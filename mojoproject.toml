@@ -1,0 +1,11 @@
+[project]
+authors = ["ZHU Yuhao 朱宇浩 <dr.yuhao.zhu@outlook.com>"]
+channels = ["https://conda.modular.com/max-nightly", "https://conda.modular.com/max", "https://repo.prefix.dev/modular-community", "conda-forge"]
+name = "decimal"
+platforms = ["osx-arm64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+max = ">=25.2.0.dev2025022805,<26"
