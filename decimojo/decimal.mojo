@@ -974,64 +974,97 @@ struct Decimal(Writable):
             scale_diff = self.scale()
             new_scale = 0
 
+        # First collect all digits that will be removed for rounding decision
+        var removed_digits = String("")
+        var temp = result
+
+        # Collect the digits to be removed (we need all of them for proper rounding)
+        for i in range(scale_diff):
+            var last_digit = temp.low % 10
+            removed_digits = String(last_digit) + removed_digits
+
+            # Divide by 10 without any rounding at this stage
+            var high64 = UInt64(temp.high)
+            var mid64 = UInt64(temp.mid)
+            var low64 = UInt64(temp.low)
+
+            # Divide high part and propagate remainder
+            var new_high = high64 // 10
+            var remainder_h = high64 % 10
+
+            # Calculate mid with remainder from high
+            var mid_with_remainder = mid64 + (remainder_h << 32)
+            var new_mid = mid_with_remainder // 10
+            var remainder_m = mid_with_remainder % 10
+
+            # Calculate low with remainder from mid
+            var low_with_remainder = low64 + (remainder_m << 32)
+            var new_low = low_with_remainder // 10
+
+            # Update temp values
+            temp.low = UInt32(new_low)
+            temp.mid = UInt32(new_mid)
+            temp.high = UInt32(new_high)
+
+        # Now we have all the digits to be removed, apply proper rounding
+        var should_round_up = False
+
+        if rounding_mode == RoundingMode.DOWN():
+            # Truncate (do nothing)
+            should_round_up = False
+        elif rounding_mode == RoundingMode.UP():
+            # Always round up if any non-zero digit was removed
+            for i in range(len(removed_digits)):
+                if removed_digits[i] != "0":
+                    should_round_up = True
+                    break
+        elif rounding_mode == RoundingMode.HALF_UP():
+            # Round up if first digit >= 5
+            if len(removed_digits) > 0 and ord(removed_digits[0]) >= ord("5"):
+                should_round_up = True
+        elif rounding_mode == RoundingMode.HALF_EVEN():
+            # Apply banker's rounding
+            if len(removed_digits) > 0:
+                var first_digit = ord(removed_digits[0]) - ord("0")
+                if first_digit > 5:
+                    # Round up
+                    should_round_up = True
+                elif first_digit == 5:
+                    # For banker's rounding we need to check:
+                    # 1. If there are other non-zero digits after 5, round up
+                    # 2. Otherwise, round to nearest even (round up if odd)
+                    var has_non_zero_after = False
+                    for i in range(1, len(removed_digits)):
+                        if removed_digits[i] != "0":
+                            has_non_zero_after = True
+                            break
+
+                    if has_non_zero_after:
+                        should_round_up = True
+                    else:
+                        # Round to even - check if the low digit is odd
+                        should_round_up = temp.low % 2 == 1
+
         # Set the new scale
-        result.flags = (result.flags & ~Self.SCALE_MASK) | (
+        result = temp
+        result.flags = (self.flags & ~Self.SCALE_MASK) | (
             UInt32(new_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
         )
 
-        # Scale down by dividing by powers of 10
-        for _ in range(scale_diff):
-            # Save the last digit for rounding
-            var last_digit = result.low % 10
-
-            # Divide by 10
-            var remainder_high_to_mid: UInt64 = 0
-            var remainder_mid_to_low: UInt64 = 0
-
-            # Calculate quotients and remainders
-            var new_high = result.high // 10
-            remainder_high_to_mid = UInt64((result.high % 10) << 32)
-
-            var mid_with_remainder = UInt64(result.mid) + remainder_high_to_mid
-            var new_mid = UInt32(mid_with_remainder // 10)
-            remainder_mid_to_low = (mid_with_remainder % 10) << 32
-
-            var low_with_remainder = UInt64(result.low) + remainder_mid_to_low
-            var new_low = UInt32(low_with_remainder // 10)
-
-            # Apply rounding based on the last digit
-            if rounding_mode == RoundingMode.DOWN():
-                # Truncate (do nothing)
-                pass
-            elif rounding_mode == RoundingMode.UP():
-                # Always round up if non-zero
-                if last_digit > 0:
-                    new_low += 1
-            elif rounding_mode == RoundingMode.HALF_UP():
-                # Round up if >= 5
-                if last_digit >= 5:
-                    new_low += 1
-            elif rounding_mode == RoundingMode.HALF_EVEN():
-                # Round to nearest even if = 5, otherwise round normally
-                if last_digit > 5:
-                    new_low += 1
-                elif last_digit == 5:
-                    # Round to even (round up if odd)
-                    if new_low % 2 == 1:
-                        new_low += 1
-
-            # Handle carry from rounding
+        # Apply rounding if needed
+        if should_round_up:
+            # Increment and handle carry
+            var new_low = UInt64(result.low) + 1
             if new_low > 0xFFFFFFFF:
-                new_low = 0
-                new_mid += 1
+                result.low = 0
+                var new_mid = UInt64(result.mid) + 1
                 if new_mid > 0xFFFFFFFF:
-                    new_mid = 0
-                    new_high += 1
-
-            # Update result
-            result.low = new_low
-            result.mid = new_mid
-            result.high = new_high
+                    result.mid = 0
+                    result.high += 1
+                else:
+                    result.mid = UInt32(new_mid)
+            else:
+                result.low = UInt32(new_low)
 
         return result
 
