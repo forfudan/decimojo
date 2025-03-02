@@ -5,3 +5,11 @@
 # magic environments
 .magic
 magic.lock
+# mojopkg files
+*.mojopkg
+# VSCode environments
+.vscode
+# local files
+# macOS environments
+.DS_Store
+test*.mojo

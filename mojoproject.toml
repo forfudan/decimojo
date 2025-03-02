@@ -1,11 +1,28 @@
 [project]
 authors = ["ZHU Yuhao 朱宇浩 <dr.yuhao.zhu@outlook.com>"]
-channels = ["https://conda.modular.com/max-nightly", "https://conda.modular.com/max", "https://repo.prefix.dev/modular-community", "conda-forge"]
+channels = ["https://conda.modular.com/max", "https://repo.prefix.dev/modular-community", "conda-forge"]
+description = "A fixed-point decimal arithmetic library written in Mojo 🔥"
+license = "Apache-2.0"
 name = "decimal"
 platforms = ["osx-arm64"]
+readme = "README.md"
 version = "0.1.0"
 
 [tasks]
+# format the code
+format = "magic run mojo format ./"
+
+# compile the package
+package = "magic run format && magic run mojo package decimojo && mv decimojo.mojopkg ./tests/"
+p = "magic run package"
+
+# tests
+test = "magic run package  && magic run mojo tests/*.mojo"
+t = "magic run test"
+
+# before commit
+final = "magic run test"
+f = "magic run final"
 
 [dependencies]
-max = ">=25.2.0.dev2025022805,<26"
+max = ">=25.0"
