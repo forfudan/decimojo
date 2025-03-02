@@ -26,6 +26,8 @@
 Implements basic object methods for working with decimal numbers.
 """
 
+from .rounding_mode import RoundingMode
+
 
 struct Decimal(Writable):
     """
@@ -284,6 +286,8 @@ struct Decimal(Writable):
             var is_negative: Bool = False
             var is_decimal_point = False
             var scale: UInt32 = 0
+            var rounding_applied = False
+            var rounding_value: UInt32 = 0
 
             var low: UInt32 = 0
             var mid: UInt32 = 0
@@ -299,6 +303,42 @@ struct Decimal(Writable):
                 elif (c >= ord("0")) and (c <= ord("9")):
                     # Extract the digit
                     var digit = UInt32(c - ord("0"))
+
+                    # Check if we've reached MAX_PRECISION after decimal point
+                    if is_decimal_point and scale >= Self.MAX_PRECISION:
+                        # Apply banker's rounding (round to nearest even)
+                        if (
+                            scale == Self.MAX_PRECISION
+                        ):  # Only consider the first digit after MAX_PRECISION
+                            if digit > 5:
+                                rounding_value = 1  # Round up
+                            elif digit == 5:
+                                # Round to even (round up if last digit is odd)
+                                if low % 2 == 1:
+                                    rounding_value = 1
+
+                            # Apply rounding if needed
+                            if rounding_value > 0:
+                                var sum64 = UInt64(low) + UInt64(rounding_value)
+                                low = UInt32(sum64 & 0xFFFFFFFF)
+
+                                # Handle carry if needed
+                                if sum64 > 0xFFFFFFFF:
+                                    var mid64 = UInt64(mid) + 1
+                                    mid = UInt32(mid64 & 0xFFFFFFFF)
+
+                                    if mid64 > 0xFFFFFFFF:
+                                        high += 1
+                                        if high == 0:  # Overflow check
+                                            raise Error(
+                                                "Decimal value too large after"
+                                                " rounding"
+                                            )
+
+                            rounding_applied = True
+
+                        # Skip remaining digits after MAX_PRECISION
+                        continue
 
                     # STEP 1: Multiply existing coefficient by 10
                     # Use 64-bit arithmetic for the calculation
@@ -448,221 +488,178 @@ struct Decimal(Writable):
     # ===------------------------------------------------------------------=== #
     # Basic operation dunders
     # ===------------------------------------------------------------------=== #
-
-    # TODO Align scales and handle overflows.
-    fn __add__(self, other: Decimal) -> Decimal:
+    fn __add__(self, other: Decimal) raises -> Decimal:
         """
-        Add two Decimal values.
+        Adds two Decimal values and returns a new Decimal containing the sum.
         """
-        if self.scale() == other.scale():
-            var result = Decimal()
-            result.flags = (
-                self.flags & ~Self.SIGN_MASK
-            )  # Copy scale but clear sign
+        # Special case for zero
+        if self.is_zero():
+            return other
+        if other.is_zero():
+            return self
 
-            if self.is_negative() == other.is_negative():
-                # Same sign: add coefficients and keep sign
-                if self.is_negative():
-                    result.flags |= Self.SIGN_MASK
+        # Determine which decimal has larger absolute value
+        var larger_decimal: Decimal
+        var smaller_decimal: Decimal
+        var larger_scale: Int
+        var smaller_scale: Int
 
-                # Add with carry
-                var carry: UInt32 = 0
-
-                # Add low parts
-                var sum = UInt64(self.low) + UInt64(other.low)
-                result.low = UInt32(sum & 0xFFFFFFFF)
-                carry = UInt32(sum >> 32)
-
-                # Add mid parts with carry
-                sum = UInt64(self.mid) + UInt64(other.mid) + UInt64(carry)
-                result.mid = UInt32(sum & 0xFFFFFFFF)
-                carry = UInt32(sum >> 32)
-
-                # Add high parts with carry
-                sum = UInt64(self.high) + UInt64(other.high) + UInt64(carry)
-                result.high = UInt32(sum & 0xFFFFFFFF)
-                # If there's still carry, we have overflow - not handled here
-
-            else:
-                # Different signs: subtract smaller absolute value from larger
-                # First determine which has larger absolute value
-                var self_larger = False
-
-                # Compare high parts first
-                if self.high > other.high:
-                    self_larger = True
-                elif self.high < other.high:
-                    self_larger = False
-                # If high parts equal, compare mid parts
-                elif self.mid > other.mid:
-                    self_larger = True
-                elif self.mid < other.mid:
-                    self_larger = False
-                # If mid parts equal, compare low parts
-                elif self.low >= other.low:
-                    self_larger = True
-                else:
-                    self_larger = False
-
-                # Perform subtraction (larger - smaller)
-                var a: Decimal
-                var b: Decimal
-
-                if self_larger:
-                    a = self
-                    b = other
-                    # Result takes sign of self (the larger value)
-                    if self.is_negative():
-                        result.flags |= Self.SIGN_MASK
-                else:
-                    a = other
-                    b = self
-                    # Result takes sign of other (the larger value)
-                    if other.is_negative():
-                        result.flags |= Self.SIGN_MASK
-
-                # Subtract b from a with borrow
-                var borrow: UInt32 = 0
-
-                # Subtract low parts
-                if a.low >= b.low + borrow:
-                    result.low = a.low - b.low - borrow
-                    borrow = 0
-                else:
-                    result.low = UInt32(0x100000000 + a.low - b.low - borrow)
-                    borrow = 1
-
-                # Subtract mid parts with borrow
-                if a.mid >= b.mid + borrow:
-                    result.mid = a.mid - b.mid - borrow
-                    borrow = 0
-                else:
-                    result.mid = UInt32(0x100000000 + a.mid - b.mid - borrow)
-                    borrow = 1
-
-                # Subtract high parts with borrow
-                result.high = a.high - b.high - borrow
-
-            return result
+        if self._abs_compare(other) >= 0:
+            larger_decimal = self
+            smaller_decimal = other
+            larger_scale = self.scale()
+            smaller_scale = other.scale()
         else:
-            # Different scales: need to align before adding
-            var result = Decimal()
-            var self_copy = self
-            var other_copy = other
+            larger_decimal = other
+            smaller_decimal = self
+            larger_scale = other.scale()
+            smaller_scale = self.scale()
 
-            # Determine which decimal has larger scale (more decimal places)
-            var self_scale = self.scale()
-            var other_scale = other.scale()
-            var target_scale = max(self_scale, other_scale)
+        # Calculate how much we can safely scale up the larger number
+        var larger_coef = larger_decimal.coefficient()
+        var significant_digits = len(larger_coef)
+        var max_safe_scale_increase = Self.MAX_PRECISION - significant_digits
 
-            # Set the result scale to the target scale
-            result.flags = UInt32(
-                (target_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
+        # If the scales are too different, we need special handling
+        if smaller_scale > larger_scale + max_safe_scale_increase:
+            # We need to determine the effective position where the smaller number would contribute
+            var scale_diff = smaller_scale - larger_scale
+
+            # If beyond our max safe scale, we need to round
+            if scale_diff > max_safe_scale_increase:
+                # Get smallest significant digit position in the smaller number
+                var smaller_coef = smaller_decimal.coefficient()
+
+                # Find first non-zero digit in the smaller number
+                var first_digit_pos = 0
+                for i in range(len(smaller_coef)):
+                    if smaller_coef[i] != "0":
+                        first_digit_pos = i
+                        break
+
+                # Calculate total effective position
+                var effective_pos = scale_diff + first_digit_pos
+
+                # If still beyond max safe scale, determine if rounding is needed
+                if effective_pos > max_safe_scale_increase:
+                    # If way beyond precision limit, just return the larger number
+                    if effective_pos > max_safe_scale_increase + 1:
+                        return larger_decimal
+
+                    # If exactly at rounding boundary, use first digit to determine rounding
+                    var first_digit = ord(smaller_coef[first_digit_pos]) - ord(
+                        "0"
+                    )
+
+                    # Round up if 5 or greater (using half-up rounding)
+                    if first_digit >= 5:
+                        # Create a small decimal for rounding adjustment
+                        var round_value = Decimal(
+                            "0." + "0" * max_safe_scale_increase + "1"
+                        )
+
+                        # Apply rounding based on signs
+                        if (
+                            smaller_decimal.is_negative()
+                            != larger_decimal.is_negative()
+                        ):
+                            return larger_decimal + -round_value
+                        else:
+                            return larger_decimal + round_value
+                    else:
+                        # Round down - just return larger number
+                        return larger_decimal
+
+                # If we get here, we can align to max safe scale
+                var safe_scale = larger_scale + max_safe_scale_increase
+                var scale_reduction = smaller_scale - safe_scale
+                smaller_decimal = smaller_decimal._scale_down(
+                    scale_reduction, RoundingMode.HALF_EVEN()
+                )
+
+        # Standard addition with aligned scales
+        var result = Decimal()
+        var target_scale = max(larger_scale, smaller_decimal.scale())
+
+        # Scale up if needed
+        var larger_copy = larger_decimal
+        var smaller_copy = smaller_decimal
+
+        if larger_scale < target_scale:
+            larger_copy = larger_decimal._scale_up(target_scale - larger_scale)
+        if smaller_decimal.scale() < target_scale:
+            smaller_copy = smaller_decimal._scale_up(
+                target_scale - smaller_decimal.scale()
             )
 
-            # Scale up the decimal with smaller scale
-            if self_scale < other_scale:
-                # Scale up self
-                var scale_diff = other_scale - self_scale
-                self_copy = self_copy._scale_up(scale_diff)
-            elif other_scale < self_scale:
-                # Scale up other
-                var scale_diff = self_scale - other_scale
-                other_copy = other_copy._scale_up(scale_diff)
+        # Set result scale
+        result.flags = UInt32(
+            (target_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
+        )
 
-            # Now both have the same scale, perform addition
-            if self_copy.is_negative() == other_copy.is_negative():
-                # Same sign: add coefficients and keep sign
-                if self_copy.is_negative():
-                    result.flags |= Self.SIGN_MASK
+        # Now perform the actual addition
+        if larger_copy.is_negative() == smaller_copy.is_negative():
+            # Same sign: add absolute values and keep the sign
+            if larger_copy.is_negative():
+                result.flags |= Self.SIGN_MASK
 
-                # Add with carry
-                var carry: UInt32 = 0
+            # Add with carry
+            var carry: UInt32 = 0
 
-                # Add low parts
-                var sum = UInt64(self_copy.low) + UInt64(other_copy.low)
-                result.low = UInt32(sum & 0xFFFFFFFF)
-                carry = UInt32(sum >> 32)
+            # Add low parts
+            var sum_low = UInt64(larger_copy.low) + UInt64(smaller_copy.low)
+            result.low = UInt32(sum_low & 0xFFFFFFFF)
+            carry = UInt32(sum_low >> 32)
 
-                # Add mid parts with carry
-                sum = (
-                    UInt64(self_copy.mid)
-                    + UInt64(other_copy.mid)
-                    + UInt64(carry)
-                )
-                result.mid = UInt32(sum & 0xFFFFFFFF)
-                carry = UInt32(sum >> 32)
+            # Add mid parts with carry
+            var sum_mid = UInt64(larger_copy.mid) + UInt64(
+                smaller_copy.mid
+            ) + UInt64(carry)
+            result.mid = UInt32(sum_mid & 0xFFFFFFFF)
+            carry = UInt32(sum_mid >> 32)
 
-                # Add high parts with carry
-                sum = (
-                    UInt64(self_copy.high)
-                    + UInt64(other_copy.high)
-                    + UInt64(carry)
-                )
-                result.high = UInt32(sum & 0xFFFFFFFF)
-                # If there's still carry, we have overflow - not handling here
+            # Add high parts with carry
+            var sum_high = UInt64(larger_copy.high) + UInt64(
+                smaller_copy.high
+            ) + UInt64(carry)
+            result.high = UInt32(sum_high & 0xFFFFFFFF)
 
+            # Check for overflow
+            if (sum_high >> 32) > 0:
+                raise Error("Decimal overflow in addition")
+        else:
+            # Different signs: subtract smaller absolute value from larger
+            # We already know larger_copy has larger absolute value
+            var borrow: UInt32 = 0
+
+            # Subtract low parts with borrow
+            if larger_copy.low >= smaller_copy.low:
+                result.low = larger_copy.low - smaller_copy.low
+                borrow = 0
             else:
-                # Different signs: subtract smaller absolute value from larger
-                # First determine which has larger absolute value
-                var self_larger = False
+                result.low = UInt32(
+                    0x100000000 + larger_copy.low - smaller_copy.low
+                )
+                borrow = 1
 
-                # Compare high parts first
-                if self_copy.high > other_copy.high:
-                    self_larger = True
-                elif self_copy.high < other_copy.high:
-                    self_larger = False
-                # If high parts equal, compare mid parts
-                elif self_copy.mid > other_copy.mid:
-                    self_larger = True
-                elif self_copy.mid < other_copy.mid:
-                    self_larger = False
-                # If mid parts equal, compare low parts
-                elif self_copy.low >= other_copy.low:
-                    self_larger = True
-                else:
-                    self_larger = False
+            # Subtract mid parts with borrow
+            if larger_copy.mid >= smaller_copy.mid + borrow:
+                result.mid = larger_copy.mid - smaller_copy.mid - borrow
+                borrow = 0
+            else:
+                result.mid = UInt32(
+                    0x100000000 + larger_copy.mid - smaller_copy.mid - borrow
+                )
+                borrow = 1
 
-                # Perform subtraction (larger - smaller)
-                var a: Decimal
-                var b: Decimal
+            # Subtract high parts with borrow
+            result.high = larger_copy.high - smaller_copy.high - borrow
 
-                if self_larger:
-                    a = self_copy
-                    b = other_copy
-                    # Result takes sign of self (the larger value)
-                    if self_copy.is_negative():
-                        result.flags |= Self.SIGN_MASK
-                else:
-                    a = other_copy
-                    b = self_copy
-                    # Result takes sign of other (the larger value)
-                    if other_copy.is_negative():
-                        result.flags |= Self.SIGN_MASK
+            # Set sign based on which had larger absolute value
+            if larger_copy.is_negative():
+                result.flags |= Self.SIGN_MASK
 
-                # Subtract b from a with borrow
-                var borrow: UInt32 = 0
-
-                # Subtract low parts
-                if a.low >= b.low + borrow:
-                    result.low = a.low - b.low - borrow
-                    borrow = 0
-                else:
-                    result.low = UInt32(0x100000000 + a.low - b.low - borrow)
-                    borrow = 1
-
-                # Subtract mid parts with borrow
-                if a.mid >= b.mid + borrow:
-                    result.mid = a.mid - b.mid - borrow
-                    borrow = 0
-                else:
-                    result.mid = UInt32(0x100000000 + a.mid - b.mid - borrow)
-                    borrow = 1
-
-                # Subtract high parts with borrow
-                result.high = a.high - b.high - borrow
-
-            return result
+        return result
 
     fn __neg__(self) -> Decimal:
         """Unary negation operator."""
@@ -731,13 +728,103 @@ struct Decimal(Writable):
         """Returns True if this Decimal is negative."""
         return (self.flags & Self.SIGN_MASK) != 0
 
+    fn is_zero(self) -> Bool:
+        """
+        Returns True if this Decimal represents zero.
+        A decimal is zero when all coefficient parts (low, mid, high) are zero,
+        regardless of its sign or scale.
+        """
+        return self.low == 0 and self.mid == 0 and self.high == 0
+
     fn scale(self) -> Int:
         """Returns the scale (number of decimal places) of this Decimal."""
         return Int((self.flags & Self.SCALE_MASK) >> Self.SCALE_SHIFT)
 
+    fn round(
+        self,
+        decimal_places: Int,
+        rounding_mode: RoundingMode = RoundingMode.HALF_EVEN(),
+    ) -> Decimal:
+        """
+        Rounds the Decimal to the specified number of decimal places.
+
+        Args:
+            decimal_places: Number of decimal places to round to.
+            rounding_mode: Rounding mode to use (defaults to HALF_EVEN/banker's rounding).
+
+        Returns:
+            A new Decimal rounded to the specified number of decimal places
+
+        Examples:
+        ```
+        var d = Decimal("123.456789")
+        var rounded = d.round(2)  # Returns 123.46 (using banker's rounding)
+        var down = d.round(3, RoundingMode.DOWN())  # Returns 123.456 (truncated)
+        var up = d.round(1, RoundingMode.UP())  # Returns 123.5 (rounded up)
+        ```
+        .
+        """
+        var current_scale = self.scale()
+
+        # If already at the desired scale, return a copy
+        if current_scale == decimal_places:
+            return self
+
+        # If we need more decimal places, scale up
+        if decimal_places > current_scale:
+            return self._scale_up(decimal_places - current_scale)
+
+        # Otherwise, scale down with the specified rounding mode
+        return self._scale_down(current_scale - decimal_places, rounding_mode)
+
     # ===------------------------------------------------------------------=== #
     # Internal methods
     # ===------------------------------------------------------------------=== #
+
+    fn _abs_compare(self, other: Decimal) -> Int:
+        """
+        Compares absolute values of two Decimal numbers, ignoring signs.
+
+        Returns:
+        - Positive value if |self| > |other|
+        - Zero if |self| = |other|
+        - Negative value if |self| < |other|
+        """
+        # Create temporary copies with same scale for comparison
+        var self_copy = self
+        var other_copy = other
+
+        # Get scales
+        var self_scale = self.scale()
+        var other_scale = other.scale()
+
+        # Scale up the one with smaller scale to match
+        if self_scale < other_scale:
+            self_copy = self_copy._scale_up(other_scale - self_scale)
+        elif other_scale < self_scale:
+            other_copy = other_copy._scale_up(self_scale - other_scale)
+
+        # Now both have the same scale, compare coefficients
+        # Start with highest significance (high)
+        if self_copy.high > other_copy.high:
+            return 1
+        if self_copy.high < other_copy.high:
+            return -1
+
+        # High parts equal, compare mid parts
+        if self_copy.mid > other_copy.mid:
+            return 1
+        if self_copy.mid < other_copy.mid:
+            return -1
+
+        # Mid parts equal, compare low parts
+        if self_copy.low > other_copy.low:
+            return 1
+        if self_copy.low < other_copy.low:
+            return -1
+
+        # All parts equal, numbers are equal
+        return 0
 
     fn _internal_representation(value: Decimal):
         # Show internal representation details
@@ -751,6 +838,95 @@ struct Decimal(Writable):
         print("scale:         ", value.scale())
         print("is negative:   ", value.is_negative())
         print("--------------------------------")
+
+    fn _scale_down(
+        self,
+        owned scale_diff: Int,
+        rounding_mode: RoundingMode = RoundingMode.HALF_EVEN(),
+    ) -> Decimal:
+        """
+        Internal method to scale down a decimal by dividing by 10^scale_diff.
+
+        Args:
+            scale_diff: Number of decimal places to scale down by
+            rounding_mode: Rounding mode to use
+
+        Returns:
+            A new Decimal with the scaled down value
+        """
+        var result = self
+
+        # Early return if no scaling needed
+        if scale_diff <= 0:
+            return result
+
+        # Update the scale in the flags
+        var new_scale = self.scale() - scale_diff
+        if new_scale < 0:
+            # Cannot scale below zero, limit the scaling
+            scale_diff = self.scale()
+            new_scale = 0
+
+        # Set the new scale
+        result.flags = (result.flags & ~Self.SCALE_MASK) | (
+            UInt32(new_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
+        )
+
+        # Scale down by dividing by powers of 10
+        for _ in range(scale_diff):
+            # Save the last digit for rounding
+            var last_digit = result.low % 10
+
+            # Divide by 10
+            var remainder_high_to_mid: UInt64 = 0
+            var remainder_mid_to_low: UInt64 = 0
+
+            # Calculate quotients and remainders
+            var new_high = result.high // 10
+            remainder_high_to_mid = UInt64((result.high % 10) << 32)
+
+            var mid_with_remainder = UInt64(result.mid) + remainder_high_to_mid
+            var new_mid = UInt32(mid_with_remainder // 10)
+            remainder_mid_to_low = (mid_with_remainder % 10) << 32
+
+            var low_with_remainder = UInt64(result.low) + remainder_mid_to_low
+            var new_low = UInt32(low_with_remainder // 10)
+
+            # Apply rounding based on the last digit
+            if rounding_mode == RoundingMode.DOWN():
+                # Truncate (do nothing)
+                pass
+            elif rounding_mode == RoundingMode.UP():
+                # Always round up if non-zero
+                if last_digit > 0:
+                    new_low += 1
+            elif rounding_mode == RoundingMode.HALF_UP():
+                # Round up if >= 5
+                if last_digit >= 5:
+                    new_low += 1
+            elif rounding_mode == RoundingMode.HALF_EVEN():
+                # Round to nearest even if = 5, otherwise round normally
+                if last_digit > 5:
+                    new_low += 1
+                elif last_digit == 5:
+                    # Round to even (round up if odd)
+                    if new_low % 2 == 1:
+                        new_low += 1
+
+            # Handle carry from rounding
+            if new_low > 0xFFFFFFFF:
+                new_low = 0
+                new_mid += 1
+                if new_mid > 0xFFFFFFFF:
+                    new_mid = 0
+                    new_high += 1
+
+            # Update result
+            result.low = new_low
+            result.mid = new_mid
+            result.high = new_high
+
+        return result
 
     fn _scale_up(self, owned scale_diff: Int) -> Decimal:
         """

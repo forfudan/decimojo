@@ -5,12 +5,6 @@ from decimojo import Decimal
 import testing
 
 
-fn main() raises:
-    # test_decimal_from_int()
-    test_decimal_from_float()
-    # test_decimal_from_string()
-
-
 fn test_decimal_from_int() raises:
     print("Testing Decimal Creation from Integer Values")
     print("------------------------------------------")
@@ -324,3 +318,9 @@ fn test_decimal_from_string() raises:
     )
 
     print("\nAll string tests passed!")
+
+
+fn main() raises:
+    test_decimal_from_int()
+    test_decimal_from_float()
+    test_decimal_from_string()
