@@ -17,7 +17,7 @@ package = "magic run format && magic run mojo package decimojo && mv decimojo.mo
 p = "magic run package"
 
 # tests
-test = "magic run package  && magic run mojo tests/*.mojo"
+test = "magic run package && magic run mojo tests/*.mojo && magic run mojo test tests"
 t = "magic run test"
 
 # before commit

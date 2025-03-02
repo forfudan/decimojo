@@ -326,7 +326,7 @@ struct Decimal(Writable):
         # Handle zero as a special case
         if coef == "0":
             if scale > 0:
-                return "0." + "0" * scale
+                return "0"  # Return just "0" instead of "0.000..."
             else:
                 return "0"
 
@@ -343,6 +343,20 @@ struct Decimal(Writable):
             # Insert decimal point at appropriate position
             var insert_pos = len(coef) - scale
             result = coef[:insert_pos] + "." + coef[insert_pos:]
+
+        # Remove trailing zeros after decimal point
+        if "." in result:
+            var i = len(result) - 1
+            while i > 0 and result[i] == "0" and result[i - 1] != ".":
+                i -= 1
+
+            # If we found trailing zeros, remove them
+            if i < len(result) - 1:
+                result = result[: i + 1]
+
+            # If only the decimal point is left, remove it too
+            if result[-1] == ".":
+                result = result[:-1]
 
         # Add negative sign if needed
         if self.is_negative() and result != "0":
