@@ -764,6 +764,140 @@ struct Decimal(Writable):
 
         return result
 
+    fn __mul__(self, other: Decimal) raises -> Decimal:
+        """
+        Multiplies two Decimal values and returns a new Decimal containing the product.
+
+        Args:
+            other: The Decimal to multiply with this Decimal.
+
+        Returns:
+            A new Decimal containing the product
+
+        Examples:
+        ```
+        var a = Decimal("12.34")
+        var b = Decimal("5.6")
+        var result = a * b  # Returns 69.104
+        ```
+        .
+        """
+        # Special cases for zero
+        if self.is_zero() or other.is_zero():
+            # For zero, we need to preserve the scale (sum of both scales)
+            var result = Decimal.ZERO()
+            var result_scale = min(
+                self.scale() + other.scale(), Self.MAX_PRECISION
+            )
+
+            # Set the scale in the flags
+            result.flags = UInt32(
+                (result_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
+            )
+
+            return result
+
+        # Calculate the result scale (sum of scales)
+        var result_scale = self.scale() + other.scale()
+        if result_scale > Self.MAX_PRECISION:
+            result_scale = Self.MAX_PRECISION
+
+        # Determine the sign of the result (XOR of signs)
+        var result_is_negative = self.is_negative() != other.is_negative()
+
+        # Extract the components for multiplication
+        var a_low = UInt64(self.low)
+        var a_mid = UInt64(self.mid)
+        var a_high = UInt64(self.high)
+
+        var b_low = UInt64(other.low)
+        var b_mid = UInt64(other.mid)
+        var b_high = UInt64(other.high)
+
+        # Perform 96-bit by 96-bit multiplication
+        # This requires 9 multiplications and carrying
+
+        # Multiply: low x low (first 32 bits)
+        var r0 = a_low * b_low
+
+        # Multiply: low x mid
+        var r1_a = a_low * b_mid
+
+        # Multiply: mid x low
+        var r1_b = a_mid * b_low
+
+        # Multiply: low x high
+        var r2_a = a_low * b_high
+
+        # Multiply: mid x mid
+        var r2_b = a_mid * b_mid
+
+        # Multiply: high x low
+        var r2_c = a_high * b_low
+
+        # Multiply: mid x high
+        var r3_a = a_mid * b_high
+
+        # Multiply: high x mid
+        var r3_b = a_high * b_mid
+
+        # Multiply: high x high
+        var r4 = a_high * b_high
+
+        # Check if we have an overflow in the high part
+        if r4 > 0:
+            raise Error("Decimal overflow in multiplication")
+
+        # Accumulate results with carries
+        var c0 = r0 & 0xFFFFFFFF
+        var c1 = (r0 >> 32) + (r1_a & 0xFFFFFFFF) + (r1_b & 0xFFFFFFFF)
+        var c2 = (r1_a >> 32) + (r1_b >> 32) + (r2_a & 0xFFFFFFFF) + (
+            r2_b & 0xFFFFFFFF
+        ) + (r2_c & 0xFFFFFFFF) + (c1 >> 32)
+        var c3 = (r2_a >> 32) + (r2_b >> 32) + (r2_c >> 32) + (
+            r3_a & 0xFFFFFFFF
+        ) + (r3_b & 0xFFFFFFFF) + (c2 >> 32)
+        var c4 = (r3_a >> 32) + (r3_b >> 32) + (c3 >> 32)
+
+        # Check for overflow in the result
+        if c4 > 0:
+            raise Error("Decimal overflow in multiplication")
+
+        # Extract 32-bit parts for the result
+        var result_low = UInt32(c0 & 0xFFFFFFFF)
+        var result_mid = UInt32(c1 & 0xFFFFFFFF)
+        var result_high = UInt32(c2 & 0xFFFFFFFF)
+
+        # Create the result with proper scale
+        var result = Decimal(result_low, result_mid, result_high, 0)
+
+        # Set the flags for scale and sign
+        result.flags = UInt32(
+            (result_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
+        )
+        if result_is_negative:
+            result.flags |= Self.SIGN_MASK
+
+        # If we have more than MAX_PRECISION decimal places, round the result
+        if self.scale() + other.scale() > Self.MAX_PRECISION:
+            var scale_diff = self.scale() + other.scale() - Self.MAX_PRECISION
+            result = result._scale_down(scale_diff, RoundingMode.HALF_EVEN())
+            # Check if the result would round to zero - both numbers are very small
+            if result.coefficient() == "0" or (
+                len(result.coefficient()) <= scale_diff
+                and result.coefficient()[0] < "5"
+            ):
+                # Result will underflow to zero, set scale to MAX_PRECISION
+                var zero_result = Decimal.ZERO()
+                zero_result.flags = UInt32(
+                    (Self.MAX_PRECISION << Self.SCALE_SHIFT) & Self.SCALE_MASK
+                )
+                return zero_result
+
+            result = result._scale_down(scale_diff, RoundingMode.HALF_EVEN())
+
+        return result
+
     fn __neg__(self) -> Decimal:
         """Unary negation operator."""
         var result = Decimal(self.low, self.mid, self.high, self.flags)
