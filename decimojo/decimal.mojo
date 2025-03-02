@@ -770,6 +770,30 @@ struct Decimal(Writable):
         result.flags ^= Self.SIGN_MASK  # Flip sign bit
         return result
 
+    fn __sub__(self, other: Decimal) raises -> Decimal:
+        """
+        Subtracts the other Decimal from self and returns a new Decimal.
+
+        Args:
+            other: The Decimal to subtract from this Decimal.
+
+        Returns:
+            A new Decimal containing the difference
+
+        Notes:
+        This method is implemented using the existing `__add__()` and `__neg__()` methods.
+
+        Examples:
+        ```console
+        var a = Decimal("10.5")
+        var b = Decimal("3.2")
+        var result = a - b  # Returns 7.3
+        ```
+        .
+        """
+        # Implementation using the existing `__add__()` and `__neg__()` methods
+        return self + (-other)
+
     # ===------------------------------------------------------------------=== #
     # Other methods
     # ===------------------------------------------------------------------=== #

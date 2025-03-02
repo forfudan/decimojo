@@ -1,5 +1,5 @@
 """
-Test Decimal arithmetic operations including addition and negation.
+Test Decimal arithmetic operations including addition, subtraction, and negation.
 """
 from decimojo import Decimal
 import testing
@@ -234,6 +234,138 @@ fn test_negation() raises:
     print("Decimal negation tests passed!")
 
 
+fn test_subtraction() raises:
+    print("Testing decimal subtraction...")
+
+    # Test case 1: Simple subtraction with same scale
+    var a1 = Decimal("123.45")
+    var b1 = Decimal("67.89")
+    var result1 = a1 - b1
+    testing.assert_equal(
+        String(result1), "55.56", "Simple subtraction with same scale"
+    )
+
+    # Test case 2: Subtraction with different scales
+    var a2 = Decimal("123.4")
+    var b2 = Decimal("67.89")
+    var result2 = a2 - b2
+    testing.assert_equal(
+        String(result2), "55.51", "Subtraction with different scales"
+    )
+
+    # Test case 3: Subtraction resulting in negative
+    var a3 = Decimal("67.89")
+    var b3 = Decimal("123.45")
+    var result3 = a3 - b3
+    testing.assert_equal(
+        String(result3), "-55.56", "Subtraction resulting in negative"
+    )
+
+    # Test case 4: Subtraction of negative numbers
+    var a4 = Decimal("123.45")
+    var b4 = Decimal("-67.89")
+    var result4 = a4 - b4
+    testing.assert_equal(
+        String(result4), "191.34", "Subtraction of negative number"
+    )
+
+    # Test case 5: Subtraction with zero
+    var a5 = Decimal("123.45")
+    var b5 = Decimal("0.00")
+    var result5 = a5 - b5
+    testing.assert_equal(String(result5), "123.45", "Subtraction with zero")
+
+    # Test case 6: Subtraction resulting in zero
+    var a6 = Decimal("123.45")
+    var b6 = Decimal("123.45")
+    var result6 = a6 - b6
+    testing.assert_equal(
+        String(result6), "0.00", "Subtraction resulting in zero"
+    )
+
+    # Test case 7: Subtraction with large scales
+    var a7 = Decimal("0.0000003")
+    var b7 = Decimal("0.0000002")
+    var result7 = a7 - b7
+    testing.assert_equal(
+        String(result7), "0.0000001", "Subtraction with large scales"
+    )
+
+    # Test case 8: Subtraction with different large scales
+    var a8 = Decimal("0.000005")
+    var b8 = Decimal("0.0000002")
+    var result8 = a8 - b8
+    testing.assert_equal(
+        String(result8), "0.0000048", "Subtraction with different large scales"
+    )
+
+    # Test case 9: Subtraction with small difference
+    var a9 = Decimal("1.0000001")
+    var b9 = Decimal("1.0000000")
+    var result9 = a9 - b9
+    testing.assert_equal(
+        String(result9), "0.0000001", "Subtraction with small difference"
+    )
+
+    # Test case 10: Subtraction of very small from very large
+    var a10 = Decimal("9999999999.9999999")
+    var b10 = Decimal("0.0000001")
+    var result10 = a10 - b10
+    testing.assert_equal(
+        String(result10),
+        "9999999999.9999998",
+        "Subtraction of very small from very large",
+    )
+
+    # Test case 11: Self subtraction for various values (expanded from list)
+    # Individual test cases instead of iterating over a list
+    var value1 = Decimal("0")
+    testing.assert_equal(
+        String(value1 - value1),
+        String(Decimal("0").round(value1.scale())),
+        "Self subtraction should yield zero (0)",
+    )
+
+    var value2 = Decimal("123.45")
+    testing.assert_equal(
+        String(value2 - value2),
+        String(Decimal("0").round(value2.scale())),
+        "Self subtraction should yield zero (123.45)",
+    )
+
+    var value3 = Decimal("-987.654")
+    testing.assert_equal(
+        String(value3 - value3),
+        String(Decimal("0").round(value3.scale())),
+        "Self subtraction should yield zero (-987.654)",
+    )
+
+    var value4 = Decimal("0.0001")
+    testing.assert_equal(
+        String(value4 - value4),
+        String(Decimal("0").round(value4.scale())),
+        "Self subtraction should yield zero (0.0001)",
+    )
+
+    var value5 = Decimal("-99999.99999")
+    testing.assert_equal(
+        String(value5 - value5),
+        String(Decimal("0").round(value5.scale())),
+        "Self subtraction should yield zero (-99999.99999)",
+    )
+
+    # Test case 12: Verify that a - b = -(b - a)
+    var a12a = Decimal("123.456")
+    var b12a = Decimal("789.012")
+    var result12a = a12a - b12a
+    var result12b = -(b12a - a12a)
+    testing.assert_equal(
+        String(result12a), String(result12b), "a - b should equal -(b - a)"
+    )
+
+    print("Decimal subtraction tests passed!")
+
+
 fn test_extreme_cases() raises:
     print("Testing extreme cases...")
 
@@ -291,6 +423,9 @@ fn main() raises:
 
     # Run addition tests
     test_addition()
+
+    # Run subtraction tests
+    test_subtraction()
 
     # Run negation tests
     test_negation()
