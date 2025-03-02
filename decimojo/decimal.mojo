@@ -33,7 +33,7 @@ struct Decimal(Writable):
 
     Internal Representation
     -----------------------
-    Each decimal uses a 256-bit on memory, where (for right-to-left):
+    Each decimal uses a 128-bit on memory, where (for right-to-left):
     - 96 bits for the coefficient (mantissa), which is 96-bit unsigned integers
       stored as three 32 bit integer (low, mid, high).
       The value of the coefficient is: high * 2**64 + mid * 2**32 + low
@@ -206,56 +206,43 @@ struct Decimal(Writable):
                 # Extract the digit
                 var digit = UInt32(c - ord("0"))
 
-                # Multiply existing coefficient by 10 and add new digit
-                # Handling potential overflow across all three 32-bit parts
+                # STEP 1: Multiply existing coefficient by 10
+                # Use 64-bit arithmetic for the calculation
+                var low64 = UInt64(low) * 10
+                var mid64 = UInt64(mid) * 10 + (low64 >> 32)
+                var high64 = UInt64(high) * 10 + (mid64 >> 32)
 
-                # First, multiply low by 10
-                var temp_low = low * 10
-
-                # Check for overflow from low to mid
-                var overflow_low_to_mid = low > 0xFFFFFFFF // 10
-
-                # Add the digit to low
-                var new_low = temp_low + digit
-
-                # Check if adding the digit caused additional overflow
-                var digit_overflow = new_low < temp_low
-
-                # Update mid: mid*10 + any overflow from low
-                var temp_mid = mid * 10
-                if overflow_low_to_mid:
-                    temp_mid += 1
-
-                # Check for overflow from mid to high
-                var overflow_mid_to_high = mid > 0xFFFFFFFF // 10
-
-                # Update mid with any digit overflow from low
-                var new_mid = temp_mid
-                if digit_overflow:
-                    new_mid += 1
-
-                # Check if incrementing mid caused additional overflow
-                var mid_carry = new_mid < temp_mid
-
-                # Update high: high*10 + any overflow from mid
-                var new_high = high * 10
-                if overflow_mid_to_high:
-                    new_high += 1
-                if mid_carry:
-                    new_high += 1
-
-                # Check for overflow in high part (means number is too large)
-                if high > 0xFFFFFFFF // 10:
+                # Check for overflow in high part
+                if high64 > 0xFFFFFFFF:
                     raise Error("Decimal value too large")
 
-                # Update our values
-                low = new_low
-                mid = new_mid
-                high = new_high
+                # Extract 32-bit values
+                low = UInt32(low64 & 0xFFFFFFFF)
+                mid = UInt32(mid64 & 0xFFFFFFFF)
+                high = UInt32(high64 & 0xFFFFFFFF)
+
+                # STEP 2: Add the digit
+                # Use 64-bit arithmetic for the addition
+                var sum64 = UInt64(low) + UInt64(digit)
+                low = UInt32(sum64 & 0xFFFFFFFF)
+
+                # Handle carry to mid if needed
+                if sum64 > 0xFFFFFFFF:
+                    mid64 = UInt64(mid) + 1
+                    mid = UInt32(mid64 & 0xFFFFFFFF)
+
+                    # Handle carry to high if needed
+                    if mid64 > 0xFFFFFFFF:
+                        high += 1
+                        if high == 0:  # Overflow check
+                            raise Error("Decimal value too large")
 
                 # Update scale if we are after the decimal point
                 if is_decimal_point:
                     scale += 1
+            elif c == ord(" ") or c == ord("_"):
+                # Allow spaces and underscores for readability
+                continue
             else:
                 raise Error("Invalid character in decimal string")
 
@@ -271,61 +258,34 @@ struct Decimal(Writable):
         """
         Initializes a Decimal from a floating-point value.
         You may lose precision because float representation is inexact.
-
-        Notes:
-        Since `Float64` can only represent integers exactly up to 2^53,
-        the `high` field will always be 0.
         """
-        var flags: UInt32 = 0
-        var low: UInt32 = 0
-        var mid: UInt32 = 0
-        var high: UInt32 = 0
-        var scale = 0
+        # Handle sign first
+        var is_negative = f < 0
+        var abs_value = abs(f)
 
-        var float_value = f
-        if float_value < 0:
-            flags |= Self.SIGN_MASK
-            float_value = -float_value
+        # Convert to string with high precision to capture all significant digits
+        # The format ensures we get up to MAX_PRECISION decimal places
+        var float_str = _float_to_decimal_str(abs_value, Self.MAX_PRECISION)
 
-        # Extract integral and fractional parts
-        var integral_part = Int64(float_value)
-        var fractional_part = float_value - Float64(integral_part)
+        # Remove trailing zeros after decimal point
+        var decimal_pos = float_str.find(".")
+        if decimal_pos >= 0:
+            var i = len(float_str) - 1
+            while i > decimal_pos and float_str[i] == "0":
+                i -= 1
 
-        # Handle integral part
-        # Float64 can only represent integers exactly up to 2^53
-        # it cannot accurately represent values that need the high 32 bits
-        # Thus, the high 32 bits is set to 0
-        low = UInt32(integral_part & 0xFFFFFFFF)
-        mid = UInt32((integral_part >> 32) & 0xFFFFFFFF)
-        high = 0
+            # If only the decimal point is left, remove it too
+            if i == decimal_pos:
+                float_str = float_str[:decimal_pos]
+            else:
+                float_str = float_str[: i + 1]
 
-        # Process fractional part
-        while (fractional_part > 1e-10) and (scale < Self.MAX_PRECISION):
-            fractional_part = fractional_part * 10
-            integral_part = Int64(fractional_part)
-            fractional_part -= Float64(integral_part)
+        # Add negative sign if needed
+        if is_negative:
+            float_str = "-" + float_str
 
-            # Calculate if multiplying by 10 would overflow
-            var overflow = (0xFFFFFFFF - UInt32(integral_part)) / 10 < low
-
-            # Multiply low by 10 and add the new digit
-            low = low * 10 + UInt32(integral_part)
-
-            # Handle overflow
-            if overflow:
-                # Increment mid, checking for overflow to high
-                mid += 1
-                if mid == 0:  # Mid overflowed
-                    high += 1
-                    if high == 0:  # High overflowed
-                        raise Error("Decimal value too large")
-
-            scale += 1
-
-        # Set the flags
-        flags |= UInt32((scale << Self.SCALE_SHIFT) & Self.SCALE_MASK)
-
-        self = Decimal(low, mid, high, flags)
+        # Use the string constructor which already handles overflow correctly
+        self = Decimal(float_str)
 
     fn __copyinit__(out self, other: Self):
         """
@@ -359,28 +319,33 @@ struct Decimal(Writable):
         > str(Decimal.from_string("-0.789")) == "-0.789"
         ```
         """
-
+        # Get the coefficient as a string (absolute value)
         var coef = self.coefficient()
         var scale = self.scale()
-        var is_neg = self.is_negative()
 
-        # Start with the coefficient
-        var result = coef
-
-        # Insert decimal point if needed
-        if scale > 0:
-            var len_result = len(result)
-            if len_result <= scale:
-                # Need to pad with zeros
-                var padding = scale - len_result + 1
-                result = "0." + "0" * (padding - 1) + result
+        # Handle zero as a special case
+        if coef == "0":
+            if scale > 0:
+                return "0." + "0" * scale
             else:
-                # Insert decimal point
-                var decimal_pos = len_result - scale
-                result = result[:decimal_pos] + "." + result[decimal_pos:]
+                return "0"
+
+        # For non-zero values, format according to scale
+        var result: String
+
+        if scale == 0:
+            # No decimal places needed
+            result = coef
+        elif scale >= len(coef):
+            # Need leading zeros after decimal point
+            result = "0." + "0" * (scale - len(coef)) + coef
+        else:
+            # Insert decimal point at appropriate position
+            var insert_pos = len(coef) - scale
+            result = coef[:insert_pos] + "." + coef[insert_pos:]
 
         # Add negative sign if needed
-        if is_neg and result != "0":
+        if self.is_negative() and result != "0":
             result = "-" + result
 
         return result
@@ -619,49 +584,59 @@ struct Decimal(Writable):
     # ===------------------------------------------------------------------=== #
     # Other methods
     # ===------------------------------------------------------------------=== #
-
     fn coefficient(self) -> String:
         """
         Returns the unscaled integer coefficient.
         This is the absolute value of the decimal digits without considering the scale or sign.
         We need to combine the three 32-bit parts into a single value.
         Since we might exceed built-in integer limits, we build the string directly.
+        The value of the coefficient is: high * 2**64 + mid * 2**32 + low.
         """
         if self.low == 0 and self.mid == 0 and self.high == 0:
             return "0"
 
-        # First convert high, mid, low to String separately
-        var high_str = String(self.high) if self.high > 0 else ""
-        var mid_str = String(self.mid)
-        var low_str = String(self.low)
+        # We need to build the decimal representation of the 96-bit integer
+        # by repeatedly dividing by 10 and collecting remainders
+        var result = String("")
+        var h = UInt64(self.high)
+        var m = UInt64(self.mid)
+        var l = UInt64(self.low)
 
-        # Pad with zeros where necessary
-        if self.high > 0:
-            # If high is non-zero, mid and low need to be exactly 10 digits (32 bits)
-            if self.mid > 0:
-                # Ensure mid is properly padded
-                while len(mid_str) < 10:
-                    mid_str = "0" + mid_str
-            else:
-                mid_str = "0000000000"  # 10 zeros
+        while h > 0 or m > 0 or l > 0:
+            # Perform division by 10 across all three parts
+            var remainder: UInt64 = 0
+            var new_h: UInt64 = 0
+            var new_m: UInt64 = 0
+            var new_l: UInt64 = 0
 
-            # Ensure low is properly padded
-            while len(low_str) < 10:
-                low_str = "0" + low_str
+            # Process high part
+            if h > 0:
+                new_h = h // 10
+                remainder = h % 10
+                # Propagate remainder to mid
+                m += remainder << 32  # equivalent to remainder * 2^32
 
-        elif self.mid > 0:
-            # Only mid and low are non-zero
-            # Ensure low is properly padded
-            while len(low_str) < 10:
-                low_str = "0" + low_str
+            # Process mid part
+            if m > 0:
+                new_m = m // 10
+                remainder = m % 10
+                # Propagate remainder to low
+                l += remainder << 32  # equivalent to remainder * 2^32
 
-        # Combine the parts
-        if self.high > 0:
-            return high_str + mid_str + low_str
-        elif self.mid > 0:
-            return mid_str + low_str
-        else:
-            return low_str
+            # Process low part
+            if l > 0:
+                new_l = l // 10
+                remainder = l % 10
+
+            # Append remainder to result (in reverse order)
+            result = String(remainder) + String(result)
+
+            # Update values for next iteration
+            h = new_h
+            m = new_m
+            l = new_l
+
+        return result
 
     fn is_negative(self) -> Bool:
         """Returns True if this Decimal is negative."""
@@ -718,7 +693,9 @@ struct Decimal(Writable):
         # Scale up by multiplying by powers of 10
         for _ in range(scale_diff):
             # Check for potential overflow before multiplying
-            if result.high > 0xFFFFFFFF // 10:
+            if result.high > 0xFFFFFFFF // 10 or (
+                result.high == 0xFFFFFFFF // 10 and result.low > 0xFFFFFFFF % 10
+            ):
                 # Overflow would occur, cannot scale further
                 break
 
@@ -742,3 +719,31 @@ struct Decimal(Writable):
             result.high = new_high
 
         return result
+
+
+fn _float_to_decimal_str(value: Float64, precision: Int) -> String:
+    """
+    Converts float to string with specified precision.
+    """
+    var int_part = Int64(value)
+    var frac_part = value - Float64(int_part)
+
+    # Convert integer part to string
+    var result = String(int_part)
+
+    # Handle fractional part if needed
+    if frac_part > 0:
+        result += "."
+
+        # Extract decimal digits one by one
+        for _ in range(precision):
+            frac_part *= 10
+            var digit = Int8(frac_part)
+            result += String(digit)
+            frac_part -= Float64(digit)
+
+            # Stop if we've reached the end of precision
+            if frac_part < 1e-17:
+                break
+
+    return result
