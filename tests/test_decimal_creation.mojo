@@ -227,7 +227,7 @@ fn test_decimal_from_string() raises:
 
     # Very large and small numbers
     var very_large = Decimal("999999999999999999999999999")
-    var very_small = Decimal("0." + "0" * 28 + "1")
+    var very_small = Decimal("0." + "0" * 27 + "1")
     var large_negative = Decimal("-" + "9" * 21)
 
     testing.assert_equal(
@@ -237,7 +237,7 @@ fn test_decimal_from_string() raises:
     )
     testing.assert_equal(
         String(very_small),
-        "0." + "0" * 28 + "1",
+        "0." + "0" * 27 + "1",
         "Small numbers should be preserved",
     )
     testing.assert_equal(

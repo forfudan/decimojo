@@ -178,7 +178,6 @@ struct Decimal(Writable):
             self.high = 0
 
     # TODO: Improve it to handle more cases and formats, e.g., _ and space.
-    # TODO: Improve scientific notation handling.
     fn __init__(out self, s: String) raises:
         """
         Initializes a Decimal from a string representation.
@@ -208,6 +207,9 @@ struct Decimal(Writable):
                 exp_position = i
                 break
 
+        #######################################################
+        # Scientific notation
+        #######################################################
         if scientific_notation:
             # Extract mantissa and exponent parts
             mantissa_str = s[:exp_position]
@@ -280,9 +282,64 @@ struct Decimal(Writable):
                 self = Decimal(
                     mantissa.low, mantissa.mid, mantissa.high, new_flags
                 )
+
+        #######################################################
+        # Not scientific notation, parse as regular decimal
+        #######################################################
         else:
-            # Not scientific notation, parse as regular decimal
-            var bytes_of_string = s.as_bytes()
+            # Analyze string to check for potential overflow
+            var s_copy = s
+            var bytes_of_string = s_copy.as_bytes()
+            var len_bytes = len(bytes_of_string)
+            var total_significant_digits = 0
+            var decimal_pos = -1
+            var start_pos = 0
+            var has_non_zero = False
+
+            # Skip leading sign if present
+            if len_bytes > 0 and bytes_of_string[0] == ord("-"):
+                start_pos = 1
+
+            # First pass: count significant digits and locate decimal point
+            for i in range(start_pos, len_bytes):
+                var c = bytes_of_string[i]
+
+                if c == ord("."):
+                    decimal_pos = i
+                elif c >= ord("0") and c <= ord("9"):
+                    # Count significant digits (ignore leading zeros)
+                    if c != ord("0") or has_non_zero:
+                        has_non_zero = True
+                        total_significant_digits += 1
+                elif c != ord(" ") and c != ord("_"):
+                    # Allow spaces and underscores for readability
+                    raise Error(
+                        "Invalid character in decimal string: " + String(c)
+                    )
+
+            # Calculate integer and fractional lengths
+            var integer_len = decimal_pos - start_pos if decimal_pos >= 0 else len_bytes - start_pos
+            var fractional_len = len_bytes - decimal_pos - 1 if decimal_pos >= 0 else 0
+
+            # Check if integer part alone exceeds capacity
+            if integer_len > 29:  # 96 bits ~= 29 decimal digits
+                raise Error("Decimal integer part too large: " + s)
+
+            # Process string based on analysis
+            var parsing_str: String
+            if (
+                total_significant_digits > 29
+                or fractional_len > Self.MAX_PRECISION
+            ):
+                # Need to truncate and round
+                parsing_str = _truncate_and_round_decimal_string(
+                    s, 29, Self.MAX_PRECISION
+                )
+            else:
+                # Original string is fine
+                parsing_str = s
+
+            # Now parse the string
             var is_negative: Bool = False
             var is_decimal_point = False
             var scale: UInt32 = 0
@@ -292,6 +349,9 @@ struct Decimal(Writable):
             var low: UInt32 = 0
             var mid: UInt32 = 0
             var high: UInt32 = 0
+
+            s_copy = parsing_str
+            bytes_of_string = s_copy.as_bytes()
 
             for i in range(len(bytes_of_string)):
                 var c = bytes_of_string[i]
@@ -492,11 +552,58 @@ struct Decimal(Writable):
         """
         Adds two Decimal values and returns a new Decimal containing the sum.
         """
+        ############################################################
         # Special case for zero
+        ############################################################
         if self.is_zero():
             return other
         if other.is_zero():
             return self
+
+        ############################################################
+        # Integer addition with same scale
+        ############################################################
+        if self.scale() == other.scale():
+            var result = Decimal()
+            result.flags = UInt32(
+                (self.scale() << Self.SCALE_SHIFT) & Self.SCALE_MASK
+            )
+
+            # Same sign: add absolute values and keep the sign
+            if self.is_negative() == other.is_negative():
+                if self.is_negative():
+                    result.flags |= Self.SIGN_MASK
+
+                # Add with carry
+                var carry: UInt32 = 0
+
+                # Add low parts
+                var sum_low = UInt64(self.low) + UInt64(other.low)
+                result.low = UInt32(sum_low & 0xFFFFFFFF)
+                carry = UInt32(sum_low >> 32)
+
+                # Add mid parts with carry
+                var sum_mid = UInt64(self.mid) + UInt64(other.mid) + UInt64(
+                    carry
+                )
+                result.mid = UInt32(sum_mid & 0xFFFFFFFF)
+                carry = UInt32(sum_mid >> 32)
+
+                # Add high parts with carry
+                var sum_high = UInt64(self.high) + UInt64(other.high) + UInt64(
+                    carry
+                )
+                result.high = UInt32(sum_high & 0xFFFFFFFF)
+
+                # Check for overflow
+                if (sum_high >> 32) > 0:
+                    raise Error("Decimal overflow in addition")
+
+                return result
+
+        ############################################################
+        # Float addition which may be with different scales
+        ############################################################
 
         # Determine which decimal has larger absolute value
         var larger_decimal: Decimal
@@ -1016,5 +1123,122 @@ fn _float_to_decimal_str(value: Float64, precision: Int) -> String:
     # Add negative sign if needed
     if is_negative:
         result = "-" + result
+
+    return result
+
+
+fn _truncate_and_round_decimal_string(
+    s: String, max_digits: Int, max_precision: Int
+) -> String:
+    """
+    Truncate a decimal string to have at most max_digits significant digits
+    and at most max_precision decimal places, applying banker's rounding.
+    """
+    var result = String("")
+    var is_negative = False
+    var decimal_index = -1
+    var significant_count = 0
+    var start_index = 0
+
+    # Handle sign
+    if len(s) > 0 and s[0] == "-":
+        is_negative = True
+        start_index = 1
+        result += "-"
+
+    # Find decimal point and count significant digits
+    for i in range(start_index, len(s)):
+        if s[i] == ".":
+            decimal_index = i
+            break
+
+    # Process integer part
+    var integer_start = start_index
+    while integer_start < len(s) and (
+        integer_start < decimal_index or decimal_index == -1
+    ):
+        if s[integer_start] >= "0" and s[integer_start] <= "9":
+            if (
+                s[integer_start] != "0"
+                or significant_count > 0
+                or integer_start == decimal_index - 1
+            ):
+                result += String(s[integer_start])
+                significant_count += 1
+            else:
+                # Skip leading zeros
+                pass
+        integer_start += 1
+
+    # Add decimal point if needed
+    if decimal_index != -1:
+        result += "."
+
+        # Process fractional part
+        var fraction_count = 0
+        for i in range(decimal_index + 1, len(s)):
+            if s[i] >= "0" and s[i] <= "9":
+                if (
+                    significant_count < max_digits
+                    and fraction_count < max_precision
+                ):
+                    result += String(s[i])
+                    significant_count += 1
+                    fraction_count += 1
+                elif fraction_count == max_precision:
+                    # Apply rounding based on next digit
+                    if s[i] >= "5":
+                        # Round up
+                        var result_bytes = result.as_bytes()
+                        var j = len(result_bytes) - 1
+                        var carry = True
+
+                        # Process carry
+                        while carry and j >= 0:
+                            if result_bytes[j] == ord("."):
+                                j -= 1
+                                continue
+
+                            if result_bytes[j] < ord("9"):
+                                # We can increment without carrying
+                                result_bytes[j] += 1
+                                carry = False
+                            else:
+                                # We have a '9', change to '0' and continue with carry
+                                result_bytes[j] = ord("0")
+
+                            j -= 1
+
+                        # If we still have a carry, we need to add a '1' at the beginning
+                        if carry:
+                            if is_negative:
+                                result = "-1" + (result[1:])
+                            else:
+                                result = "1" + String(result)
+                        else:
+                            result = String(result)
+                    break
+                fraction_count += 1
+
+    # Remove trailing zeros after decimal point
+    var result_bytes = result.as_bytes()
+    var decimal_found = False
+    var last_non_zero = len(result_bytes)
+
+    for i in range(len(result_bytes) - 1, -1, -1):
+        if result_bytes[i] == ord("."):
+            decimal_found = True
+            if last_non_zero == len(result_bytes):  # Only zeros after decimal
+                last_non_zero = i  # Remove decimal point too
+            break
+        elif result_bytes[i] != ord("0"):
+            last_non_zero = i + 1
+
+    if decimal_found and last_non_zero < len(result_bytes):
+        result = String(result[:last_non_zero])
+
+    # Handle case where result is just "-" (for values like -0.00001)
+    if result == "-":
+        result = "0"
 
     return result

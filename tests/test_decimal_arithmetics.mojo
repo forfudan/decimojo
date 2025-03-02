@@ -150,7 +150,7 @@ fn test_addition() raises:
     var result17 = a17 + b17
     testing.assert_equal(
         String(result17),
-        "1234567890123456789.012345679",
+        "1234567890123456789.0123456789",
         "Addition with large and small values",
     )
 
