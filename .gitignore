@@ -9,7 +9,7 @@ magic.lock
 *.mojopkg
 # VSCode environments
 .vscode
-# local files
 # macOS environments
 .DS_Store
-test*.mojo
+# local files
+/test*.mojo

@@ -52,10 +52,14 @@ struct Decimal(Writable):
     """
 
     # Internal representation fields
-    var low: UInt32  # Least significant 32 bits of coefficient
-    var mid: UInt32  # Middle 32 bits of coefficient
-    var high: UInt32  # Most significant 32 bits of coefficient
-    var flags: UInt32  # Scale information and the sign
+    var low: UInt32
+    """Least significant 32 bits of coefficient."""
+    var mid: UInt32
+    """Middle 32 bits of coefficient."""
+    var high: UInt32
+    """Most significant 32 bits of coefficient."""
+    var flags: UInt32
+    """Scale information and the sign."""
 
     # Constants
     alias MAX_PRECISION = 28
@@ -79,17 +83,23 @@ struct Decimal(Writable):
     # Special values
     @staticmethod
     fn ZERO() -> Decimal:
-        """Returns a Decimal representing 0."""
+        """
+        Returns a Decimal representing 0.
+        """
         return Decimal(0, 0, 0, 0)
 
     @staticmethod
     fn ONE() -> Decimal:
-        """Returns a Decimal representing 1."""
+        """
+        Returns a Decimal representing 1.
+        """
         return Decimal(1, 0, 0, 0)
 
     @staticmethod
     fn NEGATIVE_ONE() -> Decimal:
-        """Returns a Decimal representing -1."""
+        """
+        Returns a Decimal representing -1.
+        """
         return Decimal(1, 0, 0, Decimal.SIGN_MASK)
 
     @staticmethod
@@ -165,124 +175,197 @@ struct Decimal(Writable):
             self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
             self.high = 0
 
-    # TODO Improve it to handle more cases and formats, e.g., _ and space.
+    # TODO: Improve it to handle more cases and formats, e.g., _ and space.
+    # TODO: Improve scientific notation handling.
     fn __init__(out self, s: String) raises:
         """
         Initializes a Decimal from a string representation.
+        Supports standard decimal notation and scientific notation.
 
         Args:
-            s: String representation of a decimal number (e.g., "1234.5678").
-
-        Returns:
-            A new Decimal instance.
+            s: String representation of a decimal number (e.g., "1234.5678" or "1.23e5").
 
         Examples:
         ```console
-        > Decimal("123.456")                  # Returns 123.456
-        > Decimal("-0.789")                   # Returns -0.789
+        > Decimal("123.456")     # Returns 123.456
+        > Decimal("-0.789")      # Returns -0.789
+        > Decimal("1.23e5")      # Returns 123000
+        > Decimal("4.56e-7")     # Returns 0.0000004560
         ```
-
-        Notes:
-        Since Int is a 64-bit type in Mojo, this constructor can only
-        handle values up to 64 bits. The `high` field will always be 0.
         """
-        var bytes_of_string = s.as_bytes()
-        var is_negative: Bool = False
-        var is_decimal_point = False
-        var scale: UInt32 = 0
+        # Check if the string is in scientific notation
+        var scientific_notation = False
+        var exp_position: Int = -1
+        var mantissa_str = String("")
+        var exponent = 0
 
-        var low: UInt32 = 0
-        var mid: UInt32 = 0
-        var high: UInt32 = 0
+        # Look for 'e' or 'E' in the string
+        for i in range(len(s)):
+            if s[i] == "e" or s[i] == "E":
+                scientific_notation = True
+                exp_position = i
+                break
 
-        for i in range(len(bytes_of_string)):
-            var c = bytes_of_string[i]
+        if scientific_notation:
+            # Extract mantissa and exponent parts
+            mantissa_str = s[:exp_position]
+            var exp_str = s[exp_position + 1 :]
 
-            if i == 0 and c == ord("-"):
-                is_negative = True
-            elif c == ord("."):
-                is_decimal_point = True
-            elif (c >= ord("0")) and (c <= ord("9")):
-                # Extract the digit
-                var digit = UInt32(c - ord("0"))
+            # Check if exponent is negative
+            var exp_negative = False
+            if len(exp_str) > 0 and exp_str[0] == "-":
+                exp_negative = True
+                exp_str = exp_str[1:]
+            elif len(exp_str) > 0 and exp_str[0] == "+":
+                exp_str = exp_str[1:]
 
-                # STEP 1: Multiply existing coefficient by 10
-                # Use 64-bit arithmetic for the calculation
-                var low64 = UInt64(low) * 10
-                var mid64 = UInt64(mid) * 10 + (low64 >> 32)
-                var high64 = UInt64(high) * 10 + (mid64 >> 32)
+            # Parse exponent
+            for i in range(len(exp_str)):
+                var c = exp_str[i]
+                if c >= "0" and c <= "9":
+                    exponent = exponent * 10 + ord(c) - ord("0")
+                else:
+                    raise Error("Invalid character in exponent: " + String(c))
 
-                # Check for overflow in high part
-                if high64 > 0xFFFFFFFF:
-                    raise Error("Decimal value too large")
+            if exp_negative:
+                exponent = -exponent
 
-                # Extract 32-bit values
-                low = UInt32(low64 & 0xFFFFFFFF)
-                mid = UInt32(mid64 & 0xFFFFFFFF)
-                high = UInt32(high64 & 0xFFFFFFFF)
+            # Now parse the mantissa as a regular decimal
+            var mantissa = Decimal(mantissa_str)
 
-                # STEP 2: Add the digit
-                # Use 64-bit arithmetic for the addition
-                var sum64 = UInt64(low) + UInt64(digit)
-                low = UInt32(sum64 & 0xFFFFFFFF)
-
-                # Handle carry to mid if needed
-                if sum64 > 0xFFFFFFFF:
-                    mid64 = UInt64(mid) + 1
-                    mid = UInt32(mid64 & 0xFFFFFFFF)
-
-                    # Handle carry to high if needed
-                    if mid64 > 0xFFFFFFFF:
-                        high += 1
-                        if high == 0:  # Overflow check
-                            raise Error("Decimal value too large")
-
-                # Update scale if we are after the decimal point
-                if is_decimal_point:
-                    scale += 1
-            elif c == ord(" ") or c == ord("_"):
-                # Allow spaces and underscores for readability
-                continue
+            # Scale the mantissa according to the exponent
+            if exponent > 0:
+                # Positive exponent: move decimal point right
+                # This means we need to multiply by 10^exponent
+                var scale = mantissa.scale()
+                if exponent >= scale:
+                    # Remove decimal point entirely and pad with zeros
+                    var new_coef = mantissa.coefficient() + "0" * (
+                        exponent - scale
+                    )
+                    self = Decimal(new_coef)
+                    if mantissa.is_negative():
+                        self.flags |= Self.SIGN_MASK
+                else:
+                    # Move the decimal point left by exponent positions
+                    var new_scale = scale - exponent
+                    var new_flags = (
+                        (mantissa.flags & ~Self.SCALE_MASK)
+                        | (
+                            UInt32(new_scale << Self.SCALE_SHIFT)
+                            & Self.SCALE_MASK
+                        )
+                    )
+                    self = Decimal(
+                        mantissa.low, mantissa.mid, mantissa.high, new_flags
+                    )
             else:
-                raise Error("Invalid character in decimal string")
+                # Negative exponent: move decimal point left
+                # This means we need to divide by 10^|exponent|
+                var abs_exp = -exponent
 
-        # Set the flags
-        var flags = UInt32((scale << Self.SCALE_SHIFT) & Self.SCALE_MASK)
-        if is_negative:
-            flags |= Self.SIGN_MASK
+                # This increases the scale
+                var new_scale = mantissa.scale() + abs_exp
+                if new_scale > Self.MAX_PRECISION:
+                    raise Error("Resulting decimal exceeds maximum precision")
 
-        self = Decimal(low, mid, high, flags)
+                var scale_bits = UInt32(new_scale) << Self.SCALE_SHIFT
+                var masked_scale = scale_bits & Self.SCALE_MASK
+                var new_flags = (
+                    mantissa.flags & ~Self.SCALE_MASK
+                ) | masked_scale
+
+                self = Decimal(
+                    mantissa.low, mantissa.mid, mantissa.high, new_flags
+                )
+        else:
+            # Not scientific notation, parse as regular decimal
+            var bytes_of_string = s.as_bytes()
+            var is_negative: Bool = False
+            var is_decimal_point = False
+            var scale: UInt32 = 0
+
+            var low: UInt32 = 0
+            var mid: UInt32 = 0
+            var high: UInt32 = 0
+
+            for i in range(len(bytes_of_string)):
+                var c = bytes_of_string[i]
+
+                if i == 0 and c == ord("-"):
+                    is_negative = True
+                elif c == ord("."):
+                    is_decimal_point = True
+                elif (c >= ord("0")) and (c <= ord("9")):
+                    # Extract the digit
+                    var digit = UInt32(c - ord("0"))
+
+                    # STEP 1: Multiply existing coefficient by 10
+                    # Use 64-bit arithmetic for the calculation
+                    var low64 = UInt64(low) * 10
+                    var mid64 = UInt64(mid) * 10 + (low64 >> 32)
+                    var high64 = UInt64(high) * 10 + (mid64 >> 32)
+
+                    # Check for overflow in high part
+                    if high64 > 0xFFFFFFFF:
+                        raise Error("Decimal value too large")
+
+                    # Extract 32-bit values
+                    low = UInt32(low64 & 0xFFFFFFFF)
+                    mid = UInt32(mid64 & 0xFFFFFFFF)
+                    high = UInt32(high64 & 0xFFFFFFFF)
+
+                    # STEP 2: Add the digit
+                    # Use 64-bit arithmetic for the addition
+                    var sum64 = UInt64(low) + UInt64(digit)
+                    low = UInt32(sum64 & 0xFFFFFFFF)
+
+                    # Handle carry to mid if needed
+                    if sum64 > 0xFFFFFFFF:
+                        mid64 = UInt64(mid) + 1
+                        mid = UInt32(mid64 & 0xFFFFFFFF)
+
+                        # Handle carry to high if needed
+                        if mid64 > 0xFFFFFFFF:
+                            high += 1
+                            if high == 0:  # Overflow check
+                                raise Error("Decimal value too large")
+
+                    # Update scale if we are after the decimal point
+                    if is_decimal_point:
+                        scale += 1
+                elif c == ord(" ") or c == ord("_"):
+                    # Allow spaces and underscores for readability
+                    continue
+                else:
+                    raise Error(
+                        "Invalid character in decimal string: " + String(c)
+                    )
+
+            # Set the flags
+            var flags = UInt32((scale << Self.SCALE_SHIFT) & Self.SCALE_MASK)
+            if is_negative:
+                flags |= Self.SIGN_MASK
+
+            self = Decimal(low, mid, high, flags)
 
     # TODO: Use generic floating-point type.
-    fn __init__(out self, f: Float64) raises:
+    fn __init__(out self, f: Float64, *, max_precision: Bool = True) raises:
         """
         Initializes a Decimal from a floating-point value.
         You may lose precision because float representation is inexact.
         """
-        # Handle sign first
-        var is_negative = f < 0
-        var abs_value = abs(f)
+        var float_str: String
 
-        # Convert to string with high precision to capture all significant digits
-        # The format ensures we get up to MAX_PRECISION decimal places
-        var float_str = _float_to_decimal_str(abs_value, Self.MAX_PRECISION)
-
-        # Remove trailing zeros after decimal point
-        var decimal_pos = float_str.find(".")
-        if decimal_pos >= 0:
-            var i = len(float_str) - 1
-            while i > decimal_pos and float_str[i] == "0":
-                i -= 1
-
-            # If only the decimal point is left, remove it too
-            if i == decimal_pos:
-                float_str = float_str[:decimal_pos]
-            else:
-                float_str = float_str[: i + 1]
-
-        # Add negative sign if needed
-        if is_negative:
-            float_str = "-" + float_str
+        if max_precision:
+            # Use maximum precision
+            # Convert float to string ith high precision to capture all significant digits
+            # The format ensures we get up to MAX_PRECISION decimal places
+            float_str = _float_to_decimal_str(f, Self.MAX_PRECISION)
+        else:
+            # Use default string representation
+            # Convert float to string with Mojo's default precision
+            float_str = String(f)
 
         # Use the string constructor which already handles overflow correctly
         self = Decimal(float_str)
@@ -312,12 +395,7 @@ struct Decimal(Writable):
     fn __str__(self) -> String:
         """
         Returns string representation of the Decimal.
-
-        Examples:
-        ```console
-        > str(Decimal.from_string("123.456")) == "123.456"
-        > str(Decimal.from_string("-0.789")) == "-0.789"
-        ```
+        Trailing zeros after decimal point are removed.
         """
         # Get the coefficient as a string (absolute value)
         var coef = self.coefficient()
@@ -325,10 +403,7 @@ struct Decimal(Writable):
 
         # Handle zero as a special case
         if coef == "0":
-            if scale > 0:
-                return "0"  # Return just "0" instead of "0.000..."
-            else:
-                return "0"
+            return "0"
 
         # For non-zero values, format according to scale
         var result: String
@@ -347,7 +422,7 @@ struct Decimal(Writable):
         # Remove trailing zeros after decimal point
         if "." in result:
             var i = len(result) - 1
-            while i > 0 and result[i] == "0" and result[i - 1] != ".":
+            while i > 0 and result[i] == "0":
                 i -= 1
 
             # If we found trailing zeros, remove them
@@ -355,8 +430,8 @@ struct Decimal(Writable):
                 result = result[: i + 1]
 
             # If only the decimal point is left, remove it too
-            if result[-1] == ".":
-                result = result[:-1]
+            if i > 0 and result[i] == ".":
+                result = result[:i]
 
         # Add negative sign if needed
         if self.is_negative() and result != "0":
@@ -738,9 +813,15 @@ struct Decimal(Writable):
 fn _float_to_decimal_str(value: Float64, precision: Int) -> String:
     """
     Converts float to string with specified precision.
+    Properly handles negative values.
     """
-    var int_part = Int64(value)
-    var frac_part = value - Float64(int_part)
+    # Handle sign separately
+    var is_negative = value < 0
+    var abs_value = abs(value)
+
+    # Extract integer and fractional parts from absolute value
+    var int_part = Int64(abs_value)
+    var frac_part = abs_value - Float64(int_part)
 
     # Convert integer part to string
     var result = String(int_part)
@@ -756,8 +837,8 @@ fn _float_to_decimal_str(value: Float64, precision: Int) -> String:
             result += String(digit)
             frac_part -= Float64(digit)
 
-            # Stop if we've reached the end of precision
-            if frac_part < 1e-17:
-                break
+    # Add negative sign if needed
+    if is_negative:
+        result = "-" + result
 
     return result
