@@ -133,7 +133,7 @@ fn test_edge_cases() raises:
     var carry_value = Decimal("9.999")
 
     testing.assert_equal(
-        String(carry_value.round(2)), "10", "Rounding with carry propagation"
+        String(carry_value.round(2)), "10.00", "Rounding with carry propagation"
     )
 
     # Test case 5: Rounding to maximum precision

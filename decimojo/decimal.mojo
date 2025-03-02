@@ -491,11 +491,10 @@ struct Decimal(Writable):
     # ===------------------------------------------------------------------=== #
     # Output dunders and other methods
     # ===------------------------------------------------------------------=== #
-
     fn __str__(self) -> String:
         """
         Returns string representation of the Decimal.
-        Trailing zeros after decimal point are removed.
+        Preserves trailing zeros after decimal point to match the scale.
         """
         # Get the coefficient as a string (absolute value)
         var coef = self.coefficient()
@@ -503,7 +502,10 @@ struct Decimal(Writable):
 
         # Handle zero as a special case
         if coef == "0":
-            return "0"
+            if scale == 0:
+                return "0"
+            else:
+                return "0." + "0" * scale
 
         # For non-zero values, format according to scale
         var result: String
@@ -519,19 +521,13 @@ struct Decimal(Writable):
             var insert_pos = len(coef) - scale
             result = coef[:insert_pos] + "." + coef[insert_pos:]
 
-        # Remove trailing zeros after decimal point
-        if "." in result:
-            var i = len(result) - 1
-            while i > 0 and result[i] == "0":
-                i -= 1
+            # Ensure we have exactly 'scale' digits after decimal point
+            var decimal_point_pos = result.find(".")
+            var current_decimals = len(result) - decimal_point_pos - 1
 
-            # If we found trailing zeros, remove them
-            if i < len(result) - 1:
-                result = result[: i + 1]
-
-            # If only the decimal point is left, remove it too
-            if i > 0 and result[i] == ".":
-                result = result[:i]
+            if current_decimals < scale:
+                # Add trailing zeros if needed
+                result += "0" * (scale - current_decimals)
 
         # Add negative sign if needed
         if self.is_negative() and result != "0":

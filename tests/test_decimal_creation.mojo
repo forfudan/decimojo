@@ -217,12 +217,14 @@ fn test_decimal_from_string() raises:
         String(leading_zeros), "123.456", "Leading zeros should be removed"
     )
     testing.assert_equal(
-        String(trailing_zeros), "123.456", "Trailing zeros should be removed"
+        String(trailing_zeros),
+        "123.45600000",
+        "Trailing zeros should not be removed",
     )
     testing.assert_equal(
         String(both_zeros),
-        "123.456",
-        "Leading and trailing zeros should be removed",
+        "123.45600",
+        "Leading zeros should be removed",
     )
 
     # Very large and small numbers
@@ -288,7 +290,9 @@ fn test_decimal_from_string() raises:
     var max_precision = Decimal("0." + "9" * 28)
 
     testing.assert_equal(
-        String(only_zeros), "0", "String of zeros should be represented as '0'"
+        String(only_zeros),
+        "0.0000",
+        "String of zeros should be represented as '0'",
     )
     testing.assert_equal(
         String(max_precision),

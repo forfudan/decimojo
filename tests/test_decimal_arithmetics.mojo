@@ -42,7 +42,7 @@ fn test_addition() raises:
 
     # Test case 5: Addition with zero
     var a5 = Decimal("123.45")
-    var b5 = Decimal("0")
+    var b5 = Decimal("0.00")
     var result5 = a5 + b5
     testing.assert_equal(String(result5), "123.45", "Addition with zero")
 
@@ -50,7 +50,7 @@ fn test_addition() raises:
     var a6 = Decimal("123.45")
     var b6 = Decimal("-123.45")
     var result6 = a6 + b6
-    testing.assert_equal(String(result6), "0", "Addition resulting in zero")
+    testing.assert_equal(String(result6), "0.00", "Addition resulting in zero")
 
     # Test case 7: Addition with large scales
     var a7 = Decimal("0.0000001")
@@ -76,7 +76,7 @@ fn test_addition() raises:
     var result9 = a9 + b9
     testing.assert_equal(
         String(result9),
-        "1.11111111011111111101111111",
+        "1.111111110111111111011111110",
         "Addition with many decimal places",
     )
 
@@ -96,7 +96,7 @@ fn test_addition() raises:
     var result11 = a11 + b11
     testing.assert_equal(
         String(result11),
-        "1.111111111111111111111111111",
+        "1.1111111111111111111111111110",
         "Addition near maximum precision",
     )
 
@@ -106,7 +106,7 @@ fn test_addition() raises:
     var result12 = a12 + b12
     testing.assert_equal(
         String(result12),
-        "0." + "2" + "1" * 26,
+        "0." + "2" + "1" * 26 + "0",
         "Addition causing scale truncation",
     )
 
@@ -142,7 +142,7 @@ fn test_addition() raises:
     var acc = Decimal("0")
     for i in range(10):
         acc = acc + Decimal("0.1")
-    testing.assert_equal(String(acc), "1", "Repeated addition of 0.1")
+    testing.assert_equal(String(acc), "1.0", "Repeated addition of 0.1")
 
     # Test case 17: Edge case with alternating very large and very small values
     var a17 = Decimal("1234567890123456789.0123456789")
@@ -179,7 +179,7 @@ fn test_negation() raises:
     var a4 = Decimal("123.4500")
     var result4 = -a4
     testing.assert_equal(
-        String(result4), "-123.45", "Negating with trailing zeros"
+        String(result4), "-123.4500", "Negating with trailing zeros"
     )
 
     # Test case 5: Double negation
@@ -242,7 +242,9 @@ fn test_extreme_cases() raises:
     var b1 = Decimal("-0." + "1" * 28)  # -0.1111...1 (28 digits)
     var result1 = a1 + b1
     testing.assert_equal(
-        String(result1), "0", "High precision addition resulting in zero"
+        String(result1),
+        "0." + "0" * 28,
+        "High precision addition resulting in zero",
     )
 
     # Test case 2: Addition that should trigger overflow handling
@@ -259,7 +261,7 @@ fn test_extreme_cases() raises:
     var b3 = Decimal("0.000000")
     var result3 = a3 + b3
     testing.assert_equal(
-        String(result3), "0", "Addition of different precision zeros"
+        String(result3), "0.000000", "Addition of different precision zeros"
     )
 
     # Test case 4: Addition with boundary values involving zeros
@@ -267,7 +269,7 @@ fn test_extreme_cases() raises:
     var b4 = Decimal("-0.00")
     var result4 = a4 + b4
     testing.assert_equal(
-        String(result4), "0", "Addition of positive and negative zero"
+        String(result4), "0.00", "Addition of positive and negative zero"
     )
 
     # Test case 5: Adding numbers that require carry propagation through many places
