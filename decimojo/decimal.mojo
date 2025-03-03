@@ -314,7 +314,7 @@ struct Decimal(Writable):
                 elif c != ord(" ") and c != ord("_"):
                     # Allow spaces and underscores for readability
                     raise Error(
-                        "Invalid character in decimal string: " + String(c)
+                        "Invalid character in decimal string: " + chr(Int(c))
                     )
 
             # Calculate integer and fractional lengths
@@ -439,7 +439,7 @@ struct Decimal(Writable):
                     continue
                 else:
                     raise Error(
-                        "Invalid character in decimal string: " + String(c)
+                        "Invalid character in decimal string: " + chr(Int(c))
                     )
 
             # Set the flags
@@ -1315,117 +1315,184 @@ fn _float_to_decimal_str(value: Float64, precision: Int) -> String:
 
 
 fn _truncate_and_round_decimal_string(
-    s: String, max_digits: Int, max_precision: Int
-) -> String:
+    s: String, max_significant: Int, max_precision: Int
+) raises -> String:
     """
-    Truncate a decimal string to have at most max_digits significant digits
+    Truncate a decimal string to have at most max_significant digits total
     and at most max_precision decimal places, applying banker's rounding.
     """
-    var result = String("")
-    var is_negative = False
-    var decimal_index = -1
-    var significant_count = 0
-    var start_index = 0
+    # Parse the string structure
+    var is_negative = s.startswith("-")
+    var start_index = 1 if is_negative else 0
+    var decimal_index = s.find(".")
+    var has_decimal = decimal_index >= 0
 
-    # Handle sign
-    if len(s) > 0 and s[0] == "-":
-        is_negative = True
-        start_index = 1
+    # Skip leading zeros in integer part
+    var effective_start = start_index
+    while (
+        effective_start < len(s)
+        and (effective_start < decimal_index or decimal_index < 0)
+        and s[effective_start] == "0"
+    ):
+        effective_start += 1
+
+    # Calculate effective integer length (without leading zeros)
+    var effective_integer_length = (
+        decimal_index - effective_start
+    ) if has_decimal and decimal_index > effective_start else (
+        len(s) - effective_start if decimal_index < 0 else 0
+    )
+
+    # Calculate fractional length
+    var fractional_length = len(s) - decimal_index - 1 if has_decimal else 0
+
+    # Special case: Check if number consists only of 9s and might round up
+    if has_decimal and effective_integer_length > 0:
+        var all_nines = True
+        for i in range(effective_start, decimal_index):
+            if s[i] != "9":
+                all_nines = False
+                break
+
+        if all_nines and decimal_index + 1 < len(s):
+            if s[decimal_index + 1] >= "5":
+                # Will round up to 10^integer_length
+                # The new integer part will have effective_integer_length + 1 digits
+                var new_integer_length = effective_integer_length + 1
+
+                # Calculate how many decimal places we can keep
+                var available_decimal_places = max(
+                    0, max_significant - new_integer_length
+                )
+                var adjusted_precision = min(
+                    max_precision, available_decimal_places
+                )
+
+                return (
+                    (String("-") if is_negative else "")
+                    + "1"
+                    + "0" * effective_integer_length
+                    + (
+                        "." + "0" * adjusted_precision if adjusted_precision
+                        > 0 else ""
+                    )
+                )
+
+    # Check if integer part alone exceeds capacity
+    if effective_integer_length > max_significant:
+        raise Error("Decimal integer part too large")
+
+    # Determine how many fractional digits we can keep based on integer length
+    var max_frac_digits = min(
+        max_precision, max_significant - effective_integer_length
+    )
+
+    # Build result
+    var result = String("")
+
+    # Add sign if needed
+    if is_negative:
         result += "-"
 
-    # Find decimal point and count significant digits
-    for i in range(start_index, len(s)):
-        if s[i] == ".":
-            decimal_index = i
-            break
+    # Add integer part (preserving leading zeros if no significant digits)
+    if effective_integer_length > 0:
+        result += s[effective_start:decimal_index]
+    else:
+        result += "0"  # At least one zero needed
 
-    # Process integer part
-    var integer_start = start_index
-    while integer_start < len(s) and (
-        integer_start < decimal_index or decimal_index == -1
-    ):
-        if s[integer_start] >= "0" and s[integer_start] <= "9":
-            if (
-                s[integer_start] != "0"
-                or significant_count > 0
-                or integer_start == decimal_index - 1
-            ):
-                result += String(s[integer_start])
-                significant_count += 1
-            else:
-                # Skip leading zeros
-                pass
-        integer_start += 1
-
-    # Add decimal point if needed
-    if decimal_index != -1:
+    # Add decimal point and fractional part if needed
+    if max_frac_digits > 0:
         result += "."
 
-        # Process fractional part
-        var fraction_count = 0
-        for i in range(decimal_index + 1, len(s)):
-            if s[i] >= "0" and s[i] <= "9":
-                if (
-                    significant_count < max_digits
-                    and fraction_count < max_precision
-                ):
-                    result += String(s[i])
-                    significant_count += 1
-                    fraction_count += 1
-                elif fraction_count == max_precision:
-                    # Apply rounding based on next digit
-                    if s[i] >= "5":
-                        # Round up
-                        var result_bytes = result.as_bytes()
-                        var j = len(result_bytes) - 1
-                        var carry = True
+        # Copy up to max_frac_digits from fractional part
+        var frac_to_keep = min(fractional_length, max_frac_digits)
+        var frac_part = s[decimal_index + 1 : decimal_index + 1 + frac_to_keep]
+        result += frac_part
 
-                        # Process carry
-                        while carry and j >= 0:
-                            if result_bytes[j] == ord("."):
-                                j -= 1
-                                continue
+        # Check if we need to round based on the next digit
+        if fractional_length > frac_to_keep:
+            var next_digit = ord(s[decimal_index + 1 + frac_to_keep]) - ord("0")
+            var round_up = False
 
-                            if result_bytes[j] < ord("9"):
-                                # We can increment without carrying
-                                result_bytes[j] += 1
-                                carry = False
-                            else:
-                                # We have a '9', change to '0' and continue with carry
-                                result_bytes[j] = ord("0")
+            if next_digit > 5:
+                round_up = True
+            elif next_digit == 5:
+                # Check digits after 5 for banker's rounding
+                var has_nonzero_after = False
+                for i in range(decimal_index + 1 + frac_to_keep + 1, len(s)):
+                    if s[i] > "0":
+                        has_nonzero_after = True
+                        break
 
-                            j -= 1
+                if has_nonzero_after:
+                    round_up = True
+                else:
+                    # Round to even
+                    var last_digit = ord(result[len(result) - 1]) - ord("0")
+                    round_up = last_digit % 2 == 1
 
-                        # If we still have a carry, we need to add a '1' at the beginning
-                        if carry:
-                            if is_negative:
-                                result = "-1" + (result[1:])
-                            else:
-                                result = "1" + String(result)
-                        else:
-                            result = String(result)
-                    break
-                fraction_count += 1
+            # Apply rounding if needed
+            if round_up:
+                # Process from right to left
+                var chars = List[String]()
+                for i in range(len(result)):
+                    chars.append(result[i])
 
-    # Remove trailing zeros after decimal point
-    var result_bytes = result.as_bytes()
-    var decimal_found = False
-    var last_non_zero = len(result_bytes)
+                var pos = len(chars) - 1
+                var carry = 1
 
-    for i in range(len(result_bytes) - 1, -1, -1):
-        if result_bytes[i] == ord("."):
-            decimal_found = True
-            if last_non_zero == len(result_bytes):  # Only zeros after decimal
-                last_non_zero = i  # Remove decimal point too
-            break
-        elif result_bytes[i] != ord("0"):
-            last_non_zero = i + 1
+                while pos >= 0 and carry > 0:
+                    if chars[pos] == ".":
+                        pos -= 1
+                        continue
 
-    if decimal_found and last_non_zero < len(result_bytes):
-        result = String(result[:last_non_zero])
+                    if chars[pos] >= "0" and chars[pos] <= "8":
+                        chars[pos] = chr(ord(chars[pos]) + 1)
+                        carry = 0
+                    elif chars[pos] == "9":
+                        chars[pos] = "0"
+                        carry = 1
 
-    # Handle case where result is just "-" (for values like -0.00001)
-    if result == "-":
-        result = "0"
+                    pos -= 1
+
+                # If we still have a carry, handle the special case
+                if carry > 0:
+                    # We need to add a leading "1", which will change our significant digits
+                    var new_integer_length = effective_integer_length + 1
+
+                    # Recalculate how many fractional digits we can have
+                    var new_max_frac = max(
+                        0, max_significant - new_integer_length
+                    )
+
+                    # If we can't have any fractional digits, just return the integer part
+                    if new_max_frac == 0:
+                        return (
+                            (String("-") if is_negative else "")
+                            + "1"
+                            + "0" * effective_integer_length
+                        )
+
+                    # Otherwise, build a new result with the adjusted precision
+                    var new_result = (String("-") if is_negative else "") + "1"
+
+                    # Add back the integer part zeros
+                    if effective_start < decimal_index:
+                        new_result += "0" * effective_integer_length
+
+                    # Add decimal point and fractional part with adjusted precision
+                    if new_max_frac > 0:
+                        new_result += "." + "0" * new_max_frac
+
+                    return new_result
+
+                # Rebuild result
+                result = String("")
+                for c in chars:
+                    result += c[]
+
+        # Add trailing zeros if needed
+        if frac_to_keep < max_frac_digits:
+            result += "0" * (max_frac_digits - frac_to_keep)
 
     return result

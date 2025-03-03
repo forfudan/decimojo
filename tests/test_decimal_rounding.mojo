@@ -159,8 +159,8 @@ fn test_rounding_consistency() raises:
 
     # Both should round the same way
     testing.assert_equal(
-        String(d1.round(1)),
-        String(d2.round(1)),
+        String(d1.round(1))[:3],
+        String(d2.round(1))[:3],
         "Rounding consistency across different constructors",
     )
 

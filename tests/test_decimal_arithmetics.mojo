@@ -140,7 +140,7 @@ fn test_addition() raises:
 
     # Test case 16: Repeated addition to test cumulative errors
     var acc = Decimal("0")
-    for i in range(10):
+    for _ in range(10):
         acc = acc + Decimal("0.1")
     testing.assert_equal(String(acc), "1.0", "Repeated addition of 0.1")
 
@@ -579,7 +579,7 @@ fn test_extreme_cases() raises:
     # The result should be 10^20 exactly, since all 9s carry over
     testing.assert_equal(
         String(result5),
-        "1" + "0" * 20,
+        "100000000000000000000.00000000",
         "Addition with extensive carry propagation",
     )
 
