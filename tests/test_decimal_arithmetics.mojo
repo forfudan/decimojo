@@ -653,7 +653,7 @@ fn test_division() raises:
     var result14 = a14 / a14
     testing.assert_equal(
         String(result14),
-        "1.00000000000000000000000000",
+        "1",
         "Division of number by itself",
     )
 

@@ -527,6 +527,37 @@ struct Decimal(Writable):
             return self
 
         ############################################################
+        # Check for operands that cancel each other out
+        # (same absolute value but opposite signs)
+        ############################################################
+        if self.is_negative() != other.is_negative():
+            # Different signs - check if absolute values are equal
+            # First normalize both to same scale for comparison
+            var max_scale = max(self.scale(), other.scale())
+            var self_copy = self
+            var other_copy = other
+
+            # Scale both up to the maximum scale for proper comparison
+            if self.scale() < max_scale:
+                self_copy = self._scale_up(max_scale - self.scale())
+            if other.scale() < max_scale:
+                other_copy = other._scale_up(max_scale - other.scale())
+
+            # Compare absolute values (ignoring sign)
+            if (
+                self_copy.low == other_copy.low
+                and self_copy.mid == other_copy.mid
+                and self_copy.high == other_copy.high
+            ):
+                # Numbers cancel out, return zero with proper scale
+                var result = Decimal.ZERO()
+                # Use the larger scale for the result
+                result.flags = UInt32(
+                    (max_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
+                )
+                return result
+
+        ############################################################
         # Integer addition with same scale
         ############################################################
         if self.scale() == other.scale():
@@ -896,10 +927,6 @@ struct Decimal(Writable):
         """
         Divides self by other and returns a new Decimal containing the quotient.
         """
-        print("\n===== DIVISION DEBUG =====")
-        print("Dividend:", String(self), "scale:", String(self.scale()))
-        print("Divisor:", String(other), "scale:", String(other.scale()))
-
         # Check for division by zero
         if other.is_zero():
             raise Error("Division by zero")
@@ -911,9 +938,6 @@ struct Decimal(Writable):
             result.flags = UInt32(
                 (result_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
             )
-            print(
-                "Zero dividend -> returning 0 with scale", String(result_scale)
-            )
             return result
 
         # If dividing identical numbers, return 1
@@ -921,37 +945,22 @@ struct Decimal(Writable):
             self.coefficient() == other.coefficient()
             and self.scale() == other.scale()
         ):
-            print("Identical numbers -> returning 1")
             return Decimal("1")
 
         # Determine sign of result
         var result_is_negative = self.is_negative() != other.is_negative()
-        print("Result will be negative:", String(result_is_negative))
 
         # Get coefficients
         var numerator = self.coefficient()
         var denominator = other.coefficient()
-        print("Numerator coefficient:", numerator)
-        print("Denominator coefficient:", denominator)
-
-        # Calculate raw division value for debugging
-        var division = Float64(numerator) / Float64(denominator)
-        print("Raw division result:", String(division))
 
         # Calculate natural scale (difference in scales)
         var dividend_scale = self.scale()
         var divisor_scale = other.scale()
         var natural_scale = dividend_scale - divisor_scale
-        print(
-            "Natural scale (dividend_scale - divisor_scale):",
-            String(natural_scale),
-        )
 
         # Add working precision zeros to numerator for division
         var working_precision = Self.MAX_PRECISION
-        print(
-            "Adding", String(working_precision), "digits for working precision"
-        )
         numerator += "0" * working_precision
 
         # Convert denominator to integer
@@ -960,7 +969,6 @@ struct Decimal(Writable):
             denom_value = denom_value * 10 + UInt64(
                 ord(denominator[i]) - ord("0")
             )
-        print("Denominator value:", String(denom_value))
 
         # Perform long division
         var quotient_digits = String("")
@@ -972,8 +980,6 @@ struct Decimal(Writable):
             quotient_digits += String(digit)
             remainder = remainder % denom_value
 
-        print("Raw quotient:", quotient_digits)
-
         # Remove leading zeros
         var start_pos = 0
         while (
@@ -982,11 +988,9 @@ struct Decimal(Writable):
         ):
             start_pos += 1
         quotient_digits = quotient_digits[start_pos:]
-        print("Normalized quotient:", quotient_digits)
 
         # Check if the division is exact
         var is_exact = remainder == 0
-        print("Is division exact?", String(is_exact))
 
         # For exact division, trim unnecessary trailing zeros
         var trailing_zeros_removed = 0
@@ -1001,30 +1005,23 @@ struct Decimal(Writable):
                 else:
                     break
 
-            print("Trailing zeros in quotient:", String(trailing_zeros))
-
             # For exact division, trim all trailing zeros
             if trailing_zeros > 0:
                 quotient_digits = quotient_digits[
                     : len(quotient_digits) - trailing_zeros
                 ]
                 trailing_zeros_removed = trailing_zeros
-                print("Trimmed quotient:", quotient_digits)
 
-        print("Final quotient digits:", quotient_digits)
-
-        # Now create the result with the correct decimal point position
+        # Create the result with the correct decimal point position
         var actual_value_str = String("")
 
-        # FIXED: Handle exact division correctly - properly handle negative natural_scale
+        # Handle exact division correctly with proper decimal point placement
         if is_exact:
-            # The scale should be (natural_scale + working_precision - trailing_zeros_removed)
+            # The scale should be adjusted for trailing zeros removed
             var effective_scale = natural_scale + working_precision - trailing_zeros_removed
-            print("Effective scale:", String(effective_scale))
 
             if effective_scale <= 0:
-                # BUGFIX: For negative effective scale, we need to ADD zeros instead of placing decimal point
-                # This handles cases like 1000000.0 / 0.001 = 1000000000
+                # For negative effective scale, we need to add zeros
                 actual_value_str = quotient_digits + "0" * (-effective_scale)
             else:
                 # Need to place decimal point with effective_scale digits after it
@@ -1036,7 +1033,7 @@ struct Decimal(Writable):
                         + quotient_digits
                     )
                 else:
-                    # Place decimal point from right to left to get the correct scale
+                    # Place decimal point from right to left
                     var decimal_pos = len(quotient_digits) - effective_scale
                     actual_value_str = (
                         quotient_digits[:decimal_pos]
@@ -1058,18 +1055,12 @@ struct Decimal(Writable):
                     + quotient_digits[decimal_pos:]
                 )
 
-        print("Result string with correct decimal point:", actual_value_str)
-
         # Create result from formatted string
         var result = Decimal(actual_value_str)
 
         # Apply sign
         if result_is_negative:
             result = -result
-
-        print("Final result:", String(result))
-        print("Final scale:", String(result.scale()))
-        print("===== END DIVISION DEBUG =====\n")
 
         return result
 
