@@ -13,7 +13,7 @@ version = "0.1.0"
 format = "magic run mojo format ./"
 
 # compile the package
-package = "magic run format && magic run mojo package decimojo && mv decimojo.mojopkg ./tests/"
+package = "magic run format && magic run mojo package decimojo && cp decimojo.mojopkg ./tests/ && cp decimojo.mojopkg ./docs/ && cp decimojo.mojopkg ./examples/ && rm decimojo.mojopkg"
 p = "magic run package"
 
 # tests
