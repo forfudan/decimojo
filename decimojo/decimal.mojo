@@ -65,6 +65,10 @@ struct Decimal(Writable):
 
     # Constants
     alias MAX_PRECISION = 28
+    alias MAX_AS_STRING = String("79228162514264337593543950335")
+    """Maximum value as a string of a 128-bit Decimal."""
+    alias LEN_OF_MAX_VALUE = 29
+    """Length of the max value as a string. For 128-bit Decimal, it is 29 digits"""
     alias SIGN_MASK = UInt32(0x80000000)
     """
     Sign mask.
@@ -177,7 +181,6 @@ struct Decimal(Writable):
             self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
             self.high = 0
 
-    # TODO: Improve it to handle more cases and formats, e.g., _ and space.
     fn __init__(out self, s: String) raises:
         """
         Initializes a Decimal from a string representation.
@@ -185,269 +188,219 @@ struct Decimal(Writable):
 
         Args:
             s: String representation of a decimal number (e.g., "1234.5678" or "1.23e5").
-
-        Examples:
-        ```console
-        > Decimal("123.456")     # Returns 123.456
-        > Decimal("-0.789")      # Returns -0.789
-        > Decimal("1.23e5")      # Returns 123000
-        > Decimal("4.56e-7")     # Returns 0.0000004560
-        ```
         """
-        # Check if the string is in scientific notation
+        # Initialize fields to zero
+        self.low = 0
+        self.mid = 0
+        self.high = 0
+        self.flags = 0
+
+        # Check for empty string
+        if len(s) == 0:
+            return
+
+        # Check for scientific notation
         var scientific_notation = False
-        var exp_position: Int = -1
-        var mantissa_str = String("")
+        var exp_position = -1
         var exponent = 0
 
-        # Look for 'e' or 'E' in the string
+        # Look for 'e' or 'E' in the string to determine scientific notation
         for i in range(len(s)):
-            if s[i] == "e" or s[i] == "E":
+            if s[i] == String("e") or s[i] == String("E"):
                 scientific_notation = True
                 exp_position = i
                 break
 
-        #######################################################
-        # Scientific notation
-        #######################################################
+        # Parse the string based on whether it's scientific notation or not
+        var parsing_str = s
+
+        # Handle scientific notation
         if scientific_notation:
-            # Extract mantissa and exponent parts
-            mantissa_str = s[:exp_position]
+            # Extract the mantissa and exponent
+            var mantissa_str = s[:exp_position]
             var exp_str = s[exp_position + 1 :]
 
             # Check if exponent is negative
             var exp_negative = False
-            if len(exp_str) > 0 and exp_str[0] == "-":
+            if len(exp_str) > 0 and exp_str[0] == String("-"):
                 exp_negative = True
                 exp_str = exp_str[1:]
-            elif len(exp_str) > 0 and exp_str[0] == "+":
+            elif len(exp_str) > 0 and exp_str[0] == String("+"):
                 exp_str = exp_str[1:]
 
-            # Parse exponent
+            # Parse the exponent
             for i in range(len(exp_str)):
                 var c = exp_str[i]
-                if c >= "0" and c <= "9":
-                    exponent = exponent * 10 + ord(c) - ord("0")
+                if c >= String("0") and c <= String("9"):
+                    exponent = exponent * 10 + (ord(c) - ord(String("0")))
                 else:
-                    raise Error("Invalid character in exponent: " + String(c))
+                    raise Error("Invalid character in exponent: " + c)
 
             if exp_negative:
                 exponent = -exponent
 
-            # Now parse the mantissa as a regular decimal
-            var mantissa = Decimal(mantissa_str)
+            # Adjust the mantissa based on the exponent
+            parsing_str = mantissa_str
 
-            # Scale the mantissa according to the exponent
-            if exponent > 0:
-                # Positive exponent: move decimal point right
-                # This means we need to multiply by 10^exponent
-                var scale = mantissa.scale()
-                if exponent >= scale:
-                    # Remove decimal point entirely and pad with zeros
-                    var new_coef = mantissa.coefficient() + "0" * (
-                        exponent - scale
-                    )
-                    self = Decimal(new_coef)
-                    if mantissa.is_negative():
-                        self.flags |= Self.SIGN_MASK
-                else:
-                    # Move the decimal point left by exponent positions
-                    var new_scale = scale - exponent
-                    var new_flags = (
-                        (mantissa.flags & ~Self.SCALE_MASK)
-                        | (
-                            UInt32(new_scale << Self.SCALE_SHIFT)
-                            & Self.SCALE_MASK
-                        )
-                    )
-                    self = Decimal(
-                        mantissa.low, mantissa.mid, mantissa.high, new_flags
-                    )
+        # STEP 1: Determine sign and extract significant digits
+        var is_negative = len(parsing_str) > 0 and parsing_str[0] == String("-")
+        var start_pos = 1 if is_negative else 0
+        var decimal_pos = parsing_str.find(String("."))
+        var has_decimal = decimal_pos >= 0
+
+        # Extract significant digits and calculate scale
+        var string_of_coefficient = String("")
+        var scale = 0
+        var found_significant = False
+
+        for i in range(start_pos, len(parsing_str)):
+            var c = parsing_str[i]
+
+            if c == String("."):
+                continue  # Skip decimal point
+            elif c == String(",") or c == String("_"):
+                continue  # Skip separators
+            elif c >= String("0") and c <= String("9"):
+                # Count digits after decimal point for scale
+                if has_decimal and i > decimal_pos:
+                    scale += 1
+
+                # Skip leading zeros for the coefficient
+                if c != String("0") or found_significant:
+                    found_significant = True
+                    string_of_coefficient += c
             else:
-                # Negative exponent: move decimal point left
-                # This means we need to divide by 10^|exponent|
-                var abs_exp = -exponent
+                raise Error("Invalid character in decimal string: " + c)
 
-                # This increases the scale
-                var new_scale = mantissa.scale() + abs_exp
-                if new_scale > Self.MAX_PRECISION:
-                    raise Error("Resulting decimal exceeds maximum precision")
-
-                var scale_bits = UInt32(new_scale) << Self.SCALE_SHIFT
-                var masked_scale = scale_bits & Self.SCALE_MASK
-                var new_flags = (
-                    mantissa.flags & ~Self.SCALE_MASK
-                ) | masked_scale
-
-                self = Decimal(
-                    mantissa.low, mantissa.mid, mantissa.high, new_flags
-                )
-
-        #######################################################
-        # Not scientific notation, parse as regular decimal
-        #######################################################
-        else:
-            # Analyze string to check for potential overflow
-            var s_copy = s
-            var bytes_of_string = s_copy.as_bytes()
-            var len_bytes = len(bytes_of_string)
-            var total_significant_digits = 0
-            var decimal_pos = -1
-            var start_pos = 0
-            var has_non_zero = False
-
-            # Skip leading sign if present
-            if len_bytes > 0 and bytes_of_string[0] == ord("-"):
-                start_pos = 1
-
-            # First pass: count significant digits and locate decimal point
-            for i in range(start_pos, len_bytes):
-                var c = bytes_of_string[i]
-
-                if c == ord("."):
-                    decimal_pos = i
-                elif c >= ord("0") and c <= ord("9"):
-                    # Count significant digits (ignore leading zeros)
-                    if c != ord("0") or has_non_zero:
-                        has_non_zero = True
-                        total_significant_digits += 1
-                elif c != ord(" ") and c != ord("_"):
-                    # Allow spaces and underscores for readability
-                    raise Error(
-                        "Invalid character in decimal string: " + chr(Int(c))
-                    )
-
-            # Calculate integer and fractional lengths
-            var integer_len = decimal_pos - start_pos if decimal_pos >= 0 else len_bytes - start_pos
-            var fractional_len = len_bytes - decimal_pos - 1 if decimal_pos >= 0 else 0
-
-            # Check if integer part alone exceeds capacity
-            if integer_len > 29:  # 96 bits ~= 29 decimal digits
-                raise Error("Decimal integer part too large: " + s)
-
-            # Process string based on analysis
-            var parsing_str: String
-            if (
-                total_significant_digits > 29
-                or fractional_len > Self.MAX_PRECISION
-            ):
-                # Need to truncate and round
-                parsing_str = _truncate_and_round_decimal_string(
-                    s, 29, Self.MAX_PRECISION
-                )
-            else:
-                # Original string is fine
-                parsing_str = s
-
-            # Now parse the string
-            var is_negative: Bool = False
-            var is_decimal_point = False
-            var scale: UInt32 = 0
-            var rounding_applied = False
-            var rounding_value: UInt32 = 0
-
-            var low: UInt32 = 0
-            var mid: UInt32 = 0
-            var high: UInt32 = 0
-
-            s_copy = parsing_str
-            bytes_of_string = s_copy.as_bytes()
-
-            for i in range(len(bytes_of_string)):
-                var c = bytes_of_string[i]
-
-                if i == 0 and c == ord("-"):
-                    is_negative = True
-                elif c == ord("."):
-                    is_decimal_point = True
-                elif (c >= ord("0")) and (c <= ord("9")):
-                    # Extract the digit
-                    var digit = UInt32(c - ord("0"))
-
-                    # Check if we've reached MAX_PRECISION after decimal point
-                    if is_decimal_point and scale >= Self.MAX_PRECISION:
-                        # Apply banker's rounding (round to nearest even)
-                        if (
-                            scale == Self.MAX_PRECISION
-                        ):  # Only consider the first digit after MAX_PRECISION
-                            if digit > 5:
-                                rounding_value = 1  # Round up
-                            elif digit == 5:
-                                # Round to even (round up if last digit is odd)
-                                if low % 2 == 1:
-                                    rounding_value = 1
-
-                            # Apply rounding if needed
-                            if rounding_value > 0:
-                                var sum64 = UInt64(low) + UInt64(rounding_value)
-                                low = UInt32(sum64 & 0xFFFFFFFF)
-
-                                # Handle carry if needed
-                                if sum64 > 0xFFFFFFFF:
-                                    var mid64 = UInt64(mid) + 1
-                                    mid = UInt32(mid64 & 0xFFFFFFFF)
-
-                                    if mid64 > 0xFFFFFFFF:
-                                        high += 1
-                                        if high == 0:  # Overflow check
-                                            raise Error(
-                                                "Decimal value too large after"
-                                                " rounding"
-                                            )
-
-                            rounding_applied = True
-
-                        # Skip remaining digits after MAX_PRECISION
-                        continue
-
-                    # STEP 1: Multiply existing coefficient by 10
-                    # Use 64-bit arithmetic for the calculation
-                    var low64 = UInt64(low) * 10
-                    var mid64 = UInt64(mid) * 10 + (low64 >> 32)
-                    var high64 = UInt64(high) * 10 + (mid64 >> 32)
-
-                    # Check for overflow in high part
-                    if high64 > 0xFFFFFFFF:
-                        raise Error("Decimal value too large")
-
-                    # Extract 32-bit values
-                    low = UInt32(low64 & 0xFFFFFFFF)
-                    mid = UInt32(mid64 & 0xFFFFFFFF)
-                    high = UInt32(high64 & 0xFFFFFFFF)
-
-                    # STEP 2: Add the digit
-                    # Use 64-bit arithmetic for the addition
-                    var sum64 = UInt64(low) + UInt64(digit)
-                    low = UInt32(sum64 & 0xFFFFFFFF)
-
-                    # Handle carry to mid if needed
-                    if sum64 > 0xFFFFFFFF:
-                        mid64 = UInt64(mid) + 1
-                        mid = UInt32(mid64 & 0xFFFFFFFF)
-
-                        # Handle carry to high if needed
-                        if mid64 > 0xFFFFFFFF:
-                            high += 1
-                            if high == 0:  # Overflow check
-                                raise Error("Decimal value too large")
-
-                    # Update scale if we are after the decimal point
-                    if is_decimal_point:
-                        scale += 1
-                elif c == ord(" ") or c == ord("_"):
-                    # Allow spaces and underscores for readability
-                    continue
-                else:
-                    raise Error(
-                        "Invalid character in decimal string: " + chr(Int(c))
-                    )
-
-            # Set the flags
-            var flags = UInt32((scale << Self.SCALE_SHIFT) & Self.SCALE_MASK)
+        # If no significant digits found, result is zero
+        if len(string_of_coefficient) == 0:
+            # Set the flags for scale and sign
+            self.flags = UInt32((scale << Self.SCALE_SHIFT) & Self.SCALE_MASK)
             if is_negative:
-                flags |= Self.SIGN_MASK
+                self.flags |= Self.SIGN_MASK
+            return  # Already initialized to zero
 
-            self = Decimal(low, mid, high, flags)
+        # Adjust scale for scientific notation
+        if scientific_notation:
+            if exponent > 0:
+                # Move decimal point right
+                if scale <= exponent:
+                    # Append zeros if needed
+                    string_of_coefficient += String("0") * (exponent - scale)
+                    scale = 0
+                else:
+                    scale -= exponent
+            else:
+                # Move decimal point left (increase scale)
+                scale += -exponent
+
+        # STEP 2: Check for overflow
+        # Check if the integral part of the coefficient is too large
+        var string_of_integral_part: String
+        if len(string_of_coefficient) > scale:
+            string_of_integral_part = string_of_coefficient[
+                : len(string_of_coefficient) - scale
+            ]
+        else:
+            string_of_integral_part = String("0")
+
+        if len(string_of_integral_part) > Decimal.LEN_OF_MAX_VALUE:
+            raise Error("Decimal value too large: " + s)
+        elif len(string_of_integral_part) == Decimal.LEN_OF_MAX_VALUE and (
+            string_of_integral_part > Self.MAX_AS_STRING
+        ):
+            raise Error("Decimal value too large: " + s)
+
+        # Check if the coefficient is too large
+        var raw_length_of_coefficient = len(string_of_coefficient)
+        if raw_length_of_coefficient > Decimal.LEN_OF_MAX_VALUE:
+            # Need to truncate to Decimal.LEN_OF_MAX_VALUE digits
+            var rounding_digit = string_of_coefficient[Decimal.LEN_OF_MAX_VALUE]
+            string_of_coefficient = string_of_coefficient[
+                : Decimal.LEN_OF_MAX_VALUE
+            ]
+            scale = scale - (
+                raw_length_of_coefficient - Decimal.LEN_OF_MAX_VALUE
+            )
+
+            # Apply rounding if needed
+            if rounding_digit >= String("5"):
+                # Same rounding logic as above
+                var carry = 1
+                var result_chars = List[String]()
+
+                for i in range(len(string_of_coefficient)):
+                    result_chars.append(string_of_coefficient[i])
+
+                var pos = len(result_chars) - 1
+                while pos >= 0 and carry > 0:
+                    var digit = ord(result_chars[pos]) - ord(String("0"))
+                    digit += carry
+
+                    if digit < 10:
+                        result_chars[pos] = chr(digit + ord(String("0")))
+                        carry = 0
+                    else:
+                        result_chars[pos] = String("0")
+                        carry = 1
+                    pos -= 1
+
+                if carry > 0:
+                    result_chars.insert(0, String("1"))
+
+                    # If adding a digit would exceed max length, drop the last digit and reduce scale
+                    if len(result_chars) > Decimal.LEN_OF_MAX_VALUE:
+                        result_chars = result_chars[: Decimal.LEN_OF_MAX_VALUE]
+                        if scale > 0:
+                            scale -= 1
+
+                string_of_coefficient = String("")
+                for ch in result_chars:
+                    string_of_coefficient += ch[]
+
+        # Check if the coefficient exceeds MAX_AS_STRING
+        if len(string_of_coefficient) == len(Self.MAX_AS_STRING):
+            var is_greater = False
+            for i in range(len(string_of_coefficient)):
+                if string_of_coefficient[i] > Self.MAX_AS_STRING[i]:
+                    is_greater = True
+                    break
+                elif string_of_coefficient[i] < Self.MAX_AS_STRING[i]:
+                    break
+
+            if is_greater:
+                raise Error("Decimal value too large: " + s)
+        elif len(string_of_coefficient) > len(Self.MAX_AS_STRING):
+            raise Error("Decimal value too large: " + s)
+
+        # Step 3: Convert the coefficient string to low/mid/high parts
+        var low: UInt32 = 0
+        var mid: UInt32 = 0
+        var high: UInt32 = 0
+
+        for i in range(len(string_of_coefficient)):
+            var digit = UInt32(ord(string_of_coefficient[i]) - ord(String("0")))
+
+            # Multiply current value by 10 and add the new digit
+            # Use 64-bit arithmetic for the calculation
+            var low64 = UInt64(low) * 10 + UInt64(digit)
+            var mid64 = UInt64(mid) * 10 + (low64 >> 32)
+            var high64 = UInt64(high) * 10 + (mid64 >> 32)
+
+            # Extract 32-bit parts
+            low = UInt32(low64 & 0xFFFFFFFF)
+            mid = UInt32(mid64 & 0xFFFFFFFF)
+            high = UInt32(high64 & 0xFFFFFFFF)
+
+        # Step 4: Set the final result
+        self.low = low
+        self.mid = mid
+        self.high = high
+
+        # Set the flags for scale and sign
+        self.flags = UInt32((scale << Self.SCALE_SHIFT) & Self.SCALE_MASK)
+        if is_negative:
+            self.flags |= Self.SIGN_MASK
 
     # TODO: Use generic floating-point type.
     fn __init__(out self, f: Float64, *, max_precision: Bool = True) raises:
@@ -1310,189 +1263,5 @@ fn _float_to_decimal_str(value: Float64, precision: Int) -> String:
     # Add negative sign if needed
     if is_negative:
         result = "-" + result
-
-    return result
-
-
-fn _truncate_and_round_decimal_string(
-    s: String, max_significant: Int, max_precision: Int
-) raises -> String:
-    """
-    Truncate a decimal string to have at most max_significant digits total
-    and at most max_precision decimal places, applying banker's rounding.
-    """
-    # Parse the string structure
-    var is_negative = s.startswith("-")
-    var start_index = 1 if is_negative else 0
-    var decimal_index = s.find(".")
-    var has_decimal = decimal_index >= 0
-
-    # Skip leading zeros in integer part
-    var effective_start = start_index
-    while (
-        effective_start < len(s)
-        and (effective_start < decimal_index or decimal_index < 0)
-        and s[effective_start] == "0"
-    ):
-        effective_start += 1
-
-    # Calculate effective integer length (without leading zeros)
-    var effective_integer_length = (
-        decimal_index - effective_start
-    ) if has_decimal and decimal_index > effective_start else (
-        len(s) - effective_start if decimal_index < 0 else 0
-    )
-
-    # Calculate fractional length
-    var fractional_length = len(s) - decimal_index - 1 if has_decimal else 0
-
-    # Special case: Check if number consists only of 9s and might round up
-    if has_decimal and effective_integer_length > 0:
-        var all_nines = True
-        for i in range(effective_start, decimal_index):
-            if s[i] != "9":
-                all_nines = False
-                break
-
-        if all_nines and decimal_index + 1 < len(s):
-            if s[decimal_index + 1] >= "5":
-                # Will round up to 10^integer_length
-                # The new integer part will have effective_integer_length + 1 digits
-                var new_integer_length = effective_integer_length + 1
-
-                # Calculate how many decimal places we can keep
-                var available_decimal_places = max(
-                    0, max_significant - new_integer_length
-                )
-                var adjusted_precision = min(
-                    max_precision, available_decimal_places
-                )
-
-                return (
-                    (String("-") if is_negative else "")
-                    + "1"
-                    + "0" * effective_integer_length
-                    + (
-                        "." + "0" * adjusted_precision if adjusted_precision
-                        > 0 else ""
-                    )
-                )
-
-    # Check if integer part alone exceeds capacity
-    if effective_integer_length > max_significant:
-        raise Error("Decimal integer part too large")
-
-    # Determine how many fractional digits we can keep based on integer length
-    var max_frac_digits = min(
-        max_precision, max_significant - effective_integer_length
-    )
-
-    # Build result
-    var result = String("")
-
-    # Add sign if needed
-    if is_negative:
-        result += "-"
-
-    # Add integer part (preserving leading zeros if no significant digits)
-    if effective_integer_length > 0:
-        result += s[effective_start:decimal_index]
-    else:
-        result += "0"  # At least one zero needed
-
-    # Add decimal point and fractional part if needed
-    if max_frac_digits > 0:
-        result += "."
-
-        # Copy up to max_frac_digits from fractional part
-        var frac_to_keep = min(fractional_length, max_frac_digits)
-        var frac_part = s[decimal_index + 1 : decimal_index + 1 + frac_to_keep]
-        result += frac_part
-
-        # Check if we need to round based on the next digit
-        if fractional_length > frac_to_keep:
-            var next_digit = ord(s[decimal_index + 1 + frac_to_keep]) - ord("0")
-            var round_up = False
-
-            if next_digit > 5:
-                round_up = True
-            elif next_digit == 5:
-                # Check digits after 5 for banker's rounding
-                var has_nonzero_after = False
-                for i in range(decimal_index + 1 + frac_to_keep + 1, len(s)):
-                    if s[i] > "0":
-                        has_nonzero_after = True
-                        break
-
-                if has_nonzero_after:
-                    round_up = True
-                else:
-                    # Round to even
-                    var last_digit = ord(result[len(result) - 1]) - ord("0")
-                    round_up = last_digit % 2 == 1
-
-            # Apply rounding if needed
-            if round_up:
-                # Process from right to left
-                var chars = List[String]()
-                for i in range(len(result)):
-                    chars.append(result[i])
-
-                var pos = len(chars) - 1
-                var carry = 1
-
-                while pos >= 0 and carry > 0:
-                    if chars[pos] == ".":
-                        pos -= 1
-                        continue
-
-                    if chars[pos] >= "0" and chars[pos] <= "8":
-                        chars[pos] = chr(ord(chars[pos]) + 1)
-                        carry = 0
-                    elif chars[pos] == "9":
-                        chars[pos] = "0"
-                        carry = 1
-
-                    pos -= 1
-
-                # If we still have a carry, handle the special case
-                if carry > 0:
-                    # We need to add a leading "1", which will change our significant digits
-                    var new_integer_length = effective_integer_length + 1
-
-                    # Recalculate how many fractional digits we can have
-                    var new_max_frac = max(
-                        0, max_significant - new_integer_length
-                    )
-
-                    # If we can't have any fractional digits, just return the integer part
-                    if new_max_frac == 0:
-                        return (
-                            (String("-") if is_negative else "")
-                            + "1"
-                            + "0" * effective_integer_length
-                        )
-
-                    # Otherwise, build a new result with the adjusted precision
-                    var new_result = (String("-") if is_negative else "") + "1"
-
-                    # Add back the integer part zeros
-                    if effective_start < decimal_index:
-                        new_result += "0" * effective_integer_length
-
-                    # Add decimal point and fractional part with adjusted precision
-                    if new_max_frac > 0:
-                        new_result += "." + "0" * new_max_frac
-
-                    return new_result
-
-                # Rebuild result
-                result = String("")
-                for c in chars:
-                    result += c[]
-
-        # Add trailing zeros if needed
-        if frac_to_keep < max_frac_digits:
-            result += "0" * (max_frac_digits - frac_to_keep)
 
     return result
