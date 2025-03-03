@@ -188,6 +188,21 @@ struct Decimal(Writable):
 
         Args:
             s: String representation of a decimal number (e.g., "1234.5678" or "1.23e5").
+
+        Notes
+        -----
+        The logic I used to implement this method is as follows:
+
+        First, loop the string input (also differentiate the scientific notation and normal notation) and:
+        - Judge whether it is negative.
+        - Get the scale.
+        - Extract the all the significant digits as a new string `string_of_coefficient`
+
+        Next, check overflow:
+        - If integral part of `string_of_coefficient` is larger than the max possible value of a Decimal (Decimal.MAX_AS_STRING), then raise an error that decimal is too big (first compare number of digit then compare the string).
+        - Else, truncate the first 29 digits of the `string_of_coefficient` (also do rounding). Check whether his new sub-string exceeds the `MAX_AS_STRING`. Yes, it exceeds the `MAX_AS_STRING`, then truncate the first 28 digits of the `string_of_coefficient` with rounding.
+
+        Finally, transfer the string into low, mid, and high. Construct the `flag`. Use `Decimal(low, mid, high, flags)` return the decimal.
         """
         # Initialize fields to zero
         self.low = 0
