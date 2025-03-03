@@ -907,9 +907,7 @@ struct Decimal(Writable):
         # Special case: if dividend is zero, return zero with appropriate scale
         if self.is_zero():
             var result = Decimal.ZERO()
-            var result_scale = min(
-                max(self.scale() - other.scale(), 0), Self.MAX_PRECISION
-            )
+            var result_scale = max(0, self.scale() - other.scale())
             result.flags = UInt32(
                 (result_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
             )
@@ -1018,19 +1016,18 @@ struct Decimal(Writable):
         # Now create the result with the correct decimal point position
         var actual_value_str = String("")
 
-        # FIXED: Handle exact division correctly
+        # FIXED: Handle exact division correctly - properly handle negative natural_scale
         if is_exact:
-            # Create a properly formatted string with the correct decimal point position
-
             # The scale should be (natural_scale + working_precision - trailing_zeros_removed)
             var effective_scale = natural_scale + working_precision - trailing_zeros_removed
+            print("Effective scale:", String(effective_scale))
 
-            # For exact division with zero natural scale (like 10.00/2.00 = 5), no decimal needed
             if effective_scale <= 0:
-                actual_value_str = quotient_digits
+                # BUGFIX: For negative effective scale, we need to ADD zeros instead of placing decimal point
+                # This handles cases like 1000000.0 / 0.001 = 1000000000
+                actual_value_str = quotient_digits + "0" * (-effective_scale)
             else:
-                # Need to place decimal point with 'effective_scale' digits after it
-
+                # Need to place decimal point with effective_scale digits after it
                 if len(quotient_digits) <= effective_scale:
                     # Number < 1, needs leading zeros
                     actual_value_str = (
