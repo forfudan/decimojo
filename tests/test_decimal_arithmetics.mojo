@@ -534,6 +534,143 @@ fn test_multiplication() raises:
     print("Decimal multiplication tests passed!")
 
 
+fn test_division() raises:
+    print("Testing decimal division...")
+
+    # Test case 1: Simple division with same scale
+    var a1 = Decimal("10.00")
+    var b1 = Decimal("2.00")
+    var result1 = a1 / b1
+    testing.assert_equal(
+        String(result1), "5", "Simple division with same scale"
+    )
+
+    # Test case 2: Division with different scales
+    var a2 = Decimal("10.5")
+    var b2 = Decimal("2.1")
+    var result2 = a2 / b2
+    testing.assert_equal(
+        String(result2),
+        "5",
+        "Division with different scales",
+    )
+
+    # Test case 3: Division with negative numbers
+    var a3 = Decimal("12.34")
+    var b3 = Decimal("-2.0")
+    var result3 = a3 / b3
+    testing.assert_equal(
+        String(result3),
+        "-6.17",
+        "Division with negative number",
+    )
+
+    # Test case 4: Division with both negative numbers
+    var a4 = Decimal("-12.34")
+    var b4 = Decimal("-2.0")
+    var result4 = a4 / b4
+    testing.assert_equal(
+        String(result4),
+        "6.17",
+        "Division with both negative numbers",
+    )
+
+    # Test case 5: Division by one
+    var a5 = Decimal("12.34")
+    var b5 = Decimal("1.0")
+    var result5 = a5 / b5
+    testing.assert_equal(String(result5), "12.34", "Division by one")
+
+    # Test case 6: Division resulting in repeating decimal
+    var a6 = Decimal("10.0")
+    var b6 = Decimal("3.0")
+    var result6 = a6 / b6
+    testing.assert_equal(
+        String(result6).startswith("3.333333333"),
+        True,
+        "Division resulting in repeating decimal",
+    )
+
+    # Test case 7: Division resulting in exact value
+    var a7 = Decimal("10.0")
+    var b7 = Decimal("5.0")
+    var result7 = a7 / b7
+    testing.assert_equal(
+        String(result7), "2", "Division resulting in exact value"
+    )
+
+    # Test case 8: Division of zero by non-zero
+    var a8 = Decimal("0.0")
+    var b8 = Decimal("5.0")
+    var result8 = a8 / b8
+    testing.assert_equal(String(result8), "0", "Division of zero by non-zero")
+
+    # Test case 9: Division with small numbers
+    var a9 = Decimal("0.001")
+    var b9 = Decimal("0.01")
+    var result9 = a9 / b9
+    testing.assert_equal(String(result9), "0.1", "Division with small numbers")
+
+    # Test case 10: Division with large numbers
+    var a10 = Decimal("1000000.0")
+    var b10 = Decimal("0.001")
+    var result10 = a10 / b10
+    testing.assert_equal(
+        String(result10), "1000000000", "Division with large numbers"
+    )
+
+    # Test case 11: Division requiring rounding
+    var a11 = Decimal("1.0")
+    var b11 = Decimal("7.0")
+    var result11 = a11 / b11
+    testing.assert_equal(
+        String(result11).startswith("0.142857142857142857142857"),
+        True,
+        "Division requiring rounding",
+    )
+
+    # Test case 12: Division with mixed precision
+    var a12 = Decimal("123.456")
+    var b12 = Decimal("0.1")
+    var result12 = a12 / b12
+    testing.assert_equal(
+        String(result12), "1234.56", "Division with mixed precision"
+    )
+
+    # Test case 13: Verify mathematical identity (a/b)*b ≈ a within rounding error
+    var a13 = Decimal("123.45")
+    var b13 = Decimal("7.89")
+    var div_result = a13 / b13
+    var mul_result = div_result * b13
+    # Because of rounding, we don't expect exact equality, so check if the difference is small
+    var diff = a13 - mul_result
+    var abs_diff = -diff if diff.is_negative() else diff
+    var is_close = Float64(String(abs_diff)) < 0.0001
+    testing.assert_equal(is_close, True, "(a/b)*b should approximately equal a")
+
+    # Test case 14: Division of number by itself should be 1
+    var a14 = Decimal("123.45")
+    var result14 = a14 / a14
+    testing.assert_equal(
+        String(result14),
+        "1.00000000000000000000000000",
+        "Division of number by itself",
+    )
+
+    # Test case 15: Division by zero should raise an error
+    var a15 = Decimal("123.45")
+    var b15 = Decimal("0.0")
+    try:
+        var result15 = a15 / b15
+        testing.assert_equal(
+            True, False, "Division by zero should raise an error"
+        )
+    except:
+        testing.assert_equal(True, True, "Division by zero correctly rejected")
+
+    print("Decimal division tests passed!")
+
+
 fn test_extreme_cases() raises:
     print("Testing extreme cases...")
 
@@ -600,6 +737,9 @@ fn main() raises:
 
     # Run multiplication tests
     test_multiplication()
+
+    # Run division tests
+    test_division()
 
     # Run extreme cases tests
     test_extreme_cases()

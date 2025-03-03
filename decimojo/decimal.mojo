@@ -26,6 +26,7 @@
 Implements basic object methods for working with decimal numbers.
 """
 
+import math.math as mt
 from .rounding_mode import RoundingMode
 
 
@@ -513,7 +514,7 @@ struct Decimal(Writable):
     # ===------------------------------------------------------------------=== #
     # Basic operation dunders
     # ===------------------------------------------------------------------=== #
-    fn __add__(self, other: Decimal) raises -> Decimal:
+    fn __add__(self, other: Decimal) raises -> Self:
         """
         Adds two Decimal values and returns a new Decimal containing the sum.
         """
@@ -733,7 +734,7 @@ struct Decimal(Writable):
 
         return result
 
-    fn __mul__(self, other: Decimal) raises -> Decimal:
+    fn __mul__(self, other: Decimal) raises -> Self:
         """
         Multiplies two Decimal values and returns a new Decimal containing the product.
         """
@@ -861,13 +862,13 @@ struct Decimal(Writable):
 
         return result
 
-    fn __neg__(self) -> Decimal:
+    fn __neg__(self) -> Self:
         """Unary negation operator."""
         var result = Decimal(self.low, self.mid, self.high, self.flags)
         result.flags ^= Self.SIGN_MASK  # Flip sign bit
         return result
 
-    fn __sub__(self, other: Decimal) raises -> Decimal:
+    fn __sub__(self, other: Decimal) raises -> Self:
         """
         Subtracts the other Decimal from self and returns a new Decimal.
 
@@ -890,6 +891,190 @@ struct Decimal(Writable):
         """
         # Implementation using the existing `__add__()` and `__neg__()` methods
         return self + (-other)
+
+    fn __truediv__(self, other: Decimal) raises -> Self:
+        """
+        Divides self by other and returns a new Decimal containing the quotient.
+        """
+        print("\n===== DIVISION DEBUG =====")
+        print("Dividend:", String(self), "scale:", String(self.scale()))
+        print("Divisor:", String(other), "scale:", String(other.scale()))
+
+        # Check for division by zero
+        if other.is_zero():
+            raise Error("Division by zero")
+
+        # Special case: if dividend is zero, return zero with appropriate scale
+        if self.is_zero():
+            var result = Decimal.ZERO()
+            var result_scale = min(
+                max(self.scale() - other.scale(), 0), Self.MAX_PRECISION
+            )
+            result.flags = UInt32(
+                (result_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
+            )
+            print(
+                "Zero dividend -> returning 0 with scale", String(result_scale)
+            )
+            return result
+
+        # If dividing identical numbers, return 1
+        if (
+            self.coefficient() == other.coefficient()
+            and self.scale() == other.scale()
+        ):
+            print("Identical numbers -> returning 1")
+            return Decimal("1")
+
+        # Determine sign of result
+        var result_is_negative = self.is_negative() != other.is_negative()
+        print("Result will be negative:", String(result_is_negative))
+
+        # Get coefficients
+        var numerator = self.coefficient()
+        var denominator = other.coefficient()
+        print("Numerator coefficient:", numerator)
+        print("Denominator coefficient:", denominator)
+
+        # Calculate raw division value for debugging
+        var division = Float64(numerator) / Float64(denominator)
+        print("Raw division result:", String(division))
+
+        # Calculate natural scale (difference in scales)
+        var dividend_scale = self.scale()
+        var divisor_scale = other.scale()
+        var natural_scale = dividend_scale - divisor_scale
+        print(
+            "Natural scale (dividend_scale - divisor_scale):",
+            String(natural_scale),
+        )
+
+        # Add working precision zeros to numerator for division
+        var working_precision = Self.MAX_PRECISION
+        print(
+            "Adding", String(working_precision), "digits for working precision"
+        )
+        numerator += "0" * working_precision
+
+        # Convert denominator to integer
+        var denom_value = UInt64(0)
+        for i in range(len(denominator)):
+            denom_value = denom_value * 10 + UInt64(
+                ord(denominator[i]) - ord("0")
+            )
+        print("Denominator value:", String(denom_value))
+
+        # Perform long division
+        var quotient_digits = String("")
+        var remainder = UInt64(0)
+
+        for i in range(len(numerator)):
+            remainder = remainder * 10 + UInt64(ord(numerator[i]) - ord("0"))
+            var digit = remainder / denom_value
+            quotient_digits += String(digit)
+            remainder = remainder % denom_value
+
+        print("Raw quotient:", quotient_digits)
+
+        # Remove leading zeros
+        var start_pos = 0
+        while (
+            start_pos < len(quotient_digits) - 1
+            and quotient_digits[start_pos] == "0"
+        ):
+            start_pos += 1
+        quotient_digits = quotient_digits[start_pos:]
+        print("Normalized quotient:", quotient_digits)
+
+        # Check if the division is exact
+        var is_exact = remainder == 0
+        print("Is division exact?", String(is_exact))
+
+        # For exact division, trim unnecessary trailing zeros
+        var trailing_zeros_removed = 0
+        if is_exact:
+            # Count trailing zeros
+            var trailing_zeros = 0
+            for i in range(
+                len(quotient_digits) - 1, 0, -1
+            ):  # Don't remove last digit
+                if quotient_digits[i] == "0":
+                    trailing_zeros += 1
+                else:
+                    break
+
+            print("Trailing zeros in quotient:", String(trailing_zeros))
+
+            # For exact division, trim all trailing zeros
+            if trailing_zeros > 0:
+                quotient_digits = quotient_digits[
+                    : len(quotient_digits) - trailing_zeros
+                ]
+                trailing_zeros_removed = trailing_zeros
+                print("Trimmed quotient:", quotient_digits)
+
+        print("Final quotient digits:", quotient_digits)
+
+        # Now create the result with the correct decimal point position
+        var actual_value_str = String("")
+
+        # FIXED: Handle exact division correctly
+        if is_exact:
+            # Create a properly formatted string with the correct decimal point position
+
+            # The scale should be (natural_scale + working_precision - trailing_zeros_removed)
+            var effective_scale = natural_scale + working_precision - trailing_zeros_removed
+
+            # For exact division with zero natural scale (like 10.00/2.00 = 5), no decimal needed
+            if effective_scale <= 0:
+                actual_value_str = quotient_digits
+            else:
+                # Need to place decimal point with 'effective_scale' digits after it
+
+                if len(quotient_digits) <= effective_scale:
+                    # Number < 1, needs leading zeros
+                    actual_value_str = (
+                        "0."
+                        + "0" * (effective_scale - len(quotient_digits))
+                        + quotient_digits
+                    )
+                else:
+                    # Place decimal point from right to left to get the correct scale
+                    var decimal_pos = len(quotient_digits) - effective_scale
+                    actual_value_str = (
+                        quotient_digits[:decimal_pos]
+                        + "."
+                        + quotient_digits[decimal_pos:]
+                    )
+        else:
+            # For inexact division, position decimal based on working_precision
+            var decimal_pos = len(quotient_digits) - working_precision
+
+            if decimal_pos <= 0:
+                # Number < 1, needs leading zeros
+                actual_value_str = "0." + "0" * (-decimal_pos) + quotient_digits
+            else:
+                # Insert decimal at the appropriate position
+                actual_value_str = (
+                    quotient_digits[:decimal_pos]
+                    + "."
+                    + quotient_digits[decimal_pos:]
+                )
+
+        print("Result string with correct decimal point:", actual_value_str)
+
+        # Create result from formatted string
+        var result = Decimal(actual_value_str)
+
+        # Apply sign
+        if result_is_negative:
+            result = -result
+
+        print("Final result:", String(result))
+        print("Final scale:", String(result.scale()))
+        print("===== END DIVISION DEBUG =====\n")
+
+        return result
 
     # ===------------------------------------------------------------------=== #
     # Other methods
