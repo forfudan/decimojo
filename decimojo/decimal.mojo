@@ -65,6 +65,7 @@ struct Decimal(Writable):
 
     # Constants
     alias MAX_PRECISION = 28
+    alias MAX_SCALE = 128
     alias MAX_AS_STRING = String("79228162514264337593543950335")
     """Maximum value as a string of a 128-bit Decimal."""
     alias LEN_OF_MAX_VALUE = 29
@@ -735,40 +736,21 @@ struct Decimal(Writable):
     fn __mul__(self, other: Decimal) raises -> Decimal:
         """
         Multiplies two Decimal values and returns a new Decimal containing the product.
-
-        Args:
-            other: The Decimal to multiply with this Decimal.
-
-        Returns:
-            A new Decimal containing the product
-
-        Examples:
-        ```
-        var a = Decimal("12.34")
-        var b = Decimal("5.6")
-        var result = a * b  # Returns 69.104
-        ```
-        .
         """
         # Special cases for zero
         if self.is_zero() or other.is_zero():
-            # For zero, we need to preserve the scale (sum of both scales)
+            # For zero, we need to preserve the scale
             var result = Decimal.ZERO()
             var result_scale = min(
                 self.scale() + other.scale(), Self.MAX_PRECISION
             )
-
-            # Set the scale in the flags
             result.flags = UInt32(
                 (result_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
             )
-
             return result
 
-        # Calculate the result scale (sum of scales)
-        var result_scale = self.scale() + other.scale()
-        if result_scale > Self.MAX_PRECISION:
-            result_scale = Self.MAX_PRECISION
+        # Calculate the combined scale (sum of both scales)
+        var combined_scale = self.scale() + other.scale()
 
         # Determine the sign of the result (XOR of signs)
         var result_is_negative = self.is_negative() != other.is_negative()
@@ -783,38 +765,15 @@ struct Decimal(Writable):
         var b_high = UInt64(other.high)
 
         # Perform 96-bit by 96-bit multiplication
-        # This requires 9 multiplications and carrying
-
-        # Multiply: low x low (first 32 bits)
         var r0 = a_low * b_low
-
-        # Multiply: low x mid
         var r1_a = a_low * b_mid
-
-        # Multiply: mid x low
         var r1_b = a_mid * b_low
-
-        # Multiply: low x high
         var r2_a = a_low * b_high
-
-        # Multiply: mid x mid
         var r2_b = a_mid * b_mid
-
-        # Multiply: high x low
         var r2_c = a_high * b_low
-
-        # Multiply: mid x high
         var r3_a = a_mid * b_high
-
-        # Multiply: high x mid
         var r3_b = a_high * b_mid
-
-        # Multiply: high x high
         var r4 = a_high * b_high
-
-        # Check if we have an overflow in the high part
-        if r4 > 0:
-            raise Error("Decimal overflow in multiplication")
 
         # Accumulate results with carries
         var c0 = r0 & 0xFFFFFFFF
@@ -822,46 +781,82 @@ struct Decimal(Writable):
         var c2 = (r1_a >> 32) + (r1_b >> 32) + (r2_a & 0xFFFFFFFF) + (
             r2_b & 0xFFFFFFFF
         ) + (r2_c & 0xFFFFFFFF) + (c1 >> 32)
+        c1 = c1 & 0xFFFFFFFF  # Mask after carry
+
         var c3 = (r2_a >> 32) + (r2_b >> 32) + (r2_c >> 32) + (
             r3_a & 0xFFFFFFFF
         ) + (r3_b & 0xFFFFFFFF) + (c2 >> 32)
-        var c4 = (r3_a >> 32) + (r3_b >> 32) + (c3 >> 32)
+        c2 = c2 & 0xFFFFFFFF  # Mask after carry
 
-        # Check for overflow in the result
-        if c4 > 0:
-            raise Error("Decimal overflow in multiplication")
+        var c4 = (r3_a >> 32) + (r3_b >> 32) + (c3 >> 32) + r4
+        c3 = c3 & 0xFFFFFFFF  # Mask after carry
 
-        # Extract 32-bit parts for the result
-        var result_low = UInt32(c0 & 0xFFFFFFFF)
-        var result_mid = UInt32(c1 & 0xFFFFFFFF)
-        var result_high = UInt32(c2 & 0xFFFFFFFF)
+        var result_low = UInt32(c0)
+        var result_mid = UInt32(c1)
+        var result_high = UInt32(c2)
 
-        # Create the result with proper scale
+        # If we have overflow, we need to adjust the scale by dividing
+        # BUT ONLY enough to fit the result in 96 bits - no more
+        var scale_reduction = 0
+        if c3 > 0 or c4 > 0:
+            # Calculate minimum shifts needed to fit the result
+            while c3 > 0 or c4 > 0:
+                var remainder = UInt64(0)
+
+                # Process c4
+                var new_c4 = c4 / 10
+                remainder = c4 % 10
+
+                # Process c3 with remainder from c4
+                var new_c3 = (remainder << 32 | c3) / 10
+                remainder = (remainder << 32 | c3) % 10
+
+                # Process c2 with remainder from c3
+                var new_c2 = (remainder << 32 | c2) / 10
+                remainder = (remainder << 32 | c2) % 10
+
+                # Process c1 with remainder from c2
+                var new_c1 = (remainder << 32 | c1) / 10
+                remainder = (remainder << 32 | c1) % 10
+
+                # Process c0 with remainder from c1
+                var new_c0 = (remainder << 32 | c0) / 10
+
+                # Update values
+                c4 = new_c4
+                c3 = new_c3
+                c2 = new_c2
+                c1 = new_c1
+                c0 = new_c0
+
+                scale_reduction += 1
+
+            # Update result components after shifting
+            result_low = UInt32(c0)
+            result_mid = UInt32(c1)
+            result_high = UInt32(c2)
+
+        # Create the result with adjusted values
         var result = Decimal(result_low, result_mid, result_high, 0)
 
-        # Set the flags for scale and sign
+        # IMPORTANT: We account for the scale reduction separately from MAX_PRECISION capping
+        # First, apply the technical scale reduction needed due to overflow
+        var adjusted_scale = combined_scale - scale_reduction
+
+        # THEN cap at MAX_PRECISION
+        var final_scale = min(adjusted_scale, Self.MAX_SCALE)
+
+        # Set the flags with the correct scale
         result.flags = UInt32(
-            (result_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
+            (final_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
         )
         if result_is_negative:
             result.flags |= Self.SIGN_MASK
 
-        # If we have more than MAX_PRECISION decimal places, round the result
-        if self.scale() + other.scale() > Self.MAX_PRECISION:
-            var scale_diff = self.scale() + other.scale() - Self.MAX_PRECISION
-            result = result._scale_down(scale_diff, RoundingMode.HALF_EVEN())
-            # Check if the result would round to zero - both numbers are very small
-            if result.coefficient() == "0" or (
-                len(result.coefficient()) <= scale_diff
-                and result.coefficient()[0] < "5"
-            ):
-                # Result will underflow to zero, set scale to MAX_PRECISION
-                var zero_result = Decimal.ZERO()
-                zero_result.flags = UInt32(
-                    (Self.MAX_PRECISION << Self.SCALE_SHIFT) & Self.SCALE_MASK
-                )
-                return zero_result
-
+        # Handle excess precision separately AFTER handling overflow
+        # (this shouldn't be reducing scale twice)
+        if adjusted_scale > Self.MAX_PRECISION:
+            var scale_diff = adjusted_scale - Self.MAX_PRECISION
             result = result._scale_down(scale_diff, RoundingMode.HALF_EVEN())
 
         return result
