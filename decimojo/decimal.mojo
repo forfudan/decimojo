@@ -17,10 +17,6 @@
 # 5) Raises
 # 9) Examples
 # ===----------------------------------------------------------------------=== #
-#
-# ===----------------------------------------------------------------------=== #
-# TODO: Implement basic arithmetics for decimals.
-# ===----------------------------------------------------------------------=== #
 
 """
 Implements basic object methods for working with decimal numbers.
@@ -139,15 +135,62 @@ struct Decimal(Writable):
         self.flags = 0x00000000
 
     fn __init__(
-        out self, low: UInt32, mid: UInt32, high: UInt32, flags: UInt32
+        out self,
+        low: UInt32,
+        mid: UInt32,
+        high: UInt32,
+        negative: Bool,
+        scale: UInt32,
     ):
         """
-        Initializes a Decimal with internal representation fields.
+        Initializes a Decimal with separate components.
+        the scale can be larger than 28, but will be scaled to the maximum precision.
+
+        Args:
+            low: Least significant 32 bits of coefficient.
+            mid: Middle 32 bits of coefficient.
+            high: Most significant 32 bits of coefficient.
+            negative: True if the number is negative.
+            scale: Number of decimal places (0-28).
         """
         self.low = low
         self.mid = mid
         self.high = high
+
+        # First set the flags without capping to initialize properly
+        var flags: UInt32 = 0
+
+        # Set the initial scale (may be higher than MAX_PRECISION)
+        flags |= (scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
+
+        # Set the sign bit if negative
+        if negative:
+            flags |= Self.SIGN_MASK
+
         self.flags = flags
+
+        # Now check if we need to round due to exceeding MAX_PRECISION
+        if scale > Self.MAX_PRECISION:
+            # We need to properly round the value, not just change the scale
+            var scale_diff = scale - Self.MAX_PRECISION
+            # The 'self' is already initialized above, so we can call _scale_down on it
+            self = self._scale_down(Int(scale_diff), RoundingMode.HALF_EVEN())
+
+        # No else needed as the value is already properly set if scale <= MAX_PRECISION
+
+    fn __init__(
+        out self, low: UInt32, mid: UInt32, high: UInt32, flags: UInt32
+    ):
+        """
+        Initializes a Decimal with internal representation fields.
+        Uses the full constructor to properly handle scaling and rounding.
+        """
+        # Extract sign and scale from flags
+        var is_negative = (flags & Self.SIGN_MASK) != 0
+        var scale = (flags & Self.SCALE_MASK) >> Self.SCALE_SHIFT
+
+        # Use the previous constructor which handles scale rounding properly
+        self = Self(low, mid, high, is_negative, scale)
 
     fn __init__(out self, integer: Int):
         """
@@ -459,8 +502,56 @@ struct Decimal(Writable):
         self.flags = other.flags
 
     # ===------------------------------------------------------------------=== #
-    # Output dunders and other methods
+    # Output dunders, type-transfer dunders, and other methods
     # ===------------------------------------------------------------------=== #
+
+    fn __int__(self) raises -> Int:
+        """
+        Converts this Decimal to an Int value.
+
+        Returns:
+            The Int representation of this Decimal.
+
+        Raises:
+            Error: If the Decimal has a non-zero fractional part.
+        """
+        var scale = self.scale()
+
+        # If scale is 0, the number is already an integer
+        if scale == 0:
+            # Convert the coefficient string to an integer
+            var coef = self.coefficient()
+            var result: Int = 0
+            for i in range(len(coef)):
+                var digit = ord(coef[i]) - ord("0")
+                result = result * 10 + digit
+
+            return -result if self.is_negative() else result
+
+        # If scale > 0, check if we have a whole number (all fractional digits are 0)
+        var coef = self.coefficient()
+        if len(coef) <= scale:
+            # Value is less than 1, so integer part is 0
+            return 0
+
+        # Check if all fractional digits are 0
+        for i in range(len(coef) - scale, len(coef)):
+            if coef[i] != "0":
+                raise Error(
+                    "Cannot convert Decimal with non-zero fractional part"
+                    " to Int"
+                )
+
+        # Get the integer part
+        var int_part = coef[: len(coef) - scale]
+        var result: Int = 0
+
+        for i in range(len(int_part)):
+            var digit = ord(int_part[i]) - ord("0")
+            result = result * 10 + digit
+
+        return -result if self.is_negative() else result
+
     fn __str__(self) -> String:
         """
         Returns string representation of the Decimal.
@@ -512,7 +603,19 @@ struct Decimal(Writable):
         writer.write(String(self))
 
     # ===------------------------------------------------------------------=== #
-    # Basic operation dunders
+    # Basic unary operation dunders
+    # neg
+    # ===------------------------------------------------------------------=== #
+
+    fn __neg__(self) -> Self:
+        """Unary negation operator."""
+        var result = Decimal(self.low, self.mid, self.high, self.flags)
+        result.flags ^= Self.SIGN_MASK  # Flip sign bit
+        return result
+
+    # ===------------------------------------------------------------------=== #
+    # Basic binary operation dunders
+    # add, sub, mul, truediv, pow
     # ===------------------------------------------------------------------=== #
     fn __add__(self, other: Decimal) raises -> Self:
         """
@@ -765,6 +868,30 @@ struct Decimal(Writable):
 
         return result
 
+    fn __sub__(self, other: Decimal) raises -> Self:
+        """
+        Subtracts the other Decimal from self and returns a new Decimal.
+
+        Args:
+            other: The Decimal to subtract from this Decimal.
+
+        Returns:
+            A new Decimal containing the difference
+
+        Notes:
+        This method is implemented using the existing `__add__()` and `__neg__()` methods.
+
+        Examples:
+        ```console
+        var a = Decimal("10.5")
+        var b = Decimal("3.2")
+        var result = a - b  # Returns 7.3
+        ```
+        .
+        """
+        # Implementation using the existing `__add__()` and `__neg__()` methods
+        return self + (-other)
+
     fn __mul__(self, other: Decimal) raises -> Self:
         """
         Multiplies two Decimal values and returns a new Decimal containing the product.
@@ -892,36 +1019,6 @@ struct Decimal(Writable):
             result = result._scale_down(scale_diff, RoundingMode.HALF_EVEN())
 
         return result
-
-    fn __neg__(self) -> Self:
-        """Unary negation operator."""
-        var result = Decimal(self.low, self.mid, self.high, self.flags)
-        result.flags ^= Self.SIGN_MASK  # Flip sign bit
-        return result
-
-    fn __sub__(self, other: Decimal) raises -> Self:
-        """
-        Subtracts the other Decimal from self and returns a new Decimal.
-
-        Args:
-            other: The Decimal to subtract from this Decimal.
-
-        Returns:
-            A new Decimal containing the difference
-
-        Notes:
-        This method is implemented using the existing `__add__()` and `__neg__()` methods.
-
-        Examples:
-        ```console
-        var a = Decimal("10.5")
-        var b = Decimal("3.2")
-        var result = a - b  # Returns 7.3
-        ```
-        .
-        """
-        # Implementation using the existing `__add__()` and `__neg__()` methods
-        return self + (-other)
 
     fn __truediv__(self, other: Decimal) raises -> Self:
         """
@@ -1064,6 +1161,43 @@ struct Decimal(Writable):
 
         return result
 
+    fn __pow__(self, exponent: Decimal) raises -> Self:
+        """
+        Raises self to the power of exponent and returns a new Decimal.
+
+        Currently supports integer exponents only.
+
+        Args:
+            exponent: The power to raise self to.
+                It must be an integer or effectively an integer (e.g., 2.0).
+
+        Returns:
+            A new Decimal containing the result of self^exponent
+
+        Raises:
+            Error: If exponent is not an integer or if the operation would overflow.
+        """
+
+        return decimal.power(self, exponent)
+
+    fn __pow__(self, exponent: Int) raises -> Self:
+        """
+        Raises self to the power of exponent and returns a new Decimal.
+
+        Currently supports integer exponents only.
+
+        Args:
+            exponent: The power to raise self to.
+
+        Returns:
+            A new Decimal containing the result of self^exponent
+
+        Raises:
+            Error: If exponent is not an integer or if the operation would overflow.
+        """
+
+        return decimal.power(self, exponent)
+
     # ===------------------------------------------------------------------=== #
     # Other methods
     # ===------------------------------------------------------------------=== #
@@ -1120,6 +1254,47 @@ struct Decimal(Writable):
             l = new_l
 
         return result
+
+    fn is_integer(self) -> Bool:
+        """
+        Determines whether this Decimal value represents an integer.
+        A Decimal represents an integer when it has no fractional part
+        (i.e., all digits after the decimal point are zero).
+
+        Returns:
+            True if this Decimal represents an integer value, False otherwise.
+
+        Examples:
+        ```
+        Decimal("123").is_integer()      # Returns True
+        Decimal("123.0").is_integer()    # Returns True
+        Decimal("123.00").is_integer()   # Returns True
+        Decimal("123.45").is_integer()   # Returns False
+        ```
+        .
+        """
+        var scale = self.scale()
+
+        # If scale is 0, it's already an integer
+        if scale == 0:
+            return True
+
+        # If scale > 0, check if all fractional digits are zeros
+        var coef = self.coefficient()
+
+        # If coefficient length is less than or equal to scale,
+        # the value is between -1 and 1 (e.g., 0.123)
+        # It's an integer only if it's exactly zero
+        if len(coef) <= scale:
+            return self.is_zero()
+
+        # Check if all digits after the decimal point are zeros
+        for i in range(len(coef) - scale, len(coef)):
+            if coef[i] != "0":
+                return False
+
+        # All digits after decimal point are zeros
+        return True
 
     fn is_negative(self) -> Bool:
         """Returns True if this Decimal is negative."""

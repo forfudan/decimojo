@@ -5,3 +5,5 @@
 # ===----------------------------------------------------------------------=== #
 
 from .decimal import Decimal
+
+from .mathematics import power
