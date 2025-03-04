@@ -1,6 +1,8 @@
-name: DeciMojo Unit Tests
+name: Run pre-commit
 on:
+  # Run pre-commit on pull requests
   pull_request:
+  # Add a workflow_dispatch event to run pre-commit manually
   workflow_dispatch:
 
 permissions:
@@ -8,14 +10,8 @@ permissions:
   pull-requests: read
 
 jobs:
-  testing-decimojo:
-    name: with ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ["ubuntu-22.04"]
-
-    runs-on: ${{ matrix.os }}
+  lint:
+    runs-on: "ubuntu-22.04"
     timeout-minutes: 30
 
     defaults:
@@ -31,7 +27,7 @@ jobs:
       - name: Install magic
         run: |
           curl -ssL https://magic.modular.com/deb181c4-455c-4abe-a263-afcff49ccf67 | bash
-      
+    
       - name: Add path
         run: |
           echo "MODULAR_HOME=$HOME/.modular" >> $GITHUB_ENV
@@ -44,7 +40,12 @@ jobs:
           . $HOME/venv/bin/activate
           echo PATH=$PATH >> $GITHUB_ENV
 
-      - name: Run tests
+      - name: Install pre-commit
         run: |
+          pip install pre-commit
+          pre-commit install
+      
+      - name: Run pre-commit
+        run: | 
           magic install
-          magic run mojo test tests -I .
+          pre-commit run --all-files

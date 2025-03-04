@@ -22,7 +22,6 @@
 Implements basic object methods for working with decimal numbers.
 """
 
-import math.math as mt
 from .rounding_mode import RoundingMode
 
 
@@ -354,6 +353,51 @@ struct Decimal(Roundable, Writable):
                 # Move decimal point left (increase scale)
                 scale += -exponent
 
+        # STEP 2: If scale  > max_precision,
+        # round the coefficient string after truncating
+        # and re-calculate the scale
+        if scale > Self.MAX_PRECISION:
+            var diff_scale = scale - Self.MAX_PRECISION
+            var kept_digits = len(string_of_coefficient) - diff_scale
+
+            # Truncate the coefficient string to 29 digits
+            if kept_digits < 0:
+                string_of_coefficient = String("0")
+            else:
+                string_of_coefficient = string_of_coefficient[:kept_digits]
+
+            # Apply rounding if needed
+            if kept_digits < len(string_of_coefficient):
+                if string_of_coefficient[kept_digits] >= String("5"):
+                    # Same rounding logic as above
+                    var carry = 1
+                    var result_chars = List[String]()
+
+                    for i in range(len(string_of_coefficient)):
+                        result_chars.append(string_of_coefficient[i])
+
+                    var pos = Self.MAX_PRECISION
+                    while pos >= 0 and carry > 0:
+                        var digit = ord(result_chars[pos]) - ord(String("0"))
+                        digit += carry
+
+                        if digit < 10:
+                            result_chars[pos] = chr(digit + ord(String("0")))
+                            carry = 0
+                        else:
+                            result_chars[pos] = String("0")
+                            carry = 1
+                        pos -= 1
+
+                    if carry > 0:
+                        result_chars.insert(0, String("1"))
+
+                    string_of_coefficient = String("")
+                    for ch in result_chars:
+                        string_of_coefficient += ch[]
+
+            scale = Self.MAX_PRECISION
+
         # STEP 2: Check for overflow
         # Check if the integral part of the coefficient is too large
         var string_of_integral_part: String
@@ -364,23 +408,36 @@ struct Decimal(Roundable, Writable):
         else:
             string_of_integral_part = String("0")
 
-        if len(string_of_integral_part) > Decimal.LEN_OF_MAX_VALUE:
-            raise Error("Decimal value too large: " + s)
-        elif len(string_of_integral_part) == Decimal.LEN_OF_MAX_VALUE and (
-            string_of_integral_part > Self.MAX_AS_STRING
+        if (len(string_of_integral_part) > Decimal.LEN_OF_MAX_VALUE) or (
+            len(string_of_integral_part) == Decimal.LEN_OF_MAX_VALUE
+            and (string_of_integral_part > Self.MAX_AS_STRING)
         ):
-            raise Error("Decimal value too large: " + s)
+            raise Error(
+                "\nError in init from string: Integral part of the Decimal"
+                " value too large: "
+                + s
+            )
 
         # Check if the coefficient is too large
-        var raw_length_of_coefficient = len(string_of_coefficient)
-        if raw_length_of_coefficient > Decimal.LEN_OF_MAX_VALUE:
-            # Need to truncate to Decimal.LEN_OF_MAX_VALUE digits
-            var rounding_digit = string_of_coefficient[Decimal.LEN_OF_MAX_VALUE]
-            string_of_coefficient = string_of_coefficient[
-                : Decimal.LEN_OF_MAX_VALUE
+        # Recursively re-calculate the coefficient string after truncating and rounding
+        # until it fits within the Decimal limits
+        while (len(string_of_coefficient) > Decimal.LEN_OF_MAX_VALUE) or (
+            len(string_of_coefficient) == Decimal.LEN_OF_MAX_VALUE
+            and (string_of_coefficient > Self.MAX_AS_STRING)
+        ):
+            var raw_length_of_coefficient = len(string_of_coefficient)
+
+            # If string_of_coefficient has more than 29 digits, truncate it to 29.
+            # If string_of_coefficient has 29 digits and larger than MAX_AS_STRING, truncate it to 28.
+            var rounding_digit = string_of_coefficient[
+                min(Decimal.LEN_OF_MAX_VALUE, len(string_of_coefficient) - 1)
             ]
+            string_of_coefficient = string_of_coefficient[
+                : min(Decimal.LEN_OF_MAX_VALUE, len(string_of_coefficient) - 1)
+            ]
+
             scale = scale - (
-                raw_length_of_coefficient - Decimal.LEN_OF_MAX_VALUE
+                raw_length_of_coefficient - len(string_of_coefficient)
             )
 
             # Apply rounding if needed
@@ -429,9 +486,13 @@ struct Decimal(Roundable, Writable):
                     break
 
             if is_greater:
-                raise Error("Decimal value too large: " + s)
+                raise Error(
+                    "\nError in init from string: Decimal value too large: " + s
+                )
         elif len(string_of_coefficient) > len(Self.MAX_AS_STRING):
-            raise Error("Decimal value too large: " + s)
+            raise Error(
+                "\nError in init from string: Decimal value too large: " + s
+            )
 
         # Step 3: Convert the coefficient string to low/mid/high parts
         var low: UInt32 = 0
@@ -621,49 +682,14 @@ struct Decimal(Roundable, Writable):
         """
         Adds two Decimal values and returns a new Decimal containing the sum.
         """
-        ############################################################
         # Special case for zero
-        ############################################################
         if self.is_zero():
             return other
         if other.is_zero():
             return self
 
-        ############################################################
-        # Check for operands that cancel each other out
-        # (same absolute value but opposite signs)
-        ############################################################
-        if self.is_negative() != other.is_negative():
-            # Different signs - check if absolute values are equal
-            # First normalize both to same scale for comparison
-            var max_scale = max(self.scale(), other.scale())
-            var self_copy = self
-            var other_copy = other
-
-            # Scale both up to the maximum scale for proper comparison
-            if self.scale() < max_scale:
-                self_copy = self._scale_up(max_scale - self.scale())
-            if other.scale() < max_scale:
-                other_copy = other._scale_up(max_scale - other.scale())
-
-            # Compare absolute values (ignoring sign)
-            if (
-                self_copy.low == other_copy.low
-                and self_copy.mid == other_copy.mid
-                and self_copy.high == other_copy.high
-            ):
-                # Numbers cancel out, return zero with proper scale
-                var result = Decimal.ZERO()
-                # Use the larger scale for the result
-                result.flags = UInt32(
-                    (max_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
-                )
-                return result
-
-        ############################################################
-        # Integer addition with same scale
-        ############################################################
-        if self.scale() == other.scale():
+        # Integer addition
+        if (self.scale() == 0) and (other.scale() == 0):
             var result = Decimal()
             result.flags = UInt32(
                 (self.scale() << Self.SCALE_SHIFT) & Self.SCALE_MASK
@@ -701,172 +727,10 @@ struct Decimal(Roundable, Writable):
 
                 return result
 
-        ############################################################
         # Float addition which may be with different scales
-        ############################################################
+        # Use string-based approach
 
-        # Determine which decimal has larger absolute value
-        var larger_decimal: Decimal
-        var smaller_decimal: Decimal
-        var larger_scale: Int
-        var smaller_scale: Int
-
-        if self._abs_compare(other) >= 0:
-            larger_decimal = self
-            smaller_decimal = other
-            larger_scale = self.scale()
-            smaller_scale = other.scale()
-        else:
-            larger_decimal = other
-            smaller_decimal = self
-            larger_scale = other.scale()
-            smaller_scale = self.scale()
-
-        # Calculate how much we can safely scale up the larger number
-        var larger_coef = larger_decimal.coefficient()
-        var significant_digits = len(larger_coef)
-        var max_safe_scale_increase = Self.MAX_PRECISION - significant_digits
-
-        # If the scales are too different, we need special handling
-        if smaller_scale > larger_scale + max_safe_scale_increase:
-            # We need to determine the effective position where the smaller number would contribute
-            var scale_diff = smaller_scale - larger_scale
-
-            # If beyond our max safe scale, we need to round
-            if scale_diff > max_safe_scale_increase:
-                # Get smallest significant digit position in the smaller number
-                var smaller_coef = smaller_decimal.coefficient()
-
-                # Find first non-zero digit in the smaller number
-                var first_digit_pos = 0
-                for i in range(len(smaller_coef)):
-                    if smaller_coef[i] != "0":
-                        first_digit_pos = i
-                        break
-
-                # Calculate total effective position
-                var effective_pos = scale_diff + first_digit_pos
-
-                # If still beyond max safe scale, determine if rounding is needed
-                if effective_pos > max_safe_scale_increase:
-                    # If way beyond precision limit, just return the larger number
-                    if effective_pos > max_safe_scale_increase + 1:
-                        return larger_decimal
-
-                    # If exactly at rounding boundary, use first digit to determine rounding
-                    var first_digit = ord(smaller_coef[first_digit_pos]) - ord(
-                        "0"
-                    )
-
-                    # Round up if 5 or greater (using half-up rounding)
-                    if first_digit >= 5:
-                        # Create a small decimal for rounding adjustment
-                        var round_value = Decimal(
-                            "0." + "0" * max_safe_scale_increase + "1"
-                        )
-
-                        # Apply rounding based on signs
-                        if (
-                            smaller_decimal.is_negative()
-                            != larger_decimal.is_negative()
-                        ):
-                            return larger_decimal + -round_value
-                        else:
-                            return larger_decimal + round_value
-                    else:
-                        # Round down - just return larger number
-                        return larger_decimal
-
-                # If we get here, we can align to max safe scale
-                var safe_scale = larger_scale + max_safe_scale_increase
-                var scale_reduction = smaller_scale - safe_scale
-                smaller_decimal = smaller_decimal._scale_down(
-                    scale_reduction, RoundingMode.HALF_EVEN()
-                )
-
-        # Standard addition with aligned scales
-        var result = Decimal()
-        var target_scale = max(larger_scale, smaller_decimal.scale())
-
-        # Scale up if needed
-        var larger_copy = larger_decimal
-        var smaller_copy = smaller_decimal
-
-        if larger_scale < target_scale:
-            larger_copy = larger_decimal._scale_up(target_scale - larger_scale)
-        if smaller_decimal.scale() < target_scale:
-            smaller_copy = smaller_decimal._scale_up(
-                target_scale - smaller_decimal.scale()
-            )
-
-        # Set result scale
-        result.flags = UInt32(
-            (target_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
-        )
-
-        # Now perform the actual addition
-        if larger_copy.is_negative() == smaller_copy.is_negative():
-            # Same sign: add absolute values and keep the sign
-            if larger_copy.is_negative():
-                result.flags |= Self.SIGN_MASK
-
-            # Add with carry
-            var carry: UInt32 = 0
-
-            # Add low parts
-            var sum_low = UInt64(larger_copy.low) + UInt64(smaller_copy.low)
-            result.low = UInt32(sum_low & 0xFFFFFFFF)
-            carry = UInt32(sum_low >> 32)
-
-            # Add mid parts with carry
-            var sum_mid = UInt64(larger_copy.mid) + UInt64(
-                smaller_copy.mid
-            ) + UInt64(carry)
-            result.mid = UInt32(sum_mid & 0xFFFFFFFF)
-            carry = UInt32(sum_mid >> 32)
-
-            # Add high parts with carry
-            var sum_high = UInt64(larger_copy.high) + UInt64(
-                smaller_copy.high
-            ) + UInt64(carry)
-            result.high = UInt32(sum_high & 0xFFFFFFFF)
-
-            # Check for overflow
-            if (sum_high >> 32) > 0:
-                raise Error("Decimal overflow in addition")
-        else:
-            # Different signs: subtract smaller absolute value from larger
-            # We already know larger_copy has larger absolute value
-            var borrow: UInt32 = 0
-
-            # Subtract low parts with borrow
-            if larger_copy.low >= smaller_copy.low:
-                result.low = larger_copy.low - smaller_copy.low
-                borrow = 0
-            else:
-                result.low = UInt32(
-                    0x100000000 + larger_copy.low - smaller_copy.low
-                )
-                borrow = 1
-
-            # Subtract mid parts with borrow
-            if larger_copy.mid >= smaller_copy.mid + borrow:
-                result.mid = larger_copy.mid - smaller_copy.mid - borrow
-                borrow = 0
-            else:
-                result.mid = UInt32(
-                    0x100000000 + larger_copy.mid - smaller_copy.mid - borrow
-                )
-                borrow = 1
-
-            # Subtract high parts with borrow
-            result.high = larger_copy.high - smaller_copy.high - borrow
-
-            # Set sign based on which had larger absolute value
-            if larger_copy.is_negative():
-                result.flags |= Self.SIGN_MASK
-
-        return result
+        return Decimal(decimojo.mathematics._addition_string_based(self, other))
 
     fn __sub__(self, other: Decimal) raises -> Self:
         """
@@ -1023,7 +887,9 @@ struct Decimal(Roundable, Writable):
     fn __truediv__(self, other: Decimal) raises -> Self:
         """
         Divides self by other and returns a new Decimal containing the quotient.
+        Uses a simpler string-based long division approach.
         """
+
         # Check for division by zero
         if other.is_zero():
             raise Error("Division by zero")
@@ -1039,125 +905,149 @@ struct Decimal(Roundable, Writable):
 
         # If dividing identical numbers, return 1
         if (
-            self.coefficient() == other.coefficient()
+            self.low == other.low
+            and self.mid == other.mid
+            and self.high == other.high
             and self.scale() == other.scale()
         ):
-            return Decimal("1")
+            return Decimal.ONE()
 
-        # Determine sign of result
+        # Determine sign of result (positive if signs are the same, negative otherwise)
         var result_is_negative = self.is_negative() != other.is_negative()
 
-        # Get coefficients
-        var numerator = self.coefficient()
-        var denominator = other.coefficient()
+        # Get coefficients as strings (absolute values)
+        var dividend_coef = _remove_trailing_zeros(self.coefficient())
+        var divisor_coef = _remove_trailing_zeros(other.coefficient())
 
-        # Calculate natural scale (difference in scales)
-        var dividend_scale = self.scale()
-        var divisor_scale = other.scale()
-        var natural_scale = dividend_scale - divisor_scale
+        # Use string-based division to avoid overflow with large numbers
 
-        # Add working precision zeros to numerator for division
-        var working_precision = Self.MAX_PRECISION
-        numerator += "0" * working_precision
+        # Determine precision needed for calculation
+        var working_precision = Self.LEN_OF_MAX_VALUE + 1  # +1 for potential rounding
 
-        # Convert denominator to integer
-        var denom_value = UInt64(0)
-        for i in range(len(denominator)):
-            denom_value = denom_value * 10 + UInt64(
-                ord(denominator[i]) - ord("0")
+        # Perform long division algorithm
+        var quotient = String("")
+        var remainder = String("")
+        var digit = 0
+        var current_pos = 0
+        var processed_all_dividend = False
+        var significant_digits_of_quotient = 0
+
+        while significant_digits_of_quotient < working_precision:
+            # Grab next digit from dividend if available
+            if current_pos < len(dividend_coef):
+                remainder += dividend_coef[current_pos]
+                current_pos += 1
+            else:
+                # If we've processed all dividend digits, add a zero
+                if not processed_all_dividend:
+                    processed_all_dividend = True
+                remainder += "0"
+
+            # Remove leading zeros from remainder for cleaner comparison
+            var remainder_start = 0
+            while (
+                remainder_start < len(remainder) - 1
+                and remainder[remainder_start] == "0"
+            ):
+                remainder_start += 1
+            remainder = remainder[remainder_start:]
+
+            # Compare remainder with divisor to determine next quotient digit
+            digit = 0
+            var can_subtract = False
+
+            # Check if remainder >= divisor_coef
+            if len(remainder) > len(divisor_coef) or (
+                len(remainder) == len(divisor_coef)
+                and remainder >= divisor_coef
+            ):
+                can_subtract = True
+
+            if can_subtract:
+                # Find how many times divisor goes into remainder
+                while True:
+                    # Try to subtract divisor from remainder
+                    var new_remainder = _subtract_strings(
+                        remainder, divisor_coef
+                    )
+                    if (
+                        new_remainder[0] == "-"
+                    ):  # Negative result means we've gone too far
+                        break
+                    remainder = new_remainder
+                    digit += 1
+
+            # Add digit to quotient
+            quotient += String(digit)
+            significant_digits_of_quotient = len(
+                _remove_leading_zeros(quotient)
             )
 
-        # Perform long division
-        var quotient_digits = String("")
-        var remainder = UInt64(0)
-
-        for i in range(len(numerator)):
-            remainder = remainder * 10 + UInt64(ord(numerator[i]) - ord("0"))
-            var digit = remainder / denom_value
-            quotient_digits += String(digit)
-            remainder = remainder % denom_value
+        # Check if division is exact
+        var is_exact = remainder == "0" and current_pos >= len(dividend_coef)
 
         # Remove leading zeros
-        var start_pos = 0
-        while (
-            start_pos < len(quotient_digits) - 1
-            and quotient_digits[start_pos] == "0"
-        ):
-            start_pos += 1
-        quotient_digits = quotient_digits[start_pos:]
+        var leading_zeros = 0
+        for i in range(len(quotient)):
+            if quotient[i] == "0":
+                leading_zeros += 1
+            else:
+                break
 
-        # Check if the division is exact
-        var is_exact = remainder == 0
+        if leading_zeros == len(quotient):
+            # All zeros, keep just one
+            quotient = "0"
+        elif leading_zeros > 0:
+            quotient = quotient[leading_zeros:]
 
-        # For exact division, trim unnecessary trailing zeros
-        var trailing_zeros_removed = 0
-        if is_exact:
-            # Count trailing zeros
-            var trailing_zeros = 0
-            for i in range(
-                len(quotient_digits) - 1, 0, -1
-            ):  # Don't remove last digit
-                if quotient_digits[i] == "0":
+        # Handle trailing zeros for exact division
+        var trailing_zeros = 0
+        if is_exact and len(quotient) > 1:  # Don't remove single digit
+            for i in range(len(quotient) - 1, 0, -1):
+                if quotient[i] == "0":
                     trailing_zeros += 1
                 else:
                     break
 
-            # For exact division, trim all trailing zeros
             if trailing_zeros > 0:
-                quotient_digits = quotient_digits[
-                    : len(quotient_digits) - trailing_zeros
-                ]
-                trailing_zeros_removed = trailing_zeros
+                quotient = quotient[: len(quotient) - trailing_zeros]
 
-        # Create the result with the correct decimal point position
-        var actual_value_str = String("")
+        # Calculate decimal point position
+        var dividend_scientific_exponent = self.scientific_exponent()
+        var divisor_scientific_exponent = other.scientific_exponent()
+        var result_scientific_exponent = dividend_scientific_exponent - divisor_scientific_exponent
 
-        # Handle exact division correctly with proper decimal point placement
-        if is_exact:
-            # The scale should be adjusted for trailing zeros removed
-            var effective_scale = natural_scale + working_precision - trailing_zeros_removed
+        if dividend_coef < divisor_coef:
+            # If dividend < divisor, result < 1
+            result_scientific_exponent -= 1
 
-            if effective_scale <= 0:
-                # For negative effective scale, we need to add zeros
-                actual_value_str = quotient_digits + "0" * (-effective_scale)
-            else:
-                # Need to place decimal point with effective_scale digits after it
-                if len(quotient_digits) <= effective_scale:
-                    # Number < 1, needs leading zeros
-                    actual_value_str = (
-                        "0."
-                        + "0" * (effective_scale - len(quotient_digits))
-                        + quotient_digits
-                    )
-                else:
-                    # Place decimal point from right to left
-                    var decimal_pos = len(quotient_digits) - effective_scale
-                    actual_value_str = (
-                        quotient_digits[:decimal_pos]
-                        + "."
-                        + quotient_digits[decimal_pos:]
-                    )
+        var decimal_pos = result_scientific_exponent + 1
+
+        # Format result with decimal point
+        var result_str = String("")
+
+        if decimal_pos <= 0:
+            # decimal_pos <= 0, needs leading zeros
+            # For example, decimal_pos = -1
+            # 1234 -> 0.1234
+            result_str = "0." + "0" * (-decimal_pos) + quotient
+        elif decimal_pos >= len(quotient):
+            # All digits are to the left of the decimal point
+            # For example, decimal_pos = 5
+            # 1234 -> 12340
+            result_str = quotient + "0" * (decimal_pos - len(quotient))
         else:
-            # For inexact division, position decimal based on working_precision
-            var decimal_pos = len(quotient_digits) - working_precision
-
-            if decimal_pos <= 0:
-                # Number < 1, needs leading zeros
-                actual_value_str = "0." + "0" * (-decimal_pos) + quotient_digits
-            else:
-                # Insert decimal at the appropriate position
-                actual_value_str = (
-                    quotient_digits[:decimal_pos]
-                    + "."
-                    + quotient_digits[decimal_pos:]
-                )
-
-        # Create result from formatted string
-        var result = Decimal(actual_value_str)
+            # Insert decimal point within the digits
+            # For example, decimal_pos = 2
+            # 1234 -> 12.34
+            result_str = quotient[:decimal_pos] + "." + quotient[decimal_pos:]
 
         # Apply sign
-        if result_is_negative:
-            result = -result
+        if result_is_negative and result_str != "0":
+            result_str = "-" + result_str
+
+        # Convert to Decimal and return
+        var result = Decimal(result_str)
 
         return result
 
@@ -1440,11 +1330,44 @@ struct Decimal(Roundable, Writable):
         """Returns the scale (number of decimal places) of this Decimal."""
         return Int((self.flags & Self.SCALE_MASK) >> Self.SCALE_SHIFT)
 
+    fn scientific_exponent(self) -> Int:
+        """
+        Calculates the exponent for scientific notation representation of a Decimal.
+        The exponent is the power of 10 needed to represent the value in scientific notation.
+        """
+
+        # Get the coefficient as a string
+        var coef = self.coefficient()
+
+        return len(coef) - 1 - self.scale()
+
+    fn significant_digits(self) -> Int:
+        """
+        Returns the number of significant digits in this Decimal.
+        The number of significant digits is the total number of digits in the coefficient,
+        excluding leading and trailing zeros.
+        """
+
+        # Get the coefficient as a string
+        var coef = self.coefficient()
+
+        # Count significant digits
+        var count = 0
+        var found_non_zero = False
+
+        for i in range(len(coef)):
+            if coef[i] != "0":
+                found_non_zero = True
+            if found_non_zero:
+                count += 1
+
+        return count
+
     # ===------------------------------------------------------------------=== #
     # Internal methods
     # ===------------------------------------------------------------------=== #
 
-    fn _abs_compare(self, other: Decimal) -> Int:
+    fn _abs_compare(self, other: Decimal) raises -> Int:
         """
         Compares absolute values of two Decimal numbers, ignoring signs.
 
@@ -1453,41 +1376,15 @@ struct Decimal(Roundable, Writable):
         - Zero if |self| = |other|
         - Negative value if |self| < |other|
         """
-        # Create temporary copies with same scale for comparison
-        var self_copy = self
-        var other_copy = other
+        var abs_self = decimojo.absolute(self)
+        var abs_other = decimojo.absolute(other)
 
-        # Get scales
-        var self_scale = self.scale()
-        var other_scale = other.scale()
-
-        # Scale up the one with smaller scale to match
-        if self_scale < other_scale:
-            self_copy = self_copy._scale_up(other_scale - self_scale)
-        elif other_scale < self_scale:
-            other_copy = other_copy._scale_up(self_scale - other_scale)
-
-        # Now both have the same scale, compare coefficients
-        # Start with highest significance (high)
-        if self_copy.high > other_copy.high:
+        if abs_self > abs_other:
             return 1
-        if self_copy.high < other_copy.high:
+        elif abs_self < abs_other:
             return -1
-
-        # High parts equal, compare mid parts
-        if self_copy.mid > other_copy.mid:
-            return 1
-        if self_copy.mid < other_copy.mid:
-            return -1
-
-        # Mid parts equal, compare low parts
-        if self_copy.low > other_copy.low:
-            return 1
-        if self_copy.low < other_copy.low:
-            return -1
-
-        # All parts equal, numbers are equal
-        return 0
+        else:
+            return 0
 
     fn _internal_representation(value: Decimal):
         # Show internal representation details
@@ -1536,9 +1433,6 @@ struct Decimal(Roundable, Writable):
 
         # Collect the digits to be removed (we need all of them for proper rounding)
         for i in range(scale_diff):
-            var last_digit = temp.low % 10
-            removed_digits = String(last_digit) + removed_digits
-
             # Divide by 10 without any rounding at this stage
             var high64 = UInt64(temp.high)
             var mid64 = UInt64(temp.mid)
@@ -1556,6 +1450,9 @@ struct Decimal(Roundable, Writable):
             # Calculate low with remainder from mid
             var low_with_remainder = low64 + (remainder_m << 32)
             var new_low = low_with_remainder // 10
+
+            var last_digit = low_with_remainder % 10
+            removed_digits = String(last_digit) + removed_digits
 
             # Update temp values
             temp.low = UInt32(new_low)
@@ -1626,7 +1523,9 @@ struct Decimal(Roundable, Writable):
 
     fn _scale_up(self, owned scale_diff: Int) -> Decimal:
         """
-        Internal method to scale up a decimal by multiplying by 10^scale_diff.
+        Internal method to scale up a decimal by:
+            - multiplying coefficient by 10^scale_diff.
+            - imcrease the scale by scale_diff.
 
         Args:
             scale_diff: Number of decimal places to scale up by
@@ -1642,17 +1541,17 @@ struct Decimal(Roundable, Writable):
 
         # Update the scale in the flags
         var new_scale = self.scale() + scale_diff
-        if new_scale > Self.MAX_PRECISION:
+        if new_scale > Self.MAX_PRECISION + 1:
             # Cannot scale beyond max precision, limit the scaling
-            scale_diff = Self.MAX_PRECISION - self.scale()
-            new_scale = Self.MAX_PRECISION
+            scale_diff = Self.MAX_PRECISION + 1 - self.scale()
+            new_scale = Self.MAX_PRECISION + 1
 
         result.flags = (result.flags & ~Self.SCALE_MASK) | (
             UInt32(new_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
         )
 
         # Scale up by multiplying by powers of 10
-        for _ in range(scale_diff):
+        for i in range(scale_diff):
             # Check for potential overflow before multiplying
             if result.high > 0xFFFFFFFF // 10 or (
                 result.high == 0xFFFFFFFF // 10 and result.low > 0xFFFFFFFF % 10
@@ -1714,3 +1613,60 @@ fn _float_to_decimal_str(value: Float64, precision: Int) -> String:
         result = "-" + result
 
     return result
+
+
+fn _subtract_strings(a: String, b: String) -> String:
+    """Subtracts string b from string a and returns the result as a string."""
+    # Ensure a is longer or equal to b by padding with zeros
+    var a_padded = a
+    var b_padded = b
+
+    if len(a) < len(b):
+        a_padded = "0" * (len(b) - len(a)) + a
+    elif len(b) < len(a):
+        b_padded = "0" * (len(a) - len(b)) + b
+
+    var result = String("")
+    var borrow = 0
+
+    # Perform subtraction digit by digit from right to left
+    for i in range(len(a_padded) - 1, -1, -1):
+        var digit_a = ord(a_padded[i]) - ord("0")
+        var digit_b = ord(b_padded[i]) - ord("0") + borrow
+
+        if digit_a < digit_b:
+            digit_a += 10
+            borrow = 1
+        else:
+            borrow = 0
+
+        result = String(digit_a - digit_b) + result
+
+    # Check if result is negative
+    if borrow > 0:
+        return "-" + result
+
+    # Remove leading zeros
+    var start_idx = 0
+    while start_idx < len(result) - 1 and result[start_idx] == "0":
+        start_idx += 1
+
+    return result[start_idx:]
+
+
+fn _remove_leading_zeros(value: String) -> String:
+    """Removes leading zeros from a string."""
+    var start_idx = 0
+    while start_idx < len(value) - 1 and value[start_idx] == "0":
+        start_idx += 1
+
+    return value[start_idx:]
+
+
+fn _remove_trailing_zeros(value: String) -> String:
+    """Removes trailing zeros from a string."""
+    var end_idx = len(value)
+    while end_idx > 0 and value[end_idx - 1] == "0":
+        end_idx -= 1
+
+    return value[:end_idx]
