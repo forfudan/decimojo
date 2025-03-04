@@ -603,8 +603,19 @@ struct Decimal(Writable):
         writer.write(String(self))
 
     # ===------------------------------------------------------------------=== #
-    # Basic unary and binary operation dunders
-    # neg, add, sub, mul, truediv
+    # Basic unary operation dunders
+    # neg
+    # ===------------------------------------------------------------------=== #
+
+    fn __neg__(self) -> Self:
+        """Unary negation operator."""
+        var result = Decimal(self.low, self.mid, self.high, self.flags)
+        result.flags ^= Self.SIGN_MASK  # Flip sign bit
+        return result
+
+    # ===------------------------------------------------------------------=== #
+    # Basic binary operation dunders
+    # add, sub, mul, truediv
     # ===------------------------------------------------------------------=== #
     fn __add__(self, other: Decimal) raises -> Self:
         """
@@ -857,6 +868,30 @@ struct Decimal(Writable):
 
         return result
 
+    fn __sub__(self, other: Decimal) raises -> Self:
+        """
+        Subtracts the other Decimal from self and returns a new Decimal.
+
+        Args:
+            other: The Decimal to subtract from this Decimal.
+
+        Returns:
+            A new Decimal containing the difference
+
+        Notes:
+        This method is implemented using the existing `__add__()` and `__neg__()` methods.
+
+        Examples:
+        ```console
+        var a = Decimal("10.5")
+        var b = Decimal("3.2")
+        var result = a - b  # Returns 7.3
+        ```
+        .
+        """
+        # Implementation using the existing `__add__()` and `__neg__()` methods
+        return self + (-other)
+
     fn __mul__(self, other: Decimal) raises -> Self:
         """
         Multiplies two Decimal values and returns a new Decimal containing the product.
@@ -984,36 +1019,6 @@ struct Decimal(Writable):
             result = result._scale_down(scale_diff, RoundingMode.HALF_EVEN())
 
         return result
-
-    fn __neg__(self) -> Self:
-        """Unary negation operator."""
-        var result = Decimal(self.low, self.mid, self.high, self.flags)
-        result.flags ^= Self.SIGN_MASK  # Flip sign bit
-        return result
-
-    fn __sub__(self, other: Decimal) raises -> Self:
-        """
-        Subtracts the other Decimal from self and returns a new Decimal.
-
-        Args:
-            other: The Decimal to subtract from this Decimal.
-
-        Returns:
-            A new Decimal containing the difference
-
-        Notes:
-        This method is implemented using the existing `__add__()` and `__neg__()` methods.
-
-        Examples:
-        ```console
-        var a = Decimal("10.5")
-        var b = Decimal("3.2")
-        var result = a - b  # Returns 7.3
-        ```
-        .
-        """
-        # Implementation using the existing `__add__()` and `__neg__()` methods
-        return self + (-other)
 
     fn __truediv__(self, other: Decimal) raises -> Self:
         """

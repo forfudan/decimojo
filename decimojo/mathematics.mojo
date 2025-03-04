@@ -31,7 +31,7 @@ fn power(base: Decimal, exponent: Decimal) raises -> Decimal:
         A new Decimal containing the result of base^exponent
 
     Raises:
-        Error: If exponent is not an integer or if the operation would overflow
+        Error: If exponent is not an integer or if the operation would overflow.
     """
     print("\n===== POWER OPERATION DEBUG =====")
     print("Base:", String(base), "scale:", String(base.scale()))
@@ -108,10 +108,24 @@ fn power(base: Decimal, exponent: Int) raises -> Decimal:
     Convenience method to raise base to an integer power.
 
     Args:
-        base: The base value
-        exponent: The integer power to raise base to
+        base: The base value.
+        exponent: The integer power to raise base to.
 
     Returns:
-        A new Decimal containing the result
+        A new Decimal containing the result.
     """
     return power(base, Decimal(exponent))
+
+
+fn pow(base: Decimal, exponent: Decimal) raises -> Decimal:
+    """
+    Alias for power() function. Raises base to the power of exponent.
+    """
+    return power(base, exponent)
+
+
+fn pow(base: Decimal, exponent: Int) raises -> Decimal:
+    """
+    Alias for power() function. Raises base to an integer power.
+    """
+    return power(base, exponent)
