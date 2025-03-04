@@ -2,6 +2,7 @@
 Test Decimal arithmetic operations including addition, subtraction, and negation.
 """
 from decimojo import Decimal
+from decimojo.mathematics import round
 import testing
 
 
@@ -322,35 +323,35 @@ fn test_subtraction() raises:
     var value1 = Decimal("0")
     testing.assert_equal(
         String(value1 - value1),
-        String(Decimal("0").round(value1.scale())),
+        String(round(Decimal("0"), value1.scale())),
         "Self subtraction should yield zero (0)",
     )
 
     var value2 = Decimal("123.45")
     testing.assert_equal(
         String(value2 - value2),
-        String(Decimal("0").round(value2.scale())),
+        String(round(Decimal("0"), value2.scale())),
         "Self subtraction should yield zero (123.45)",
     )
 
     var value3 = Decimal("-987.654")
     testing.assert_equal(
         String(value3 - value3),
-        String(Decimal("0").round(value3.scale())),
+        String(round(Decimal("0"), value3.scale())),
         "Self subtraction should yield zero (-987.654)",
     )
 
     var value4 = Decimal("0.0001")
     testing.assert_equal(
         String(value4 - value4),
-        String(Decimal("0").round(value4.scale())),
+        String(round(Decimal("0"), value4.scale())),
         "Self subtraction should yield zero (0.0001)",
     )
 
     var value5 = Decimal("-99999.99999")
     testing.assert_equal(
         String(value5 - value5),
-        String(Decimal("0").round(value5.scale())),
+        String(round(Decimal("0"), value5.scale())),
         "Self subtraction should yield zero (-99999.99999)",
     )
 
@@ -836,12 +837,10 @@ fn test_power_precision() raises:
 
     # These tests assume we have overloaded the ** operator
     # and we have a way to control precision similar to pow()
-
     try:
         # Test with precision control
         var a1 = Decimal("1.5")
         var result1 = a1**2
-
         # Test equality including precision
         testing.assert_equal(
             String(result1), "2.25", "1.5^2 should be exactly 2.25"

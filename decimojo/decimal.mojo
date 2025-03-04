@@ -26,7 +26,7 @@ import math.math as mt
 from .rounding_mode import RoundingMode
 
 
-struct Decimal(Writable):
+struct Decimal(Roundable, Writable):
     """
     Correctly-rounded fixed-precision number.
 
@@ -614,7 +614,7 @@ struct Decimal(Writable):
         return result
 
     # ===------------------------------------------------------------------=== #
-    # Basic binary operation dunders
+    # Basic binary arithmetic operation dunders
     # add, sub, mul, truediv, pow
     # ===------------------------------------------------------------------=== #
     fn __add__(self, other: Decimal) raises -> Self:
@@ -1199,6 +1199,134 @@ struct Decimal(Writable):
         return decimal.power(self, exponent)
 
     # ===------------------------------------------------------------------=== #
+    # Basic binary logic operation dunders
+    # __gt__, __ge__, __lt__, __le__, __eq__, __ne__
+    # ===------------------------------------------------------------------=== #
+
+    fn __gt__(self, other: Decimal) -> Bool:
+        """
+        Greater than comparison operator.
+
+        Args:
+            other: The Decimal to compare with.
+
+        Returns:
+            True if self is greater than other, False otherwise.
+        """
+        return decimojo.greater(self, other)
+
+    fn __ge__(self, other: Decimal) -> Bool:
+        """
+        Greater than or equal comparison operator.
+
+        Args:
+            other: The Decimal to compare with.
+
+        Returns:
+            True if self is greater than or equal to other, False otherwise.
+        """
+        return decimojo.greater_equal(self, other)
+
+    fn __lt__(self, other: Decimal) -> Bool:
+        """
+        Less than comparison operator.
+
+        Args:
+            other: The Decimal to compare with.
+
+        Returns:
+            True if self is less than other, False otherwise.
+        """
+        return decimojo.less(self, other)
+
+    fn __le__(self, other: Decimal) -> Bool:
+        """
+        Less than or equal comparison operator.
+
+        Args:
+            other: The Decimal to compare with.
+
+        Returns:
+            True if self is less than or equal to other, False otherwise.
+        """
+        return decimojo.less_equal(self, other)
+
+    fn __eq__(self, other: Decimal) -> Bool:
+        """
+        Equality comparison operator.
+
+        Args:
+            other: The Decimal to compare with.
+
+        Returns:
+            True if self is equal to other, False otherwise.
+        """
+        return decimojo.equal(self, other)
+
+    fn __ne__(self, other: Decimal) -> Bool:
+        """
+        Inequality comparison operator.
+
+        Args:
+            other: The Decimal to compare with.
+
+        Returns:
+            True if self is not equal to other, False otherwise.
+        """
+        return decimojo.not_equal(self, other)
+
+    # ===------------------------------------------------------------------=== #
+    # Other dunders that implements tratis
+    # round
+    # ===------------------------------------------------------------------=== #
+
+    fn __round__(
+        self, ndigits: Int = 0, mode: RoundingMode = RoundingMode.HALF_EVEN()
+    ) raises -> Self:
+        """
+        Rounds this Decimal to the specified number of decimal places.
+
+        Args:
+            ndigits: Number of decimal places to round to.
+                If 0 (default), rounds to the nearest integer.
+                If positive, rounds to the given number of decimal places.
+                If negative, rounds to the left of the decimal point.
+            mode: The rounding mode to use. Defaults to RoundingMode.HALF_EVEN.
+
+        Returns:
+            A new Decimal rounded to the specified precision
+
+        Raises:
+            Error: If the operation would result in overflow.
+
+        Examples:
+        ```
+        round(Decimal("3.14159"), 2)  # Returns 3.14
+        round("3.14159")   # Returns 3
+        round("1234.5", -2)  # Returns 1200
+        ```
+        .
+        """
+
+        return decimojo.round(self, ndigits, mode)
+
+    fn __round__(self, ndigits: Int = 0) -> Self:
+        """
+        **OVERLOAD**
+        Rounds this Decimal to the specified number of decimal places.
+        """
+
+        return decimojo.round(self, ndigits, RoundingMode.HALF_EVEN())
+
+    fn __round__(self) -> Self:
+        """
+        **OVERLOAD**
+        Rounds this Decimal to the specified number of decimal places.
+        """
+
+        return decimojo.round(self, 0, RoundingMode.HALF_EVEN())
+
+    # ===------------------------------------------------------------------=== #
     # Other methods
     # ===------------------------------------------------------------------=== #
     fn coefficient(self) -> String:
@@ -1311,43 +1439,6 @@ struct Decimal(Writable):
     fn scale(self) -> Int:
         """Returns the scale (number of decimal places) of this Decimal."""
         return Int((self.flags & Self.SCALE_MASK) >> Self.SCALE_SHIFT)
-
-    fn round(
-        self,
-        decimal_places: Int,
-        rounding_mode: RoundingMode = RoundingMode.HALF_EVEN(),
-    ) -> Decimal:
-        """
-        Rounds the Decimal to the specified number of decimal places.
-
-        Args:
-            decimal_places: Number of decimal places to round to.
-            rounding_mode: Rounding mode to use (defaults to HALF_EVEN/banker's rounding).
-
-        Returns:
-            A new Decimal rounded to the specified number of decimal places
-
-        Examples:
-        ```
-        var d = Decimal("123.456789")
-        var rounded = d.round(2)  # Returns 123.46 (using banker's rounding)
-        var down = d.round(3, RoundingMode.DOWN())  # Returns 123.456 (truncated)
-        var up = d.round(1, RoundingMode.UP())  # Returns 123.5 (rounded up)
-        ```
-        .
-        """
-        var current_scale = self.scale()
-
-        # If already at the desired scale, return a copy
-        if current_scale == decimal_places:
-            return self
-
-        # If we need more decimal places, scale up
-        if decimal_places > current_scale:
-            return self._scale_up(decimal_places - current_scale)
-
-        # Otherwise, scale down with the specified rounding mode
-        return self._scale_down(current_scale - decimal_places, rounding_mode)
 
     # ===------------------------------------------------------------------=== #
     # Internal methods

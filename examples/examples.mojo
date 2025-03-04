@@ -1,7 +1,7 @@
 """
 Examples demonstrating the usage of Decimojo's Decimal type.
 """
-from decimojo import Decimal
+from decimojo import Decimal, round
 from decimojo.rounding_mode import RoundingMode
 
 
@@ -181,18 +181,18 @@ fn rounding_and_precision() raises:
     print("Original value:", d)
 
     # Default rounding (HALF_EVEN/banker's rounding)
-    var r1 = d.round(2)
-    var r2 = d.round(4)
-    var r3 = d.round(0)
+    var r1 = round(d, 2)
+    var r2 = round(d, 4)
+    var r3 = round(d, 0)
     print("Rounded to 2 places (default):", r1)
     print("Rounded to 4 places (default):", r2)
     print("Rounded to 0 places (default):", r3)
 
     # Using different rounding modes
-    var down = d.round(2, RoundingMode.DOWN())
-    var up = d.round(2, RoundingMode.UP())
-    var half_up = d.round(2, RoundingMode.HALF_UP())
-    var half_even = d.round(2, RoundingMode.HALF_EVEN())
+    var down = round(d, 2, RoundingMode.DOWN())
+    var up = round(d, 2, RoundingMode.UP())
+    var half_up = round(d, 2, RoundingMode.HALF_UP())
+    var half_even = round(d, 2, RoundingMode.HALF_EVEN())
     print("\nRounding 123.456789 to 2 places with different modes:")
     print("DOWN():", down)
     print("UP():", up)
@@ -201,9 +201,9 @@ fn rounding_and_precision() raises:
 
     # Rounding special cases
     var half_val = Decimal("123.5")
-    var half_rounded = half_val.round(0, RoundingMode.HALF_EVEN())
+    var half_rounded = round(half_val, 0, RoundingMode.HALF_EVEN())
     var val = Decimal("124.5")
-    var even_rounded = val.round(0, RoundingMode.HALF_EVEN())
+    var even_rounded = round(val, 0, RoundingMode.HALF_EVEN())
     print("\nRounding special cases (banker's rounding):")
     print("123.5 rounded to 0 places:", half_rounded)
     print("124.5 rounded to 0 places:", even_rounded)
@@ -213,7 +213,7 @@ fn rounding_and_precision() raises:
     print("Value:", d_scale, "- Scale:", d_scale.scale())
 
     # Round to different scales
-    var rounded = d_scale.round(3)
+    var rounded = round(d_scale, 3)
     print("Rounded to 3 places:", rounded, "- New scale:", rounded.scale())
 
     # Scale after arithmetic operations

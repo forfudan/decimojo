@@ -14,15 +14,19 @@ format = "magic run mojo format ./"
 
 # compile the package
 package = "magic run format && magic run mojo package decimojo && cp decimojo.mojopkg ./tests/ && cp decimojo.mojopkg ./examples/ && rm decimojo.mojopkg"
-p = "magic run package"
+p = "clear && magic run package"
 
-# tests
-test = "magic run package && magic run mojo tests/*.mojo && magic run mojo test tests -I ."
-t = "magic run test"
+# debugs (run the testing files only)
+debug = "magic run package && magic run mojo tests/*.mojo"
+d = "clear && magic run debug"
+
+# tests (use the mojo testing tool)
+test = "magic run package && magic run mojo test tests -I ."
+t = "clear && magic run test"
 
 # before commit
 final = "magic run test"
-f = "magic run final"
+f = "clear && magic run final"
 
 [dependencies]
 max = ">=25.0"
