@@ -3,8 +3,8 @@ Comprehensive tests for string-based decimal operations.
 Tests addition and subtraction functions with 50 test cases each.
 """
 from decimojo import Decimal
-from decimojo.mathematics import addition_string_based as addition
-from decimojo.mathematics import subtraction_string_based as subtraction
+from decimojo.mathematics import _addition_string_based as addition
+from decimojo.mathematics import _subtraction_string_based as subtraction
 import testing
 
 

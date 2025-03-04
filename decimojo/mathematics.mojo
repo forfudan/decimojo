@@ -44,7 +44,7 @@ from decimojo.rounding_mode import RoundingMode
 # ===----------------------------------------------------------------------=== #
 
 
-fn addition_string_based(a: Decimal, b: Decimal) -> String:
+fn _addition_string_based(a: Decimal, b: Decimal) -> String:
     """
     Performs addition of two Decimals using a string-based approach.
     Preserves decimal places to match the inputs.
@@ -67,10 +67,10 @@ fn addition_string_based(a: Decimal, b: Decimal) -> String:
         # If signs differ, we need subtraction
         if a.is_negative():
             # -a + b = b - |a|
-            return subtraction_string_based(b, -a)
+            return _subtraction_string_based(b, -a)
         else:
             # a + (-b) = a - |b|
-            return subtraction_string_based(a, -b)
+            return _subtraction_string_based(a, -b)
 
     # Determine the number of decimal places to preserve
     # We need to examine the original string representation of a and b
@@ -171,7 +171,7 @@ fn addition_string_based(a: Decimal, b: Decimal) -> String:
     return final_result
 
 
-fn subtraction_string_based(owned a: Decimal, owned b: Decimal) -> String:
+fn _subtraction_string_based(owned a: Decimal, owned b: Decimal) -> String:
     """
     Helper function to perform subtraction of b from a.
     Handles cases for all sign combinations and preserves decimal places.
@@ -208,13 +208,13 @@ fn subtraction_string_based(owned a: Decimal, owned b: Decimal) -> String:
         # When signs differ, subtraction becomes addition
         if a.is_negative():
             # -a - b = -(a + b)
-            var sum_result = addition_string_based(-a, b)
+            var sum_result = _addition_string_based(-a, b)
             if sum_result == "0":
                 return "0." + "0" * target_decimal_places
             return "-" + sum_result
         else:
             # a - (-b) = a + b
-            return addition_string_based(a, -b)
+            return _addition_string_based(a, -b)
 
     # At this point, both numbers have the same sign
     var is_negative = a.is_negative()  # Both a and b have the same sign

@@ -22,7 +22,6 @@
 Implements basic object methods for working with decimal numbers.
 """
 
-import math.math as mt
 from .rounding_mode import RoundingMode
 
 
@@ -272,7 +271,7 @@ struct Decimal(Roundable, Writable):
                 break
 
         # Parse the string based on whether it's scientific notation or not
-        parsing_str = s
+        var parsing_str = s
 
         # Handle scientific notation
         if scientific_notation:
@@ -427,7 +426,6 @@ struct Decimal(Roundable, Writable):
                             scale -= 1
 
                 string_of_coefficient = String("")
-
                 for ch in result_chars:
                     string_of_coefficient += ch[]
 
@@ -638,49 +636,14 @@ struct Decimal(Roundable, Writable):
         """
         Adds two Decimal values and returns a new Decimal containing the sum.
         """
-        ############################################################
         # Special case for zero
-        ############################################################
         if self.is_zero():
             return other
         if other.is_zero():
             return self
 
-        ############################################################
-        # Check for operands that cancel each other out
-        # (same absolute value but opposite signs)
-        ############################################################
-        if self.is_negative() != other.is_negative():
-            # Different signs - check if absolute values are equal
-            # First normalize both to same scale for comparison
-            var max_scale = max(self.scale(), other.scale())
-            var self_copy = self
-            var other_copy = other
-
-            # Scale both up to the maximum scale for proper comparison
-            if self.scale() < max_scale:
-                self_copy = self._scale_up(max_scale - self.scale())
-            if other.scale() < max_scale:
-                other_copy = other._scale_up(max_scale - other.scale())
-
-            # Compare absolute values (ignoring sign)
-            if (
-                self_copy.low == other_copy.low
-                and self_copy.mid == other_copy.mid
-                and self_copy.high == other_copy.high
-            ):
-                # Numbers cancel out, return zero with proper scale
-                var result = Decimal.ZERO()
-                # Use the larger scale for the result
-                result.flags = UInt32(
-                    (max_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
-                )
-                return result
-
-        ############################################################
-        # Integer addition with same scale
-        ############################################################
-        if self.scale() == other.scale():
+        # Integer addition
+        if (self.scale() == 0) and (other.scale() == 0):
             var result = Decimal()
             result.flags = UInt32(
                 (self.scale() << Self.SCALE_SHIFT) & Self.SCALE_MASK
@@ -718,172 +681,10 @@ struct Decimal(Roundable, Writable):
 
                 return result
 
-        ############################################################
         # Float addition which may be with different scales
-        ############################################################
+        # Use string-based approach
 
-        # Determine which decimal has larger absolute value
-        var larger_decimal: Decimal
-        var smaller_decimal: Decimal
-        var larger_scale: Int
-        var smaller_scale: Int
-
-        if self._abs_compare(other) >= 0:
-            larger_decimal = self
-            smaller_decimal = other
-            larger_scale = self.scale()
-            smaller_scale = other.scale()
-        else:
-            larger_decimal = other
-            smaller_decimal = self
-            larger_scale = other.scale()
-            smaller_scale = self.scale()
-
-        # Calculate how much we can safely scale up the larger number
-        var larger_coef = larger_decimal.coefficient()
-        var significant_digits = len(larger_coef)
-        var max_safe_scale_increase = Self.MAX_PRECISION - significant_digits
-
-        # If the scales are too different, we need special handling
-        if smaller_scale > larger_scale + max_safe_scale_increase:
-            # We need to determine the effective position where the smaller number would contribute
-            var scale_diff = smaller_scale - larger_scale
-
-            # If beyond our max safe scale, we need to round
-            if scale_diff > max_safe_scale_increase:
-                # Get smallest significant digit position in the smaller number
-                var smaller_coef = smaller_decimal.coefficient()
-
-                # Find first non-zero digit in the smaller number
-                var first_digit_pos = 0
-                for i in range(len(smaller_coef)):
-                    if smaller_coef[i] != "0":
-                        first_digit_pos = i
-                        break
-
-                # Calculate total effective position
-                var effective_pos = scale_diff + first_digit_pos
-
-                # If still beyond max safe scale, determine if rounding is needed
-                if effective_pos > max_safe_scale_increase:
-                    # If way beyond precision limit, just return the larger number
-                    if effective_pos > max_safe_scale_increase + 1:
-                        return larger_decimal
-
-                    # If exactly at rounding boundary, use first digit to determine rounding
-                    var first_digit = ord(smaller_coef[first_digit_pos]) - ord(
-                        "0"
-                    )
-
-                    # Round up if 5 or greater (using half-up rounding)
-                    if first_digit >= 5:
-                        # Create a small decimal for rounding adjustment
-                        var round_value = Decimal(
-                            "0." + "0" * max_safe_scale_increase + "1"
-                        )
-
-                        # Apply rounding based on signs
-                        if (
-                            smaller_decimal.is_negative()
-                            != larger_decimal.is_negative()
-                        ):
-                            return larger_decimal + -round_value
-                        else:
-                            return larger_decimal + round_value
-                    else:
-                        # Round down - just return larger number
-                        return larger_decimal
-
-                # If we get here, we can align to max safe scale
-                var safe_scale = larger_scale + max_safe_scale_increase
-                var scale_reduction = smaller_scale - safe_scale
-                smaller_decimal = smaller_decimal._scale_down(
-                    scale_reduction, RoundingMode.HALF_EVEN()
-                )
-
-        # Standard addition with aligned scales
-        var result = Decimal()
-        var target_scale = max(larger_scale, smaller_decimal.scale())
-
-        # Scale up if needed
-        var larger_copy = larger_decimal
-        var smaller_copy = smaller_decimal
-
-        if larger_scale < target_scale:
-            larger_copy = larger_decimal._scale_up(target_scale - larger_scale)
-        if smaller_decimal.scale() < target_scale:
-            smaller_copy = smaller_decimal._scale_up(
-                target_scale - smaller_decimal.scale()
-            )
-
-        # Set result scale
-        result.flags = UInt32(
-            (target_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
-        )
-
-        # Now perform the actual addition
-        if larger_copy.is_negative() == smaller_copy.is_negative():
-            # Same sign: add absolute values and keep the sign
-            if larger_copy.is_negative():
-                result.flags |= Self.SIGN_MASK
-
-            # Add with carry
-            var carry: UInt32 = 0
-
-            # Add low parts
-            var sum_low = UInt64(larger_copy.low) + UInt64(smaller_copy.low)
-            result.low = UInt32(sum_low & 0xFFFFFFFF)
-            carry = UInt32(sum_low >> 32)
-
-            # Add mid parts with carry
-            var sum_mid = UInt64(larger_copy.mid) + UInt64(
-                smaller_copy.mid
-            ) + UInt64(carry)
-            result.mid = UInt32(sum_mid & 0xFFFFFFFF)
-            carry = UInt32(sum_mid >> 32)
-
-            # Add high parts with carry
-            var sum_high = UInt64(larger_copy.high) + UInt64(
-                smaller_copy.high
-            ) + UInt64(carry)
-            result.high = UInt32(sum_high & 0xFFFFFFFF)
-
-            # Check for overflow
-            if (sum_high >> 32) > 0:
-                raise Error("Decimal overflow in addition")
-        else:
-            # Different signs: subtract smaller absolute value from larger
-            # We already know larger_copy has larger absolute value
-            var borrow: UInt32 = 0
-
-            # Subtract low parts with borrow
-            if larger_copy.low >= smaller_copy.low:
-                result.low = larger_copy.low - smaller_copy.low
-                borrow = 0
-            else:
-                result.low = UInt32(
-                    0x100000000 + larger_copy.low - smaller_copy.low
-                )
-                borrow = 1
-
-            # Subtract mid parts with borrow
-            if larger_copy.mid >= smaller_copy.mid + borrow:
-                result.mid = larger_copy.mid - smaller_copy.mid - borrow
-                borrow = 0
-            else:
-                result.mid = UInt32(
-                    0x100000000 + larger_copy.mid - smaller_copy.mid - borrow
-                )
-                borrow = 1
-
-            # Subtract high parts with borrow
-            result.high = larger_copy.high - smaller_copy.high - borrow
-
-            # Set sign based on which had larger absolute value
-            if larger_copy.is_negative():
-                result.flags |= Self.SIGN_MASK
-
-        return result
+        return Decimal(decimojo.mathematics._addition_string_based(self, other))
 
     fn __sub__(self, other: Decimal) raises -> Self:
         """
