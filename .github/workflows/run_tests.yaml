@@ -52,5 +52,11 @@ jobs:
       - name: Run formating checks
         run: |
           magic install
+          cp -r ./ /tmp/decimojo-original
           magic run mojo format ./
-  
+          if ! diff -r --exclude=.git --exclude=.github --exclude=venv ./ /tmp/decimojo-original > /dev/null; then
+            echo "::error::Formatting issues detected. Run 'mojo format' locally to fix."
+            exit 1
+          else
+            echo "No formatting issues detected."
+          fi
