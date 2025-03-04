@@ -353,15 +353,63 @@ struct Decimal(Roundable, Writable):
                 # Move decimal point left (increase scale)
                 scale += -exponent
 
+        # STEP 2: If scale  > max_precision,
+        # round the coefficient string after truncating
+        # and re-calculate the scale
+        if scale > Self.MAX_PRECISION:
+            var diff_scale = scale - Self.MAX_PRECISION
+            var kept_digits = len(string_of_coefficient) - diff_scale
+
+            # Truncate the coefficient string to 29 digits
+            if kept_digits < 0:
+                string_of_coefficient = String("0")
+            else:
+                string_of_coefficient = string_of_coefficient[:kept_digits]
+
+            # Apply rounding if needed
+            if kept_digits < len(string_of_coefficient):
+                if string_of_coefficient[kept_digits] >= String("5"):
+                    # Same rounding logic as above
+                    var carry = 1
+                    var result_chars = List[String]()
+
+                    for i in range(len(string_of_coefficient)):
+                        result_chars.append(string_of_coefficient[i])
+
+                    var pos = Self.MAX_PRECISION
+                    while pos >= 0 and carry > 0:
+                        var digit = ord(result_chars[pos]) - ord(String("0"))
+                        digit += carry
+
+                        if digit < 10:
+                            result_chars[pos] = chr(digit + ord(String("0")))
+                            carry = 0
+                        else:
+                            result_chars[pos] = String("0")
+                            carry = 1
+                        pos -= 1
+
+                    if carry > 0:
+                        result_chars.insert(0, String("1"))
+
+                    string_of_coefficient = String("")
+                    for ch in result_chars:
+                        string_of_coefficient += ch[]
+
+            scale = Self.MAX_PRECISION
+
         # STEP 2: Check for overflow
         # Check if the integral part of the coefficient is too large
         var string_of_integral_part: String
+        print("DEBUG: string_of_coefficient", string_of_coefficient)
         if len(string_of_coefficient) > scale:
             string_of_integral_part = string_of_coefficient[
                 : len(string_of_coefficient) - scale
             ]
         else:
             string_of_integral_part = String("0")
+
+        print("DEBUG: string_of_integral_part", string_of_integral_part)
 
         if (len(string_of_integral_part) > Decimal.LEN_OF_MAX_VALUE) or (
             len(string_of_integral_part) == Decimal.LEN_OF_MAX_VALUE
@@ -376,11 +424,13 @@ struct Decimal(Roundable, Writable):
         # Check if the coefficient is too large
         # Recursively re-calculate the coefficient string after truncating and rounding
         # until it fits within the Decimal limits
-        var raw_length_of_coefficient = len(string_of_coefficient)
         while (len(string_of_coefficient) > Decimal.LEN_OF_MAX_VALUE) or (
             len(string_of_coefficient) == Decimal.LEN_OF_MAX_VALUE
             and (string_of_coefficient > Self.MAX_AS_STRING)
         ):
+            var raw_length_of_coefficient = len(string_of_coefficient)
+            print("DEBUG: raw_length_of_coefficient", raw_length_of_coefficient)
+
             # If string_of_coefficient has more than 29 digits, truncate it to 29.
             # If string_of_coefficient has 29 digits and larger than MAX_AS_STRING, truncate it to 28.
             var rounding_digit = string_of_coefficient[
@@ -390,9 +440,17 @@ struct Decimal(Roundable, Writable):
                 : min(Decimal.LEN_OF_MAX_VALUE, len(string_of_coefficient) - 1)
             ]
 
+            print("DEBUG: rounding_digit", rounding_digit)
+
+            print(
+                "DEBUG: string_of_coefficient after truncating",
+                string_of_coefficient,
+            )
             scale = scale - (
                 raw_length_of_coefficient - len(string_of_coefficient)
             )
+
+            print("DEBUG: scale", scale)
 
             # Apply rounding if needed
             if rounding_digit >= String("5"):
@@ -842,25 +900,6 @@ struct Decimal(Roundable, Writable):
         """
         Divides self by other and returns a new Decimal containing the quotient.
         Uses a simpler string-based long division approach.
-
-        Notes
-        -----
-
-        Yuhao: Here is my current algorithm for the division.
-        Get the coefficients of the denominator and numerator as strings.
-        Based on these two coeffiecients, conduct a naive, primary school
-        taught, string-based division, from the most significant digit to the
-        least significant digit (left to right). Do this until digit 30 because
-        it is no need to calculate beyond max precision + 1.
-        Calculate the place of the decmimal point of the resulting string by
-        looking at the (1) difference of the exponent of the scientific notation
-        of the dividor and dividee and (2) whose string is larger. For example,
-        1214.24 has an exponent of 3 and 0.013 has an exponent of -2, and the
-        string "121424" is smaller than "12", so the exponent of the result
-        should be 3 - (-2) - 1 = 4.
-        Insert the decimal point at the correct location of the string of the
-        coefficient of the result.
-        Use this string to construct the decimal of the result.
         """
 
         # Check for division by zero
@@ -903,7 +942,6 @@ struct Decimal(Roundable, Writable):
         var digit = 0
         var current_pos = 0
         var processed_all_dividend = False
-
         var significant_digits_of_quotient = 0
 
         while significant_digits_of_quotient < working_precision:
@@ -1022,6 +1060,7 @@ struct Decimal(Roundable, Writable):
 
         # Convert to Decimal and return
         var result = Decimal(result_str)
+
         return result
 
     fn __pow__(self, exponent: Decimal) raises -> Self:
@@ -1406,9 +1445,6 @@ struct Decimal(Roundable, Writable):
 
         # Collect the digits to be removed (we need all of them for proper rounding)
         for i in range(scale_diff):
-            var last_digit = temp.low % 10
-            removed_digits = String(last_digit) + removed_digits
-
             # Divide by 10 without any rounding at this stage
             var high64 = UInt64(temp.high)
             var mid64 = UInt64(temp.mid)
@@ -1426,6 +1462,9 @@ struct Decimal(Roundable, Writable):
             # Calculate low with remainder from mid
             var low_with_remainder = low64 + (remainder_m << 32)
             var new_low = low_with_remainder // 10
+
+            var last_digit = low_with_remainder % 10
+            removed_digits = String(last_digit) + removed_digits
 
             # Update temp values
             temp.low = UInt32(new_low)
@@ -1450,6 +1489,7 @@ struct Decimal(Roundable, Writable):
                 should_round_up = True
         elif rounding_mode == RoundingMode.HALF_EVEN():
             # Apply banker's rounding
+            print("DEBUG: Removed digits for rounding:", removed_digits)
             if len(removed_digits) > 0:
                 var first_digit = ord(removed_digits[0]) - ord("0")
                 if first_digit > 5:
@@ -1473,6 +1513,7 @@ struct Decimal(Roundable, Writable):
 
         # Set the new scale
         result = temp
+        print("DEBUG: Result after scaling down:", result)
         result.flags = (self.flags & ~Self.SCALE_MASK) | (
             UInt32(new_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
         )

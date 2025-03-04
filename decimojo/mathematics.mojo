@@ -518,48 +518,31 @@ fn sqrt(x: Decimal) raises -> Decimal:
         Error: If x is negative.
     """
     # Special cases
-    print("\n***********************\n")
-    print("DEBUG: sqrt input value:", x)
     if x.is_negative():
         raise Error("Cannot compute square root of negative number")
 
     if x.is_zero():
-        print("DEBUG: sqrt of zero - returning zero")
         return Decimal.ZERO()
 
     if x == Decimal.ONE():
-        print("DEBUG: sqrt of one - returning one")
         return Decimal.ONE()
 
     # Working precision - we'll compute with extra digits and round at the end
     var working_precision = UInt32(x.scale() * 2)
     working_precision = max(working_precision, UInt32(10))  # At least 10 digits
-    print("DEBUG: working precision:", working_precision)
 
     # Initial guess - a good guess helps converge faster
     # For numbers near 1, use the number itself
     # For very small or large numbers, scale appropriately
     var guess: Decimal
     var exponent = len(x.coefficient()) - x.scale()
-    print(
-        "DEBUG: coefficient:",
-        x.coefficient(),
-        "scale:",
-        x.scale(),
-        "exponent:",
-        exponent,
-    )
 
     if exponent >= 0 and exponent <= 3:
         # For numbers between 0.1 and 1000, start with x/2 + 0.5
-        print("DEBUG: using x/2 + 0.5 for initial guess")
         try:
             var half_x = x / Decimal("2")
-            print("DEBUG: half_x =", half_x)
             guess = half_x + Decimal("0.5")
-            print("DEBUG: initial guess =", guess)
         except e:
-            print("DEBUG: ERROR during initial guess calculation:", e)
             raise e
     else:
         # For larger/smaller numbers, make a smarter guess
@@ -571,20 +554,14 @@ fn sqrt(x: Decimal) raises -> Decimal:
         else:
             shift = exponent // 2
 
-        print("DEBUG: using power-based guess with shift:", shift)
-
         try:
             # Use an approximation based on the exponent
             if exponent > 0:
-                print("DEBUG: Calculating 10^", shift)
                 guess = Decimal("10") ** shift
             else:
-                print("DEBUG: Calculating 0.1^(", -shift, ")")
                 guess = Decimal("0.1") ** (-shift)
 
-            print("DEBUG: initial guess =", guess)
         except e:
-            print("DEBUG: ERROR during power-based guess calculation:", e)
             raise e
 
     # Newton-Raphson iterations
@@ -593,27 +570,17 @@ fn sqrt(x: Decimal) raises -> Decimal:
     var iteration_count = 0
     var max_iterations = 100  # Prevent infinite loops
 
-    print("DEBUG: Starting Newton-Raphson iterations")
     while guess != prev_guess and iteration_count < max_iterations:
         prev_guess = guess
-        print("DEBUG: Iteration", iteration_count, "- current guess:", guess)
 
         try:
             var division_result = x / guess
-            print("DEBUG: x/guess =", division_result)
             var sum_result = guess + division_result
-            print("DEBUG: guess + x/guess =", sum_result)
             guess = sum_result / Decimal("2")
-            print("DEBUG: new guess =", guess)
         except e:
-            print("DEBUG: ERROR during iteration", iteration_count, ":", e)
             raise e
 
         iteration_count += 1
-
-    print(
-        "DEBUG: Newton-Raphson completed after", iteration_count, "iterations"
-    )
 
     # Round to appropriate precision - typically half the working precision
     var result_precision = x.scale()
@@ -623,16 +590,12 @@ fn sqrt(x: Decimal) raises -> Decimal:
 
     # The result scale should be approximately half the input scale
     result_precision = result_precision // 2
-    print("DEBUG: result precision:", result_precision)
 
     # Format to the appropriate number of decimal places
     var result_str = String(guess)
-    print("DEBUG: final guess as string:", result_str)
 
     try:
         var rounded_result = Decimal(result_str)
-        print("DEBUG: final result:", rounded_result)
         return rounded_result
     except e:
-        print("DEBUG: ERROR creating final result decimal:", e)
         raise e
