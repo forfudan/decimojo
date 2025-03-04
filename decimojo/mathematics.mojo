@@ -14,10 +14,11 @@
 # power(base: Decimal, exponent: Decimal): Raises base to the power of exponent (integer exponents only)
 # power(base: Decimal, exponent: Int): Convenience method for integer exponents
 # sqrt(x: Decimal): Computes the square root of x using Newton-Raphson method
-# root(x: Decimal, n: Int): Computes the nth root of x using Newton's method
+# round(x: Decimal, places: Int, mode: RoundingMode): Rounds x to specified decimal places
 #
 # TODO Additional functions planned for future implementation:
 #
+# root(x: Decimal, n: Int): Computes the nth root of x using Newton's method
 # exp(x: Decimal): Computes e raised to the power of x
 # ln(x: Decimal): Computes the natural logarithm of x
 # log10(x: Decimal): Computes the base-10 logarithm of x
@@ -25,7 +26,6 @@
 # cos(x: Decimal): Computes the cosine of x (in radians)
 # tan(x: Decimal): Computes the tangent of x (in radians)
 # abs(x: Decimal): Returns the absolute value of x
-# round(x: Decimal, places: Int, mode: RoundingMode): Rounds x to specified decimal places
 # floor(x: Decimal): Returns the largest integer <= x
 # ceil(x: Decimal): Returns the smallest integer >= x
 # gcd(a: Decimal, b: Decimal): Returns greatest common divisor of a and b
@@ -162,3 +162,102 @@ fn round(
 
     # Otherwise, scale down with the specified rounding mode
     return number._scale_down(current_scale - decimal_places, rounding_mode)
+
+
+# ===------------------------------------------------------------------------===#
+# Rounding
+# ===------------------------------------------------------------------------===#
+
+
+fn absolute(x: Decimal) raises -> Decimal:
+    """
+    Returns the absolute value of a Decimal number.
+
+    Args:
+        x: The Decimal value to compute the absolute value of.
+
+    Returns:
+        A new Decimal containing the absolute value of x.
+    """
+    if x.is_negative():
+        return -x
+    return x
+
+
+fn sqrt(x: Decimal) raises -> Decimal:
+    """
+    Computes the square root of a Decimal value using Newton-Raphson method.
+
+    Args:
+        x: The Decimal value to compute the square root of.
+
+    Returns:
+        A new Decimal containing the square root of x.
+
+    Raises:
+        Error: If x is negative.
+    """
+    # Special cases
+    if x.is_negative():
+        raise Error("Cannot compute square root of negative number")
+
+    if x.is_zero():
+        return Decimal.ZERO()
+
+    if x == Decimal.ONE():
+        return Decimal.ONE()
+
+    # Working precision - we'll compute with extra digits and round at the end
+    var working_precision = UInt32(x.scale() * 2)
+    working_precision = max(working_precision, UInt32(10))  # At least 10 digits
+
+    # Initial guess - a good guess helps converge faster
+    # For numbers near 1, use the number itself
+    # For very small or large numbers, scale appropriately
+    var guess: Decimal
+    var exponent = len(x.coefficient()) - x.scale()
+
+    if exponent >= 0 and exponent <= 3:
+        # For numbers between 0.1 and 1000, start with x/2 + 0.5
+        guess = (x / Decimal("2")) + Decimal("0.5")
+    else:
+        # For larger/smaller numbers, make a smarter guess
+        # This scales based on the magnitude of the number
+        var shift: Int
+        if exponent % 2 != 0:
+            # For odd exponents, adjust
+            shift = (exponent + 1) // 2
+        else:
+            shift = exponent // 2
+
+        # Use an approximation based on the exponent
+        if exponent > 0:
+            guess = Decimal("10") ** shift
+        else:
+            guess = Decimal("0.1") ** (-shift)
+
+    # Newton-Raphson iterations
+    # x_n+1 = (x_n + S/x_n) / 2
+    var prev_guess = Decimal.ZERO()
+    var iteration_count = 0
+    var max_iterations = 100  # Prevent infinite loops
+
+    while guess != prev_guess and iteration_count < max_iterations:
+        prev_guess = guess
+        guess = (guess + (x / guess)) / Decimal("2")
+        iteration_count += 1
+
+    # Round to appropriate precision - typically half the working precision
+    var result_precision = x.scale()
+    if result_precision % 2 == 1:
+        # For odd scales, add 1 to ensure proper rounding
+        result_precision += 1
+
+    # The result scale should be approximately half the input scale
+    result_precision = result_precision // 2
+
+    # Format to the appropriate number of decimal places
+    var result_str = String(guess)
+    var rounded_result = Decimal(result_str)
+
+    return rounded_result
