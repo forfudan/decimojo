@@ -502,8 +502,56 @@ struct Decimal(Writable):
         self.flags = other.flags
 
     # ===------------------------------------------------------------------=== #
-    # Output dunders and other methods
+    # Output dunders, type-transfer dunders, and other methods
     # ===------------------------------------------------------------------=== #
+
+    fn __int__(self) raises -> Int:
+        """
+        Converts this Decimal to an Int value.
+
+        Returns:
+            The Int representation of this Decimal.
+
+        Raises:
+            Error: If the Decimal has a non-zero fractional part.
+        """
+        var scale = self.scale()
+
+        # If scale is 0, the number is already an integer
+        if scale == 0:
+            # Convert the coefficient string to an integer
+            var coef = self.coefficient()
+            var result: Int = 0
+            for i in range(len(coef)):
+                var digit = ord(coef[i]) - ord("0")
+                result = result * 10 + digit
+
+            return -result if self.is_negative() else result
+
+        # If scale > 0, check if we have a whole number (all fractional digits are 0)
+        var coef = self.coefficient()
+        if len(coef) <= scale:
+            # Value is less than 1, so integer part is 0
+            return 0
+
+        # Check if all fractional digits are 0
+        for i in range(len(coef) - scale, len(coef)):
+            if coef[i] != "0":
+                raise Error(
+                    "Cannot convert Decimal with non-zero fractional part"
+                    " to Int"
+                )
+
+        # Get the integer part
+        var int_part = coef[: len(coef) - scale]
+        var result: Int = 0
+
+        for i in range(len(int_part)):
+            var digit = ord(int_part[i]) - ord("0")
+            result = result * 10 + digit
+
+        return -result if self.is_negative() else result
+
     fn __str__(self) -> String:
         """
         Returns string representation of the Decimal.
@@ -1164,6 +1212,47 @@ struct Decimal(Writable):
             l = new_l
 
         return result
+
+    fn is_integer(self) -> Bool:
+        """
+        Determines whether this Decimal value represents an integer.
+        A Decimal represents an integer when it has no fractional part
+        (i.e., all digits after the decimal point are zero).
+
+        Returns:
+            True if this Decimal represents an integer value, False otherwise.
+
+        Examples:
+        ```
+        Decimal("123").is_integer()      # Returns True
+        Decimal("123.0").is_integer()    # Returns True
+        Decimal("123.00").is_integer()   # Returns True
+        Decimal("123.45").is_integer()   # Returns False
+        ```
+        .
+        """
+        var scale = self.scale()
+
+        # If scale is 0, it's already an integer
+        if scale == 0:
+            return True
+
+        # If scale > 0, check if all fractional digits are zeros
+        var coef = self.coefficient()
+
+        # If coefficient length is less than or equal to scale,
+        # the value is between -1 and 1 (e.g., 0.123)
+        # It's an integer only if it's exactly zero
+        if len(coef) <= scale:
+            return self.is_zero()
+
+        # Check if all digits after the decimal point are zeros
+        for i in range(len(coef) - scale, len(coef)):
+            if coef[i] != "0":
+                return False
+
+        # All digits after decimal point are zeros
+        return True
 
     fn is_negative(self) -> Bool:
         """Returns True if this Decimal is negative."""
