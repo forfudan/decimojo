@@ -272,7 +272,7 @@ struct Decimal(Roundable, Writable):
                 break
 
         # Parse the string based on whether it's scientific notation or not
-        var parsing_str = s
+        parsing_str = s
 
         # Handle scientific notation
         if scientific_notation:
@@ -1040,141 +1040,237 @@ struct Decimal(Roundable, Writable):
     fn __truediv__(self, other: Decimal) raises -> Self:
         """
         Divides self by other and returns a new Decimal containing the quotient.
+        Uses a simpler string-based long division approach.
+
+        Notes
+        -----
+
+        Yuhao: Here is my current algorithm for the division.
+        Get the coefficients of the denominator and numerator as strings.
+        Based on these two coeffiecients, conduct a naive, primary school
+        taught, string-based division, from the most significant digit to the
+        least significant digit (left to right). Do this until digit 30 because
+        it is no need to calculate beyond max precision + 1.
+        Calculate the place of the decmimal point of the resulting string by
+        looking at the (1) difference of the exponent of the scientific notation
+        of the dividor and dividee and (2) whose string is larger. For example,
+        1214.24 has an exponent of 3 and 0.013 has an exponent of -2, and the
+        string "121424" is smaller than "12", so the exponent of the result
+        should be 3 - (-2) - 1 = 4.
+        Insert the decimal point at the correct location of the string of the
+        coefficient of the result.
+        Use this string to construct the decimal of the result.
         """
+
+        print("\n==== DEBUG DIVISION START ====")
+        print("DEBUG DIV: Dividing", self, "by", other)
+
         # Check for division by zero
         if other.is_zero():
+            print("DEBUG DIV: Division by zero detected!")
             raise Error("Division by zero")
 
         # Special case: if dividend is zero, return zero with appropriate scale
         if self.is_zero():
+            print("DEBUG DIV: Dividend is zero, returning scaled zero")
             var result = Decimal.ZERO()
             var result_scale = max(0, self.scale() - other.scale())
             result.flags = UInt32(
                 (result_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
             )
+            print("DEBUG DIV: Result:", result, "with scale:", result_scale)
             return result
 
         # If dividing identical numbers, return 1
         if (
-            self.coefficient() == other.coefficient()
+            self.low == other.low
+            and self.mid == other.mid
+            and self.high == other.high
             and self.scale() == other.scale()
         ):
-            return Decimal("1")
+            print("DEBUG DIV: Identical numbers, returning 1")
+            return Decimal.ONE()
 
-        # Determine sign of result
+        # Determine sign of result (positive if signs are the same, negative otherwise)
         var result_is_negative = self.is_negative() != other.is_negative()
+        print(
+            "DEBUG DIV: Result sign will be",
+            "positive" if not result_is_negative else "negative",
+        )
 
-        # Get coefficients
-        var numerator = self.coefficient()
-        var denominator = other.coefficient()
+        # Get coefficients as strings (absolute values)
+        var dividend_coef = _remove_trailing_zeros(self.coefficient())
+        var divisor_coef = _remove_trailing_zeros(other.coefficient())
+        print("DEBUG DIV: Dividend coefficient:", dividend_coef)
+        print("DEBUG DIV: Divisor coefficient:", divisor_coef)
 
-        # Calculate natural scale (difference in scales)
-        var dividend_scale = self.scale()
-        var divisor_scale = other.scale()
-        var natural_scale = dividend_scale - divisor_scale
+        # Use string-based division to avoid overflow with large numbers
 
-        # Add working precision zeros to numerator for division
-        var working_precision = Self.MAX_PRECISION
-        numerator += "0" * working_precision
+        # Determine precision needed for calculation
+        var working_precision = Self.LEN_OF_MAX_VALUE + 1  # +1 for potential rounding
+        print("DEBUG DIV: Working precision:", working_precision)
 
-        # Convert denominator to integer
-        var denom_value = UInt64(0)
-        for i in range(len(denominator)):
-            denom_value = denom_value * 10 + UInt64(
-                ord(denominator[i]) - ord("0")
+        # Perform long division algorithm
+        var quotient = String("")
+        var remainder = String("")
+        var digit = 0
+        var current_pos = 0
+        var processed_all_dividend = False
+
+        var significant_digits_of_quotient = 0
+
+        while significant_digits_of_quotient < working_precision:
+            # Grab next digit from dividend if available
+            if current_pos < len(dividend_coef):
+                remainder += dividend_coef[current_pos]
+                current_pos += 1
+            else:
+                # If we've processed all dividend digits, add a zero
+                if not processed_all_dividend:
+                    processed_all_dividend = True
+                    print(
+                        "DEBUG DIV: Processed all dividend digits, adding zeros"
+                    )
+                remainder += "0"
+
+            # Remove leading zeros from remainder for cleaner comparison
+            var remainder_start = 0
+            while (
+                remainder_start < len(remainder) - 1
+                and remainder[remainder_start] == "0"
+            ):
+                remainder_start += 1
+            remainder = remainder[remainder_start:]
+
+            # Compare remainder with divisor to determine next quotient digit
+            digit = 0
+            var can_subtract = False
+
+            # Check if remainder >= divisor_coef
+            if len(remainder) > len(divisor_coef) or (
+                len(remainder) == len(divisor_coef)
+                and remainder >= divisor_coef
+            ):
+                can_subtract = True
+
+            if can_subtract:
+                # Find how many times divisor goes into remainder
+                while True:
+                    # Try to subtract divisor from remainder
+                    var new_remainder = _subtract_strings(
+                        remainder, divisor_coef
+                    )
+                    if (
+                        new_remainder[0] == "-"
+                    ):  # Negative result means we've gone too far
+                        break
+                    remainder = new_remainder
+                    digit += 1
+
+            # Add digit to quotient
+            quotient += String(digit)
+            significant_digits_of_quotient = len(
+                _remove_leading_zeros(quotient)
             )
 
-        # Perform long division
-        var quotient_digits = String("")
-        var remainder = UInt64(0)
+            # Update remainder (it's already updated if we did subtraction)
+            print(
+                "DEBUG DIV: Position",
+                len(quotient) - 1,
+                ": digit=" + String(digit) + ", remainder=" + remainder,
+            )
 
-        for i in range(len(numerator)):
-            remainder = remainder * 10 + UInt64(ord(numerator[i]) - ord("0"))
-            var digit = remainder / denom_value
-            quotient_digits += String(digit)
-            remainder = remainder % denom_value
+        print("DEBUG DIV: Raw quotient:", quotient)
+
+        # Check if division is exact
+        var is_exact = remainder == "0" and current_pos >= len(dividend_coef)
+        print("DEBUG DIV: Division is exact?", is_exact)
 
         # Remove leading zeros
-        var start_pos = 0
-        while (
-            start_pos < len(quotient_digits) - 1
-            and quotient_digits[start_pos] == "0"
-        ):
-            start_pos += 1
-        quotient_digits = quotient_digits[start_pos:]
+        var leading_zeros = 0
+        for i in range(len(quotient)):
+            if quotient[i] == "0":
+                leading_zeros += 1
+            else:
+                break
 
-        # Check if the division is exact
-        var is_exact = remainder == 0
+        if leading_zeros == len(quotient):
+            # All zeros, keep just one
+            quotient = "0"
+        elif leading_zeros > 0:
+            quotient = quotient[leading_zeros:]
+            print("DEBUG DIV: Removed", leading_zeros, "leading zeros")
 
-        # For exact division, trim unnecessary trailing zeros
-        var trailing_zeros_removed = 0
-        if is_exact:
-            # Count trailing zeros
-            var trailing_zeros = 0
-            for i in range(
-                len(quotient_digits) - 1, 0, -1
-            ):  # Don't remove last digit
-                if quotient_digits[i] == "0":
+        print("DEBUG DIV: After removing leading zeros:", quotient)
+
+        # Handle trailing zeros for exact division
+        var trailing_zeros = 0
+        if is_exact and len(quotient) > 1:  # Don't remove single digit
+            for i in range(len(quotient) - 1, 0, -1):
+                if quotient[i] == "0":
                     trailing_zeros += 1
                 else:
                     break
 
-            # For exact division, trim all trailing zeros
             if trailing_zeros > 0:
-                quotient_digits = quotient_digits[
-                    : len(quotient_digits) - trailing_zeros
-                ]
-                trailing_zeros_removed = trailing_zeros
+                quotient = quotient[: len(quotient) - trailing_zeros]
+                print("DEBUG DIV: Removed", trailing_zeros, "trailing zeros")
 
-        # Create the result with the correct decimal point position
-        var actual_value_str = String("")
+        # Calculate decimal point position
+        var dividend_scientific_exponent = self.scientific_exponent()
+        var divisor_scientific_exponent = other.scientific_exponent()
+        var result_scientific_exponent = dividend_scientific_exponent - divisor_scientific_exponent
 
-        # Handle exact division correctly with proper decimal point placement
-        if is_exact:
-            # The scale should be adjusted for trailing zeros removed
-            var effective_scale = natural_scale + working_precision - trailing_zeros_removed
+        print("DEBUG DIV: Dividend exponent:", dividend_scientific_exponent)
+        print("DEBUG DIV: Divisor exponent:", divisor_scientific_exponent)
+        print(
+            "DEBUG DIV: Calculated result exponent:",
+            result_scientific_exponent,
+        )
 
-            if effective_scale <= 0:
-                # For negative effective scale, we need to add zeros
-                actual_value_str = quotient_digits + "0" * (-effective_scale)
-            else:
-                # Need to place decimal point with effective_scale digits after it
-                if len(quotient_digits) <= effective_scale:
-                    # Number < 1, needs leading zeros
-                    actual_value_str = (
-                        "0."
-                        + "0" * (effective_scale - len(quotient_digits))
-                        + quotient_digits
-                    )
-                else:
-                    # Place decimal point from right to left
-                    var decimal_pos = len(quotient_digits) - effective_scale
-                    actual_value_str = (
-                        quotient_digits[:decimal_pos]
-                        + "."
-                        + quotient_digits[decimal_pos:]
-                    )
+        print("DEBUG DIV: Dividend_coef:", dividend_coef)
+        print("DEBUG DIV: Divisor_coef:", divisor_coef)
+
+        if dividend_coef < divisor_coef:
+            # If dividend < divisor, result < 1
+            result_scientific_exponent -= 1
+            print(
+                "DEBUG DIV: dividend_coef < divisor_coef, adjusting result's"
+                " exponent"
+            )
+
+        var decimal_pos = result_scientific_exponent + 1
+        print("DEBUG DIV: Decimal point position:", decimal_pos)
+
+        # Format result with decimal point
+        var result_str = String("")
+
+        if decimal_pos <= 0:
+            # decimal_pos <= 0, needs leading zeros
+            # For example, decimal_pos = -1
+            # 1234 -> 0.1234
+            result_str = "0." + "0" * (-decimal_pos) + quotient
+        elif decimal_pos >= len(quotient):
+            # All digits are to the left of the decimal point
+            # For example, decimal_pos = 5
+            # 1234 -> 12340
+            result_str = quotient + "0" * (decimal_pos - len(quotient))
         else:
-            # For inexact division, position decimal based on working_precision
-            var decimal_pos = len(quotient_digits) - working_precision
-
-            if decimal_pos <= 0:
-                # Number < 1, needs leading zeros
-                actual_value_str = "0." + "0" * (-decimal_pos) + quotient_digits
-            else:
-                # Insert decimal at the appropriate position
-                actual_value_str = (
-                    quotient_digits[:decimal_pos]
-                    + "."
-                    + quotient_digits[decimal_pos:]
-                )
-
-        # Create result from formatted string
-        var result = Decimal(actual_value_str)
+            # Insert decimal point within the digits
+            # For example, decimal_pos = 2
+            # 1234 -> 12.34
+            result_str = quotient[:decimal_pos] + "." + quotient[decimal_pos:]
 
         # Apply sign
-        if result_is_negative:
-            result = -result
+        if result_is_negative and result_str != "0":
+            result_str = "-" + result_str
+
+        print("DEBUG DIV: Final string result:", result_str)
+
+        # Convert to Decimal and return
+        var result = Decimal(result_str)
+        print("DEBUG DIV: Final Decimal result:", result)
+        print("==== DEBUG DIVISION END ====\n")
 
         return result
 
@@ -1457,6 +1553,39 @@ struct Decimal(Roundable, Writable):
         """Returns the scale (number of decimal places) of this Decimal."""
         return Int((self.flags & Self.SCALE_MASK) >> Self.SCALE_SHIFT)
 
+    fn scientific_exponent(self) -> Int:
+        """
+        Calculates the exponent for scientific notation representation of a Decimal.
+        The exponent is the power of 10 needed to represent the value in scientific notation.
+        """
+
+        # Get the coefficient as a string
+        var coef = self.coefficient()
+
+        return len(coef) - 1 - self.scale()
+
+    fn significant_digits(self) -> Int:
+        """
+        Returns the number of significant digits in this Decimal.
+        The number of significant digits is the total number of digits in the coefficient,
+        excluding leading and trailing zeros.
+        """
+
+        # Get the coefficient as a string
+        var coef = self.coefficient()
+
+        # Count significant digits
+        var count = 0
+        var found_non_zero = False
+
+        for i in range(len(coef)):
+            if coef[i] != "0":
+                found_non_zero = True
+            if found_non_zero:
+                count += 1
+
+        return count
+
     # ===------------------------------------------------------------------=== #
     # Internal methods
     # ===------------------------------------------------------------------=== #
@@ -1731,3 +1860,60 @@ fn _float_to_decimal_str(value: Float64, precision: Int) -> String:
         result = "-" + result
 
     return result
+
+
+fn _subtract_strings(a: String, b: String) -> String:
+    """Subtracts string b from string a and returns the result as a string."""
+    # Ensure a is longer or equal to b by padding with zeros
+    var a_padded = a
+    var b_padded = b
+
+    if len(a) < len(b):
+        a_padded = "0" * (len(b) - len(a)) + a
+    elif len(b) < len(a):
+        b_padded = "0" * (len(a) - len(b)) + b
+
+    var result = String("")
+    var borrow = 0
+
+    # Perform subtraction digit by digit from right to left
+    for i in range(len(a_padded) - 1, -1, -1):
+        var digit_a = ord(a_padded[i]) - ord("0")
+        var digit_b = ord(b_padded[i]) - ord("0") + borrow
+
+        if digit_a < digit_b:
+            digit_a += 10
+            borrow = 1
+        else:
+            borrow = 0
+
+        result = String(digit_a - digit_b) + result
+
+    # Check if result is negative
+    if borrow > 0:
+        return "-" + result
+
+    # Remove leading zeros
+    var start_idx = 0
+    while start_idx < len(result) - 1 and result[start_idx] == "0":
+        start_idx += 1
+
+    return result[start_idx:]
+
+
+fn _remove_leading_zeros(value: String) -> String:
+    """Removes leading zeros from a string."""
+    var start_idx = 0
+    while start_idx < len(value) - 1 and value[start_idx] == "0":
+        start_idx += 1
+
+    return value[start_idx:]
+
+
+fn _remove_trailing_zeros(value: String) -> String:
+    """Removes trailing zeros from a string."""
+    var end_idx = len(value)
+    while end_idx > 0 and value[end_idx - 1] == "0":
+        end_idx -= 1
+
+    return value[:end_idx]
