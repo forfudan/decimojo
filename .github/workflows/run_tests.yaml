@@ -1,0 +1,56 @@
+name: DeciMojo Unit Tests
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  testing-decimojo:
+    name: with ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-22.04"]
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+
+    defaults:
+      run:
+        shell: bash
+    env:
+      DEBIAN_FRONTEND: noninteractive
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install magic
+        run: |
+          curl -ssL https://magic.modular.com/deb181c4-455c-4abe-a263-afcff49ccf67 | bash
+      
+      - name: Add path
+        run: |
+          echo "MODULAR_HOME=$HOME/.modular" >> $GITHUB_ENV
+          echo "$HOME/.modular/bin"  >> $GITHUB_PATH
+          echo "$HOME/.modular/pkg/packages.modular.com_mojo/bin"  >> $GITHUB_PATH
+
+      - name: Activate virtualenv
+        run: |
+          python3 -m venv $HOME/venv/
+          . $HOME/venv/bin/activate
+          echo PATH=$PATH >> $GITHUB_ENV
+
+      - name: Run tests
+        run: |
+          magic install
+          magic run mojo test tests -I .
+
+      - name: Run formating checks
+        run: |
+          magic install
+          magic run mojo format ./
+  
