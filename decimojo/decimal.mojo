@@ -17,10 +17,6 @@
 # 5) Raises
 # 9) Examples
 # ===----------------------------------------------------------------------=== #
-#
-# ===----------------------------------------------------------------------=== #
-# TODO: Implement basic arithmetics for decimals.
-# ===----------------------------------------------------------------------=== #
 
 """
 Implements basic object methods for working with decimal numbers.
@@ -139,15 +135,62 @@ struct Decimal(Writable):
         self.flags = 0x00000000
 
     fn __init__(
-        out self, low: UInt32, mid: UInt32, high: UInt32, flags: UInt32
+        out self,
+        low: UInt32,
+        mid: UInt32,
+        high: UInt32,
+        negative: Bool,
+        scale: UInt32,
     ):
         """
-        Initializes a Decimal with internal representation fields.
+        Initializes a Decimal with separate components.
+        the scale can be larger than 28, but will be scaled to the maximum precision.
+
+        Args:
+            low: Least significant 32 bits of coefficient.
+            mid: Middle 32 bits of coefficient.
+            high: Most significant 32 bits of coefficient.
+            negative: True if the number is negative.
+            scale: Number of decimal places (0-28).
         """
         self.low = low
         self.mid = mid
         self.high = high
+
+        # First set the flags without capping to initialize properly
+        var flags: UInt32 = 0
+
+        # Set the initial scale (may be higher than MAX_PRECISION)
+        flags |= (scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
+
+        # Set the sign bit if negative
+        if negative:
+            flags |= Self.SIGN_MASK
+
         self.flags = flags
+
+        # Now check if we need to round due to exceeding MAX_PRECISION
+        if scale > Self.MAX_PRECISION:
+            # We need to properly round the value, not just change the scale
+            var scale_diff = scale - Self.MAX_PRECISION
+            # The 'self' is already initialized above, so we can call _scale_down on it
+            self = self._scale_down(Int(scale_diff), RoundingMode.HALF_EVEN())
+
+        # No else needed as the value is already properly set if scale <= MAX_PRECISION
+
+    fn __init__(
+        out self, low: UInt32, mid: UInt32, high: UInt32, flags: UInt32
+    ):
+        """
+        Initializes a Decimal with internal representation fields.
+        Uses the full constructor to properly handle scaling and rounding.
+        """
+        # Extract sign and scale from flags
+        var is_negative = (flags & Self.SIGN_MASK) != 0
+        var scale = (flags & Self.SCALE_MASK) >> Self.SCALE_SHIFT
+
+        # Use the previous constructor which handles scale rounding properly
+        self = Self(low, mid, high, is_negative, scale)
 
     fn __init__(out self, integer: Int):
         """
@@ -512,7 +555,8 @@ struct Decimal(Writable):
         writer.write(String(self))
 
     # ===------------------------------------------------------------------=== #
-    # Basic operation dunders
+    # Basic unary and binary operation dunders
+    # neg, add, sub, mul, truediv
     # ===------------------------------------------------------------------=== #
     fn __add__(self, other: Decimal) raises -> Self:
         """
