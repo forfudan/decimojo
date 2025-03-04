@@ -614,7 +614,7 @@ struct Decimal(Roundable, Writable):
         return result
 
     # ===------------------------------------------------------------------=== #
-    # Basic binary operation dunders
+    # Basic binary arithmetic operation dunders
     # add, sub, mul, truediv, pow
     # ===------------------------------------------------------------------=== #
     fn __add__(self, other: Decimal) raises -> Self:
@@ -1197,6 +1197,83 @@ struct Decimal(Roundable, Writable):
         """
 
         return decimal.power(self, exponent)
+
+    # ===------------------------------------------------------------------=== #
+    # Basic binary logic operation dunders
+    # __gt__, __ge__, __lt__, __le__, __eq__, __ne__
+    # ===------------------------------------------------------------------=== #
+
+    fn __gt__(self, other: Decimal) -> Bool:
+        """
+        Greater than comparison operator.
+
+        Args:
+            other: The Decimal to compare with.
+
+        Returns:
+            True if self is greater than other, False otherwise.
+        """
+        return decimojo.greater(self, other)
+
+    fn __ge__(self, other: Decimal) -> Bool:
+        """
+        Greater than or equal comparison operator.
+
+        Args:
+            other: The Decimal to compare with.
+
+        Returns:
+            True if self is greater than or equal to other, False otherwise.
+        """
+        return decimojo.greater_equal(self, other)
+
+    fn __lt__(self, other: Decimal) -> Bool:
+        """
+        Less than comparison operator.
+
+        Args:
+            other: The Decimal to compare with.
+
+        Returns:
+            True if self is less than other, False otherwise.
+        """
+        return decimojo.less(self, other)
+
+    fn __le__(self, other: Decimal) -> Bool:
+        """
+        Less than or equal comparison operator.
+
+        Args:
+            other: The Decimal to compare with.
+
+        Returns:
+            True if self is less than or equal to other, False otherwise.
+        """
+        return decimojo.less_equal(self, other)
+
+    fn __eq__(self, other: Decimal) -> Bool:
+        """
+        Equality comparison operator.
+
+        Args:
+            other: The Decimal to compare with.
+
+        Returns:
+            True if self is equal to other, False otherwise.
+        """
+        return decimojo.equal(self, other)
+
+    fn __ne__(self, other: Decimal) -> Bool:
+        """
+        Inequality comparison operator.
+
+        Args:
+            other: The Decimal to compare with.
+
+        Returns:
+            True if self is not equal to other, False otherwise.
+        """
+        return decimojo.not_equal(self, other)
 
     # ===------------------------------------------------------------------=== #
     # Other dunders that implements tratis
