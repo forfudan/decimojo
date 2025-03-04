@@ -364,23 +364,35 @@ struct Decimal(Roundable, Writable):
         else:
             string_of_integral_part = String("0")
 
-        if len(string_of_integral_part) > Decimal.LEN_OF_MAX_VALUE:
-            raise Error("Decimal value too large: " + s)
-        elif len(string_of_integral_part) == Decimal.LEN_OF_MAX_VALUE and (
-            string_of_integral_part > Self.MAX_AS_STRING
+        if (len(string_of_integral_part) > Decimal.LEN_OF_MAX_VALUE) or (
+            len(string_of_integral_part) == Decimal.LEN_OF_MAX_VALUE
+            and (string_of_integral_part > Self.MAX_AS_STRING)
         ):
-            raise Error("Decimal value too large: " + s)
+            raise Error(
+                "\nError in init from string: Integral part of the Decimal"
+                " value too large: "
+                + s
+            )
 
         # Check if the coefficient is too large
+        # Recursively re-calculate the coefficient string after truncating and rounding
+        # until it fits within the Decimal limits
         var raw_length_of_coefficient = len(string_of_coefficient)
-        if raw_length_of_coefficient > Decimal.LEN_OF_MAX_VALUE:
-            # Need to truncate to Decimal.LEN_OF_MAX_VALUE digits
-            var rounding_digit = string_of_coefficient[Decimal.LEN_OF_MAX_VALUE]
-            string_of_coefficient = string_of_coefficient[
-                : Decimal.LEN_OF_MAX_VALUE
+        while (len(string_of_coefficient) > Decimal.LEN_OF_MAX_VALUE) or (
+            len(string_of_coefficient) == Decimal.LEN_OF_MAX_VALUE
+            and (string_of_coefficient > Self.MAX_AS_STRING)
+        ):
+            # If string_of_coefficient has more than 29 digits, truncate it to 29.
+            # If string_of_coefficient has 29 digits and larger than MAX_AS_STRING, truncate it to 28.
+            var rounding_digit = string_of_coefficient[
+                min(Decimal.LEN_OF_MAX_VALUE, len(string_of_coefficient) - 1)
             ]
+            string_of_coefficient = string_of_coefficient[
+                : min(Decimal.LEN_OF_MAX_VALUE, len(string_of_coefficient) - 1)
+            ]
+
             scale = scale - (
-                raw_length_of_coefficient - Decimal.LEN_OF_MAX_VALUE
+                raw_length_of_coefficient - len(string_of_coefficient)
             )
 
             # Apply rounding if needed
@@ -415,6 +427,7 @@ struct Decimal(Roundable, Writable):
                             scale -= 1
 
                 string_of_coefficient = String("")
+
                 for ch in result_chars:
                     string_of_coefficient += ch[]
 
@@ -429,9 +442,13 @@ struct Decimal(Roundable, Writable):
                     break
 
             if is_greater:
-                raise Error("Decimal value too large: " + s)
+                raise Error(
+                    "\nError in init from string: Decimal value too large: " + s
+                )
         elif len(string_of_coefficient) > len(Self.MAX_AS_STRING):
-            raise Error("Decimal value too large: " + s)
+            raise Error(
+                "\nError in init from string: Decimal value too large: " + s
+            )
 
         # Step 3: Convert the coefficient string to low/mid/high parts
         var low: UInt32 = 0
