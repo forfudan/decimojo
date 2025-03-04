@@ -2,7 +2,7 @@
 Test Decimal arithmetic operations including addition, subtraction, and negation.
 """
 from decimojo import Decimal
-from decimojo.mathematics import round
+from decimojo.mathematics import round, absolute
 import testing
 
 
@@ -668,6 +668,207 @@ fn test_division() raises:
         )
     except:
         testing.assert_equal(True, True, "Division by zero correctly rejected")
+
+    # ============= ADDITIONAL DIVISION TEST CASES =============
+    print("\nTesting additional division scenarios...")
+
+    # Test case 16: Division with very large number by very small number
+    var a16 = Decimal("1000000000")
+    var b16 = Decimal("0.0001")
+    var result16 = a16 / b16
+    testing.assert_equal(
+        String(result16),
+        "10000000000000",
+        "Large number divided by small number",
+    )
+
+    # Test case 17: Division with very small number by very large number
+    var a17 = Decimal("0.0001")
+    var b17 = Decimal("1000000000")
+    var result17 = a17 / b17
+    testing.assert_true(
+        String(result17).startswith("0.0000000000001"),
+        "Small number divided by large number",
+    )
+
+    # Test case 18: Division resulting in repeating decimal
+    var a18 = Decimal("1")
+    var b18 = Decimal("3")
+    var result18 = a18 / b18
+    testing.assert_true(
+        String(result18).startswith("0.33333333"),
+        "Division resulting in repeating decimal (1/3)",
+    )
+
+    # Test case 19: Division by powers of 10
+    var a19 = Decimal("123.456")
+    var b19 = Decimal("10")
+    var result19 = a19 / b19
+    testing.assert_equal(
+        String(result19),
+        "12.3456",
+        "Division by power of 10",
+    )
+
+    # Test case 20: Division by powers of 10 (another case)
+    var a20 = Decimal("123.456")
+    var b20 = Decimal("0.01")
+    var result20 = a20 / b20
+    testing.assert_equal(
+        String(result20),
+        "12345.6",
+        "Division by 0.01 (multiply by 100)",
+    )
+
+    # Test case 21: Division of nearly equal numbers
+    var a21 = Decimal("1.000001")
+    var b21 = Decimal("1")
+    var result21 = a21 / b21
+    testing.assert_equal(
+        String(result21),
+        "1.000001",
+        "Division of nearly equal numbers",
+    )
+
+    # Test case 22: Division resulting in a number with many trailing zeros
+    var a22 = Decimal("1")
+    var b22 = Decimal("8")
+    var result22 = a22 / b22
+    testing.assert_true(
+        String(result22).startswith("0.125"),
+        "Division resulting in an exact decimal with trailing zeros",
+    )
+
+    # Test case 23: Division with negative numerator
+    var a23 = Decimal("-50")
+    var b23 = Decimal("10")
+    var result23 = a23 / b23
+    testing.assert_equal(
+        String(result23),
+        "-5",
+        "Division with negative numerator",
+    )
+
+    # Test case 24: Division with negative denominator
+    var a24 = Decimal("50")
+    var b24 = Decimal("-10")
+    var result24 = a24 / b24
+    testing.assert_equal(
+        String(result24),
+        "-5",
+        "Division with negative denominator",
+    )
+
+    # Test case 25: Division with both negative
+    var a25 = Decimal("-50")
+    var b25 = Decimal("-10")
+    var result25 = a25 / b25
+    testing.assert_equal(
+        String(result25),
+        "5",
+        "Division with both negative numbers",
+    )
+
+    # Test case 26: Division resulting in exact integer
+    var a26 = Decimal("96.75")
+    var b26 = Decimal("4.5")
+    var result26 = a26 / b26
+    testing.assert_equal(
+        String(result26),
+        "21.5",
+        "Division resulting in exact value",
+    )
+
+    # Test case 27: Division with high precision numbers
+    var a27 = Decimal("0.123456789012345678901234567")
+    var b27 = Decimal("0.987654321098765432109876543")
+    var result27 = a27 / b27
+    testing.assert_true(
+        String(result27).startswith("0.12499"),
+        "Division of high precision numbers",
+    )
+
+    # Test case 28: Division with extreme digit patterns
+    var a28 = Decimal("9" * 15)  # 999999999999999
+    var b28 = Decimal("9" * 5)  # 99999
+    var result28 = a28 / b28
+    testing.assert_equal(
+        String(result28),
+        "10000100001",
+        "Division with extreme digit patterns (all 9's)",
+    )
+
+    # Test case 29: Division where result is zero
+    var a29 = Decimal("0")
+    var b29 = Decimal("123.45")
+    var result29 = a29 / b29
+    testing.assert_equal(
+        String(result29),
+        "0",
+        "Division where result is zero",
+    )
+
+    # Test case 30: Division where numerator is smaller than denominator
+    var a30 = Decimal("1")
+    var b30 = Decimal("10000")
+    var result30 = a30 / b30
+    testing.assert_equal(
+        String(result30),
+        "0.0001",
+        "Division where numerator is smaller than denominator",
+    )
+
+    # Test case 31: Division resulting in scientific notation range
+    var a31 = Decimal("1")
+    var b31 = Decimal("1" + "0" * 20)  # 10^20
+    var result31 = a31 / b31
+    testing.assert_true(
+        String(result31).startswith("0.00000000000000000001"),
+        "Division resulting in very small number",
+    )
+
+    # Test case 32: Division with mixed precision
+    var a32 = Decimal("1")
+    var b32 = Decimal("3.33333333333333333333333333")
+    var result32 = a32 / b32
+    testing.assert_true(
+        String(result32).startswith("0.3"),
+        "Division with mixed precision numbers",
+    )
+
+    # Test case 33: Division by fractional power of 10
+    var a33 = Decimal("5.5")
+    var b33 = Decimal("0.055")
+    var result33 = a33 / b33
+    testing.assert_equal(
+        String(result33),
+        "100",
+        "Division by fractional power of 10",
+    )
+
+    # Test case 34: Division with rounding at precision boundary
+    var a34 = Decimal("2")
+    var b34 = Decimal("3")
+    var result34 = a34 / b34
+    # Result should be about 0.66666...
+    var expected34 = Decimal("0.66666666666666666666666666667")
+    print(result34)
+    testing.assert_equal(
+        result34,
+        expected34,
+        "Division with rounding at precision boundary",
+    )
+
+    # Test case 35: Division by value very close to zero
+    var a35 = Decimal("1")
+    var b35 = Decimal("0." + "0" * 26 + "1")  # 0.000...0001 (27 zeros)
+    var result35 = a35 / b35
+    testing.assert_true(
+        String(result35).startswith("1" + "0" * 27),
+        "Division by value very close to zero",
+    )
+
+    print("Additional division tests passed!")
 
     print("Decimal division tests passed!")
 

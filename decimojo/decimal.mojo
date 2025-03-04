@@ -1062,23 +1062,17 @@ struct Decimal(Roundable, Writable):
         Use this string to construct the decimal of the result.
         """
 
-        print("\n==== DEBUG DIVISION START ====")
-        print("DEBUG DIV: Dividing", self, "by", other)
-
         # Check for division by zero
         if other.is_zero():
-            print("DEBUG DIV: Division by zero detected!")
             raise Error("Division by zero")
 
         # Special case: if dividend is zero, return zero with appropriate scale
         if self.is_zero():
-            print("DEBUG DIV: Dividend is zero, returning scaled zero")
             var result = Decimal.ZERO()
             var result_scale = max(0, self.scale() - other.scale())
             result.flags = UInt32(
                 (result_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
             )
-            print("DEBUG DIV: Result:", result, "with scale:", result_scale)
             return result
 
         # If dividing identical numbers, return 1
@@ -1088,27 +1082,19 @@ struct Decimal(Roundable, Writable):
             and self.high == other.high
             and self.scale() == other.scale()
         ):
-            print("DEBUG DIV: Identical numbers, returning 1")
             return Decimal.ONE()
 
         # Determine sign of result (positive if signs are the same, negative otherwise)
         var result_is_negative = self.is_negative() != other.is_negative()
-        print(
-            "DEBUG DIV: Result sign will be",
-            "positive" if not result_is_negative else "negative",
-        )
 
         # Get coefficients as strings (absolute values)
         var dividend_coef = _remove_trailing_zeros(self.coefficient())
         var divisor_coef = _remove_trailing_zeros(other.coefficient())
-        print("DEBUG DIV: Dividend coefficient:", dividend_coef)
-        print("DEBUG DIV: Divisor coefficient:", divisor_coef)
 
         # Use string-based division to avoid overflow with large numbers
 
         # Determine precision needed for calculation
         var working_precision = Self.LEN_OF_MAX_VALUE + 1  # +1 for potential rounding
-        print("DEBUG DIV: Working precision:", working_precision)
 
         # Perform long division algorithm
         var quotient = String("")
@@ -1128,9 +1114,6 @@ struct Decimal(Roundable, Writable):
                 # If we've processed all dividend digits, add a zero
                 if not processed_all_dividend:
                     processed_all_dividend = True
-                    print(
-                        "DEBUG DIV: Processed all dividend digits, adding zeros"
-                    )
                 remainder += "0"
 
             # Remove leading zeros from remainder for cleaner comparison
@@ -1173,18 +1156,8 @@ struct Decimal(Roundable, Writable):
                 _remove_leading_zeros(quotient)
             )
 
-            # Update remainder (it's already updated if we did subtraction)
-            print(
-                "DEBUG DIV: Position",
-                len(quotient) - 1,
-                ": digit=" + String(digit) + ", remainder=" + remainder,
-            )
-
-        print("DEBUG DIV: Raw quotient:", quotient)
-
         # Check if division is exact
         var is_exact = remainder == "0" and current_pos >= len(dividend_coef)
-        print("DEBUG DIV: Division is exact?", is_exact)
 
         # Remove leading zeros
         var leading_zeros = 0
@@ -1199,9 +1172,6 @@ struct Decimal(Roundable, Writable):
             quotient = "0"
         elif leading_zeros > 0:
             quotient = quotient[leading_zeros:]
-            print("DEBUG DIV: Removed", leading_zeros, "leading zeros")
-
-        print("DEBUG DIV: After removing leading zeros:", quotient)
 
         # Handle trailing zeros for exact division
         var trailing_zeros = 0
@@ -1214,33 +1184,17 @@ struct Decimal(Roundable, Writable):
 
             if trailing_zeros > 0:
                 quotient = quotient[: len(quotient) - trailing_zeros]
-                print("DEBUG DIV: Removed", trailing_zeros, "trailing zeros")
 
         # Calculate decimal point position
         var dividend_scientific_exponent = self.scientific_exponent()
         var divisor_scientific_exponent = other.scientific_exponent()
         var result_scientific_exponent = dividend_scientific_exponent - divisor_scientific_exponent
 
-        print("DEBUG DIV: Dividend exponent:", dividend_scientific_exponent)
-        print("DEBUG DIV: Divisor exponent:", divisor_scientific_exponent)
-        print(
-            "DEBUG DIV: Calculated result exponent:",
-            result_scientific_exponent,
-        )
-
-        print("DEBUG DIV: Dividend_coef:", dividend_coef)
-        print("DEBUG DIV: Divisor_coef:", divisor_coef)
-
         if dividend_coef < divisor_coef:
             # If dividend < divisor, result < 1
             result_scientific_exponent -= 1
-            print(
-                "DEBUG DIV: dividend_coef < divisor_coef, adjusting result's"
-                " exponent"
-            )
 
         var decimal_pos = result_scientific_exponent + 1
-        print("DEBUG DIV: Decimal point position:", decimal_pos)
 
         # Format result with decimal point
         var result_str = String("")
@@ -1265,13 +1219,8 @@ struct Decimal(Roundable, Writable):
         if result_is_negative and result_str != "0":
             result_str = "-" + result_str
 
-        print("DEBUG DIV: Final string result:", result_str)
-
         # Convert to Decimal and return
         var result = Decimal(result_str)
-        print("DEBUG DIV: Final Decimal result:", result)
-        print("==== DEBUG DIVISION END ====\n")
-
         return result
 
     fn __pow__(self, exponent: Decimal) raises -> Self:
@@ -1590,7 +1539,7 @@ struct Decimal(Roundable, Writable):
     # Internal methods
     # ===------------------------------------------------------------------=== #
 
-    fn _abs_compare(self, other: Decimal) -> Int:
+    fn _abs_compare(self, other: Decimal) raises -> Int:
         """
         Compares absolute values of two Decimal numbers, ignoring signs.
 
@@ -1599,41 +1548,15 @@ struct Decimal(Roundable, Writable):
         - Zero if |self| = |other|
         - Negative value if |self| < |other|
         """
-        # Create temporary copies with same scale for comparison
-        var self_copy = self
-        var other_copy = other
+        var abs_self = decimojo.absolute(self)
+        var abs_other = decimojo.absolute(other)
 
-        # Get scales
-        var self_scale = self.scale()
-        var other_scale = other.scale()
-
-        # Scale up the one with smaller scale to match
-        if self_scale < other_scale:
-            self_copy = self_copy._scale_up(other_scale - self_scale)
-        elif other_scale < self_scale:
-            other_copy = other_copy._scale_up(self_scale - other_scale)
-
-        # Now both have the same scale, compare coefficients
-        # Start with highest significance (high)
-        if self_copy.high > other_copy.high:
+        if abs_self > abs_other:
             return 1
-        if self_copy.high < other_copy.high:
+        elif abs_self < abs_other:
             return -1
-
-        # High parts equal, compare mid parts
-        if self_copy.mid > other_copy.mid:
-            return 1
-        if self_copy.mid < other_copy.mid:
-            return -1
-
-        # Mid parts equal, compare low parts
-        if self_copy.low > other_copy.low:
-            return 1
-        if self_copy.low < other_copy.low:
-            return -1
-
-        # All parts equal, numbers are equal
-        return 0
+        else:
+            return 0
 
     fn _internal_representation(value: Decimal):
         # Show internal representation details
@@ -1772,7 +1695,9 @@ struct Decimal(Roundable, Writable):
 
     fn _scale_up(self, owned scale_diff: Int) -> Decimal:
         """
-        Internal method to scale up a decimal by multiplying by 10^scale_diff.
+        Internal method to scale up a decimal by:
+            - multiplying coefficient by 10^scale_diff.
+            - imcrease the scale by scale_diff.
 
         Args:
             scale_diff: Number of decimal places to scale up by
@@ -1788,17 +1713,17 @@ struct Decimal(Roundable, Writable):
 
         # Update the scale in the flags
         var new_scale = self.scale() + scale_diff
-        if new_scale > Self.MAX_PRECISION:
+        if new_scale > Self.MAX_PRECISION + 1:
             # Cannot scale beyond max precision, limit the scaling
-            scale_diff = Self.MAX_PRECISION - self.scale()
-            new_scale = Self.MAX_PRECISION
+            scale_diff = Self.MAX_PRECISION + 1 - self.scale()
+            new_scale = Self.MAX_PRECISION + 1
 
         result.flags = (result.flags & ~Self.SCALE_MASK) | (
             UInt32(new_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
         )
 
         # Scale up by multiplying by powers of 10
-        for _ in range(scale_diff):
+        for i in range(scale_diff):
             # Check for potential overflow before multiplying
             if result.high > 0xFFFFFFFF // 10 or (
                 result.high == 0xFFFFFFFF // 10 and result.low > 0xFFFFFFFF % 10
