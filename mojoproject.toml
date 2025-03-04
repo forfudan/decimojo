@@ -4,7 +4,7 @@ channels = ["https://conda.modular.com/max", "https://repo.prefix.dev/modular-co
 description = "A fixed-point decimal arithmetic library written in Mojo 🔥"
 license = "Apache-2.0"
 name = "decimal"
-platforms = ["osx-arm64"]
+platforms = ["osx-arm64", "linux-64"]
 readme = "README.md"
 version = "0.1.0"
 
