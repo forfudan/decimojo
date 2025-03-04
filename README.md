@@ -72,18 +72,19 @@ var reciprocal = Decimal("2") ** (-1)  # 0.5
 ```mojo
 from decimojo import Decimal
 from decimojo.rounding_mode import RoundingMode
+from decimojo.mathematics import round
 
 var num = Decimal("123.456789")
 
 # Round to various decimal places with different modes
-var default_round = num.round(2)                      # 123.46 (HALF_EVEN)
-var down = num.round(2, RoundingMode.DOWN())          # 123.45 (truncate)
-var up = num.round(2, RoundingMode.UP())              # 123.46 (away from zero)
-var half_up = num.round(2, RoundingMode.HALF_UP())    # 123.46 (≥0.5 rounds up)
+var default_round = round(num, 2)                      # 123.46 (HALF_EVEN)
+var down = round(num, 2, RoundingMode.DOWN())          # 123.45 (truncate)
+var up = round(num, 2, RoundingMode.UP())              # 123.46 (away from zero)
+var half_up = round(num, 2, RoundingMode.HALF_UP())    # 123.46 (≥0.5 rounds up)
 
 # Rounding special cases
-var half_value = Decimal("123.5").round(0)  # 124 (banker's rounding)
-var half_odd = Decimal("124.5").round(0)    # 124 (banker's rounding to even)
+var half_value = round(Decimal("123.5"), 0)  # 124 (banker's rounding)
+var half_odd = round(Decimal("124.5"), 0)    # 124 (banker's rounding to even)
 ```
 
 ### 4. Working with Scale and Precision
@@ -93,10 +94,10 @@ var d = Decimal("123.45")        # Scale is 2
 print(d.scale())                 # Prints: 2
 
 # Changing scale through rounding
-var more_precise = d.round(4)    # 123.4500
+var more_precise = round(d, 4)    # 123.4500
 print(more_precise.scale())      # Prints: 4
 
-var less_precise = d.round(1)    # 123.5 (rounds up)
+var less_precise = round(d, 1)    # 123.5 (rounds up)
 print(less_precise.scale())      # Prints: 1
 
 # Scale after operations
