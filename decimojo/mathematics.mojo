@@ -115,17 +115,3 @@ fn power(base: Decimal, exponent: Int) raises -> Decimal:
         A new Decimal containing the result.
     """
     return power(base, Decimal(exponent))
-
-
-fn pow(base: Decimal, exponent: Decimal) raises -> Decimal:
-    """
-    Alias for power() function. Raises base to the power of exponent.
-    """
-    return power(base, exponent)
-
-
-fn pow(base: Decimal, exponent: Int) raises -> Decimal:
-    """
-    Alias for power() function. Raises base to an integer power.
-    """
-    return power(base, exponent)

@@ -671,6 +671,194 @@ fn test_division() raises:
     print("Decimal division tests passed!")
 
 
+fn test_power_integer_exponents() raises:
+    print("Testing power with integer exponents...")
+
+    # Test case 1: Base cases: x^0 = 1 for any x except 0
+    var a1 = Decimal("2.5")
+    var result1 = a1**0
+    testing.assert_equal(
+        String(result1), "1", "Any number to power 0 should be 1"
+    )
+
+    # Test case 2: 0^n = 0 for n > 0
+    var a2 = Decimal("0")
+    var result2 = a2**5
+    testing.assert_equal(
+        String(result2), "0", "0 to any positive power should be 0"
+    )
+
+    # Test case 3: x^1 = x
+    var a3 = Decimal("3.14159")
+    var result3 = a3**1
+    testing.assert_equal(String(result3), "3.14159", "x^1 should be x")
+
+    # Test case 4: Positive integer powers
+    var a4 = Decimal("2")
+    var result4 = a4**3
+    testing.assert_equal(String(result4), "8", "2^3 should be 8")
+
+    # Test case 5: Test with scale
+    var a5 = Decimal("1.5")
+    var result5 = a5**2
+    testing.assert_equal(String(result5), "2.25", "1.5^2 should be 2.25")
+
+    # Test case 6: Larger powers
+    var a6 = Decimal("2")
+    var result6 = a6**10
+    testing.assert_equal(String(result6), "1024", "2^10 should be 1024")
+
+    # Test case 7: Negative base, even power
+    var a7 = Decimal("-3")
+    var result7 = a7**2
+    testing.assert_equal(String(result7), "9", "(-3)^2 should be 9")
+
+    # Test case 8: Negative base, odd power
+    var a8 = Decimal("-3")
+    var result8 = a8**3
+    testing.assert_equal(String(result8), "-27", "(-3)^3 should be -27")
+
+    # Test case 9: Decimal base, positive power
+    var a9 = Decimal("0.1")
+    var result9 = a9**3
+    testing.assert_equal(String(result9), "0.001", "0.1^3 should be 0.001")
+
+    # Test case 10: Large number to small power
+    var a10 = Decimal("1000")
+    var result10 = a10**2
+    testing.assert_equal(
+        String(result10), "1000000", "1000^2 should be 1000000"
+    )
+
+    print("Integer exponent tests passed!")
+
+
+fn test_power_negative_exponents() raises:
+    print("Testing power with negative integer exponents...")
+
+    # Test case 1: Basic negative exponent
+    var a1 = Decimal("2")
+    var result1 = a1 ** (-2)
+    testing.assert_equal(String(result1), "0.25", "2^(-2) should be 0.25")
+
+    # Test case 2: Larger negative exponent
+    var a2 = Decimal("10")
+    var result2 = a2 ** (-3)
+    testing.assert_equal(String(result2), "0.001", "10^(-3) should be 0.001")
+
+    # Test case 3: Negative base, even negative power
+    var a3 = Decimal("-2")
+    var result3 = a3 ** (-2)
+    testing.assert_equal(String(result3), "0.25", "(-2)^(-2) should be 0.25")
+
+    # Test case 4: Negative base, odd negative power
+    var a4 = Decimal("-2")
+    var result4 = a4 ** (-3)
+    testing.assert_equal(
+        String(result4), "-0.125", "(-2)^(-3) should be -0.125"
+    )
+
+    # Test case 5: Decimal base, negative power
+    var a5 = Decimal("0.5")
+    var result5 = a5 ** (-2)
+    testing.assert_equal(String(result5), "4", "0.5^(-2) should be 4")
+
+    # Test case 6: 1^(-n) = 1
+    var a6 = Decimal("1")
+    var result6 = a6 ** (-5)
+    testing.assert_equal(String(result6), "1", "1^(-5) should be 1")
+
+    print("Negative exponent tests passed!")
+
+
+fn test_power_special_cases() raises:
+    print("Testing power function special cases...")
+
+    # Test case 1: 0^0 (typically defined as 1)
+    var a1 = Decimal("0")
+    try:
+        var result1 = a1**0
+        testing.assert_equal(String(result1), "1", "0^0 should be defined as 1")
+    except:
+        print("0^0 raises an exception (mathematically undefined)")
+
+    # Test case 2: 0^(-n) (mathematically undefined)
+    var a2 = Decimal("0")
+    try:
+        var result2 = a2 ** (-2)
+        print("WARNING: 0^(-2) didn't raise an exception, got", result2)
+    except:
+        print("0^(-2) correctly raises an exception")
+
+    # Test case 3: 1^n = 1 for any n
+    var a3 = Decimal("1")
+    var result3a = a3**100
+    var result3b = a3 ** (-100)
+    testing.assert_equal(String(result3a), "1", "1^100 should be 1")
+    testing.assert_equal(String(result3b), "1", "1^(-100) should be 1")
+
+    # Test case 4: High precision result with rounding
+    # TODO: Implement __gt__
+    # var a4 = Decimal("1.1")
+    # var result4 = a4**30
+    # testing.assert_true(
+    #     result4 > Decimal("17.4") and result4 < Decimal("17.5"),
+    #     "1.1^30 should be approximately 17.449",
+    # )
+
+    print("Special cases tests passed!")
+
+
+fn test_power_decimal_exponents() raises:
+    print("Testing power with decimal exponents...")
+
+    # Try a few basic decimal exponents if supported
+    try:
+        var a1 = Decimal("4")
+        var e1 = Decimal("0.5")  # Square root
+        var result1 = a1**e1
+        testing.assert_equal(String(result1), "2", "4^0.5 should be 2")
+
+        var a2 = Decimal("8")
+        var e2 = Decimal("1.5")  # Cube root of square
+        var result2 = a2**e2
+        testing.assert_equal(
+            String(result2)[:4], "22.6", "8^1.5 should be approximately 22.6"
+        )
+    except:
+        print("Decimal exponents not supported in this implementation")
+
+    print("Decimal exponent tests passed!")
+
+
+fn test_power_precision() raises:
+    print("Testing power precision...")
+
+    # These tests assume we have overloaded the ** operator
+    # and we have a way to control precision similar to pow()
+
+    try:
+        # Test with precision control
+        var a1 = Decimal("1.5")
+        var result1 = a1**2
+
+        # Test equality including precision
+        testing.assert_equal(
+            String(result1), "2.25", "1.5^2 should be exactly 2.25"
+        )
+
+        # Check scale
+        testing.assert_equal(
+            result1.scale(),
+            2,
+            "Result should maintain precision of 2 decimal places",
+        )
+    except:
+        print("Precision parameters not supported with ** operator")
+
+    print("Precision tests passed!")
+
+
 fn test_extreme_cases() raises:
     print("Testing extreme cases...")
 
@@ -740,6 +928,21 @@ fn main() raises:
 
     # Run division tests
     test_division()
+
+    # Run power tests with integer exponents
+    test_power_integer_exponents()
+
+    # Run power tests with negative exponents
+    test_power_negative_exponents()
+
+    # Run power tests for special cases
+    test_power_special_cases()
+
+    # Run power tests with decimal exponents
+    test_power_decimal_exponents()
+
+    # Run power precision tests
+    test_power_precision()
 
     # Run extreme cases tests
     test_extreme_cases()

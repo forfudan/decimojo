@@ -615,7 +615,7 @@ struct Decimal(Writable):
 
     # ===------------------------------------------------------------------=== #
     # Basic binary operation dunders
-    # add, sub, mul, truediv
+    # add, sub, mul, truediv, pow
     # ===------------------------------------------------------------------=== #
     fn __add__(self, other: Decimal) raises -> Self:
         """
@@ -1160,6 +1160,43 @@ struct Decimal(Writable):
             result = -result
 
         return result
+
+    fn __pow__(self, exponent: Decimal) raises -> Self:
+        """
+        Raises self to the power of exponent and returns a new Decimal.
+
+        Currently supports integer exponents only.
+
+        Args:
+            exponent: The power to raise self to.
+                It must be an integer or effectively an integer (e.g., 2.0).
+
+        Returns:
+            A new Decimal containing the result of self^exponent
+
+        Raises:
+            Error: If exponent is not an integer or if the operation would overflow.
+        """
+
+        return decimal.power(self, exponent)
+
+    fn __pow__(self, exponent: Int) raises -> Self:
+        """
+        Raises self to the power of exponent and returns a new Decimal.
+
+        Currently supports integer exponents only.
+
+        Args:
+            exponent: The power to raise self to.
+
+        Returns:
+            A new Decimal containing the result of self^exponent
+
+        Raises:
+            Error: If exponent is not an integer or if the operation would overflow.
+        """
+
+        return decimal.power(self, exponent)
 
     # ===------------------------------------------------------------------=== #
     # Other methods
