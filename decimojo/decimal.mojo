@@ -542,7 +542,9 @@ struct Decimal(
             # Use maximum precision
             # Convert float to string ith high precision to capture all significant digits
             # The format ensures we get up to MAX_PRECISION decimal places
-            float_str = _float_to_decimal_str(f, Self.MAX_PRECISION)
+            float_str = decimojo.str._float_to_decimal_str(
+                f, Self.MAX_PRECISION
+            )
         else:
             # Use default string representation
             # Convert float to string with Mojo's default precision
@@ -674,6 +676,12 @@ struct Decimal(
 
         return result
 
+    fn __repr__(self) -> String:
+        """
+        Returns a string representation of the Decimal.
+        """
+        return 'Decimal("' + self.__str__() + '")'
+
     fn write_to[W: Writer](self, mut writer: W):
         """
         Writes the Decimal to a writer.
@@ -710,56 +718,33 @@ struct Decimal(
     fn __add__(self, other: Decimal) raises -> Self:
         """
         Adds two Decimal values and returns a new Decimal containing the sum.
+
+        Args:
+            other: The Decimal to add to this Decimal.
+
+        Returns:
+            A new Decimal containing the sum.
+
+        Raises:
+            Error: If an error occurs during the addition, forward the error.
         """
-        # Special case for zero
-        if self.is_zero():
-            return other
-        if other.is_zero():
-            return self
 
-        # Integer addition
-        if (self.scale() == 0) and (other.scale() == 0):
-            var result = Decimal()
-            result.flags = UInt32(
-                (self.scale() << Self.SCALE_SHIFT) & Self.SCALE_MASK
-            )
+        try:
+            return decimojo.add(self, other)
+        except e:
+            raise Error("Error in `__add__()`; ", e)
 
-            # Same sign: add absolute values and keep the sign
-            if self.is_negative() == other.is_negative():
-                if self.is_negative():
-                    result.flags |= Self.SIGN_MASK
+    fn __add__(self, other: Float64) raises -> Self:
+        return decimojo.add(self, Decimal(other))
 
-                # Add with carry
-                var carry: UInt32 = 0
+    fn __add__(self, other: Int) raises -> Self:
+        return decimojo.add(self, Decimal(other))
 
-                # Add low parts
-                var sum_low = UInt64(self.low) + UInt64(other.low)
-                result.low = UInt32(sum_low & 0xFFFFFFFF)
-                carry = UInt32(sum_low >> 32)
+    fn __radd__(self, other: Float64) raises -> Self:
+        return decimojo.add(Decimal(other), self)
 
-                # Add mid parts with carry
-                var sum_mid = UInt64(self.mid) + UInt64(other.mid) + UInt64(
-                    carry
-                )
-                result.mid = UInt32(sum_mid & 0xFFFFFFFF)
-                carry = UInt32(sum_mid >> 32)
-
-                # Add high parts with carry
-                var sum_high = UInt64(self.high) + UInt64(other.high) + UInt64(
-                    carry
-                )
-                result.high = UInt32(sum_high & 0xFFFFFFFF)
-
-                # Check for overflow
-                if (sum_high >> 32) > 0:
-                    raise Error("Decimal overflow in addition")
-
-                return result
-
-        # Float addition which may be with different scales
-        # Use string-based approach
-
-        return Decimal(decimojo.mathematics._addition_string_based(self, other))
+    fn __radd__(self, other: Int) raises -> Self:
+        return decimojo.add(Decimal(other), self)
 
     fn __sub__(self, other: Decimal) raises -> Self:
         """
@@ -782,303 +767,54 @@ struct Decimal(
         ```
         .
         """
-        # Implementation using the existing `__add__()` and `__neg__()` methods
-        return self + (-other)
 
-    fn __mul__(self, other: Decimal) raises -> Self:
+        try:
+            return decimojo.subtract(self, other)
+        except e:
+            raise Error("Error in `__sub__()`; ", e)
+
+    fn __sub__(self, other: Float64) raises -> Self:
+        return decimojo.subtract(self, Decimal(other))
+
+    fn __sub__(self, other: Int) raises -> Self:
+        return decimojo.subtract(self, Decimal(other))
+
+    fn __rsub__(self, other: Float64) raises -> Self:
+        return decimojo.subtract(Decimal(other), self)
+
+    fn __rsub__(self, other: Int) raises -> Self:
+        return decimojo.subtract(Decimal(other), self)
+
+    fn __mul__(self, other: Decimal) -> Self:
         """
         Multiplies two Decimal values and returns a new Decimal containing the product.
         """
-        # Special cases for zero
-        if self.is_zero() or other.is_zero():
-            # For zero, we need to preserve the scale
-            var result = Decimal.ZERO()
-            var result_scale = min(
-                self.scale() + other.scale(), Self.MAX_PRECISION
-            )
-            result.flags = UInt32(
-                (result_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
-            )
-            return result
 
-        # Calculate the combined scale (sum of both scales)
-        var combined_scale = self.scale() + other.scale()
+        return decimojo.multiply(self, other)
 
-        # Determine the sign of the result (XOR of signs)
-        var result_is_negative = self.is_negative() != other.is_negative()
+    fn __mul__(self, other: Float64) raises -> Self:
+        return decimojo.multiply(self, Decimal(other))
 
-        # Extract the components for multiplication
-        var a_low = UInt64(self.low)
-        var a_mid = UInt64(self.mid)
-        var a_high = UInt64(self.high)
-
-        var b_low = UInt64(other.low)
-        var b_mid = UInt64(other.mid)
-        var b_high = UInt64(other.high)
-
-        # Perform 96-bit by 96-bit multiplication
-        var r0 = a_low * b_low
-        var r1_a = a_low * b_mid
-        var r1_b = a_mid * b_low
-        var r2_a = a_low * b_high
-        var r2_b = a_mid * b_mid
-        var r2_c = a_high * b_low
-        var r3_a = a_mid * b_high
-        var r3_b = a_high * b_mid
-        var r4 = a_high * b_high
-
-        # Accumulate results with carries
-        var c0 = r0 & 0xFFFFFFFF
-        var c1 = (r0 >> 32) + (r1_a & 0xFFFFFFFF) + (r1_b & 0xFFFFFFFF)
-        var c2 = (r1_a >> 32) + (r1_b >> 32) + (r2_a & 0xFFFFFFFF) + (
-            r2_b & 0xFFFFFFFF
-        ) + (r2_c & 0xFFFFFFFF) + (c1 >> 32)
-        c1 = c1 & 0xFFFFFFFF  # Mask after carry
-
-        var c3 = (r2_a >> 32) + (r2_b >> 32) + (r2_c >> 32) + (
-            r3_a & 0xFFFFFFFF
-        ) + (r3_b & 0xFFFFFFFF) + (c2 >> 32)
-        c2 = c2 & 0xFFFFFFFF  # Mask after carry
-
-        var c4 = (r3_a >> 32) + (r3_b >> 32) + (c3 >> 32) + r4
-        c3 = c3 & 0xFFFFFFFF  # Mask after carry
-
-        var result_low = UInt32(c0)
-        var result_mid = UInt32(c1)
-        var result_high = UInt32(c2)
-
-        # If we have overflow, we need to adjust the scale by dividing
-        # BUT ONLY enough to fit the result in 96 bits - no more
-        var scale_reduction = 0
-        if c3 > 0 or c4 > 0:
-            # Calculate minimum shifts needed to fit the result
-            while c3 > 0 or c4 > 0:
-                var remainder = UInt64(0)
-
-                # Process c4
-                var new_c4 = c4 / 10
-                remainder = c4 % 10
-
-                # Process c3 with remainder from c4
-                var new_c3 = (remainder << 32 | c3) / 10
-                remainder = (remainder << 32 | c3) % 10
-
-                # Process c2 with remainder from c3
-                var new_c2 = (remainder << 32 | c2) / 10
-                remainder = (remainder << 32 | c2) % 10
-
-                # Process c1 with remainder from c2
-                var new_c1 = (remainder << 32 | c1) / 10
-                remainder = (remainder << 32 | c1) % 10
-
-                # Process c0 with remainder from c1
-                var new_c0 = (remainder << 32 | c0) / 10
-
-                # Update values
-                c4 = new_c4
-                c3 = new_c3
-                c2 = new_c2
-                c1 = new_c1
-                c0 = new_c0
-
-                scale_reduction += 1
-
-            # Update result components after shifting
-            result_low = UInt32(c0)
-            result_mid = UInt32(c1)
-            result_high = UInt32(c2)
-
-        # Create the result with adjusted values
-        var result = Decimal(result_low, result_mid, result_high, 0)
-
-        # IMPORTANT: We account for the scale reduction separately from MAX_PRECISION capping
-        # First, apply the technical scale reduction needed due to overflow
-        var adjusted_scale = combined_scale - scale_reduction
-
-        # THEN cap at MAX_PRECISION
-        var final_scale = min(adjusted_scale, Self.MAX_SCALE)
-
-        # Set the flags with the correct scale
-        result.flags = UInt32(
-            (final_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
-        )
-        if result_is_negative:
-            result.flags |= Self.SIGN_MASK
-
-        # Handle excess precision separately AFTER handling overflow
-        # (this shouldn't be reducing scale twice)
-        if adjusted_scale > Self.MAX_PRECISION:
-            var scale_diff = adjusted_scale - Self.MAX_PRECISION
-            result = result._scale_down(scale_diff, RoundingMode.HALF_EVEN())
-
-        return result
+    fn __mul__(self, other: Int) -> Self:
+        return decimojo.multiply(self, Decimal(other))
 
     fn __truediv__(self, other: Decimal) raises -> Self:
         """
-        Divides self by other and returns a new Decimal containing the quotient.
-        Uses a simpler string-based long division approach.
+        Divides this Decimal by another Decimal and returns a new Decimal containing the result.
         """
+        return decimojo.true_divide(self, other)
 
-        # Check for division by zero
-        if other.is_zero():
-            raise Error("Division by zero")
+    fn __truediv__(self, other: Float64) raises -> Self:
+        return decimojo.true_divide(self, Decimal(other))
 
-        # Special case: if dividend is zero, return zero with appropriate scale
-        if self.is_zero():
-            var result = Decimal.ZERO()
-            var result_scale = max(0, self.scale() - other.scale())
-            result.flags = UInt32(
-                (result_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
-            )
-            return result
+    fn __truediv__(self, other: Int) raises -> Self:
+        return decimojo.true_divide(self, Decimal(other))
 
-        # If dividing identical numbers, return 1
-        if (
-            self.low == other.low
-            and self.mid == other.mid
-            and self.high == other.high
-            and self.scale() == other.scale()
-        ):
-            return Decimal.ONE()
+    fn __rtruediv__(self, other: Float64) raises -> Self:
+        return decimojo.true_divide(Decimal(other), self)
 
-        # Determine sign of result (positive if signs are the same, negative otherwise)
-        var result_is_negative = self.is_negative() != other.is_negative()
-
-        # Get coefficients as strings (absolute values)
-        var dividend_coef = _remove_trailing_zeros(self.coefficient())
-        var divisor_coef = _remove_trailing_zeros(other.coefficient())
-
-        # Use string-based division to avoid overflow with large numbers
-
-        # Determine precision needed for calculation
-        var working_precision = Self.LEN_OF_MAX_VALUE + 1  # +1 for potential rounding
-
-        # Perform long division algorithm
-        var quotient = String("")
-        var remainder = String("")
-        var digit = 0
-        var current_pos = 0
-        var processed_all_dividend = False
-        var significant_digits_of_quotient = 0
-
-        while significant_digits_of_quotient < working_precision:
-            # Grab next digit from dividend if available
-            if current_pos < len(dividend_coef):
-                remainder += dividend_coef[current_pos]
-                current_pos += 1
-            else:
-                # If we've processed all dividend digits, add a zero
-                if not processed_all_dividend:
-                    processed_all_dividend = True
-                remainder += "0"
-
-            # Remove leading zeros from remainder for cleaner comparison
-            var remainder_start = 0
-            while (
-                remainder_start < len(remainder) - 1
-                and remainder[remainder_start] == "0"
-            ):
-                remainder_start += 1
-            remainder = remainder[remainder_start:]
-
-            # Compare remainder with divisor to determine next quotient digit
-            digit = 0
-            var can_subtract = False
-
-            # Check if remainder >= divisor_coef
-            if len(remainder) > len(divisor_coef) or (
-                len(remainder) == len(divisor_coef)
-                and remainder >= divisor_coef
-            ):
-                can_subtract = True
-
-            if can_subtract:
-                # Find how many times divisor goes into remainder
-                while True:
-                    # Try to subtract divisor from remainder
-                    var new_remainder = _subtract_strings(
-                        remainder, divisor_coef
-                    )
-                    if (
-                        new_remainder[0] == "-"
-                    ):  # Negative result means we've gone too far
-                        break
-                    remainder = new_remainder
-                    digit += 1
-
-            # Add digit to quotient
-            quotient += String(digit)
-            significant_digits_of_quotient = len(
-                _remove_leading_zeros(quotient)
-            )
-
-        # Check if division is exact
-        var is_exact = remainder == "0" and current_pos >= len(dividend_coef)
-
-        # Remove leading zeros
-        var leading_zeros = 0
-        for i in range(len(quotient)):
-            if quotient[i] == "0":
-                leading_zeros += 1
-            else:
-                break
-
-        if leading_zeros == len(quotient):
-            # All zeros, keep just one
-            quotient = "0"
-        elif leading_zeros > 0:
-            quotient = quotient[leading_zeros:]
-
-        # Handle trailing zeros for exact division
-        var trailing_zeros = 0
-        if is_exact and len(quotient) > 1:  # Don't remove single digit
-            for i in range(len(quotient) - 1, 0, -1):
-                if quotient[i] == "0":
-                    trailing_zeros += 1
-                else:
-                    break
-
-            if trailing_zeros > 0:
-                quotient = quotient[: len(quotient) - trailing_zeros]
-
-        # Calculate decimal point position
-        var dividend_scientific_exponent = self.scientific_exponent()
-        var divisor_scientific_exponent = other.scientific_exponent()
-        var result_scientific_exponent = dividend_scientific_exponent - divisor_scientific_exponent
-
-        if dividend_coef < divisor_coef:
-            # If dividend < divisor, result < 1
-            result_scientific_exponent -= 1
-
-        var decimal_pos = result_scientific_exponent + 1
-
-        # Format result with decimal point
-        var result_str = String("")
-
-        if decimal_pos <= 0:
-            # decimal_pos <= 0, needs leading zeros
-            # For example, decimal_pos = -1
-            # 1234 -> 0.1234
-            result_str = "0." + "0" * (-decimal_pos) + quotient
-        elif decimal_pos >= len(quotient):
-            # All digits are to the left of the decimal point
-            # For example, decimal_pos = 5
-            # 1234 -> 12340
-            result_str = quotient + "0" * (decimal_pos - len(quotient))
-        else:
-            # Insert decimal point within the digits
-            # For example, decimal_pos = 2
-            # 1234 -> 12.34
-            result_str = quotient[:decimal_pos] + "." + quotient[decimal_pos:]
-
-        # Apply sign
-        if result_is_negative and result_str != "0":
-            result_str = "-" + result_str
-
-        # Convert to Decimal and return
-        var result = Decimal(result_str)
-
-        return result
+    fn __rtruediv__(self, other: Int) raises -> Self:
+        return decimojo.true_divide(Decimal(other), self)
 
     fn __pow__(self, exponent: Decimal) raises -> Self:
         """
@@ -1100,22 +836,10 @@ struct Decimal(
         return decimal.power(self, exponent)
 
     fn __pow__(self, exponent: Int) raises -> Self:
-        """
-        Raises self to the power of exponent and returns a new Decimal.
-
-        Currently supports integer exponents only.
-
-        Args:
-            exponent: The power to raise self to.
-
-        Returns:
-            A new Decimal containing the result of self^exponent
-
-        Raises:
-            Error: If exponent is not an integer or if the operation would overflow.
-        """
-
         return decimal.power(self, exponent)
+
+    fn __pow__(self, exponent: Float64) raises -> Self:
+        return decimal.power(self, Decimal(exponent))
 
     # ===------------------------------------------------------------------=== #
     # Basic binary logic operation dunders
@@ -1608,94 +1332,3 @@ struct Decimal(
             result.high = new_high
 
         return result
-
-
-fn _float_to_decimal_str(value: Float64, precision: Int) -> String:
-    """
-    Converts float to string with specified precision.
-    Properly handles negative values.
-    """
-    # Handle sign separately
-    var is_negative = value < 0
-    var abs_value = abs(value)
-
-    # Extract integer and fractional parts from absolute value
-    var int_part = Int64(abs_value)
-    var frac_part = abs_value - Float64(int_part)
-
-    # Convert integer part to string
-    var result = String(int_part)
-
-    # Handle fractional part if needed
-    if frac_part > 0:
-        result += "."
-
-        # Extract decimal digits one by one
-        for _ in range(precision):
-            frac_part *= 10
-            var digit = Int8(frac_part)
-            result += String(digit)
-            frac_part -= Float64(digit)
-
-    # Add negative sign if needed
-    if is_negative:
-        result = "-" + result
-
-    return result
-
-
-fn _subtract_strings(a: String, b: String) -> String:
-    """Subtracts string b from string a and returns the result as a string."""
-    # Ensure a is longer or equal to b by padding with zeros
-    var a_padded = a
-    var b_padded = b
-
-    if len(a) < len(b):
-        a_padded = "0" * (len(b) - len(a)) + a
-    elif len(b) < len(a):
-        b_padded = "0" * (len(a) - len(b)) + b
-
-    var result = String("")
-    var borrow = 0
-
-    # Perform subtraction digit by digit from right to left
-    for i in range(len(a_padded) - 1, -1, -1):
-        var digit_a = ord(a_padded[i]) - ord("0")
-        var digit_b = ord(b_padded[i]) - ord("0") + borrow
-
-        if digit_a < digit_b:
-            digit_a += 10
-            borrow = 1
-        else:
-            borrow = 0
-
-        result = String(digit_a - digit_b) + result
-
-    # Check if result is negative
-    if borrow > 0:
-        return "-" + result
-
-    # Remove leading zeros
-    var start_idx = 0
-    while start_idx < len(result) - 1 and result[start_idx] == "0":
-        start_idx += 1
-
-    return result[start_idx:]
-
-
-fn _remove_leading_zeros(value: String) -> String:
-    """Removes leading zeros from a string."""
-    var start_idx = 0
-    while start_idx < len(value) - 1 and value[start_idx] == "0":
-        start_idx += 1
-
-    return value[start_idx:]
-
-
-fn _remove_trailing_zeros(value: String) -> String:
-    """Removes trailing zeros from a string."""
-    var end_idx = len(value)
-    while end_idx > 0 and value[end_idx - 1] == "0":
-        end_idx -= 1
-
-    return value[:end_idx]

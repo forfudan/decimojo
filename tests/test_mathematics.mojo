@@ -1,9 +1,8 @@
 """
 Comprehensive tests for the sqrt function of the Decimal type.
 """
-from decimojo import Decimal
-from decimojo.mathematics import sqrt, round
-from decimojo.rounding_mode import RoundingMode
+from decimojo.prelude import *
+from decimojo import sqrt
 import testing
 
 
@@ -390,7 +389,7 @@ fn test_edge_cases() raises:
     var negative = Decimal("-1")
     var negative_exception_caught = False
     try:
-        var result_negative = sqrt(negative)
+        var _result_negative = sqrt(negative)
         testing.assert_equal(
             True, False, "sqrt() of negative should raise exception"
         )

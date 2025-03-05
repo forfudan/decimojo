@@ -10,5 +10,14 @@ DeciMojo - Correctly-rounded, fixed-point Decimal library for Mojo.
 
 from .decimal import Decimal
 from .rounding_mode import RoundingMode
-from .mathematics import power, sqrt, round, absolute
+from .maths import (
+    add,
+    subtract,
+    multiply,
+    true_divide,
+    power,
+    sqrt,
+    round,
+    absolute,
+)
 from .logic import greater, greater_equal, less, less_equal, equal, not_equal

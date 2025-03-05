@@ -3,12 +3,14 @@ Comprehensive tests for string-based decimal operations.
 Tests addition and subtraction functions with 50 test cases each.
 """
 from decimojo import Decimal
-from decimojo.mathematics import _addition_string_based as addition
-from decimojo.mathematics import _subtraction_string_based as subtraction
+from decimojo.maths.arithmetics import _add_decimals_as_string as addition
+from decimojo.maths.arithmetics import (
+    _subtract_decimals_as_string as subtraction,
+)
 import testing
 
 
-fn test_addition_function() raises:
+fn test_add_function() raises:
     print("Testing string-based addition function...")
 
     # Array to store all test cases
@@ -311,7 +313,7 @@ fn test_addition_function() raises:
     )
 
 
-fn test_subtraction_function() raises:
+fn test_subtract_function() raises:
     print(String("Testing string-based subtraction function..."))
 
     # Array to store all test cases
@@ -618,9 +620,9 @@ fn main() raises:
         )
     )
 
-    test_addition_function()
+    test_add_function()
     print(String("\n"))
-    test_subtraction_function()
+    test_subtract_function()
 
     print(
         String(
