@@ -389,7 +389,7 @@ fn test_edge_cases() raises:
     var negative = Decimal("-1")
     var negative_exception_caught = False
     try:
-        var result_negative = sqrt(negative)
+        var _result_negative = sqrt(negative)
         testing.assert_equal(
             True, False, "sqrt() of negative should raise exception"
         )
