@@ -6,7 +6,7 @@ from decimojo.prelude import *
 import testing
 
 
-fn test_addition() raises:
+fn test_add() raises:
     print("Testing decimal addition...")
 
     # Test case 1: Simple addition with same scale
@@ -316,7 +316,7 @@ fn test_abs() raises:
     print("Decimal absolute value tests passed!")
 
 
-fn test_subtraction() raises:
+fn test_subtract() raises:
     print("Testing decimal subtraction...")
 
     # Test case 1: Simple subtraction with same scale
@@ -1196,7 +1196,7 @@ fn main() raises:
     print("Running decimal arithmetic tests")
 
     # Run addition tests
-    test_addition()
+    test_add()
 
     # Run negation tests
     test_negation()
@@ -1205,7 +1205,7 @@ fn main() raises:
     test_abs()
 
     # Run subtraction tests
-    test_subtraction()
+    test_subtract()
 
     # Run multiplication tests
     test_multiplication()

@@ -26,6 +26,9 @@
 # ===----------------------------------------------------------------------=== #
 
 from .arithmetics import (
+    add,
+    subtract,
+    true_divide,
     power,
     absolute,
     sqrt,

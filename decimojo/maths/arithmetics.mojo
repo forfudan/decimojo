@@ -32,7 +32,97 @@ from decimojo.rounding_mode import RoundingMode
 # ===----------------------------------------------------------------------=== #
 
 
-fn _addition_string_based(a: Decimal, b: Decimal) -> String:
+fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
+    """
+    Adds two Decimal values and returns a new Decimal containing the sum.
+
+    Args:
+        x1: The first Decimal operand.
+        x2: The second Decimal operand.
+
+    Returns:
+        A new Decimal containing the sum of x1 and x2.
+
+    Raises:
+        Error: If the operation would overflow.
+    """
+    # Special case for zero
+    if x1.is_zero():
+        return x2
+    if x2.is_zero():
+        return x1
+
+    # Integer addition
+    if (x1.scale() == 0) and (x2.scale() == 0):
+        var result = Decimal()
+        result.flags = UInt32((x1.scale() << x1.SCALE_SHIFT) & x1.SCALE_MASK)
+
+        # Same sign: add absolute values and keep the sign
+        if x1.is_negative() == x2.is_negative():
+            if x1.is_negative():
+                result.flags |= x1.SIGN_MASK
+
+            # Add with carry
+            var carry: UInt32 = 0
+
+            # Add low parts
+            var sum_low = UInt64(x1.low) + UInt64(x2.low)
+            result.low = UInt32(sum_low & 0xFFFFFFFF)
+            carry = UInt32(sum_low >> 32)
+
+            # Add mid parts with carry
+            var sum_mid = UInt64(x1.mid) + UInt64(x2.mid) + UInt64(carry)
+            result.mid = UInt32(sum_mid & 0xFFFFFFFF)
+            carry = UInt32(sum_mid >> 32)
+
+            # Add high parts with carry
+            var sum_high = UInt64(x1.high) + UInt64(x2.high) + UInt64(carry)
+            result.high = UInt32(sum_high & 0xFFFFFFFF)
+
+            # Check for overflow
+            if (sum_high >> 32) > 0:
+                raise Error("Error in `addition()`: Decimal overflow")
+
+            return result
+
+    # Float addition which may be with different scales
+    # Use string-based approach
+
+    return Decimal(decimojo.maths.arithmetics._add_decimals_as_string(x1, x2))
+
+
+fn subtract(x1: Decimal, x2: Decimal) raises -> Decimal:
+    """
+    Subtracts the x2 Decimal from x1 and returns a new Decimal.
+
+    Args:
+        x1: The Decimal to subtract from.
+        x2: The Decimal to subtract.
+
+    Returns:
+        A new Decimal containing the difference.
+
+    Notes:
+    ------
+    This method is implemented using the existing `__add__()` and `__neg__()` methods.
+
+    Examples:
+    ---------
+    ```console
+    var a = Decimal("10.5")
+    var b = Decimal("3.2")
+    var result = a - b  # Returns 7.3
+    ```
+    .
+    """
+    # Implementation using the existing `__add__()` and `__neg__()` methods
+    try:
+        return x1 + (-x2)
+    except e:
+        raise Error("Error in `subtract()`; ", e)
+
+
+fn _add_decimals_as_string(a: Decimal, b: Decimal) -> String:
     """
     Performs addition of two Decimals using a string-based approach.
     Preserves decimal places to match the inputs.
@@ -55,10 +145,10 @@ fn _addition_string_based(a: Decimal, b: Decimal) -> String:
         # If signs differ, we need subtraction
         if a.is_negative():
             # -a + b = b - |a|
-            return _subtraction_string_based(b, -a)
+            return _subtract_decimals_as_string(b, -a)
         else:
             # a + (-b) = a - |b|
-            return _subtraction_string_based(a, -b)
+            return _subtract_decimals_as_string(a, -b)
 
     # Determine the number of decimal places to preserve
     # We need to examine the original string representation of a and b
@@ -159,7 +249,7 @@ fn _addition_string_based(a: Decimal, b: Decimal) -> String:
     return final_result
 
 
-fn _subtraction_string_based(owned a: Decimal, owned b: Decimal) -> String:
+fn _subtract_decimals_as_string(owned a: Decimal, owned b: Decimal) -> String:
     """
     Helper function to perform subtraction of b from a.
     Handles cases for all sign combinations and preserves decimal places.
@@ -196,13 +286,13 @@ fn _subtraction_string_based(owned a: Decimal, owned b: Decimal) -> String:
         # When signs differ, subtraction becomes addition
         if a.is_negative():
             # -a - b = -(a + b)
-            var sum_result = _addition_string_based(-a, b)
+            var sum_result = _add_decimals_as_string(-a, b)
             if sum_result == "0":
                 return "0." + "0" * target_decimal_places
             return "-" + sum_result
         else:
             # a - (-b) = a + b
-            return _addition_string_based(a, -b)
+            return _add_decimals_as_string(a, -b)
 
     # At this point, both numbers have the same sign
     var is_negative = a.is_negative()  # Both a and b have the same sign
@@ -350,6 +440,231 @@ fn _subtraction_string_based(owned a: Decimal, owned b: Decimal) -> String:
         final_result = "-" + final_result
 
     return final_result
+
+
+fn _subtract_strings(a: String, b: String) -> String:
+    """
+    Subtracts string b from string a and returns the result as a string.
+    The input strings must be integers.
+
+    Args:
+        a: The string to subtract from. Must be an integer.
+        b: The string to subtract. Must be an integer.
+
+    Returns:
+        A string containing the result of the subtraction.
+    """
+
+    # Ensure a is longer or equal to b by padding with zeros
+    var a_padded = a
+    var b_padded = b
+
+    if len(a) < len(b):
+        a_padded = "0" * (len(b) - len(a)) + a
+    elif len(b) < len(a):
+        b_padded = "0" * (len(a) - len(b)) + b
+
+    var result = String("")
+    var borrow = 0
+
+    # Perform subtraction digit by digit from right to left
+    for i in range(len(a_padded) - 1, -1, -1):
+        var digit_a = ord(a_padded[i]) - ord("0")
+        var digit_b = ord(b_padded[i]) - ord("0") + borrow
+
+        if digit_a < digit_b:
+            digit_a += 10
+            borrow = 1
+        else:
+            borrow = 0
+
+        result = String(digit_a - digit_b) + result
+
+    # Check if result is negative
+    if borrow > 0:
+        return "-" + result
+
+    # Remove leading zeros
+    var start_idx = 0
+    while start_idx < len(result) - 1 and result[start_idx] == "0":
+        start_idx += 1
+
+    return result[start_idx:]
+
+
+fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
+    """
+    Divides x1 by x2 and returns a new Decimal containing the quotient.
+    Uses a simpler string-based long division approach.
+
+    Args:
+        x1: The dividend.
+        x2: The divisor.
+
+    Returns:
+        A new Decimal containing the result of x1 / x2.
+
+    Raises:
+        Error: If x2 is zero.
+    """
+
+    # Check for division by zero
+    if x2.is_zero():
+        raise Error("Error in `__truediv__`: Division by zero")
+
+    # Special case: if dividend is zero, return zero with appropriate scale
+    if x1.is_zero():
+        var result = Decimal.ZERO()
+        var result_scale = max(0, x1.scale() - x2.scale())
+        result.flags = UInt32(
+            (result_scale << Decimal.SCALE_SHIFT) & Decimal.SCALE_MASK
+        )
+        return result
+
+    # If dividing identical numbers, return 1
+    if (
+        x1.low == x2.low
+        and x1.mid == x2.mid
+        and x1.high == x2.high
+        and x1.scale() == x2.scale()
+    ):
+        return Decimal.ONE()
+
+    # Determine sign of result (positive if signs are the same, negative otherwise)
+    var result_is_negative = x1.is_negative() != x2.is_negative()
+
+    # Get coefficients as strings (absolute values)
+    var dividend_coef = decimojo.str._remove_trailing_zeros(x1.coefficient())
+    var divisor_coef = decimojo.str._remove_trailing_zeros(x2.coefficient())
+
+    # Use string-based division to avoid overflow with large numbers
+
+    # Determine precision needed for calculation
+    var working_precision = Decimal.LEN_OF_MAX_VALUE + 1  # +1 for potential rounding
+
+    # Perform long division algorithm
+    var quotient = String("")
+    var remainder = String("")
+    var digit = 0
+    var current_pos = 0
+    var processed_all_dividend = False
+    var significant_digits_of_quotient = 0
+
+    while significant_digits_of_quotient < working_precision:
+        # Grab next digit from dividend if available
+        if current_pos < len(dividend_coef):
+            remainder += dividend_coef[current_pos]
+            current_pos += 1
+        else:
+            # If we've processed all dividend digits, add a zero
+            if not processed_all_dividend:
+                processed_all_dividend = True
+            remainder += "0"
+
+        # Remove leading zeros from remainder for cleaner comparison
+        var remainder_start = 0
+        while (
+            remainder_start < len(remainder) - 1
+            and remainder[remainder_start] == "0"
+        ):
+            remainder_start += 1
+        remainder = remainder[remainder_start:]
+
+        # Compare remainder with divisor to determine next quotient digit
+        digit = 0
+        var can_subtract = False
+
+        # Check if remainder >= divisor_coef
+        if len(remainder) > len(divisor_coef) or (
+            len(remainder) == len(divisor_coef) and remainder >= divisor_coef
+        ):
+            can_subtract = True
+
+        if can_subtract:
+            # Find how many times divisor goes into remainder
+            while True:
+                # Try to subtract divisor from remainder
+                var new_remainder = _subtract_strings(remainder, divisor_coef)
+                if (
+                    new_remainder[0] == "-"
+                ):  # Negative result means we've gone too far
+                    break
+                remainder = new_remainder
+                digit += 1
+
+        # Add digit to quotient
+        quotient += String(digit)
+        significant_digits_of_quotient = len(
+            decimojo.str._remove_leading_zeros(quotient)
+        )
+
+    # Check if division is exact
+    var is_exact = remainder == "0" and current_pos >= len(dividend_coef)
+
+    # Remove leading zeros
+    var leading_zeros = 0
+    for i in range(len(quotient)):
+        if quotient[i] == "0":
+            leading_zeros += 1
+        else:
+            break
+
+    if leading_zeros == len(quotient):
+        # All zeros, keep just one
+        quotient = "0"
+    elif leading_zeros > 0:
+        quotient = quotient[leading_zeros:]
+
+    # Handle trailing zeros for exact division
+    var trailing_zeros = 0
+    if is_exact and len(quotient) > 1:  # Don't remove single digit
+        for i in range(len(quotient) - 1, 0, -1):
+            if quotient[i] == "0":
+                trailing_zeros += 1
+            else:
+                break
+
+        if trailing_zeros > 0:
+            quotient = quotient[: len(quotient) - trailing_zeros]
+
+    # Calculate decimal point position
+    var dividend_scientific_exponent = x1.scientific_exponent()
+    var divisor_scientific_exponent = x2.scientific_exponent()
+    var result_scientific_exponent = dividend_scientific_exponent - divisor_scientific_exponent
+
+    if dividend_coef < divisor_coef:
+        # If dividend < divisor, result < 1
+        result_scientific_exponent -= 1
+
+    var decimal_pos = result_scientific_exponent + 1
+
+    # Format result with decimal point
+    var result_str = String("")
+
+    if decimal_pos <= 0:
+        # decimal_pos <= 0, needs leading zeros
+        # For example, decimal_pos = -1
+        # 1234 -> 0.1234
+        result_str = "0." + "0" * (-decimal_pos) + quotient
+    elif decimal_pos >= len(quotient):
+        # All digits are to the left of the decimal point
+        # For example, decimal_pos = 5
+        # 1234 -> 12340
+        result_str = quotient + "0" * (decimal_pos - len(quotient))
+    else:
+        # Insert decimal point within the digits
+        # For example, decimal_pos = 2
+        # 1234 -> 12.34
+        result_str = quotient[:decimal_pos] + "." + quotient[decimal_pos:]
+
+    # Apply sign
+    if result_is_negative and result_str != "0":
+        result_str = "-" + result_str
+
+    # Convert to Decimal and return
+    var result = Decimal(result_str)
+
+    return result
 
 
 fn power(base: Decimal, exponent: Decimal) raises -> Decimal:
