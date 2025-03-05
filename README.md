@@ -20,12 +20,12 @@ Rome is not built in one day. DeciMojo is currently under active development. Co
 
 ## Examples
 
-Here presents 10 key examples of how to use the `Decimal` type with the most common operations.
+Here are 10 key examples of how to use the `Decimal` type with the most important features.
 
 ### 1. Creating Decimals
 
 ```mojo
-from decimojo import Decimal
+from decimojo.prelude import *
 
 # From string with various formats
 var d1 = Decimal("123.45")           # Regular decimal
@@ -36,11 +36,11 @@ var d4 = Decimal("1_000_000.00")     # Readable format with underscores
 # From integers and floats
 var d5 = Decimal(123)                # Integer
 var d6 = Decimal(123.45)             # Float (approximate)
-var d7 = Decimal(123.45, max_precision=True)  # Float with maximum precision
 
-# From components
-var d8 = Decimal(12345, 0, 0, False, 2)  # 123.45 (coefficient 12345, scale 2)
-var d9 = Decimal(12345, 0, 0, True, 2)   # -123.45 (negative flag set)
+# Special values
+var max_val = Decimal.MAX()          # 79228162514264337593543950335
+var min_val = Decimal.MIN()          # -79228162514264337593543950335
+var zero = Decimal.ZERO()            # 0
 ```
 
 ### 2. Basic Arithmetic Operations
@@ -61,165 +61,156 @@ var quot = Decimal("123.45") / Decimal("2.5")  # 49.38
 # Negation
 var neg = -Decimal("123.45")  # -123.45
 
-# Power (exponentiation)
-var squared = Decimal("2.5") ** 2  # 6.25
-var cubed = Decimal("2") ** 3     # 8
-var reciprocal = Decimal("2") ** (-1)  # 0.5
+# Absolute value
+var abs_val = abs(Decimal("-123.45"))  # 123.45
 ```
 
-### 3. Rounding with Different Modes
+### 3. Exponentiation (Power Functions)
 
 ```mojo
-from decimojo import Decimal
-from decimojo.rounding_mode import RoundingMode
-from decimojo.mathematics import round
+# Integer exponents
+var squared = Decimal("2.5") ** 2    # 6.25
+var cubed = Decimal("2") ** 3        # 8
+var tenth_power = Decimal("2") ** 10  # 1024
 
-var num = Decimal("123.456789")
+# Negative exponents
+var reciprocal = Decimal("2") ** (-1)    # 0.5
+var inverse_square = Decimal("2") ** (-2)  # 0.25
 
-# Round to various decimal places with different modes
-var default_round = round(num, 2)                      # 123.46 (HALF_EVEN)
-var down = round(num, 2, RoundingMode.DOWN())          # 123.45 (truncate)
-var up = round(num, 2, RoundingMode.UP())              # 123.46 (away from zero)
-var half_up = round(num, 2, RoundingMode.HALF_UP())    # 123.46 (≥0.5 rounds up)
-
-# Rounding special cases
-var half_value = round(Decimal("123.5"), 0)  # 124 (banker's rounding)
-var half_odd = round(Decimal("124.5"), 0)    # 124 (banker's rounding to even)
+# Special cases
+var anything_power_zero = Decimal("123.45") ** 0  # 1
+var one_power_anything = Decimal("1") ** 100      # 1
+var zero_power_positive = Decimal("0") ** 5       # 0
 ```
 
-### 4. Working with Scale and Precision
-
-```mojo
-var d = Decimal("123.45")        # Scale is 2
-print(d.scale())                 # Prints: 2
-
-# Changing scale through rounding
-var more_precise = round(d, 4)    # 123.4500
-print(more_precise.scale())      # Prints: 4
-
-var less_precise = round(d, 1)    # 123.5 (rounds up)
-print(less_precise.scale())      # Prints: 1
-
-# Scale after operations
-var a = Decimal("123.45")         # Scale 2
-var b = Decimal("67.890")         # Scale 3
-print((a + b).scale())            # Prints: 3 (takes the larger scale)
-print((a * b).scale())            # Scale becomes 5 (sum of scales)
-```
-
-### 5. Zero and Special Values
-
-```mojo
-# Different ways to represent zero
-var z1 = Decimal("0")                # 0
-var z2 = Decimal("0.00")             # 0.00
-print(z1.is_zero(), z2.is_zero())    # Both print: True
-
-# Special values from static methods
-var max_val = Decimal.MAX()          # 79228162514264337593543950335
-var min_val = Decimal.MIN()          # -79228162514264337593543950335
-var one = Decimal.ONE()              # 1
-var neg_one = Decimal.NEGATIVE_ONE() # -1
-var zero = Decimal.ZERO()            # 0
-```
-
-### 6. Handling Very Small and Large Numbers
-
-```mojo
-# Very small number (1 at 28th decimal place - maximum precision)
-var small = Decimal("0." + "0" * 27 + "1")
-print(small)  # 0.0000000000000000000000000001
-
-# Large number close to max
-var large = Decimal("79228162514264337593543950334")  # MAX() - 1
-print(large)  # 79228162514264337593543950334
-
-# Calculations with extreme values
-var small_squared = small ** 2  # Even smaller number
-
-# Division resulting in long repeating decimal
-var repeating = Decimal("1") / Decimal("3")  # 0.333333... (up to max precision)
-print(repeating)  # 0.3333333333333333333333333333
-```
-
-### 7. Type Conversions
+### 4. Type Conversions
 
 ```mojo
 var d = Decimal("123.456")
 
-# String representation
+# String conversion
 var str_val = String(d)  # "123.456"
 
-# Integer conversion (throws error if has fractional part)
-try:
-    var int_val = Int(d)  # Error: has non-zero fractional part
-    print("This won't print")
-except:
-    print("Cannot convert to Int with non-zero fraction")
+# Integer conversion (truncates toward zero)
+var int_val = Int(d)  # 123
 
-# Integer conversion for whole number with decimal places
-var whole = Decimal("100.000")
-var int_whole = Int(whole)  # 100 (works because fractional part is zero)
+# Float conversion
+var float_val = Float64(d)  # 123.456
+
+# Check if value can be represented as an integer
+var is_int = d.is_integer()  # False
+var whole_num = Decimal("100.000")
+var is_whole = whole_num.is_integer()  # True
 ```
 
-### 8. Working with Integer Checking
+### 5. Working with Scale and Precision
 
 ```mojo
-# Check if a Decimal represents an integer (even if it has decimal places)
-var d1 = Decimal("123")      # Scale 0
-var d2 = Decimal("123.0")    # Scale 1
-var d3 = Decimal("123.456")  # Scale 3
+var d = Decimal("123.45")
+var scale_val = d.scale()  # 2 (number of decimal places)
 
-print(d1.is_integer())  # True
-print(d2.is_integer())  # True - all fractional digits are 0
-print(d3.is_integer())  # False - has non-zero fractional digits
+# Operations respect and combine scales appropriately
+var a = Decimal("123.45")         # Scale 2
+var b = Decimal("67.890")         # Scale 3
+var addition = a + b              # Scale 3 (the larger scale)
+var multiplication = a * b        # Scale 5 (sum of scales)
+
+# Very high precision values are supported
+var high_precision = Decimal("0.123456789012345678901234567")  # 27 decimal places
 ```
 
-### 9. Error Handling
+### 6. Edge Cases Handling
 
 ```mojo
-# Handle division by zero
+# Division by zero is detected
 try:
-    var result = Decimal("123.45") / Decimal("0") 
+    var undefined = Decimal("1") / Decimal("0")
     print("This won't print")
 except:
-    print("Correctly caught division by zero")
+    print("Division by zero detected")
 
-# Handle overflow
+# Overflow is detected
 try:
-    var max_value = Decimal.MAX()
-    var overflow_attempt = max_value + Decimal("1")
+    var max_val = Decimal.MAX()
+    var overflow = max_val + Decimal("1")
     print("This won't print")
 except:
-    print("Correctly caught overflow")
+    print("Overflow detected")
 
-# Handle invalid power operation
-try:
-    var zero_neg_power = Decimal("0") ** (-1)
-    print("This won't print")
-except:
-    print("Correctly caught zero raised to negative power")
+# Zero handling
+var zero = Decimal("0")
+var is_zero = zero.is_zero()  # True
+var zero_with_scale = Decimal("0.00000")
+var also_zero = zero_with_scale.is_zero()  # True
 ```
 
-### 10. Mathematics Module
+### 7. Working with Very Small and Large Numbers
 
 ```mojo
-from decimojo import Decimal
-from decimojo.mathematics import power
+# Very small number (maximum precision)
+var small = Decimal("0." + "0" * 27 + "1")  # 0.0000000000000000000000000001
 
-# Two equivalent ways to compute powers
-var result1 = Decimal("2.5") ** 2
-var result2 = power(Decimal("2.5"), 2)
+# Very large number
+var large = Decimal("79228162514264337593543950334")  # Near maximum value
 
-print(String(result1) == String(result2))  # True
+# Operations with extreme values
+var very_small_sum = small + small  # 0.0000000000000000000000000002
+var small_product = small * small   # Might result in underflow to zero due to precision limits
+```
 
-# More complex power operations
-var cube = power(Decimal("2"), 3)   # 8
-var reciprocal = power(Decimal("2"), -1)  # 0.5
+### 8. Negative Numbers
 
-# Can also pass a Decimal exponent (must be an integer value)
-var exp_as_decimal = Decimal("3")
-var cubed = power(Decimal("2"), exp_as_decimal)  # 8
+```mojo
+# Creating negative numbers
+var neg1 = Decimal("-123.45")
+var neg2 = -Decimal("123.45")  # Same as above
+
+# Sign operations
+var is_negative = neg1.is_negative()  # True
+var abs_value = abs(neg1)            # 123.45
+var negate_again = -neg1             # 123.45
+
+# Arithmetic with mixed signs
+var prod_neg_pos = neg1 * Decimal("2")   # -246.90
+var prod_neg_neg = neg1 * neg2          # 15240.0025 (positive result)
+```
+
+### 9. Equality and Comparison
+
+```mojo
+var a = Decimal("123.45")
+var b = Decimal("123.450")  # Same value but different scale
+
+# Equality checks the numeric value, not the representation
+var equal = (a == b)  # True
+
+# Self-comparisons
+var self_equal = (a == a)  # Always True
+
+# Zero comparisons with different scales
+var zero1 = Decimal("0")
+var zero2 = Decimal("0.000")
+var zeros_equal = (zero1 == zero2)  # True
+```
+
+### 10. Mathematics Functions
+
+```mojo
+from decimojo.mathematics import sqrt
+
+# Square root
+var root = sqrt(Decimal("16"))  # 4
+
+# Rounding to specific decimal places
+var rounded = round(Decimal("123.456"), 2)  # 123.46
+
+# Absolute value (two equivalent ways)
+var abs1 = abs(Decimal("-123.45"))  # 123.45
+var abs2 = abs(Decimal("-123.45"))       # 123.45
+
+# Calculating with arbitrary precision
+var precise_div = Decimal("1") / Decimal("7")  # 0.1428571428571428571428571429
+var precise_sqrt = sqrt(Decimal("2"))          # 1.414213562373095048801688724
 ```
 
 ## Related Projects

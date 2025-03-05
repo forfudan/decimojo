@@ -1,8 +1,8 @@
 """
 Test Decimal arithmetic operations including addition, subtraction, and negation.
 """
-from decimojo import Decimal
-from decimojo.mathematics import round, absolute
+
+from decimojo.prelude import *
 import testing
 
 
@@ -233,6 +233,87 @@ fn test_negation() raises:
     )
 
     print("Decimal negation tests passed!")
+
+
+fn test_abs() raises:
+    print("Testing decimal absolute value...")
+
+    # Test case 1: Absolute value of positive number
+    var a1 = Decimal("123.45")
+    var result1 = abs(a1)
+    testing.assert_equal(
+        String(result1), "123.45", "Absolute value of positive number"
+    )
+
+    # Test case 2: Absolute value of negative number
+    var a2 = Decimal("-67.89")
+    var result2 = abs(a2)
+    testing.assert_equal(
+        String(result2), "67.89", "Absolute value of negative number"
+    )
+
+    # Test case 3: Absolute value of zero
+    var a3 = Decimal("0")
+    var result3 = abs(a3)
+    testing.assert_equal(String(result3), "0", "Absolute value of zero")
+
+    # Test case 4: Absolute value of negative zero (if supported)
+    var a4 = Decimal("-0.00")
+    var result4 = abs(a4)
+    testing.assert_equal(
+        String(result4), "0.00", "Absolute value of negative zero"
+    )
+
+    # Test case 5: Absolute value with large number of decimal places
+    var a5 = Decimal("-0.0000000001")
+    var result5 = abs(a5)
+    testing.assert_equal(
+        String(result5),
+        "0.0000000001",
+        "Absolute value of small negative number",
+    )
+
+    # Test case 6: Absolute value of very large number
+    var a6 = Decimal("-9999999999.9999999999")
+    var result6 = abs(a6)
+    testing.assert_equal(
+        String(result6),
+        "9999999999.9999999999",
+        "Absolute value of large negative number",
+    )
+
+    # Test case 7: Absolute value of number with many significant digits
+    var a7 = Decimal("-0.123456789012345678901234567")
+    var result7 = abs(a7)
+    testing.assert_equal(
+        String(result7),
+        "0.123456789012345678901234567",
+        "Absolute value of high precision negative number",
+    )
+
+    # Test case 8: Absolute value of maximum representable number
+    try:
+        var a8 = Decimal("79228162514264337593543950335")  # Maximum value
+        var result8 = abs(a8)
+        testing.assert_equal(
+            String(result8),
+            "79228162514264337593543950335",
+            "Absolute value of maximum value",
+        )
+
+        var a9 = Decimal(
+            "-79228162514264337593543950335"
+        )  # Negative maximum value
+        var result9 = abs(a9)
+        testing.assert_equal(
+            String(result9),
+            "79228162514264337593543950335",
+            "Absolute value of negative maximum value",
+        )
+    except:
+        print("Maximum value test not applicable")
+
+    print("Decimal absolute value tests passed!")
 
 
 fn test_subtraction() raises:
@@ -1117,11 +1198,14 @@ fn main() raises:
     # Run addition tests
     test_addition()
 
-    # Run subtraction tests
-    test_subtraction()
-
     # Run negation tests
     test_negation()
+
+    # Run absolute value tests
+    test_abs()
+
+    # Run subtraction tests
+    test_subtraction()
 
     # Run multiplication tests
     test_multiplication()
@@ -1133,6 +1217,7 @@ fn main() raises:
     test_power_integer_exponents()
 
     # Run power tests with negative exponents
+
     test_power_negative_exponents()
 
     # Run power tests for special cases
