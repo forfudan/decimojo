@@ -728,6 +728,18 @@ struct Decimal(
         except e:
             raise Error("Error in `__add__()`; ", e)
 
+    fn __add__(self, other: Float64) raises -> Self:
+        return decimojo.add(self, Decimal(other))
+
+    fn __add__(self, other: Int) raises -> Self:
+        return decimojo.add(self, Decimal(other))
+
+    fn __radd__(self, other: Float64) raises -> Self:
+        return decimojo.add(Decimal(other), self)
+
+    fn __radd__(self, other: Int) raises -> Self:
+        return decimojo.add(Decimal(other), self)
+
     fn __sub__(self, other: Decimal) raises -> Self:
         """
         Subtracts the other Decimal from self and returns a new Decimal.
@@ -755,139 +767,48 @@ struct Decimal(
         except e:
             raise Error("Error in `__sub__()`; ", e)
 
-    fn __mul__(self, other: Decimal) raises -> Self:
+    fn __sub__(self, other: Float64) raises -> Self:
+        return decimojo.subtract(self, Decimal(other))
+
+    fn __sub__(self, other: Int) raises -> Self:
+        return decimojo.subtract(self, Decimal(other))
+
+    fn __rsub__(self, other: Float64) raises -> Self:
+        return decimojo.subtract(Decimal(other), self)
+
+    fn __rsub__(self, other: Int) raises -> Self:
+        return decimojo.subtract(Decimal(other), self)
+
+    fn __mul__(self, other: Decimal) -> Self:
         """
         Multiplies two Decimal values and returns a new Decimal containing the product.
         """
-        # Special cases for zero
-        if self.is_zero() or other.is_zero():
-            # For zero, we need to preserve the scale
-            var result = Decimal.ZERO()
-            var result_scale = min(
-                self.scale() + other.scale(), Self.MAX_PRECISION
-            )
-            result.flags = UInt32(
-                (result_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
-            )
-            return result
 
-        # Calculate the combined scale (sum of both scales)
-        var combined_scale = self.scale() + other.scale()
+        return decimojo.multiply(self, other)
 
-        # Determine the sign of the result (XOR of signs)
-        var result_is_negative = self.is_negative() != other.is_negative()
+    fn __mul__(self, other: Float64) raises -> Self:
+        return decimojo.multiply(self, Decimal(other))
 
-        # Extract the components for multiplication
-        var a_low = UInt64(self.low)
-        var a_mid = UInt64(self.mid)
-        var a_high = UInt64(self.high)
-
-        var b_low = UInt64(other.low)
-        var b_mid = UInt64(other.mid)
-        var b_high = UInt64(other.high)
-
-        # Perform 96-bit by 96-bit multiplication
-        var r0 = a_low * b_low
-        var r1_a = a_low * b_mid
-        var r1_b = a_mid * b_low
-        var r2_a = a_low * b_high
-        var r2_b = a_mid * b_mid
-        var r2_c = a_high * b_low
-        var r3_a = a_mid * b_high
-        var r3_b = a_high * b_mid
-        var r4 = a_high * b_high
-
-        # Accumulate results with carries
-        var c0 = r0 & 0xFFFFFFFF
-        var c1 = (r0 >> 32) + (r1_a & 0xFFFFFFFF) + (r1_b & 0xFFFFFFFF)
-        var c2 = (r1_a >> 32) + (r1_b >> 32) + (r2_a & 0xFFFFFFFF) + (
-            r2_b & 0xFFFFFFFF
-        ) + (r2_c & 0xFFFFFFFF) + (c1 >> 32)
-        c1 = c1 & 0xFFFFFFFF  # Mask after carry
-
-        var c3 = (r2_a >> 32) + (r2_b >> 32) + (r2_c >> 32) + (
-            r3_a & 0xFFFFFFFF
-        ) + (r3_b & 0xFFFFFFFF) + (c2 >> 32)
-        c2 = c2 & 0xFFFFFFFF  # Mask after carry
-
-        var c4 = (r3_a >> 32) + (r3_b >> 32) + (c3 >> 32) + r4
-        c3 = c3 & 0xFFFFFFFF  # Mask after carry
-
-        var result_low = UInt32(c0)
-        var result_mid = UInt32(c1)
-        var result_high = UInt32(c2)
-
-        # If we have overflow, we need to adjust the scale by dividing
-        # BUT ONLY enough to fit the result in 96 bits - no more
-        var scale_reduction = 0
-        if c3 > 0 or c4 > 0:
-            # Calculate minimum shifts needed to fit the result
-            while c3 > 0 or c4 > 0:
-                var remainder = UInt64(0)
-
-                # Process c4
-                var new_c4 = c4 / 10
-                remainder = c4 % 10
-
-                # Process c3 with remainder from c4
-                var new_c3 = (remainder << 32 | c3) / 10
-                remainder = (remainder << 32 | c3) % 10
-
-                # Process c2 with remainder from c3
-                var new_c2 = (remainder << 32 | c2) / 10
-                remainder = (remainder << 32 | c2) % 10
-
-                # Process c1 with remainder from c2
-                var new_c1 = (remainder << 32 | c1) / 10
-                remainder = (remainder << 32 | c1) % 10
-
-                # Process c0 with remainder from c1
-                var new_c0 = (remainder << 32 | c0) / 10
-
-                # Update values
-                c4 = new_c4
-                c3 = new_c3
-                c2 = new_c2
-                c1 = new_c1
-                c0 = new_c0
-
-                scale_reduction += 1
-
-            # Update result components after shifting
-            result_low = UInt32(c0)
-            result_mid = UInt32(c1)
-            result_high = UInt32(c2)
-
-        # Create the result with adjusted values
-        var result = Decimal(result_low, result_mid, result_high, 0)
-
-        # IMPORTANT: We account for the scale reduction separately from MAX_PRECISION capping
-        # First, apply the technical scale reduction needed due to overflow
-        var adjusted_scale = combined_scale - scale_reduction
-
-        # THEN cap at MAX_PRECISION
-        var final_scale = min(adjusted_scale, Self.MAX_SCALE)
-
-        # Set the flags with the correct scale
-        result.flags = UInt32(
-            (final_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
-        )
-        if result_is_negative:
-            result.flags |= Self.SIGN_MASK
-
-        # Handle excess precision separately AFTER handling overflow
-        # (this shouldn't be reducing scale twice)
-        if adjusted_scale > Self.MAX_PRECISION:
-            var scale_diff = adjusted_scale - Self.MAX_PRECISION
-            result = result._scale_down(scale_diff, RoundingMode.HALF_EVEN())
-
-        return result
+    fn __mul__(self, other: Int) -> Self:
+        return decimojo.multiply(self, Decimal(other))
 
     fn __truediv__(self, other: Decimal) raises -> Self:
         """
         Divides this Decimal by another Decimal and returns a new Decimal containing the result.
         """
         return decimojo.true_divide(self, other)
+
+    fn __truediv__(self, other: Float64) raises -> Self:
+        return decimojo.true_divide(self, Decimal(other))
+
+    fn __truediv__(self, other: Int) raises -> Self:
+        return decimojo.true_divide(self, Decimal(other))
+
+    fn __rtruediv__(self, other: Float64) raises -> Self:
+        return decimojo.true_divide(Decimal(other), self)
+
+    fn __rtruediv__(self, other: Int) raises -> Self:
+        return decimojo.true_divide(Decimal(other), self)
 
     fn __pow__(self, exponent: Decimal) raises -> Self:
         """

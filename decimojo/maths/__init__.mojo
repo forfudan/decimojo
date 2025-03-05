@@ -28,6 +28,7 @@
 from .arithmetics import (
     add,
     subtract,
+    multiply,
     true_divide,
     power,
     absolute,
