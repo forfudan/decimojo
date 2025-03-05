@@ -14,215 +14,252 @@ Since Mojo currently lacks a native Decimal type in its standard library, I deci
 
 This project draws inspiration from several established decimal implementations and documentation, e.g., [Python built-in `Decimal` type](https://docs.python.org/3/library/decimal.html), [Rust `rust_decimal` crate](https://docs.rs/rust_decimal/latest/rust_decimal/index.html), [Microsoft's `Decimal` implementation](https://learn.microsoft.com/en-us/dotnet/api/system.decimal.getbits?view=net-9.0&redirectedfrom=MSDN#System_Decimal_GetBits_System_Decimal_), [General Decimal Arithmetic Specification](https://speleotrove.com/decimal/decarith.html), etc. Many thanks to these predecessors for their contributions and their commitment to open knowledge sharing.
 
-## Issues
+## Status
 
-Rome is not built in one day. DeciMojo is currently under active development. Contributions, bug reports, and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/forFudan/decimojo/issues).
+Rome is not built in one day. DeciMojo is currently under active development and appears to be between the **"make it work"** and **"make it right"** phases, leaning more toward the latter. Contributions, bug reports, and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/forFudan/decimojo/issues).
+
+### Make it Work ✅ (MOSTLY COMPLETED)
+
+- Core decimal implementation exists and functions
+- Basic arithmetic operations (+, -, *, /) are implemented
+- Type conversions to/from various formats work
+- String representation and parsing are functional
+- Construction from different sources (strings, numbers) is supported
+
+### Make it Right 🔄 (IN PROGRESS)
+
+- Edge case handling is being addressed (division by zero, zero to negative power)
+- Scale and precision management shows sophistication
+- Financial calculations demonstrate proper rounding
+- High precision support is implemented (up to 28 decimal places)
+- The examples show robust handling of various scenarios
+
+### Make it Fast ⏳ (FUTURE WORK)
+
+- Performance optimization is acknowledged but not currently prioritized
 
 ## Examples
 
-Here are 10 key examples demonstrating the current functionality of the `Decimal` type.
+Here are 10 key examples highlighting the most important features of the `Decimal` type in its current state:
 
-### 1. Creating and Displaying Decimals
+### 1. Fixed-Point Precision for Financial Calculations
 
 ```mojo
 from decimojo import Decimal
 
-# From string literals with various formats
-var d1 = Decimal("123.45")           # Regular decimal
-var d2 = Decimal("-67.89")           # Negative decimal
-var d3 = Decimal("0.0012345678901234567890123456")  # High precision decimal
+# The classic floating-point problem
+print(0.1 + 0.2)  # 0.30000000000000004 (not exactly 0.3)
 
-# String representation 
-print(d1)                # Displays: 123.45
-print(repr(d1))          # Display internal representation
+# Decimal solves this with exact representation
+var d1 = Decimal("0.1")
+var d2 = Decimal("0.2")
+var sum = d1 + d2
+print(sum)  # Exactly 0.3
 
-# From numeric types
-var d4 = Decimal(123)    # From integer
-var d5 = Decimal(123.45) # From float (approximation)
+# Financial calculation example - computing tax
+var price = Decimal("19.99")
+var tax_rate = Decimal("0.0725")
+var tax = price * tax_rate  # Exactly 1.449275
+var total = price + tax     # Exactly 21.439275
 ```
 
-### 2. Basic Arithmetic Operations
+### 2. Basic Arithmetic with Proper Rounding
 
 ```mojo
-# Addition
-var sum = Decimal("123.45") + Decimal("67.89")  # 191.34
-
-# Subtraction
-var diff = Decimal("123.45") - Decimal("67.89")  # 55.56
-
-# Multiplication
-var prod = Decimal("12.34") * Decimal("5.67")  # 69.9678
-
-# Division
-var quot = Decimal("123.45") / Decimal("2.5")  # 49.38
-
-# Division with repeating decimal
-var repeating = Decimal("1") / Decimal("3")  # 0.3333333333333333333333333333
-```
-
-### 3. Sign Operations
-
-```mojo
-# Negation
+# Addition with different scales
 var a = Decimal("123.45")
-var neg_a = -a           # -123.45
+var b = Decimal("67.8")
+print(a + b)  # 191.25 (preserves highest precision)
 
-# Double negation
-var pos_a = -(-a)        # 123.45
+# Subtraction with negative result
+var c = Decimal("50")
+var d = Decimal("75.25")
+print(c - d)  # -25.25
 
-# Absolute value
-var b = Decimal("-67.89")
-var abs_b = abs(b)       # 67.89
+# Multiplication preserving full precision
+var e = Decimal("12.34")
+var f = Decimal("5.67")
+print(e * f)  # 69.9678 (all digits preserved)
 
-# Sign checking
-var is_neg = b.is_negative()  # True
-var is_pos = a.is_negative()  # False
+# Division with repeating decimals handled precisely
+var g = Decimal("1")
+var h = Decimal("3")
+print(g / h)  # 0.3333333333333333333333333333 (to precision limit)
 ```
 
-### 4. Type Conversions
+### 3. Scale and Precision Management
 
 ```mojo
-var d = Decimal("123.456")
-
-# String conversion
-var str_val = String(d)  # "123.456"
-
-# Integer conversion
-var int_val = Int(d)     # 123 (truncates toward zero)
-var neg_int = Int(Decimal("-123.456"))  # -123
-
-# Float conversion
-var float_val = Float64(d)  # 123.456
-
-# Zero checking
-var is_zero = Decimal("0").is_zero()        # True
-var scale_zero = Decimal("0.00").is_zero()  # True
-```
-
-### 5. Working with Scale and Precision
-
-```mojo
-# Get the scale (number of decimal places)
+# Scale refers to number of decimal places
 var d1 = Decimal("123.45")
 print(d1.scale())  # 2
 
 var d2 = Decimal("123.4500")
 print(d2.scale())  # 4
 
-# Scale after operations
-var sum = d1 + d2             # Scale is max(2, 4) = 4
-print(sum)                    # 246.9000
+# Arithmetic operations combine scales appropriately
+var sum = Decimal("0.123") + Decimal("0.45")  # Takes larger scale
+print(sum)  # 0.573
 
-var product = d1 * d2         # Scale is 2 + 4 = 6
-print(product)                # 15240.270000
+var product = Decimal("0.12") * Decimal("0.34")  # Sums the scales
+print(product)  # 0.0408
+
+# High precision is preserved (up to 28 decimal places)
+var precise = Decimal("0.1234567890123456789012345678")
+print(precise)  # 0.1234567890123456789012345678
 ```
 
-### 6. Power Operations
+### 4. Sign Handling and Absolute Value
 
 ```mojo
-# Integer exponents
-var base = Decimal("2")
-var squared = base ** 2    # 4
-var cubed = base ** 3      # 8
-var raised = base ** 10    # 1024
+# Negation operator
+var pos = Decimal("123.45")
+var neg = -pos
+print(neg)  # -123.45
 
-# Negative exponents
-var half = base ** (-1)      # 0.5
-var quarter = base ** (-2)   # 0.25
-var eighth = base ** (-3)    # 0.125
+# Multiple negations
+var back_to_pos = -(-pos)
+print(back_to_pos)  # 123.45
+
+# Absolute value
+var abs_val = abs(Decimal("-987.65"))
+print(abs_val)  # 987.65
+
+# Sign checking
+print(Decimal("-123.45").is_negative())  # True
+print(Decimal("0").is_negative())        # False
+print(Decimal("123.45").is_negative())   # False
+```
+
+### 5. Advanced Mathematical Operations
+
+```mojo
+from decimojo.mathematics import sqrt
+
+# Integer powers
+var squared = Decimal("3") ** 2
+print(squared)  # 9
+
+# Negative powers (reciprocals)
+var recip = Decimal("2") ** (-1)
+print(recip)  # 0.5
+
+# Square root with high precision
+var root2 = sqrt(Decimal("2"))
+print(root2)  # 1.414213562373095048801688724...
 
 # Special cases
-var any_to_zero = Decimal("123.45") ** 0  # 1
-var one_to_any = Decimal("1") ** 100      # 1
-var zero_to_pos = Decimal("0") ** 5       # 0
+print(Decimal("10") ** 0)  # 1 (anything to power 0)
+print(Decimal("1") ** 20)  # 1 (1 to any power)
+print(Decimal("0") ** 5)   # 0 (0 to positive power)
 ```
 
-### 7. Edge Cases Handling
+### 6. Type Conversions and Interoperability
 
 ```mojo
-# Division by zero
+var d = Decimal("123.456")
+
+# Converting to string (for display or serialization)
+var str_val = String(d)
+print(str_val)  # "123.456"
+
+# Getting internal representation 
+print(repr(d))  # Shows internal state
+
+# Converting to int (truncates toward zero)
+var i = Int(d)
+print(i)  # 123
+
+# Converting to float (may lose precision)
+var f = Float64(d)
+print(f)  # 123.456
+```
+
+### 7. Handling Edge Cases and Errors
+
+```mojo
+# Division by zero is properly caught
 try:
-    var result = Decimal("123.45") / Decimal("0")
-    print("This won't print")
+    var result = Decimal("10") / Decimal("0")
 except:
-    print("Division by zero detected")
+    print("Division by zero properly detected")
 
 # Zero raised to negative power
 try:
-    var result = Decimal("0") ** (-1)
-    print("This won't print")
+    var invalid = Decimal("0") ** (-1)
 except:
-    print("Zero raised to negative power detected")
-
-# Very small numbers
-var small = Decimal("0." + "0" * 27 + "1")  # Smallest possible positive decimal
-print(small)  # 0.0000000000000000000000000001
+    print("Zero to negative power properly detected")
+    
+# Smallest representable positive value
+var tiny = Decimal("0." + "0" * 27 + "1")  # 28 decimal places
+print(tiny)  # 0.0000000000000000000000000001
 ```
 
-### 8. Exact Decimal Representation
+### 8. Equality and Zero Comparisons
 
 ```mojo
-# Floating-point issue
-var float_sum = 0.1 + 0.2
-print(float_sum)  # 0.30000000000000004 (not exactly 0.3)
+# Equal values with different representations
+var a = Decimal("123.4500")
+var b = Decimal("123.45")
+print(a == b)  # True (numeric value equality)
 
-# Decimal solves this
-var dec_sum = Decimal("0.1") + Decimal("0.2")
-print(dec_sum)    # Exactly 0.3
+# Zero values with different scales
+var z1 = Decimal("0")
+var z2 = Decimal("0.000")
+print(z1 == z2)  # True
 
-# Division with accurate representation of repeating decimals
-var third = Decimal("1") / Decimal("3")
-print(third)      # 0.3333333333333333333333333333 (to precision limit)
+# Zero detection
+print(z1.is_zero())  # True
+print(z2.is_zero())  # True
 ```
 
-### 9. High Precision Calculations
+### 9. Real World Financial Examples
 
 ```mojo
-# High precision decimal
-var high_prec = Decimal("0.123456789012345678901234567")
-print(high_prec)  # Full 27 decimal places preserved
+# Monthly loan payment calculation
+var principal = Decimal("200000")  # $200,000 loan
+var annual_rate = Decimal("0.05")  # 5% interest rate
+var monthly_rate = annual_rate / Decimal("12")
+var num_payments = Decimal("360")  # 30 years
 
-# Square root with high precision
-from decimojo.mathematics import sqrt
-var root2 = sqrt(Decimal("2"))
-print(root2)      # 1.414213562373095048801688724 (to precision limit)
+# Monthly payment formula: P * r(1+r)^n/((1+r)^n-1)
+var numerator = monthly_rate * (Decimal("1") + monthly_rate) ** 360
+var denominator = (Decimal("1") + monthly_rate) ** 360 - Decimal("1")
+var payment = principal * (numerator / denominator)
+print("Monthly payment: $" + String(round(payment, 2)))  # $1,073.64
 
-# Financial calculations maintaining exact cents
-var item1 = Decimal("9.99")
-var item2 = Decimal("19.99")
-var tax_rate = Decimal("0.0725")
-var subtotal = item1 + item2           # 29.98
-var tax = subtotal * tax_rate          # 2.17355
-var total = subtotal + tax             # 32.15355
-print(total.round(2))                  # 32.15 (properly rounded)
+# Correct handling of multiple items and discounts
+var item1 = Decimal("29.99")
+var item2 = Decimal("59.99")
+var subtotal = item1 + item2  # 89.98
+var discount = subtotal * Decimal("0.15")  # 15% off
+var after_discount = subtotal - discount
+var tax = after_discount * Decimal("0.08")  # 8% tax
+var final = after_discount + tax
+print("Final price: $" + String(round(final, 2)))
 ```
 
-### 10. Performance Comparison
+### 10. Maximum Precision and Limit Testing
 
 ```mojo
-import time
-from decimojo import Decimal
-import math
+# Maximum value supported
+var max_val = Decimal.MAX()
+print(max_val)  # 79228162514264337593543950335
 
-# Benchmark division
-var dec_val = Decimal("123.456789")
-var float_val = 123.456789
+# Minimum value supported
+var min_val = Decimal.MIN()
+print(min_val)  # -79228162514264337593543950335
 
-# Decimal calculation
-var t0 = time.perf_counter_ns()
-var dec_result = Decimal("2") / dec_val
-var dec_time = time.perf_counter_ns() - t0
+# Operations near limits
+var near_max = Decimal("79228162514264337593543950334")  # MAX() - 1
+var still_valid = near_max + Decimal("1")
+print(still_valid == max_val)  # True
 
-# Float calculation
-t0 = time.perf_counter_ns()
-var float_result = 2.0 / float_val
-var float_time = time.perf_counter_ns() - t0
-
-print("Decimal result:", dec_result)
-print("Decimal time:", dec_time, "ns")
-print("Float result:", float_result) 
-print("Float time:", float_time, "ns")
-print("Decimal/Float time ratio:", dec_time/float_time)
+# Maximum precision for high-accuracy scientific calculations
+var pi = Decimal("3.1415926535897932384626433832")
+var radius = Decimal("2.5")
+var area = pi * (radius ** 2)
+print("Circle area: " + String(area))  # Precisely calculated area
 ```
 
 ## Related Projects
