@@ -43,7 +43,9 @@ struct Decimal(
       stored as three 32 bit integer (low, mid, high).
       The value of the coefficient is: high * 2**64 + mid * 2**32 + low
     - 32 bits for the flags, which contain the sign and scale information.
-      - Bits 0 to 15 are unused and must be zero.
+      - Bit 0 contains the infinity flag: 1 means infinity, 0 means finite.
+      - Bit 1 contains the NaN flag: 1 means NaN, 0 means not NaN.
+      - Bits 2 to 15 are unused and must be zero.
       - Bits 16 to 23 must contain an scale (exponent) between 0 and 28.
       - Bits 24 to 30 are unused and must be zero.
       - Bit 31 contains the sign: 0 mean positive, and 1 means negative.
@@ -74,23 +76,51 @@ struct Decimal(
     alias LEN_OF_MAX_VALUE = 29
     """Length of the max value as a string. For 128-bit Decimal, it is 29 digits"""
     alias SIGN_MASK = UInt32(0x80000000)
-    """
-    Sign mask.
-    `0b1000_0000_0000_0000_0000_0000_0000_0000`.
-    1 bit for sign (0 is positive and 1 is negative).
-    """
+    """Sign mask. `0b1000_0000_0000_0000_0000_0000_0000_0000`.
+    1 bit for sign (0 is positive and 1 is negative)."""
     alias SCALE_MASK = UInt32(0x00FF0000)
-    """
-    `0b0000_0000_1111_1111_0000_0000_0000_0000`.
-    Bits 0 to 15 are unused and must be zero.
-    Bits 16 to 23 must contain an exponent between 0 and 28.
-    Bits 24 to 30 are unused and must be zero."""
+    """Scale mask. `0b0000_0000_1111_1111_0000_0000_0000_0000`.
+    Bits 16 to 23 must contain an exponent between 0 and 28."""
     alias SCALE_SHIFT = UInt32(16)
-    """
-    Bits 16 to 23 must contain an exponent between 0 and 28.
-    """
+    """Bits 16 to 23 must contain an exponent between 0 and 28."""
+    alias INFINITY_MASK = UInt32(0x00000001)
+    """Infinity mask. `0b0000_0000_0000_0000_0000_0000_0000_0001`."""
+    alias NAN_MASK = UInt32(0x00000002)
+    """Not a Number mask. `0b0000_0000_0000_0000_0000_0000_0000_0010`."""
 
     # Special values
+    @staticmethod
+    fn INFINITY() -> Decimal:
+        """
+        Returns a Decimal representing positive infinity.
+        Internal representation: `0b0000_0000_0000_0000_0000_0000_0001`.
+        """
+        return Decimal(0, 0, 0, 0x00000001)
+
+    @staticmethod
+    fn NEGATIVE_INFINITY() -> Decimal:
+        """
+        Returns a Decimal representing negative infinity.
+        Internal representation: `0b1000_0000_0000_0000_0000_0000_0001`.
+        """
+        return Decimal(0, 0, 0, 0x80000001)
+
+    @staticmethod
+    fn NAN() -> Decimal:
+        """
+        Returns a Decimal representing Not a Number (NaN).
+        Internal representation: `0b0000_0000_0000_0000_0000_0000_0010`.
+        """
+        return Decimal(0, 0, 0, 0x00000010)
+
+    @staticmethod
+    fn NEGATIVE_NAN() -> Decimal:
+        """
+        Returns a Decimal representing negative Not a Number.
+        Internal representation: `0b1000_0000_0000_0000_0000_0000_0010`.
+        """
+        return Decimal(0, 0, 0, 0x80000010)
+
     @staticmethod
     fn ZERO() -> Decimal:
         """
@@ -1078,6 +1108,14 @@ struct Decimal(
         regardless of its sign or scale.
         """
         return self.low == 0 and self.mid == 0 and self.high == 0
+
+    fn is_infinity(self) -> Bool:
+        """Returns True if this Decimal is positive or negative infinity."""
+        return (self.flags & Self.INFINITY_MASK) != 0
+
+    fn is_nan(self) -> Bool:
+        """Returns True if this Decimal is NaN (Not a Number)."""
+        return (self.flags & Self.NAN_MASK) != 0
 
     fn scale(self) -> Int:
         """Returns the scale (number of decimal places) of this Decimal."""
