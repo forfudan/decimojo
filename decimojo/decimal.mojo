@@ -676,6 +676,12 @@ struct Decimal(
 
         return result
 
+    fn __repr__(self) -> String:
+        """
+        Returns a string representation of the Decimal.
+        """
+        return 'Decimal("' + self.__str__() + '")'
+
     fn write_to[W: Writer](self, mut writer: W):
         """
         Writes the Decimal to a writer.
@@ -830,22 +836,10 @@ struct Decimal(
         return decimal.power(self, exponent)
 
     fn __pow__(self, exponent: Int) raises -> Self:
-        """
-        Raises self to the power of exponent and returns a new Decimal.
-
-        Currently supports integer exponents only.
-
-        Args:
-            exponent: The power to raise self to.
-
-        Returns:
-            A new Decimal containing the result of self^exponent
-
-        Raises:
-            Error: If exponent is not an integer or if the operation would overflow.
-        """
-
         return decimal.power(self, exponent)
+
+    fn __pow__(self, exponent: Float64) raises -> Self:
+        return decimal.power(self, Decimal(exponent))
 
     # ===------------------------------------------------------------------=== #
     # Basic binary logic operation dunders
