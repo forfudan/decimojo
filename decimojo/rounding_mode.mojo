@@ -16,6 +16,12 @@ struct RoundingMode:
     - UP: Round away from zero
     """
 
+    # alias
+    alias down = Self.DOWN()
+    alias half_up = Self.HALF_UP()
+    alias half_even = Self.HALF_EVEN()
+    alias up = Self.UP()
+
     # Internal value
     var value: Int
 

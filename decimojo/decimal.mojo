@@ -25,7 +25,14 @@ Implements basic object methods for working with decimal numbers.
 from .rounding_mode import RoundingMode
 
 
-struct Decimal(Roundable, Writable):
+struct Decimal(
+    Absable,
+    Comparable,
+    Floatable,
+    Intable,
+    Roundable,
+    Writable,
+):
     """
     Correctly-rounded fixed-precision number.
 
@@ -566,15 +573,33 @@ struct Decimal(Roundable, Writable):
     # Output dunders, type-transfer dunders, and other methods
     # ===------------------------------------------------------------------=== #
 
-    fn __int__(self) raises -> Int:
+    fn __float__(self) -> Float64:
+        """
+        Converts this Decimal to a floating-point value.
+        Because Decimal is fixed-point, this may lose precision.
+
+        Returns:
+            The floating-point representation of this Decimal.
+        """
+        var coefficient = self.coefficient()
+        var result = Float64(0)
+
+        for i in range(len(coefficient)):
+            var digit = ord(coefficient[i]) - ord("0")
+            result = result * 10 + digit
+
+        result = result / (10 ** self.scale())
+
+        result = -result if self.is_negative() else result
+
+        return result
+
+    fn __int__(self) -> Int:
         """
         Converts this Decimal to an Int value.
 
         Returns:
             The Int representation of this Decimal.
-
-        Raises:
-            Error: If the Decimal has a non-zero fractional part.
         """
         var scale = self.scale()
 
@@ -594,14 +619,6 @@ struct Decimal(Roundable, Writable):
         if len(coef) <= scale:
             # Value is less than 1, so integer part is 0
             return 0
-
-        # Check if all fractional digits are 0
-        for i in range(len(coef) - scale, len(coef)):
-            if coef[i] != "0":
-                raise Error(
-                    "Cannot convert Decimal with non-zero fractional part"
-                    " to Int"
-                )
 
         # Get the integer part
         var int_part = coef[: len(coef) - scale]
@@ -667,6 +684,18 @@ struct Decimal(Roundable, Writable):
     # Basic unary operation dunders
     # neg
     # ===------------------------------------------------------------------=== #
+
+    fn __abs__(self) -> Self:
+        """
+        Returns the absolute value of this Decimal.
+
+        Returns:
+            The absolute value of this Decimal.
+        """
+        var result = Decimal(self.low, self.mid, self.high, self.flags)
+        result.flags &= ~Self.SIGN_MASK  # Clear sign bit
+
+        return result
 
     fn __neg__(self) -> Self:
         """Unary negation operator."""
@@ -1432,7 +1461,7 @@ struct Decimal(Roundable, Writable):
         var temp = result
 
         # Collect the digits to be removed (we need all of them for proper rounding)
-        for i in range(scale_diff):
+        for _ in range(scale_diff):
             # Divide by 10 without any rounding at this stage
             var high64 = UInt64(temp.high)
             var mid64 = UInt64(temp.mid)
@@ -1551,7 +1580,7 @@ struct Decimal(Roundable, Writable):
         )
 
         # Scale up by multiplying by powers of 10
-        for i in range(scale_diff):
+        for _ in range(scale_diff):
             # Check for potential overflow before multiplying
             if result.high > 0xFFFFFFFF // 10 or (
                 result.high == 0xFFFFFFFF // 10 and result.low > 0xFFFFFFFF % 10
