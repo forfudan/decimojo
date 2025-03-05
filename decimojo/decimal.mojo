@@ -759,7 +759,9 @@ struct Decimal(
         # Float addition which may be with different scales
         # Use string-based approach
 
-        return Decimal(decimojo.mathematics._addition_string_based(self, other))
+        return Decimal(
+            decimojo.maths.arithmetics._addition_string_based(self, other)
+        )
 
     fn __sub__(self, other: Decimal) raises -> Self:
         """

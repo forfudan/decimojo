@@ -205,8 +205,8 @@ var root = sqrt(Decimal("16"))  # 4
 var rounded = round(Decimal("123.456"), 2)  # 123.46
 
 # Absolute value (two equivalent ways)
-var abs1 = abs(Decimal("-123.45"))  # 123.45
-var abs2 = abs(Decimal("-123.45"))       # 123.45
+var abs1 = dm.absolute(Decimal("-123.45"))  # 123.45
+var abs2 = abs(Decimal("-123.45"))          # 123.45
 
 # Calculating with arbitrary precision
 var precise_div = Decimal("1") / Decimal("7")  # 0.1428571428571428571428571429

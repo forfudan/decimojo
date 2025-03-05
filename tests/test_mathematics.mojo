@@ -1,9 +1,8 @@
 """
 Comprehensive tests for the sqrt function of the Decimal type.
 """
-from decimojo import Decimal
-from decimojo.mathematics import sqrt, round
-from decimojo.rounding_mode import RoundingMode
+from decimojo.prelude import *
+from decimojo import sqrt
 import testing
 
 

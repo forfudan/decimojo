@@ -1,9 +1,7 @@
 """
 Test Decimal rounding methods with different rounding modes and precision levels.
 """
-from decimojo import Decimal
-from decimojo.rounding_mode import RoundingMode
-from decimojo.mathematics import round
+from decimojo.prelude import *
 import testing
 
 
@@ -45,19 +43,19 @@ fn test_different_rounding_modes() raises:
     var test_value = Decimal("123.456")
 
     # Test case 1: Round down (truncate)
-    var result1 = round(test_value, 2, RoundingMode.DOWN())
+    var result1 = dm.round(test_value, 2, RoundingMode.DOWN())
     testing.assert_equal(String(result1), "123.45", "Rounding down")
 
     # Test case 2: Round up (away from zero)
-    var result2 = round(test_value, 2, RoundingMode.UP())
+    var result2 = dm.round(test_value, 2, RoundingMode.UP())
     testing.assert_equal(String(result2), "123.46", "Rounding up")
 
     # Test case 3: Round half up
-    var result3 = round(test_value, 2, RoundingMode.HALF_UP())
+    var result3 = dm.round(test_value, 2, RoundingMode.HALF_UP())
     testing.assert_equal(String(result3), "123.46", "Rounding half up")
 
     # Test case 4: Round half even (banker's rounding)
-    var result4 = round(test_value, 2, RoundingMode.HALF_EVEN())
+    var result4 = dm.round(test_value, 2, RoundingMode.HALF_EVEN())
     testing.assert_equal(String(result4), "123.46", "Rounding half even")
 
     print("Rounding mode tests passed!")
@@ -70,25 +68,25 @@ fn test_edge_cases() raises:
     var half_value = Decimal("123.5")
 
     testing.assert_equal(
-        String(round(half_value, 0, RoundingMode.DOWN())),
+        String(dm.round(half_value, 0, RoundingMode.DOWN())),
         "123",
         "Rounding 0.5 down",
     )
 
     testing.assert_equal(
-        String(round(half_value, 0, RoundingMode.UP())),
+        String(dm.round(half_value, 0, RoundingMode.UP())),
         "124",
         "Rounding 0.5 up",
     )
 
     testing.assert_equal(
-        String(round(half_value, 0, RoundingMode.HALF_UP())),
+        String(dm.round(half_value, 0, RoundingMode.HALF_UP())),
         "124",
         "Rounding 0.5 half up",
     )
 
     testing.assert_equal(
-        String(round(half_value, 0, RoundingMode.HALF_EVEN())),
+        String(dm.round(half_value, 0, RoundingMode.HALF_EVEN())),
         "124",
         "Rounding 0.5 half even (even is 124)",
     )
@@ -96,7 +94,7 @@ fn test_edge_cases() raises:
     # Another test with half to even value
     var half_even_value = Decimal("124.5")
     testing.assert_equal(
-        String(round(half_even_value, 0, RoundingMode.HALF_EVEN())),
+        String(dm.round(half_even_value, 0, RoundingMode.HALF_EVEN())),
         "124",
         "Rounding 124.5 half even (even is 124)",
     )
@@ -115,19 +113,19 @@ fn test_edge_cases() raises:
     var negative_value = Decimal("-123.456")
 
     testing.assert_equal(
-        String(round(negative_value, 2, RoundingMode.DOWN())),
+        String(dm.round(negative_value, 2, RoundingMode.DOWN())),
         "-123.45",
         "Rounding negative number down",
     )
 
     testing.assert_equal(
-        String(round(negative_value, 2, RoundingMode.UP())),
+        String(dm.round(negative_value, 2, RoundingMode.UP())),
         "-123.46",
         "Rounding negative number up",
     )
 
     testing.assert_equal(
-        String(round(negative_value, 2, RoundingMode.HALF_EVEN())),
+        String(dm.round(negative_value, 2, RoundingMode.HALF_EVEN())),
         "-123.46",
         "Rounding negative number half even",
     )
