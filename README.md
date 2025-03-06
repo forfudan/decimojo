@@ -262,6 +262,13 @@ var area = pi * (radius ** 2)
 print("Circle area: " + String(area))  # Precisely calculated area
 ```
 
+## Tests and benches
+
+After cloning the repo onto your local disk, you can:
+
+- Use `magic run test` (or `maigic run t`) to run tests.
+- Use `magic run bench` (or `magic run b`) to generate logs for benchmarking tests agains `python.decimal` module. The log files are saved in `benches/logs/`.
+
 ## Related Projects
 
 I am also working on NuMojo, a library for numerical computing in Mojo 🔥 similar to NumPy, SciPy in Python. If you are also interested, you can [check it out here](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo).

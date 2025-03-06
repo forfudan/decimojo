@@ -13,7 +13,7 @@ version = "0.1.0"
 format = "magic run mojo format ./"
 
 # compile the package
-package = "magic run format && magic run mojo package decimojo && cp decimojo.mojopkg ./tests/ && rm decimojo.mojopkg"
+package = "magic run format && magic run mojo package decimojo && cp decimojo.mojopkg ./tests/ && cp decimojo.mojopkg ./benches/ && rm decimojo.mojopkg"
 p = "clear && magic run package"
 
 # debugs (run the testing files only)
@@ -21,11 +21,15 @@ debug = "magic run package && magic run mojo tests/*.mojo"
 d = "clear && magic run debug"
 
 # tests (use the mojo testing tool)
-test = "magic run package && magic run mojo test tests -I ."
+test = "magic run package && magic run mojo test tests"
 t = "clear && magic run test"
 
+# benches
+bench = "magic run package && cd benches && magic run mojo *.mojo && cd .."
+b = "clear && magic run bench"
+
 # before commit
-final = "magic run test"
+final = "magic run test && magic run bench"
 f = "clear && magic run final"
 
 [dependencies]

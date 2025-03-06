@@ -352,22 +352,9 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
                 if (
                     new_remainder[0] == "-"
                 ):  # Negative result means we've gone too far
-                    print(
-                        (
-                            "DEBUG: Subtraction would be negative, stopping at"
-                            " digit"
-                        ),
-                        digit,
-                    )
                     break
                 remainder = new_remainder
                 digit += 1
-                print(
-                    "DEBUG: Subtracted divisor, digit =",
-                    digit,
-                    ", remainder =",
-                    remainder,
-                )
 
         # Add digit to quotient
         quotient += String(digit)
@@ -391,12 +378,6 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
         quotient = "0"
     elif leading_zeros > 0:
         quotient = quotient[leading_zeros:]
-        print(
-            "DEBUG: Removed",
-            leading_zeros,
-            "leading zeros, quotient =",
-            quotient,
-        )
 
     # Handle trailing zeros for exact division
     var trailing_zeros = 0
@@ -409,12 +390,6 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
 
         if trailing_zeros > 0:
             quotient = quotient[: len(quotient) - trailing_zeros]
-            print(
-                "DEBUG: Removed",
-                trailing_zeros,
-                "trailing zeros, quotient =",
-                quotient,
-            )
 
     # Calculate decimal point position
     var dividend_scientific_exponent = x1.scientific_exponent()
