@@ -272,16 +272,12 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
         Error: If x2 is zero.
     """
 
-    print("DEBUG: Starting division of", x1, "by", x2)
-
     # Check for division by zero
     if x2.is_zero():
-        print("DEBUG: Division by zero detected")
         raise Error("Error in `__truediv__`: Division by zero")
 
     # Special case: if dividend is zero, return zero with appropriate scale
     if x1.is_zero():
-        print("DEBUG: Dividend is zero, returning zero with appropriate scale")
         var result = Decimal.ZERO()
         var result_scale = max(0, x1.scale() - x2.scale())
         result.flags = UInt32(
@@ -296,29 +292,19 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
         and x1.high == x2.high
         and x1.scale() == x2.scale()
     ):
-        print("DEBUG: Identical numbers detected, returning 1")
         return Decimal.ONE()
 
     # Determine sign of result (positive if signs are the same, negative otherwise)
     var result_is_negative = x1.is_negative() != x2.is_negative()
-    print(
-        "DEBUG: Result will be",
-        "negative" if result_is_negative else "positive",
-    )
 
     # Get coefficients as strings (absolute values)
     var dividend_coef = String(x1.coefficient())
     var divisor_coef = String(x2.coefficient())
-    print("DEBUG: Dividend coefficient:", dividend_coef)
-    print("DEBUG: Divisor coefficient:", divisor_coef)
-    print("DEBUG: Dividend scale:", x1.scale())
-    print("DEBUG: Divisor scale:", x2.scale())
 
     # Use string-based division to avoid overflow with large numbers
 
     # Determine precision needed for calculation
     var working_precision = Decimal.LEN_OF_MAX_VALUE + 1  # +1 for potential rounding
-    print("DEBUG: Working precision:", working_precision)
 
     # Perform long division algorithm
     var quotient = String("")
@@ -328,20 +314,16 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
     var processed_all_dividend = False
     var number_of_significant_digits_of_quotient = 0
 
-    print("DEBUG: Starting long division algorithm")
     while number_of_significant_digits_of_quotient < working_precision:
         # Grab next digit from dividend if available
         if current_pos < len(dividend_coef):
             remainder += dividend_coef[current_pos]
             current_pos += 1
-            print("DEBUG: Added digit from dividend, remainder =", remainder)
         else:
             # If we've processed all dividend digits, add a zero
             if not processed_all_dividend:
                 processed_all_dividend = True
-                print("DEBUG: Processed all dividend digits")
             remainder += "0"
-            print("DEBUG: Added trailing zero, remainder =", remainder)
 
         # Remove leading zeros from remainder for cleaner comparison
         var remainder_start = 0
@@ -351,7 +333,6 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
         ):
             remainder_start += 1
         remainder = remainder[remainder_start:]
-        print("DEBUG: Removed leading zeros, remainder =", remainder)
 
         # Compare remainder with divisor to determine next quotient digit
         digit = 0
@@ -362,13 +343,9 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
             len(remainder) == len(divisor_coef) and remainder >= divisor_coef
         ):
             can_subtract = True
-            print("DEBUG: Remainder is >= divisor, can subtract")
-        else:
-            print("DEBUG: Remainder is < divisor, adding 0 to quotient")
 
         if can_subtract:
             # Find how many times divisor goes into remainder
-            print("DEBUG: Finding how many times divisor goes into remainder")
             while True:
                 # Try to subtract divisor from remainder
                 var new_remainder = _subtract_strings(remainder, divisor_coef)
@@ -397,20 +374,9 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
         number_of_significant_digits_of_quotient = len(
             decimojo.str._remove_leading_zeros(quotient)
         )
-        print("DEBUG: Added digit", digit, "to quotient:", quotient)
-        print(
-            "DEBUG: Significant digits in quotient:",
-            number_of_significant_digits_of_quotient,
-        )
 
     # Check if division is exact
     var is_exact = remainder == "0" and current_pos >= len(dividend_coef)
-    print(
-        "DEBUG: Division is",
-        "exact" if is_exact else "not exact",
-        "remainder =",
-        remainder,
-    )
 
     # Remove leading zeros
     var leading_zeros = 0
@@ -423,7 +389,6 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
     if leading_zeros == len(quotient):
         # All zeros, keep just one
         quotient = "0"
-        print("DEBUG: Quotient is all zeros, setting to '0'")
     elif leading_zeros > 0:
         quotient = quotient[leading_zeros:]
         print(
@@ -455,22 +420,14 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
     var dividend_scientific_exponent = x1.scientific_exponent()
     var divisor_scientific_exponent = x2.scientific_exponent()
     var result_scientific_exponent = dividend_scientific_exponent - divisor_scientific_exponent
-    print("DEBUG: Dividend scientific exponent:", dividend_scientific_exponent)
-    print("DEBUG: Divisor scientific exponent:", divisor_scientific_exponent)
-    print("DEBUG: Result scientific exponent:", result_scientific_exponent)
 
     if decimojo.str._remove_trailing_zeros(
         dividend_coef
     ) < decimojo.str._remove_trailing_zeros(divisor_coef):
         # If dividend < divisor, result < 1
         result_scientific_exponent -= 1
-        print(
-            "DEBUG: Dividend < divisor, adjusted result exponent to:",
-            result_scientific_exponent,
-        )
 
     var decimal_pos = result_scientific_exponent + 1
-    print("DEBUG: Decimal position:", decimal_pos)
 
     # Format result with decimal point
     var result_str = String("")
@@ -480,29 +437,23 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
         # For example, decimal_pos = -1
         # 1234 -> 0.1234
         result_str = "0." + "0" * (-decimal_pos) + quotient
-        print("DEBUG: Result < 1, formatted as:", result_str)
     elif decimal_pos >= len(quotient):
         # All digits are to the left of the decimal point
         # For example, decimal_pos = 5
         # 1234 -> 12340
         result_str = quotient + "0" * (decimal_pos - len(quotient))
-        print("DEBUG: All digits left of decimal, formatted as:", result_str)
     else:
         # Insert decimal point within the digits
         # For example, decimal_pos = 2
         # 1234 -> 12.34
         result_str = quotient[:decimal_pos] + "." + quotient[decimal_pos:]
-        print("DEBUG: Inserting decimal point, formatted as:", result_str)
 
     # Apply sign
     if result_is_negative and result_str != "0":
         result_str = "-" + result_str
-        print("DEBUG: Applied negative sign, result:", result_str)
 
     # Convert to Decimal and return
-    print("DEBUG: Final string result:", result_str)
     var result = Decimal(result_str)
-    print("DEBUG: Converted to Decimal:", result)
 
     return result
 
