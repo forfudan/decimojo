@@ -298,8 +298,8 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
     var result_is_negative = x1.is_negative() != x2.is_negative()
 
     # Get coefficients as strings (absolute values)
-    var dividend_coef = decimojo.str._remove_trailing_zeros(x1.coefficient())
-    var divisor_coef = decimojo.str._remove_trailing_zeros(x2.coefficient())
+    var dividend_coef = String(x1.coefficient())
+    var divisor_coef = String(x2.coefficient())
 
     # Use string-based division to avoid overflow with large numbers
 
@@ -312,9 +312,9 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
     var digit = 0
     var current_pos = 0
     var processed_all_dividend = False
-    var significant_digits_of_quotient = 0
+    var number_of_significant_digits_of_quotient = 0
 
-    while significant_digits_of_quotient < working_precision:
+    while number_of_significant_digits_of_quotient < working_precision:
         # Grab next digit from dividend if available
         if current_pos < len(dividend_coef):
             remainder += dividend_coef[current_pos]
@@ -358,7 +358,7 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
 
         # Add digit to quotient
         quotient += String(digit)
-        significant_digits_of_quotient = len(
+        number_of_significant_digits_of_quotient = len(
             decimojo.str._remove_leading_zeros(quotient)
         )
 
@@ -396,7 +396,9 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
     var divisor_scientific_exponent = x2.scientific_exponent()
     var result_scientific_exponent = dividend_scientific_exponent - divisor_scientific_exponent
 
-    if dividend_coef < divisor_coef:
+    if decimojo.str._remove_trailing_zeros(
+        dividend_coef
+    ) < decimojo.str._remove_trailing_zeros(divisor_coef):
         # If dividend < divisor, result < 1
         result_scientific_exponent -= 1
 
@@ -473,7 +475,7 @@ fn power(base: Decimal, exponent: Decimal) raises -> Decimal:
             # 0^n is undefined for n < 0
             raise Error("Zero cannot be raised to a negative power")
 
-    if base.coefficient() == "1" and base.scale() == 0:
+    if base.coefficient() == 1 and base.scale() == 0:
         # 1^n = 1 for any n
         return Decimal.ONE()
 
@@ -686,8 +688,8 @@ fn _add_decimals_as_string(a: Decimal, b: Decimal) -> String:
     var is_negative = a.is_negative()  # and b.is_negative() is the same
 
     # Step 1: Get coefficient strings (absolute values)
-    var a_coef = a.coefficient()
-    var b_coef = b.coefficient()
+    var a_coef = String(a.coefficient())
+    var b_coef = String(b.coefficient())
     var a_scale = a.scale()
     var b_scale = b.scale()
 
@@ -811,8 +813,8 @@ fn _subtract_decimals_as_string(owned a: Decimal, owned b: Decimal) -> String:
 
     # Compare absolute values to determine which is larger
     var a_larger = True
-    var a_coef = a.coefficient()
-    var b_coef = b.coefficient()
+    var a_coef = String(a.coefficient())
+    var b_coef = String(b.coefficient())
     var a_scale = a.scale()
     var b_scale = b.scale()
 
@@ -855,8 +857,8 @@ fn _subtract_decimals_as_string(owned a: Decimal, owned b: Decimal) -> String:
     var max_scale = max(a.scale(), b.scale())
 
     # Get coefficients again (after possible swap)
-    a_coef = a.coefficient()
-    b_coef = b.coefficient()
+    a_coef = String(a.coefficient())
+    b_coef = String(b.coefficient())
     a_scale = a.scale()
     b_scale = b.scale()
 

@@ -16,7 +16,7 @@ This project draws inspiration from several established decimal implementations 
 
 ## Status
 
-Rome is not built in one day. DeciMojo is currently under active development and appears to be between the **"make it work"** and **"make it right"** phases, leaning more toward the latter. Contributions, bug reports, and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/forFudan/decimojo/issues).
+Rome is not built in one day. DeciMojo is currently under active development and appears to be between the **"make it work"** and **"make it right"** phases, leaning more toward the latter. Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/forFudan/decimojo/issues).
 
 ### Make it Work ✅ (MOSTLY COMPLETED)
 
@@ -261,6 +261,13 @@ var radius = Decimal("2.5")
 var area = pi * (radius ** 2)
 print("Circle area: " + String(area))  # Precisely calculated area
 ```
+
+## Tests and benches
+
+After cloning the repo onto your local disk, you can:
+
+- Use `magic run test` (or `maigic run t`) to run tests.
+- Use `magic run bench` (or `magic run b`) to generate logs for benchmarking tests agains `python.decimal` module. The log files are saved in `benches/logs/`.
 
 ## Related Projects
 

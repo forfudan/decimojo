@@ -12,5 +12,7 @@ magic.lock
 tempCodeRunnerFile.mojo
 # macOS environments
 .DS_Store
+# log files
+*.log
 # local files
 /test*.mojo

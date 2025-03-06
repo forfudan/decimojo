@@ -25,6 +25,7 @@ Implements basic object methods for working with decimal numbers.
 from .rounding_mode import RoundingMode
 
 
+@register_passable
 struct Decimal(
     Absable,
     Comparable,
@@ -592,15 +593,6 @@ struct Decimal(
         self.high = other.high
         self.flags = other.flags
 
-    fn __moveinit__(out self, owned other: Self):
-        """
-        Initializes a Decimal by moving from another Decimal.
-        """
-        self.low = other.low
-        self.mid = other.mid
-        self.high = other.high
-        self.flags = other.flags
-
     # ===------------------------------------------------------------------=== #
     # Output dunders, type-transfer dunders, and other methods
     # ===------------------------------------------------------------------=== #
@@ -613,15 +605,8 @@ struct Decimal(
         Returns:
             The floating-point representation of this Decimal.
         """
-        var coefficient = self.coefficient()
-        var result = Float64(0)
 
-        for i in range(len(coefficient)):
-            var digit = ord(coefficient[i]) - ord("0")
-            result = result * 10 + digit
-
-        result = result / (10 ** self.scale())
-
+        var result = Float64(self.coefficient()) / (10 ** self.scale())
         result = -result if self.is_negative() else result
 
         return result
@@ -629,37 +614,28 @@ struct Decimal(
     fn __int__(self) -> Int:
         """
         Converts this Decimal to an Int value.
+        ***WARNING***: If the Decimal is too large to fit in an Int,
+        this will become the maximum or minimum Int value.
 
         Returns:
             The Int representation of this Decimal.
         """
-        var scale = self.scale()
+        if self.is_zero():
+            return 0
 
         # If scale is 0, the number is already an integer
-        if scale == 0:
-            # Convert the coefficient string to an integer
-            var coef = self.coefficient()
-            var result: Int = 0
-            for i in range(len(coef)):
-                var digit = ord(coef[i]) - ord("0")
-                result = result * 10 + digit
+        if self.scale() == 0:
+            return Int(
+                -self.coefficient() if self.is_negative() else self.coefficient()
+            )
 
-            return -result if self.is_negative() else result
-
-        # If scale > 0, check if we have a whole number (all fractional digits are 0)
-        var coef = self.coefficient()
-        if len(coef) <= scale:
+        # If scale is not 0, check whether integer part is 0
+        if self.number_of_significant_digits() <= self.scale():
             # Value is less than 1, so integer part is 0
             return 0
 
-        # Get the integer part
-        var int_part = coef[: len(coef) - scale]
-        var result: Int = 0
-
-        for i in range(len(int_part)):
-            var digit = ord(int_part[i]) - ord("0")
-            result = result * 10 + digit
-
+        # Otherwise, get the integer part by dividing by 10^scale
+        var result = Int(self.coefficient() // 10 ** UInt128(self.scale()))
         return -result if self.is_negative() else result
 
     fn __str__(self) -> String:
@@ -668,7 +644,7 @@ struct Decimal(
         Preserves trailing zeros after decimal point to match the scale.
         """
         # Get the coefficient as a string (absolute value)
-        var coef = self.coefficient()
+        var coef = String(self.coefficient())
         var scale = self.scale()
 
         # Handle zero as a special case
@@ -1002,59 +978,22 @@ struct Decimal(
     # ===------------------------------------------------------------------=== #
     # Other methods
     # ===------------------------------------------------------------------=== #
-    fn coefficient(self) -> String:
+
+    fn coefficient(self) -> UInt128:
         """
-        Returns the unscaled integer coefficient.
-        This is the absolute value of the decimal digits without considering the scale or sign.
-        We need to combine the three 32-bit parts into a single value.
-        Since we might exceed built-in integer limits, we build the string directly.
+        Returns the unscaled integer coefficient as an UInt128 value.
+        This is the absolute value of the decimal digits without considering the scale.
         The value of the coefficient is: high * 2**64 + mid * 2**32 + low.
+
+        Returns:
+            Int128: The coefficient as a unsigned 128-bit signed integer.
         """
-        if self.low == 0 and self.mid == 0 and self.high == 0:
-            return "0"
-
-        # We need to build the decimal representation of the 96-bit integer
-        # by repeatedly dividing by 10 and collecting remainders
-        var result = String("")
-        var h = UInt64(self.high)
-        var m = UInt64(self.mid)
-        var l = UInt64(self.low)
-
-        while h > 0 or m > 0 or l > 0:
-            # Perform division by 10 across all three parts
-            var remainder: UInt64 = 0
-            var new_h: UInt64 = 0
-            var new_m: UInt64 = 0
-            var new_l: UInt64 = 0
-
-            # Process high part
-            if h > 0:
-                new_h = h // 10
-                remainder = h % 10
-                # Propagate remainder to mid
-                m += remainder << 32  # equivalent to remainder * 2^32
-
-            # Process mid part
-            if m > 0:
-                new_m = m // 10
-                remainder = m % 10
-                # Propagate remainder to low
-                l += remainder << 32  # equivalent to remainder * 2^32
-
-            # Process low part
-            if l > 0:
-                new_l = l // 10
-                remainder = l % 10
-
-            # Append remainder to result (in reverse order)
-            result = String(remainder) + String(result)
-
-            # Update values for next iteration
-            h = new_h
-            m = new_m
-            l = new_l
-
-        return result
+        # Combine the three 32-bit parts into a single Int128
+        return (
+            UInt128(self.high) << 64
+            | UInt128(self.mid) << 32
+            | UInt128(self.low)
+        )
 
     fn is_integer(self) -> Bool:
         """
@@ -1064,38 +1003,22 @@ struct Decimal(
 
         Returns:
             True if this Decimal represents an integer value, False otherwise.
-
-        Examples:
-        ```
-        Decimal("123").is_integer()      # Returns True
-        Decimal("123.0").is_integer()    # Returns True
-        Decimal("123.00").is_integer()   # Returns True
-        Decimal("123.45").is_integer()   # Returns False
-        ```
-        .
         """
-        var scale = self.scale()
 
         # If scale is 0, it's already an integer
-        if scale == 0:
+        if self.scale() == 0:
             return True
 
-        # If scale > 0, check if all fractional digits are zeros
-        var coef = self.coefficient()
+        # If value is zero, it's an integer regardless of scale
+        if self.is_zero():
+            return True
 
-        # If coefficient length is less than or equal to scale,
-        # the value is between -1 and 1 (e.g., 0.123)
-        # It's an integer only if it's exactly zero
-        if len(coef) <= scale:
-            return self.is_zero()
-
-        # Check if all digits after the decimal point are zeros
-        for i in range(len(coef) - scale, len(coef)):
-            if coef[i] != "0":
-                return False
-
-        # All digits after decimal point are zeros
-        return True
+        # For a value to be an integer, it must be divisible by 10^scale
+        # If coefficient % 10^scale == 0, then all decimal places are zeros
+        # If it divides evenly, it's an integer
+        return (
+            self.coefficient() % (UInt128(10) ** UInt128(self.scale()))
+        ) == 0
 
     fn is_negative(self) -> Bool:
         """Returns True if this Decimal is negative."""
@@ -1127,32 +1050,28 @@ struct Decimal(
         The exponent is the power of 10 needed to represent the value in scientific notation.
         """
 
-        # Get the coefficient as a string
-        var coef = self.coefficient()
+        return self.number_of_significant_digits() - 1 - self.scale()
 
-        return len(coef) - 1 - self.scale()
-
-    fn significant_digits(self) -> Int:
+    fn number_of_significant_digits(self) -> Int:
         """
         Returns the number of significant digits in this Decimal.
         The number of significant digits is the total number of digits in the coefficient,
         excluding leading and trailing zeros.
         """
 
-        # Get the coefficient as a string
-        var coef = self.coefficient()
+        # Special case for zero
+        if self.coefficient() == 0:
+            return 0  # Zero has zero significant digit
 
-        # Count significant digits
-        var count = 0
-        var found_non_zero = False
+        # Count digits using integer division
+        var digit_count = 0
+        var temp = self.coefficient()
 
-        for i in range(len(coef)):
-            if coef[i] != "0":
-                found_non_zero = True
-            if found_non_zero:
-                count += 1
+        while temp > 0:
+            temp //= 10
+            digit_count += 1
 
-        return count
+        return digit_count
 
     # ===------------------------------------------------------------------=== #
     # Internal methods
@@ -1177,17 +1096,22 @@ struct Decimal(
         else:
             return 0
 
-    fn _internal_representation(value: Decimal):
+    fn internal_representation(value: Decimal):
         # Show internal representation details
         print("\nInternal Representation Details:")
         print("--------------------------------")
         print("Decimal:       ", value)
-        print("low:           ", value.low)
-        print("mid:           ", value.mid)
-        print("high:          ", value.high)
         print("coefficient:   ", value.coefficient())
         print("scale:         ", value.scale())
         print("is negative:   ", value.is_negative())
+        print("is zero:       ", value.is_zero())
+        print("low:           ", value.low)
+        print("mid:           ", value.mid)
+        print("high:          ", value.high)
+        print("low byte:      ", hex(value.low))
+        print("mid byte:      ", hex(value.mid))
+        print("high byte:     ", hex(value.high))
+        print("flags byte:    ", hex(value.flags))
         print("--------------------------------")
 
     fn _scale_down(
@@ -1218,37 +1142,25 @@ struct Decimal(
             scale_diff = self.scale()
             new_scale = 0
 
-        # First collect all digits that will be removed for rounding decision
-        var removed_digits = String("")
-        var temp = result
+        # With UInt128, we can represent the coefficient as a single value
+        var coefficient = UInt128(self.high) << 64 | UInt128(
+            self.mid
+        ) << 32 | UInt128(self.low)
 
-        # Collect the digits to be removed (we need all of them for proper rounding)
+        # Collect all digits that will be removed for rounding decision
+        var removed_digits = List[UInt8]()
+
+        # Calculate coefficient / 10^scale_diff and collect remainder digits
         for _ in range(scale_diff):
-            # Divide by 10 without any rounding at this stage
-            var high64 = UInt64(temp.high)
-            var mid64 = UInt64(temp.mid)
-            var low64 = UInt64(temp.low)
+            var last_digit = UInt8(coefficient % 10)
+            coefficient //= 10
+            removed_digits.append(last_digit)
 
-            # Divide high part and propagate remainder
-            var new_high = high64 // 10
-            var remainder_h = high64 % 10
-
-            # Calculate mid with remainder from high
-            var mid_with_remainder = mid64 + (remainder_h << 32)
-            var new_mid = mid_with_remainder // 10
-            var remainder_m = mid_with_remainder % 10
-
-            # Calculate low with remainder from mid
-            var low_with_remainder = low64 + (remainder_m << 32)
-            var new_low = low_with_remainder // 10
-
-            var last_digit = low_with_remainder % 10
-            removed_digits = String(last_digit) + removed_digits
-
-            # Update temp values
-            temp.low = UInt32(new_low)
-            temp.mid = UInt32(new_mid)
-            temp.high = UInt32(new_high)
+        # After collecting digits, reverse the list for correct rounding
+        var reversed_digits = List[UInt8]()
+        for i in range(len(removed_digits) - 1, -1, -1):
+            reversed_digits.append(removed_digits[i])
+        removed_digits = reversed_digits
 
         # Now we have all the digits to be removed, apply proper rounding
         var should_round_up = False
@@ -1258,28 +1170,28 @@ struct Decimal(
             should_round_up = False
         elif rounding_mode == RoundingMode.UP():
             # Always round up if any non-zero digit was removed
-            for i in range(len(removed_digits)):
-                if removed_digits[i] != "0":
+            for digit in removed_digits:
+                if digit[] != 0:
                     should_round_up = True
                     break
         elif rounding_mode == RoundingMode.HALF_UP():
-            # Round up if first digit >= 5
-            if len(removed_digits) > 0 and ord(removed_digits[0]) >= ord("5"):
+            # Round up if first removed digit >= 5
+            if len(removed_digits) > 0 and removed_digits[0] >= 5:
                 should_round_up = True
         elif rounding_mode == RoundingMode.HALF_EVEN():
             # Apply banker's rounding
             if len(removed_digits) > 0:
-                var first_digit = ord(removed_digits[0]) - ord("0")
+                var first_digit = removed_digits[0]
                 if first_digit > 5:
                     # Round up
                     should_round_up = True
                 elif first_digit == 5:
-                    # For banker's rounding we need to check:
+                    # For banker's rounding:
                     # 1. If there are other non-zero digits after 5, round up
                     # 2. Otherwise, round to nearest even (round up if odd)
                     var has_non_zero_after = False
                     for i in range(1, len(removed_digits)):
-                        if removed_digits[i] != "0":
+                        if removed_digits[i] != 0:
                             has_non_zero_after = True
                             break
 
@@ -1287,36 +1199,29 @@ struct Decimal(
                         should_round_up = True
                     else:
                         # Round to even - check if the low digit is odd
-                        should_round_up = temp.low % 2 == 1
-
-        # Set the new scale
-        result = temp
-        result.flags = (self.flags & ~Self.SCALE_MASK) | (
-            UInt32(new_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
-        )
+                        should_round_up = (coefficient & 1) == 1
 
         # Apply rounding if needed
         if should_round_up:
-            # Increment and handle carry
-            var new_low = UInt64(result.low) + 1
-            if new_low > 0xFFFFFFFF:
-                result.low = 0
-                var new_mid = UInt64(result.mid) + 1
-                if new_mid > 0xFFFFFFFF:
-                    result.mid = 0
-                    result.high += 1
-                else:
-                    result.mid = UInt32(new_mid)
-            else:
-                result.low = UInt32(new_low)
+            coefficient += 1
+
+        # Extract the 32-bit components from the UInt128
+        result.low = UInt32(coefficient & 0xFFFFFFFF)
+        result.mid = UInt32((coefficient >> 32) & 0xFFFFFFFF)
+        result.high = UInt32((coefficient >> 64) & 0xFFFFFFFF)
+
+        # Set the new scale
+        result.flags = (self.flags & ~Self.SCALE_MASK) | (
+            UInt32(new_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
+        )
 
         return result
 
     fn _scale_up(self, owned scale_diff: Int) -> Decimal:
         """
         Internal method to scale up a decimal by:
-            - multiplying coefficient by 10^scale_diff.
-            - imcrease the scale by scale_diff.
+            - multiplying coefficient by 10^scale_diff
+            - increase the scale by scale_diff
 
         Args:
             scale_diff: Number of decimal places to scale up by
@@ -1337,36 +1242,28 @@ struct Decimal(
             scale_diff = Self.MAX_PRECISION + 1 - self.scale()
             new_scale = Self.MAX_PRECISION + 1
 
-        result.flags = (result.flags & ~Self.SCALE_MASK) | (
+        # With UInt128, we can represent the coefficient as a single value
+        var coefficient = UInt128(self.high) << 64 | UInt128(
+            self.mid
+        ) << 32 | UInt128(self.low)
+
+        # Check if multiplication by 10^scale_diff would cause overflow
+        var max_coefficient = ~UInt128(0) / UInt128(10**scale_diff)
+        if coefficient > max_coefficient:
+            # Handle overflow case - limit to maximum value or raise error
+            coefficient = ~UInt128(0)
+        else:
+            # No overflow - safe to multiply
+            coefficient *= UInt128(10**scale_diff)
+
+        # Extract the 32-bit components from the UInt128
+        result.low = UInt32(coefficient & 0xFFFFFFFF)
+        result.mid = UInt32((coefficient >> 32) & 0xFFFFFFFF)
+        result.high = UInt32((coefficient >> 64) & 0xFFFFFFFF)
+
+        # Set the new scale
+        result.flags = (self.flags & ~Self.SCALE_MASK) | (
             UInt32(new_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
         )
-
-        # Scale up by multiplying by powers of 10
-        for _ in range(scale_diff):
-            # Check for potential overflow before multiplying
-            if result.high > 0xFFFFFFFF // 10 or (
-                result.high == 0xFFFFFFFF // 10 and result.low > 0xFFFFFFFF % 10
-            ):
-                # Overflow would occur, cannot scale further
-                break
-
-            # Multiply by 10
-            var overflow_low_to_mid: UInt64 = 0
-            var overflow_mid_to_high: UInt64 = 0
-
-            # Calculate products and overflows
-            var new_low = result.low * 10
-            overflow_low_to_mid = UInt64(result.low) * 10 >> 32
-
-            var new_mid_temp = UInt64(result.mid) * 10 + overflow_low_to_mid
-            var new_mid = UInt32(new_mid_temp & 0xFFFFFFFF)
-            overflow_mid_to_high = new_mid_temp >> 32
-
-            var new_high = result.high * 10 + UInt32(overflow_mid_to_high)
-
-            # Update result
-            result.low = new_low
-            result.mid = new_mid
-            result.high = new_high
 
         return result
