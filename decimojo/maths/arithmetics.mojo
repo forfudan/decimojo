@@ -46,19 +46,69 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
     Raises:
         Error: If the operation would overflow.
     """
+
     # Special case for zero
     if x1.is_zero():
-        return x2
-    if x2.is_zero():
-        return x1
+        return Decimal(
+            x2.low,
+            x2.mid,
+            x2.high,
+            x2.is_negative() and x1.is_negative(),
+            max(x1.scale(), x2.scale()),
+        )
 
-    # TODO: Implement optimized addition for scale == 0 for both numbers
-    # Integer addition
-    if x1.is_integer() and x2.is_integer():
+    elif x2.is_zero():
+        return Decimal(
+            x1.low,
+            x1.mid,
+            x1.high,
+            x2.is_negative() and x1.is_negative(),
+            max(x1.scale(), x2.scale()),
+        )
+
+    # Integer addition with scale of 0
+    elif x1.scale() == 0 and x2.scale() == 0:
         # Same sign: add absolute values and keep the sign
         if x1.is_negative() == x2.is_negative():
             # Add directly using UInt128 arithmetic
-            var summation = x1.to_uint() + x2.to_uint()
+            var summation = x1.to_uint128() + x2.to_uint128()
+
+            # Check for overflow (UInt128 can store values beyond our 96-bit limit)
+            # We need to make sure the sum fits in 96 bits (our Decimal capacity)
+            if summation > Decimal.MAX_AS_UINT128:  # 2^96-1
+                raise Error("Error in `addition()`: Decimal overflow")
+
+            # Extract the 32-bit components from the UInt128 sum
+            var low = UInt32(summation & 0xFFFFFFFF)
+            var mid = UInt32((summation >> 32) & 0xFFFFFFFF)
+            var high = UInt32((summation >> 64) & 0xFFFFFFFF)
+
+            return Decimal(low, mid, high, x1.is_negative(), 0)
+
+        # Different signs: subtract the smaller from the larger
+        else:
+            var diff: UInt128
+            var is_negative: Bool
+            if x1.coefficient() > x2.coefficient():
+                diff = x1.to_uint128() - x2.to_uint128()
+                is_negative = x1.is_negative()
+            else:
+                diff = x2.to_uint128() - x1.to_uint128()
+                is_negative = x2.is_negative()
+
+            # Extract the 32-bit components from the UInt128 difference
+            low = UInt32(diff & 0xFFFFFFFF)
+            mid = UInt32((diff >> 32) & 0xFFFFFFFF)
+            high = UInt32((diff >> 64) & 0xFFFFFFFF)
+
+            return Decimal(low, mid, high, is_negative, 0)
+
+    # Integer addition with positive scales
+    elif x1.is_integer() and x2.is_integer():
+        # Same sign: add absolute values and keep the sign
+        if x1.is_negative() == x2.is_negative():
+            # Add directly using UInt128 arithmetic
+            var summation = x1.to_uint128() + x2.to_uint128()
 
             # Check for overflow (UInt128 can store values beyond our 96-bit limit)
             # We need to make sure the sum fits in 96 bits (our Decimal capacity)
@@ -88,10 +138,10 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
             var diff: UInt128
             var is_negative: Bool
             if x1.coefficient() > x2.coefficient():
-                diff = x1.to_uint() - x2.to_uint()
+                diff = x1.to_uint128() - x2.to_uint128()
                 is_negative = x1.is_negative()
             else:
-                diff = x2.to_uint() - x1.to_uint()
+                diff = x2.to_uint128() - x1.to_uint128()
                 is_negative = x2.is_negative()
 
             # Determine the scale for the result
@@ -113,8 +163,6 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
             return Decimal(low, mid, high, is_negative, scale)
 
     # Float addition which may be with different scales
-    # Use string-based approach
-
     # else:
     #     # Same sign: add absolute values and keep the sign
     #     if x1.is_negative() == x2.is_negative():
@@ -134,7 +182,11 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
 
     # UInt256(x1.coefficient())
 
-    return Decimal(decimojo.maths.arithmetics._add_decimals_as_string(x1, x2))
+    # Use string-based approach for float addition
+    else:
+        return Decimal(
+            decimojo.maths.arithmetics._add_decimals_as_string(x1, x2)
+        )
 
 
 fn subtract(x1: Decimal, x2: Decimal) raises -> Decimal:

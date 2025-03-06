@@ -642,7 +642,7 @@ struct Decimal(
             The Int representation of this Decimal.
         """
 
-        var res = Int(self.to_uint())
+        var res = Int(self.to_uint128())
 
         return -res if self.is_negative() else res
 
@@ -654,18 +654,17 @@ struct Decimal(
         # Get the coefficient as a string (absolute value)
         var coef = String(self.coefficient())
         var scale = self.scale()
+        var result: String
 
         # Handle zero as a special case
         if coef == "0":
             if scale == 0:
-                return "0"
+                result = "0"
             else:
-                return "0." + "0" * scale
+                result = "0." + "0" * scale
 
         # For non-zero values, format according to scale
-        var result: String
-
-        if scale == 0:
+        elif scale == 0:
             # No decimal places needed
             result = coef
         elif scale >= len(coef):
@@ -685,7 +684,7 @@ struct Decimal(
                 result += "0" * (scale - current_decimals)
 
         # Add negative sign if needed
-        if self.is_negative() and result != "0":
+        if self.is_negative():
             result = "-" + result
 
         return result
@@ -702,11 +701,37 @@ struct Decimal(
         Compared to `__int__` method, the returned value will not be truncated.
         """
 
-        var res = Int128(self.to_uint())
+        var res = Int128(self.to_uint128())
 
         return -res if self.is_negative() else res
 
-    fn to_uint(self) -> UInt128:
+    fn to_int128(self) -> Int128:
+        """
+        Returns the unsigned integral part of the Decimal.
+        Compared to `__int__` method, the returned value will not be truncated.
+        """
+
+        var res: Int128
+
+        if self.is_zero():
+            res = 0
+
+        # If scale is 0, the number is already an integer
+        elif self.scale() == 0:
+            res = Int128(self.coefficient())
+
+        # If scale is not 0, check whether integer part is 0
+        elif self.number_of_significant_digits() <= self.scale():
+            # Value is less than 1, so integer part is 0
+            res = 0
+
+        # Otherwise, get the integer part by dividing by 10^scale
+        else:
+            res = Int128(self.coefficient() // UInt128(10 ** self.scale()))
+
+        return res
+
+    fn to_uint128(self) -> UInt128:
         """
         Returns the unsigned integral part of the Decimal.
         Compared to `__int__` method, the returned value will not be truncated.
@@ -757,6 +782,10 @@ struct Decimal(
 
     fn __neg__(self) -> Self:
         """Unary negation operator."""
+        # Special case for negative zero
+        if self.is_zero():
+            return Decimal.ZERO()
+
         var result = Decimal(self.low, self.mid, self.high, self.flags)
         result.flags ^= Self.SIGN_MASK  # Flip sign bit
         return result
