@@ -25,6 +25,7 @@ Implements basic object methods for working with decimal numbers.
 from .rounding_mode import RoundingMode
 
 
+@register_passable
 struct Decimal(
     Absable,
     Comparable,
@@ -586,15 +587,6 @@ struct Decimal(
     fn __copyinit__(out self, other: Self):
         """
         Initializes a Decimal by copying another Decimal.
-        """
-        self.low = other.low
-        self.mid = other.mid
-        self.high = other.high
-        self.flags = other.flags
-
-    fn __moveinit__(out self, owned other: Self):
-        """
-        Initializes a Decimal by moving from another Decimal.
         """
         self.low = other.low
         self.mid = other.mid
