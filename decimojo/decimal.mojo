@@ -613,15 +613,8 @@ struct Decimal(
         Returns:
             The floating-point representation of this Decimal.
         """
-        var coefficient = self.coefficient()
-        var result = Float64(0)
 
-        for i in range(len(coefficient)):
-            var digit = ord(coefficient[i]) - ord("0")
-            result = result * 10 + digit
-
-        result = result / (10 ** self.scale())
-
+        var result = Float64(self.coefficient()) / (10 ** self.scale())
         result = -result if self.is_negative() else result
 
         return result
@@ -629,37 +622,28 @@ struct Decimal(
     fn __int__(self) -> Int:
         """
         Converts this Decimal to an Int value.
+        ***WARNING***: If the Decimal is too large to fit in an Int,
+        this will become the maximum or minimum Int value.
 
         Returns:
             The Int representation of this Decimal.
         """
-        var scale = self.scale()
+        if self.is_zero():
+            return 0
 
         # If scale is 0, the number is already an integer
-        if scale == 0:
-            # Convert the coefficient string to an integer
-            var coef = self.coefficient()
-            var result: Int = 0
-            for i in range(len(coef)):
-                var digit = ord(coef[i]) - ord("0")
-                result = result * 10 + digit
+        if self.scale() == 0:
+            return Int(
+                -self.coefficient() if self.is_negative() else self.coefficient()
+            )
 
-            return -result if self.is_negative() else result
-
-        # If scale > 0, check if we have a whole number (all fractional digits are 0)
-        var coef = self.coefficient()
-        if len(coef) <= scale:
+        # If scale is not 0, check whether integer part is 0
+        if self.number_of_significant_digits() <= self.scale():
             # Value is less than 1, so integer part is 0
             return 0
 
-        # Get the integer part
-        var int_part = coef[: len(coef) - scale]
-        var result: Int = 0
-
-        for i in range(len(int_part)):
-            var digit = ord(int_part[i]) - ord("0")
-            result = result * 10 + digit
-
+        # Otherwise, get the integer part by dividing by 10^scale
+        var result = Int(self.coefficient() // 10 ** UInt128(self.scale()))
         return -result if self.is_negative() else result
 
     fn __str__(self) -> String:
@@ -668,7 +652,7 @@ struct Decimal(
         Preserves trailing zeros after decimal point to match the scale.
         """
         # Get the coefficient as a string (absolute value)
-        var coef = self.coefficient()
+        var coef = String(self.coefficient())
         var scale = self.scale()
 
         # Handle zero as a special case
@@ -1002,59 +986,22 @@ struct Decimal(
     # ===------------------------------------------------------------------=== #
     # Other methods
     # ===------------------------------------------------------------------=== #
-    fn coefficient(self) -> String:
+
+    fn coefficient(self) -> UInt128:
         """
-        Returns the unscaled integer coefficient.
-        This is the absolute value of the decimal digits without considering the scale or sign.
-        We need to combine the three 32-bit parts into a single value.
-        Since we might exceed built-in integer limits, we build the string directly.
+        Returns the unscaled integer coefficient as an UInt128 value.
+        This is the absolute value of the decimal digits without considering the scale.
         The value of the coefficient is: high * 2**64 + mid * 2**32 + low.
+
+        Returns:
+            Int128: The coefficient as a unsigned 128-bit signed integer.
         """
-        if self.low == 0 and self.mid == 0 and self.high == 0:
-            return "0"
-
-        # We need to build the decimal representation of the 96-bit integer
-        # by repeatedly dividing by 10 and collecting remainders
-        var result = String("")
-        var h = UInt64(self.high)
-        var m = UInt64(self.mid)
-        var l = UInt64(self.low)
-
-        while h > 0 or m > 0 or l > 0:
-            # Perform division by 10 across all three parts
-            var remainder: UInt64 = 0
-            var new_h: UInt64 = 0
-            var new_m: UInt64 = 0
-            var new_l: UInt64 = 0
-
-            # Process high part
-            if h > 0:
-                new_h = h // 10
-                remainder = h % 10
-                # Propagate remainder to mid
-                m += remainder << 32  # equivalent to remainder * 2^32
-
-            # Process mid part
-            if m > 0:
-                new_m = m // 10
-                remainder = m % 10
-                # Propagate remainder to low
-                l += remainder << 32  # equivalent to remainder * 2^32
-
-            # Process low part
-            if l > 0:
-                new_l = l // 10
-                remainder = l % 10
-
-            # Append remainder to result (in reverse order)
-            result = String(remainder) + String(result)
-
-            # Update values for next iteration
-            h = new_h
-            m = new_m
-            l = new_l
-
-        return result
+        # Combine the three 32-bit parts into a single Int128
+        return (
+            UInt128(self.high) << 64
+            | UInt128(self.mid) << 32
+            | UInt128(self.low)
+        )
 
     fn is_integer(self) -> Bool:
         """
@@ -1064,38 +1011,22 @@ struct Decimal(
 
         Returns:
             True if this Decimal represents an integer value, False otherwise.
-
-        Examples:
-        ```
-        Decimal("123").is_integer()      # Returns True
-        Decimal("123.0").is_integer()    # Returns True
-        Decimal("123.00").is_integer()   # Returns True
-        Decimal("123.45").is_integer()   # Returns False
-        ```
-        .
         """
-        var scale = self.scale()
 
         # If scale is 0, it's already an integer
-        if scale == 0:
+        if self.scale() == 0:
             return True
 
-        # If scale > 0, check if all fractional digits are zeros
-        var coef = self.coefficient()
+        # If value is zero, it's an integer regardless of scale
+        if self.is_zero():
+            return True
 
-        # If coefficient length is less than or equal to scale,
-        # the value is between -1 and 1 (e.g., 0.123)
-        # It's an integer only if it's exactly zero
-        if len(coef) <= scale:
-            return self.is_zero()
-
-        # Check if all digits after the decimal point are zeros
-        for i in range(len(coef) - scale, len(coef)):
-            if coef[i] != "0":
-                return False
-
-        # All digits after decimal point are zeros
-        return True
+        # For a value to be an integer, it must be divisible by 10^scale
+        # If coefficient % 10^scale == 0, then all decimal places are zeros
+        # If it divides evenly, it's an integer
+        return (
+            self.coefficient() % (UInt128(10) ** UInt128(self.scale()))
+        ) == 0
 
     fn is_negative(self) -> Bool:
         """Returns True if this Decimal is negative."""
@@ -1127,32 +1058,28 @@ struct Decimal(
         The exponent is the power of 10 needed to represent the value in scientific notation.
         """
 
-        # Get the coefficient as a string
-        var coef = self.coefficient()
+        return self.number_of_significant_digits() - 1 - self.scale()
 
-        return len(coef) - 1 - self.scale()
-
-    fn significant_digits(self) -> Int:
+    fn number_of_significant_digits(self) -> Int:
         """
         Returns the number of significant digits in this Decimal.
         The number of significant digits is the total number of digits in the coefficient,
         excluding leading and trailing zeros.
         """
 
-        # Get the coefficient as a string
-        var coef = self.coefficient()
+        # Special case for zero
+        if self.coefficient() == 0:
+            return 0  # Zero has zero significant digit
 
-        # Count significant digits
-        var count = 0
-        var found_non_zero = False
+        # Count digits using integer division
+        var digit_count = 0
+        var temp = self.coefficient()
 
-        for i in range(len(coef)):
-            if coef[i] != "0":
-                found_non_zero = True
-            if found_non_zero:
-                count += 1
+        while temp > 0:
+            temp //= 10
+            digit_count += 1
 
-        return count
+        return digit_count
 
     # ===------------------------------------------------------------------=== #
     # Internal methods
