@@ -1096,17 +1096,22 @@ struct Decimal(
         else:
             return 0
 
-    fn _internal_representation(value: Decimal):
+    fn internal_representation(value: Decimal):
         # Show internal representation details
         print("\nInternal Representation Details:")
         print("--------------------------------")
         print("Decimal:       ", value)
-        print("low:           ", value.low)
-        print("mid:           ", value.mid)
-        print("high:          ", value.high)
         print("coefficient:   ", value.coefficient())
         print("scale:         ", value.scale())
         print("is negative:   ", value.is_negative())
+        print("is zero:       ", value.is_zero())
+        print("low:           ", value.low)
+        print("mid:           ", value.mid)
+        print("high:          ", value.high)
+        print("low byte:      ", hex(value.low))
+        print("mid byte:      ", hex(value.mid))
+        print("high byte:     ", hex(value.high))
+        print("flags byte:    ", hex(value.flags))
         print("--------------------------------")
 
     fn _scale_down(
