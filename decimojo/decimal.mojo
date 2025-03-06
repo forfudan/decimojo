@@ -1218,37 +1218,25 @@ struct Decimal(
             scale_diff = self.scale()
             new_scale = 0
 
-        # First collect all digits that will be removed for rounding decision
-        var removed_digits = String("")
-        var temp = result
+        # With UInt128, we can represent the coefficient as a single value
+        var coefficient = UInt128(self.high) << 64 | UInt128(
+            self.mid
+        ) << 32 | UInt128(self.low)
 
-        # Collect the digits to be removed (we need all of them for proper rounding)
+        # Collect all digits that will be removed for rounding decision
+        var removed_digits = List[UInt8]()
+
+        # Calculate coefficient / 10^scale_diff and collect remainder digits
         for _ in range(scale_diff):
-            # Divide by 10 without any rounding at this stage
-            var high64 = UInt64(temp.high)
-            var mid64 = UInt64(temp.mid)
-            var low64 = UInt64(temp.low)
+            var last_digit = UInt8(coefficient % 10)
+            coefficient //= 10
+            removed_digits.append(last_digit)
 
-            # Divide high part and propagate remainder
-            var new_high = high64 // 10
-            var remainder_h = high64 % 10
-
-            # Calculate mid with remainder from high
-            var mid_with_remainder = mid64 + (remainder_h << 32)
-            var new_mid = mid_with_remainder // 10
-            var remainder_m = mid_with_remainder % 10
-
-            # Calculate low with remainder from mid
-            var low_with_remainder = low64 + (remainder_m << 32)
-            var new_low = low_with_remainder // 10
-
-            var last_digit = low_with_remainder % 10
-            removed_digits = String(last_digit) + removed_digits
-
-            # Update temp values
-            temp.low = UInt32(new_low)
-            temp.mid = UInt32(new_mid)
-            temp.high = UInt32(new_high)
+        # After collecting digits, reverse the list for correct rounding
+        var reversed_digits = List[UInt8]()
+        for i in range(len(removed_digits) - 1, -1, -1):
+            reversed_digits.append(removed_digits[i])
+        removed_digits = reversed_digits
 
         # Now we have all the digits to be removed, apply proper rounding
         var should_round_up = False
@@ -1258,28 +1246,28 @@ struct Decimal(
             should_round_up = False
         elif rounding_mode == RoundingMode.UP():
             # Always round up if any non-zero digit was removed
-            for i in range(len(removed_digits)):
-                if removed_digits[i] != "0":
+            for digit in removed_digits:
+                if digit[] != 0:
                     should_round_up = True
                     break
         elif rounding_mode == RoundingMode.HALF_UP():
-            # Round up if first digit >= 5
-            if len(removed_digits) > 0 and ord(removed_digits[0]) >= ord("5"):
+            # Round up if first removed digit >= 5
+            if len(removed_digits) > 0 and removed_digits[0] >= 5:
                 should_round_up = True
         elif rounding_mode == RoundingMode.HALF_EVEN():
             # Apply banker's rounding
             if len(removed_digits) > 0:
-                var first_digit = ord(removed_digits[0]) - ord("0")
+                var first_digit = removed_digits[0]
                 if first_digit > 5:
                     # Round up
                     should_round_up = True
                 elif first_digit == 5:
-                    # For banker's rounding we need to check:
+                    # For banker's rounding:
                     # 1. If there are other non-zero digits after 5, round up
                     # 2. Otherwise, round to nearest even (round up if odd)
                     var has_non_zero_after = False
                     for i in range(1, len(removed_digits)):
-                        if removed_digits[i] != "0":
+                        if removed_digits[i] != 0:
                             has_non_zero_after = True
                             break
 
@@ -1287,36 +1275,29 @@ struct Decimal(
                         should_round_up = True
                     else:
                         # Round to even - check if the low digit is odd
-                        should_round_up = temp.low % 2 == 1
-
-        # Set the new scale
-        result = temp
-        result.flags = (self.flags & ~Self.SCALE_MASK) | (
-            UInt32(new_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
-        )
+                        should_round_up = (coefficient & 1) == 1
 
         # Apply rounding if needed
         if should_round_up:
-            # Increment and handle carry
-            var new_low = UInt64(result.low) + 1
-            if new_low > 0xFFFFFFFF:
-                result.low = 0
-                var new_mid = UInt64(result.mid) + 1
-                if new_mid > 0xFFFFFFFF:
-                    result.mid = 0
-                    result.high += 1
-                else:
-                    result.mid = UInt32(new_mid)
-            else:
-                result.low = UInt32(new_low)
+            coefficient += 1
+
+        # Extract the 32-bit components from the UInt128
+        result.low = UInt32(coefficient & 0xFFFFFFFF)
+        result.mid = UInt32((coefficient >> 32) & 0xFFFFFFFF)
+        result.high = UInt32((coefficient >> 64) & 0xFFFFFFFF)
+
+        # Set the new scale
+        result.flags = (self.flags & ~Self.SCALE_MASK) | (
+            UInt32(new_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
+        )
 
         return result
 
     fn _scale_up(self, owned scale_diff: Int) -> Decimal:
         """
         Internal method to scale up a decimal by:
-            - multiplying coefficient by 10^scale_diff.
-            - imcrease the scale by scale_diff.
+            - multiplying coefficient by 10^scale_diff
+            - increase the scale by scale_diff
 
         Args:
             scale_diff: Number of decimal places to scale up by
@@ -1337,36 +1318,28 @@ struct Decimal(
             scale_diff = Self.MAX_PRECISION + 1 - self.scale()
             new_scale = Self.MAX_PRECISION + 1
 
-        result.flags = (result.flags & ~Self.SCALE_MASK) | (
+        # With UInt128, we can represent the coefficient as a single value
+        var coefficient = UInt128(self.high) << 64 | UInt128(
+            self.mid
+        ) << 32 | UInt128(self.low)
+
+        # Check if multiplication by 10^scale_diff would cause overflow
+        var max_coefficient = ~UInt128(0) / UInt128(10**scale_diff)
+        if coefficient > max_coefficient:
+            # Handle overflow case - limit to maximum value or raise error
+            coefficient = ~UInt128(0)
+        else:
+            # No overflow - safe to multiply
+            coefficient *= UInt128(10**scale_diff)
+
+        # Extract the 32-bit components from the UInt128
+        result.low = UInt32(coefficient & 0xFFFFFFFF)
+        result.mid = UInt32((coefficient >> 32) & 0xFFFFFFFF)
+        result.high = UInt32((coefficient >> 64) & 0xFFFFFFFF)
+
+        # Set the new scale
+        result.flags = (self.flags & ~Self.SCALE_MASK) | (
             UInt32(new_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
         )
-
-        # Scale up by multiplying by powers of 10
-        for _ in range(scale_diff):
-            # Check for potential overflow before multiplying
-            if result.high > 0xFFFFFFFF // 10 or (
-                result.high == 0xFFFFFFFF // 10 and result.low > 0xFFFFFFFF % 10
-            ):
-                # Overflow would occur, cannot scale further
-                break
-
-            # Multiply by 10
-            var overflow_low_to_mid: UInt64 = 0
-            var overflow_mid_to_high: UInt64 = 0
-
-            # Calculate products and overflows
-            var new_low = result.low * 10
-            overflow_low_to_mid = UInt64(result.low) * 10 >> 32
-
-            var new_mid_temp = UInt64(result.mid) * 10 + overflow_low_to_mid
-            var new_mid = UInt32(new_mid_temp & 0xFFFFFFFF)
-            overflow_mid_to_high = new_mid_temp >> 32
-
-            var new_high = result.high * 10 + UInt32(overflow_mid_to_high)
-
-            # Update result
-            result.low = new_low
-            result.mid = new_mid
-            result.high = new_high
 
         return result
