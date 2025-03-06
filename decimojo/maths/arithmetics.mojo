@@ -52,41 +52,87 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
     if x2.is_zero():
         return x1
 
+    # TODO: Implement optimized addition for scale == 0 for both numbers
     # Integer addition
-    if (x1.scale() == 0) and (x2.scale() == 0):
-        var result = Decimal()
-        result.flags = UInt32((x1.scale() << x1.SCALE_SHIFT) & x1.SCALE_MASK)
-
+    if x1.is_integer() and x2.is_integer():
         # Same sign: add absolute values and keep the sign
         if x1.is_negative() == x2.is_negative():
-            if x1.is_negative():
-                result.flags |= x1.SIGN_MASK
-
-            # Convert both coefficients to UInt128
-            var coef1 = UInt128(x1.high) << 64 | UInt128(
-                x1.mid
-            ) << 32 | UInt128(x1.low)
-            var coef2 = UInt128(x2.high) << 64 | UInt128(
-                x2.mid
-            ) << 32 | UInt128(x2.low)
-
             # Add directly using UInt128 arithmetic
-            var sum = coef1 + coef2
+            var summation = x1.to_uint() + x2.to_uint()
 
             # Check for overflow (UInt128 can store values beyond our 96-bit limit)
             # We need to make sure the sum fits in 96 bits (our Decimal capacity)
-            if sum > UInt128(0xFFFFFFFF_FFFFFFFF_FFFFFFFF):  # 2^96-1
+            if summation > Decimal.MAX_AS_UINT128:  # 2^96-1
                 raise Error("Error in `addition()`: Decimal overflow")
 
-            # Extract the 32-bit components from the UInt128 sum
-            result.low = UInt32(sum & 0xFFFFFFFF)
-            result.mid = UInt32((sum >> 32) & 0xFFFFFFFF)
-            result.high = UInt32((sum >> 64) & 0xFFFFFFFF)
+            # Determine the scale for the result
+            var scale = min(
+                max(x1.scale(), x2.scale()),
+                Decimal.MAX_VALUE_DIGITS
+                - decimojo.decimal._number_of_significant_digits(summation),
+            )
+            ## If summation > 7922816251426433759354395033
+            if (summation > Decimal.MAX_AS_UINT128 // 10) and (scale > 0):
+                scale -= 1
+            summation *= UInt128(10) ** scale
 
-            return result
+            # Extract the 32-bit components from the UInt128 sum
+            var low = UInt32(summation & 0xFFFFFFFF)
+            var mid = UInt32((summation >> 32) & 0xFFFFFFFF)
+            var high = UInt32((summation >> 64) & 0xFFFFFFFF)
+
+            return Decimal(low, mid, high, x1.is_negative(), scale)
+
+        # Different signs: subtract the smaller from the larger
+        else:
+            var diff: UInt128
+            var is_negative: Bool
+            if x1.coefficient() > x2.coefficient():
+                diff = x1.to_uint() - x2.to_uint()
+                is_negative = x1.is_negative()
+            else:
+                diff = x2.to_uint() - x1.to_uint()
+                is_negative = x2.is_negative()
+
+            # Determine the scale for the result
+            var scale = min(
+                max(x1.scale(), x2.scale()),
+                Decimal.MAX_VALUE_DIGITS
+                - decimojo.decimal._number_of_significant_digits(diff),
+            )
+            ## If summation > 7922816251426433759354395033
+            if (diff > Decimal.MAX_AS_UINT128 // 10) and (scale > 0):
+                scale -= 1
+            diff *= UInt128(10) ** scale
+
+            # Extract the 32-bit components from the UInt128 difference
+            low = UInt32(diff & 0xFFFFFFFF)
+            mid = UInt32((diff >> 32) & 0xFFFFFFFF)
+            high = UInt32((diff >> 64) & 0xFFFFFFFF)
+
+            return Decimal(low, mid, high, is_negative, scale)
 
     # Float addition which may be with different scales
     # Use string-based approach
+
+    # else:
+    #     # Same sign: add absolute values and keep the sign
+    #     if x1.is_negative() == x2.is_negative():
+    #         var scale_diff = x1.scale() - x2.scale()
+    #         var summation: UInt256
+    #         if scale_diff > 0:
+    #             # x1 has more decimal places
+    #             summation = (
+    #                 UInt256(x1.coefficient())
+    #                 + UInt256(x2.coefficient()) * 10**scale_diff
+    #             )
+    #         elif scale_diff < 0:
+    #             # x2 has more decimal places
+    #             summation = UInt256(x1.coefficient()) * 10 ** (
+    #                 -scale_diff
+    #             ) + UInt256(x2.coefficient())
+
+    # UInt256(x1.coefficient())
 
     return Decimal(decimojo.maths.arithmetics._add_decimals_as_string(x1, x2))
 
@@ -304,7 +350,7 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
     # Use string-based division to avoid overflow with large numbers
 
     # Determine precision needed for calculation
-    var working_precision = Decimal.LEN_OF_MAX_VALUE + 1  # +1 for potential rounding
+    var working_precision = Decimal.MAX_VALUE_DIGITS + 1  # +1 for potential rounding
 
     # Perform long division algorithm
     var quotient = String("")

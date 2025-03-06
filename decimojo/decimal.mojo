@@ -72,9 +72,10 @@ struct Decimal(
     # Constants
     alias MAX_PRECISION = 28
     alias MAX_SCALE = 128
+    alias MAX_AS_UINT128 = UInt128(79228162514264337593543950335)
     alias MAX_AS_STRING = String("79228162514264337593543950335")
     """Maximum value as a string of a 128-bit Decimal."""
-    alias LEN_OF_MAX_VALUE = 29
+    alias MAX_VALUE_DIGITS = 29
     """Length of the max value as a string. For 128-bit Decimal, it is 29 digits"""
     alias SIGN_MASK = UInt32(0x80000000)
     """Sign mask. `0b1000_0000_0000_0000_0000_0000_0000_0000`.
@@ -263,6 +264,26 @@ struct Decimal(
             self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
             self.high = 0
 
+    fn __init__(out self, value: UInt128):
+        """
+        Initializes a Decimal from an UInt128 value.
+        ***WARNING***: This constructor can only handle values up to 96 bits.
+        """
+        self.low = UInt32(value & 0xFFFFFFFF)
+        self.mid = UInt32((value >> 32) & 0xFFFFFFFF)
+        self.high = UInt32((value >> 64) & 0xFFFFFFFF)
+        self.flags = 0
+
+    fn __init__(out self, value: UInt256):
+        """
+        Initializes a Decimal from an UInt256 value.
+        ***WARNING***: This constructor can only handle values up to 96 bits.
+        """
+        self.low = UInt32(value & 0xFFFFFFFF)
+        self.mid = UInt32((value >> 32) & 0xFFFFFFFF)
+        self.high = UInt32((value >> 64) & 0xFFFFFFFF)
+        self.flags = 0
+
     fn __init__(out self, s: String) raises:
         """
         Initializes a Decimal from a string representation.
@@ -446,8 +467,8 @@ struct Decimal(
         else:
             string_of_integral_part = String("0")
 
-        if (len(string_of_integral_part) > Decimal.LEN_OF_MAX_VALUE) or (
-            len(string_of_integral_part) == Decimal.LEN_OF_MAX_VALUE
+        if (len(string_of_integral_part) > Decimal.MAX_VALUE_DIGITS) or (
+            len(string_of_integral_part) == Decimal.MAX_VALUE_DIGITS
             and (string_of_integral_part > Self.MAX_AS_STRING)
         ):
             raise Error(
@@ -459,8 +480,8 @@ struct Decimal(
         # Check if the coefficient is too large
         # Recursively re-calculate the coefficient string after truncating and rounding
         # until it fits within the Decimal limits
-        while (len(string_of_coefficient) > Decimal.LEN_OF_MAX_VALUE) or (
-            len(string_of_coefficient) == Decimal.LEN_OF_MAX_VALUE
+        while (len(string_of_coefficient) > Decimal.MAX_VALUE_DIGITS) or (
+            len(string_of_coefficient) == Decimal.MAX_VALUE_DIGITS
             and (string_of_coefficient > Self.MAX_AS_STRING)
         ):
             var raw_length_of_coefficient = len(string_of_coefficient)
@@ -468,10 +489,10 @@ struct Decimal(
             # If string_of_coefficient has more than 29 digits, truncate it to 29.
             # If string_of_coefficient has 29 digits and larger than MAX_AS_STRING, truncate it to 28.
             var rounding_digit = string_of_coefficient[
-                min(Decimal.LEN_OF_MAX_VALUE, len(string_of_coefficient) - 1)
+                min(Decimal.MAX_VALUE_DIGITS, len(string_of_coefficient) - 1)
             ]
             string_of_coefficient = string_of_coefficient[
-                : min(Decimal.LEN_OF_MAX_VALUE, len(string_of_coefficient) - 1)
+                : min(Decimal.MAX_VALUE_DIGITS, len(string_of_coefficient) - 1)
             ]
 
             scale = scale - (
@@ -504,8 +525,8 @@ struct Decimal(
                     result_chars.insert(0, String("1"))
 
                     # If adding a digit would exceed max length, drop the last digit and reduce scale
-                    if len(result_chars) > Decimal.LEN_OF_MAX_VALUE:
-                        result_chars = result_chars[: Decimal.LEN_OF_MAX_VALUE]
+                    if len(result_chars) > Decimal.MAX_VALUE_DIGITS:
+                        result_chars = result_chars[: Decimal.MAX_VALUE_DIGITS]
                         if scale > 0:
                             scale -= 1
 
@@ -1290,3 +1311,25 @@ struct Decimal(
         )
 
         return result
+
+
+fn _number_of_significant_digits(x: UInt128) -> Int:
+    var temp = x
+    var digit_count = 0
+
+    while temp > 0:
+        temp //= 10
+        digit_count += 1
+
+    return digit_count
+
+
+fn _number_of_significant_digits(x: UInt256) -> Int:
+    var temp = x
+    var digit_count = 0
+
+    while temp > 0:
+        temp //= 10
+        digit_count += 1
+
+    return digit_count
