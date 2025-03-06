@@ -594,7 +594,7 @@ struct Decimal(
         self.flags = other.flags
 
     # ===------------------------------------------------------------------=== #
-    # Output dunders, type-transfer dunders, and other methods
+    # Output dunders, type-transfer dunders, and other type-transfer methods
     # ===------------------------------------------------------------------=== #
 
     fn __float__(self) -> Float64:
@@ -620,23 +620,10 @@ struct Decimal(
         Returns:
             The Int representation of this Decimal.
         """
-        if self.is_zero():
-            return 0
 
-        # If scale is 0, the number is already an integer
-        if self.scale() == 0:
-            return Int(
-                -self.coefficient() if self.is_negative() else self.coefficient()
-            )
+        var res = Int(self.to_uint())
 
-        # If scale is not 0, check whether integer part is 0
-        if self.number_of_significant_digits() <= self.scale():
-            # Value is less than 1, so integer part is 0
-            return 0
-
-        # Otherwise, get the integer part by dividing by 10^scale
-        var result = Int(self.coefficient() // 10 ** UInt128(self.scale()))
-        return -result if self.is_negative() else result
+        return -res if self.is_negative() else res
 
     fn __str__(self) -> String:
         """
@@ -687,6 +674,42 @@ struct Decimal(
         Returns a string representation of the Decimal.
         """
         return 'Decimal("' + self.__str__() + '")'
+
+    fn to_int(self) -> Int128:
+        """
+        Returns the signed integral part of the Decimal.
+        Compared to `__int__` method, the returned value will not be truncated.
+        """
+
+        var res = Int128(self.to_uint())
+
+        return -res if self.is_negative() else res
+
+    fn to_uint(self) -> UInt128:
+        """
+        Returns the unsigned integral part of the Decimal.
+        Compared to `__int__` method, the returned value will not be truncated.
+        """
+
+        var res: UInt128
+
+        if self.is_zero():
+            res = 0
+
+        # If scale is 0, the number is already an integer
+        elif self.scale() == 0:
+            res = self.coefficient()
+
+        # If scale is not 0, check whether integer part is 0
+        elif self.number_of_significant_digits() <= self.scale():
+            # Value is less than 1, so integer part is 0
+            res = 0
+
+        # Otherwise, get the integer part by dividing by 10^scale
+        else:
+            res = self.coefficient() // 10 ** UInt128(self.scale())
+
+        return res
 
     fn write_to[W: Writer](self, mut writer: W):
         """

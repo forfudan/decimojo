@@ -62,26 +62,26 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
             if x1.is_negative():
                 result.flags |= x1.SIGN_MASK
 
-            # Add with carry
-            var carry: UInt32 = 0
+            # Convert both coefficients to UInt128
+            var coef1 = UInt128(x1.high) << 64 | UInt128(
+                x1.mid
+            ) << 32 | UInt128(x1.low)
+            var coef2 = UInt128(x2.high) << 64 | UInt128(
+                x2.mid
+            ) << 32 | UInt128(x2.low)
 
-            # Add low parts
-            var sum_low = UInt64(x1.low) + UInt64(x2.low)
-            result.low = UInt32(sum_low & 0xFFFFFFFF)
-            carry = UInt32(sum_low >> 32)
+            # Add directly using UInt128 arithmetic
+            var sum = coef1 + coef2
 
-            # Add mid parts with carry
-            var sum_mid = UInt64(x1.mid) + UInt64(x2.mid) + UInt64(carry)
-            result.mid = UInt32(sum_mid & 0xFFFFFFFF)
-            carry = UInt32(sum_mid >> 32)
-
-            # Add high parts with carry
-            var sum_high = UInt64(x1.high) + UInt64(x2.high) + UInt64(carry)
-            result.high = UInt32(sum_high & 0xFFFFFFFF)
-
-            # Check for overflow
-            if (sum_high >> 32) > 0:
+            # Check for overflow (UInt128 can store values beyond our 96-bit limit)
+            # We need to make sure the sum fits in 96 bits (our Decimal capacity)
+            if sum > UInt128(0xFFFFFFFF_FFFFFFFF_FFFFFFFF):  # 2^96-1
                 raise Error("Error in `addition()`: Decimal overflow")
+
+            # Extract the 32-bit components from the UInt128 sum
+            result.low = UInt32(sum & 0xFFFFFFFF)
+            result.mid = UInt32((sum >> 32) & 0xFFFFFFFF)
+            result.high = UInt32((sum >> 64) & 0xFFFFFFFF)
 
             return result
 
