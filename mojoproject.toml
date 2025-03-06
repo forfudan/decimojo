@@ -25,7 +25,7 @@ test = "magic run package && magic run mojo test tests"
 t = "clear && magic run test"
 
 # benches
-bench = "magic run package && cd benches && magic run mojo *.mojo && cd .."
+bench = "magic run package && cd benches && magic run mojo bench.mojo && cd .."
 b = "clear && magic run bench"
 
 # before commit
