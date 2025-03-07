@@ -45,7 +45,7 @@ Here are 10 key examples highlighting the most important features of the `Decima
 ### 1. Fixed-Point Precision for Financial Calculations
 
 ```mojo
-from decimojo import Decimal
+from decimojo.prelude import *
 
 # The classic floating-point problem
 print(0.1 + 0.2)  # 0.30000000000000004 (not exactly 0.3)
