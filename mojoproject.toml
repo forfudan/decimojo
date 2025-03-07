@@ -33,4 +33,4 @@ final = "magic run test && magic run bench"
 f = "clear && magic run final"
 
 [dependencies]
-max = ">=25.0"
+max = ">=25.1,<25.3"
