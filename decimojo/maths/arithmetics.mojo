@@ -750,6 +750,7 @@ fn sqrt(x: Decimal) raises -> Decimal:
         raise e
 
 
+# TODO: Remove this if Mojo stable version introduces UInt256
 fn _add_decimals_as_string(a: Decimal, b: Decimal) -> String:
     """
     Performs addition of two Decimals using a string-based approach.
@@ -877,6 +878,7 @@ fn _add_decimals_as_string(a: Decimal, b: Decimal) -> String:
     return final_result
 
 
+# TODO: Remove this if Mojo stable version introduces UInt256
 fn _subtract_decimals_as_string(owned a: Decimal, owned b: Decimal) -> String:
     """
     Helper function to perform subtraction of b from a.
