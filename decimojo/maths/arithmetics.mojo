@@ -203,7 +203,6 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
 
     # Float addition which with different scales
     else:
-        print("DEBUG: Float addition with different scales")
         var summation: Int256
         if x1.scale() == x2.scale():
             summation = (-1) ** x1.is_negative() * Int256(x1.coefficient()) + (
