@@ -32,6 +32,7 @@ from decimojo.rounding_mode import RoundingMode
 fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
     """
     Adds two Decimal values and returns a new Decimal containing the sum.
+    The results will be rounded (up to even) if digits are too many.
 
     Args:
         x1: The first Decimal operand.
@@ -63,12 +64,15 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
             max(x1.scale(), x2.scale()),
         )
 
-    # Integer addition with scale of 0
+    # Integer addition with scale of 0 (true integers)
     elif x1.scale() == 0 and x2.scale() == 0:
+        var x1_coef = x1.coefficient()
+        var x2_coef = x2.coefficient()
+
         # Same sign: add absolute values and keep the sign
         if x1.is_negative() == x2.is_negative():
             # Add directly using UInt128 arithmetic
-            var summation = x1.to_uint128() + x2.to_uint128()
+            var summation = x1_coef + x2_coef
 
             # Check for overflow (UInt128 can store values beyond our 96-bit limit)
             # We need to make sure the sum fits in 96 bits (our Decimal capacity)
@@ -86,11 +90,11 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
         else:
             var diff: UInt128
             var is_negative: Bool
-            if x1.coefficient() > x2.coefficient():
-                diff = x1.to_uint128() - x2.to_uint128()
+            if x1_coef > x2_coef:
+                diff = x1_coef - x2_coef
                 is_negative = x1.is_negative()
             else:
-                diff = x2.to_uint128() - x1.to_uint128()
+                diff = x2_coef - x1_coef
                 is_negative = x2.is_negative()
 
             # Extract the 32-bit components from the UInt128 difference
@@ -159,9 +163,47 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
 
             return Decimal(low, mid, high, is_negative, scale)
 
-    # TODO: Optimize float addition of the same scales
+    # Float addition with the same scale
+    elif x1.scale() == x2.scale():
+        var summation: Int128  # 97-bit signed integer can be stored in Int128
+        summation = (-1) ** x1.is_negative() * Int128(x1.coefficient()) + (
+            -1
+        ) ** x2.is_negative() * Int128(x2.coefficient())
+
+        var is_nagative = summation < 0
+        if is_nagative:
+            summation = -summation
+
+        # Now we need to truncate the summation to fit in 96 bits
+        var final_scale: Int
+        var truncated_summation = UInt128(summation)
+
+        # If the summation fits in 96 bits, we can use the original scale
+        if summation < Decimal.MAX_AS_INT128:
+            final_scale = x1.scale()
+
+        # Otherwise, we need to truncate the summation to fit in 96 bits
+        else:
+            truncated_summation = decimojo.utility.truncate_to_max(
+                truncated_summation
+            )
+            final_scale = decimojo.utility.number_of_significant_digits(
+                truncated_summation
+            ) - (
+                decimojo.utility.number_of_significant_digits(summation)
+                - max(x1.scale(), x2.scale())
+            )
+
+        # Extract the 32-bit components from the Int256 difference
+        low = UInt32(truncated_summation & 0xFFFFFFFF)
+        mid = UInt32((truncated_summation >> 32) & 0xFFFFFFFF)
+        high = UInt32((truncated_summation >> 64) & 0xFFFFFFFF)
+
+        return Decimal(low, mid, high, is_nagative, final_scale)
+
     # Float addition which with different scales
     else:
+        print("DEBUG: Float addition with different scales")
         var summation: Int256
         if x1.scale() == x2.scale():
             summation = (-1) ** x1.is_negative() * Int256(x1.coefficient()) + (
@@ -186,16 +228,25 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
         if is_nagative:
             summation = -summation
 
+        # Now we need to truncate the summation to fit in 96 bits
+        var final_scale: Int
         var truncated_summation = UInt256(summation)
-        truncated_summation = decimojo.utility.truncate_to_max(
-            truncated_summation
-        )
-        var final_scale = decimojo.utility.number_of_significant_digits(
-            truncated_summation
-        ) - (
-            decimojo.utility.number_of_significant_digits(summation)
-            - max(x1.scale(), x2.scale())
-        )
+
+        # If the summation fits in 96 bits, we can use the original scale
+        if summation < Decimal.MAX_AS_INT256:
+            final_scale = max(x1.scale(), x2.scale())
+
+        # Otherwise, we need to truncate the summation to fit in 96 bits
+        else:
+            truncated_summation = decimojo.utility.truncate_to_max(
+                truncated_summation
+            )
+            final_scale = decimojo.utility.number_of_significant_digits(
+                truncated_summation
+            ) - (
+                decimojo.utility.number_of_significant_digits(summation)
+                - max(x1.scale(), x2.scale())
+            )
 
         # Extract the 32-bit components from the Int256 difference
         low = UInt32(truncated_summation & 0xFFFFFFFF)
