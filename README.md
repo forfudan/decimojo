@@ -14,6 +14,12 @@ Since Mojo currently lacks a native Decimal type in its standard library, I deci
 
 This project draws inspiration from several established decimal implementations and documentation, e.g., [Python built-in `Decimal` type](https://docs.python.org/3/library/decimal.html), [Rust `rust_decimal` crate](https://docs.rs/rust_decimal/latest/rust_decimal/index.html), [Microsoft's `Decimal` implementation](https://learn.microsoft.com/en-us/dotnet/api/system.decimal.getbits?view=net-9.0&redirectedfrom=MSDN#System_Decimal_GetBits_System_Decimal_), [General Decimal Arithmetic Specification](https://speleotrove.com/decimal/decarith.html), etc. Many thanks to these predecessors for their contributions and their commitment to open knowledge sharing.
 
+## Nomenclature
+
+DeciMojo combines "Decimal" and "Mojo" - reflecting both its purpose (decimal arithmetic) and the programming language it's implemented in. The name highlights the project's focus on bringing precise decimal calculations to the Mojo ecosystem.
+
+For brevity, you can also refer to it "decimo" (derived from the Latin root "decimus" meaning "tenth").
+
 ## Status
 
 Rome is not built in one day. DeciMojo is currently under active development and appears to be between the **"make it work"** and **"make it right"** phases, leaning more toward the latter. Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/forFudan/decimojo/issues).
