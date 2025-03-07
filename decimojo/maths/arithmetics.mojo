@@ -15,9 +15,6 @@
 # power(base: Decimal, exponent: Int): Convenience method for integer exponents
 # sqrt(x: Decimal): Computes the square root of x using Newton-Raphson method
 #
-# TODO Additional functions planned for future implementation:
-#
-# root(x: Decimal, n: Int): Computes the nth root of x using Newton's method
 # ===----------------------------------------------------------------------=== #
 
 """
@@ -53,7 +50,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
             x2.low,
             x2.mid,
             x2.high,
-            x2.is_negative() and x1.is_negative(),
+            x1.flags & x2.flags == Decimal.SIGN_MASK,
             max(x1.scale(), x2.scale()),
         )
 
@@ -62,7 +59,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
             x1.low,
             x1.mid,
             x1.high,
-            x2.is_negative() and x1.is_negative(),
+            x1.flags & x2.flags == Decimal.SIGN_MASK,
             max(x1.scale(), x2.scale()),
         )
 
@@ -119,7 +116,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
             var scale = min(
                 max(x1.scale(), x2.scale()),
                 Decimal.MAX_VALUE_DIGITS
-                - decimojo.decimal._number_of_significant_digits(summation),
+                - decimojo.utility.number_of_significant_digits(summation),
             )
             ## If summation > 7922816251426433759354395033
             if (summation > Decimal.MAX_AS_UINT128 // 10) and (scale > 0):
@@ -148,7 +145,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
             var scale = min(
                 max(x1.scale(), x2.scale()),
                 Decimal.MAX_VALUE_DIGITS
-                - decimojo.decimal._number_of_significant_digits(diff),
+                - decimojo.utility.number_of_significant_digits(diff),
             )
             ## If summation > 7922816251426433759354395033
             if (diff > Decimal.MAX_AS_UINT128 // 10) and (scale > 0):
@@ -162,31 +159,50 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
 
             return Decimal(low, mid, high, is_negative, scale)
 
-    # Float addition which may be with different scales
-    # else:
-    #     # Same sign: add absolute values and keep the sign
-    #     if x1.is_negative() == x2.is_negative():
-    #         var scale_diff = x1.scale() - x2.scale()
-    #         var summation: UInt256
-    #         if scale_diff > 0:
-    #             # x1 has more decimal places
-    #             summation = (
-    #                 UInt256(x1.coefficient())
-    #                 + UInt256(x2.coefficient()) * 10**scale_diff
-    #             )
-    #         elif scale_diff < 0:
-    #             # x2 has more decimal places
-    #             summation = UInt256(x1.coefficient()) * 10 ** (
-    #                 -scale_diff
-    #             ) + UInt256(x2.coefficient())
-
-    # UInt256(x1.coefficient())
-
-    # Use string-based approach for float addition
+    # TODO: Optimize float addition of the same scales
+    # Float addition which with different scales
     else:
-        return Decimal(
-            decimojo.maths.arithmetics._add_decimals_as_string(x1, x2)
+        var summation: Int256
+        if x1.scale() == x2.scale():
+            summation = (-1) ** x1.is_negative() * Int256(x1.coefficient()) + (
+                -1
+            ) ** x2.is_negative() * Int256(x2.coefficient())
+        elif x1.scale() > x2.scale():
+            summation = (-1) ** x1.is_negative() * Int256(x1.coefficient()) + (
+                -1
+            ) ** x2.is_negative() * Int256(x2.coefficient()) * Int256(10) ** (
+                x1.scale() - x2.scale()
+            )
+        else:
+            summation = (-1) ** x1.is_negative() * Int256(
+                x1.coefficient()
+            ) * Int256(10) ** (x2.scale() - x1.scale()) + (
+                -1
+            ) ** x2.is_negative() * Int256(
+                x2.coefficient()
+            )
+
+        var is_nagative = summation < 0
+        if is_nagative:
+            summation = -summation
+
+        var truncated_summation = UInt256(summation)
+        truncated_summation = decimojo.utility.truncate_to_max(
+            truncated_summation
         )
+        var final_scale = decimojo.utility.number_of_significant_digits(
+            truncated_summation
+        ) - (
+            decimojo.utility.number_of_significant_digits(summation)
+            - max(x1.scale(), x2.scale())
+        )
+
+        # Extract the 32-bit components from the Int256 difference
+        low = UInt32(truncated_summation & 0xFFFFFFFF)
+        mid = UInt32((truncated_summation >> 32) & 0xFFFFFFFF)
+        high = UInt32((truncated_summation >> 64) & 0xFFFFFFFF)
+
+        return Decimal(low, mid, high, is_nagative, final_scale)
 
 
 fn subtract(x1: Decimal, x2: Decimal) raises -> Decimal:

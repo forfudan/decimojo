@@ -11,25 +11,8 @@
 #
 # List of functions in this module:
 #
-# power(base: Decimal, exponent: Decimal): Raises base to the power of exponent (integer exponents only)
-# power(base: Decimal, exponent: Int): Convenience method for integer exponents
-# sqrt(x: Decimal): Computes the square root of x using Newton-Raphson method
 # round(x: Decimal, places: Int, mode: RoundingMode): Rounds x to specified decimal places
 #
-# TODO Additional functions planned for future implementation:
-#
-# root(x: Decimal, n: Int): Computes the nth root of x using Newton's method
-# exp(x: Decimal): Computes e raised to the power of x
-# ln(x: Decimal): Computes the natural logarithm of x
-# log10(x: Decimal): Computes the base-10 logarithm of x
-# sin(x: Decimal): Computes the sine of x (in radians)
-# cos(x: Decimal): Computes the cosine of x (in radians)
-# tan(x: Decimal): Computes the tangent of x (in radians)
-# abs(x: Decimal): Returns the absolute value of x
-# floor(x: Decimal): Returns the largest integer <= x
-# ceil(x: Decimal): Returns the smallest integer >= x
-# gcd(a: Decimal, b: Decimal): Returns greatest common divisor of a and b
-# lcm(a: Decimal, b: Decimal): Returns least common multiple of a and b
 # ===----------------------------------------------------------------------=== #
 
 """
