@@ -18,6 +18,7 @@ fn open_log_file() raises -> PythonObject:
         A file object opened for writing.
     """
     var python = Python.import_module("builtins")
+    var datetime = Python.import_module("datetime")
 
     # Create logs directory if it doesn't exist
     var log_dir = "./logs"
@@ -25,7 +26,7 @@ fn open_log_file() raises -> PythonObject:
         os.makedirs(log_dir)
 
     # Generate a timestamp for the filename
-    var timestamp = String(time.perf_counter())
+    var timestamp = String(datetime.datetime.now().isoformat())
     var log_filename = log_dir + "/benchmark_multiply_" + timestamp + ".log"
 
     print("Saving benchmark results to:", log_filename)
@@ -101,10 +102,11 @@ fn run_benchmark(
 fn main() raises:
     # Open log file
     var log_file = open_log_file()
+    var datetime = Python.import_module("datetime")
 
     # Display benchmark header with system information
     log_print("=== DeciMojo Multiplication Benchmark ===", log_file)
-    log_print("Time: " + String(time.perf_counter()), log_file)
+    log_print("Time: " + String(datetime.datetime.now().isoformat()), log_file)
 
     # Try to get system info
     try:

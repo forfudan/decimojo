@@ -15,9 +15,6 @@
 # power(base: Decimal, exponent: Int): Convenience method for integer exponents
 # sqrt(x: Decimal): Computes the square root of x using Newton-Raphson method
 #
-# TODO Additional functions planned for future implementation:
-#
-# root(x: Decimal, n: Int): Computes the nth root of x using Newton's method
 # ===----------------------------------------------------------------------=== #
 
 """
@@ -35,6 +32,7 @@ from decimojo.rounding_mode import RoundingMode
 fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
     """
     Adds two Decimal values and returns a new Decimal containing the sum.
+    The results will be rounded (up to even) if digits are too many.
 
     Args:
         x1: The first Decimal operand.
@@ -46,49 +44,215 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
     Raises:
         Error: If the operation would overflow.
     """
+
     # Special case for zero
     if x1.is_zero():
-        return x2
-    if x2.is_zero():
-        return x1
+        return Decimal(
+            x2.low,
+            x2.mid,
+            x2.high,
+            x1.flags & x2.flags == Decimal.SIGN_MASK,
+            max(x1.scale(), x2.scale()),
+        )
 
-    # Integer addition
-    if (x1.scale() == 0) and (x2.scale() == 0):
-        var result = Decimal()
-        result.flags = UInt32((x1.scale() << x1.SCALE_SHIFT) & x1.SCALE_MASK)
+    elif x2.is_zero():
+        return Decimal(
+            x1.low,
+            x1.mid,
+            x1.high,
+            x1.flags & x2.flags == Decimal.SIGN_MASK,
+            max(x1.scale(), x2.scale()),
+        )
+
+    # Integer addition with scale of 0 (true integers)
+    elif x1.scale() == 0 and x2.scale() == 0:
+        var x1_coef = x1.coefficient()
+        var x2_coef = x2.coefficient()
 
         # Same sign: add absolute values and keep the sign
         if x1.is_negative() == x2.is_negative():
-            if x1.is_negative():
-                result.flags |= x1.SIGN_MASK
+            # Add directly using UInt128 arithmetic
+            var summation = x1_coef + x2_coef
 
-            # Add with carry
-            var carry: UInt32 = 0
-
-            # Add low parts
-            var sum_low = UInt64(x1.low) + UInt64(x2.low)
-            result.low = UInt32(sum_low & 0xFFFFFFFF)
-            carry = UInt32(sum_low >> 32)
-
-            # Add mid parts with carry
-            var sum_mid = UInt64(x1.mid) + UInt64(x2.mid) + UInt64(carry)
-            result.mid = UInt32(sum_mid & 0xFFFFFFFF)
-            carry = UInt32(sum_mid >> 32)
-
-            # Add high parts with carry
-            var sum_high = UInt64(x1.high) + UInt64(x2.high) + UInt64(carry)
-            result.high = UInt32(sum_high & 0xFFFFFFFF)
-
-            # Check for overflow
-            if (sum_high >> 32) > 0:
+            # Check for overflow (UInt128 can store values beyond our 96-bit limit)
+            # We need to make sure the sum fits in 96 bits (our Decimal capacity)
+            if summation > Decimal.MAX_AS_UINT128:  # 2^96-1
                 raise Error("Error in `addition()`: Decimal overflow")
 
-            return result
+            # Extract the 32-bit components from the UInt128 sum
+            var low = UInt32(summation & 0xFFFFFFFF)
+            var mid = UInt32((summation >> 32) & 0xFFFFFFFF)
+            var high = UInt32((summation >> 64) & 0xFFFFFFFF)
 
-    # Float addition which may be with different scales
-    # Use string-based approach
+            return Decimal(low, mid, high, x1.is_negative(), 0)
 
-    return Decimal(decimojo.maths.arithmetics._add_decimals_as_string(x1, x2))
+        # Different signs: subtract the smaller from the larger
+        else:
+            var diff: UInt128
+            var is_negative: Bool
+            if x1_coef > x2_coef:
+                diff = x1_coef - x2_coef
+                is_negative = x1.is_negative()
+            else:
+                diff = x2_coef - x1_coef
+                is_negative = x2.is_negative()
+
+            # Extract the 32-bit components from the UInt128 difference
+            low = UInt32(diff & 0xFFFFFFFF)
+            mid = UInt32((diff >> 32) & 0xFFFFFFFF)
+            high = UInt32((diff >> 64) & 0xFFFFFFFF)
+
+            return Decimal(low, mid, high, is_negative, 0)
+
+    # Integer addition with positive scales
+    elif x1.is_integer() and x2.is_integer():
+        # Same sign: add absolute values and keep the sign
+        if x1.is_negative() == x2.is_negative():
+            # Add directly using UInt128 arithmetic
+            var summation = x1.to_uint128() + x2.to_uint128()
+
+            # Check for overflow (UInt128 can store values beyond our 96-bit limit)
+            # We need to make sure the sum fits in 96 bits (our Decimal capacity)
+            if summation > Decimal.MAX_AS_UINT128:  # 2^96-1
+                raise Error("Error in `addition()`: Decimal overflow")
+
+            # Determine the scale for the result
+            var scale = min(
+                max(x1.scale(), x2.scale()),
+                Decimal.MAX_VALUE_DIGITS
+                - decimojo.utility.number_of_significant_digits(summation),
+            )
+            ## If summation > 7922816251426433759354395033
+            if (summation > Decimal.MAX_AS_UINT128 // 10) and (scale > 0):
+                scale -= 1
+            summation *= UInt128(10) ** scale
+
+            # Extract the 32-bit components from the UInt128 sum
+            var low = UInt32(summation & 0xFFFFFFFF)
+            var mid = UInt32((summation >> 32) & 0xFFFFFFFF)
+            var high = UInt32((summation >> 64) & 0xFFFFFFFF)
+
+            return Decimal(low, mid, high, x1.is_negative(), scale)
+
+        # Different signs: subtract the smaller from the larger
+        else:
+            var diff: UInt128
+            var is_negative: Bool
+            if x1.coefficient() > x2.coefficient():
+                diff = x1.to_uint128() - x2.to_uint128()
+                is_negative = x1.is_negative()
+            else:
+                diff = x2.to_uint128() - x1.to_uint128()
+                is_negative = x2.is_negative()
+
+            # Determine the scale for the result
+            var scale = min(
+                max(x1.scale(), x2.scale()),
+                Decimal.MAX_VALUE_DIGITS
+                - decimojo.utility.number_of_significant_digits(diff),
+            )
+            ## If summation > 7922816251426433759354395033
+            if (diff > Decimal.MAX_AS_UINT128 // 10) and (scale > 0):
+                scale -= 1
+            diff *= UInt128(10) ** scale
+
+            # Extract the 32-bit components from the UInt128 difference
+            low = UInt32(diff & 0xFFFFFFFF)
+            mid = UInt32((diff >> 32) & 0xFFFFFFFF)
+            high = UInt32((diff >> 64) & 0xFFFFFFFF)
+
+            return Decimal(low, mid, high, is_negative, scale)
+
+    # Float addition with the same scale
+    elif x1.scale() == x2.scale():
+        var summation: Int128  # 97-bit signed integer can be stored in Int128
+        summation = (-1) ** x1.is_negative() * Int128(x1.coefficient()) + (
+            -1
+        ) ** x2.is_negative() * Int128(x2.coefficient())
+
+        var is_nagative = summation < 0
+        if is_nagative:
+            summation = -summation
+
+        # Now we need to truncate the summation to fit in 96 bits
+        var final_scale: Int
+        var truncated_summation = UInt128(summation)
+
+        # If the summation fits in 96 bits, we can use the original scale
+        if summation < Decimal.MAX_AS_INT128:
+            final_scale = x1.scale()
+
+        # Otherwise, we need to truncate the summation to fit in 96 bits
+        else:
+            truncated_summation = decimojo.utility.truncate_to_max(
+                truncated_summation
+            )
+            final_scale = decimojo.utility.number_of_significant_digits(
+                truncated_summation
+            ) - (
+                decimojo.utility.number_of_significant_digits(summation)
+                - max(x1.scale(), x2.scale())
+            )
+
+        # Extract the 32-bit components from the Int256 difference
+        low = UInt32(truncated_summation & 0xFFFFFFFF)
+        mid = UInt32((truncated_summation >> 32) & 0xFFFFFFFF)
+        high = UInt32((truncated_summation >> 64) & 0xFFFFFFFF)
+
+        return Decimal(low, mid, high, is_nagative, final_scale)
+
+    # Float addition which with different scales
+    else:
+        var summation: Int256
+        if x1.scale() == x2.scale():
+            summation = (-1) ** x1.is_negative() * Int256(x1.coefficient()) + (
+                -1
+            ) ** x2.is_negative() * Int256(x2.coefficient())
+        elif x1.scale() > x2.scale():
+            summation = (-1) ** x1.is_negative() * Int256(x1.coefficient()) + (
+                -1
+            ) ** x2.is_negative() * Int256(x2.coefficient()) * Int256(10) ** (
+                x1.scale() - x2.scale()
+            )
+        else:
+            summation = (-1) ** x1.is_negative() * Int256(
+                x1.coefficient()
+            ) * Int256(10) ** (x2.scale() - x1.scale()) + (
+                -1
+            ) ** x2.is_negative() * Int256(
+                x2.coefficient()
+            )
+
+        var is_nagative = summation < 0
+        if is_nagative:
+            summation = -summation
+
+        # Now we need to truncate the summation to fit in 96 bits
+        var final_scale: Int
+        var truncated_summation = UInt256(summation)
+
+        # If the summation fits in 96 bits, we can use the original scale
+        if summation < Decimal.MAX_AS_INT256:
+            final_scale = max(x1.scale(), x2.scale())
+
+        # Otherwise, we need to truncate the summation to fit in 96 bits
+        else:
+            truncated_summation = decimojo.utility.truncate_to_max(
+                truncated_summation
+            )
+            final_scale = decimojo.utility.number_of_significant_digits(
+                truncated_summation
+            ) - (
+                decimojo.utility.number_of_significant_digits(summation)
+                - max(x1.scale(), x2.scale())
+            )
+
+        # Extract the 32-bit components from the Int256 difference
+        low = UInt32(truncated_summation & 0xFFFFFFFF)
+        mid = UInt32((truncated_summation >> 32) & 0xFFFFFFFF)
+        high = UInt32((truncated_summation >> 64) & 0xFFFFFFFF)
+
+        return Decimal(low, mid, high, is_nagative, final_scale)
 
 
 fn subtract(x1: Decimal, x2: Decimal) raises -> Decimal:
@@ -304,7 +468,7 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
     # Use string-based division to avoid overflow with large numbers
 
     # Determine precision needed for calculation
-    var working_precision = Decimal.LEN_OF_MAX_VALUE + 1  # +1 for potential rounding
+    var working_precision = Decimal.MAX_VALUE_DIGITS + 1  # +1 for potential rounding
 
     # Perform long division algorithm
     var quotient = String("")
@@ -634,326 +798,6 @@ fn sqrt(x: Decimal) raises -> Decimal:
         return rounded_result
     except e:
         raise e
-
-
-fn _add_decimals_as_string(a: Decimal, b: Decimal) -> String:
-    """
-    Performs addition of two Decimals using a string-based approach.
-    Preserves decimal places to match the inputs.
-
-    Args:
-        a: First Decimal operand.
-        b: Second Decimal operand.
-
-    Returns:
-        A string representation of the sum with decimal places preserved.
-    """
-    # Special case: if either number is zero, return the other
-    if a.is_zero():
-        return String(b)
-    if b.is_zero():
-        return String(a)
-
-    # Handle different signs
-    if a.is_negative() != b.is_negative():
-        # If signs differ, we need subtraction
-        if a.is_negative():
-            # -a + b = b - |a|
-            return _subtract_decimals_as_string(b, -a)
-        else:
-            # a + (-b) = a - |b|
-            return _subtract_decimals_as_string(a, -b)
-
-    # Determine the number of decimal places to preserve
-    # We need to examine the original string representation of a and b
-    var a_str = String(a)
-    var b_str = String(b)
-    var a_decimal_places = 0
-    var b_decimal_places = 0
-
-    # Count decimal places in a
-    var a_decimal_pos = a_str.find(".")
-    if a_decimal_pos >= 0:
-        a_decimal_places = len(a_str) - a_decimal_pos - 1
-
-    # Count decimal places in b
-    var b_decimal_pos = b_str.find(".")
-    if b_decimal_pos >= 0:
-        b_decimal_places = len(b_str) - b_decimal_pos - 1
-
-    # Determine target decimal places (maximum of both inputs)
-    var target_decimal_places = max(a_decimal_places, b_decimal_places)
-
-    # At this point, both numbers have the same sign
-    var is_negative = a.is_negative()  # and b.is_negative() is the same
-
-    # Step 1: Get coefficient strings (absolute values)
-    var a_coef = String(a.coefficient())
-    var b_coef = String(b.coefficient())
-    var a_scale = a.scale()
-    var b_scale = b.scale()
-
-    # Step 2: Align decimal points
-    var max_scale = max(a_scale, b_scale)
-
-    # Pad coefficients with trailing zeros to align decimal points
-    if a_scale < max_scale:
-        a_coef += "0" * (max_scale - a_scale)
-    if b_scale < max_scale:
-        b_coef += "0" * (max_scale - b_scale)
-
-    # Ensure both strings are the same length by padding with leading zeros
-    var max_length = max(len(a_coef), len(b_coef))
-    a_coef = "0" * (max_length - len(a_coef)) + a_coef
-    b_coef = "0" * (max_length - len(b_coef)) + b_coef
-
-    # Step 3: Perform addition from right to left
-    var result = String("")
-    var carry = 0
-
-    for i in range(len(a_coef) - 1, -1, -1):
-        var digit_a = ord(a_coef[i]) - ord("0")
-        var digit_b = ord(b_coef[i]) - ord("0")
-
-        var digit_sum = digit_a + digit_b + carry
-        carry = digit_sum // 10
-        result = String(digit_sum % 10) + result
-
-    # Handle final carry
-    if carry > 0:
-        result = String(carry) + result
-
-    # Step 4: Insert decimal point at correct position
-    var final_result = String("")
-
-    if max_scale == 0:
-        # No decimal places, just return the result
-        final_result = result
-        # Add decimal point and zeros if needed to match target decimal places
-        if target_decimal_places > 0:
-            final_result += "." + "0" * target_decimal_places
-    else:
-        var decimal_pos = len(result) - max_scale
-
-        if decimal_pos <= 0:
-            # Result is less than 1, need leading zeros
-            final_result = "0." + "0" * (0 - decimal_pos) + result
-
-            # Ensure we have enough decimal places to match target
-            var current_decimals = len(result) + (0 - decimal_pos)
-            if current_decimals < target_decimal_places:
-                final_result += "0" * (target_decimal_places - current_decimals)
-        else:
-            # Insert decimal point
-            final_result = result[:decimal_pos] + "." + result[decimal_pos:]
-
-            # Ensure we have enough decimal places to match target
-            var current_decimals = len(result) - decimal_pos
-            if current_decimals < target_decimal_places:
-                final_result += "0" * (target_decimal_places - current_decimals)
-
-    # Add negative sign if needed
-    if (
-        is_negative
-        and final_result != "0"
-        and final_result != "0." + "0" * target_decimal_places
-    ):
-        final_result = "-" + final_result
-
-    return final_result
-
-
-fn _subtract_decimals_as_string(owned a: Decimal, owned b: Decimal) -> String:
-    """
-    Helper function to perform subtraction of b from a.
-    Handles cases for all sign combinations and preserves decimal places.
-
-    Args:
-        a: First Decimal operand (minuend).
-        b: Second Decimal operand (subtrahend).
-
-    Returns:
-        A string representation of the difference with decimal places preserved.
-    """
-    # Determine the number of decimal places to preserve
-    # We need to examine the original string representation of a and b
-    var a_str = String(a)
-    var b_str = String(b)
-    var a_decimal_places = 0
-    var b_decimal_places = 0
-
-    # Count decimal places in a
-    var a_decimal_pos = a_str.find(".")
-    if a_decimal_pos >= 0:
-        a_decimal_places = len(a_str) - a_decimal_pos - 1
-
-    # Count decimal places in b
-    var b_decimal_pos = b_str.find(".")
-    if b_decimal_pos >= 0:
-        b_decimal_places = len(b_str) - b_decimal_pos - 1
-
-    # Determine target decimal places (maximum of both inputs)
-    var target_decimal_places = max(a_decimal_places, b_decimal_places)
-
-    # Handle different signs
-    if a.is_negative() != b.is_negative():
-        # When signs differ, subtraction becomes addition
-        if a.is_negative():
-            # -a - b = -(a + b)
-            var sum_result = _add_decimals_as_string(-a, b)
-            if sum_result == "0":
-                return "0." + "0" * target_decimal_places
-            return "-" + sum_result
-        else:
-            # a - (-b) = a + b
-            return _add_decimals_as_string(a, -b)
-
-    # At this point, both numbers have the same sign
-    var is_negative = a.is_negative()  # Both a and b have the same sign
-
-    # Compare absolute values to determine which is larger
-    var a_larger = True
-    var a_coef = String(a.coefficient())
-    var b_coef = String(b.coefficient())
-    var a_scale = a.scale()
-    var b_scale = b.scale()
-
-    # First compare by number of digits before decimal point
-    var a_int_digits = len(a_coef) - a_scale
-    var b_int_digits = len(b_coef) - b_scale
-
-    if a_int_digits < b_int_digits:
-        a_larger = False
-    elif a_int_digits == b_int_digits:
-        # If same number of integer digits, align decimal points and compare
-        var max_scale = max(a_scale, b_scale)
-
-        # Pad coefficients with trailing zeros to align
-        var a_padded = a_coef + "0" * (max_scale - a_scale)
-        var b_padded = b_coef + "0" * (max_scale - b_scale)
-
-        # Ensure both are the same length
-        var max_length = max(len(a_padded), len(b_padded))
-        a_padded = "0" * (max_length - len(a_padded)) + a_padded
-        b_padded = "0" * (max_length - len(b_padded)) + b_padded
-
-        # Compare digit by digit
-        a_larger = a_padded >= b_padded
-
-    # Determine sign of result based on comparison and original signs
-    var result_is_negative = is_negative
-    if not a_larger:
-        # If |a| < |b|, then:
-        # For positive numbers: a - b = -(b - a)
-        # For negative numbers: -a - (-b) = -a + b = b - a = -(-(b - a)) = -(b - a)
-        # So result sign is flipped from original
-        result_is_negative = not result_is_negative
-
-        # Swap a and b so we always subtract smaller from larger
-        a, b = b, a
-
-    # Now |a| is guaranteed to be >= |b|
-    # Align decimal points again for the actual subtraction
-    var max_scale = max(a.scale(), b.scale())
-
-    # Get coefficients again (after possible swap)
-    a_coef = String(a.coefficient())
-    b_coef = String(b.coefficient())
-    a_scale = a.scale()
-    b_scale = b.scale()
-
-    # Pad coefficients with trailing zeros to align decimal points
-    a_coef += "0" * (max_scale - a_scale)
-    b_coef += "0" * (max_scale - b_scale)
-
-    # Ensure both strings are the same length
-    var max_length = max(len(a_coef), len(b_coef))
-    a_coef = "0" * (max_length - len(a_coef)) + a_coef
-    b_coef = "0" * (max_length - len(b_coef)) + b_coef
-
-    # Perform subtraction from right to left
-    var result = String("")
-    var borrow = 0
-
-    for i in range(len(a_coef) - 1, -1, -1):
-        var digit_a = ord(a_coef[i]) - ord("0") - borrow
-        var digit_b = ord(b_coef[i]) - ord("0")
-
-        if digit_a < digit_b:
-            digit_a += 10
-            borrow = 1
-        else:
-            borrow = 0
-
-        var digit_diff = digit_a - digit_b
-        result = String(digit_diff) + result
-
-    # Remove leading zeros (but keep at least one digit before decimal point)
-    var start_idx = 0
-    while start_idx < len(result) - max_scale - 1 and result[start_idx] == "0":
-        start_idx += 1
-
-    result = result[start_idx:]
-
-    # Insert decimal point
-    var final_result = String("")
-
-    if max_scale == 0:
-        # No decimal places in calculation, but we still need to consider target decimal places
-        final_result = result
-        if target_decimal_places > 0:
-            final_result += "." + "0" * target_decimal_places
-    else:
-        var decimal_pos = len(result) - max_scale
-
-        if decimal_pos <= 0:
-            # Result is less than 1
-            final_result = "0." + "0" * (0 - decimal_pos) + result
-
-            # Ensure we have enough decimal places to match target
-            var current_decimals = len(result) + (0 - decimal_pos)
-            if current_decimals < target_decimal_places:
-                final_result += "0" * (target_decimal_places - current_decimals)
-        else:
-            # Insert decimal point
-            final_result = result[:decimal_pos] + "." + result[decimal_pos:]
-
-            # Ensure we have enough decimal places to match target
-            var current_decimals = len(result) - decimal_pos
-            if current_decimals < target_decimal_places:
-                final_result += "0" * (target_decimal_places - current_decimals)
-
-    # Handle case where result is zero
-    if final_result == "0" or final_result.startswith("0."):
-        # Check if the result contains only zeros and decimal point
-        var is_all_zero = True
-        for i in range(len(final_result)):
-            if final_result[i] != "0" and final_result[i] != ".":
-                is_all_zero = False
-                break
-
-        if is_all_zero:
-            return (
-                "0." + "0" * target_decimal_places if target_decimal_places
-                > 0 else "0"
-            )
-
-    var is_zero_point = True
-    for i in range(len(final_result)):
-        if final_result[i] != "0" and final_result[i] != ".":
-            is_zero_point = False
-            break
-
-    # Add negative sign if needed
-    if result_is_negative and not (
-        final_result == "0"
-        or
-        # Check if string starts with "0." and contains only zeros and decimal point
-        (final_result.startswith("0.") and (is_zero_point))
-    ):
-        final_result = "-" + final_result
-
-    return final_result
 
 
 fn _subtract_strings(a: String, b: String) -> String:

@@ -72,9 +72,13 @@ struct Decimal(
     # Constants
     alias MAX_PRECISION = 28
     alias MAX_SCALE = 128
+    alias MAX_AS_UINT128 = UInt128(79228162514264337593543950335)
+    alias MAX_AS_INT128 = Int128(79228162514264337593543950335)
+    alias MAX_AS_UINT256 = UInt256(79228162514264337593543950335)
+    alias MAX_AS_INT256 = Int256(79228162514264337593543950335)
     alias MAX_AS_STRING = String("79228162514264337593543950335")
     """Maximum value as a string of a 128-bit Decimal."""
-    alias LEN_OF_MAX_VALUE = 29
+    alias MAX_VALUE_DIGITS = 29
     """Length of the max value as a string. For 128-bit Decimal, it is 29 digits"""
     alias SIGN_MASK = UInt32(0x80000000)
     """Sign mask. `0b1000_0000_0000_0000_0000_0000_0000_0000`.
@@ -263,6 +267,58 @@ struct Decimal(
             self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
             self.high = 0
 
+    fn __init__(out self, integer: Int128):
+        """
+        Initializes a Decimal from an Int128 value.
+        ***WARNING***: This constructor can only handle values up to 96 bits.
+        """
+        self.flags = 0
+
+        if integer == 0:
+            self.low = 0
+            self.mid = 0
+            self.high = 0
+            return
+
+        if integer < 0:
+            # Set sign bit for negative integers
+            self.flags = Self.SIGN_MASK
+
+            # Handle negative value by taking absolute value first
+            var abs_value = -integer
+
+            # Set the coefficient fields
+            # `high` will always be 0 because Int is 64-bit
+            self.low = UInt32(abs_value & 0xFFFFFFFF)
+            self.mid = UInt32((abs_value >> 32) & 0xFFFFFFFF)
+            self.high = UInt32((abs_value >> 64) & 0xFFFFFFFF)
+        else:
+            # Positive integer
+            print(integer)
+            self.low = UInt32(integer & 0xFFFFFFFF)
+            self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
+            self.high = UInt32((integer >> 64) & 0xFFFFFFFF)
+
+    fn __init__(out self, integer: UInt128):
+        """
+        Initializes a Decimal from an UInt128 value.
+        ***WARNING***: This constructor can only handle values up to 96 bits.
+        """
+        self.low = UInt32(integer & 0xFFFFFFFF)
+        self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
+        self.high = UInt32((integer >> 64) & 0xFFFFFFFF)
+        self.flags = 0
+
+    fn __init__(out self, integer: UInt256):
+        """
+        Initializes a Decimal from an UInt256 value.
+        ***WARNING***: This constructor can only handle values up to 96 bits.
+        """
+        self.low = UInt32(integer & 0xFFFFFFFF)
+        self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
+        self.high = UInt32((integer >> 64) & 0xFFFFFFFF)
+        self.flags = 0
+
     fn __init__(out self, s: String) raises:
         """
         Initializes a Decimal from a string representation.
@@ -446,8 +502,8 @@ struct Decimal(
         else:
             string_of_integral_part = String("0")
 
-        if (len(string_of_integral_part) > Decimal.LEN_OF_MAX_VALUE) or (
-            len(string_of_integral_part) == Decimal.LEN_OF_MAX_VALUE
+        if (len(string_of_integral_part) > Decimal.MAX_VALUE_DIGITS) or (
+            len(string_of_integral_part) == Decimal.MAX_VALUE_DIGITS
             and (string_of_integral_part > Self.MAX_AS_STRING)
         ):
             raise Error(
@@ -459,8 +515,8 @@ struct Decimal(
         # Check if the coefficient is too large
         # Recursively re-calculate the coefficient string after truncating and rounding
         # until it fits within the Decimal limits
-        while (len(string_of_coefficient) > Decimal.LEN_OF_MAX_VALUE) or (
-            len(string_of_coefficient) == Decimal.LEN_OF_MAX_VALUE
+        while (len(string_of_coefficient) > Decimal.MAX_VALUE_DIGITS) or (
+            len(string_of_coefficient) == Decimal.MAX_VALUE_DIGITS
             and (string_of_coefficient > Self.MAX_AS_STRING)
         ):
             var raw_length_of_coefficient = len(string_of_coefficient)
@@ -468,10 +524,10 @@ struct Decimal(
             # If string_of_coefficient has more than 29 digits, truncate it to 29.
             # If string_of_coefficient has 29 digits and larger than MAX_AS_STRING, truncate it to 28.
             var rounding_digit = string_of_coefficient[
-                min(Decimal.LEN_OF_MAX_VALUE, len(string_of_coefficient) - 1)
+                min(Decimal.MAX_VALUE_DIGITS, len(string_of_coefficient) - 1)
             ]
             string_of_coefficient = string_of_coefficient[
-                : min(Decimal.LEN_OF_MAX_VALUE, len(string_of_coefficient) - 1)
+                : min(Decimal.MAX_VALUE_DIGITS, len(string_of_coefficient) - 1)
             ]
 
             scale = scale - (
@@ -504,8 +560,8 @@ struct Decimal(
                     result_chars.insert(0, String("1"))
 
                     # If adding a digit would exceed max length, drop the last digit and reduce scale
-                    if len(result_chars) > Decimal.LEN_OF_MAX_VALUE:
-                        result_chars = result_chars[: Decimal.LEN_OF_MAX_VALUE]
+                    if len(result_chars) > Decimal.MAX_VALUE_DIGITS:
+                        result_chars = result_chars[: Decimal.MAX_VALUE_DIGITS]
                         if scale > 0:
                             scale -= 1
 
@@ -561,7 +617,7 @@ struct Decimal(
         if is_negative:
             self.flags |= Self.SIGN_MASK
 
-    # TODO: Use generic floating-point type.
+    # TODO: Use generic floating-point type if possible.
     fn __init__(out self, f: Float64, *, max_precision: Bool = True) raises:
         """
         Initializes a Decimal from a floating-point value.
@@ -594,7 +650,7 @@ struct Decimal(
         self.flags = other.flags
 
     # ===------------------------------------------------------------------=== #
-    # Output dunders, type-transfer dunders, and other methods
+    # Output dunders, type-transfer dunders, and other type-transfer methods
     # ===------------------------------------------------------------------=== #
 
     fn __float__(self) -> Float64:
@@ -620,23 +676,10 @@ struct Decimal(
         Returns:
             The Int representation of this Decimal.
         """
-        if self.is_zero():
-            return 0
 
-        # If scale is 0, the number is already an integer
-        if self.scale() == 0:
-            return Int(
-                -self.coefficient() if self.is_negative() else self.coefficient()
-            )
+        var res = Int(self.to_uint128())
 
-        # If scale is not 0, check whether integer part is 0
-        if self.number_of_significant_digits() <= self.scale():
-            # Value is less than 1, so integer part is 0
-            return 0
-
-        # Otherwise, get the integer part by dividing by 10^scale
-        var result = Int(self.coefficient() // 10 ** UInt128(self.scale()))
-        return -result if self.is_negative() else result
+        return -res if self.is_negative() else res
 
     fn __str__(self) -> String:
         """
@@ -646,18 +689,17 @@ struct Decimal(
         # Get the coefficient as a string (absolute value)
         var coef = String(self.coefficient())
         var scale = self.scale()
+        var result: String
 
         # Handle zero as a special case
         if coef == "0":
             if scale == 0:
-                return "0"
+                result = "0"
             else:
-                return "0." + "0" * scale
+                result = "0." + "0" * scale
 
         # For non-zero values, format according to scale
-        var result: String
-
-        if scale == 0:
+        elif scale == 0:
             # No decimal places needed
             result = coef
         elif scale >= len(coef):
@@ -677,7 +719,7 @@ struct Decimal(
                 result += "0" * (scale - current_decimals)
 
         # Add negative sign if needed
-        if self.is_negative() and result != "0":
+        if self.is_negative():
             result = "-" + result
 
         return result
@@ -687,6 +729,42 @@ struct Decimal(
         Returns a string representation of the Decimal.
         """
         return 'Decimal("' + self.__str__() + '")'
+
+    fn to_int128(self) -> Int128:
+        """
+        Returns the signed integral part of the Decimal.
+        Compared to `__int__` method, the returned value will not be truncated.
+        """
+
+        var res = Int128(self.to_uint128())
+
+        return -res if self.is_negative() else res
+
+    fn to_uint128(self) -> UInt128:
+        """
+        Returns the unsigned integral part of the Decimal.
+        Compared to `__int__` method, the returned value will not be truncated.
+        """
+
+        var res: UInt128
+
+        if self.is_zero():
+            res = 0
+
+        # If scale is 0, the number is already an integer
+        elif self.scale() == 0:
+            res = self.coefficient()
+
+        # If scale is not 0, check whether integer part is 0
+        elif self.number_of_significant_digits() <= self.scale():
+            # Value is less than 1, so integer part is 0
+            res = 0
+
+        # Otherwise, get the integer part by dividing by 10^scale
+        else:
+            res = self.coefficient() // 10 ** UInt128(self.scale())
+
+        return res
 
     fn write_to[W: Writer](self, mut writer: W):
         """
@@ -713,6 +791,10 @@ struct Decimal(
 
     fn __neg__(self) -> Self:
         """Unary negation operator."""
+        # Special case for negative zero
+        if self.is_zero():
+            return Decimal.ZERO()
+
         var result = Decimal(self.low, self.mid, self.high, self.flags)
         result.flags ^= Self.SIGN_MASK  # Flip sign bit
         return result

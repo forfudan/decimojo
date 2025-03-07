@@ -1,18 +1,26 @@
 # DeciMojo
 
-A correctly-rounded, fixed-point decimal arithmetic library for the [Mojo programming language 🔥](https://www.modular.com/mojo).
+A fixed-point decimal arithmetic library implemented in [the Mojo programming language 🔥](https://www.modular.com/mojo).
 
 ## Overview
 
 DeciMojo provides a Decimal type implementation for Mojo with fixed-precision arithmetic, designed to handle financial calculations and other scenarios where floating-point rounding errors are problematic.
 
+Repo: [https://github.com/forFudan/DeciMojo](https://github.com/forFudan/DeciMojo)
+
 ## Objective
 
-Financial calculations and data analysis require precise decimal arithmetic that floating-point numbers cannot reliably provide. As someone working in finance and credit risk model validation, I needed a dependable fixed-precision numeric type when migrating my personal projects from Python to Mojo.
+Financial calculations and data analysis require precise decimal arithmetic that floating-point numbers cannot reliably provide. As someone working in finance and credit risk model validation, I needed a dependable correctly-rounded, fixed-precision numeric type when migrating my personal projects from Python to Mojo.
 
 Since Mojo currently lacks a native Decimal type in its standard library, I decided to create my own implementation to fill that gap.
 
 This project draws inspiration from several established decimal implementations and documentation, e.g., [Python built-in `Decimal` type](https://docs.python.org/3/library/decimal.html), [Rust `rust_decimal` crate](https://docs.rs/rust_decimal/latest/rust_decimal/index.html), [Microsoft's `Decimal` implementation](https://learn.microsoft.com/en-us/dotnet/api/system.decimal.getbits?view=net-9.0&redirectedfrom=MSDN#System_Decimal_GetBits_System_Decimal_), [General Decimal Arithmetic Specification](https://speleotrove.com/decimal/decarith.html), etc. Many thanks to these predecessors for their contributions and their commitment to open knowledge sharing.
+
+## Nomenclature
+
+DeciMojo combines "Decimal" and "Mojo" - reflecting both its purpose (decimal arithmetic) and the programming language it's implemented in. The name highlights the project's focus on bringing precise decimal calculations to the Mojo ecosystem.
+
+For brevity, you can also refer to it "decimo" (derived from the Latin root "decimus" meaning "tenth").
 
 ## Status
 
@@ -45,7 +53,7 @@ Here are 10 key examples highlighting the most important features of the `Decima
 ### 1. Fixed-Point Precision for Financial Calculations
 
 ```mojo
-from decimojo import Decimal
+from decimojo.prelude import *
 
 # The classic floating-point problem
 print(0.1 + 0.2)  # 0.30000000000000004 (not exactly 0.3)
@@ -269,14 +277,19 @@ After cloning the repo onto your local disk, you can:
 - Use `magic run test` (or `maigic run t`) to run tests.
 - Use `magic run bench` (or `magic run b`) to generate logs for benchmarking tests agains `python.decimal` module. The log files are saved in `benches/logs/`.
 
-## Related Projects
-
-I am also working on NuMojo, a library for numerical computing in Mojo 🔥 similar to NumPy, SciPy in Python. If you are also interested, you can [check it out here](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo).
-
 ## License
 
 Distributed under the Apache 2.0 License. See [LICENSE](https://github.com/forFudan/decimojo/blob/main/LICENSE) for details.
 
-## Acknowledgements
+If you find DeciMojo useful for your research, consider listing it in your citations 😀.
 
-Built with the [Mojo programming language 🔥](https://www.modular.com/mojo) created by [Modular](https://www.modular.com/).
+```tex
+@software{Zhu.2025,
+    author       = {Zhu, Yuhao},
+    year         = {2025},
+    title        = {DeciMojo: A fixed-point decimal arithmetic library in Mojo},
+    url          = {https://github.com/forFudan/DeciMojo},
+    version      = {0.1.0},
+    note = {Computer Software}
+}
+```
