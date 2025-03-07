@@ -282,11 +282,12 @@ Distributed under the Apache 2.0 License. See [LICENSE](https://github.com/forFu
 If you find DeciMojo useful for your research, consider listing it in your citations 😀.
 
 ```tex
-@software{decimojo,
-    author       = {{Yuhao Zhu}},
+@software{Zhu.2025,
+    author       = {Zhu, Yuhao},
     year         = {2025},
     title        = {DeciMojo: A fixed-point decimal arithmetic library in Mojo},
     url          = {https://github.com/forFudan/DeciMojo},
-    version      = {0.1.0}
+    version      = {0.1.0},
+    note = {Computer Software}
 }
 ```
