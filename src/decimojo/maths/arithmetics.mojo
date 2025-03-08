@@ -463,7 +463,6 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
             )
 
     # GENERAL CASES: Decimal multiplication with any scales
-    # TODO: Consider different sub-cases
 
     # SUB-CASE: Both operands are small
     # The bits of the product will not exceed 96 bits
