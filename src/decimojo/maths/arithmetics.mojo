@@ -302,13 +302,15 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     var x2_coef = x2.coefficient()
     var x1_scale = x1.scale()
     var x2_scale = x2.scale()
+    var combined_scale = x1_scale + x2_scale
+    """Combined scale of the two operands."""
     var is_nagative = x1.is_negative() != x2.is_negative()
 
     # SPECIAL CASE: zero
     # Return zero while preserving the scale
     if x1_coef == 0 or x2_coef == 0:
         var result = Decimal.ZERO()
-        var result_scale = min(x1_scale + x2_scale, Decimal.MAX_PRECISION)
+        var result_scale = min(combined_scale, Decimal.MAX_PRECISION)
         result.flags = UInt32(
             (result_scale << Decimal.SCALE_SHIFT) & Decimal.SCALE_MASK
         )
@@ -316,7 +318,6 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
 
     # SPECIAL CASE: Both operands have coefficient of 1
     if x1_coef == 1 and x2_coef == 1:
-        var combined_scale = x1_scale + x2_scale
         # If the combined scale exceeds the maximum precision,
         # return 0 with leading zeros after the decimal point and correct sign
         if combined_scale > Decimal.MAX_PRECISION:
@@ -342,7 +343,6 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
             return result
         else:
             var mul = x2_coef
-            var combined_scale = x1_scale + x2_scale
             # Rounding may be needed.
             var num_digits_mul = decimojo.utility.number_of_digits(mul)
             var num_digits_to_keep = num_digits_mul - (
@@ -374,7 +374,6 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
             return result
         else:
             var mul = x1_coef
-            var combined_scale = x1_scale + x2_scale
             # Rounding may be needed.
             var num_digits_mul = decimojo.utility.number_of_digits(mul)
             var num_digits_to_keep = num_digits_mul - (
@@ -395,27 +394,27 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
                 final_scale,
             )
 
+    # Determine the number of bits in the coefficients
+    # Used to determine the appropriate multiplication method
+    # The coefficient of result would be the sum of the two numbers of bits
+    var x1_num_bits = decimojo.utility.number_of_bits(x1_coef)
+    """Number of significant bits in the coefficient of x1."""
+    var x2_num_bits = decimojo.utility.number_of_bits(x2_coef)
+    """Number of significant bits in the coefficient of x2."""
+    var combined_num_bits = x1_num_bits + x2_num_bits
+    """Number of significant bits in the coefficient of the result."""
+
     # SPECIAL CASE: Both operands are true integers
     if x1_scale == 0 and x2_scale == 0:
         # Small integers, use UInt64 multiplication
-        if x1.is_uint32able() and x2.is_uint32able():
+        if combined_num_bits <= 64:
             var mul: UInt64 = UInt64(x1.low) * UInt64(x2.low)
             var low = UInt32(mul & 0xFFFFFFFF)
             var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
             return Decimal(low, mid, 0, is_nagative, 0)
 
         # Moderate integers, use UInt128 multiplication
-        elif x1.is_uint64able() and x2.is_uint64able():
-            var mul: UInt128 = UInt128(x1_coef) * UInt128(x2_coef)
-            var low = UInt32(mul & 0xFFFFFFFF)
-            var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
-            var high = UInt32((mul >> 64) & 0xFFFFFFFF)
-            return Decimal(low, mid, high, is_nagative, 0)
-
-        # One integer is 32-bit, even though the other is 96-bit
-        # The multipication result will be 128-bit
-        # Use UInt128 multiplication
-        elif (x2.is_uint32able()) or (x1.is_uint32able()):
+        elif combined_num_bits <= 128:
             var mul: UInt128 = UInt128(x1_coef) * UInt128(x2_coef)
             var low = UInt32(mul & 0xFFFFFFFF)
             var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
@@ -442,7 +441,6 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
         if mul > Decimal.MAX_AS_UINT256:
             raise Error("Error in `multiply()`: Decimal overflow")
         else:
-            var combined_scale = x1_scale + x2_scale
             var num_digits = decimojo.utility.number_of_digits(mul)
             var final_scale = min(
                 Decimal.MAX_VALUE_DIGITS - num_digits, combined_scale
@@ -464,17 +462,79 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
                 final_scale,
             )
 
-    # TODO: Consider different cases
-
-    # GENERAL CASE: Decimal multiplication with any scales
+    # GENERAL CASES: Decimal multiplication with any scales
+    # TODO: Consider different sub-cases
 
     # SUB-CASE: Both operands are small
-    # The bits of the product will not exceed 128 bits
+    # The bits of the product will not exceed 96 bits
+    # It can just fit into Decimal's capacity without overflow
+    # Result coefficient will less than 2^96 - 1 = 79228162514264337593543950335
     # Examples: 1.23 * 4.56
+    if combined_num_bits <= 96:
+        var mul: UInt128 = x1_coef * x2_coef
+
+        # Combined scale more than max precision, no need to truncate
+        if combined_scale <= Decimal.MAX_PRECISION:
+            var low = UInt32(mul & 0xFFFFFFFF)
+            var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
+            var high = UInt32((mul >> 64) & 0xFFFFFFFF)
+            return Decimal(low, mid, high, is_nagative, combined_scale)
+
+        # Combined scale no more than max precision, truncate with rounding
+        else:
+            var num_digits = decimojo.utility.number_of_digits(mul)
+            var num_digits_to_keep = num_digits - (
+                combined_scale - Decimal.MAX_PRECISION
+            )
+            mul = decimojo.utility.truncate_to_digits(mul, num_digits_to_keep)
+            var final_scale = min(Decimal.MAX_PRECISION, combined_scale)
+            var low = UInt32(mul & 0xFFFFFFFF)
+            var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
+            var high = UInt32((mul >> 64) & 0xFFFFFFFF)
+            return Decimal(low, mid, high, is_nagative, final_scale)
+
+    # SUB-CASE: Both operands are moderate
+    # The bits of the product will not exceed 128 bits
+    # Result coefficient will less than 2^128 - 1 but more than 2^96 - 1
+    # Truncating is needed to fit into Decimal's capacity
+    if combined_num_bits <= 128:
+        var mul: UInt128 = x1_coef * x2_coef
+
+        # Check outflow
+        var num_digits_of_integral_part = decimojo.utility.number_of_digits(
+            mul
+        ) - combined_scale
+        var mul_intergral_part = decimojo.utility.truncate_to_digits(
+            mul, num_digits_of_integral_part
+        )
+        if mul_intergral_part > Decimal.MAX_AS_UINT128:
+            raise Error("Error in `multiply()`: Decimal overflow")
+
+        # Truncated first 29 digits
+        var truncated_mul_at_max_length = decimojo.utility.truncate_to_digits(
+            mul, Decimal.MAX_VALUE_DIGITS
+        )
+        var num_digits_of_decimal_part = Decimal.MAX_VALUE_DIGITS - num_digits_of_integral_part
+        # If the first 29 digits exceed the limit,
+        # we need to adjust the num_digits_of_decimal_part by -1
+        # so that the final coefficient will be of 28 digits.
+        if truncated_mul_at_max_length > Decimal.MAX_AS_UINT128:
+            num_digits_of_decimal_part -= 1
+            mul = decimojo.utility.truncate_to_digits(
+                mul, Decimal.MAX_VALUE_DIGITS - 1
+            )
+        else:
+            mul = truncated_mul_at_max_length
+
+        # I think combined_scale should always be smaller
+        var final_scale = min(num_digits_of_decimal_part, combined_scale)
+        var low = UInt32(mul & 0xFFFFFFFF)
+        var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
+        var high = UInt32((mul >> 64) & 0xFFFFFFFF)
+        return Decimal(low, mid, high, is_nagative, final_scale)
 
     # REMAINING CASES
     # Calculate the combined scale (sum of both scales)
-    var combined_scale = x1_scale + x2_scale
     var mul: UInt256 = UInt256(x1_coef) * UInt256(x2_coef)
 
     # SPECIAL CASE: sum of scale <= 28 and mul <= max
