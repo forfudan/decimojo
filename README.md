@@ -24,7 +24,7 @@ For brevity, you can also refer to it "decimo" (derived from the Latin root "dec
 
 ## Status
 
-Rome is not built in one day. DeciMojo is currently under active development and appears to be between the **"make it work"** and **"make it right"** phases, leaning more toward the latter. Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/forFudan/decimojo/issues).
+Rome wasn't built in a day. DeciMojo is currently under active development, positioned between the **"make it work"** and **"make it right"** phases, with a stronger emphasis on the latter. Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/forFudan/decimojo/issues).
 
 ### Make it Work ✅ (MOSTLY COMPLETED)
 
@@ -42,9 +42,11 @@ Rome is not built in one day. DeciMojo is currently under active development and
 - High precision support is implemented (up to 28 decimal places)
 - The examples show robust handling of various scenarios
 
-### Make it Fast ⏳ (FUTURE WORK)
+### Make it Fast ⏳ (IN PROGRESS & FUTURE WORK)
 
-- Performance optimization is acknowledged but not currently prioritized
+- Performance optimization on basic operations (+ - * /) in progress
+- Regular benchmarking against Python's `decimal` module (see `bench/` folder)
+- Performance optimization on other functions are acknowleged but not currently prioritized
 
 ## Examples
 
