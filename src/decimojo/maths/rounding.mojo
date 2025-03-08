@@ -29,7 +29,7 @@ from decimojo.rounding_mode import RoundingMode
 
 fn round(
     number: Decimal,
-    decimal_places: Int,
+    decimal_places: Int = 0,
     rounding_mode: RoundingMode = RoundingMode.HALF_EVEN(),
 ) -> Decimal:
     """
@@ -38,16 +38,24 @@ fn round(
     Args:
         number: The Decimal to round.
         decimal_places: Number of decimal places to round to.
-        rounding_mode: Rounding mode to use (defaults to HALF_EVEN/banker's rounding).
+            Defaults to 0.
+        rounding_mode: Rounding mode to use.
+            Defaults to HALF_EVEN/banker's rounding.
 
     Returns:
         A new Decimal rounded to the specified number of decimal places.
     """
     var current_scale = number.scale()
 
-    # If already at the desired scale, return a copy
+    # CASE: If already at the desired scale
+    # Return a copy
+    # round(Decimal("123.456"), 3) -> Decimal("123.456")
     if current_scale == decimal_places:
         return number
+
+    # TODO: CASE: If the number is an integer
+    # Return with more or less zeros until the desired scale
+    # round(Decimal("123"), 2) -> Decimal("123.00")
 
     # If we need more decimal places, scale up
     if decimal_places > current_scale:

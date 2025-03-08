@@ -50,8 +50,8 @@ fn bitcast[dtype: DType](dec: Decimal) -> Scalar[dtype]:
 
 fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
     """
-    Truncates a UInt256 or UInt128 value to maximum possible value of Decimal
-    coefficient with rounding.
+    Truncates a UInt256 or UInt128 value to be as closer to the max value of
+    Decimal coefficient (`2^96 - 1`) as possible with rounding.
     Uses banker's rounding (ROUND_HALF_EVEN) for any truncated digits.
     `792281625142643375935439503356` will be truncated to
     `7922816251426433759354395034`.
@@ -64,19 +64,19 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
     Args:
         value: The UInt256 value to truncate.
 
+    Constraints:
+        `dtype` must be either `DType.uint128` or `DType.uint256`.
+
     Returns:
         The truncated UInt256 value, guaranteed to fit within 96 bits.
     """
 
     alias ValueType = Scalar[dtype]
 
-    # TODO: Make this compile-time check instead of rasing an error
-    # @parameter
-    # if (dtype != DType.uint128) and (dtype != DType.uint256):
-    #     raise Error(
-    #         "Error in `truncate_to_max`: dtype must be either uint128 or"
-    #         " uint256."
-    #     )
+    constrained[
+        dtype == DType.uint128 or dtype == DType.uint256,
+        "must be uint128 or uint256",
+    ]()
 
     # If the value is already less than the maximum possible value, return it
     if value <= ValueType(Decimal.MAX_AS_UINT128):
