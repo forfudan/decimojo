@@ -16,13 +16,18 @@ format = "magic run mojo format ./"
 package = "magic run format && magic run mojo package src/decimojo && cp decimojo.mojopkg tests/ && cp decimojo.mojopkg benches/ && rm decimojo.mojopkg"
 p = "clear && magic run package"
 
+# delete the package files in tests folder
+delete_package = "rm tests/decimojo.mojopkg"
+
 # debugs (run the testing files only)
 debug = "magic run package && magic run mojo tests/*.mojo"
 d = "clear && magic run debug"
 
 # tests (use the mojo testing tool)
-test = "magic run package && magic run mojo test tests"
+test = "magic run package && magic run mojo test tests && magic run delete_package"
 t = "clear && magic run test"
+
+# individual test files
 
 # benches
 bench = "magic run package && cd benches && magic run mojo bench.mojo && cd .."
