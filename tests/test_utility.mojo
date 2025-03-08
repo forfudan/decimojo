@@ -6,39 +6,39 @@ from testing import assert_equal, assert_true
 import max
 
 from decimojo.prelude import *
-from decimojo.utility import truncate_to_max, number_of_significant_digits
+from decimojo.utility import truncate_to_max, number_of_digits
 
 
-fn test_number_of_significant_digits() raises:
-    """Tests for number_of_significant_digits function."""
-    print("Testing number_of_significant_digits...")
+fn test_number_of_digits() raises:
+    """Tests for number_of_digits function."""
+    print("Testing number_of_digits...")
 
     # Test with simple UInt128 values
-    assert_equal(number_of_significant_digits(UInt128(0)), 0)
-    assert_equal(number_of_significant_digits(UInt128(1)), 1)
-    assert_equal(number_of_significant_digits(UInt128(9)), 1)
-    assert_equal(number_of_significant_digits(UInt128(10)), 2)
-    assert_equal(number_of_significant_digits(UInt128(123)), 3)
-    assert_equal(number_of_significant_digits(UInt128(9999)), 4)
+    assert_equal(number_of_digits(UInt128(0)), 0)
+    assert_equal(number_of_digits(UInt128(1)), 1)
+    assert_equal(number_of_digits(UInt128(9)), 1)
+    assert_equal(number_of_digits(UInt128(10)), 2)
+    assert_equal(number_of_digits(UInt128(123)), 3)
+    assert_equal(number_of_digits(UInt128(9999)), 4)
 
     # Test with powers of 10
-    assert_equal(number_of_significant_digits(UInt128(10**6)), 7)
-    assert_equal(number_of_significant_digits(UInt128(10**12)), 13)
+    assert_equal(number_of_digits(UInt128(10**6)), 7)
+    assert_equal(number_of_digits(UInt128(10**12)), 13)
 
     # Test with UInt256 values
-    assert_equal(number_of_significant_digits(UInt256(0)), 0)
-    assert_equal(number_of_significant_digits(UInt256(123456789)), 9)
-    assert_equal(number_of_significant_digits(UInt256(10) ** 20), 21)
+    assert_equal(number_of_digits(UInt256(0)), 0)
+    assert_equal(number_of_digits(UInt256(123456789)), 9)
+    assert_equal(number_of_digits(UInt256(10) ** 20), 21)
 
     # Test with large values approaching UInt128 maximum
     var large_value = UInt128(Decimal.MAX_AS_UINT128)
-    assert_equal(number_of_significant_digits(large_value), 29)
+    assert_equal(number_of_digits(large_value), 29)
 
     # Test with values larger than UInt128 max (using UInt256)
     var very_large = UInt256(Decimal.MAX_AS_UINT128) * UInt256(10)
-    assert_equal(number_of_significant_digits(very_large), 30)
+    assert_equal(number_of_digits(very_large), 30)
 
-    print("✓ All number_of_significant_digits tests passed!")
+    print("✓ All number_of_digits tests passed!")
 
 
 fn test_truncate_to_max_below_max() raises:
@@ -161,6 +161,63 @@ fn test_truncate_to_max_banker_rounding() raises:
     print("✓ All truncate_to_max banker's rounding tests passed!")
 
 
+fn test_truncate_to_digits() raises:
+    """Test the truncate_to_digits function for proper digit truncation and rounding.
+    """
+    print("Testing truncate_to_digits...")
+
+    # Test case 1: Value with more digits than to keep (round to nearest power of 10)
+    var case1 = UInt128(997)
+    var case1_expected = UInt128(1)
+    assert_equal(dm.utility.truncate_to_digits(case1, 0), case1_expected)
+
+    # Test case 2: Value with one more digit than to keep
+    var case2 = UInt128(234567)
+    var case2_expected = UInt128(23457)
+    assert_equal(dm.utility.truncate_to_digits(case2, 5), case2_expected)
+
+    # Test case 3: Value with fewer digits than to keep (should return original)
+    var case3 = UInt128(234567)
+    assert_equal(dm.utility.truncate_to_digits(case3, 29), case3)
+
+    # Test case 4: Test banker's rounding with 5 (round to even)
+    var case4a = UInt128(12345)  # Last digit is 5, preceding digit is even
+    var case4a_expected = UInt128(1234)
+    assert_equal(dm.utility.truncate_to_digits(case4a, 4), case4a_expected)
+
+    var case4b = UInt128(23455)  # Last digit is 5, preceding digit is odd
+    var case4b_expected = UInt128(2346)
+    assert_equal(dm.utility.truncate_to_digits(case4b, 4), case4b_expected)
+
+    # Test case 5: Rounding down (< 5)
+    var case5 = UInt128(12342)
+    var case5_expected = UInt128(1234)
+    assert_equal(dm.utility.truncate_to_digits(case5, 4), case5_expected)
+
+    # Test case 6: Rounding up (> 5)
+    var case6 = UInt128(12347)
+    var case6_expected = UInt128(1235)
+    assert_equal(dm.utility.truncate_to_digits(case6, 4), case6_expected)
+
+    # Test case 7: Zero input
+    var case7 = UInt128(0)
+    assert_equal(dm.utility.truncate_to_digits(case7, 5), UInt128(0))
+
+    # Test case 8: Single digit input
+    var case8 = UInt128(7)
+    assert_equal(dm.utility.truncate_to_digits(case8, 1), UInt128(7))
+    assert_equal(
+        dm.utility.truncate_to_digits(case8, 0), UInt128(1)
+    )  # Round to nearest power of 10
+
+    # Test case 9: Large value with UInt256
+    var case9 = UInt256(9876543210987654321)
+    var case9_expected = UInt256(987654321098765432)
+    assert_equal(dm.utility.truncate_to_digits(case9, 18), case9_expected)
+
+    print("✓ All truncate_to_digits tests passed!")
+
+
 fn test_bitcast() raises:
     """Test the bitcast utility function for direct memory bit conversion."""
     print("Testing utility.bitcast...")
@@ -204,12 +261,11 @@ fn test_bitcast() raises:
     print("✓ All bitcast tests passed!")
 
 
-# Update the test_all function to include the new test
 fn test_all() raises:
     """Run all tests for the utility module."""
     print("\n=== Running Utility Module Tests ===\n")
 
-    test_number_of_significant_digits()
+    test_number_of_digits()
     print()
 
     test_truncate_to_max_below_max()
@@ -222,6 +278,9 @@ fn test_all() raises:
     print()
 
     test_bitcast()
+    print()
+
+    test_truncate_to_digits()
     print()
 
     print("✓✓✓ All utility module tests passed! ✓✓✓")

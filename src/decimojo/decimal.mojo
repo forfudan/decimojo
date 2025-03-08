@@ -876,7 +876,7 @@ struct Decimal(
     fn __rsub__(self, other: Int) raises -> Self:
         return decimojo.subtract(Decimal(other), self)
 
-    fn __mul__(self, other: Decimal) -> Self:
+    fn __mul__(self, other: Decimal) raises -> Self:
         """
         Multiplies two Decimal values and returns a new Decimal containing the product.
         """
@@ -886,7 +886,7 @@ struct Decimal(
     fn __mul__(self, other: Float64) raises -> Self:
         return decimojo.multiply(self, Decimal(other))
 
-    fn __mul__(self, other: Int) -> Self:
+    fn __mul__(self, other: Int) raises -> Self:
         return decimojo.multiply(self, Decimal(other))
 
     fn __truediv__(self, other: Decimal) raises -> Self:
@@ -1132,6 +1132,18 @@ struct Decimal(
     fn is_nan(self) -> Bool:
         """Returns True if this Decimal is NaN (Not a Number)."""
         return (self.flags & Self.NAN_MASK) != 0
+
+    fn is_uint32able(self) -> Bool:
+        """
+        Returns True if the coefficient can be represented as a UInt32 value.
+        """
+        return self.high == 0 and self.mid == 0
+
+    fn is_uint64able(self) -> Bool:
+        """
+        Returns True if the coefficient can be represented as a UInt64 value.
+        """
+        return self.high == 0
 
     fn scale(self) -> Int:
         """Returns the scale (number of decimal places) of this Decimal."""
