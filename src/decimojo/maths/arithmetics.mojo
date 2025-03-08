@@ -29,6 +29,7 @@ from decimojo.rounding_mode import RoundingMode
 # ===----------------------------------------------------------------------=== #
 
 
+# TODO: Like `multiply` use combined bits to determine the appropriate method
 fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
     """
     Adds two Decimal values and returns a new Decimal containing the sum.
