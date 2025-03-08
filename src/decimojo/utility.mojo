@@ -85,7 +85,7 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
     else:
         # Calculate how many digits we need to truncate
         # Calculate how many digits to keep (MAX_VALUE_DIGITS = 29)
-        var num_digits = number_of_significant_digits(value)
+        var num_digits = number_of_digits(value)
         var digits_to_remove = num_digits - Decimal.MAX_VALUE_DIGITS
 
         # Collect digits for rounding decision
@@ -248,7 +248,10 @@ fn truncate_to_digits[
         "must be uint128 or uint256",
     ]()
 
-    var num_significant_digits = number_of_significant_digits(value)
+    if num_digits < 0:
+        return 0
+
+    var num_significant_digits = number_of_digits(value)
     # If the number of digits is less than or equal to the specified digits,
     # return the value
     if num_significant_digits <= num_digits:
@@ -292,16 +295,49 @@ fn truncate_to_digits[
         return truncated_value
 
 
-fn number_of_significant_digits[dtype: DType, //](x: Scalar[dtype]) -> Int:
+fn number_of_digits[dtype: DType, //](owned value: Scalar[dtype]) -> Int:
     """
-    Returns the number of significant digits in a scalar value.
-    ***WARNING***: The input must be an integer.
+    Returns the number of (significant) digits in an intergral value.
+
+    Constraints:
+        `dtype` must be integral.
     """
-    var temp = x
-    var digit_count: Int = 0
 
-    while temp > 0:
-        temp //= 10
-        digit_count += 1
+    constrained[
+        dtype.is_integral(),
+        "must be intergral",
+    ]()
 
-    return digit_count
+    if value < 0:
+        value = -value
+
+    var count = 0
+    while value > 0:
+        value //= 10
+        count += 1
+
+    return count
+
+
+fn number_of_bits[dtype: DType, //](owned value: Scalar[dtype]) -> Int:
+    """
+    Returns the number of significant bits in an integer value.
+
+    Constraints:
+        `dtype` must be integral.
+    """
+
+    constrained[
+        dtype.is_integral(),
+        "must be intergral",
+    ]()
+
+    if value < 0:
+        value = -value
+
+    var count = 0
+    while value > 0:
+        value >>= 1
+        count += 1
+
+    return count

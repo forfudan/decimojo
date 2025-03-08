@@ -33,6 +33,10 @@ t = "clear && magic run test"
 bench = "magic run package && cd benches && magic run mojo bench.mojo && cd .."
 b = "clear && magic run bench"
 
+# individual bench files
+b_mul = "magic run package && cd benches && magic run mojo bench_multiply.mojo && cd .."
+b_div = "magic run package && cd benches && magic run mojo bench_divide.mojo && cd .."
+
 # before commit
 final = "magic run test && magic run bench"
 f = "clear && magic run final"

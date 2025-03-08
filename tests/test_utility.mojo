@@ -6,39 +6,39 @@ from testing import assert_equal, assert_true
 import max
 
 from decimojo.prelude import *
-from decimojo.utility import truncate_to_max, number_of_significant_digits
+from decimojo.utility import truncate_to_max, number_of_digits
 
 
-fn test_number_of_significant_digits() raises:
-    """Tests for number_of_significant_digits function."""
-    print("Testing number_of_significant_digits...")
+fn test_number_of_digits() raises:
+    """Tests for number_of_digits function."""
+    print("Testing number_of_digits...")
 
     # Test with simple UInt128 values
-    assert_equal(number_of_significant_digits(UInt128(0)), 0)
-    assert_equal(number_of_significant_digits(UInt128(1)), 1)
-    assert_equal(number_of_significant_digits(UInt128(9)), 1)
-    assert_equal(number_of_significant_digits(UInt128(10)), 2)
-    assert_equal(number_of_significant_digits(UInt128(123)), 3)
-    assert_equal(number_of_significant_digits(UInt128(9999)), 4)
+    assert_equal(number_of_digits(UInt128(0)), 0)
+    assert_equal(number_of_digits(UInt128(1)), 1)
+    assert_equal(number_of_digits(UInt128(9)), 1)
+    assert_equal(number_of_digits(UInt128(10)), 2)
+    assert_equal(number_of_digits(UInt128(123)), 3)
+    assert_equal(number_of_digits(UInt128(9999)), 4)
 
     # Test with powers of 10
-    assert_equal(number_of_significant_digits(UInt128(10**6)), 7)
-    assert_equal(number_of_significant_digits(UInt128(10**12)), 13)
+    assert_equal(number_of_digits(UInt128(10**6)), 7)
+    assert_equal(number_of_digits(UInt128(10**12)), 13)
 
     # Test with UInt256 values
-    assert_equal(number_of_significant_digits(UInt256(0)), 0)
-    assert_equal(number_of_significant_digits(UInt256(123456789)), 9)
-    assert_equal(number_of_significant_digits(UInt256(10) ** 20), 21)
+    assert_equal(number_of_digits(UInt256(0)), 0)
+    assert_equal(number_of_digits(UInt256(123456789)), 9)
+    assert_equal(number_of_digits(UInt256(10) ** 20), 21)
 
     # Test with large values approaching UInt128 maximum
     var large_value = UInt128(Decimal.MAX_AS_UINT128)
-    assert_equal(number_of_significant_digits(large_value), 29)
+    assert_equal(number_of_digits(large_value), 29)
 
     # Test with values larger than UInt128 max (using UInt256)
     var very_large = UInt256(Decimal.MAX_AS_UINT128) * UInt256(10)
-    assert_equal(number_of_significant_digits(very_large), 30)
+    assert_equal(number_of_digits(very_large), 30)
 
-    print("✓ All number_of_significant_digits tests passed!")
+    print("✓ All number_of_digits tests passed!")
 
 
 fn test_truncate_to_max_below_max() raises:
@@ -265,7 +265,7 @@ fn test_all() raises:
     """Run all tests for the utility module."""
     print("\n=== Running Utility Module Tests ===\n")
 
-    test_number_of_significant_digits()
+    test_number_of_digits()
     print()
 
     test_truncate_to_max_below_max()
