@@ -219,7 +219,6 @@ fn truncate_to_digits[
     Therefore, we need to truncate the coefficient to 5 (`6 - (29 - 28)`) digits
     and round it to the nearest even number.
     The truncated ceofficient will be `23457`.
-    Note that `truncated_digits = 1` which is equal to `num_digits_to_keep = 1`.
     The final decimal value will be `0.0000000000000000000000023457`.
 
     When you want to apply a scale of 5 to the coefficient `234567`, it will be
