@@ -176,6 +176,116 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
             return truncated_value
 
 
+fn truncate_to_digits[
+    dtype: DType, //
+](value: Scalar[dtype], num_digits_to_keep: Int) -> Scalar[dtype]:
+    """
+    Truncates a UInt256 or UInt128 value to the specified number of digits.
+    Uses banker's rounding (ROUND_HALF_EVEN) for any truncated digits.
+    `792281625142643375935439503356` with digits 2 will be truncated to `79`.
+    `997` with digits 2 will be truncated to `100`.
+
+    Parameters:
+        dtype: Must be either uint128 or uint256.
+
+    Args:
+        value: The UInt256 value to truncate.
+        num_digits_to_keep: The number of significant digits to keep.
+
+    Constraints:
+        `dtype` must be either `DType.uint128` or `DType.uint256`.
+
+    Returns:
+        The truncated UInt256 value, guaranteed to fit within 96 bits.
+
+    Notes:
+    ------
+
+    The function is useful in the following cases.
+
+    When you want to apply a scale of 31 to the coefficient `997`, it will be
+    `0.0000000000000000000000000000997` with 31 digits. However, we can only
+    store 28 digits in the coefficient (Decimal.MAX_PRECISION = 28).
+    Therefore, we need to truncate the coefficient to 0 (`3 - (31 - 28)`) digits
+    and round it to the nearest even number.
+    The truncated ceofficient will be `1`.
+    Note that `truncated_digits = 1` which is not equal to
+    `num_digits_to_keep = 0`, meaning there is a rounding to next digit.
+    The final decimal value will be `0.0000000000000000000000000001`.
+
+    When you want to apply a scale of 29 to the coefficient `234567`, it will be
+    `0.00000000000000000000000234567` with 29 digits. However, we can only
+    store 28 digits in the coefficient (Decimal.MAX_PRECISION = 28).
+    Therefore, we need to truncate the coefficient to 5 (`6 - (29 - 28)`) digits
+    and round it to the nearest even number.
+    The truncated ceofficient will be `23457`.
+    Note that `truncated_digits = 1` which is equal to `num_digits_to_keep = 1`.
+    The final decimal value will be `0.0000000000000000000000023457`.
+
+    When you want to apply a scale of 5 to the coefficient `234567`, it will be
+    `2.34567` with 5 digits.
+    Since `num_digits_to_keep = 6 - (5 - 28) = 29`,
+    it is greater and equal to the number of digits of the input value.
+    The function will return the value as it is.
+
+    It can also be used for rounding function. For example, if you want to round
+    `12.34567` (`1234567` with scale `5`) to 2 digits,
+    the function input will be `234567` and `4 = (7 - 5) + 2`.
+    That is (number of digits - scale) + number of rounding points.
+    The output is `1235`.
+    """
+
+    alias ValueType = Scalar[dtype]
+
+    constrained[
+        dtype == DType.uint128 or dtype == DType.uint256,
+        "must be uint128 or uint256",
+    ]()
+
+    var num_digits = number_of_significant_digits(value)
+    # If the number of digits is less than or equal to the specified digits,
+    # return the value
+    if num_digits <= num_digits_to_keep:
+        return value
+
+    else:
+        # Calculate how many digits we need to truncate
+        # Calculate how many digits to keep (MAX_VALUE_DIGITS = 29)
+        var num_digits_to_remove = num_digits - num_digits_to_keep
+
+        # Collect digits for rounding decision
+        divisor = ValueType(10) ** ValueType(num_digits_to_remove)
+        truncated_value = value // divisor
+        var remainder = value % divisor
+
+        # Get the most significant digit of the remainder for rounding
+        var rounding_digit = remainder // 10 ** (num_digits_to_remove - 1)
+
+        # Check if we need to round up based on banker's rounding (ROUND_HALF_EVEN)
+        var round_up = False
+
+        # If rounding digit is > 5, round up
+        if rounding_digit > 5:
+            round_up = True
+        # If rounding digit is 5, check if there are any non-zero digits after it
+        elif rounding_digit == 5:
+            var has_nonzero_after = remainder > 5 * 10 ** (
+                num_digits_to_remove - 1
+            )
+            # If there are non-zero digits after, round up
+            if has_nonzero_after:
+                round_up = True
+            # Otherwise, round to even (round up if last kept digit is odd)
+            else:
+                round_up = (truncated_value % 2) == 1
+
+        # Apply rounding if needed
+        if round_up:
+            truncated_value += 1
+
+        return truncated_value
+
+
 fn number_of_significant_digits[dtype: DType, //](x: Scalar[dtype]) -> Int:
     """
     Returns the number of significant digits in a scalar value.
