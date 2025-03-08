@@ -297,15 +297,19 @@ fn multiply(x1: Decimal, x2: Decimal) -> Decimal:
     Returns:
         A new Decimal containing the product of x1 and x2.
     """
-    # Special cases for zero
+    # SPECIAL CASE: zero
+    # Return zero while preserving the scale
     if x1.is_zero() or x2.is_zero():
-        # For zero, we need to preserve the scale
         var result = Decimal.ZERO()
         var result_scale = min(x1.scale() + x2.scale(), Decimal.MAX_PRECISION)
         result.flags = UInt32(
             (result_scale << Decimal.SCALE_SHIFT) & Decimal.SCALE_MASK
         )
         return result
+
+    # TODO: Consider different cases
+    # TODO: CASE 1: Both operands are UInt32able
+    # TODO: Perform 64-bit by 64-bit multiplication
 
     # Calculate the combined scale (sum of both scales)
     var combined_scale = x1.scale() + x2.scale()

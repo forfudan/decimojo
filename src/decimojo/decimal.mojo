@@ -1133,6 +1133,18 @@ struct Decimal(
         """Returns True if this Decimal is NaN (Not a Number)."""
         return (self.flags & Self.NAN_MASK) != 0
 
+    fn is_uint32able(self) -> Bool:
+        """
+        Returns True if the coefficient can be represented as a UInt32 value.
+        """
+        return self.high == 0 and self.mid == 0
+
+    fn is_uint64able(self) -> Bool:
+        """
+        Returns True if the coefficient can be represented as a UInt64 value.
+        """
+        return self.high == 0
+
     fn scale(self) -> Int:
         """Returns the scale (number of decimal places) of this Decimal."""
         return Int((self.flags & Self.SCALE_MASK) >> Self.SCALE_SHIFT)
