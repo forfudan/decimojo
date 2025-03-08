@@ -48,3 +48,8 @@ jobs:
         run: |
           magic install
           magic run mojo test tests -I .
+          magic run mojo package src/decimojo
+          cp decimojo.mojopkg tests/
+          cp decimojo.mojopkg benches/
+          magic run mojo test tests
+          magic run bench
