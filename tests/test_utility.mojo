@@ -161,6 +161,50 @@ fn test_truncate_to_max_banker_rounding() raises:
     print("✓ All truncate_to_max banker's rounding tests passed!")
 
 
+fn test_bitcast() raises:
+    """Test the bitcast utility function for direct memory bit conversion."""
+    print("Testing utility.bitcast...")
+
+    # Test case 1: Basic decimal with fractional part
+    var original = Decimal("123.456")
+    var coef = original.coefficient()
+    var bits = dm.utility.bitcast[DType.uint128](original)
+    assert_equal(coef, bits)
+
+    # Test case 2: Zero value
+    var zero = Decimal(0)
+    var zero_coef = zero.coefficient()
+    var zero_bits = dm.utility.bitcast[DType.uint128](zero)
+    assert_equal(zero_coef, zero_bits)
+
+    # Test case 3: Maximum value
+    var max_value = Decimal.MAX()
+    var max_coef = max_value.coefficient()
+    var max_bits = dm.utility.bitcast[DType.uint128](max_value)
+    assert_equal(max_coef, max_bits)
+
+    # Test case 4: Negative value
+    var negative = Decimal("-987.654321")
+    var neg_coef = negative.coefficient()
+    var neg_bits = dm.utility.bitcast[DType.uint128](negative)
+    assert_equal(neg_coef, neg_bits)
+
+    # Test case 5: Different scales
+    var large_scale = Decimal("0.000000000123456789")
+    var large_scale_coef = large_scale.coefficient()
+    var large_scale_bits = dm.utility.bitcast[DType.uint128](large_scale)
+    assert_equal(large_scale_coef, large_scale_bits)
+
+    # Test case 6: Custom bit pattern
+    var test_decimal = Decimal(12345, 67890, 0xABCDEF, 0x55)
+    var test_coef = test_decimal.coefficient()
+    var test_bits = dm.utility.bitcast[DType.uint128](test_decimal)
+    assert_equal(test_coef, test_bits)
+
+    print("✓ All bitcast tests passed!")
+
+
+# Update the test_all function to include the new test
 fn test_all() raises:
     """Run all tests for the utility module."""
     print("\n=== Running Utility Module Tests ===\n")
@@ -175,6 +219,9 @@ fn test_all() raises:
     print()
 
     test_truncate_to_max_banker_rounding()
+    print()
+
+    test_bitcast()
     print()
 
     print("✓✓✓ All utility module tests passed! ✓✓✓")
