@@ -876,7 +876,7 @@ struct Decimal(
     fn __rsub__(self, other: Int) raises -> Self:
         return decimojo.subtract(Decimal(other), self)
 
-    fn __mul__(self, other: Decimal) -> Self:
+    fn __mul__(self, other: Decimal) raises -> Self:
         """
         Multiplies two Decimal values and returns a new Decimal containing the product.
         """
@@ -886,7 +886,7 @@ struct Decimal(
     fn __mul__(self, other: Float64) raises -> Self:
         return decimojo.multiply(self, Decimal(other))
 
-    fn __mul__(self, other: Int) -> Self:
+    fn __mul__(self, other: Int) raises -> Self:
         return decimojo.multiply(self, Decimal(other))
 
     fn __truediv__(self, other: Decimal) raises -> Self:

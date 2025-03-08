@@ -286,7 +286,7 @@ fn subtract(x1: Decimal, x2: Decimal) raises -> Decimal:
         raise Error("Error in `subtract()`; ", e)
 
 
-fn multiply(x1: Decimal, x2: Decimal) -> Decimal:
+fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     """
     Multiplies two Decimal values and returns a new Decimal containing the product.
 
@@ -311,117 +311,57 @@ fn multiply(x1: Decimal, x2: Decimal) -> Decimal:
     # TODO: CASE 1: Both operands are UInt32able
     # TODO: Perform 64-bit by 64-bit multiplication
 
+    # General multiplication for any cases
     # Calculate the combined scale (sum of both scales)
     var combined_scale = x1.scale() + x2.scale()
-
     # Determine the sign of the result (XOR of signs)
     var result_is_negative = x1.is_negative() != x2.is_negative()
 
-    # Extract the components for multiplication
-    var a_low = UInt64(x1.low)
-    var a_mid = UInt64(x1.mid)
-    var a_high = UInt64(x1.high)
+    var mul: UInt256 = UInt256(x1.coefficient()) * UInt256(x2.coefficient())
 
-    var b_low = UInt64(x2.low)
-    var b_mid = UInt64(x2.mid)
-    var b_high = UInt64(x2.high)
+    var num_digits_of_integral_part = decimojo.utility.number_of_significant_digits(
+        mul
+    ) - combined_scale
 
-    # Perform 96-bit by 96-bit multiplication
-    var r0 = a_low * b_low
-    var r1_a = a_low * b_mid
-    var r1_b = a_mid * b_low
-    var r2_a = a_low * b_high
-    var r2_b = a_mid * b_mid
-    var r2_c = a_high * b_low
-    var r3_a = a_mid * b_high
-    var r3_b = a_high * b_mid
-    var r4 = a_high * b_high
-
-    # Accumulate results with carries
-    var c0 = r0 & 0xFFFFFFFF
-    var c1 = (r0 >> 32) + (r1_a & 0xFFFFFFFF) + (r1_b & 0xFFFFFFFF)
-    var c2 = (r1_a >> 32) + (r1_b >> 32) + (r2_a & 0xFFFFFFFF) + (
-        r2_b & 0xFFFFFFFF
-    ) + (r2_c & 0xFFFFFFFF) + (c1 >> 32)
-    c1 = c1 & 0xFFFFFFFF  # Mask after carry
-
-    var c3 = (r2_a >> 32) + (r2_b >> 32) + (r2_c >> 32) + (
-        r3_a & 0xFFFFFFFF
-    ) + (r3_b & 0xFFFFFFFF) + (c2 >> 32)
-    c2 = c2 & 0xFFFFFFFF  # Mask after carry
-
-    var c4 = (r3_a >> 32) + (r3_b >> 32) + (c3 >> 32) + r4
-    c3 = c3 & 0xFFFFFFFF  # Mask after carry
-
-    var result_low = UInt32(c0)
-    var result_mid = UInt32(c1)
-    var result_high = UInt32(c2)
-
-    # If we have overflow, we need to adjust the scale by dividing
-    # BUT ONLY enough to fit the result in 96 bits - no more
-    var scale_reduction = 0
-    if c3 > 0 or c4 > 0:
-        # Calculate minimum shifts needed to fit the result
-        while c3 > 0 or c4 > 0:
-            var remainder = UInt64(0)
-
-            # Process c4
-            var new_c4 = c4 / 10
-            remainder = c4 % 10
-
-            # Process c3 with remainder from c4
-            var new_c3 = (remainder << 32 | c3) / 10
-            remainder = (remainder << 32 | c3) % 10
-
-            # Process c2 with remainder from c3
-            var new_c2 = (remainder << 32 | c2) / 10
-            remainder = (remainder << 32 | c2) % 10
-
-            # Process c1 with remainder from c2
-            var new_c1 = (remainder << 32 | c1) / 10
-            remainder = (remainder << 32 | c1) % 10
-
-            # Process c0 with remainder from c1
-            var new_c0 = (remainder << 32 | c0) / 10
-
-            # Update values
-            c4 = new_c4
-            c3 = new_c3
-            c2 = new_c2
-            c1 = new_c1
-            c0 = new_c0
-
-            scale_reduction += 1
-
-        # Update result components after shifting
-        result_low = UInt32(c0)
-        result_mid = UInt32(c1)
-        result_high = UInt32(c2)
-
-    # Create the result with adjusted values
-    var result = Decimal(result_low, result_mid, result_high, 0)
-
-    # IMPORTANT: We account for the scale reduction separately from MAX_PRECISION capping
-    # First, apply the technical scale reduction needed due to overflow
-    var adjusted_scale = combined_scale - scale_reduction
-
-    # THEN cap at MAX_PRECISION
-    var final_scale = min(adjusted_scale, Decimal.MAX_SCALE)
-
-    # Set the flags with the correct scale
-    result.flags = UInt32(
-        (final_scale << Decimal.SCALE_SHIFT) & Decimal.SCALE_MASK
+    # Truncated first 29 digits
+    var truncated_mul_at_max_length = decimojo.utility.truncate_to_digits(
+        mul, Decimal.MAX_VALUE_DIGITS
     )
-    if result_is_negative:
-        result.flags |= Decimal.SIGN_MASK
 
-    # Handle excess precision separately AFTER handling overflow
-    # (this shouldn't be reducing scale twice)
-    if adjusted_scale > Decimal.MAX_PRECISION:
-        var scale_diff = adjusted_scale - Decimal.MAX_PRECISION
-        result = result._scale_down(scale_diff, RoundingMode.HALF_EVEN())
+    # Check for overflow of the integral part after rounding
+    if (num_digits_of_integral_part >= Decimal.MAX_VALUE_DIGITS) & (
+        truncated_mul_at_max_length > Decimal.MAX_AS_UINT256
+    ):
+        raise Error("Error in `multiply()`: Decimal overflow")
 
-    return result
+    # Otherwise, the value will not overflow even after rounding
+    # Determine the final scale after rounding
+
+    # If the first 29 digits does not exceed the limit,
+    # the final coefficient can be of 29 digits.
+    # The final scale can 29 - num_digits_of_integral_part.
+    var final_scale = Decimal.MAX_VALUE_DIGITS - num_digits_of_integral_part
+
+    # If the first 29 digits exceed the limit, we need to adjust the scale
+    # so that the final coefficient will be of 28 digits.
+    var truncated_mul: UInt256
+
+    if truncated_mul_at_max_length > Decimal.MAX_AS_UINT256:
+        final_scale -= 1
+        truncated_mul = decimojo.utility.truncate_to_digits(
+            mul, Decimal.MAX_VALUE_DIGITS - 1
+        )
+    else:
+        truncated_mul = truncated_mul_at_max_length
+
+    final_scale = min(final_scale, combined_scale)
+
+    # Extract the 32-bit components from the UInt256 product
+    var low = UInt32(truncated_mul & 0xFFFFFFFF)
+    var mid = UInt32((truncated_mul >> 32) & 0xFFFFFFFF)
+    var high = UInt32((truncated_mul >> 64) & 0xFFFFFFFF)
+
+    return Decimal(low, mid, high, result_is_negative, final_scale)
 
 
 fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:

@@ -176,30 +176,24 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
             return truncated_value
 
 
+# TODO: Evalulate whether this can replace truncate_to_max in some cases.
+# TODO: Add rounding modes to this function.
 fn truncate_to_digits[
     dtype: DType, //
-](value: Scalar[dtype], num_digits_to_keep: Int) -> Scalar[dtype]:
+](value: Scalar[dtype], num_digits: Int) -> Scalar[dtype]:
     """
     Truncates a UInt256 or UInt128 value to the specified number of digits.
     Uses banker's rounding (ROUND_HALF_EVEN) for any truncated digits.
     `792281625142643375935439503356` with digits 2 will be truncated to `79`.
     `997` with digits 2 will be truncated to `100`.
 
-    Parameters:
-        dtype: Must be either uint128 or uint256.
-
-    Args:
-        value: The UInt256 value to truncate.
-        num_digits_to_keep: The number of significant digits to keep.
-
-    Constraints:
-        `dtype` must be either `DType.uint128` or `DType.uint256`.
-
-    Returns:
-        The truncated UInt256 value, guaranteed to fit within 96 bits.
-
-    Notes:
-    ------
+    This is useful in two cases:
+    (1) When you want to evaluate whether the coefficient will overflow after
+    rounding, just look the first N digits (after rounding). If the truncated
+    value is larger than the maximum, then it will overflow. Then you need to
+    either raise an error (in case scale = 0 or integral part overflows),
+    or keep only the first 28 digits in the coefficient.
+    (2) When you want to round a value.
 
     The function is useful in the following cases.
 
@@ -210,7 +204,7 @@ fn truncate_to_digits[
     and round it to the nearest even number.
     The truncated ceofficient will be `1`.
     Note that `truncated_digits = 1` which is not equal to
-    `num_digits_to_keep = 0`, meaning there is a rounding to next digit.
+    `num_digits = 0`, meaning there is a rounding to next digit.
     The final decimal value will be `0.0000000000000000000000000001`.
 
     When you want to apply a scale of 29 to the coefficient `234567`, it will be
@@ -232,6 +226,19 @@ fn truncate_to_digits[
     the function input will be `234567` and `4 = (7 - 5) + 2`.
     That is (number of digits - scale) + number of rounding points.
     The output is `1235`.
+
+    Parameters:
+        dtype: Must be either uint128 or uint256.
+
+    Args:
+        value: The UInt256 value to truncate.
+        num_digits: The number of significant digits to evalulate.
+
+    Constraints:
+        `dtype` must be either `DType.uint128` or `DType.uint256`.
+
+    Returns:
+        The truncated UInt256 value, guaranteed to fit within 96 bits.
     """
 
     alias ValueType = Scalar[dtype]
@@ -241,16 +248,16 @@ fn truncate_to_digits[
         "must be uint128 or uint256",
     ]()
 
-    var num_digits = number_of_significant_digits(value)
+    var num_significant_digits = number_of_significant_digits(value)
     # If the number of digits is less than or equal to the specified digits,
     # return the value
-    if num_digits <= num_digits_to_keep:
+    if num_significant_digits <= num_digits:
         return value
 
     else:
         # Calculate how many digits we need to truncate
         # Calculate how many digits to keep (MAX_VALUE_DIGITS = 29)
-        var num_digits_to_remove = num_digits - num_digits_to_keep
+        var num_digits_to_remove = num_significant_digits - num_digits
 
         # Collect digits for rounding decision
         divisor = ValueType(10) ** ValueType(num_digits_to_remove)
