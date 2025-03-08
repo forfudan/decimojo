@@ -1067,18 +1067,26 @@ struct Decimal(
     fn coefficient(self) -> UInt128:
         """
         Returns the unscaled integer coefficient as an UInt128 value.
-        This is the absolute value of the decimal digits without considering the scale.
-        The value of the coefficient is: high * 2**64 + mid * 2**32 + low.
+        This is the absolute value of the decimal digits without considering
+        the scale.
+        The value of the coefficient is: `high * 2**64 + mid * 2**32 + low`.
 
         Returns:
             Int128: The coefficient as a unsigned 128-bit signed integer.
         """
+
+        # Fast implementation using bitcast
+        # Use bitcast to directly convert the three 32-bit parts to a UInt128
+        # UInt128 must little-endian on memory
+        return decimojo.utility.bitcast[DType.uint128](self)
+
+        # Alternative implementation using arithmetic
         # Combine the three 32-bit parts into a single Int128
-        return (
-            UInt128(self.high) << 64
-            | UInt128(self.mid) << 32
-            | UInt128(self.low)
-        )
+        # return (
+        #     UInt128(self.high) << 64
+        #     | UInt128(self.mid) << 32
+        #     | UInt128(self.low)
+        # )
 
     fn is_integer(self) -> Bool:
         """
