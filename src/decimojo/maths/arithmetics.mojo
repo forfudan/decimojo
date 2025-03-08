@@ -496,24 +496,31 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     # SUB-CASE: Both operands are moderate
     # The bits of the product will not exceed 128 bits
     # Result coefficient will less than 2^128 - 1 but more than 2^96 - 1
-    # Truncating is needed to fit into Decimal's capacity
+    # IMPORTANT: This means that the product will exceed Decimal's capacity
+    # Either raises an error if intergral part overflows
+    # Or truncates the product to fit into Decimal's capacity
     if combined_num_bits <= 128:
         var mul: UInt128 = x1_coef * x2_coef
 
         # Check outflow
+        # The number of digits of the integral part
         var num_digits_of_integral_part = decimojo.utility.number_of_digits(
             mul
         ) - combined_scale
-        var mul_intergral_part = decimojo.utility.truncate_to_digits(
-            mul, num_digits_of_integral_part
-        )
-        if mul_intergral_part > Decimal.MAX_AS_UINT128:
-            raise Error("Error in `multiply()`: Decimal overflow")
-
         # Truncated first 29 digits
         var truncated_mul_at_max_length = decimojo.utility.truncate_to_digits(
             mul, Decimal.MAX_VALUE_DIGITS
         )
+        if (num_digits_of_integral_part >= Decimal.MAX_VALUE_DIGITS) & (
+            truncated_mul_at_max_length > Decimal.MAX_AS_UINT128
+        ):
+            raise Error("Error in `multiply()`: Decimal overflow")
+
+        # Otherwise, the value will not overflow even after rounding
+        # Determine the final scale after rounding
+        # If the first 29 digits does not exceed the limit,
+        # the final coefficient can be of 29 digits.
+        # The final scale can be 29 - num_digits_of_integral_part.
         var num_digits_of_decimal_part = Decimal.MAX_VALUE_DIGITS - num_digits_of_integral_part
         # If the first 29 digits exceed the limit,
         # we need to adjust the num_digits_of_decimal_part by -1
@@ -528,36 +535,30 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
 
         # I think combined_scale should always be smaller
         var final_scale = min(num_digits_of_decimal_part, combined_scale)
+
+        # Extract the 32-bit components from the UInt128 product
         var low = UInt32(mul & 0xFFFFFFFF)
         var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
         var high = UInt32((mul >> 64) & 0xFFFFFFFF)
         return Decimal(low, mid, high, is_nagative, final_scale)
 
-    # REMAINING CASES
-    # Calculate the combined scale (sum of both scales)
+    # REMAINING CASES: Both operands are big
+    # The bits of the product will not exceed 192 bits
+    # Result coefficient will less than 2^192 - 1 but more than 2^128 - 1
+    # IMPORTANT: This means that the product will exceed Decimal's capacity
+    # Either raises an error if intergral part overflows
+    # Or truncates the product to fit into Decimal's capacity
     var mul: UInt256 = UInt256(x1_coef) * UInt256(x2_coef)
 
-    # SPECIAL CASE: sum of scale <= 28 and mul <= max
-    if (
-        combined_scale <= Decimal.MAX_PRECISION
-        and mul <= Decimal.MAX_AS_UINT256
-    ):
-        var low = UInt32(mul & 0xFFFFFFFF)
-        var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
-        var high = UInt32((mul >> 64) & 0xFFFFFFFF)
-        return Decimal(low, mid, high, is_nagative, combined_scale)
-
-    # SPECIAL CASE: sum of scale > 28 and len_of_mul < 29
-
+    # Check outflow
+    # The number of digits of the integral part
     var num_digits_of_integral_part = decimojo.utility.number_of_digits(
         mul
     ) - combined_scale
-
     # Truncated first 29 digits
     var truncated_mul_at_max_length = decimojo.utility.truncate_to_digits(
         mul, Decimal.MAX_VALUE_DIGITS
     )
-
     # Check for overflow of the integral part after rounding
     if (num_digits_of_integral_part >= Decimal.MAX_VALUE_DIGITS) & (
         truncated_mul_at_max_length > Decimal.MAX_AS_UINT256
@@ -566,30 +567,28 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
 
     # Otherwise, the value will not overflow even after rounding
     # Determine the final scale after rounding
-
     # If the first 29 digits does not exceed the limit,
     # the final coefficient can be of 29 digits.
-    # The final scale can 29 - num_digits_of_integral_part.
-    var final_scale = Decimal.MAX_VALUE_DIGITS - num_digits_of_integral_part
-
-    # If the first 29 digits exceed the limit, we need to adjust the scale
+    # The final scale can be 29 - num_digits_of_integral_part.
+    var num_digits_of_decimal_part = Decimal.MAX_VALUE_DIGITS - num_digits_of_integral_part
+    # If the first 29 digits exceed the limit,
+    # we need to adjust the num_digits_of_decimal_part by -1
     # so that the final coefficient will be of 28 digits.
-    var truncated_mul: UInt256
-
     if truncated_mul_at_max_length > Decimal.MAX_AS_UINT256:
-        final_scale -= 1
-        truncated_mul = decimojo.utility.truncate_to_digits(
+        num_digits_of_decimal_part -= 1
+        mul = decimojo.utility.truncate_to_digits(
             mul, Decimal.MAX_VALUE_DIGITS - 1
         )
     else:
-        truncated_mul = truncated_mul_at_max_length
+        mul = truncated_mul_at_max_length
 
-    final_scale = min(final_scale, combined_scale)
+    # I think combined_scale should always be smaller
+    final_scale = min(num_digits_of_decimal_part, combined_scale)
 
     # Extract the 32-bit components from the UInt256 product
-    var low = UInt32(truncated_mul & 0xFFFFFFFF)
-    var mid = UInt32((truncated_mul >> 32) & 0xFFFFFFFF)
-    var high = UInt32((truncated_mul >> 64) & 0xFFFFFFFF)
+    var low = UInt32(mul & 0xFFFFFFFF)
+    var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
+    var high = UInt32((mul >> 64) & 0xFFFFFFFF)
 
     return Decimal(low, mid, high, is_nagative, final_scale)
 
