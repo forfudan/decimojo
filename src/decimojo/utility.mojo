@@ -9,7 +9,43 @@
 #
 # ===----------------------------------------------------------------------=== #
 
+from memory import UnsafePointer
+
 from decimojo.decimal import Decimal
+
+
+fn bitcast[dtype: DType](dec: Decimal) -> Scalar[dtype]:
+    """
+    Direct memory bit copy from Decimal (low, mid, high) to Mojo's Scalar type.
+    This performs a bitcast/reinterpretation rather than bit manipulation.
+
+    Parameters:
+        dtype: The Mojo scalar type to bitcast to.
+
+    Args:
+        dec: The Decimal to bitcast.
+
+    Constraints:
+        `dtype` must be either `DType.uint128` or `DType.uint256`.
+
+    Returns:
+        The bitcasted Decimal (low, mid, high) as a Mojo scalar.
+
+    """
+
+    # Compile-time checker: ensure the dtype is either uint128 or uint256
+    constrained[
+        dtype == DType.uint128 or dtype == DType.uint256,
+        "must be uint128 or uint256",
+    ]()
+
+    # Bitcast the Decimal to the desired Mojo scalar type
+    var result = UnsafePointer[Decimal].address_of(dec).bitcast[
+        Scalar[dtype]
+    ]().load()
+    # Mask out the bits in flags
+    result &= 0x00000000_FFFFFFFF_FFFFFFFF_FFFFFFFF
+    return result
 
 
 fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
@@ -56,20 +92,18 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
         var divisor = ValueType(10) ** ValueType(digits_to_remove)
         var truncated_value = value // divisor
 
-        # Case 1:
-        # Truncated_value == MAX_AS_UINT128
-        # Rounding may not cause overflow depending on rounding digit
-        # If removed digits do not caue rounding up. Return truncated value.
-        # If removed digits cause rounding up, return MAX // 10 - 1
-        # 79228162514264337593543950335[removed part] -> 7922816251426433759354395034
-
         if truncated_value == ValueType(Decimal.MAX_AS_UINT128):
+            # Case 1:
+            # Truncated_value == MAX_AS_UINT128
+            # Rounding may not cause overflow depending on rounding digit
+            # If removed digits do not caue rounding up. Return truncated value.
+            # If removed digits cause rounding up, return MAX // 10 - 1
+            # 79228162514264337593543950335[removed part] -> 7922816251426433759354395034
+
             var remainder = value % divisor
 
             # Get the most significant digit of the remainder for rounding
-            var rounding_digit = remainder
-            while rounding_digit >= 10:
-                rounding_digit //= 10
+            var rounding_digit = remainder // 10 ** (digits_to_remove - 1)
 
             # Check if we need to round up based on banker's rounding (ROUND_HALF_EVEN)
             var round_up = False
@@ -79,7 +113,9 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
                 round_up = True
             # If rounding digit is 5, check if there are any non-zero digits after it
             elif rounding_digit == 5:
-                var has_nonzero_after = remainder > 5 * (divisor // 10)
+                var has_nonzero_after = remainder > 5 * 10 ** (
+                    digits_to_remove - 1
+                )
                 # If there are non-zero digits after, round up
                 if has_nonzero_after:
                     round_up = True
@@ -95,15 +131,15 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
 
             return truncated_value
 
-        # Case 2:
-        # Trucated_value < MAX_AS_UINT128
-        # Rounding will not case overflow
-
-        # Case 3:
-        # Truncated_value >= MAX_AS_UINT128
-        # Always overflow, increase the digits_to_remove by 1
-
         else:
+            # Case 3:
+            # Truncated_value > MAX_AS_UINT128
+            # Always overflow, increase the digits_to_remove by 1
+
+            # Case 2:
+            # Trucated_value < MAX_AS_UINT128
+            # Rounding will not case overflow
+
             if truncated_value > ValueType(Decimal.MAX_AS_UINT128):
                 digits_to_remove += 1
 
@@ -113,9 +149,7 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
             var remainder = value % divisor
 
             # Get the most significant digit of the remainder for rounding
-            var rounding_digit = remainder
-            while rounding_digit >= 10:
-                rounding_digit //= 10
+            var rounding_digit = remainder // 10 ** (digits_to_remove - 1)
 
             # Check if we need to round up based on banker's rounding (ROUND_HALF_EVEN)
             var round_up = False
@@ -125,7 +159,9 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
                 round_up = True
             # If rounding digit is 5, check if there are any non-zero digits after it
             elif rounding_digit == 5:
-                var has_nonzero_after = remainder > 5 * (divisor // 10)
+                var has_nonzero_after = remainder > 5 * 10 ** (
+                    digits_to_remove - 1
+                )
                 # If there are non-zero digits after, round up
                 if has_nonzero_after:
                     round_up = True
