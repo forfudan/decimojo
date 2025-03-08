@@ -52,5 +52,6 @@ jobs:
           cp decimojo.mojopkg benches/
 
       - name: Run tests and benches
+        run: |
           magic run mojo test tests
           magic run bench
