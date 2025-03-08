@@ -44,7 +44,14 @@ jobs:
           . $HOME/venv/bin/activate
           echo PATH=$PATH >> $GITHUB_ENV
 
-      - name: Run tests
+      - name: Build package
         run: |
           magic install
-          magic run mojo test tests -I .
+          magic run mojo package src/decimojo
+          cp decimojo.mojopkg tests/
+          cp decimojo.mojopkg benches/
+
+      - name: Run tests and benches
+        run: |
+          magic run mojo test tests
+          magic run bench

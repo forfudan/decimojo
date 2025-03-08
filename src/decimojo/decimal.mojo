@@ -39,19 +39,22 @@ struct Decimal(
 
     Internal Representation
     -----------------------
-    Each decimal uses a 128-bit on memory, where (for right-to-left):
+    Each decimal uses a 128-bit on memory, where:
     - 96 bits for the coefficient (mantissa), which is 96-bit unsigned integers
-      stored as three 32 bit integer (low, mid, high).
-      The value of the coefficient is: high * 2**64 + mid * 2**32 + low
+    stored as three 32 bit integer (little-endian).
+        - Bit 0 to 31 are stored in the low field: least significant bits.
+        - Bit 32 to 63 are stored in the mid field: middle bits.
+        - Bit 64 to 95 are stored in the high field: most significant bits.
     - 32 bits for the flags, which contain the sign and scale information.
-      - Bit 0 contains the infinity flag: 1 means infinity, 0 means finite.
-      - Bit 1 contains the NaN flag: 1 means NaN, 0 means not NaN.
-      - Bits 2 to 15 are unused and must be zero.
-      - Bits 16 to 23 must contain an scale (exponent) between 0 and 28.
-      - Bits 24 to 30 are unused and must be zero.
-      - Bit 31 contains the sign: 0 mean positive, and 1 means negative.
+        - Bit 0 contains the infinity flag: 1 means infinity, 0 means finite.
+        - Bit 1 contains the NaN flag: 1 means NaN, 0 means not NaN.
+        - Bits 2 to 15 are unused and must be zero.
+        - Bits 16 to 23 must contain an scale (exponent) between 0 and 28.
+        - Bits 24 to 30 are unused and must be zero.
+        - Bit 31 contains the sign: 0 mean positive, and 1 means negative.
 
-    The final value is: (-1)**sign * coefficient * 10**(-scale)
+    The value of the coefficient is: `high * 2**64 + mid * 2**32 + low`
+    The final value is: `(-1)**sign * coefficient * 10**(-scale)`
 
     Reference
     ---------
