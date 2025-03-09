@@ -615,7 +615,11 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
         Error: If x2 is zero.
     """
 
+    # Treatment for special cases
+    # 對各類特殊情況進行處理
+
     # SPECIAL CASE: zero divisor
+    # 特例: 除數爲零
     # Check for division by zero
     if x2.is_zero():
         raise Error("Error in `__truediv__`: Division by zero")
@@ -641,6 +645,7 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
     var is_negative = x1.is_negative() != x2.is_negative()
 
     # SPECIAL CASE: one dividend or coefficient of dividend is one
+    # 特例: 除數爲一或者除數的係數爲一
     # Return divisor with appropriate scale and sign
     # For example, 1.412 / 1 = 1.412
     # For example, 10.123 / 0.0001 = 101230
@@ -689,6 +694,7 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
                     return Decimal(low, mid, high, is_negative, 0)
 
     # SPECIAL CASE: The coefficients are equal
+    # 特例: 係數相等
     # For example, 1234.5678 / 1234.5678 = 1.0000
     # Return 1 with appropriate scale and sign
     if x1_coef == x2_coef:
@@ -712,7 +718,8 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
             var high = UInt32((quot >> 64) & 0xFFFFFFFF)
             return Decimal(low, mid, high, is_negative, 0)
 
-    # SPECIAL CASE: Modulus of coefficients is zero (exact division 可除盡)
+    # SPECIAL CASE: Modulus of coefficients is zero (exact division)
+    # 特例: 係數的餘數爲零 (可除盡)
     # For example, 32 / 2 = 16
     # For example, 18.00 / 3.0 = 6.0
     # For example, 123456780000 / 1000 = 123456780
