@@ -171,8 +171,8 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
             -1
         ) ** x2.is_negative() * Int128(x2.coefficient())
 
-        var is_nagative = summation < 0
-        if is_nagative:
+        var is_negative = summation < 0
+        if is_negative:
             summation = -summation
 
         # Now we need to truncate the summation to fit in 96 bits
@@ -200,7 +200,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
         mid = UInt32((truncated_summation >> 32) & 0xFFFFFFFF)
         high = UInt32((truncated_summation >> 64) & 0xFFFFFFFF)
 
-        return Decimal(low, mid, high, is_nagative, final_scale)
+        return Decimal(low, mid, high, is_negative, final_scale)
 
     # Float addition which with different scales
     else:
@@ -224,8 +224,8 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
                 x2.coefficient()
             )
 
-        var is_nagative = summation < 0
-        if is_nagative:
+        var is_negative = summation < 0
+        if is_negative:
             summation = -summation
 
         # Now we need to truncate the summation to fit in 96 bits
@@ -253,7 +253,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
         mid = UInt32((truncated_summation >> 32) & 0xFFFFFFFF)
         high = UInt32((truncated_summation >> 64) & 0xFFFFFFFF)
 
-        return Decimal(low, mid, high, is_nagative, final_scale)
+        return Decimal(low, mid, high, is_negative, final_scale)
 
 
 fn subtract(x1: Decimal, x2: Decimal) raises -> Decimal:
@@ -305,7 +305,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     var x2_scale = x2.scale()
     var combined_scale = x1_scale + x2_scale
     """Combined scale of the two operands."""
-    var is_nagative = x1.is_negative() != x2.is_negative()
+    var is_negative = x1.is_negative() != x2.is_negative()
 
     # SPECIAL CASE: zero
     # Return zero while preserving the scale
@@ -326,12 +326,12 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
                 0,
                 0,
                 0,
-                is_nagative,
+                is_negative,
                 Decimal.MAX_PRECISION,
             )
         # Otherwise, return 1 with correct sign and scale
         var final_scale = min(Decimal.MAX_PRECISION, combined_scale)
-        return Decimal(1, 0, 0, is_nagative, final_scale)
+        return Decimal(1, 0, 0, is_negative, final_scale)
 
     # SPECIAL CASE: First operand has coefficient of 1
     if x1_coef == 1:
@@ -339,7 +339,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
         if x1_scale == 0:
             var result = x2
             result.flags &= ~Decimal.SIGN_MASK
-            if is_nagative:
+            if is_negative:
                 result.flags |= Decimal.SIGN_MASK
             return result
         else:
@@ -360,7 +360,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
                 low,
                 mid,
                 high,
-                is_nagative,
+                is_negative,
                 final_scale,
             )
 
@@ -370,7 +370,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
         if x2_scale == 0:
             var result = x1
             result.flags &= ~Decimal.SIGN_MASK
-            if is_nagative:
+            if is_negative:
                 result.flags |= Decimal.SIGN_MASK
             return result
         else:
@@ -391,7 +391,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
                 low,
                 mid,
                 high,
-                is_nagative,
+                is_negative,
                 final_scale,
             )
 
@@ -412,7 +412,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
             var mul: UInt64 = UInt64(x1.low) * UInt64(x2.low)
             var low = UInt32(mul & 0xFFFFFFFF)
             var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
-            return Decimal(low, mid, 0, is_nagative, 0)
+            return Decimal(low, mid, 0, is_negative, 0)
 
         # Moderate integers, use UInt128 multiplication
         elif combined_num_bits <= 128:
@@ -420,7 +420,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
             var low = UInt32(mul & 0xFFFFFFFF)
             var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
             var high = UInt32((mul >> 64) & 0xFFFFFFFF)
-            return Decimal(low, mid, high, is_nagative, 0)
+            return Decimal(low, mid, high, is_negative, 0)
 
         # Large integers, use UInt256 multiplication
         else:
@@ -431,7 +431,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
                 var low = UInt32(mul & 0xFFFFFFFF)
                 var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
                 var high = UInt32((mul >> 64) & 0xFFFFFFFF)
-                return Decimal(low, mid, high, is_nagative, 0)
+                return Decimal(low, mid, high, is_negative, 0)
 
     # SPECIAL CASE: Both operands are integers but with scales
     # Examples: 123.0 * 456.00
@@ -459,7 +459,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
                 low,
                 mid,
                 high,
-                is_nagative,
+                is_negative,
                 final_scale,
             )
 
@@ -478,7 +478,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
             var low = UInt32(mul & 0xFFFFFFFF)
             var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
             var high = UInt32((mul >> 64) & 0xFFFFFFFF)
-            return Decimal(low, mid, high, is_nagative, combined_scale)
+            return Decimal(low, mid, high, is_negative, combined_scale)
 
         # Combined scale no more than max precision, truncate with rounding
         else:
@@ -491,7 +491,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
             var low = UInt32(mul & 0xFFFFFFFF)
             var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
             var high = UInt32((mul >> 64) & 0xFFFFFFFF)
-            return Decimal(low, mid, high, is_nagative, final_scale)
+            return Decimal(low, mid, high, is_negative, final_scale)
 
     # SUB-CASE: Both operands are moderate
     # The bits of the product will not exceed 128 bits
@@ -533,14 +533,14 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
         else:
             mul = truncated_mul_at_max_length
 
-        # I think combined_scale should always be smaller
+        # Yuhao's notes: I think combined_scale should always be smaller
         var final_scale = min(num_digits_of_decimal_part, combined_scale)
 
         # Extract the 32-bit components from the UInt128 product
         var low = UInt32(mul & 0xFFFFFFFF)
         var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
         var high = UInt32((mul >> 64) & 0xFFFFFFFF)
-        return Decimal(low, mid, high, is_nagative, final_scale)
+        return Decimal(low, mid, high, is_negative, final_scale)
 
     # REMAINING CASES: Both operands are big
     # The bits of the product will not exceed 192 bits
@@ -590,13 +590,13 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
     var high = UInt32((mul >> 64) & 0xFFFFFFFF)
 
-    return Decimal(low, mid, high, is_nagative, final_scale)
+    return Decimal(low, mid, high, is_negative, final_scale)
 
 
 fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
     """
     Divides x1 by x2 and returns a new Decimal containing the quotient.
-    Uses a simpler string-based long division approach.
+    Uses a simpler string-based long division approach as fallback.
 
     Args:
         x1: The dividend.
@@ -609,11 +609,16 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
         Error: If x2 is zero.
     """
 
+    # SPECIAL CASE: zero divisor
     # Check for division by zero
     if x2.is_zero():
         raise Error("Error in `__truediv__`: Division by zero")
 
-    # Special case: if dividend is zero, return zero with appropriate scale
+    # SPECIAL CASE: zero dividend
+    # If dividend is zero, return zero with appropriate scale
+    # The final scale is the (scale 1 - scale 2) floored to 0
+    # For example, 0.000 / 1234.0 = 0.00
+    # For example, 0.00 / 1.3456 = 0
     if x1.is_zero():
         var result = Decimal.ZERO()
         var result_scale = max(0, x1.scale() - x2.scale())
@@ -622,21 +627,139 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
         )
         return result
 
-    # If dividing identical numbers, return 1
-    if (
-        x1.low == x2.low
-        and x1.mid == x2.mid
-        and x1.high == x2.high
-        and x1.scale() == x2.scale()
-    ):
-        return Decimal.ONE()
+    var x1_coef = x1.coefficient()
+    var x2_coef = x2.coefficient()
+    var x1_scale = x1.scale()
+    var x2_scale = x2.scale()
+    var diff_scale = x1_scale - x2_scale
+    var is_negative = x1.is_negative() != x2.is_negative()
 
-    # Determine sign of result (positive if signs are the same, negative otherwise)
-    var result_is_negative = x1.is_negative() != x2.is_negative()
+    # SPECIAL CASE: one dividend or coefficient of dividend is one
+    # Return divisor with appropriate scale and sign
+    # For example, 1.412 / 1 = 1.412
+    # For example, 10.123 / 0.0001 = 101230
+    # For example, 1991.10180000 / 0.01 = 199110.180000
+    if x2_coef == 1:
+        # SUB-CASE: divisor is 1
+        # If divisor is 1, return dividend with correct sign
+        if x2_scale == 0:
+            return Decimal(x1.low, x1.mid, x1.high, is_negative, x1_scale)
+
+        # SUB-CASE: divisor is of coefficient 1 with positive scale
+        # diff_scale > 0, then final scale is diff_scale
+        elif diff_scale > 0:
+            return Decimal(x1.low, x1.mid, x1.high, is_negative, diff_scale)
+
+        # diff_scale < 0, then times 10 ** (-diff_scale)
+        else:
+            # print("DEBUG: x1_coef", x1_coef)
+            # print("DEBUG: x1_scale", x1_scale)
+            # print("DEBUG: x2_coef", x2_coef)
+            # print("DEBUG: x2_scale", x2_scale)
+            # print("DEBUG: diff_scale", diff_scale)
+
+            # If the result can be stored in UInt128
+            if (
+                decimojo.utility.number_of_digits(x1_coef) - diff_scale
+                < Decimal.MAX_VALUE_DIGITS
+            ):
+                var quot = x1_coef * UInt128(10) ** (-diff_scale)
+                # print("DEBUG: quot", quot)
+                var low = UInt32(quot & 0xFFFFFFFF)
+                var mid = UInt32((quot >> 32) & 0xFFFFFFFF)
+                var high = UInt32((quot >> 64) & 0xFFFFFFFF)
+                return Decimal(low, mid, high, is_negative, 0)
+
+            # If the result should be stored in UInt256
+            else:
+                var quot = UInt256(x1_coef) * UInt256(10) ** (-diff_scale)
+                # print("DEBUG: quot", quot)
+                if quot > Decimal.MAX_AS_UINT256:
+                    raise Error("Error in `true_divide()`: Decimal overflow")
+                else:
+                    var low = UInt32(quot & 0xFFFFFFFF)
+                    var mid = UInt32((quot >> 32) & 0xFFFFFFFF)
+                    var high = UInt32((quot >> 64) & 0xFFFFFFFF)
+                    return Decimal(low, mid, high, is_negative, 0)
+
+    # SPECIAL CASE: The coefficients are equal
+    # For example, 1234.5678 / 1234.5678 = 1.0000
+    # Return 1 with appropriate scale and sign
+    if x1_coef == x2_coef:
+        # SUB-CASE: The scales are equal
+        # If the scales are equal, return 1 with the scale of 0
+        # For example, 1234.5678 / 1234.5678 = 1
+        # SUB-CASE: The scales are positive
+        # If the scales are positive, return 1 with the difference in scales
+        # For example, 0.1234 / 1234 = 0.0001
+        if diff_scale >= 0:
+            return Decimal(1, 0, 0, is_negative, diff_scale)
+
+        # SUB-CASE: The scales are negative
+        # diff_scale < 0, then times 1e-diff_scale
+        # For example, 1234 / 0.1234 = 10000
+        # Since -diff_scale is less than 28, the result would not overflow
+        else:
+            var quot = UInt128(1) * UInt128(10) ** (-diff_scale)
+            var low = UInt32(quot & 0xFFFFFFFF)
+            var mid = UInt32((quot >> 32) & 0xFFFFFFFF)
+            var high = UInt32((quot >> 64) & 0xFFFFFFFF)
+            return Decimal(low, mid, high, is_negative, 0)
+
+    # SPECIAL CASE: Modulus of coefficients is zero (finite division 可除盡)
+    # For example, 32 / 2 = 16
+    # For example, 18.00 / 3.0 = 6.0
+    # For example, 123456780000 / 1000 = 123456780
+    # For example, 246824.68 / 12.341234 = 20000
+    if x1_coef % x2_coef == 0:
+        if diff_scale >= 0:
+            # If diff_scale >= 0, return the quotient with diff_scale
+            # Yuhao's notes:
+            # Because the dividor == 1 has been handled before
+            # dividor shoud be greater than 1
+            # High will be zero because the quotient is less than 2^48
+            # For safety, we still calcuate the high word
+            var quot = x1_coef // x2_coef
+            var low = UInt32(quot & 0xFFFFFFFF)
+            var mid = UInt32((quot >> 32) & 0xFFFFFFFF)
+            var high = UInt32((quot >> 64) & 0xFFFFFFFF)
+            return Decimal(low, mid, high, is_negative, diff_scale)
+
+        else:
+            # If diff_scale < 0, return the quotient with scaling up
+            # Posibly overflow, so we need to check
+
+            var quot = x1_coef // x2_coef
+
+            # If the result can be stored in UInt128
+            if (
+                decimojo.utility.number_of_digits(quot) - diff_scale
+                < Decimal.MAX_VALUE_DIGITS
+            ):
+                var quot = quot * UInt128(10) ** (-diff_scale)
+                var low = UInt32(quot & 0xFFFFFFFF)
+                var mid = UInt32((quot >> 32) & 0xFFFFFFFF)
+                var high = UInt32((quot >> 64) & 0xFFFFFFFF)
+                return Decimal(low, mid, high, is_negative, 0)
+
+            # If the result should be stored in UInt256
+            else:
+                var quot = UInt256(quot) * UInt256(10) ** (-diff_scale)
+                if quot > Decimal.MAX_AS_UINT256:
+                    raise Error("Error in `true_divide()`: Decimal overflow")
+                else:
+                    var low = UInt32(quot & 0xFFFFFFFF)
+                    var mid = UInt32((quot >> 32) & 0xFFFFFFFF)
+                    var high = UInt32((quot >> 64) & 0xFFFFFFFF)
+                    return Decimal(low, mid, high, is_negative, 0)
+
+    # REMAINING CASES: Use string-based division
+    # to avoid overflow with large numbers
 
     # Get coefficients as strings (absolute values)
-    var dividend_coef = String(x1.coefficient())
-    var divisor_coef = String(x2.coefficient())
+
+    var dividend_coef = String(x1_coef)
+    var divisor_coef = String(x2_coef)
 
     # Use string-based division to avoid overflow with large numbers
 
@@ -761,7 +884,7 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
         result_str = quotient[:decimal_pos] + "." + quotient[decimal_pos:]
 
     # Apply sign
-    if result_is_negative and result_str != "0":
+    if is_negative and result_str != "0":
         result_str = "-" + result_str
 
     # Convert to Decimal and return
@@ -899,10 +1022,6 @@ fn sqrt(x: Decimal) raises -> Decimal:
     if x == Decimal.ONE():
         return Decimal.ONE()
 
-    # Working precision - we'll compute with extra digits and round at the end
-    var working_precision = UInt32(x.scale() * 2)
-    working_precision = max(working_precision, UInt32(10))  # At least 10 digits
-
     # Initial guess - a good guess helps converge faster
     # For numbers near 1, use the number itself
     # For very small or large numbers, scale appropriately
@@ -954,23 +1073,23 @@ fn sqrt(x: Decimal) raises -> Decimal:
 
         iteration_count += 1
 
-    # Round to appropriate precision - typically half the working precision
-    var result_precision = x.scale()
-    if result_precision % 2 == 1:
-        # For odd scales, add 1 to ensure proper rounding
-        result_precision += 1
+    # If exact square root found
+    # Remove trailing zeros after the decimal point
+    var guess_coef = guess.coefficient()
+    var count = 0
+    for _ in range(guess.scale()):
+        if guess_coef % 10 == 0:
+            guess_coef //= 10
+            count += 1
+        else:
+            break
+    if guess_coef * guess_coef == x.coefficient():
+        var low = UInt32(guess_coef & 0xFFFFFFFF)
+        var mid = UInt32((guess_coef >> 32) & 0xFFFFFFFF)
+        var high = UInt32((guess_coef >> 64) & 0xFFFFFFFF)
+        return Decimal(low, mid, high, False, guess.scale() - count)
 
-    # The result scale should be approximately half the input scale
-    result_precision = result_precision // 2
-
-    # Format to the appropriate number of decimal places
-    var result_str = String(guess)
-
-    try:
-        var rounded_result = Decimal(result_str)
-        return rounded_result
-    except e:
-        raise e
+    return guess
 
 
 fn _subtract_strings(a: String, b: String) -> String:

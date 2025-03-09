@@ -72,6 +72,9 @@ fn run_benchmark(
     # Verify correctness
     var mojo_result = a_mojo - b_mojo
     var py_result = a_py - b_py
+    log_print(
+        "Decimals:        " + String(a_mojo) + " - " + String(b_mojo), log_file
+    )
     log_print("Mojo result:     " + String(mojo_result), log_file)
     log_print("Python result:   " + String(py_result), log_file)
 

@@ -68,6 +68,9 @@ fn run_benchmark(
         log_file: File object for logging results.
     """
     log_print("\nBenchmark:       " + name, log_file)
+    log_print(
+        "Decimals:        " + String(a_mojo) + " / " + String(b_mojo), log_file
+    )
 
     # Verify correctness
     var mojo_result = a_mojo / b_mojo
