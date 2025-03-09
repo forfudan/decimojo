@@ -21,17 +21,17 @@ delete_package = "rm tests/decimojo.mojopkg"
 
 # debugs (run the testing files only)
 debug = "magic run package && magic run mojo tests/*.mojo && magic run delete_package"
-d = "clear && magic run debug"
-
-# individual debug
-d_arith = "magic run package && magic run mojo tests/test_arithmetics.mojo && magic run delete_package"
+debug_arith = "magic run package && magic run mojo tests/test_arithmetics.mojo && magic run delete_package"
+debug_div = "magic run package && magic run mojo tests/test_division.mojo && magic run delete_package"
+debug_sqrt = "magic run package && magic run mojo tests/test_sqrt.mojo && magic run delete_package"
 
 # tests (use the mojo testing tool)
 test = "magic run package && magic run mojo test tests && magic run delete_package"
 t = "clear && magic run test"
-
-# individual test
-t_arith = "magic run package && magic run mojo test tests/test_arithmetics.mojo && magic run delete_package"
+test_arith = "magic run package && magic run mojo test tests/test_arithmetics.mojo && magic run delete_package"
+test_div = "magic run package && magic run mojo test tests/test_division.mojo && magic run delete_package"
+test_sqrt = "magic run package && magic run mojo test tests/test_sqrt.mojo && magic run delete_package"
+test_round = "magic run package && magic run mojo test tests/test_rounding.mojo && magic run delete_package"
 
 # benches
 bench = "magic run package && cd benches && magic run mojo bench.mojo && cd .."

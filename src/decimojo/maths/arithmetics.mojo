@@ -615,6 +615,11 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
         Error: If x2 is zero.
     """
 
+    # print("----------------------------------------")
+    # print("DEBUG divide()")
+    # print("DEBUG: x1", x1)
+    # print("DEBUG: x2", x2)
+
     # Treatment for special cases
     # 對各類特殊情況進行處理
 
@@ -728,8 +733,7 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
         if diff_scale >= 0:
             # If diff_scale >= 0, return the quotient with diff_scale
             # Yuhao's notes:
-            # Because the dividor == 1 has been handled before
-            # dividor shoud be greater than 1
+            # Because the dividor == 1 has been handled before dividor shoud be greater than 1
             # High will be zero because the quotient is less than 2^48
             # For safety, we still calcuate the high word
             var quot = x1_coef // x2_coef
@@ -766,144 +770,233 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
                     var high = UInt32((quot >> 64) & 0xFFFFFFFF)
                     return Decimal(low, mid, high, is_negative, 0)
 
-    # REMAINING CASES: Use string-based division
-    # to avoid overflow with large numbers
+    # REMAINING CASES: Perform long division
+    # 其他情況: 進行長除法
+    #
+    # Example: 123456.789 / 12.8 = 964506.1640625
+    # x1_coef = 123456789, x2_coef = 128
+    # x1_scale = 3, x2_scale = 1, diff_scale = 2
+    # Step 0: 123456789 // 128 -> quot = 964506, rem = 21
+    # Step 1: (21 * 10) // 128 -> quot = 1, rem = 82
+    # Step 2: (82 * 10) // 128 -> quot = 6, rem = 52
+    # Step 3: (52 * 10) // 128 -> quot = 4, rem = 8
+    # Step 4: (8 * 10) // 128 -> quot = 0, rem = 80
+    # Step 5: (80 * 10) // 128 -> quot = 6, rem = 32
+    # Step 6: (32 * 10) // 128 -> quot = 2, rem = 64
+    # Step 7: (64 * 10) // 128 -> quot = 5, rem = 0
+    # Result: 9645061640625 with scale 9 (= step_counter + diff_scale)
+    #
+    # Example: 12345678.9 / 1.28 = 9645061.640625
+    # x1_coef = 123456789, x2_coef = 128
+    # x1_scale = 1, x2_scale = 2, diff_scale = -1
+    # Result: 9645061640625 with scale 6 (= step_counter + diff_scale)
+    #
+    # Long division algorithm
+    # Stop when remainder is zero or precision is reached or the optimal number of steps is reached
+    #
+    # Yuhao's notes: How to determine the optimal number of steps?
+    # First, we need to consider that the max scale (precision) is 28
+    # Second, we need to consider the significant digits of the quotient
+    # EXAMPLE: 1 / 1.1111111111111111111111111111 ~= 0.900000000000000000000000000090
+    # If we only consider the precision, we just need 28 steps
+    # Then quotient of coefficients would be zeros
+    # Approach 1: The optimal number of steps should be approximately
+    #             max_len - diff_digits - digits_of_first_quotient + 1
+    # Approach 2: Times 10**(-diff_digits) to the dividend and then perform the long division
+    #             The number of steps is set to be max_len - digits_of_first_quotient + 1
+    #             so that we just need to scale up one than loop -diff_digits times
+    #
+    # Get intitial quotient and remainder
+    # Yuhao's notes: remainder should be positive beacuse the previous cases have been handled
+    # 朱宇浩注: 餘數應該爲正,因爲之前的特例已經處理過了
 
-    # Get coefficients as strings (absolute values)
+    var x1_number_of_digits = decimojo.utility.number_of_digits(x1_coef)
+    var x2_number_of_digits = decimojo.utility.number_of_digits(x2_coef)
+    var diff_digits = x1_number_of_digits - x2_number_of_digits
+    # Here is an estimation of the maximum possible number of digits of the quotient's integral part
+    # If it is higher than 28, we need to use UInt256 to store the quotient
+    var est_max_num_of_digits_of_quot_int_part = diff_digits - diff_scale + 1
+    var is_use_uint128 = est_max_num_of_digits_of_quot_int_part < Decimal.MAX_VALUE_DIGITS
 
-    var dividend_coef = String(x1_coef)
-    var divisor_coef = String(x2_coef)
+    # SUB-CASE: Use UInt128 to store the quotient
+    # If the quotient's integral part is less than 28 digits, we can use UInt128
+    # if is_use_uint128:
+    var quot: UInt128
+    var rem: UInt128
+    var ajusted_scale = 0
 
-    # Use string-based division to avoid overflow with large numbers
-
-    # Determine precision needed for calculation
-    var working_precision = Decimal.MAX_VALUE_DIGITS + 1  # +1 for potential rounding
-
-    # Perform long division algorithm
-    var quotient = String("")
-    var remainder = String("")
-    var digit = 0
-    var current_pos = 0
-    var processed_all_dividend = False
-    var number_of_significant_digits_of_quotient = 0
-
-    while number_of_significant_digits_of_quotient < working_precision:
-        # Grab next digit from dividend if available
-        if current_pos < len(dividend_coef):
-            remainder += dividend_coef[current_pos]
-            current_pos += 1
-        else:
-            # If we've processed all dividend digits, add a zero
-            if not processed_all_dividend:
-                processed_all_dividend = True
-            remainder += "0"
-
-        # Remove leading zeros from remainder for cleaner comparison
-        var remainder_start = 0
-        while (
-            remainder_start < len(remainder) - 1
-            and remainder[remainder_start] == "0"
-        ):
-            remainder_start += 1
-        remainder = remainder[remainder_start:]
-
-        # Compare remainder with divisor to determine next quotient digit
-        digit = 0
-        var can_subtract = False
-
-        # Check if remainder >= divisor_coef
-        if len(remainder) > len(divisor_coef) or (
-            len(remainder) == len(divisor_coef) and remainder >= divisor_coef
-        ):
-            can_subtract = True
-
-        if can_subtract:
-            # Find how many times divisor goes into remainder
-            while True:
-                # Try to subtract divisor from remainder
-                var new_remainder = _subtract_strings(remainder, divisor_coef)
-                if (
-                    new_remainder[0] == "-"
-                ):  # Negative result means we've gone too far
-                    break
-                remainder = new_remainder
-                digit += 1
-
-        # Add digit to quotient
-        quotient += String(digit)
-        number_of_significant_digits_of_quotient = len(
-            decimojo.str._remove_leading_zeros(quotient)
-        )
-
-    # Check if division is exact
-    var is_exact = remainder == "0" and current_pos >= len(dividend_coef)
-
-    # Remove leading zeros
-    var leading_zeros = 0
-    for i in range(len(quotient)):
-        if quotient[i] == "0":
-            leading_zeros += 1
-        else:
-            break
-
-    if leading_zeros == len(quotient):
-        # All zeros, keep just one
-        quotient = "0"
-    elif leading_zeros > 0:
-        quotient = quotient[leading_zeros:]
-
-    # Handle trailing zeros for exact division
-    var trailing_zeros = 0
-    if is_exact and len(quotient) > 1:  # Don't remove single digit
-        for i in range(len(quotient) - 1, 0, -1):
-            if quotient[i] == "0":
-                trailing_zeros += 1
-            else:
-                break
-
-        if trailing_zeros > 0:
-            quotient = quotient[: len(quotient) - trailing_zeros]
-
-    # Calculate decimal point position
-    var dividend_scientific_exponent = x1.scientific_exponent()
-    var divisor_scientific_exponent = x2.scientific_exponent()
-    var result_scientific_exponent = dividend_scientific_exponent - divisor_scientific_exponent
-
-    if decimojo.str._remove_trailing_zeros(
-        dividend_coef
-    ) < decimojo.str._remove_trailing_zeros(divisor_coef):
-        # If dividend < divisor, result < 1
-        result_scientific_exponent -= 1
-
-    var decimal_pos = result_scientific_exponent + 1
-
-    # Format result with decimal point
-    var result_str = String("")
-
-    if decimal_pos <= 0:
-        # decimal_pos <= 0, needs leading zeros
-        # For example, decimal_pos = -1
-        # 1234 -> 0.1234
-        result_str = "0." + "0" * (-decimal_pos) + quotient
-    elif decimal_pos >= len(quotient):
-        # All digits are to the left of the decimal point
-        # For example, decimal_pos = 5
-        # 1234 -> 12340
-        result_str = quotient + "0" * (decimal_pos - len(quotient))
+    # The adjusted dividend coefficient will not exceed 2^96 - 1
+    if diff_digits < 0:
+        var adjusted_x1_coef = x1_coef * UInt128(10) ** (-diff_digits)
+        quot = adjusted_x1_coef // x2_coef
+        rem = adjusted_x1_coef % x2_coef
+        ajusted_scale = -diff_digits
     else:
-        # Insert decimal point within the digits
-        # For example, decimal_pos = 2
-        # 1234 -> 12.34
-        result_str = quotient[:decimal_pos] + "." + quotient[decimal_pos:]
+        quot = x1_coef // x2_coef
+        rem = x1_coef % x2_coef
 
-    # Apply sign
-    if is_negative and result_str != "0":
-        result_str = "-" + result_str
+    if is_use_uint128:
+        # Maximum number of steps is MAX_VALUE_DIGITS - num_digits_first_quot + 1
+        # num_digis_first_quot is the number of digits of the quotient before using long division
+        # The extra digit is used for rounding up when it is 5 and not exact division
+        # 最大步數加一,用於捨去項爲5且非精確相除時向上捨去
 
-    # Convert to Decimal and return
-    var result = Decimal(result_str)
+        # digit is the tempory quotient digit
+        var digit = UInt128(0)
+        # The final step counter stands for the number of dicimal points
+        var step_counter = 0
+        var num_digits_first_quot = decimojo.utility.number_of_digits(quot)
+        while (rem != 0) and (
+            step_counter
+            < (Decimal.MAX_VALUE_DIGITS - num_digits_first_quot + 1)
+        ):
+            # Multiply remainder by 10
+            rem *= 10
+            # Calculate next quotient digit
+            digit = rem // x2_coef
+            quot = quot * 10 + digit
+            # Calculate new remainder
+            rem = rem % x2_coef
+            # Increment step counter
+            step_counter += 1
+            # Check if division is exact
 
-    return result
+        # Yuhao's notes: When the remainder is non-zero at the end and the the digit to round is 5
+        # we always round up, even if the rounding mode is round half to even
+        # 朱宇浩注: 捨去項爲5時,其後方的數字可能會影響捨去項,但後方數字可能是無限位,所以無法確定
+        # 比如: 1.0000000000000000000000000000_5 可能是 1.0000000000000000000000000000_5{100 zeros}1
+        # 但我們只能算到 1.0000000000000000000000000000_5,
+        # 在銀行家捨去法中,我們將捨去項爲5時,向上捨去, 保留28位後爲1.0000000000000000000000000000
+        # 這樣的捨去法是不準確的,所以我們一律在到達餘數非零且捨去項爲5時,向上捨去
+        var is_exact_division: Bool = False
+        if rem == 0:
+            is_exact_division = True
+        else:
+            if digit == 5:
+                # Not exact division, round up the last digit
+                quot += 1
+
+        var scale_of_quot = step_counter + diff_scale + ajusted_scale
+        # If the scale is negative, we need to scale up the quotient
+        if scale_of_quot < 0:
+            quot = quot * UInt128(10) ** (-scale_of_quot)
+            scale_of_quot = 0
+        var number_of_digits_quot = decimojo.utility.number_of_digits(quot)
+        var number_of_digits_quot_int_part = number_of_digits_quot - scale_of_quot
+
+        # If quot is within MAX, return the result
+        if quot <= Decimal.MAX_AS_UINT128:
+            var low = UInt32(quot & 0xFFFFFFFF)
+            var mid = UInt32((quot >> 32) & 0xFFFFFFFF)
+            var high = UInt32((quot >> 64) & 0xFFFFFFFF)
+            return Decimal(low, mid, high, is_negative, scale_of_quot)
+
+        # Otherwise, we need to truncate the first 29 or 28 digits
+        else:
+            var truncated_quot = decimojo.utility.truncate_to_digits(
+                quot, Decimal.MAX_VALUE_DIGITS
+            )
+            var scale_of_truncated_quot = (
+                Decimal.MAX_VALUE_DIGITS - number_of_digits_quot_int_part
+            )
+            if truncated_quot > Decimal.MAX_AS_UINT128:
+                truncated_quot = decimojo.utility.truncate_to_digits(
+                    quot, Decimal.MAX_VALUE_DIGITS - 1
+                )
+                scale_of_truncated_quot -= 1
+
+            var low = UInt32(truncated_quot & 0xFFFFFFFF)
+            var mid = UInt32((truncated_quot >> 32) & 0xFFFFFFFF)
+            var high = UInt32((truncated_quot >> 64) & 0xFFFFFFFF)
+
+            return Decimal(low, mid, high, is_negative, scale_of_truncated_quot)
+
+    # SUB-CASE: Use UInt256 to store the quotient
+    # Also the FALLBACK approach for the remaining cases
+    # If the quotient's integral part is possibly more than 28 digits, we use UInt256
+    # It is almost the same also the case above, so we just use the same code
+
+    else:
+        # Maximum number of steps is MAX_VALUE_DIGITS - num_digits_first_quot + 1
+        # The extra digit is used for rounding up when it is 5 and not exact division
+        # 最大步數加一,用於捨去項爲5且非精確相除時向上捨去
+
+        var quot256: UInt256 = UInt256(quot)
+        var rem256: UInt256 = UInt256(rem)
+        # digit is the tempory quotient digit
+        var digit = UInt256(0)
+        # The final step counter stands for the number of dicimal points
+        var step_counter = 0
+        var num_digits_first_quot = decimojo.utility.number_of_digits(quot256)
+        while (rem256 != 0) and (
+            step_counter
+            < (Decimal.MAX_VALUE_DIGITS - num_digits_first_quot + 1)
+        ):
+            # Multiply remainder by 10
+            rem256 *= 10
+            # Calculate next quotient digit
+            digit = rem256 // UInt256(x2_coef)
+            quot256 = quot256 * 10 + digit
+            # Calculate new remainder
+            rem256 = rem256 % UInt256(x2_coef)
+            # Increment step counter
+            step_counter += 1
+            # Check if division is exact
+
+        var is_exact_division: Bool = False
+        if rem256 == 0:
+            is_exact_division = True
+        else:
+            if digit == 5:
+                # Not exact division, round up the last digit
+                quot256 += 1
+
+        var scale_of_quot = step_counter + diff_scale + ajusted_scale
+        # If the scale is negative, we need to scale up the quotient
+        if scale_of_quot < 0:
+            quot256 = quot256 * UInt256(10) ** (-scale_of_quot)
+            scale_of_quot = 0
+        var number_of_digits_quot = decimojo.utility.number_of_digits(quot256)
+        var number_of_digits_quot_int_part = number_of_digits_quot - scale_of_quot
+
+        # If quot is within MAX, return the result
+        if quot256 <= Decimal.MAX_AS_UINT256:
+            var low = UInt32(quot256 & 0xFFFFFFFF)
+            var mid = UInt32((quot256 >> 32) & 0xFFFFFFFF)
+            var high = UInt32((quot256 >> 64) & 0xFFFFFFFF)
+            return Decimal(low, mid, high, is_negative, scale_of_quot)
+
+        # Otherwise, we need to truncate the first 29 or 28 digits
+        else:
+            var truncated_quot = decimojo.utility.truncate_to_digits(
+                quot256, Decimal.MAX_VALUE_DIGITS
+            )
+
+            # If integer part of quot is more than max, raise error
+            if (number_of_digits_quot_int_part > Decimal.MAX_VALUE_DIGITS) or (
+                (number_of_digits_quot_int_part == Decimal.MAX_VALUE_DIGITS)
+                and (truncated_quot > Decimal.MAX_AS_UINT256)
+            ):
+                raise Error("Error in `true_divide()`: Decimal overflow")
+
+            var scale_of_truncated_quot = (
+                Decimal.MAX_VALUE_DIGITS - number_of_digits_quot_int_part
+            )
+
+            if truncated_quot > Decimal.MAX_AS_UINT256:
+                truncated_quot = decimojo.utility.truncate_to_digits(
+                    quot256, Decimal.MAX_VALUE_DIGITS - 1
+                )
+                scale_of_truncated_quot -= 1
+
+            print("DEBUG: truncated_quot", truncated_quot)
+            print("DEBUG: scale_of_truncated_quot", scale_of_truncated_quot)
+
+            var low = UInt32(truncated_quot & 0xFFFFFFFF)
+            var mid = UInt32((truncated_quot >> 32) & 0xFFFFFFFF)
+            var high = UInt32((truncated_quot >> 64) & 0xFFFFFFFF)
+
+            return Decimal(low, mid, high, is_negative, scale_of_truncated_quot)
 
 
 fn power(base: Decimal, exponent: Decimal) raises -> Decimal:
@@ -1075,6 +1168,11 @@ fn sqrt(x: Decimal) raises -> Decimal:
     var max_iterations = 100  # Prevent infinite loops
 
     while guess != prev_guess and iteration_count < max_iterations:
+        # print("------------------------------------------------------")
+        # print("DEBUG: iteration_count", iteration_count)
+        # print("DEBUG: prev_guess", prev_guess)
+        # print("DEBUG: guess", guess)
+
         prev_guess = guess
 
         try:
@@ -1103,53 +1201,3 @@ fn sqrt(x: Decimal) raises -> Decimal:
         return Decimal(low, mid, high, False, guess.scale() - count)
 
     return guess
-
-
-fn _subtract_strings(a: String, b: String) -> String:
-    """
-    Subtracts string b from string a and returns the result as a string.
-    The input strings must be integers.
-
-    Args:
-        a: The string to subtract from. Must be an integer.
-        b: The string to subtract. Must be an integer.
-
-    Returns:
-        A string containing the result of the subtraction.
-    """
-
-    # Ensure a is longer or equal to b by padding with zeros
-    var a_padded = a
-    var b_padded = b
-
-    if len(a) < len(b):
-        a_padded = "0" * (len(b) - len(a)) + a
-    elif len(b) < len(a):
-        b_padded = "0" * (len(a) - len(b)) + b
-
-    var result = String("")
-    var borrow = 0
-
-    # Perform subtraction digit by digit from right to left
-    for i in range(len(a_padded) - 1, -1, -1):
-        var digit_a = ord(a_padded[i]) - ord("0")
-        var digit_b = ord(b_padded[i]) - ord("0") + borrow
-
-        if digit_a < digit_b:
-            digit_a += 10
-            borrow = 1
-        else:
-            borrow = 0
-
-        result = String(digit_a - digit_b) + result
-
-    # Check if result is negative
-    if borrow > 0:
-        return "-" + result
-
-    # Remove leading zeros
-    var start_idx = 0
-    while start_idx < len(result) - 1 and result[start_idx] == "0":
-        start_idx += 1
-
-    return result[start_idx:]

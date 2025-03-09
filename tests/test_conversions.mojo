@@ -9,7 +9,8 @@ import time
 
 
 fn test_int_conversion() raises:
-    print("\n--- Testing Int Conversion ---")
+    print("------------------------------------------------------")
+    print("--- Testing Int Conversion ---")
 
     # Test positive integer
     var d1 = Decimal("123")
@@ -49,7 +50,8 @@ fn test_int_conversion() raises:
 
 
 fn test_float_conversion() raises:
-    print("\n--- Testing Float64 Conversion ---")
+    print("------------------------------------------------------")
+    print("--- Testing Float64 Conversion ---")
 
     # Test positive number
     var d1 = Decimal("123.456")
@@ -83,7 +85,8 @@ fn test_float_conversion() raises:
 
 
 fn test_str_conversion() raises:
-    print("\n--- Testing String Conversion ---")
+    print("------------------------------------------------------")
+    print("--- Testing String Conversion ---")
 
     # Test positive number
     var d1 = Decimal("123.456")

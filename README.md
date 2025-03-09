@@ -50,6 +50,8 @@ Rome wasn't built in a day. DeciMojo is currently under active development, posi
 
 ## Examples
 
+The `Decimal` type can represent at most 29 significant digits and 28 digits after the decimal point. If the significant digits of a decimal value exceeds the maximum value (`2^96 - 1`), it either casts and error, or it is rounded until the siginificant digits are within the maximum value. For example, for the number `8.8888888888888888888888888888`, the significant digits (29 eights)exceeds the maximum value. It will then be rounded into `8.888888888888888888888888888` (28 eights).
+
 Here are 10 key examples highlighting the most important features of the `Decimal` type in its current state:
 
 ### 1. Fixed-Point Precision for Financial Calculations
