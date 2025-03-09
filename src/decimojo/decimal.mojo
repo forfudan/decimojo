@@ -282,17 +282,6 @@ struct Decimal(
             self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
             self.high = 0
 
-    # TODO: Add arguments to specify the scale sign
-    fn __init__(out self, integer: UInt64):
-        """
-        Initializes a Decimal from an UInt64 value.
-        The `high` word will always be 0.
-        """
-        self.low = UInt32(integer & 0xFFFFFFFF)
-        self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
-        self.high = 0
-        self.flags = 0
-
     fn __init__(out self, integer: Int128):
         """
         Initializes a Decimal from an Int128 value.
@@ -325,15 +314,39 @@ struct Decimal(
             self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
             self.high = UInt32((integer >> 64) & 0xFFFFFFFF)
 
-    fn __init__(out self, integer: UInt128):
+    # TODO: Add arguments to specify the scale and sign
+    fn __init__(out self, integer: UInt64):
+        """
+        Initializes a Decimal from an UInt64 value.
+        The `high` word will always be 0.
+        """
+        self.low = UInt32(integer & 0xFFFFFFFF)
+        self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
+        self.high = 0
+        self.flags = 0
+
+    # TODO: Add arguments to specify the scale and sign
+    fn __init__(
+        out self, integer: UInt128, negative: Bool = False, scale: UInt32 = 0
+    ):
         """
         Initializes a Decimal from an UInt128 value.
+        The scale must be <= 28.
         ***WARNING***: This constructor can only handle values up to 96 bits.
         """
         self.low = UInt32(integer & 0xFFFFFFFF)
         self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
         self.high = UInt32((integer >> 64) & 0xFFFFFFFF)
-        self.flags = 0
+
+        var flags: UInt32 = 0
+        # Set the initial scale (may be higher than MAX_PRECISION)
+        flags |= (scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
+
+        # Set the sign bit if negative
+        if negative:
+            flags |= Self.SIGN_MASK
+
+        self.flags = flags
 
     fn __init__(out self, integer: UInt256):
         """

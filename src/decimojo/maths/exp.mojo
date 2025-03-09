@@ -16,6 +16,8 @@
 #
 # ===----------------------------------------------------------------------=== #
 
+import math as builtin_math
+
 
 fn power(base: Decimal, exponent: Decimal) raises -> Decimal:
     """
@@ -128,44 +130,66 @@ fn sqrt(x: Decimal) raises -> Decimal:
     if x == Decimal.ONE():
         return Decimal.ONE()
 
-    # Initial guess - a good guess helps converge faster
-    # For numbers near 1, use the number itself
-    # For very small or large numbers, scale appropriately
-
     var x_coef = x.coefficient()
     var x_scale = x.scale()
-    var num_of_digits_x_int_part = decimojo.utility.number_of_digits(
-        x_coef
-    ) - x_scale
+
+    # Initial guess - a good guess helps converge faster
 
     var guess: Decimal
 
-    # For numbers between 0.1 and 999, start with x/2 + 0.5
-    if num_of_digits_x_int_part >= -1 and num_of_digits_x_int_part <= 3:
-        var half_x = x / Decimal(2, 0, 0, False, 0)
-        guess = half_x + Decimal(5, 0, 0, False, 1)
+    # For integers, use floating point approach to quickly find a good guess
+    if x.is_integer():
+        var float_sqrt = builtin_math.sqrt(x.to_uint128())
+        guess = Decimal(UInt128(float_sqrt))
 
-    # For larger/smaller numbers, make a smarter guess
-    # This scales based on the magnitude of the number
+    elif x_scale % 2 == 0:
+        var float_sqrt = builtin_math.sqrt(Float64(x.coefficient()))
+        guess = Decimal(UInt128(float_sqrt), negative=False, scale=x_scale >> 1)
+
+    elif x_scale % 2 == 1:
+        var float_sqrt = builtin_math.sqrt(Float64(x.coefficient())) * Float64(
+            3.15625
+        )
+        guess = Decimal(
+            UInt128(float_sqrt), negative=False, scale=(x_scale + 1) >> 1
+        )
+
+    # TODO: Remove the following code?
+    # Use decimal guess
     else:
-        var shift: Int
-        if num_of_digits_x_int_part % 2 != 0:
-            # For odd exponents, adjust
-            shift = (num_of_digits_x_int_part + 1) // 2
-        else:
-            shift = num_of_digits_x_int_part // 2
+        # For numbers near 1, use the number itself
+        # For very small or large numbers, scale appropriately
 
-        # abs(num_of_digits_x_int_part) <= 29, so abs(shift) is less than or equal to 15
-        # So 10^shift will not overflow UInt64
-        # Use an approximation based on the num_of_digits_x_int_part
-        if num_of_digits_x_int_part > 0:
-            # shift > 0
-            # guess = 10 ** shift
-            guess = Decimal(UInt64(10) ** shift)
+        var num_of_digits_x_int_part = decimojo.utility.number_of_digits(
+            x_coef
+        ) - x_scale
+
+        # For numbers between 0.1 and 999, start with x/2 + 0.5
+        if num_of_digits_x_int_part >= -1 and num_of_digits_x_int_part <= 3:
+            var half_x = x / Decimal(2, 0, 0, False, 0)
+            guess = half_x + Decimal(5, 0, 0, False, 1)
+
+        # For larger/smaller numbers, make a smarter guess
+        # This scales based on the magnitude of the number
         else:
-            # shift <= 0
-            # guess = 0.1 ** (-shift) = 1 / (10 ** (-shift))
-            guess = Decimal(1) / Decimal((UInt64(10) ** (-shift)))
+            var shift: Int
+            if num_of_digits_x_int_part % 2 != 0:
+                # For odd exponents, adjust
+                shift = (num_of_digits_x_int_part + 1) // 2
+            else:
+                shift = num_of_digits_x_int_part // 2
+
+            # abs(num_of_digits_x_int_part) <= 29, so abs(shift) is less than or equal to 15
+            # So 10^shift will not overflow UInt64
+            # Use an approximation based on the num_of_digits_x_int_part
+            if num_of_digits_x_int_part > 0:
+                # shift > 0
+                # guess = 10 ** shift
+                guess = Decimal(UInt64(10) ** shift)
+            else:
+                # shift <= 0
+                # guess = 0.1 ** (-shift) = 1 / (10 ** (-shift))
+                guess = Decimal(1) / Decimal((UInt64(10) ** (-shift)))
 
     # Newton-Raphson iterations
     # x_n+1 = (x_n + S/x_n) / 2
