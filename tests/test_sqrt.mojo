@@ -9,133 +9,209 @@ import testing
 fn test_perfect_squares() raises:
     print("Testing square root of perfect squares...")
 
-    # Test case 1
+    # Test case 1: sqrt(1) = 1
     try:
         var d1 = Decimal("1")
-        var expected1 = "1"
+        print("  Testing sqrt(1)...")
         var result1 = sqrt(d1)
+        print("  Got result: " + String(result1))
         testing.assert_equal(
             String(result1),
-            expected1,
-            "sqrt(" + String(d1) + ") should be " + expected1,
+            "1",
+            "Case 1: sqrt(1) should be 1, got " + String(result1),
         )
+        print("  Test case 1 passed.")
     except e:
         print("ERROR in test case 1: sqrt(1) = 1")
+        print("Exception: " + String(e))
         raise e
 
-    # Test case 2
+    # Test case 2: sqrt(4) = 2
     try:
         var d2 = Decimal("4")
-        var expected2 = "2"
+        print("  Testing sqrt(4)...")
         var result2 = sqrt(d2)
+        print("  Got result: " + String(result2))
         testing.assert_equal(
             String(result2),
-            expected2,
-            "sqrt(" + String(d2) + ") should be " + expected2,
+            "2",
+            "Case 2: sqrt(4) should be 2, got " + String(result2),
         )
+        print("  Test case 2 passed.")
     except e:
         print("ERROR in test case 2: sqrt(4) = 2")
+        print("Exception: " + String(e))
         raise e
 
-    # Test case 3
-    var d3 = Decimal("9")
-    var expected3 = "3"
-    var result3 = sqrt(d3)
-    testing.assert_equal(
-        String(result3),
-        expected3,
-        "sqrt(" + String(d3) + ") should be " + expected3,
-    )
+    # Test case 3: sqrt(9) = 3
+    try:
+        var d3 = Decimal("9")
+        print("  Testing sqrt(9)...")
+        var result3 = sqrt(d3)
+        print("  Got result: " + String(result3))
+        testing.assert_equal(
+            String(result3),
+            "3",
+            "Case 3: sqrt(9) should be 3, got " + String(result3),
+        )
+        print("  Test case 3 passed.")
+    except e:
+        print("ERROR in test case 3: sqrt(9) = 3")
+        print("Exception: " + String(e))
+        raise e
 
-    # Test case 4
-    var d4 = Decimal("16")
-    var expected4 = "4"
-    var result4 = sqrt(d4)
-    testing.assert_equal(
-        String(result4),
-        expected4,
-        "sqrt(" + String(d4) + ") should be " + expected4,
-    )
+    # Test case 4: sqrt(16) = 4
+    try:
+        var d4 = Decimal("16")
+        print("  Testing sqrt(16)...")
+        var result4 = sqrt(d4)
+        print("  Got result: " + String(result4))
+        testing.assert_equal(
+            String(result4),
+            "4",
+            "Case 4: sqrt(16) should be 4, got " + String(result4),
+        )
+        print("  Test case 4 passed.")
+    except e:
+        print("ERROR in test case 4: sqrt(16) = 4")
+        print("Exception: " + String(e))
+        raise e
 
-    # Test case 5
-    var d5 = Decimal("25")
-    var expected5 = "5"
-    var result5 = sqrt(d5)
-    testing.assert_equal(
-        String(result5),
-        expected5,
-        "sqrt(" + String(d5) + ") should be " + expected5,
-    )
+    # Test case 5: sqrt(25) = 5
+    try:
+        var d5 = Decimal("25")
+        print("  Testing sqrt(25)...")
+        var result5 = sqrt(d5)
+        print("  Got result: " + String(result5))
+        testing.assert_equal(
+            String(result5),
+            "5",
+            "Case 5: sqrt(25) should be 5, got " + String(result5),
+        )
+        print("  Test case 5 passed.")
+    except e:
+        print("ERROR in test case 5: sqrt(25) = 5")
+        print("Exception: " + String(e))
+        raise e
 
-    # Test case 6
-    var d6 = Decimal("36")
-    var expected6 = "6"
-    var result6 = sqrt(d6)
-    testing.assert_equal(
-        String(result6),
-        expected6,
-        "sqrt(" + String(d6) + ") should be " + expected6,
-    )
+    # Test case 6: sqrt(36) = 6
+    try:
+        var d6 = Decimal("36")
+        print("  Testing sqrt(36)...")
+        var result6 = sqrt(d6)
+        print("  Got result: " + String(result6))
+        testing.assert_equal(
+            String(result6),
+            "6",
+            "Case 6: sqrt(36) should be 6, got " + String(result6),
+        )
+        print("  Test case 6 passed.")
+    except e:
+        print("ERROR in test case 6: sqrt(36) = 6")
+        print("Exception: " + String(e))
+        raise e
 
-    # Test case 7
-    var d7 = Decimal("49")
-    var expected7 = "7"
-    var result7 = sqrt(d7)
-    testing.assert_equal(
-        String(result7),
-        expected7,
-        "sqrt(" + String(d7) + ") should be " + expected7,
-    )
+    # Test case 7: sqrt(49) = 7
+    try:
+        var d7 = Decimal("49")
+        print("  Testing sqrt(49)...")
+        var result7 = sqrt(d7)
+        print("  Got result: " + String(result7))
+        testing.assert_equal(
+            String(result7),
+            "7",
+            "Case 7: sqrt(49) should be 7, got " + String(result7),
+        )
+        print("  Test case 7 passed.")
+    except e:
+        print("ERROR in test case 7: sqrt(49) = 7")
+        print("Exception: " + String(e))
+        raise e
 
-    # Test case 8
-    var d8 = Decimal("64")
-    var expected8 = "8"
-    var result8 = sqrt(d8)
-    testing.assert_equal(
-        String(result8),
-        expected8,
-        "sqrt(" + String(d8) + ") should be " + expected8,
-    )
+    # Test case 8: sqrt(64) = 8
+    try:
+        var d8 = Decimal("64")
+        print("  Testing sqrt(64)...")
+        var result8 = sqrt(d8)
+        print("  Got result: " + String(result8))
+        testing.assert_equal(
+            String(result8),
+            "8",
+            "Case 8: sqrt(64) should be 8, got " + String(result8),
+        )
+        print("  Test case 8 passed.")
+    except e:
+        print("ERROR in test case 8: sqrt(64) = 8")
+        print("Exception: " + String(e))
+        raise e
 
-    # Test case 9
-    var d9 = Decimal("81")
-    var expected9 = "9"
-    var result9 = sqrt(d9)
-    testing.assert_equal(
-        String(result9),
-        expected9,
-        "sqrt(" + String(d9) + ") should be " + expected9,
-    )
+    # Test case 9: sqrt(81) = 9
+    try:
+        var d9 = Decimal("81")
+        print("  Testing sqrt(81)...")
+        var result9 = sqrt(d9)
+        print("  Got result: " + String(result9))
+        testing.assert_equal(
+            String(result9),
+            "9",
+            "Case 9: sqrt(81) should be 9, got " + String(result9),
+        )
+        print("  Test case 9 passed.")
+    except e:
+        print("ERROR in test case 9: sqrt(81) = 9")
+        print("Exception: " + String(e))
+        raise e
 
-    # Test case 10
-    var d10 = Decimal("100")
-    var expected10 = "10"
-    var result10 = sqrt(d10)
-    testing.assert_equal(
-        String(result10),
-        expected10,
-        "sqrt(" + String(d10) + ") should be " + expected10,
-    )
+    # Test case 10: sqrt(100) = 10
+    try:
+        var d10 = Decimal("100")
+        print("  Testing sqrt(100)...")
+        var result10 = sqrt(d10)
+        print("  Got result: " + String(result10))
+        testing.assert_equal(
+            String(result10),
+            "10",
+            "Case 10: sqrt(100) should be 10, got " + String(result10),
+        )
+        print("  Test case 10 passed.")
+    except e:
+        print("ERROR in test case 10: sqrt(100) = 10")
+        print("Exception: " + String(e))
+        raise e
 
-    # Test case 11
-    var d11 = Decimal("10000")
-    var expected11 = "100"
-    var result11 = sqrt(d11)
-    testing.assert_equal(
-        String(result11),
-        expected11,
-        "sqrt(" + String(d11) + ") should be " + expected11,
-    )
+    # Test case 11: sqrt(10000) = 100
+    try:
+        var d11 = Decimal("10000")
+        print("  Testing sqrt(10000)...")
+        var result11 = sqrt(d11)
+        print("  Got result: " + String(result11))
+        testing.assert_equal(
+            String(result11),
+            "100",
+            "Case 11: sqrt(10000) should be 100, got " + String(result11),
+        )
+        print("  Test case 11 passed.")
+    except e:
+        print("ERROR in test case 11: sqrt(10000) = 100")
+        print("Exception: " + String(e))
+        raise e
 
-    # Test case 12
-    var d12 = Decimal("1000000")
-    var expected12 = "1000"
-    var result12 = sqrt(d12)
-    testing.assert_equal(
-        String(result12),
-        expected12,
-        "sqrt(" + String(d12) + ") should be " + expected12,
-    )
+    # Test case 12: sqrt(1000000) = 1000
+    try:
+        var d12 = Decimal("1000000")
+        print("  Testing sqrt(1000000)...")
+        var result12 = sqrt(d12)
+        print("  Got result: " + String(result12))
+        testing.assert_equal(
+            String(result12),
+            "1000",
+            "Case 12: sqrt(1000000) should be 1000, got " + String(result12),
+        )
+        print("  Test case 12 passed.")
+    except e:
+        print("ERROR in test case 12: sqrt(1000000) = 1000")
+        print("Exception: " + String(e))
+        raise e
 
     print("Perfect square tests passed!")
 
@@ -146,7 +222,7 @@ fn test_non_perfect_squares() raises:
     # Test case 1
     try:
         var d1 = Decimal("2")
-        var expected_prefix1 = "1.414"
+        var expected_prefix1 = "1.414213562373095048801688724"
         var result1 = sqrt(d1)
         var result_str1 = String(result1)
         testing.assert_true(
@@ -164,7 +240,7 @@ fn test_non_perfect_squares() raises:
 
     # Test case 2
     var d2 = Decimal("3")
-    var expected_prefix2 = "1.732"
+    var expected_prefix2 = "1.73205080756887729352744634"
     var result2 = sqrt(d2)
     var result_str2 = String(result2)
     testing.assert_true(
@@ -179,7 +255,7 @@ fn test_non_perfect_squares() raises:
 
     # Test case 3
     var d3 = Decimal("5")
-    var expected_prefix3 = "2.236"
+    var expected_prefix3 = "2.23606797749978969640917366"
     var result3 = sqrt(d3)
     var result_str3 = String(result3)
     testing.assert_true(
@@ -194,7 +270,7 @@ fn test_non_perfect_squares() raises:
 
     # Test case 4
     var d4 = Decimal("10")
-    var expected_prefix4 = "3.162"
+    var expected_prefix4 = "3.162277660168379331998893544"
     var result4 = sqrt(d4)
     var result_str4 = String(result4)
     testing.assert_true(
@@ -209,7 +285,7 @@ fn test_non_perfect_squares() raises:
 
     # Test case 5
     var d5 = Decimal("50")
-    var expected_prefix5 = "7.071"
+    var expected_prefix5 = "7.071067811865475244008443621"
     var result5 = sqrt(d5)
     var result_str5 = String(result5)
     testing.assert_true(
@@ -224,7 +300,7 @@ fn test_non_perfect_squares() raises:
 
     # Test case 6
     var d6 = Decimal("99")
-    var expected_prefix6 = "9.949"
+    var expected_prefix6 = "9.949874371066199547344798210"
     var result6 = sqrt(d6)
     var result_str6 = String(result6)
     testing.assert_true(
@@ -239,7 +315,7 @@ fn test_non_perfect_squares() raises:
 
     # Test case 7
     var d7 = Decimal("999")
-    var expected_prefix7 = "31.60"
+    var expected_prefix7 = "31.6069612585582165452042139"
     var result7 = sqrt(d7)
     var result_str7 = String(result7)
     testing.assert_true(
@@ -362,8 +438,9 @@ fn test_edge_cases() raises:
             "0." + "0" * 27 + "1"
         )  # Smallest possible positive decimal
         var result_small = sqrt(very_small)
-        testing.assert_true(
-            String(result_small).startswith("0.00000000000001"),
+        testing.assert_equal(
+            String(result_small),
+            "0.00000000000001",
             String(
                 "sqrt of very small number should be positive and smaller,"
                 " very_small={}, result_small={}"
@@ -378,17 +455,17 @@ fn test_edge_cases() raises:
         var very_large = Decimal("1" + "0" * 27)  # Large decimal
         var result_large = sqrt(very_large)
         testing.assert_true(
-            String(result_large).startswith("3162277"),
-            "sqrt of 10^27 should start with 3162277...",
+            String(result_large).startswith("31622776601683.79331998893544"),
+            "sqrt of 10^27 should start with 31622776601683.79331998893544...",
         )
     except e:
         print("ERROR in test_edge_cases: sqrt of very large number (10^27)")
         raise e
 
     # Test negative number exception
-    var negative = Decimal("-1")
     var negative_exception_caught = False
     try:
+        var negative = Decimal("-1")
         var _result_negative = sqrt(negative)
         testing.assert_equal(
             True, False, "sqrt() of negative should raise exception"
@@ -414,48 +491,37 @@ fn test_edge_cases() raises:
 
 fn test_precision() raises:
     print("Testing precision of square root calculations...")
-    var expected_sqrt2 = "1.4142135623"  # First 10 decimal places of sqrt(2)
+    var expected_sqrt2 = "1.414213562373095048801688724"  # First 10 decimal places of sqrt(2)
 
     # Test precision for irrational numbers
-    try:
-        var two = Decimal("2")
-        var result = sqrt(two)
+    var two = Decimal("2")
+    var result = sqrt(two)
 
-        # Check at least 10 decimal places (should be enough for most applications)
-        testing.assert_true(
-            String(result).startswith(expected_sqrt2),
-            "sqrt(2) should start with " + expected_sqrt2,
-        )
-    except e:
-        print("ERROR in test_precision: sqrt(2) precision check")
-        raise e
+    # Check at least 10 decimal places (should be enough for most applications)
+    testing.assert_true(
+        String(result).startswith(expected_sqrt2),
+        "sqrt(2) should start with " + expected_sqrt2,
+    )
 
     # Test high precision values
-    try:
-        var precise_value = Decimal("2.0000000000000000000000000")
-        var precise_result = sqrt(precise_value)
-        testing.assert_true(
-            String(precise_result).startswith(expected_sqrt2),
-            "sqrt of high precision 2 should start with " + expected_sqrt2,
-        )
-    except e:
-        print("ERROR in test_precision: high precision sqrt(2)")
-        raise e
+    var precise_value = Decimal("2.0000000000000000000000000")
+    var precise_result = sqrt(precise_value)
+    testing.assert_true(
+        String(precise_result).startswith(expected_sqrt2),
+        "sqrt of high precision 2 should start with " + expected_sqrt2,
+    )
 
     # Check that results are appropriately rounded
-    try:
-        var d = Decimal("10")
-        var sqrt_d = sqrt(d)
-        var expected_places = 7  # Typical minimum precision
-        testing.assert_true(
-            sqrt_d.scale() >= expected_places,
-            "sqrt(10) should have at least "
-            + String(expected_places)
-            + " decimal places",
-        )
-    except e:
-        print("ERROR in test_precision: sqrt(10) scale check")
-        raise e
+    var d = Decimal("1894128.128951235")
+    var sqrt_d = sqrt(d)
+    testing.assert_true(
+        String(sqrt_d).startswith("1376.27327553478091940498131"),
+        (
+            "sqrt(1894128.128951235) should startwith"
+            " 1376.273275534780919404981314 but got "
+            + String(sqrt_d)
+        ),
+    )
 
     print("Precision tests passed!")
 
@@ -465,24 +531,20 @@ fn test_mathematical_identities() raises:
 
     # Test that sqrt(x)² = x - Expanded for each test number
     # Test number 1
-    try:
-        var num1 = Decimal("2")
-        var sqrt_num1 = sqrt(num1)
-        var squared1 = sqrt_num1 * sqrt_num1
-        var original_rounded1 = round(num1, 10)
-        var squared_rounded1 = round(squared1, 10)
-        testing.assert_true(
-            original_rounded1 == squared_rounded1,
-            "sqrt("
-            + String(num1)
-            + ")² should approximately equal "
-            + String(num1)
-            + ", but got "
-            + String(squared_rounded1),
-        )
-    except e:
-        print("ERROR in test_mathematical_identities: sqrt(2)² = 2")
-        raise e
+    var num1 = Decimal("2")
+    var sqrt_num1 = sqrt(num1)
+    var squared1 = sqrt_num1 * sqrt_num1
+    var original_rounded1 = round(num1, 10)
+    var squared_rounded1 = round(squared1, 10)
+    testing.assert_true(
+        original_rounded1 == squared_rounded1,
+        "sqrt("
+        + String(num1)
+        + ")² should approximately equal "
+        + String(num1)
+        + ", but got "
+        + String(squared_rounded1),
+    )
 
     # Test number 2
     var num2 = Decimal("3")
@@ -828,15 +890,19 @@ fn run_test_with_error_handling(
     """Helper function to run a test function with error handling and reporting.
     """
     try:
+        print("\n" + "=" * 50)
+        print("RUNNING: " + test_name)
+        print("=" * 50)
         test_fn()
-        print("✓ " + test_name + " passed\n")
+        print("\n✓ " + test_name + " passed\n")
     except e:
-        print("✗ " + test_name + " FAILED!")
+        print("\n✗ " + test_name + " FAILED!")
         print("Error message: " + String(e))
         raise e
 
 
 fn main() raises:
+    print("=========================================")
     print("Running comprehensive Decimal square root tests")
 
     run_test_with_error_handling(test_perfect_squares, "Perfect squares test")

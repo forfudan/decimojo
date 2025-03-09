@@ -6,8 +6,8 @@ import testing
 
 
 fn test_decimal_from_int() raises:
+    print("------------------------------------------------------")
     print("Testing Decimal Creation from Integer Values")
-    print("------------------------------------------")
 
     # Basic integer constructors
     var zero = Decimal(0)
@@ -63,8 +63,8 @@ fn test_decimal_from_int() raises:
 
 
 fn test_decimal_from_float() raises:
+    print("------------------------------------------------------")
     print("Testing Decimal Creation from Float Values")
-    print("----------------------------------------")
 
     # Basic float constructors
     var zero_float = Decimal(0.0)
@@ -179,8 +179,8 @@ fn test_decimal_from_float() raises:
 
 
 fn test_decimal_from_string() raises:
+    print("------------------------------------------------------")
     print("Testing Decimal Creation from String Values")
-    print("-----------------------------------------")
 
     # Basic string constructors
     var zero_str = Decimal("0")
@@ -325,8 +325,8 @@ fn test_decimal_from_string() raises:
 
 
 fn test_decimal_from_components() raises:
+    print("------------------------------------------------------")
     print("Testing Decimal Creation from Components")
-    print("---------------------------------------")
 
     # Test case 1: Zero with zero scale
     var zero = Decimal(0, 0, 0, False, 0)

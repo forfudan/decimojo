@@ -24,7 +24,7 @@ For brevity, you can also refer to it "decimo" (derived from the Latin root "dec
 
 ## Status
 
-Rome is not built in one day. DeciMojo is currently under active development and appears to be between the **"make it work"** and **"make it right"** phases, leaning more toward the latter. Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/forFudan/decimojo/issues).
+Rome wasn't built in a day. DeciMojo is currently under active development, positioned between the **"make it work"** and **"make it right"** phases, with a stronger emphasis on the latter. Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/forFudan/decimojo/issues).
 
 ### Make it Work ✅ (MOSTLY COMPLETED)
 
@@ -42,11 +42,15 @@ Rome is not built in one day. DeciMojo is currently under active development and
 - High precision support is implemented (up to 28 decimal places)
 - The examples show robust handling of various scenarios
 
-### Make it Fast ⏳ (FUTURE WORK)
+### Make it Fast ⏳ (IN PROGRESS & FUTURE WORK)
 
-- Performance optimization is acknowledged but not currently prioritized
+- Performance optimization on basic operations (+ - * /) in progress
+- Regular benchmarking against Python's `decimal` module (see `bench/` folder)
+- Performance optimization on other functions are acknowleged but not currently prioritized
 
 ## Examples
+
+The `Decimal` type can represent at most 29 significant digits and 28 digits after the decimal point. If the significant digits of a decimal value exceeds the maximum value (`2^96 - 1`), it either casts and error, or it is rounded until the siginificant digits are within the maximum value. For example, for the number `8.8888888888888888888888888888`, the significant digits (29 eights)exceeds the maximum value. It will then be rounded into `8.888888888888888888888888888` (28 eights).
 
 Here are 10 key examples highlighting the most important features of the `Decimal` type in its current state:
 
@@ -277,9 +281,7 @@ After cloning the repo onto your local disk, you can:
 - Use `magic run test` (or `maigic run t`) to run tests.
 - Use `magic run bench` (or `magic run b`) to generate logs for benchmarking tests agains `python.decimal` module. The log files are saved in `benches/logs/`.
 
-## License
-
-Distributed under the Apache 2.0 License. See [LICENSE](https://github.com/forFudan/decimojo/blob/main/LICENSE) for details.
+## Citation
 
 If you find DeciMojo useful for your research, consider listing it in your citations 😀.
 
@@ -293,3 +295,14 @@ If you find DeciMojo useful for your research, consider listing it in your citat
     note = {Computer Software}
 }
 ```
+
+## License
+
+Copyright 2025 Yuhao Zhu
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+

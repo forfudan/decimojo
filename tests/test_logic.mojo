@@ -15,6 +15,7 @@ import testing
 
 
 fn test_equality() raises:
+    print("------------------------------------------------------")
     print("Testing decimal equality...")
 
     # Test case 1: Equal decimals
@@ -60,6 +61,7 @@ fn test_equality() raises:
 
 
 fn test_inequality() raises:
+    print("------------------------------------------------------")
     print("Testing decimal inequality...")
 
     # Test case 1: Equal decimals

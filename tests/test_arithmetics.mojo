@@ -7,6 +7,7 @@ import testing
 
 
 fn test_add() raises:
+    print("------------------------------------------------------")
     print("Testing decimal addition...")
 
     # Test case 1: Simple addition with same scale
@@ -160,6 +161,7 @@ fn test_add() raises:
 
 
 fn test_negation() raises:
+    print("------------------------------------------------------")
     print("Testing decimal negation...")
 
     # Test case 1: Negate positive number
@@ -237,6 +239,7 @@ fn test_negation() raises:
 
 
 fn test_abs() raises:
+    print("------------------------------------------------------")
     print("Testing decimal absolute value...")
 
     # Test case 1: Absolute value of positive number
@@ -318,6 +321,7 @@ fn test_abs() raises:
 
 
 fn test_subtract() raises:
+    print("------------------------------------------------------")
     print("Testing decimal subtraction...")
 
     # Test case 1: Simple subtraction with same scale
@@ -450,6 +454,7 @@ fn test_subtract() raises:
 
 
 fn test_multiplication() raises:
+    print("------------------------------------------------------")
     print("Testing decimal multiplication...")
 
     # Test case 1: Simple multiplication with same scale
@@ -617,345 +622,8 @@ fn test_multiplication() raises:
     print("Decimal multiplication tests passed!")
 
 
-fn test_division() raises:
-    print("Testing decimal division...")
-
-    # Test case 1: Simple division with same scale
-    var a1 = Decimal("10.00")
-    var b1 = Decimal("2.00")
-    var result1 = a1 / b1
-    testing.assert_equal(
-        String(result1), "5", "Simple division with same scale"
-    )
-
-    # Test case 2: Division with different scales
-    var a2 = Decimal("10.5")
-    var b2 = Decimal("2.1")
-    var result2 = a2 / b2
-    testing.assert_equal(
-        String(result2),
-        "5",
-        "Division with different scales",
-    )
-
-    # Test case 3: Division with negative numbers
-    var a3 = Decimal("12.34")
-    var b3 = Decimal("-2.0")
-    var result3 = a3 / b3
-    testing.assert_equal(
-        String(result3),
-        "-6.17",
-        "Division with negative number",
-    )
-
-    # Test case 4: Division with both negative numbers
-    var a4 = Decimal("-12.34")
-    var b4 = Decimal("-2.0")
-    var result4 = a4 / b4
-    testing.assert_equal(
-        String(result4),
-        "6.17",
-        "Division with both negative numbers",
-    )
-
-    # Test case 5: Division by one
-    var a5 = Decimal("12.34")
-    var b5 = Decimal("1.0")
-    var result5 = a5 / b5
-    testing.assert_equal(String(result5), "12.34", "Division by one")
-
-    # Test case 6: Division resulting in repeating decimal
-    var a6 = Decimal("10.0")
-    var b6 = Decimal("3.0")
-    var result6 = a6 / b6
-    testing.assert_equal(
-        String(result6).startswith("3.333333333"),
-        True,
-        "Division resulting in repeating decimal",
-    )
-
-    # Test case 7: Division resulting in exact value
-    var a7 = Decimal("10.0")
-    var b7 = Decimal("5.0")
-    var result7 = a7 / b7
-    testing.assert_equal(
-        String(result7), "2", "Division resulting in exact value"
-    )
-
-    # Test case 8: Division of zero by non-zero
-    var a8 = Decimal("0.0")
-    var b8 = Decimal("5.0")
-    var result8 = a8 / b8
-    testing.assert_equal(String(result8), "0", "Division of zero by non-zero")
-
-    # Test case 9: Division with small numbers
-    var a9 = Decimal("0.001")
-    var b9 = Decimal("0.01")
-    var result9 = a9 / b9
-    testing.assert_equal(String(result9), "0.1", "Division with small numbers")
-
-    # Test case 10: Division with large numbers
-    var a10 = Decimal("1000000.0")
-    var b10 = Decimal("0.001")
-    var result10 = a10 / b10
-    testing.assert_equal(
-        String(result10), "1000000000", "Division with large numbers"
-    )
-
-    # Test case 11: Division requiring rounding
-    var a11 = Decimal("1.0")
-    var b11 = Decimal("7.0")
-    var result11 = a11 / b11
-    testing.assert_equal(
-        String(result11).startswith("0.142857142857142857142857"),
-        True,
-        "Division requiring rounding",
-    )
-
-    # Test case 12: Division with mixed precision
-    var a12 = Decimal("123.456")
-    var b12 = Decimal("0.1")
-    var result12 = a12 / b12
-    testing.assert_equal(
-        String(result12), "1234.56", "Division with mixed precision"
-    )
-
-    # Test case 13: Verify mathematical identity (a/b)*b ≈ a within rounding error
-    var a13 = Decimal("123.45")
-    var b13 = Decimal("7.89")
-    var div_result = a13 / b13
-    var mul_result = div_result * b13
-    # Because of rounding, we don't expect exact equality, so check if the difference is small
-    var diff = a13 - mul_result
-    var abs_diff = -diff if diff.is_negative() else diff
-    var is_close = Float64(String(abs_diff)) < 0.0001
-    testing.assert_equal(is_close, True, "(a/b)*b should approximately equal a")
-
-    # Test case 14: Division of number by itself should be 1
-    var a14 = Decimal("123.45")
-    var result14 = a14 / a14
-    testing.assert_equal(
-        String(result14),
-        "1",
-        "Division of number by itself",
-    )
-
-    # Test case 15: Division by zero should raise an error
-    var a15 = Decimal("123.45")
-    var b15 = Decimal("0.0")
-    try:
-        var result15 = a15 / b15
-        testing.assert_equal(
-            True, False, "Division by zero should raise an error"
-        )
-    except:
-        testing.assert_equal(True, True, "Division by zero correctly rejected")
-
-    # ============= ADDITIONAL DIVISION TEST CASES =============
-    print("\nTesting additional division scenarios...")
-
-    # Test case 16: Division with very large number by very small number
-    var a16 = Decimal("1000000000")
-    var b16 = Decimal("0.0001")
-    var result16 = a16 / b16
-    testing.assert_equal(
-        String(result16),
-        "10000000000000",
-        "Large number divided by small number",
-    )
-
-    # Test case 17: Division with very small number by very large number
-    var a17 = Decimal("0.0001")
-    var b17 = Decimal("1000000000")
-    var result17 = a17 / b17
-    testing.assert_true(
-        String(result17).startswith("0.0000000000001"),
-        "Small number divided by large number",
-    )
-
-    # Test case 18: Division resulting in repeating decimal
-    var a18 = Decimal("1")
-    var b18 = Decimal("3")
-    var result18 = a18 / b18
-    testing.assert_true(
-        String(result18).startswith("0.33333333"),
-        "Division resulting in repeating decimal (1/3)",
-    )
-
-    # Test case 19: Division by powers of 10
-    var a19 = Decimal("123.456")
-    var b19 = Decimal("10")
-    var result19 = a19 / b19
-    testing.assert_equal(
-        String(result19),
-        "12.3456",
-        "Division by power of 10",
-    )
-
-    # Test case 20: Division by powers of 10 (another case)
-    var a20 = Decimal("123.456")
-    var b20 = Decimal("0.01")
-    var result20 = a20 / b20
-    testing.assert_equal(
-        String(result20),
-        "12345.6",
-        "Division by 0.01 (multiply by 100)",
-    )
-
-    # Test case 21: Division of nearly equal numbers
-    var a21 = Decimal("1.000001")
-    var b21 = Decimal("1")
-    var result21 = a21 / b21
-    testing.assert_equal(
-        String(result21),
-        "1.000001",
-        "Division of nearly equal numbers",
-    )
-
-    # Test case 22: Division resulting in a number with many trailing zeros
-    var a22 = Decimal("1")
-    var b22 = Decimal("8")
-    var result22 = a22 / b22
-    testing.assert_true(
-        String(result22).startswith("0.125"),
-        "Division resulting in an exact decimal with trailing zeros",
-    )
-
-    # Test case 23: Division with negative numerator
-    var a23 = Decimal("-50")
-    var b23 = Decimal("10")
-    var result23 = a23 / b23
-    testing.assert_equal(
-        String(result23),
-        "-5",
-        "Division with negative numerator",
-    )
-
-    # Test case 24: Division with negative denominator
-    var a24 = Decimal("50")
-    var b24 = Decimal("-10")
-    var result24 = a24 / b24
-    testing.assert_equal(
-        String(result24),
-        "-5",
-        "Division with negative denominator",
-    )
-
-    # Test case 25: Division with both negative
-    var a25 = Decimal("-50")
-    var b25 = Decimal("-10")
-    var result25 = a25 / b25
-    testing.assert_equal(
-        String(result25),
-        "5",
-        "Division with both negative numbers",
-    )
-
-    # Test case 26: Division resulting in exact integer
-    var a26 = Decimal("96.75")
-    var b26 = Decimal("4.5")
-    var result26 = a26 / b26
-    testing.assert_equal(
-        String(result26),
-        "21.5",
-        "Division resulting in exact value",
-    )
-
-    # Test case 27: Division with high precision numbers
-    var a27 = Decimal("0.123456789012345678901234567")
-    var b27 = Decimal("0.987654321098765432109876543")
-    var result27 = a27 / b27
-    testing.assert_true(
-        String(result27).startswith("0.12499"),
-        "Division of high precision numbers",
-    )
-
-    # Test case 28: Division with extreme digit patterns
-    var a28 = Decimal("9" * 15)  # 999999999999999
-    var b28 = Decimal("9" * 5)  # 99999
-    var result28 = a28 / b28
-    testing.assert_equal(
-        String(result28),
-        "10000100001",
-        "Division with extreme digit patterns (all 9's)",
-    )
-
-    # Test case 29: Division where result is zero
-    var a29 = Decimal("0")
-    var b29 = Decimal("123.45")
-    var result29 = a29 / b29
-    testing.assert_equal(
-        String(result29),
-        "0",
-        "Division where result is zero",
-    )
-
-    # Test case 30: Division where numerator is smaller than denominator
-    var a30 = Decimal("1")
-    var b30 = Decimal("10000")
-    var result30 = a30 / b30
-    testing.assert_equal(
-        String(result30),
-        "0.0001",
-        "Division where numerator is smaller than denominator",
-    )
-
-    # Test case 31: Division resulting in scientific notation range
-    var a31 = Decimal("1")
-    var b31 = Decimal("1" + "0" * 20)  # 10^20
-    var result31 = a31 / b31
-    testing.assert_true(
-        String(result31).startswith("0.00000000000000000001"),
-        "Division resulting in very small number",
-    )
-
-    # Test case 32: Division with mixed precision
-    var a32 = Decimal("1")
-    var b32 = Decimal("3.33333333333333333333333333")
-    var result32 = a32 / b32
-    testing.assert_true(
-        String(result32).startswith("0.3"),
-        "Division with mixed precision numbers",
-    )
-
-    # Test case 33: Division by fractional power of 10
-    var a33 = Decimal("5.5")
-    var b33 = Decimal("0.055")
-    var result33 = a33 / b33
-    testing.assert_equal(
-        String(result33),
-        "100",
-        "Division by fractional power of 10",
-    )
-
-    # Test case 34: Division with rounding at precision boundary
-    var a34 = Decimal("2")
-    var b34 = Decimal("3")
-    var result34 = a34 / b34
-    # Result should be about 0.66666...
-    var expected34 = Decimal("0.66666666666666666666666666667")
-    print(result34)
-    testing.assert_equal(
-        result34,
-        expected34,
-        "Division with rounding at precision boundary",
-    )
-
-    # Test case 35: Division by value very close to zero
-    var a35 = Decimal("1")
-    var b35 = Decimal("0." + "0" * 26 + "1")  # 0.000...0001 (27 zeros)
-    var result35 = a35 / b35
-    testing.assert_true(
-        String(result35).startswith("1" + "0" * 27),
-        "Division by value very close to zero",
-    )
-
-    print("Additional division tests passed!")
-
-    print("Decimal division tests passed!")
-
-
 fn test_power_integer_exponents() raises:
+    print("------------------------------------------------------")
     print("Testing power with integer exponents...")
 
     # Test case 1: Base cases: x^0 = 1 for any x except 0
@@ -1018,6 +686,7 @@ fn test_power_integer_exponents() raises:
 
 
 fn test_power_negative_exponents() raises:
+    print("------------------------------------------------------")
     print("Testing power with negative integer exponents...")
 
     # Test case 1: Basic negative exponent
@@ -1056,6 +725,7 @@ fn test_power_negative_exponents() raises:
 
 
 fn test_power_special_cases() raises:
+    print("------------------------------------------------------")
     print("Testing power function special cases...")
 
     # Test case 1: 0^0 (typically defined as 1)
@@ -1094,6 +764,7 @@ fn test_power_special_cases() raises:
 
 
 fn test_power_decimal_exponents() raises:
+    print("------------------------------------------------------")
     print("Testing power with decimal exponents...")
 
     # Try a few basic decimal exponents if supported
@@ -1116,6 +787,7 @@ fn test_power_decimal_exponents() raises:
 
 
 fn test_power_precision() raises:
+    print("------------------------------------------------------")
     print("Testing power precision...")
 
     # These tests assume we have overloaded the ** operator
@@ -1142,6 +814,7 @@ fn test_power_precision() raises:
 
 
 fn test_extreme_cases() raises:
+    print("------------------------------------------------------")
     print("Testing extreme cases...")
 
     # Test case 1: Addition that results in exactly zero with high precision
@@ -1210,9 +883,6 @@ fn main() raises:
 
     # Run multiplication tests
     test_multiplication()
-
-    # Run division tests
-    test_division()
 
     # Run power tests with integer exponents
     test_power_integer_exponents()

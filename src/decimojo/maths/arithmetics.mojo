@@ -11,6 +11,10 @@
 #
 # List of functions in this module:
 #
+# add(x1: Decimal, x2: Decimal): Adds two Decimal values and returns a new Decimal containing the sum
+# subtract(x1: Decimal, x2: Decimal): Subtracts the x2 Decimal from x1 and returns a new Decimal
+# multiply(x1: Decimal, x2: Decimal): Multiplies two Decimal values and returns a new Decimal containing the product
+# true_divide(x1: Decimal, x2: Decimal): Divides x1 by x2 and returns a new Decimal containing the quotient
 # power(base: Decimal, exponent: Decimal): Raises base to the power of exponent (integer exponents only)
 # power(base: Decimal, exponent: Int): Convenience method for integer exponents
 # sqrt(x: Decimal): Computes the square root of x using Newton-Raphson method
@@ -171,8 +175,8 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
             -1
         ) ** x2.is_negative() * Int128(x2.coefficient())
 
-        var is_nagative = summation < 0
-        if is_nagative:
+        var is_negative = summation < 0
+        if is_negative:
             summation = -summation
 
         # Now we need to truncate the summation to fit in 96 bits
@@ -200,7 +204,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
         mid = UInt32((truncated_summation >> 32) & 0xFFFFFFFF)
         high = UInt32((truncated_summation >> 64) & 0xFFFFFFFF)
 
-        return Decimal(low, mid, high, is_nagative, final_scale)
+        return Decimal(low, mid, high, is_negative, final_scale)
 
     # Float addition which with different scales
     else:
@@ -224,8 +228,8 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
                 x2.coefficient()
             )
 
-        var is_nagative = summation < 0
-        if is_nagative:
+        var is_negative = summation < 0
+        if is_negative:
             summation = -summation
 
         # Now we need to truncate the summation to fit in 96 bits
@@ -253,7 +257,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
         mid = UInt32((truncated_summation >> 32) & 0xFFFFFFFF)
         high = UInt32((truncated_summation >> 64) & 0xFFFFFFFF)
 
-        return Decimal(low, mid, high, is_nagative, final_scale)
+        return Decimal(low, mid, high, is_negative, final_scale)
 
 
 fn subtract(x1: Decimal, x2: Decimal) raises -> Decimal:
@@ -305,7 +309,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     var x2_scale = x2.scale()
     var combined_scale = x1_scale + x2_scale
     """Combined scale of the two operands."""
-    var is_nagative = x1.is_negative() != x2.is_negative()
+    var is_negative = x1.is_negative() != x2.is_negative()
 
     # SPECIAL CASE: zero
     # Return zero while preserving the scale
@@ -326,12 +330,12 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
                 0,
                 0,
                 0,
-                is_nagative,
+                is_negative,
                 Decimal.MAX_PRECISION,
             )
         # Otherwise, return 1 with correct sign and scale
         var final_scale = min(Decimal.MAX_PRECISION, combined_scale)
-        return Decimal(1, 0, 0, is_nagative, final_scale)
+        return Decimal(1, 0, 0, is_negative, final_scale)
 
     # SPECIAL CASE: First operand has coefficient of 1
     if x1_coef == 1:
@@ -339,28 +343,28 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
         if x1_scale == 0:
             var result = x2
             result.flags &= ~Decimal.SIGN_MASK
-            if is_nagative:
+            if is_negative:
                 result.flags |= Decimal.SIGN_MASK
             return result
         else:
-            var mul = x2_coef
+            var prod = x2_coef
             # Rounding may be needed.
-            var num_digits_mul = decimojo.utility.number_of_digits(mul)
-            var num_digits_to_keep = num_digits_mul - (
+            var num_digits_prod = decimojo.utility.number_of_digits(prod)
+            var num_digits_to_keep = num_digits_prod - (
                 combined_scale - Decimal.MAX_PRECISION
             )
-            var truncated_mul = decimojo.utility.truncate_to_digits(
-                mul, num_digits_to_keep
+            var truncated_prod = decimojo.utility.truncate_to_digits(
+                prod, num_digits_to_keep
             )
             var final_scale = min(Decimal.MAX_PRECISION, combined_scale)
-            var low = UInt32(truncated_mul & 0xFFFFFFFF)
-            var mid = UInt32((truncated_mul >> 32) & 0xFFFFFFFF)
-            var high = UInt32((truncated_mul >> 64) & 0xFFFFFFFF)
+            var low = UInt32(truncated_prod & 0xFFFFFFFF)
+            var mid = UInt32((truncated_prod >> 32) & 0xFFFFFFFF)
+            var high = UInt32((truncated_prod >> 64) & 0xFFFFFFFF)
             return Decimal(
                 low,
                 mid,
                 high,
-                is_nagative,
+                is_negative,
                 final_scale,
             )
 
@@ -370,28 +374,28 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
         if x2_scale == 0:
             var result = x1
             result.flags &= ~Decimal.SIGN_MASK
-            if is_nagative:
+            if is_negative:
                 result.flags |= Decimal.SIGN_MASK
             return result
         else:
-            var mul = x1_coef
+            var prod = x1_coef
             # Rounding may be needed.
-            var num_digits_mul = decimojo.utility.number_of_digits(mul)
-            var num_digits_to_keep = num_digits_mul - (
+            var num_digits_prod = decimojo.utility.number_of_digits(prod)
+            var num_digits_to_keep = num_digits_prod - (
                 combined_scale - Decimal.MAX_PRECISION
             )
-            var truncated_mul = decimojo.utility.truncate_to_digits(
-                mul, num_digits_to_keep
+            var truncated_prod = decimojo.utility.truncate_to_digits(
+                prod, num_digits_to_keep
             )
             var final_scale = min(Decimal.MAX_PRECISION, combined_scale)
-            var low = UInt32(truncated_mul & 0xFFFFFFFF)
-            var mid = UInt32((truncated_mul >> 32) & 0xFFFFFFFF)
-            var high = UInt32((truncated_mul >> 64) & 0xFFFFFFFF)
+            var low = UInt32(truncated_prod & 0xFFFFFFFF)
+            var mid = UInt32((truncated_prod >> 32) & 0xFFFFFFFF)
+            var high = UInt32((truncated_prod >> 64) & 0xFFFFFFFF)
             return Decimal(
                 low,
                 mid,
                 high,
-                is_nagative,
+                is_negative,
                 final_scale,
             )
 
@@ -409,57 +413,59 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     if x1_scale == 0 and x2_scale == 0:
         # Small integers, use UInt64 multiplication
         if combined_num_bits <= 64:
-            var mul: UInt64 = UInt64(x1.low) * UInt64(x2.low)
-            var low = UInt32(mul & 0xFFFFFFFF)
-            var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
-            return Decimal(low, mid, 0, is_nagative, 0)
+            var prod: UInt64 = UInt64(x1.low) * UInt64(x2.low)
+            var low = UInt32(prod & 0xFFFFFFFF)
+            var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
+            return Decimal(low, mid, 0, is_negative, 0)
 
         # Moderate integers, use UInt128 multiplication
         elif combined_num_bits <= 128:
-            var mul: UInt128 = UInt128(x1_coef) * UInt128(x2_coef)
-            var low = UInt32(mul & 0xFFFFFFFF)
-            var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
-            var high = UInt32((mul >> 64) & 0xFFFFFFFF)
-            return Decimal(low, mid, high, is_nagative, 0)
+            var prod: UInt128 = UInt128(x1_coef) * UInt128(x2_coef)
+            var low = UInt32(prod & 0xFFFFFFFF)
+            var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
+            var high = UInt32((prod >> 64) & 0xFFFFFFFF)
+            return Decimal(low, mid, high, is_negative, 0)
 
         # Large integers, use UInt256 multiplication
         else:
-            var mul: UInt256 = UInt256(x1_coef) * UInt256(x2_coef)
-            if mul > Decimal.MAX_AS_UINT256:
-                raise Error("Error in `multiply()`: Decimal overflow")
+            var prod: UInt256 = UInt256(x1_coef) * UInt256(x2_coef)
+            if prod > Decimal.MAX_AS_UINT256:
+                raise Error("Error in `prodtiply()`: Decimal overflow")
             else:
-                var low = UInt32(mul & 0xFFFFFFFF)
-                var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
-                var high = UInt32((mul >> 64) & 0xFFFFFFFF)
-                return Decimal(low, mid, high, is_nagative, 0)
+                var low = UInt32(prod & 0xFFFFFFFF)
+                var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
+                var high = UInt32((prod >> 64) & 0xFFFFFFFF)
+                return Decimal(low, mid, high, is_negative, 0)
 
     # SPECIAL CASE: Both operands are integers but with scales
     # Examples: 123.0 * 456.00
     if x1.is_integer() and x2.is_integer():
         var x1_integral_part = x1_coef // (UInt128(10) ** UInt128(x1_scale))
         var x2_integral_part = x2_coef // (UInt128(10) ** UInt128(x2_scale))
-        var mul: UInt256 = UInt256(x1_integral_part) * UInt256(x2_integral_part)
-        if mul > Decimal.MAX_AS_UINT256:
+        var prod: UInt256 = UInt256(x1_integral_part) * UInt256(
+            x2_integral_part
+        )
+        if prod > Decimal.MAX_AS_UINT256:
             raise Error("Error in `multiply()`: Decimal overflow")
         else:
-            var num_digits = decimojo.utility.number_of_digits(mul)
+            var num_digits = decimojo.utility.number_of_digits(prod)
             var final_scale = min(
                 Decimal.MAX_VALUE_DIGITS - num_digits, combined_scale
             )
             # Scale up before it overflows
-            mul = mul * 10**final_scale
-            if mul > Decimal.MAX_AS_UINT256:
-                mul = mul // 10
+            prod = prod * 10**final_scale
+            if prod > Decimal.MAX_AS_UINT256:
+                prod = prod // 10
                 final_scale -= 1
 
-            var low = UInt32(mul & 0xFFFFFFFF)
-            var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
-            var high = UInt32((mul >> 64) & 0xFFFFFFFF)
+            var low = UInt32(prod & 0xFFFFFFFF)
+            var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
+            var high = UInt32((prod >> 64) & 0xFFFFFFFF)
             return Decimal(
                 low,
                 mid,
                 high,
-                is_nagative,
+                is_negative,
                 final_scale,
             )
 
@@ -471,27 +477,27 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     # Result coefficient will less than 2^96 - 1 = 79228162514264337593543950335
     # Examples: 1.23 * 4.56
     if combined_num_bits <= 96:
-        var mul: UInt128 = x1_coef * x2_coef
+        var prod: UInt128 = x1_coef * x2_coef
 
         # Combined scale more than max precision, no need to truncate
         if combined_scale <= Decimal.MAX_PRECISION:
-            var low = UInt32(mul & 0xFFFFFFFF)
-            var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
-            var high = UInt32((mul >> 64) & 0xFFFFFFFF)
-            return Decimal(low, mid, high, is_nagative, combined_scale)
+            var low = UInt32(prod & 0xFFFFFFFF)
+            var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
+            var high = UInt32((prod >> 64) & 0xFFFFFFFF)
+            return Decimal(low, mid, high, is_negative, combined_scale)
 
         # Combined scale no more than max precision, truncate with rounding
         else:
-            var num_digits = decimojo.utility.number_of_digits(mul)
+            var num_digits = decimojo.utility.number_of_digits(prod)
             var num_digits_to_keep = num_digits - (
                 combined_scale - Decimal.MAX_PRECISION
             )
-            mul = decimojo.utility.truncate_to_digits(mul, num_digits_to_keep)
+            prod = decimojo.utility.truncate_to_digits(prod, num_digits_to_keep)
             var final_scale = min(Decimal.MAX_PRECISION, combined_scale)
-            var low = UInt32(mul & 0xFFFFFFFF)
-            var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
-            var high = UInt32((mul >> 64) & 0xFFFFFFFF)
-            return Decimal(low, mid, high, is_nagative, final_scale)
+            var low = UInt32(prod & 0xFFFFFFFF)
+            var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
+            var high = UInt32((prod >> 64) & 0xFFFFFFFF)
+            return Decimal(low, mid, high, is_negative, final_scale)
 
     # SUB-CASE: Both operands are moderate
     # The bits of the product will not exceed 128 bits
@@ -500,19 +506,19 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     # Either raises an error if intergral part overflows
     # Or truncates the product to fit into Decimal's capacity
     if combined_num_bits <= 128:
-        var mul: UInt128 = x1_coef * x2_coef
+        var prod: UInt128 = x1_coef * x2_coef
 
         # Check outflow
         # The number of digits of the integral part
         var num_digits_of_integral_part = decimojo.utility.number_of_digits(
-            mul
+            prod
         ) - combined_scale
         # Truncated first 29 digits
-        var truncated_mul_at_max_length = decimojo.utility.truncate_to_digits(
-            mul, Decimal.MAX_VALUE_DIGITS
+        var truncated_prod_at_max_length = decimojo.utility.truncate_to_digits(
+            prod, Decimal.MAX_VALUE_DIGITS
         )
         if (num_digits_of_integral_part >= Decimal.MAX_VALUE_DIGITS) & (
-            truncated_mul_at_max_length > Decimal.MAX_AS_UINT128
+            truncated_prod_at_max_length > Decimal.MAX_AS_UINT128
         ):
             raise Error("Error in `multiply()`: Decimal overflow")
 
@@ -525,22 +531,22 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
         # If the first 29 digits exceed the limit,
         # we need to adjust the num_digits_of_decimal_part by -1
         # so that the final coefficient will be of 28 digits.
-        if truncated_mul_at_max_length > Decimal.MAX_AS_UINT128:
+        if truncated_prod_at_max_length > Decimal.MAX_AS_UINT128:
             num_digits_of_decimal_part -= 1
-            mul = decimojo.utility.truncate_to_digits(
-                mul, Decimal.MAX_VALUE_DIGITS - 1
+            prod = decimojo.utility.truncate_to_digits(
+                prod, Decimal.MAX_VALUE_DIGITS - 1
             )
         else:
-            mul = truncated_mul_at_max_length
+            prod = truncated_prod_at_max_length
 
-        # I think combined_scale should always be smaller
+        # Yuhao's notes: I think combined_scale should always be smaller
         var final_scale = min(num_digits_of_decimal_part, combined_scale)
 
         # Extract the 32-bit components from the UInt128 product
-        var low = UInt32(mul & 0xFFFFFFFF)
-        var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
-        var high = UInt32((mul >> 64) & 0xFFFFFFFF)
-        return Decimal(low, mid, high, is_nagative, final_scale)
+        var low = UInt32(prod & 0xFFFFFFFF)
+        var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
+        var high = UInt32((prod >> 64) & 0xFFFFFFFF)
+        return Decimal(low, mid, high, is_negative, final_scale)
 
     # REMAINING CASES: Both operands are big
     # The bits of the product will not exceed 192 bits
@@ -548,20 +554,20 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     # IMPORTANT: This means that the product will exceed Decimal's capacity
     # Either raises an error if intergral part overflows
     # Or truncates the product to fit into Decimal's capacity
-    var mul: UInt256 = UInt256(x1_coef) * UInt256(x2_coef)
+    var prod: UInt256 = UInt256(x1_coef) * UInt256(x2_coef)
 
     # Check outflow
     # The number of digits of the integral part
     var num_digits_of_integral_part = decimojo.utility.number_of_digits(
-        mul
+        prod
     ) - combined_scale
     # Truncated first 29 digits
-    var truncated_mul_at_max_length = decimojo.utility.truncate_to_digits(
-        mul, Decimal.MAX_VALUE_DIGITS
+    var truncated_prod_at_max_length = decimojo.utility.truncate_to_digits(
+        prod, Decimal.MAX_VALUE_DIGITS
     )
     # Check for overflow of the integral part after rounding
     if (num_digits_of_integral_part >= Decimal.MAX_VALUE_DIGITS) & (
-        truncated_mul_at_max_length > Decimal.MAX_AS_UINT256
+        truncated_prod_at_max_length > Decimal.MAX_AS_UINT256
     ):
         raise Error("Error in `multiply()`: Decimal overflow")
 
@@ -574,29 +580,29 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     # If the first 29 digits exceed the limit,
     # we need to adjust the num_digits_of_decimal_part by -1
     # so that the final coefficient will be of 28 digits.
-    if truncated_mul_at_max_length > Decimal.MAX_AS_UINT256:
+    if truncated_prod_at_max_length > Decimal.MAX_AS_UINT256:
         num_digits_of_decimal_part -= 1
-        mul = decimojo.utility.truncate_to_digits(
-            mul, Decimal.MAX_VALUE_DIGITS - 1
+        prod = decimojo.utility.truncate_to_digits(
+            prod, Decimal.MAX_VALUE_DIGITS - 1
         )
     else:
-        mul = truncated_mul_at_max_length
+        prod = truncated_prod_at_max_length
 
     # I think combined_scale should always be smaller
     final_scale = min(num_digits_of_decimal_part, combined_scale)
 
     # Extract the 32-bit components from the UInt256 product
-    var low = UInt32(mul & 0xFFFFFFFF)
-    var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
-    var high = UInt32((mul >> 64) & 0xFFFFFFFF)
+    var low = UInt32(prod & 0xFFFFFFFF)
+    var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
+    var high = UInt32((prod >> 64) & 0xFFFFFFFF)
 
-    return Decimal(low, mid, high, is_nagative, final_scale)
+    return Decimal(low, mid, high, is_negative, final_scale)
 
 
 fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
     """
     Divides x1 by x2 and returns a new Decimal containing the quotient.
-    Uses a simpler string-based long division approach.
+    Uses a simpler string-based long division approach as fallback.
 
     Args:
         x1: The dividend.
@@ -609,11 +615,25 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
         Error: If x2 is zero.
     """
 
+    # print("----------------------------------------")
+    # print("DEBUG divide()")
+    # print("DEBUG: x1", x1)
+    # print("DEBUG: x2", x2)
+
+    # Treatment for special cases
+    # 對各類特殊情況進行處理
+
+    # SPECIAL CASE: zero divisor
+    # 特例: 除數爲零
     # Check for division by zero
     if x2.is_zero():
         raise Error("Error in `__truediv__`: Division by zero")
 
-    # Special case: if dividend is zero, return zero with appropriate scale
+    # SPECIAL CASE: zero dividend
+    # If dividend is zero, return zero with appropriate scale
+    # The final scale is the (scale 1 - scale 2) floored to 0
+    # For example, 0.000 / 1234.0 = 0.00
+    # For example, 0.00 / 1.3456 = 0
     if x1.is_zero():
         var result = Decimal.ZERO()
         var result_scale = max(0, x1.scale() - x2.scale())
@@ -622,152 +642,361 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
         )
         return result
 
-    # If dividing identical numbers, return 1
-    if (
-        x1.low == x2.low
-        and x1.mid == x2.mid
-        and x1.high == x2.high
-        and x1.scale() == x2.scale()
-    ):
-        return Decimal.ONE()
+    var x1_coef = x1.coefficient()
+    var x2_coef = x2.coefficient()
+    var x1_scale = x1.scale()
+    var x2_scale = x2.scale()
+    var diff_scale = x1_scale - x2_scale
+    var is_negative = x1.is_negative() != x2.is_negative()
 
-    # Determine sign of result (positive if signs are the same, negative otherwise)
-    var result_is_negative = x1.is_negative() != x2.is_negative()
+    # SPECIAL CASE: one dividend or coefficient of dividend is one
+    # 特例: 除數爲一或者除數的係數爲一
+    # Return divisor with appropriate scale and sign
+    # For example, 1.412 / 1 = 1.412
+    # For example, 10.123 / 0.0001 = 101230
+    # For example, 1991.10180000 / 0.01 = 199110.180000
+    if x2_coef == 1:
+        # SUB-CASE: divisor is 1
+        # If divisor is 1, return dividend with correct sign
+        if x2_scale == 0:
+            return Decimal(x1.low, x1.mid, x1.high, is_negative, x1_scale)
 
-    # Get coefficients as strings (absolute values)
-    var dividend_coef = String(x1.coefficient())
-    var divisor_coef = String(x2.coefficient())
+        # SUB-CASE: divisor is of coefficient 1 with positive scale
+        # diff_scale > 0, then final scale is diff_scale
+        elif diff_scale > 0:
+            return Decimal(x1.low, x1.mid, x1.high, is_negative, diff_scale)
 
-    # Use string-based division to avoid overflow with large numbers
-
-    # Determine precision needed for calculation
-    var working_precision = Decimal.MAX_VALUE_DIGITS + 1  # +1 for potential rounding
-
-    # Perform long division algorithm
-    var quotient = String("")
-    var remainder = String("")
-    var digit = 0
-    var current_pos = 0
-    var processed_all_dividend = False
-    var number_of_significant_digits_of_quotient = 0
-
-    while number_of_significant_digits_of_quotient < working_precision:
-        # Grab next digit from dividend if available
-        if current_pos < len(dividend_coef):
-            remainder += dividend_coef[current_pos]
-            current_pos += 1
+        # diff_scale < 0, then times 10 ** (-diff_scale)
         else:
-            # If we've processed all dividend digits, add a zero
-            if not processed_all_dividend:
-                processed_all_dividend = True
-            remainder += "0"
+            # print("DEBUG: x1_coef", x1_coef)
+            # print("DEBUG: x1_scale", x1_scale)
+            # print("DEBUG: x2_coef", x2_coef)
+            # print("DEBUG: x2_scale", x2_scale)
+            # print("DEBUG: diff_scale", diff_scale)
 
-        # Remove leading zeros from remainder for cleaner comparison
-        var remainder_start = 0
-        while (
-            remainder_start < len(remainder) - 1
-            and remainder[remainder_start] == "0"
-        ):
-            remainder_start += 1
-        remainder = remainder[remainder_start:]
+            # If the result can be stored in UInt128
+            if (
+                decimojo.utility.number_of_digits(x1_coef) - diff_scale
+                < Decimal.MAX_VALUE_DIGITS
+            ):
+                var quot = x1_coef * UInt128(10) ** (-diff_scale)
+                # print("DEBUG: quot", quot)
+                var low = UInt32(quot & 0xFFFFFFFF)
+                var mid = UInt32((quot >> 32) & 0xFFFFFFFF)
+                var high = UInt32((quot >> 64) & 0xFFFFFFFF)
+                return Decimal(low, mid, high, is_negative, 0)
 
-        # Compare remainder with divisor to determine next quotient digit
-        digit = 0
-        var can_subtract = False
-
-        # Check if remainder >= divisor_coef
-        if len(remainder) > len(divisor_coef) or (
-            len(remainder) == len(divisor_coef) and remainder >= divisor_coef
-        ):
-            can_subtract = True
-
-        if can_subtract:
-            # Find how many times divisor goes into remainder
-            while True:
-                # Try to subtract divisor from remainder
-                var new_remainder = _subtract_strings(remainder, divisor_coef)
-                if (
-                    new_remainder[0] == "-"
-                ):  # Negative result means we've gone too far
-                    break
-                remainder = new_remainder
-                digit += 1
-
-        # Add digit to quotient
-        quotient += String(digit)
-        number_of_significant_digits_of_quotient = len(
-            decimojo.str._remove_leading_zeros(quotient)
-        )
-
-    # Check if division is exact
-    var is_exact = remainder == "0" and current_pos >= len(dividend_coef)
-
-    # Remove leading zeros
-    var leading_zeros = 0
-    for i in range(len(quotient)):
-        if quotient[i] == "0":
-            leading_zeros += 1
-        else:
-            break
-
-    if leading_zeros == len(quotient):
-        # All zeros, keep just one
-        quotient = "0"
-    elif leading_zeros > 0:
-        quotient = quotient[leading_zeros:]
-
-    # Handle trailing zeros for exact division
-    var trailing_zeros = 0
-    if is_exact and len(quotient) > 1:  # Don't remove single digit
-        for i in range(len(quotient) - 1, 0, -1):
-            if quotient[i] == "0":
-                trailing_zeros += 1
+            # If the result should be stored in UInt256
             else:
-                break
+                var quot = UInt256(x1_coef) * UInt256(10) ** (-diff_scale)
+                # print("DEBUG: quot", quot)
+                if quot > Decimal.MAX_AS_UINT256:
+                    raise Error("Error in `true_divide()`: Decimal overflow")
+                else:
+                    var low = UInt32(quot & 0xFFFFFFFF)
+                    var mid = UInt32((quot >> 32) & 0xFFFFFFFF)
+                    var high = UInt32((quot >> 64) & 0xFFFFFFFF)
+                    return Decimal(low, mid, high, is_negative, 0)
 
-        if trailing_zeros > 0:
-            quotient = quotient[: len(quotient) - trailing_zeros]
+    # SPECIAL CASE: The coefficients are equal
+    # 特例: 係數相等
+    # For example, 1234.5678 / 1234.5678 = 1.0000
+    # Return 1 with appropriate scale and sign
+    if x1_coef == x2_coef:
+        # SUB-CASE: The scales are equal
+        # If the scales are equal, return 1 with the scale of 0
+        # For example, 1234.5678 / 1234.5678 = 1
+        # SUB-CASE: The scales are positive
+        # If the scales are positive, return 1 with the difference in scales
+        # For example, 0.1234 / 1234 = 0.0001
+        if diff_scale >= 0:
+            return Decimal(1, 0, 0, is_negative, diff_scale)
 
-    # Calculate decimal point position
-    var dividend_scientific_exponent = x1.scientific_exponent()
-    var divisor_scientific_exponent = x2.scientific_exponent()
-    var result_scientific_exponent = dividend_scientific_exponent - divisor_scientific_exponent
+        # SUB-CASE: The scales are negative
+        # diff_scale < 0, then times 1e-diff_scale
+        # For example, 1234 / 0.1234 = 10000
+        # Since -diff_scale is less than 28, the result would not overflow
+        else:
+            var quot = UInt128(1) * UInt128(10) ** (-diff_scale)
+            var low = UInt32(quot & 0xFFFFFFFF)
+            var mid = UInt32((quot >> 32) & 0xFFFFFFFF)
+            var high = UInt32((quot >> 64) & 0xFFFFFFFF)
+            return Decimal(low, mid, high, is_negative, 0)
 
-    if decimojo.str._remove_trailing_zeros(
-        dividend_coef
-    ) < decimojo.str._remove_trailing_zeros(divisor_coef):
-        # If dividend < divisor, result < 1
-        result_scientific_exponent -= 1
+    # SPECIAL CASE: Modulus of coefficients is zero (exact division)
+    # 特例: 係數的餘數爲零 (可除盡)
+    # For example, 32 / 2 = 16
+    # For example, 18.00 / 3.0 = 6.0
+    # For example, 123456780000 / 1000 = 123456780
+    # For example, 246824.68 / 12.341234 = 20000
+    if x1_coef % x2_coef == 0:
+        if diff_scale >= 0:
+            # If diff_scale >= 0, return the quotient with diff_scale
+            # Yuhao's notes:
+            # Because the dividor == 1 has been handled before dividor shoud be greater than 1
+            # High will be zero because the quotient is less than 2^48
+            # For safety, we still calcuate the high word
+            var quot = x1_coef // x2_coef
+            var low = UInt32(quot & 0xFFFFFFFF)
+            var mid = UInt32((quot >> 32) & 0xFFFFFFFF)
+            var high = UInt32((quot >> 64) & 0xFFFFFFFF)
+            return Decimal(low, mid, high, is_negative, diff_scale)
 
-    var decimal_pos = result_scientific_exponent + 1
+        else:
+            # If diff_scale < 0, return the quotient with scaling up
+            # Posibly overflow, so we need to check
 
-    # Format result with decimal point
-    var result_str = String("")
+            var quot = x1_coef // x2_coef
 
-    if decimal_pos <= 0:
-        # decimal_pos <= 0, needs leading zeros
-        # For example, decimal_pos = -1
-        # 1234 -> 0.1234
-        result_str = "0." + "0" * (-decimal_pos) + quotient
-    elif decimal_pos >= len(quotient):
-        # All digits are to the left of the decimal point
-        # For example, decimal_pos = 5
-        # 1234 -> 12340
-        result_str = quotient + "0" * (decimal_pos - len(quotient))
+            # If the result can be stored in UInt128
+            if (
+                decimojo.utility.number_of_digits(quot) - diff_scale
+                < Decimal.MAX_VALUE_DIGITS
+            ):
+                var quot = quot * UInt128(10) ** (-diff_scale)
+                var low = UInt32(quot & 0xFFFFFFFF)
+                var mid = UInt32((quot >> 32) & 0xFFFFFFFF)
+                var high = UInt32((quot >> 64) & 0xFFFFFFFF)
+                return Decimal(low, mid, high, is_negative, 0)
+
+            # If the result should be stored in UInt256
+            else:
+                var quot = UInt256(quot) * UInt256(10) ** (-diff_scale)
+                if quot > Decimal.MAX_AS_UINT256:
+                    raise Error("Error in `true_divide()`: Decimal overflow")
+                else:
+                    var low = UInt32(quot & 0xFFFFFFFF)
+                    var mid = UInt32((quot >> 32) & 0xFFFFFFFF)
+                    var high = UInt32((quot >> 64) & 0xFFFFFFFF)
+                    return Decimal(low, mid, high, is_negative, 0)
+
+    # REMAINING CASES: Perform long division
+    # 其他情況: 進行長除法
+    #
+    # Example: 123456.789 / 12.8 = 964506.1640625
+    # x1_coef = 123456789, x2_coef = 128
+    # x1_scale = 3, x2_scale = 1, diff_scale = 2
+    # Step 0: 123456789 // 128 -> quot = 964506, rem = 21
+    # Step 1: (21 * 10) // 128 -> quot = 1, rem = 82
+    # Step 2: (82 * 10) // 128 -> quot = 6, rem = 52
+    # Step 3: (52 * 10) // 128 -> quot = 4, rem = 8
+    # Step 4: (8 * 10) // 128 -> quot = 0, rem = 80
+    # Step 5: (80 * 10) // 128 -> quot = 6, rem = 32
+    # Step 6: (32 * 10) // 128 -> quot = 2, rem = 64
+    # Step 7: (64 * 10) // 128 -> quot = 5, rem = 0
+    # Result: 9645061640625 with scale 9 (= step_counter + diff_scale)
+    #
+    # Example: 12345678.9 / 1.28 = 9645061.640625
+    # x1_coef = 123456789, x2_coef = 128
+    # x1_scale = 1, x2_scale = 2, diff_scale = -1
+    # Result: 9645061640625 with scale 6 (= step_counter + diff_scale)
+    #
+    # Long division algorithm
+    # Stop when remainder is zero or precision is reached or the optimal number of steps is reached
+    #
+    # Yuhao's notes: How to determine the optimal number of steps?
+    # First, we need to consider that the max scale (precision) is 28
+    # Second, we need to consider the significant digits of the quotient
+    # EXAMPLE: 1 / 1.1111111111111111111111111111 ~= 0.900000000000000000000000000090
+    # If we only consider the precision, we just need 28 steps
+    # Then quotient of coefficients would be zeros
+    # Approach 1: The optimal number of steps should be approximately
+    #             max_len - diff_digits - digits_of_first_quotient + 1
+    # Approach 2: Times 10**(-diff_digits) to the dividend and then perform the long division
+    #             The number of steps is set to be max_len - digits_of_first_quotient + 1
+    #             so that we just need to scale up one than loop -diff_digits times
+    #
+    # Get intitial quotient and remainder
+    # Yuhao's notes: remainder should be positive beacuse the previous cases have been handled
+    # 朱宇浩注: 餘數應該爲正,因爲之前的特例已經處理過了
+
+    var x1_number_of_digits = decimojo.utility.number_of_digits(x1_coef)
+    var x2_number_of_digits = decimojo.utility.number_of_digits(x2_coef)
+    var diff_digits = x1_number_of_digits - x2_number_of_digits
+    # Here is an estimation of the maximum possible number of digits of the quotient's integral part
+    # If it is higher than 28, we need to use UInt256 to store the quotient
+    var est_max_num_of_digits_of_quot_int_part = diff_digits - diff_scale + 1
+    var is_use_uint128 = est_max_num_of_digits_of_quot_int_part < Decimal.MAX_VALUE_DIGITS
+
+    # SUB-CASE: Use UInt128 to store the quotient
+    # If the quotient's integral part is less than 28 digits, we can use UInt128
+    # if is_use_uint128:
+    var quot: UInt128
+    var rem: UInt128
+    var ajusted_scale = 0
+
+    # The adjusted dividend coefficient will not exceed 2^96 - 1
+    if diff_digits < 0:
+        var adjusted_x1_coef = x1_coef * UInt128(10) ** (-diff_digits)
+        quot = adjusted_x1_coef // x2_coef
+        rem = adjusted_x1_coef % x2_coef
+        ajusted_scale = -diff_digits
     else:
-        # Insert decimal point within the digits
-        # For example, decimal_pos = 2
-        # 1234 -> 12.34
-        result_str = quotient[:decimal_pos] + "." + quotient[decimal_pos:]
+        quot = x1_coef // x2_coef
+        rem = x1_coef % x2_coef
 
-    # Apply sign
-    if result_is_negative and result_str != "0":
-        result_str = "-" + result_str
+    if is_use_uint128:
+        # Maximum number of steps is MAX_VALUE_DIGITS - num_digits_first_quot + 1
+        # num_digis_first_quot is the number of digits of the quotient before using long division
+        # The extra digit is used for rounding up when it is 5 and not exact division
+        # 最大步數加一,用於捨去項爲5且非精確相除時向上捨去
 
-    # Convert to Decimal and return
-    var result = Decimal(result_str)
+        # digit is the tempory quotient digit
+        var digit = UInt128(0)
+        # The final step counter stands for the number of dicimal points
+        var step_counter = 0
+        var num_digits_first_quot = decimojo.utility.number_of_digits(quot)
+        while (rem != 0) and (
+            step_counter
+            < (Decimal.MAX_VALUE_DIGITS - num_digits_first_quot + 1)
+        ):
+            # Multiply remainder by 10
+            rem *= 10
+            # Calculate next quotient digit
+            digit = rem // x2_coef
+            quot = quot * 10 + digit
+            # Calculate new remainder
+            rem = rem % x2_coef
+            # Increment step counter
+            step_counter += 1
+            # Check if division is exact
 
-    return result
+        # Yuhao's notes: When the remainder is non-zero at the end and the the digit to round is 5
+        # we always round up, even if the rounding mode is round half to even
+        # 朱宇浩注: 捨去項爲5時,其後方的數字可能會影響捨去項,但後方數字可能是無限位,所以無法確定
+        # 比如: 1.0000000000000000000000000000_5 可能是 1.0000000000000000000000000000_5{100 zeros}1
+        # 但我們只能算到 1.0000000000000000000000000000_5,
+        # 在銀行家捨去法中,我們將捨去項爲5時,向上捨去, 保留28位後爲1.0000000000000000000000000000
+        # 這樣的捨去法是不準確的,所以我們一律在到達餘數非零且捨去項爲5時,向上捨去
+        var is_exact_division: Bool = False
+        if rem == 0:
+            is_exact_division = True
+        else:
+            if digit == 5:
+                # Not exact division, round up the last digit
+                quot += 1
+
+        var scale_of_quot = step_counter + diff_scale + ajusted_scale
+        # If the scale is negative, we need to scale up the quotient
+        if scale_of_quot < 0:
+            quot = quot * UInt128(10) ** (-scale_of_quot)
+            scale_of_quot = 0
+        var number_of_digits_quot = decimojo.utility.number_of_digits(quot)
+        var number_of_digits_quot_int_part = number_of_digits_quot - scale_of_quot
+
+        # If quot is within MAX, return the result
+        if quot <= Decimal.MAX_AS_UINT128:
+            var low = UInt32(quot & 0xFFFFFFFF)
+            var mid = UInt32((quot >> 32) & 0xFFFFFFFF)
+            var high = UInt32((quot >> 64) & 0xFFFFFFFF)
+            return Decimal(low, mid, high, is_negative, scale_of_quot)
+
+        # Otherwise, we need to truncate the first 29 or 28 digits
+        else:
+            var truncated_quot = decimojo.utility.truncate_to_digits(
+                quot, Decimal.MAX_VALUE_DIGITS
+            )
+            var scale_of_truncated_quot = (
+                Decimal.MAX_VALUE_DIGITS - number_of_digits_quot_int_part
+            )
+            if truncated_quot > Decimal.MAX_AS_UINT128:
+                truncated_quot = decimojo.utility.truncate_to_digits(
+                    quot, Decimal.MAX_VALUE_DIGITS - 1
+                )
+                scale_of_truncated_quot -= 1
+
+            var low = UInt32(truncated_quot & 0xFFFFFFFF)
+            var mid = UInt32((truncated_quot >> 32) & 0xFFFFFFFF)
+            var high = UInt32((truncated_quot >> 64) & 0xFFFFFFFF)
+
+            return Decimal(low, mid, high, is_negative, scale_of_truncated_quot)
+
+    # SUB-CASE: Use UInt256 to store the quotient
+    # Also the FALLBACK approach for the remaining cases
+    # If the quotient's integral part is possibly more than 28 digits, we use UInt256
+    # It is almost the same also the case above, so we just use the same code
+
+    else:
+        # Maximum number of steps is MAX_VALUE_DIGITS - num_digits_first_quot + 1
+        # The extra digit is used for rounding up when it is 5 and not exact division
+        # 最大步數加一,用於捨去項爲5且非精確相除時向上捨去
+
+        var quot256: UInt256 = UInt256(quot)
+        var rem256: UInt256 = UInt256(rem)
+        # digit is the tempory quotient digit
+        var digit = UInt256(0)
+        # The final step counter stands for the number of dicimal points
+        var step_counter = 0
+        var num_digits_first_quot = decimojo.utility.number_of_digits(quot256)
+        while (rem256 != 0) and (
+            step_counter
+            < (Decimal.MAX_VALUE_DIGITS - num_digits_first_quot + 1)
+        ):
+            # Multiply remainder by 10
+            rem256 *= 10
+            # Calculate next quotient digit
+            digit = rem256 // UInt256(x2_coef)
+            quot256 = quot256 * 10 + digit
+            # Calculate new remainder
+            rem256 = rem256 % UInt256(x2_coef)
+            # Increment step counter
+            step_counter += 1
+            # Check if division is exact
+
+        var is_exact_division: Bool = False
+        if rem256 == 0:
+            is_exact_division = True
+        else:
+            if digit == 5:
+                # Not exact division, round up the last digit
+                quot256 += 1
+
+        var scale_of_quot = step_counter + diff_scale + ajusted_scale
+        # If the scale is negative, we need to scale up the quotient
+        if scale_of_quot < 0:
+            quot256 = quot256 * UInt256(10) ** (-scale_of_quot)
+            scale_of_quot = 0
+        var number_of_digits_quot = decimojo.utility.number_of_digits(quot256)
+        var number_of_digits_quot_int_part = number_of_digits_quot - scale_of_quot
+
+        # If quot is within MAX, return the result
+        if quot256 <= Decimal.MAX_AS_UINT256:
+            var low = UInt32(quot256 & 0xFFFFFFFF)
+            var mid = UInt32((quot256 >> 32) & 0xFFFFFFFF)
+            var high = UInt32((quot256 >> 64) & 0xFFFFFFFF)
+            return Decimal(low, mid, high, is_negative, scale_of_quot)
+
+        # Otherwise, we need to truncate the first 29 or 28 digits
+        else:
+            var truncated_quot = decimojo.utility.truncate_to_digits(
+                quot256, Decimal.MAX_VALUE_DIGITS
+            )
+
+            # If integer part of quot is more than max, raise error
+            if (number_of_digits_quot_int_part > Decimal.MAX_VALUE_DIGITS) or (
+                (number_of_digits_quot_int_part == Decimal.MAX_VALUE_DIGITS)
+                and (truncated_quot > Decimal.MAX_AS_UINT256)
+            ):
+                raise Error("Error in `true_divide()`: Decimal overflow")
+
+            var scale_of_truncated_quot = (
+                Decimal.MAX_VALUE_DIGITS - number_of_digits_quot_int_part
+            )
+
+            if truncated_quot > Decimal.MAX_AS_UINT256:
+                truncated_quot = decimojo.utility.truncate_to_digits(
+                    quot256, Decimal.MAX_VALUE_DIGITS - 1
+                )
+                scale_of_truncated_quot -= 1
+
+            print("DEBUG: truncated_quot", truncated_quot)
+            print("DEBUG: scale_of_truncated_quot", scale_of_truncated_quot)
+
+            var low = UInt32(truncated_quot & 0xFFFFFFFF)
+            var mid = UInt32((truncated_quot >> 32) & 0xFFFFFFFF)
+            var high = UInt32((truncated_quot >> 64) & 0xFFFFFFFF)
+
+            return Decimal(low, mid, high, is_negative, scale_of_truncated_quot)
 
 
 fn power(base: Decimal, exponent: Decimal) raises -> Decimal:
@@ -899,10 +1128,6 @@ fn sqrt(x: Decimal) raises -> Decimal:
     if x == Decimal.ONE():
         return Decimal.ONE()
 
-    # Working precision - we'll compute with extra digits and round at the end
-    var working_precision = UInt32(x.scale() * 2)
-    working_precision = max(working_precision, UInt32(10))  # At least 10 digits
-
     # Initial guess - a good guess helps converge faster
     # For numbers near 1, use the number itself
     # For very small or large numbers, scale appropriately
@@ -943,6 +1168,11 @@ fn sqrt(x: Decimal) raises -> Decimal:
     var max_iterations = 100  # Prevent infinite loops
 
     while guess != prev_guess and iteration_count < max_iterations:
+        # print("------------------------------------------------------")
+        # print("DEBUG: iteration_count", iteration_count)
+        # print("DEBUG: prev_guess", prev_guess)
+        # print("DEBUG: guess", guess)
+
         prev_guess = guess
 
         try:
@@ -954,70 +1184,20 @@ fn sqrt(x: Decimal) raises -> Decimal:
 
         iteration_count += 1
 
-    # Round to appropriate precision - typically half the working precision
-    var result_precision = x.scale()
-    if result_precision % 2 == 1:
-        # For odd scales, add 1 to ensure proper rounding
-        result_precision += 1
-
-    # The result scale should be approximately half the input scale
-    result_precision = result_precision // 2
-
-    # Format to the appropriate number of decimal places
-    var result_str = String(guess)
-
-    try:
-        var rounded_result = Decimal(result_str)
-        return rounded_result
-    except e:
-        raise e
-
-
-fn _subtract_strings(a: String, b: String) -> String:
-    """
-    Subtracts string b from string a and returns the result as a string.
-    The input strings must be integers.
-
-    Args:
-        a: The string to subtract from. Must be an integer.
-        b: The string to subtract. Must be an integer.
-
-    Returns:
-        A string containing the result of the subtraction.
-    """
-
-    # Ensure a is longer or equal to b by padding with zeros
-    var a_padded = a
-    var b_padded = b
-
-    if len(a) < len(b):
-        a_padded = "0" * (len(b) - len(a)) + a
-    elif len(b) < len(a):
-        b_padded = "0" * (len(a) - len(b)) + b
-
-    var result = String("")
-    var borrow = 0
-
-    # Perform subtraction digit by digit from right to left
-    for i in range(len(a_padded) - 1, -1, -1):
-        var digit_a = ord(a_padded[i]) - ord("0")
-        var digit_b = ord(b_padded[i]) - ord("0") + borrow
-
-        if digit_a < digit_b:
-            digit_a += 10
-            borrow = 1
+    # If exact square root found
+    # Remove trailing zeros after the decimal point
+    var guess_coef = guess.coefficient()
+    var count = 0
+    for _ in range(guess.scale()):
+        if guess_coef % 10 == 0:
+            guess_coef //= 10
+            count += 1
         else:
-            borrow = 0
+            break
+    if guess_coef * guess_coef == x.coefficient():
+        var low = UInt32(guess_coef & 0xFFFFFFFF)
+        var mid = UInt32((guess_coef >> 32) & 0xFFFFFFFF)
+        var high = UInt32((guess_coef >> 64) & 0xFFFFFFFF)
+        return Decimal(low, mid, high, False, guess.scale() - count)
 
-        result = String(digit_a - digit_b) + result
-
-    # Check if result is negative
-    if borrow > 0:
-        return "-" + result
-
-    # Remove leading zeros
-    var start_idx = 0
-    while start_idx < len(result) - 1 and result[start_idx] == "0":
-        start_idx += 1
-
-    return result[start_idx:]
+    return guess
