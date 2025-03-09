@@ -279,9 +279,7 @@ After cloning the repo onto your local disk, you can:
 - Use `magic run test` (or `maigic run t`) to run tests.
 - Use `magic run bench` (or `magic run b`) to generate logs for benchmarking tests agains `python.decimal` module. The log files are saved in `benches/logs/`.
 
-## License
-
-Distributed under the Apache 2.0 License. See [LICENSE](https://github.com/forFudan/decimojo/blob/main/LICENSE) for details.
+## Citation
 
 If you find DeciMojo useful for your research, consider listing it in your citations 😀.
 
@@ -295,3 +293,14 @@ If you find DeciMojo useful for your research, consider listing it in your citat
     note = {Computer Software}
 }
 ```
+
+## License
+
+Copyright 2025 Yuhao Zhu
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+

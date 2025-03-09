@@ -11,6 +11,10 @@
 #
 # List of functions in this module:
 #
+# add(x1: Decimal, x2: Decimal): Adds two Decimal values and returns a new Decimal containing the sum
+# subtract(x1: Decimal, x2: Decimal): Subtracts the x2 Decimal from x1 and returns a new Decimal
+# multiply(x1: Decimal, x2: Decimal): Multiplies two Decimal values and returns a new Decimal containing the product
+# true_divide(x1: Decimal, x2: Decimal): Divides x1 by x2 and returns a new Decimal containing the quotient
 # power(base: Decimal, exponent: Decimal): Raises base to the power of exponent (integer exponents only)
 # power(base: Decimal, exponent: Int): Convenience method for integer exponents
 # sqrt(x: Decimal): Computes the square root of x using Newton-Raphson method
@@ -343,19 +347,19 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
                 result.flags |= Decimal.SIGN_MASK
             return result
         else:
-            var mul = x2_coef
+            var prod = x2_coef
             # Rounding may be needed.
-            var num_digits_mul = decimojo.utility.number_of_digits(mul)
-            var num_digits_to_keep = num_digits_mul - (
+            var num_digits_prod = decimojo.utility.number_of_digits(prod)
+            var num_digits_to_keep = num_digits_prod - (
                 combined_scale - Decimal.MAX_PRECISION
             )
-            var truncated_mul = decimojo.utility.truncate_to_digits(
-                mul, num_digits_to_keep
+            var truncated_prod = decimojo.utility.truncate_to_digits(
+                prod, num_digits_to_keep
             )
             var final_scale = min(Decimal.MAX_PRECISION, combined_scale)
-            var low = UInt32(truncated_mul & 0xFFFFFFFF)
-            var mid = UInt32((truncated_mul >> 32) & 0xFFFFFFFF)
-            var high = UInt32((truncated_mul >> 64) & 0xFFFFFFFF)
+            var low = UInt32(truncated_prod & 0xFFFFFFFF)
+            var mid = UInt32((truncated_prod >> 32) & 0xFFFFFFFF)
+            var high = UInt32((truncated_prod >> 64) & 0xFFFFFFFF)
             return Decimal(
                 low,
                 mid,
@@ -374,19 +378,19 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
                 result.flags |= Decimal.SIGN_MASK
             return result
         else:
-            var mul = x1_coef
+            var prod = x1_coef
             # Rounding may be needed.
-            var num_digits_mul = decimojo.utility.number_of_digits(mul)
-            var num_digits_to_keep = num_digits_mul - (
+            var num_digits_prod = decimojo.utility.number_of_digits(prod)
+            var num_digits_to_keep = num_digits_prod - (
                 combined_scale - Decimal.MAX_PRECISION
             )
-            var truncated_mul = decimojo.utility.truncate_to_digits(
-                mul, num_digits_to_keep
+            var truncated_prod = decimojo.utility.truncate_to_digits(
+                prod, num_digits_to_keep
             )
             var final_scale = min(Decimal.MAX_PRECISION, combined_scale)
-            var low = UInt32(truncated_mul & 0xFFFFFFFF)
-            var mid = UInt32((truncated_mul >> 32) & 0xFFFFFFFF)
-            var high = UInt32((truncated_mul >> 64) & 0xFFFFFFFF)
+            var low = UInt32(truncated_prod & 0xFFFFFFFF)
+            var mid = UInt32((truncated_prod >> 32) & 0xFFFFFFFF)
+            var high = UInt32((truncated_prod >> 64) & 0xFFFFFFFF)
             return Decimal(
                 low,
                 mid,
@@ -409,28 +413,28 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     if x1_scale == 0 and x2_scale == 0:
         # Small integers, use UInt64 multiplication
         if combined_num_bits <= 64:
-            var mul: UInt64 = UInt64(x1.low) * UInt64(x2.low)
-            var low = UInt32(mul & 0xFFFFFFFF)
-            var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
+            var prod: UInt64 = UInt64(x1.low) * UInt64(x2.low)
+            var low = UInt32(prod & 0xFFFFFFFF)
+            var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
             return Decimal(low, mid, 0, is_negative, 0)
 
         # Moderate integers, use UInt128 multiplication
         elif combined_num_bits <= 128:
-            var mul: UInt128 = UInt128(x1_coef) * UInt128(x2_coef)
-            var low = UInt32(mul & 0xFFFFFFFF)
-            var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
-            var high = UInt32((mul >> 64) & 0xFFFFFFFF)
+            var prod: UInt128 = UInt128(x1_coef) * UInt128(x2_coef)
+            var low = UInt32(prod & 0xFFFFFFFF)
+            var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
+            var high = UInt32((prod >> 64) & 0xFFFFFFFF)
             return Decimal(low, mid, high, is_negative, 0)
 
         # Large integers, use UInt256 multiplication
         else:
-            var mul: UInt256 = UInt256(x1_coef) * UInt256(x2_coef)
-            if mul > Decimal.MAX_AS_UINT256:
-                raise Error("Error in `multiply()`: Decimal overflow")
+            var prod: UInt256 = UInt256(x1_coef) * UInt256(x2_coef)
+            if prod > Decimal.MAX_AS_UINT256:
+                raise Error("Error in `prodtiply()`: Decimal overflow")
             else:
-                var low = UInt32(mul & 0xFFFFFFFF)
-                var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
-                var high = UInt32((mul >> 64) & 0xFFFFFFFF)
+                var low = UInt32(prod & 0xFFFFFFFF)
+                var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
+                var high = UInt32((prod >> 64) & 0xFFFFFFFF)
                 return Decimal(low, mid, high, is_negative, 0)
 
     # SPECIAL CASE: Both operands are integers but with scales
@@ -438,23 +442,25 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     if x1.is_integer() and x2.is_integer():
         var x1_integral_part = x1_coef // (UInt128(10) ** UInt128(x1_scale))
         var x2_integral_part = x2_coef // (UInt128(10) ** UInt128(x2_scale))
-        var mul: UInt256 = UInt256(x1_integral_part) * UInt256(x2_integral_part)
-        if mul > Decimal.MAX_AS_UINT256:
+        var prod: UInt256 = UInt256(x1_integral_part) * UInt256(
+            x2_integral_part
+        )
+        if prod > Decimal.MAX_AS_UINT256:
             raise Error("Error in `multiply()`: Decimal overflow")
         else:
-            var num_digits = decimojo.utility.number_of_digits(mul)
+            var num_digits = decimojo.utility.number_of_digits(prod)
             var final_scale = min(
                 Decimal.MAX_VALUE_DIGITS - num_digits, combined_scale
             )
             # Scale up before it overflows
-            mul = mul * 10**final_scale
-            if mul > Decimal.MAX_AS_UINT256:
-                mul = mul // 10
+            prod = prod * 10**final_scale
+            if prod > Decimal.MAX_AS_UINT256:
+                prod = prod // 10
                 final_scale -= 1
 
-            var low = UInt32(mul & 0xFFFFFFFF)
-            var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
-            var high = UInt32((mul >> 64) & 0xFFFFFFFF)
+            var low = UInt32(prod & 0xFFFFFFFF)
+            var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
+            var high = UInt32((prod >> 64) & 0xFFFFFFFF)
             return Decimal(
                 low,
                 mid,
@@ -471,26 +477,26 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     # Result coefficient will less than 2^96 - 1 = 79228162514264337593543950335
     # Examples: 1.23 * 4.56
     if combined_num_bits <= 96:
-        var mul: UInt128 = x1_coef * x2_coef
+        var prod: UInt128 = x1_coef * x2_coef
 
         # Combined scale more than max precision, no need to truncate
         if combined_scale <= Decimal.MAX_PRECISION:
-            var low = UInt32(mul & 0xFFFFFFFF)
-            var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
-            var high = UInt32((mul >> 64) & 0xFFFFFFFF)
+            var low = UInt32(prod & 0xFFFFFFFF)
+            var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
+            var high = UInt32((prod >> 64) & 0xFFFFFFFF)
             return Decimal(low, mid, high, is_negative, combined_scale)
 
         # Combined scale no more than max precision, truncate with rounding
         else:
-            var num_digits = decimojo.utility.number_of_digits(mul)
+            var num_digits = decimojo.utility.number_of_digits(prod)
             var num_digits_to_keep = num_digits - (
                 combined_scale - Decimal.MAX_PRECISION
             )
-            mul = decimojo.utility.truncate_to_digits(mul, num_digits_to_keep)
+            prod = decimojo.utility.truncate_to_digits(prod, num_digits_to_keep)
             var final_scale = min(Decimal.MAX_PRECISION, combined_scale)
-            var low = UInt32(mul & 0xFFFFFFFF)
-            var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
-            var high = UInt32((mul >> 64) & 0xFFFFFFFF)
+            var low = UInt32(prod & 0xFFFFFFFF)
+            var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
+            var high = UInt32((prod >> 64) & 0xFFFFFFFF)
             return Decimal(low, mid, high, is_negative, final_scale)
 
     # SUB-CASE: Both operands are moderate
@@ -500,19 +506,19 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     # Either raises an error if intergral part overflows
     # Or truncates the product to fit into Decimal's capacity
     if combined_num_bits <= 128:
-        var mul: UInt128 = x1_coef * x2_coef
+        var prod: UInt128 = x1_coef * x2_coef
 
         # Check outflow
         # The number of digits of the integral part
         var num_digits_of_integral_part = decimojo.utility.number_of_digits(
-            mul
+            prod
         ) - combined_scale
         # Truncated first 29 digits
-        var truncated_mul_at_max_length = decimojo.utility.truncate_to_digits(
-            mul, Decimal.MAX_VALUE_DIGITS
+        var truncated_prod_at_max_length = decimojo.utility.truncate_to_digits(
+            prod, Decimal.MAX_VALUE_DIGITS
         )
         if (num_digits_of_integral_part >= Decimal.MAX_VALUE_DIGITS) & (
-            truncated_mul_at_max_length > Decimal.MAX_AS_UINT128
+            truncated_prod_at_max_length > Decimal.MAX_AS_UINT128
         ):
             raise Error("Error in `multiply()`: Decimal overflow")
 
@@ -525,21 +531,21 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
         # If the first 29 digits exceed the limit,
         # we need to adjust the num_digits_of_decimal_part by -1
         # so that the final coefficient will be of 28 digits.
-        if truncated_mul_at_max_length > Decimal.MAX_AS_UINT128:
+        if truncated_prod_at_max_length > Decimal.MAX_AS_UINT128:
             num_digits_of_decimal_part -= 1
-            mul = decimojo.utility.truncate_to_digits(
-                mul, Decimal.MAX_VALUE_DIGITS - 1
+            prod = decimojo.utility.truncate_to_digits(
+                prod, Decimal.MAX_VALUE_DIGITS - 1
             )
         else:
-            mul = truncated_mul_at_max_length
+            prod = truncated_prod_at_max_length
 
         # Yuhao's notes: I think combined_scale should always be smaller
         var final_scale = min(num_digits_of_decimal_part, combined_scale)
 
         # Extract the 32-bit components from the UInt128 product
-        var low = UInt32(mul & 0xFFFFFFFF)
-        var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
-        var high = UInt32((mul >> 64) & 0xFFFFFFFF)
+        var low = UInt32(prod & 0xFFFFFFFF)
+        var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
+        var high = UInt32((prod >> 64) & 0xFFFFFFFF)
         return Decimal(low, mid, high, is_negative, final_scale)
 
     # REMAINING CASES: Both operands are big
@@ -548,20 +554,20 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     # IMPORTANT: This means that the product will exceed Decimal's capacity
     # Either raises an error if intergral part overflows
     # Or truncates the product to fit into Decimal's capacity
-    var mul: UInt256 = UInt256(x1_coef) * UInt256(x2_coef)
+    var prod: UInt256 = UInt256(x1_coef) * UInt256(x2_coef)
 
     # Check outflow
     # The number of digits of the integral part
     var num_digits_of_integral_part = decimojo.utility.number_of_digits(
-        mul
+        prod
     ) - combined_scale
     # Truncated first 29 digits
-    var truncated_mul_at_max_length = decimojo.utility.truncate_to_digits(
-        mul, Decimal.MAX_VALUE_DIGITS
+    var truncated_prod_at_max_length = decimojo.utility.truncate_to_digits(
+        prod, Decimal.MAX_VALUE_DIGITS
     )
     # Check for overflow of the integral part after rounding
     if (num_digits_of_integral_part >= Decimal.MAX_VALUE_DIGITS) & (
-        truncated_mul_at_max_length > Decimal.MAX_AS_UINT256
+        truncated_prod_at_max_length > Decimal.MAX_AS_UINT256
     ):
         raise Error("Error in `multiply()`: Decimal overflow")
 
@@ -574,21 +580,21 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     # If the first 29 digits exceed the limit,
     # we need to adjust the num_digits_of_decimal_part by -1
     # so that the final coefficient will be of 28 digits.
-    if truncated_mul_at_max_length > Decimal.MAX_AS_UINT256:
+    if truncated_prod_at_max_length > Decimal.MAX_AS_UINT256:
         num_digits_of_decimal_part -= 1
-        mul = decimojo.utility.truncate_to_digits(
-            mul, Decimal.MAX_VALUE_DIGITS - 1
+        prod = decimojo.utility.truncate_to_digits(
+            prod, Decimal.MAX_VALUE_DIGITS - 1
         )
     else:
-        mul = truncated_mul_at_max_length
+        prod = truncated_prod_at_max_length
 
     # I think combined_scale should always be smaller
     final_scale = min(num_digits_of_decimal_part, combined_scale)
 
     # Extract the 32-bit components from the UInt256 product
-    var low = UInt32(mul & 0xFFFFFFFF)
-    var mid = UInt32((mul >> 32) & 0xFFFFFFFF)
-    var high = UInt32((mul >> 64) & 0xFFFFFFFF)
+    var low = UInt32(prod & 0xFFFFFFFF)
+    var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
+    var high = UInt32((prod >> 64) & 0xFFFFFFFF)
 
     return Decimal(low, mid, high, is_negative, final_scale)
 
@@ -706,7 +712,7 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
             var high = UInt32((quot >> 64) & 0xFFFFFFFF)
             return Decimal(low, mid, high, is_negative, 0)
 
-    # SPECIAL CASE: Modulus of coefficients is zero (finite division 可除盡)
+    # SPECIAL CASE: Modulus of coefficients is zero (exact division 可除盡)
     # For example, 32 / 2 = 16
     # For example, 18.00 / 3.0 = 6.0
     # For example, 123456780000 / 1000 = 123456780
