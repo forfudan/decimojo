@@ -989,8 +989,8 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
                 )
                 scale_of_truncated_quot -= 1
 
-            print("DEBUG: truncated_quot", truncated_quot)
-            print("DEBUG: scale_of_truncated_quot", scale_of_truncated_quot)
+            # print("DEBUG: truncated_quot", truncated_quot)
+            # print("DEBUG: scale_of_truncated_quot", scale_of_truncated_quot)
 
             var low = UInt32(truncated_quot & 0xFFFFFFFF)
             var mid = UInt32((truncated_quot >> 32) & 0xFFFFFFFF)
