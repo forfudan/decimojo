@@ -282,6 +282,17 @@ struct Decimal(
             self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
             self.high = 0
 
+    # TODO: Add arguments to specify the scale sign
+    fn __init__(out self, integer: UInt64):
+        """
+        Initializes a Decimal from an UInt64 value.
+        The `high` word will always be 0.
+        """
+        self.low = UInt32(integer & 0xFFFFFFFF)
+        self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
+        self.high = 0
+        self.flags = 0
+
     fn __init__(out self, integer: Int128):
         """
         Initializes a Decimal from an Int128 value.

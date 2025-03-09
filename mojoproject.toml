@@ -36,10 +36,9 @@ test_round = "magic run package && magic run mojo test tests/test_rounding.mojo 
 # benches
 bench = "magic run package && cd benches && magic run mojo bench.mojo && cd .."
 b = "clear && magic run bench"
-
-# individual bench files
-b_mul = "magic run package && cd benches && magic run mojo bench_multiply.mojo && cd .."
-b_div = "magic run package && cd benches && magic run mojo bench_divide.mojo && cd .."
+bench_mul = "magic run package && cd benches && magic run mojo bench_multiply.mojo && cd .."
+bench_div = "magic run package && cd benches && magic run mojo bench_divide.mojo && cd .."
+bench_sqrt = "magic run package && cd benches && magic run mojo bench_sqrt.mojo && cd .."
 
 # before commit
 final = "magic run test && magic run bench"

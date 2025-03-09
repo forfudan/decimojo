@@ -118,7 +118,9 @@ fn sqrt(x: Decimal) raises -> Decimal:
     """
     # Special cases
     if x.is_negative():
-        raise Error("Cannot compute square root of negative number")
+        raise Error(
+            "Error in sqrt: Cannot compute square root of a negative number"
+        )
 
     if x.is_zero():
         return Decimal.ZERO()
@@ -129,35 +131,41 @@ fn sqrt(x: Decimal) raises -> Decimal:
     # Initial guess - a good guess helps converge faster
     # For numbers near 1, use the number itself
     # For very small or large numbers, scale appropriately
+
+    var x_coef = x.coefficient()
+    var x_scale = x.scale()
+    var num_of_digits_x_int_part = decimojo.utility.number_of_digits(
+        x_coef
+    ) - x_scale
+
     var guess: Decimal
-    var exponent = len(x.coefficient()) - x.scale()
 
-    if exponent >= 0 and exponent <= 3:
-        # For numbers between 0.1 and 1000, start with x/2 + 0.5
-        try:
-            var half_x = x / Decimal("2")
-            guess = half_x + Decimal("0.5")
-        except e:
-            raise e
+    # For numbers between 0.1 and 999, start with x/2 + 0.5
+    if num_of_digits_x_int_part >= -1 and num_of_digits_x_int_part <= 3:
+        var half_x = x / Decimal(2, 0, 0, False, 0)
+        guess = half_x + Decimal(5, 0, 0, False, 1)
+
+    # For larger/smaller numbers, make a smarter guess
+    # This scales based on the magnitude of the number
     else:
-        # For larger/smaller numbers, make a smarter guess
-        # This scales based on the magnitude of the number
         var shift: Int
-        if exponent % 2 != 0:
+        if num_of_digits_x_int_part % 2 != 0:
             # For odd exponents, adjust
-            shift = (exponent + 1) // 2
+            shift = (num_of_digits_x_int_part + 1) // 2
         else:
-            shift = exponent // 2
+            shift = num_of_digits_x_int_part // 2
 
-        try:
-            # Use an approximation based on the exponent
-            if exponent > 0:
-                guess = Decimal("10") ** shift
-            else:
-                guess = Decimal("0.1") ** (-shift)
-
-        except e:
-            raise e
+        # abs(num_of_digits_x_int_part) <= 29, so abs(shift) is less than or equal to 15
+        # So 10^shift will not overflow UInt64
+        # Use an approximation based on the num_of_digits_x_int_part
+        if num_of_digits_x_int_part > 0:
+            # shift > 0
+            # guess = 10 ** shift
+            guess = Decimal(UInt64(10) ** shift)
+        else:
+            # shift <= 0
+            # guess = 0.1 ** (-shift) = 1 / (10 ** (-shift))
+            guess = Decimal(1) / Decimal((UInt64(10) ** (-shift)))
 
     # Newton-Raphson iterations
     # x_n+1 = (x_n + S/x_n) / 2
@@ -172,27 +180,26 @@ fn sqrt(x: Decimal) raises -> Decimal:
         # print("DEBUG: guess", guess)
 
         prev_guess = guess
-
-        try:
-            var division_result = x / guess
-            var sum_result = guess + division_result
-            guess = sum_result / Decimal("2")
-        except e:
-            raise e
-
+        var division_result = x / guess
+        var sum_result = guess + division_result
+        guess = sum_result / Decimal(2, 0, 0, False, 0)
         iteration_count += 1
 
-    # If exact square root found
-    # Remove trailing zeros after the decimal point
+    # If exact square root found remove trailing zeros after the decimal point
+    # For example, sqrt(100) = 10, not 10.000000000000000000000000000
+    # Exact square means that the coefficient of guess after removing trailing zeros
+    # is equal to the coefficient of x
+
     var guess_coef = guess.coefficient()
-    var count = 0
+    var count = 0  # Count of trailing zeros
     for _ in range(guess.scale()):
         if guess_coef % 10 == 0:
             guess_coef //= 10
             count += 1
         else:
             break
-    if guess_coef * guess_coef == x.coefficient():
+
+    if guess_coef * guess_coef == x_coef:
         var low = UInt32(guess_coef & 0xFFFFFFFF)
         var mid = UInt32((guess_coef >> 32) & 0xFFFFFFFF)
         var high = UInt32((guess_coef >> 64) & 0xFFFFFFFF)
