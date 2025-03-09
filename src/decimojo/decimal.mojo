@@ -8,6 +8,18 @@
 # which supports correctly-rounded, fixed-point arithmetic.
 #
 # ===----------------------------------------------------------------------=== #
+#
+# Organization of methods:
+# - Constructors and life time methods
+# - Output dunders, type-transfer dunders, and other type-transfer methods
+# - Basic unary arithmetic operation dunders
+# - Basic binary arithmetic operation dunders
+# - Basic binary logic operation dunders
+# - Other dunders that implements tratis
+# - Other methods
+# - Internal methods
+#
+# ===----------------------------------------------------------------------=== #
 # Docstring style:
 # 1. Description
 # 2. Parameters
@@ -1059,6 +1071,24 @@ struct Decimal(
         """
 
         return decimojo.round(self, 0, RoundingMode.HALF_EVEN())
+
+    # ===------------------------------------------------------------------=== #
+    # Methematical methods that do not implement a trait (not a dunder)
+    # sqrt
+    # ===------------------------------------------------------------------=== #
+
+    fn sqrt(self) raises -> Self:
+        """
+        Calculates the square root of this Decimal.
+
+        Returns:
+            The square root of this Decimal.
+
+        Raises:
+            Error: If the operation would result in overflow.
+        """
+
+        return decimojo.sqrt(self)
 
     # ===------------------------------------------------------------------=== #
     # Other methods
