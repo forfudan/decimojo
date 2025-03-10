@@ -30,6 +30,29 @@ import decimojo as dm
 from decimojo import Decimal
 ```
 
+## Advantages
+
+DeciMojo provides exceptional computational precision without sacrificing performance. It maintains accuracy throughout complex calculations where floating-point or other decimal implementations might introduce subtle errors.
+
+Consider the square root of `15.9999`. When comparing DeciMojo's implementation with Python's decimal module (both rounded to 16 decimal places):
+
+- DeciMojo calculates: `3.9999874999804687`
+- Python's decimal returns: `3.9999874999804685`
+
+The mathematically correct value (to 50+ digits) is:
+`3.9999874999804686889646053303778122644631365491812...`
+
+When rounded to 16 decimal places, the correct result is `3.9999874999804687`, confirming that DeciMojo produces the more accurate result in this case.
+
+```log
+Function:                   sqrt()
+Decimal value:              15.9999
+DeciMojo result:            3.9999874999804686889646053305
+Python's decimal result:    3.9999874999804685
+```
+
+This precision advantage becomes increasingly important in financial, scientific, and engineering calculations where small rounding errors can compound into significant discrepancies.
+
 ## Status
 
 Rome wasn't built in a day. DeciMojo is currently under active development, positioned between the **"make it work"** and **"make it right"** phases, with a stronger emphasis on the latter. Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/forFudan/decimojo/issues).
@@ -55,29 +78,6 @@ Rome wasn't built in a day. DeciMojo is currently under active development, posi
 - Performance optimization on basic operations (+ - * /) is mostly finished ([PR#16](https://github.com/forFudan/DeciMojo/pull/16), [PR#20](https://github.com/forFudan/DeciMojo/pull/20), [PR#21](https://github.com/forFudan/DeciMojo/pull/21)).
 - Regular benchmarking against Python's `decimal` module (see `bench/` folder)
 - Performance optimization on other functions are acknowleged but not currently prioritized
-
-## Advantages
-
-DeciMojo provides exceptional computational precision without sacrificing performance. It maintains accuracy throughout complex calculations where floating-point or other decimal implementations might introduce subtle errors.
-
-Consider the square root of `15.9999`. When comparing DeciMojo's implementation with Python's decimal module (both rounded to 16 decimal places):
-
-- DeciMojo calculates: `3.9999874999804687`
-- Python's decimal returns: `3.9999874999804685`
-
-The mathematically correct value (to 50+ digits) is:
-`3.9999874999804686889646053303778122644631365491812...`
-
-When rounded to 16 decimal places, the correct result is `3.9999874999804687`, confirming that DeciMojo produces the more accurate result in this case.
-
-```log
-Function:                   sqrt()
-Decimal value:              15.9999
-DeciMojo result:            3.9999874999804686889646053305
-Python's decimal result:    3.9999874999804685
-```
-
-This precision advantage becomes increasingly important in financial, scientific, and engineering calculations where small rounding errors can compound into significant discrepancies.
 
 ## Examples
 
