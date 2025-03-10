@@ -50,6 +50,82 @@ fn bitcast[dtype: DType](dec: Decimal) -> Scalar[dtype]:
     return result
 
 
+fn scale_up(value: Decimal, owned scale_diff: Int) -> Decimal:
+    """
+    Increase the scale of a Decimal while keeping the value unchanged.
+    Internally, this means multiplying the coefficient by 10^scale_diff
+    and increasing the scale by scale_diff simultaneously.
+
+    Args:
+        value: The Decimal to scale up.
+        scale_diff: Number of decimal places to scale up by.
+
+    Returns:
+        A new Decimal with the scaled up value.
+
+    Raises:
+        OverflowError: If the scaling would cause the coefficient to overflow.
+
+    Examples:
+
+    ```mojo
+    from decimojo import Decimal
+    from decimojo.utility import scale_up
+    var d1 = Decimal("5")       # 5
+    var d2 = scale_up(d1, 2)    # Result: 5.00 (same value, different representation)
+    print(d1)                   # 5
+    print(d2)                   # 5.00
+    print(d2.scale())           # 2
+
+    var d3 = Decimal("123.456") # 123.456
+    var d4 = scale_up(d3, 3)    # Result: 123.456000
+    print(d3)                   # 123.456
+    print(d4)                   # 123.456000
+    print(d4.scale())           # 6
+    ```
+    .
+    """
+
+    var result = value
+
+    # Early return if no scaling needed
+    if scale_diff <= 0:
+        return result
+
+    # Update the scale in the flags
+    var new_scale = value.scale() + scale_diff
+    if new_scale > Decimal.MAX_SCALE + 1:
+        # Cannot scale beyond max precision, limit the scaling
+        scale_diff = Decimal.MAX_SCALE + 1 - value.scale()
+        new_scale = Decimal.MAX_SCALE + 1
+
+    # With UInt128, we can represent the coefficient as a single value
+    var coefficient = UInt128(value.high) << 64 | UInt128(
+        value.mid
+    ) << 32 | UInt128(value.low)
+
+    # Check if multiplication by 10^scale_diff would cause overflow
+    var max_coefficient = ~UInt128(0) / UInt128(10**scale_diff)
+    if coefficient > max_coefficient:
+        # Handle overflow case - limit to maximum value or raise error
+        coefficient = ~UInt128(0)
+    else:
+        # No overflow - safe to multiply
+        coefficient *= UInt128(10**scale_diff)
+
+    # Extract the 32-bit components from the UInt128
+    result.low = UInt32(coefficient & 0xFFFFFFFF)
+    result.mid = UInt32((coefficient >> 32) & 0xFFFFFFFF)
+    result.high = UInt32((coefficient >> 64) & 0xFFFFFFFF)
+
+    # Set the new scale
+    result.flags = (value.flags & ~Decimal.SCALE_MASK) | (
+        UInt32(new_scale << Decimal.SCALE_SHIFT) & Decimal.SCALE_MASK
+    )
+
+    return result
+
+
 fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
     """
     Truncates a UInt256 or UInt128 value to be as closer to the max value of

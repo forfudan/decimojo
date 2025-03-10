@@ -193,9 +193,9 @@ fn _compare_abs(a: Decimal, b: Decimal) -> Int:
 
     # Scale up the decimal with smaller scale to match the other
     if scale_a < scale_b:
-        a_copy = a._scale_up(scale_b - scale_a)
+        a_copy = decimojo.utility.scale_up(a, scale_b - scale_a)
     elif scale_b < scale_a:
-        b_copy = b._scale_up(scale_a - scale_b)
+        b_copy = decimojo.utility.scale_up(b, scale_a - scale_b)
 
     # Now both have the same scale, compare integer components
     # Compare high parts first (most significant)

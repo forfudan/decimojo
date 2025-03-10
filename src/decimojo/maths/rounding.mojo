@@ -29,7 +29,7 @@ from decimojo.rounding_mode import RoundingMode
 
 fn round(
     number: Decimal,
-    decimal_places: Int = 0,
+    ndigits: Int = 0,
     rounding_mode: RoundingMode = RoundingMode.HALF_EVEN(),
 ) -> Decimal:
     """
@@ -37,7 +37,7 @@ fn round(
 
     Args:
         number: The Decimal to round.
-        decimal_places: Number of decimal places to round to.
+        ndigits: Number of decimal places to round to.
             Defaults to 0.
         rounding_mode: Rounding mode to use.
             Defaults to HALF_EVEN/banker's rounding.
@@ -50,7 +50,7 @@ fn round(
     # CASE: If already at the desired scale
     # Return a copy
     # round(Decimal("123.456"), 3) -> Decimal("123.456")
-    if current_scale == decimal_places:
+    if current_scale == ndigits:
         return number
 
     # TODO: CASE: If the number is an integer
@@ -58,8 +58,8 @@ fn round(
     # round(Decimal("123"), 2) -> Decimal("123.00")
 
     # If we need more decimal places, scale up
-    if decimal_places > current_scale:
-        return number._scale_up(decimal_places - current_scale)
+    if ndigits > current_scale:
+        return decimojo.utility.scale_up(number, ndigits - current_scale)
 
     # Otherwise, scale down with the specified rounding mode
-    return number._scale_down(current_scale - decimal_places, rounding_mode)
+    return number._scale_down(current_scale - ndigits, rounding_mode)
