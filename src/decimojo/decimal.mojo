@@ -324,38 +324,32 @@ struct Decimal(
         self.high = 0
         self.flags = 0
 
-    # TODO: Add arguments to specify the scale and sign
+    # TODO: Add arguments to specify the scale and sign for all integer constructors
     fn __init__(
         out self, integer: UInt128, negative: Bool = False, scale: UInt32 = 0
     ):
         """
         Initializes a Decimal from an UInt128 value.
-        The scale must be <= 28.
         ***WARNING***: This constructor can only handle values up to 96 bits.
         """
-        self.low = UInt32(integer & 0xFFFFFFFF)
-        self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
-        self.high = UInt32((integer >> 64) & 0xFFFFFFFF)
+        var low = UInt32(integer & 0xFFFFFFFF)
+        var mid = UInt32((integer >> 32) & 0xFFFFFFFF)
+        var high = UInt32((integer >> 64) & 0xFFFFFFFF)
 
-        var flags: UInt32 = 0
-        # Set the initial scale (may be higher than MAX_SCALE)
-        flags |= (scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
+        self = Decimal(low, mid, high, negative, scale)
 
-        # Set the sign bit if negative
-        if negative:
-            flags |= Self.SIGN_MASK
-
-        self.flags = flags
-
-    fn __init__(out self, integer: UInt256):
+    fn __init__(
+        out self, integer: UInt256, negative: Bool = False, scale: UInt32 = 0
+    ):
         """
         Initializes a Decimal from an UInt256 value.
         ***WARNING***: This constructor can only handle values up to 96 bits.
         """
-        self.low = UInt32(integer & 0xFFFFFFFF)
-        self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
-        self.high = UInt32((integer >> 64) & 0xFFFFFFFF)
-        self.flags = 0
+        var low = UInt32(integer & 0xFFFFFFFF)
+        var mid = UInt32((integer >> 32) & 0xFFFFFFFF)
+        var high = UInt32((integer >> 64) & 0xFFFFFFFF)
+
+        self = Decimal(low, mid, high, negative, scale)
 
     fn __init__(out self, s: String) raises:
         """
