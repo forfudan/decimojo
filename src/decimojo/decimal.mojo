@@ -8,6 +8,18 @@
 # which supports correctly-rounded, fixed-point arithmetic.
 #
 # ===----------------------------------------------------------------------=== #
+#
+# Organization of methods:
+# - Constructors and life time methods
+# - Output dunders, type-transfer dunders, and other type-transfer methods
+# - Basic unary arithmetic operation dunders
+# - Basic binary arithmetic operation dunders
+# - Basic binary logic operation dunders
+# - Other dunders that implements tratis
+# - Other methods
+# - Internal methods
+#
+# ===----------------------------------------------------------------------=== #
 # Docstring style:
 # 1. Description
 # 2. Parameters
@@ -73,8 +85,7 @@ struct Decimal(
     """Scale information and the sign."""
 
     # Constants
-    alias MAX_PRECISION = 28
-    alias MAX_SCALE = 128
+    alias MAX_SCALE: Int = 28
     alias MAX_AS_UINT128 = UInt128(79228162514264337593543950335)
     alias MAX_AS_INT128 = Int128(79228162514264337593543950335)
     alias MAX_AS_UINT256 = UInt256(79228162514264337593543950335)
@@ -166,7 +177,7 @@ struct Decimal(
         return Decimal(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, Decimal.SIGN_MASK)
 
     # ===------------------------------------------------------------------=== #
-    # Constructors and life time methods
+    # Constructors and life time dunder methods
     # ===------------------------------------------------------------------=== #
 
     fn __init__(out self):
@@ -183,19 +194,19 @@ struct Decimal(
         low: UInt32,
         mid: UInt32,
         high: UInt32,
-        negative: Bool,
         scale: UInt32,
+        negative: Bool,
     ):
         """
-        Initializes a Decimal with separate components.
-        the scale can be larger than 28, but will be scaled to the maximum precision.
+        Initializes a Decimal with five components.
+        If the scale is greater than MAX_SCALE, it is set to MAX_SCALE.
 
         Args:
             low: Least significant 32 bits of coefficient.
             mid: Middle 32 bits of coefficient.
             high: Most significant 32 bits of coefficient.
-            negative: True if the number is negative.
             scale: Number of decimal places (0-28).
+            negative: True if the number is negative.
         """
         self.low = low
         self.mid = mid
@@ -204,7 +215,7 @@ struct Decimal(
         # First set the flags without capping to initialize properly
         var flags: UInt32 = 0
 
-        # Set the initial scale (may be higher than MAX_PRECISION)
+        # Set the initial scale (may be higher than MAX_SCALE)
         flags |= (scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
 
         # Set the sign bit if negative
@@ -213,14 +224,14 @@ struct Decimal(
 
         self.flags = flags
 
-        # Now check if we need to round due to exceeding MAX_PRECISION
-        if scale > Self.MAX_PRECISION:
+        # Now check if we need to round due to exceeding MAX_SCALE
+        if scale > Self.MAX_SCALE:
             # We need to properly round the value, not just change the scale
-            var scale_diff = scale - Self.MAX_PRECISION
+            var scale_diff = scale - Self.MAX_SCALE
             # The 'self' is already initialized above, so we can call _scale_down on it
             self = self._scale_down(Int(scale_diff), RoundingMode.HALF_EVEN())
 
-        # No else needed as the value is already properly set if scale <= MAX_PRECISION
+        # No else needed as the value is already properly set if scale <= MAX_SCALE
 
     fn __init__(
         out self, low: UInt32, mid: UInt32, high: UInt32, flags: UInt32
@@ -234,7 +245,7 @@ struct Decimal(
         var scale = (flags & Self.SCALE_MASK) >> Self.SCALE_SHIFT
 
         # Use the previous constructor which handles scale rounding properly
-        self = Self(low, mid, high, is_negative, scale)
+        self = Self(low, mid, high, scale, is_negative)
 
     fn __init__(out self, integer: Int):
         """
@@ -302,25 +313,43 @@ struct Decimal(
             self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
             self.high = UInt32((integer >> 64) & 0xFFFFFFFF)
 
-    fn __init__(out self, integer: UInt128):
+    # TODO: Add arguments to specify the scale and sign
+    fn __init__(out self, integer: UInt64):
+        """
+        Initializes a Decimal from an UInt64 value.
+        The `high` word will always be 0.
+        """
+        self.low = UInt32(integer & 0xFFFFFFFF)
+        self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
+        self.high = 0
+        self.flags = 0
+
+    # TODO: Add arguments to specify the scale and sign for all integer constructors
+    fn __init__(
+        out self, integer: UInt128, scale: UInt32 = 0, negative: Bool = False
+    ):
         """
         Initializes a Decimal from an UInt128 value.
         ***WARNING***: This constructor can only handle values up to 96 bits.
         """
-        self.low = UInt32(integer & 0xFFFFFFFF)
-        self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
-        self.high = UInt32((integer >> 64) & 0xFFFFFFFF)
-        self.flags = 0
+        var low = UInt32(integer & 0xFFFFFFFF)
+        var mid = UInt32((integer >> 32) & 0xFFFFFFFF)
+        var high = UInt32((integer >> 64) & 0xFFFFFFFF)
 
-    fn __init__(out self, integer: UInt256):
+        self = Decimal(low, mid, high, scale, negative)
+
+    fn __init__(
+        out self, integer: UInt256, scale: UInt32 = 0, negative: Bool = False
+    ):
         """
         Initializes a Decimal from an UInt256 value.
         ***WARNING***: This constructor can only handle values up to 96 bits.
         """
-        self.low = UInt32(integer & 0xFFFFFFFF)
-        self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
-        self.high = UInt32((integer >> 64) & 0xFFFFFFFF)
-        self.flags = 0
+        var low = UInt32(integer & 0xFFFFFFFF)
+        var mid = UInt32((integer >> 32) & 0xFFFFFFFF)
+        var high = UInt32((integer >> 64) & 0xFFFFFFFF)
+
+        self = Decimal(low, mid, high, scale, negative)
 
     fn __init__(out self, s: String) raises:
         """
@@ -450,11 +479,11 @@ struct Decimal(
                 # Move decimal point left (increase scale)
                 scale += -exponent
 
-        # STEP 2: If scale  > max_precision,
+        # STEP 2: If scale  > MAX_SCALE,
         # round the coefficient string after truncating
         # and re-calculate the scale
-        if scale > Self.MAX_PRECISION:
-            var diff_scale = scale - Self.MAX_PRECISION
+        if scale > Self.MAX_SCALE:
+            var diff_scale = scale - Self.MAX_SCALE
             var kept_digits = len(string_of_coefficient) - diff_scale
 
             # Truncate the coefficient string to 29 digits
@@ -473,7 +502,7 @@ struct Decimal(
                     for i in range(len(string_of_coefficient)):
                         result_chars.append(string_of_coefficient[i])
 
-                    var pos = Self.MAX_PRECISION
+                    var pos = Self.MAX_SCALE
                     while pos >= 0 and carry > 0:
                         var digit = ord(result_chars[pos]) - ord(String("0"))
                         digit += carry
@@ -493,7 +522,7 @@ struct Decimal(
                     for ch in result_chars:
                         string_of_coefficient += ch[]
 
-            scale = Self.MAX_PRECISION
+            scale = Self.MAX_SCALE
 
         # STEP 2: Check for overflow
         # Check if the integral part of the coefficient is too large
@@ -621,20 +650,18 @@ struct Decimal(
             self.flags |= Self.SIGN_MASK
 
     # TODO: Use generic floating-point type if possible.
-    fn __init__(out self, f: Float64, *, max_precision: Bool = True) raises:
+    fn __init__(out self, f: Float64, *, MAX_SCALE: Bool = True) raises:
         """
         Initializes a Decimal from a floating-point value.
         You may lose precision because float representation is inexact.
         """
         var float_str: String
 
-        if max_precision:
+        if MAX_SCALE:
             # Use maximum precision
             # Convert float to string ith high precision to capture all significant digits
-            # The format ensures we get up to MAX_PRECISION decimal places
-            float_str = decimojo.str._float_to_decimal_str(
-                f, Self.MAX_PRECISION
-            )
+            # The format ensures we get up to MAX_SCALE decimal places
+            float_str = decimojo.str._float_to_decimal_str(f, Self.MAX_SCALE)
         else:
             # Use default string representation
             # Convert float to string with Mojo's default precision
@@ -1061,6 +1088,24 @@ struct Decimal(
         return decimojo.round(self, 0, RoundingMode.HALF_EVEN())
 
     # ===------------------------------------------------------------------=== #
+    # Methematical methods that do not implement a trait (not a dunder)
+    # sqrt
+    # ===------------------------------------------------------------------=== #
+
+    fn sqrt(self) raises -> Self:
+        """
+        Calculates the square root of this Decimal.
+
+        Returns:
+            The square root of this Decimal.
+
+        Raises:
+            Error: If the operation would result in overflow.
+        """
+
+        return decimojo.sqrt(self)
+
+    # ===------------------------------------------------------------------=== #
     # Other methods
     # ===------------------------------------------------------------------=== #
 
@@ -1132,18 +1177,6 @@ struct Decimal(
     fn is_nan(self) -> Bool:
         """Returns True if this Decimal is NaN (Not a Number)."""
         return (self.flags & Self.NAN_MASK) != 0
-
-    fn is_uint32able(self) -> Bool:
-        """
-        Returns True if the coefficient can be represented as a UInt32 value.
-        """
-        return self.high == 0 and self.mid == 0
-
-    fn is_uint64able(self) -> Bool:
-        """
-        Returns True if the coefficient can be represented as a UInt64 value.
-        """
-        return self.high == 0
 
     fn scale(self) -> Int:
         """Returns the scale (number of decimal places) of this Decimal."""
@@ -1342,10 +1375,10 @@ struct Decimal(
 
         # Update the scale in the flags
         var new_scale = self.scale() + scale_diff
-        if new_scale > Self.MAX_PRECISION + 1:
+        if new_scale > Self.MAX_SCALE + 1:
             # Cannot scale beyond max precision, limit the scaling
-            scale_diff = Self.MAX_PRECISION + 1 - self.scale()
-            new_scale = Self.MAX_PRECISION + 1
+            scale_diff = Self.MAX_SCALE + 1 - self.scale()
+            new_scale = Self.MAX_SCALE + 1
 
         # With UInt128, we can represent the coefficient as a single value
         var coefficient = UInt128(self.high) << 64 | UInt128(

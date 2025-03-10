@@ -3,7 +3,7 @@ Comprehensive test suite for Decimal division operations.
 Includes 100 test cases covering edge cases, precision limits, and various scenarios.
 """
 
-from decimojo.prelude import *
+from decimojo import dm, Decimal
 import testing
 
 
@@ -191,10 +191,8 @@ fn test_precision_rounding() raises:
 
     # 25. Precision limit with repeating 9s
     var a25 = Decimal("1") / Decimal("81")  # ~0.01234...
-    var precision_reached = a25.scale() <= Decimal.MAX_PRECISION
-    testing.assert_true(
-        precision_reached, "Scale should not exceed MAX_PRECISION"
-    )
+    var precision_reached = a25.scale() <= Decimal.MAX_SCALE
+    testing.assert_true(precision_reached, "Scale should not exceed MAX_SCALE")
 
     # 26. Test precision with negative numbers
     var a26 = Decimal("-1") / Decimal("3")
@@ -222,15 +220,15 @@ fn test_precision_rounding() raises:
     # 29. Division where quotient has more digits than precision allows
     var a29 = Decimal("12345678901234567890123456789") / Decimal("7")
     testing.assert_true(
-        a29.scale() <= Decimal.MAX_PRECISION,
-        "Scale should not exceed MAX_PRECISION",
+        a29.scale() <= Decimal.MAX_SCALE,
+        "Scale should not exceed MAX_SCALE",
     )
 
     # 30. Division where both operands have maximum precision
     var a30 = Decimal("0." + "1" * 28) / Decimal("0." + "9" * 28)
     testing.assert_true(
-        a30.scale() <= Decimal.MAX_PRECISION,
-        "Scale should not exceed MAX_PRECISION",
+        a30.scale() <= Decimal.MAX_SCALE,
+        "Scale should not exceed MAX_SCALE",
     )
 
     print("✓ Precision and rounding tests passed!")
@@ -338,7 +336,7 @@ fn test_edge_cases() raises:
     var max_decimal = Decimal.MAX()
     var small_divisor = Decimal("0.0001")
     try:
-        var a43 = max_decimal / small_divisor
+        var _a43 = max_decimal / small_divisor
     except:
         print(
             "Division of very large number by very small number raised"
@@ -350,7 +348,7 @@ fn test_edge_cases() raises:
         "0." + "0" * 27 + "1"
     )  # Smallest positive decimal
     var a44 = min_positive / Decimal("2")
-    testing.assert_true(a44.scale() <= Decimal.MAX_PRECISION)
+    testing.assert_true(a44.scale() <= Decimal.MAX_SCALE)
 
     # 45. Division by power of 2 (binary divisions)
     testing.assert_equal(
@@ -364,11 +362,11 @@ fn test_edge_cases() raises:
         "Division by 9's",
     )
 
-    # 47. Division resulting in exactly MAX_PRECISION digits
+    # 47. Division resulting in exactly MAX_SCALE digits
     var a47 = Decimal("1") / Decimal("3")
     testing.assert_true(
-        a47.scale() == Decimal.MAX_PRECISION,
-        "Case 47: Division resulting in exactly MAX_PRECISION digits failed",
+        a47.scale() == Decimal.MAX_SCALE,
+        "Case 47: Division resulting in exactly MAX_SCALE digits failed",
     )
 
     # 48. Division of large integers resulting in max precision
@@ -386,7 +384,7 @@ fn test_edge_cases() raises:
     # 50. Division with value at maximum supported scale
     var a50 = Decimal("0." + "0" * 27 + "5") / Decimal("1")
     testing.assert_true(
-        a50.scale() <= Decimal.MAX_PRECISION,
+        a50.scale() <= Decimal.MAX_SCALE,
         "Case 50: Division with value at maximum supported scale failed",
     )
 
@@ -643,9 +641,9 @@ fn test_rounding_behavior() raises:
 
     # 81. Banker's rounding at boundary (round to even)
     var a81 = Decimal("1") / Decimal(
-        String("3" + "0" * (Decimal.MAX_PRECISION - 1))
+        String("3" + "0" * (Decimal.MAX_SCALE - 1))
     )
-    var expected = "0." + "0" * (Decimal.MAX_PRECISION - 1) + "3"
+    var expected = "0." + "0" * (Decimal.MAX_SCALE - 1) + "3"
     testing.assert_equal(
         String(a81), expected, "Case 81: Banker's rounding at boundary failed"
     )
@@ -667,8 +665,8 @@ fn test_rounding_behavior() raises:
     )
 
     # 84. Division that results in exactly half a unit in last place
-    var a84 = Decimal("1") / Decimal("4" + "0" * Decimal.MAX_PRECISION)
-    var expected84 = Decimal("0." + "0" * (Decimal.MAX_PRECISION))
+    var a84 = Decimal("1") / Decimal("4" + "0" * Decimal.MAX_SCALE)
+    var expected84 = Decimal("0." + "0" * (Decimal.MAX_SCALE))
     testing.assert_equal(
         a84,
         expected84,
@@ -717,13 +715,13 @@ fn test_rounding_behavior() raises:
         "Testing half-even rounding with odd digit before",
     )
 
-    # 90. Division with MAX_PRECISION-3 digits
+    # 90. Division with MAX_SCALE-3 digits
     # 1 / 300000000000000000000000000 (26 zeros)
     var a90 = Decimal("1") / Decimal(String("300000000000000000000000000"))
     testing.assert_equal(
         String(a90),
         "0.0000000000000000000000000033",
-        "Case 90: Division with exactly MAX_PRECISION digits failed",
+        "Case 90: Division with exactly MAX_SCALE digits failed",
     )
 
     print("✓ Rounding behavior tests passed!")
@@ -735,7 +733,7 @@ fn test_error_cases() raises:
 
     # 91. Division by zero
     try:
-        var result = Decimal("123") / Decimal("0")
+        var _result = Decimal("123") / Decimal("0")
         testing.assert_true(
             False, "Case 91: Expected division by zero to raise exception"
         )
@@ -810,7 +808,7 @@ fn test_error_cases() raises:
 
     # 100. Division at the exact boundary of precision limit
     # 1 / 70000000000000000000000000000 (28 zeros)
-    var a100 = Decimal("1") / Decimal(String("7" + "0" * Decimal.MAX_PRECISION))
+    var a100 = Decimal("1") / Decimal(String("7" + "0" * Decimal.MAX_SCALE))
     testing.assert_equal(
         String(a100),
         "0.0000000000000000000000000000",

@@ -3,7 +3,7 @@ Comprehensive benchmarks for Decimal division operations.
 Compares performance against Python's decimal module.
 """
 
-from decimojo.prelude import *
+from decimojo import dm, Decimal
 from python import Python, PythonObject
 from time import perf_counter_ns
 import time
@@ -137,9 +137,7 @@ fn main() raises:
         "Python decimal precision: " + String(pydecimal.getcontext().prec),
         log_file,
     )
-    log_print(
-        "Mojo decimal precision: " + String(Decimal.MAX_PRECISION), log_file
-    )
+    log_print("Mojo decimal precision: " + String(Decimal.MAX_SCALE), log_file)
 
     # Define benchmark cases
     log_print(

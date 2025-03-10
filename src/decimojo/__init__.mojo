@@ -5,11 +5,26 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-DeciMojo - Correctly-rounded, fixed-point Decimal library for Mojo.
+DeciMojo: A fixed-point decimal arithmetic library in Mojo.
+
+You can import a list of useful objects in one line, e.g., 
+
+```mojo
+from decimojo import decimojo, dm, Decimal, D
+```
+
+where `decimojo` is the module itself, `dm` is an alias for the module, 
+`Decimal` is the `Decimal` type, and `D` is an alias for the `Decimal` type.
 """
 
+import decimojo
+import decimojo as dm
+
 from .decimal import Decimal
+from .decimal import Decimal as D
+
 from .rounding_mode import RoundingMode
+
 from .maths import (
     add,
     subtract,

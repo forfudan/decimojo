@@ -1,7 +1,7 @@
 """
 Test Decimal rounding methods with different rounding modes and precision levels.
 """
-from decimojo.prelude import *
+from decimojo import dm, Decimal, RoundingMode
 import testing
 
 
@@ -140,9 +140,9 @@ fn test_edge_cases() raises:
     )
 
     # Test case 5: Rounding to maximum precision
-    var max_precision = Decimal("0." + "1" * 28)  # 0.1111...1 (28 digits)
+    var MAX_SCALE = Decimal("0." + "1" * 28)  # 0.1111...1 (28 digits)
     testing.assert_equal(
-        String(round(max_precision, 14)),
+        String(round(MAX_SCALE, 14)),
         "0.11111111111111",
         "Rounding from maximum precision",
     )

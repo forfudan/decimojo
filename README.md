@@ -18,9 +18,39 @@ This project draws inspiration from several established decimal implementations 
 
 ## Nomenclature
 
-DeciMojo combines "Decimal" and "Mojo" - reflecting both its purpose (decimal arithmetic) and the programming language it's implemented in. The name highlights the project's focus on bringing precise decimal calculations to the Mojo ecosystem.
+DeciMojo combines "Decimal" and "Mojo" - reflecting both its purpose (decimal arithmetic) and the programming language it's implemented in. The name emphasizes the project's focus on bringing precise decimal calculations to the Mojo ecosystem.
 
-For brevity, you can also refer to it "decimo" (derived from the Latin root "decimus" meaning "tenth").
+For brevity, you can refer to it as "deci" (derived from the Latin root "decimus" meaning "tenth").
+
+When you add `from decimojo import dm, Decimal` at the top of your script, this imports the `decimojo` module into your namespace with the shorter alias `dm` and directly imports the `Decimal` type. This is equivalent to:
+
+```mojo
+import decimojo as dm
+from decimojo import Decimal
+```
+
+## Advantages
+
+DeciMojo provides exceptional computational precision without sacrificing performance. It maintains accuracy throughout complex calculations where floating-point or other decimal implementations might introduce subtle errors.
+
+Consider the square root of `15.9999`. When comparing DeciMojo's implementation with Python's decimal module (both rounded to 16 decimal places):
+
+- DeciMojo calculates: `3.9999874999804687`
+- Python's decimal returns: `3.9999874999804685`
+
+The mathematically correct value (to 50+ digits) is:
+`3.9999874999804686889646053303778122644631365491812...`
+
+When rounded to 16 decimal places, the correct result is `3.9999874999804687`, confirming that DeciMojo produces the more accurate result in this case.
+
+```log
+Function:                   sqrt()
+Decimal value:              15.9999
+DeciMojo result:            3.9999874999804686889646053305
+Python's decimal result:    3.9999874999804685
+```
+
+This precision advantage becomes increasingly important in financial, scientific, and engineering calculations where small rounding errors can compound into significant discrepancies.
 
 ## Status
 
@@ -44,20 +74,20 @@ Rome wasn't built in a day. DeciMojo is currently under active development, posi
 
 ### Make it Fast ⏳ (IN PROGRESS & FUTURE WORK)
 
-- Performance optimization on basic operations (+ - * /) in progress
+- Performance optimization on basic operations (+ - * /) is mostly finished ([PR#16](https://github.com/forFudan/DeciMojo/pull/16), [PR#20](https://github.com/forFudan/DeciMojo/pull/20), [PR#21](https://github.com/forFudan/DeciMojo/pull/21)).
 - Regular benchmarking against Python's `decimal` module (see `bench/` folder)
 - Performance optimization on other functions are acknowleged but not currently prioritized
 
 ## Examples
 
-The `Decimal` type can represent at most 29 significant digits and 28 digits after the decimal point. If the significant digits of a decimal value exceeds the maximum value (`2^96 - 1`), it either casts and error, or it is rounded until the siginificant digits are within the maximum value. For example, for the number `8.8888888888888888888888888888`, the significant digits (29 eights)exceeds the maximum value. It will then be rounded into `8.888888888888888888888888888` (28 eights).
+The `Decimal` type can represent values with up to 29 significant digits and a maximum of 28 digits after the decimal point. When a value exceeds the maximum representable value (`2^96 - 1`), DeciMojo either raises an error or rounds the value to fit within these constraints. For example, the significant digits of `8.8888888888888888888888888888` (29 eights total with 28 after the decimal point) exceeds the maximum representable value (`2^96 - 1`) and is automatically rounded to `8.888888888888888888888888888` (28 eights total with 27 after the decimal point).
 
-Here are 10 key examples highlighting the most important features of the `Decimal` type in its current state:
+Here are 8 key examples highlighting the most important features of the `Decimal` type in its current state:
 
 ### 1. Fixed-Point Precision for Financial Calculations
 
 ```mojo
-from decimojo.prelude import *
+from decimojo import dm, Decimal
 
 # The classic floating-point problem
 print(0.1 + 0.2)  # 0.30000000000000004 (not exactly 0.3)
@@ -75,7 +105,7 @@ var tax = price * tax_rate  # Exactly 1.449275
 var total = price + tax     # Exactly 21.439275
 ```
 
-### 2. Basic Arithmetic with Proper Rounding
+### 2. Basic Arithmetic with Proper Banker's Rounding
 
 ```mojo
 # Addition with different scales
@@ -88,15 +118,15 @@ var c = Decimal("50")
 var d = Decimal("75.25")
 print(c - d)  # -25.25
 
-# Multiplication preserving full precision
-var e = Decimal("12.34")
+# Multiplication with banker's rounding (round to even)
+var e = Decimal("12.345")
 var f = Decimal("5.67")
-print(e * f)  # 69.9678 (all digits preserved)
+print(round(e * f, 2))  # 69.96 (rounds to nearest even)
 
-# Division with repeating decimals handled precisely
-var g = Decimal("1")
+# Division with banker's rounding
+var g = Decimal("10")
 var h = Decimal("3")
-print(g / h)  # 0.3333333333333333333333333333 (to precision limit)
+print(round(g / h, 2))  # 3.33 (rounded banker's style)
 ```
 
 ### 3. Scale and Precision Management
@@ -106,19 +136,17 @@ print(g / h)  # 0.3333333333333333333333333333 (to precision limit)
 var d1 = Decimal("123.45")
 print(d1.scale())  # 2
 
-var d2 = Decimal("123.4500")
-print(d2.scale())  # 4
-
-# Arithmetic operations combine scales appropriately
-var sum = Decimal("0.123") + Decimal("0.45")  # Takes larger scale
-print(sum)  # 0.573
-
-var product = Decimal("0.12") * Decimal("0.34")  # Sums the scales
-print(product)  # 0.0408
+# Precision control with explicit rounding
+var d2 = Decimal("123.456")
+print(d2.round_to_scale(1))  # 123.5 (banker's rounding)
 
 # High precision is preserved (up to 28 decimal places)
 var precise = Decimal("0.1234567890123456789012345678")
 print(precise)  # 0.1234567890123456789012345678
+
+# Truncation to specific number of digits
+var large_num = Decimal("123456.789")
+print(truncate_to_digits(large_num, 4))  # 1235 (banker's rounded)
 ```
 
 ### 4. Sign Handling and Absolute Value
@@ -129,10 +157,6 @@ var pos = Decimal("123.45")
 var neg = -pos
 print(neg)  # -123.45
 
-# Multiple negations
-var back_to_pos = -(-pos)
-print(back_to_pos)  # 123.45
-
 # Absolute value
 var abs_val = abs(Decimal("-987.65"))
 print(abs_val)  # 987.65
@@ -140,7 +164,10 @@ print(abs_val)  # 987.65
 # Sign checking
 print(Decimal("-123.45").is_negative())  # True
 print(Decimal("0").is_negative())        # False
-print(Decimal("123.45").is_negative())   # False
+
+# Sign preservation in multiplication
+print(Decimal("-5") * Decimal("3"))      # -15 
+print(Decimal("-5") * Decimal("-3"))     # 15
 ```
 
 ### 5. Advanced Mathematical Operations
@@ -148,46 +175,24 @@ print(Decimal("123.45").is_negative())   # False
 ```mojo
 from decimojo.mathematics import sqrt
 
-# Integer powers
-var squared = Decimal("3") ** 2
-print(squared)  # 9
+# Highly accurate square root implementation
+var root2 = sqrt(Decimal("2"))
+print(root2)  # 1.4142135623730950488016887242...
+
+# Square root of imperfect squares
+var root_15_9999 = sqrt(Decimal("15.9999"))
+print(root_15_9999)  # 3.9999874999804686889646053305...
+
+# Integer powers with fast binary exponentiation
+var cubed = Decimal("3") ** 3
+print(cubed)  # 27
 
 # Negative powers (reciprocals)
 var recip = Decimal("2") ** (-1)
 print(recip)  # 0.5
-
-# Square root with high precision
-var root2 = sqrt(Decimal("2"))
-print(root2)  # 1.414213562373095048801688724...
-
-# Special cases
-print(Decimal("10") ** 0)  # 1 (anything to power 0)
-print(Decimal("1") ** 20)  # 1 (1 to any power)
-print(Decimal("0") ** 5)   # 0 (0 to positive power)
 ```
 
-### 6. Type Conversions and Interoperability
-
-```mojo
-var d = Decimal("123.456")
-
-# Converting to string (for display or serialization)
-var str_val = String(d)
-print(str_val)  # "123.456"
-
-# Getting internal representation 
-print(repr(d))  # Shows internal state
-
-# Converting to int (truncates toward zero)
-var i = Int(d)
-print(i)  # 123
-
-# Converting to float (may lose precision)
-var f = Float64(d)
-print(f)  # 123.456
-```
-
-### 7. Handling Edge Cases and Errors
+### 6. Robust Edge Case Handling
 
 ```mojo
 # Division by zero is properly caught
@@ -202,33 +207,36 @@ try:
 except:
     print("Zero to negative power properly detected")
     
-# Smallest representable positive value
-var tiny = Decimal("0." + "0" * 27 + "1")  # 28 decimal places
-print(tiny)  # 0.0000000000000000000000000001
+# Overflow detection and prevention
+var max_val = Decimal.MAX()
+try:
+    var overflow = max_val * Decimal("2")
+except:
+    print("Overflow correctly detected")
 ```
 
-### 8. Equality and Zero Comparisons
+### 7. Equality and Comparison Operations
 
 ```mojo
-# Equal values with different representations
+# Equal values with different scales
 var a = Decimal("123.4500")
 var b = Decimal("123.45")
 print(a == b)  # True (numeric value equality)
 
-# Zero values with different scales
-var z1 = Decimal("0")
-var z2 = Decimal("0.000")
-print(z1 == z2)  # True
-
-# Zero detection
-print(z1.is_zero())  # True
-print(z2.is_zero())  # True
+# Comparison operators
+var c = Decimal("100")
+var d = Decimal("200")
+print(c < d)   # True
+print(c <= d)  # True
+print(c > d)   # False
+print(c >= d)  # False
+print(c != d)  # True
 ```
 
-### 9. Real World Financial Examples
+### 8. Real World Financial Examples
 
 ```mojo
-# Monthly loan payment calculation
+# Monthly loan payment calculation with precise interest
 var principal = Decimal("200000")  # $200,000 loan
 var annual_rate = Decimal("0.05")  # 5% interest rate
 var monthly_rate = annual_rate / Decimal("12")
@@ -239,39 +247,6 @@ var numerator = monthly_rate * (Decimal("1") + monthly_rate) ** 360
 var denominator = (Decimal("1") + monthly_rate) ** 360 - Decimal("1")
 var payment = principal * (numerator / denominator)
 print("Monthly payment: $" + String(round(payment, 2)))  # $1,073.64
-
-# Correct handling of multiple items and discounts
-var item1 = Decimal("29.99")
-var item2 = Decimal("59.99")
-var subtotal = item1 + item2  # 89.98
-var discount = subtotal * Decimal("0.15")  # 15% off
-var after_discount = subtotal - discount
-var tax = after_discount * Decimal("0.08")  # 8% tax
-var final = after_discount + tax
-print("Final price: $" + String(round(final, 2)))
-```
-
-### 10. Maximum Precision and Limit Testing
-
-```mojo
-# Maximum value supported
-var max_val = Decimal.MAX()
-print(max_val)  # 79228162514264337593543950335
-
-# Minimum value supported
-var min_val = Decimal.MIN()
-print(min_val)  # -79228162514264337593543950335
-
-# Operations near limits
-var near_max = Decimal("79228162514264337593543950334")  # MAX() - 1
-var still_valid = near_max + Decimal("1")
-print(still_valid == max_val)  # True
-
-# Maximum precision for high-accuracy scientific calculations
-var pi = Decimal("3.1415926535897932384626433832")
-var radius = Decimal("2.5")
-var area = pi * (radius ** 2)
-print("Circle area: " + String(area))  # Precisely calculated area
 ```
 
 ## Tests and benches
@@ -292,7 +267,7 @@ If you find DeciMojo useful for your research, consider listing it in your citat
     title        = {DeciMojo: A fixed-point decimal arithmetic library in Mojo},
     url          = {https://github.com/forFudan/DeciMojo},
     version      = {0.1.0},
-    note = {Computer Software}
+    note         = {Computer Software}
 }
 ```
 
@@ -302,7 +277,6 @@ Copyright 2025 Yuhao Zhu
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
 
-http://www.apache.org/licenses/LICENSE-2.0
+[http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
-
