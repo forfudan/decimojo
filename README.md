@@ -18,9 +18,17 @@ This project draws inspiration from several established decimal implementations 
 
 ## Nomenclature
 
-DeciMojo combines "Decimal" and "Mojo" - reflecting both its purpose (decimal arithmetic) and the programming language it's implemented in. The name highlights the project's focus on bringing precise decimal calculations to the Mojo ecosystem.
+DeciMojo combines "Decimal" and "Mojo" - reflecting both its purpose (decimal arithmetic) and the programming language it's implemented in. The name emphasizes the project's focus on bringing precise decimal calculations to the Mojo ecosystem.
 
-For brevity, you can also refer to it "decimo" (derived from the Latin root "decimus" meaning "tenth").
+For brevity, you can refer to it as "deci" (derived from the Latin root "decimus" meaning "tenth").
+
+When you add `from decimojo.prelude import *` at the top of your script, this imports the `decimojo` module into your namespace with the shorter alias `dm` and directly imports the `Decimal` type. This is equivalent to:
+
+```mojo
+import decimojo
+import decimojo as dm
+from decimojo import Decimal
+```
 
 ## Status
 
@@ -44,13 +52,13 @@ Rome wasn't built in a day. DeciMojo is currently under active development, posi
 
 ### Make it Fast ⏳ (IN PROGRESS & FUTURE WORK)
 
-- Performance optimization on basic operations (+ - * /) in progress
+- Performance optimization on basic operations (+ - * /) is mostly finished ([PR#16](https://github.com/forFudan/DeciMojo/pull/16), [PR#20](https://github.com/forFudan/DeciMojo/pull/20), [PR#21](https://github.com/forFudan/DeciMojo/pull/21)).
 - Regular benchmarking against Python's `decimal` module (see `bench/` folder)
 - Performance optimization on other functions are acknowleged but not currently prioritized
 
 ## Examples
 
-The `Decimal` type can represent at most 29 significant digits and 28 digits after the decimal point. If the significant digits of a decimal value exceeds the maximum value (`2^96 - 1`), it either casts and error, or it is rounded until the siginificant digits are within the maximum value. For example, for the number `8.8888888888888888888888888888`, the significant digits (29 eights)exceeds the maximum value. It will then be rounded into `8.888888888888888888888888888` (28 eights).
+The `Decimal` type can represent values with up to 29 significant digits and a maximum of 28 digits after the decimal point. When a value exceeds the maximum representable value (`2^96 - 1`), DeciMojo either raises an error or rounds the value to fit within these constraints. For example, the significant digits of `8.8888888888888888888888888888` (29 eights total with 28 after the decimal point) exceeds the maximum representable value (`2^96 - 1`) and is automatically rounded to `8.888888888888888888888888888` (28 eights total with 27 after the decimal point).
 
 Here are 10 key examples highlighting the most important features of the `Decimal` type in its current state:
 
@@ -292,7 +300,7 @@ If you find DeciMojo useful for your research, consider listing it in your citat
     title        = {DeciMojo: A fixed-point decimal arithmetic library in Mojo},
     url          = {https://github.com/forFudan/DeciMojo},
     version      = {0.1.0},
-    note = {Computer Software}
+    note         = {Computer Software}
 }
 ```
 
@@ -302,7 +310,6 @@ Copyright 2025 Yuhao Zhu
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
 
-http://www.apache.org/licenses/LICENSE-2.0
+[http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
-

@@ -287,7 +287,7 @@ fn test_decimal_from_string() raises:
         print("Decimal point without digits not supported")
 
     var only_zeros = Decimal("0.0000")
-    var max_precision = Decimal("0." + "9" * 28)
+    var MAX_SCALE = Decimal("0." + "9" * 28)
 
     testing.assert_equal(
         String(only_zeros),
@@ -295,7 +295,7 @@ fn test_decimal_from_string() raises:
         "String of zeros should be represented as '0'",
     )
     testing.assert_equal(
-        String(max_precision),
+        String(MAX_SCALE),
         "0." + "9" * 28,
         "Max precision should be preserved",
     )

@@ -307,7 +307,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     # Return zero while preserving the scale
     if x1_coef == 0 or x2_coef == 0:
         var result = Decimal.ZERO()
-        var result_scale = min(combined_scale, Decimal.MAX_PRECISION)
+        var result_scale = min(combined_scale, Decimal.MAX_SCALE)
         result.flags = UInt32(
             (result_scale << Decimal.SCALE_SHIFT) & Decimal.SCALE_MASK
         )
@@ -317,16 +317,16 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     if x1_coef == 1 and x2_coef == 1:
         # If the combined scale exceeds the maximum precision,
         # return 0 with leading zeros after the decimal point and correct sign
-        if combined_scale > Decimal.MAX_PRECISION:
+        if combined_scale > Decimal.MAX_SCALE:
             return Decimal(
                 0,
                 0,
                 0,
                 is_negative,
-                Decimal.MAX_PRECISION,
+                Decimal.MAX_SCALE,
             )
         # Otherwise, return 1 with correct sign and scale
-        var final_scale = min(Decimal.MAX_PRECISION, combined_scale)
+        var final_scale = min(Decimal.MAX_SCALE, combined_scale)
         return Decimal(1, 0, 0, is_negative, final_scale)
 
     # SPECIAL CASE: First operand has coefficient of 1
@@ -343,12 +343,12 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
             # Rounding may be needed.
             var num_digits_prod = decimojo.utility.number_of_digits(prod)
             var num_digits_to_keep = num_digits_prod - (
-                combined_scale - Decimal.MAX_PRECISION
+                combined_scale - Decimal.MAX_SCALE
             )
             var truncated_prod = decimojo.utility.truncate_to_digits(
                 prod, num_digits_to_keep
             )
-            var final_scale = min(Decimal.MAX_PRECISION, combined_scale)
+            var final_scale = min(Decimal.MAX_SCALE, combined_scale)
             var low = UInt32(truncated_prod & 0xFFFFFFFF)
             var mid = UInt32((truncated_prod >> 32) & 0xFFFFFFFF)
             var high = UInt32((truncated_prod >> 64) & 0xFFFFFFFF)
@@ -374,12 +374,12 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
             # Rounding may be needed.
             var num_digits_prod = decimojo.utility.number_of_digits(prod)
             var num_digits_to_keep = num_digits_prod - (
-                combined_scale - Decimal.MAX_PRECISION
+                combined_scale - Decimal.MAX_SCALE
             )
             var truncated_prod = decimojo.utility.truncate_to_digits(
                 prod, num_digits_to_keep
             )
-            var final_scale = min(Decimal.MAX_PRECISION, combined_scale)
+            var final_scale = min(Decimal.MAX_SCALE, combined_scale)
             var low = UInt32(truncated_prod & 0xFFFFFFFF)
             var mid = UInt32((truncated_prod >> 32) & 0xFFFFFFFF)
             var high = UInt32((truncated_prod >> 64) & 0xFFFFFFFF)
@@ -472,7 +472,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
         var prod: UInt128 = x1_coef * x2_coef
 
         # Combined scale more than max precision, no need to truncate
-        if combined_scale <= Decimal.MAX_PRECISION:
+        if combined_scale <= Decimal.MAX_SCALE:
             var low = UInt32(prod & 0xFFFFFFFF)
             var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
             var high = UInt32((prod >> 64) & 0xFFFFFFFF)
@@ -482,10 +482,10 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
         else:
             var num_digits = decimojo.utility.number_of_digits(prod)
             var num_digits_to_keep = num_digits - (
-                combined_scale - Decimal.MAX_PRECISION
+                combined_scale - Decimal.MAX_SCALE
             )
             prod = decimojo.utility.truncate_to_digits(prod, num_digits_to_keep)
-            var final_scale = min(Decimal.MAX_PRECISION, combined_scale)
+            var final_scale = min(Decimal.MAX_SCALE, combined_scale)
             var low = UInt32(prod & 0xFFFFFFFF)
             var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
             var high = UInt32((prod >> 64) & 0xFFFFFFFF)

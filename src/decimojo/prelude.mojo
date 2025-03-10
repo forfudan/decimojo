@@ -13,6 +13,7 @@ from decimojo.prelude import *
 ```
 """
 
+import decimojo
 import decimojo as dm
 from decimojo import Decimal
 from decimojo import RoundingMode

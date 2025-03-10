@@ -14,10 +14,12 @@ from memory import UnsafePointer
 from decimojo.decimal import Decimal
 
 
+# UNSAFE
 fn bitcast[dtype: DType](dec: Decimal) -> Scalar[dtype]:
     """
     Direct memory bit copy from Decimal (low, mid, high) to Mojo's Scalar type.
     This performs a bitcast/reinterpretation rather than bit manipulation.
+    ***UNSAFE***: This function is unsafe and should be used with caution.
 
     Parameters:
         dtype: The Mojo scalar type to bitcast to.
@@ -26,7 +28,7 @@ fn bitcast[dtype: DType](dec: Decimal) -> Scalar[dtype]:
         dec: The Decimal to bitcast.
 
     Constraints:
-        `dtype` must be either `DType.uint128` or `DType.uint256`.
+        `dtype` must be `DType.uint128`.
 
     Returns:
         The bitcasted Decimal (low, mid, high) as a Mojo scalar.
@@ -35,8 +37,8 @@ fn bitcast[dtype: DType](dec: Decimal) -> Scalar[dtype]:
 
     # Compile-time checker: ensure the dtype is either uint128 or uint256
     constrained[
-        dtype == DType.uint128 or dtype == DType.uint256,
-        "must be uint128 or uint256",
+        dtype == DType.uint128,
+        "must be uint128",
     ]()
 
     # Bitcast the Decimal to the desired Mojo scalar type
@@ -199,7 +201,7 @@ fn truncate_to_digits[
 
     When you want to apply a scale of 31 to the coefficient `997`, it will be
     `0.0000000000000000000000000000997` with 31 digits. However, we can only
-    store 28 digits in the coefficient (Decimal.MAX_PRECISION = 28).
+    store 28 digits in the coefficient (Decimal.MAX_SCALE = 28).
     Therefore, we need to truncate the coefficient to 0 (`3 - (31 - 28)`) digits
     and round it to the nearest even number.
     The truncated ceofficient will be `1`.
@@ -209,7 +211,7 @@ fn truncate_to_digits[
 
     When you want to apply a scale of 29 to the coefficient `234567`, it will be
     `0.00000000000000000000000234567` with 29 digits. However, we can only
-    store 28 digits in the coefficient (Decimal.MAX_PRECISION = 28).
+    store 28 digits in the coefficient (Decimal.MAX_SCALE = 28).
     Therefore, we need to truncate the coefficient to 5 (`6 - (29 - 28)`) digits
     and round it to the nearest even number.
     The truncated ceofficient will be `23457`.

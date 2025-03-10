@@ -137,9 +137,7 @@ fn main() raises:
         "Python decimal precision: " + String(pydecimal.getcontext().prec),
         log_file,
     )
-    log_print(
-        "Mojo decimal precision: " + String(Decimal.MAX_PRECISION), log_file
-    )
+    log_print("Mojo decimal precision: " + String(Decimal.MAX_SCALE), log_file)
 
     # Define benchmark cases
     log_print(

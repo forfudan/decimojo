@@ -17,6 +17,7 @@
 # ===----------------------------------------------------------------------=== #
 
 import math as builtin_math
+import testing
 
 
 fn power(base: Decimal, exponent: Decimal) raises -> Decimal:
@@ -130,74 +131,48 @@ fn sqrt(x: Decimal) raises -> Decimal:
     if x == Decimal.ONE():
         return Decimal.ONE()
 
-    var x_coef = x.coefficient()
+    var x_coef: UInt128 = x.coefficient()
     var x_scale = x.scale()
 
     # Initial guess - a good guess helps converge faster
+    # use floating point approach to quickly find a good guess
 
     var guess: Decimal
 
-    # For integers, use floating point approach to quickly find a good guess
-    if x.is_integer():
-        var float_sqrt = builtin_math.sqrt(x.to_uint128())
+    # For numbers with zero scale (true integers)
+    if x_scale == 0:
+        var float_sqrt = builtin_math.sqrt(Float64(x_coef))
         guess = Decimal(UInt128(float_sqrt))
+        # print("DEBUG: scale = 0")
 
+    # For numbers with even scale
     elif x_scale % 2 == 0:
-        var float_sqrt = builtin_math.sqrt(Float64(x.coefficient()))
+        var float_sqrt = builtin_math.sqrt(Float64(x_coef))
         guess = Decimal(UInt128(float_sqrt), negative=False, scale=x_scale >> 1)
+        # print("DEBUG: scale is even")
 
-    elif x_scale % 2 == 1:
-        var float_sqrt = builtin_math.sqrt(Float64(x.coefficient())) * Float64(
-            3.15625
-        )
+    # For numbers with odd scale
+    else:
+        var float_sqrt = builtin_math.sqrt(Float64(x_coef)) * Float64(3.15625)
         guess = Decimal(
             UInt128(float_sqrt), negative=False, scale=(x_scale + 1) >> 1
         )
+        # print("DEBUG: scale is odd")
 
-    # TODO: Remove the following code?
-    # Use decimal guess
-    else:
-        # For numbers near 1, use the number itself
-        # For very small or large numbers, scale appropriately
+    # print("DEBUG: initial guess", guess)
 
-        var num_of_digits_x_int_part = decimojo.utility.number_of_digits(
-            x_coef
-        ) - x_scale
-
-        # For numbers between 0.1 and 999, start with x/2 + 0.5
-        if num_of_digits_x_int_part >= -1 and num_of_digits_x_int_part <= 3:
-            var half_x = x / Decimal(2, 0, 0, False, 0)
-            guess = half_x + Decimal(5, 0, 0, False, 1)
-
-        # For larger/smaller numbers, make a smarter guess
-        # This scales based on the magnitude of the number
-        else:
-            var shift: Int
-            if num_of_digits_x_int_part % 2 != 0:
-                # For odd exponents, adjust
-                shift = (num_of_digits_x_int_part + 1) // 2
-            else:
-                shift = num_of_digits_x_int_part // 2
-
-            # abs(num_of_digits_x_int_part) <= 29, so abs(shift) is less than or equal to 15
-            # So 10^shift will not overflow UInt64
-            # Use an approximation based on the num_of_digits_x_int_part
-            if num_of_digits_x_int_part > 0:
-                # shift > 0
-                # guess = 10 ** shift
-                guess = Decimal(UInt64(10) ** shift)
-            else:
-                # shift <= 0
-                # guess = 0.1 ** (-shift) = 1 / (10 ** (-shift))
-                guess = Decimal(1) / Decimal((UInt64(10) ** (-shift)))
+    # print("DEBUG: initial guess", guess)
+    testing.assert_false(guess.is_zero(), "Initial guess should not be zero")
 
     # Newton-Raphson iterations
     # x_n+1 = (x_n + S/x_n) / 2
     var prev_guess = Decimal.ZERO()
     var iteration_count = 0
-    var max_iterations = 100  # Prevent infinite loops
 
-    while guess != prev_guess and iteration_count < max_iterations:
+    # Iterate until guess converges or max iterations reached
+    # max iterations is set to 100 to avoid infinite loop
+    # log2(1e18) ~= 60, so 100 iterations should be enough
+    while guess != prev_guess and iteration_count < 100:
         # print("------------------------------------------------------")
         # print("DEBUG: iteration_count", iteration_count)
         # print("DEBUG: prev_guess", prev_guess)
@@ -209,24 +184,34 @@ fn sqrt(x: Decimal) raises -> Decimal:
         guess = sum_result / Decimal(2, 0, 0, False, 0)
         iteration_count += 1
 
+    # print("DEBUG: iteration_count", iteration_count)
+
     # If exact square root found remove trailing zeros after the decimal point
-    # For example, sqrt(100) = 10, not 10.000000000000000000000000000
+    # For example, sqrt(100) = 10, not 10.000000
+    # For example, sqrt(100.0000) = 10.00 not 10.000000
     # Exact square means that the coefficient of guess after removing trailing zeros
     # is equal to the coefficient of x
 
     var guess_coef = guess.coefficient()
-    var count = 0  # Count of trailing zeros
-    for _ in range(guess.scale()):
+    var num_digits_x_ceof = decimojo.utility.number_of_digits(x_coef)
+    var num_digits_x_sqrt_coef = (num_digits_x_ceof + 1) >> 1
+    var num_digits_guess_coef = decimojo.utility.number_of_digits(guess_coef)
+    var num_digits_to_decrease = num_digits_guess_coef - num_digits_x_sqrt_coef
+
+    testing.assert_true(
+        num_digits_to_decrease >= 0, "sqrt of x has fewer digits than expected"
+    )
+    for _ in range(num_digits_to_decrease):
         if guess_coef % 10 == 0:
             guess_coef //= 10
-            count += 1
         else:
             break
-
-    if guess_coef * guess_coef == x_coef:
+    else:
         var low = UInt32(guess_coef & 0xFFFFFFFF)
         var mid = UInt32((guess_coef >> 32) & 0xFFFFFFFF)
         var high = UInt32((guess_coef >> 64) & 0xFFFFFFFF)
-        return Decimal(low, mid, high, False, guess.scale() - count)
+        return Decimal(
+            low, mid, high, False, guess.scale() - num_digits_to_decrease
+        )
 
     return guess
