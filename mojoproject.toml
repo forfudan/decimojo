@@ -31,7 +31,7 @@ t = "clear && magic run test"
 test_arith = "magic run package && magic run mojo test tests/test_arithmetics.mojo && magic run delete_package"
 test_div = "magic run package && magic run mojo test tests/test_division.mojo && magic run delete_package"
 test_sqrt = "magic run package && magic run mojo test tests/test_sqrt.mojo && magic run delete_package"
-test_round = "magic run package && magic run mojo test tests/test_rounding.mojo && magic run delete_package"
+test_round = "magic run package && magic run mojo test tests/test_round.mojo && magic run delete_package"
 
 # benches
 bench = "magic run package && cd benches && magic run mojo bench.mojo && cd .. && magic run delete_package"
