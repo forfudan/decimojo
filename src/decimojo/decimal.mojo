@@ -1064,7 +1064,7 @@ struct Decimal(
         return self.__round__(ndigits=0)
 
     # ===------------------------------------------------------------------=== #
-    # Methematical methods that do not implement a trait (not a dunder)
+    # Mathematical methods that do not implement a trait (not a dunder)
     # sqrt
     # ===------------------------------------------------------------------=== #
 
@@ -1137,6 +1137,26 @@ struct Decimal(
     fn is_negative(self) -> Bool:
         """Returns True if this Decimal is negative."""
         return (self.flags & Self.SIGN_MASK) != 0
+
+    fn is_one(self) -> Bool:
+        """
+        Returns True if this Decimal represents the value 1.
+        If 10^scale == coefficient, then it's one.
+        `1` and `1.00` are considered ones.
+        """
+        if self.is_negative():
+            return False
+
+        var scale = self.scale()
+        var coef = self.coefficient()
+
+        if scale == 0 and coef == 1:
+            return True
+
+        if UInt128(10) ** scale == coef:
+            return True
+
+        return False
 
     fn is_zero(self) -> Bool:
         """
