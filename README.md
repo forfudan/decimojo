@@ -74,9 +74,9 @@ Rome wasn't built in a day. DeciMojo is currently under active development, posi
 
 ### Make it Fast ⏳ (IN PROGRESS & FUTURE WORK)
 
-- Performance optimization on basic operations (+ - * /) is mostly finished ([PR#16](https://github.com/forFudan/DeciMojo/pull/16), [PR#20](https://github.com/forFudan/DeciMojo/pull/20), [PR#21](https://github.com/forFudan/DeciMojo/pull/21)).
+- Core arithmetic operations (+, -, *, /) have been optimized for performance, with comprehensive benchmarking reports available comparing performance against Python's built-in decimal module ([PR#16](https://github.com/forFudan/DeciMojo/pull/16), [PR#20](https://github.com/forFudan/DeciMojo/pull/20), [PR#21](https://github.com/forFudan/DeciMojo/pull/21)).
 - Regular benchmarking against Python's `decimal` module (see `bench/` folder)
-- Performance optimization on other functions are acknowleged but not currently prioritized
+- Performance optimization on other functions are acknowledged but not currently prioritized
 
 ## Examples
 
@@ -254,7 +254,7 @@ print("Monthly payment: $" + String(round(payment, 2)))  # $1,073.64
 After cloning the repo onto your local disk, you can:
 
 - Use `magic run test` (or `maigic run t`) to run tests.
-- Use `magic run bench` (or `magic run b`) to generate logs for benchmarking tests agains `python.decimal` module. The log files are saved in `benches/logs/`.
+- Use `magic run bench` (or `magic run b`) to generate logs for benchmarking tests against `python.decimal` module. The log files are saved in `benches/logs/`.
 
 ## Citation
 
