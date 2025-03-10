@@ -177,7 +177,7 @@ struct Decimal(
         return Decimal(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, Decimal.SIGN_MASK)
 
     # ===------------------------------------------------------------------=== #
-    # Constructors and life time methods
+    # Constructors and life time dunder methods
     # ===------------------------------------------------------------------=== #
 
     fn __init__(out self):
@@ -194,19 +194,19 @@ struct Decimal(
         low: UInt32,
         mid: UInt32,
         high: UInt32,
-        negative: Bool,
         scale: UInt32,
+        negative: Bool,
     ):
         """
-        Initializes a Decimal with separate components.
+        Initializes a Decimal with five components.
         If the scale is greater than MAX_SCALE, it is set to MAX_SCALE.
 
         Args:
             low: Least significant 32 bits of coefficient.
             mid: Middle 32 bits of coefficient.
             high: Most significant 32 bits of coefficient.
-            negative: True if the number is negative.
             scale: Number of decimal places (0-28).
+            negative: True if the number is negative.
         """
         self.low = low
         self.mid = mid
@@ -245,7 +245,7 @@ struct Decimal(
         var scale = (flags & Self.SCALE_MASK) >> Self.SCALE_SHIFT
 
         # Use the previous constructor which handles scale rounding properly
-        self = Self(low, mid, high, is_negative, scale)
+        self = Self(low, mid, high, scale, is_negative)
 
     fn __init__(out self, integer: Int):
         """
@@ -326,7 +326,7 @@ struct Decimal(
 
     # TODO: Add arguments to specify the scale and sign for all integer constructors
     fn __init__(
-        out self, integer: UInt128, negative: Bool = False, scale: UInt32 = 0
+        out self, integer: UInt128, scale: UInt32 = 0, negative: Bool = False
     ):
         """
         Initializes a Decimal from an UInt128 value.
@@ -336,10 +336,10 @@ struct Decimal(
         var mid = UInt32((integer >> 32) & 0xFFFFFFFF)
         var high = UInt32((integer >> 64) & 0xFFFFFFFF)
 
-        self = Decimal(low, mid, high, negative, scale)
+        self = Decimal(low, mid, high, scale, negative)
 
     fn __init__(
-        out self, integer: UInt256, negative: Bool = False, scale: UInt32 = 0
+        out self, integer: UInt256, scale: UInt32 = 0, negative: Bool = False
     ):
         """
         Initializes a Decimal from an UInt256 value.
@@ -349,7 +349,7 @@ struct Decimal(
         var mid = UInt32((integer >> 32) & 0xFFFFFFFF)
         var high = UInt32((integer >> 64) & 0xFFFFFFFF)
 
-        self = Decimal(low, mid, high, negative, scale)
+        self = Decimal(low, mid, high, scale, negative)
 
     fn __init__(out self, s: String) raises:
         """

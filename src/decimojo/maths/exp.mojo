@@ -176,7 +176,7 @@ fn sqrt(x: Decimal) raises -> Decimal:
         prev_guess = guess
         var division_result = x / guess
         var sum_result = guess + division_result
-        guess = sum_result / Decimal(2, 0, 0, False, 0)
+        guess = sum_result / Decimal(2, 0, 0, 0, False)
         iteration_count += 1
 
         # print("------------------------------------------------------")
@@ -223,8 +223,8 @@ fn sqrt(x: Decimal) raises -> Decimal:
                     low,
                     mid,
                     high,
-                    False,
                     guess.scale() - num_digits_to_decrease,
+                    False,
                 )
 
     return guess

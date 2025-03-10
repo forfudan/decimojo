@@ -48,8 +48,8 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
             x2.low,
             x2.mid,
             x2.high,
-            x1.flags & x2.flags == Decimal.SIGN_MASK,
             max(x1.scale(), x2.scale()),
+            x1.flags & x2.flags == Decimal.SIGN_MASK,
         )
 
     elif x2.is_zero():
@@ -57,8 +57,8 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
             x1.low,
             x1.mid,
             x1.high,
-            x1.flags & x2.flags == Decimal.SIGN_MASK,
             max(x1.scale(), x2.scale()),
+            x1.flags & x2.flags == Decimal.SIGN_MASK,
         )
 
     # Integer addition with scale of 0 (true integers)
@@ -81,7 +81,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
             var mid = UInt32((summation >> 32) & 0xFFFFFFFF)
             var high = UInt32((summation >> 64) & 0xFFFFFFFF)
 
-            return Decimal(low, mid, high, x1.is_negative(), 0)
+            return Decimal(low, mid, high, 0, x1.is_negative())
 
         # Different signs: subtract the smaller from the larger
         else:
@@ -99,7 +99,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
             mid = UInt32((diff >> 32) & 0xFFFFFFFF)
             high = UInt32((diff >> 64) & 0xFFFFFFFF)
 
-            return Decimal(low, mid, high, is_negative, 0)
+            return Decimal(low, mid, high, 0, is_negative)
 
     # Integer addition with positive scales
     elif x1.is_integer() and x2.is_integer():
@@ -129,7 +129,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
             var mid = UInt32((summation >> 32) & 0xFFFFFFFF)
             var high = UInt32((summation >> 64) & 0xFFFFFFFF)
 
-            return Decimal(low, mid, high, x1.is_negative(), scale)
+            return Decimal(low, mid, high, scale, x1.is_negative())
 
         # Different signs: subtract the smaller from the larger
         else:
@@ -158,7 +158,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
             mid = UInt32((diff >> 32) & 0xFFFFFFFF)
             high = UInt32((diff >> 64) & 0xFFFFFFFF)
 
-            return Decimal(low, mid, high, is_negative, scale)
+            return Decimal(low, mid, high, scale, is_negative)
 
     # Float addition with the same scale
     elif x1.scale() == x2.scale():
@@ -196,7 +196,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
         mid = UInt32((truncated_summation >> 32) & 0xFFFFFFFF)
         high = UInt32((truncated_summation >> 64) & 0xFFFFFFFF)
 
-        return Decimal(low, mid, high, is_negative, final_scale)
+        return Decimal(low, mid, high, final_scale, is_negative)
 
     # Float addition which with different scales
     else:
@@ -249,7 +249,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
         mid = UInt32((truncated_summation >> 32) & 0xFFFFFFFF)
         high = UInt32((truncated_summation >> 64) & 0xFFFFFFFF)
 
-        return Decimal(low, mid, high, is_negative, final_scale)
+        return Decimal(low, mid, high, final_scale, is_negative)
 
 
 fn subtract(x1: Decimal, x2: Decimal) raises -> Decimal:
@@ -322,12 +322,12 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
                 0,
                 0,
                 0,
-                is_negative,
                 Decimal.MAX_SCALE,
+                is_negative,
             )
         # Otherwise, return 1 with correct sign and scale
         var final_scale = min(Decimal.MAX_SCALE, combined_scale)
-        return Decimal(1, 0, 0, is_negative, final_scale)
+        return Decimal(1, 0, 0, final_scale, is_negative)
 
     # SPECIAL CASE: First operand has coefficient of 1
     if x1_coef == 1:
@@ -356,8 +356,8 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
                 low,
                 mid,
                 high,
-                is_negative,
                 final_scale,
+                is_negative,
             )
 
     # SPECIAL CASE: Second operand has coefficient of 1
@@ -387,8 +387,8 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
                 low,
                 mid,
                 high,
-                is_negative,
                 final_scale,
+                is_negative,
             )
 
     # Determine the number of bits in the coefficients
@@ -408,7 +408,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
             var prod: UInt64 = UInt64(x1.low) * UInt64(x2.low)
             var low = UInt32(prod & 0xFFFFFFFF)
             var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
-            return Decimal(low, mid, 0, is_negative, 0)
+            return Decimal(low, mid, 0, 0, is_negative)
 
         # Moderate integers, use UInt128 multiplication
         elif combined_num_bits <= 128:
@@ -416,7 +416,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
             var low = UInt32(prod & 0xFFFFFFFF)
             var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
             var high = UInt32((prod >> 64) & 0xFFFFFFFF)
-            return Decimal(low, mid, high, is_negative, 0)
+            return Decimal(low, mid, high, 0, is_negative)
 
         # Large integers, use UInt256 multiplication
         else:
@@ -427,7 +427,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
                 var low = UInt32(prod & 0xFFFFFFFF)
                 var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
                 var high = UInt32((prod >> 64) & 0xFFFFFFFF)
-                return Decimal(low, mid, high, is_negative, 0)
+                return Decimal(low, mid, high, 0, is_negative)
 
     # SPECIAL CASE: Both operands are integers but with scales
     # Examples: 123.0 * 456.00
@@ -457,8 +457,8 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
                 low,
                 mid,
                 high,
-                is_negative,
                 final_scale,
+                is_negative,
             )
 
     # GENERAL CASES: Decimal multiplication with any scales
@@ -476,7 +476,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
             var low = UInt32(prod & 0xFFFFFFFF)
             var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
             var high = UInt32((prod >> 64) & 0xFFFFFFFF)
-            return Decimal(low, mid, high, is_negative, combined_scale)
+            return Decimal(low, mid, high, combined_scale, is_negative)
 
         # Combined scale no more than max precision, truncate with rounding
         else:
@@ -489,7 +489,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
             var low = UInt32(prod & 0xFFFFFFFF)
             var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
             var high = UInt32((prod >> 64) & 0xFFFFFFFF)
-            return Decimal(low, mid, high, is_negative, final_scale)
+            return Decimal(low, mid, high, final_scale, is_negative)
 
     # SUB-CASE: Both operands are moderate
     # The bits of the product will not exceed 128 bits
@@ -538,7 +538,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
         var low = UInt32(prod & 0xFFFFFFFF)
         var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
         var high = UInt32((prod >> 64) & 0xFFFFFFFF)
-        return Decimal(low, mid, high, is_negative, final_scale)
+        return Decimal(low, mid, high, final_scale, is_negative)
 
     # REMAINING CASES: Both operands are big
     # The bits of the product will not exceed 192 bits
@@ -588,7 +588,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
     var high = UInt32((prod >> 64) & 0xFFFFFFFF)
 
-    return Decimal(low, mid, high, is_negative, final_scale)
+    return Decimal(low, mid, high, final_scale, is_negative)
 
 
 fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
@@ -651,12 +651,12 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
         # SUB-CASE: divisor is 1
         # If divisor is 1, return dividend with correct sign
         if x2_scale == 0:
-            return Decimal(x1.low, x1.mid, x1.high, is_negative, x1_scale)
+            return Decimal(x1.low, x1.mid, x1.high, x1_scale, is_negative)
 
         # SUB-CASE: divisor is of coefficient 1 with positive scale
         # diff_scale > 0, then final scale is diff_scale
         elif diff_scale > 0:
-            return Decimal(x1.low, x1.mid, x1.high, is_negative, diff_scale)
+            return Decimal(x1.low, x1.mid, x1.high, diff_scale, is_negative)
 
         # diff_scale < 0, then times 10 ** (-diff_scale)
         else:
@@ -676,7 +676,7 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
                 var low = UInt32(quot & 0xFFFFFFFF)
                 var mid = UInt32((quot >> 32) & 0xFFFFFFFF)
                 var high = UInt32((quot >> 64) & 0xFFFFFFFF)
-                return Decimal(low, mid, high, is_negative, 0)
+                return Decimal(low, mid, high, 0, is_negative)
 
             # If the result should be stored in UInt256
             else:
@@ -688,7 +688,7 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
                     var low = UInt32(quot & 0xFFFFFFFF)
                     var mid = UInt32((quot >> 32) & 0xFFFFFFFF)
                     var high = UInt32((quot >> 64) & 0xFFFFFFFF)
-                    return Decimal(low, mid, high, is_negative, 0)
+                    return Decimal(low, mid, high, 0, is_negative)
 
     # SPECIAL CASE: The coefficients are equal
     # 特例: 係數相等
@@ -702,7 +702,7 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
         # If the scales are positive, return 1 with the difference in scales
         # For example, 0.1234 / 1234 = 0.0001
         if diff_scale >= 0:
-            return Decimal(1, 0, 0, is_negative, diff_scale)
+            return Decimal(1, 0, 0, diff_scale, is_negative)
 
         # SUB-CASE: The scales are negative
         # diff_scale < 0, then times 1e-diff_scale
@@ -713,7 +713,7 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
             var low = UInt32(quot & 0xFFFFFFFF)
             var mid = UInt32((quot >> 32) & 0xFFFFFFFF)
             var high = UInt32((quot >> 64) & 0xFFFFFFFF)
-            return Decimal(low, mid, high, is_negative, 0)
+            return Decimal(low, mid, high, 0, is_negative)
 
     # SPECIAL CASE: Modulus of coefficients is zero (exact division)
     # 特例: 係數的餘數爲零 (可除盡)
@@ -732,7 +732,7 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
             var low = UInt32(quot & 0xFFFFFFFF)
             var mid = UInt32((quot >> 32) & 0xFFFFFFFF)
             var high = UInt32((quot >> 64) & 0xFFFFFFFF)
-            return Decimal(low, mid, high, is_negative, diff_scale)
+            return Decimal(low, mid, high, diff_scale, is_negative)
 
         else:
             # If diff_scale < 0, return the quotient with scaling up
@@ -749,7 +749,7 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
                 var low = UInt32(quot & 0xFFFFFFFF)
                 var mid = UInt32((quot >> 32) & 0xFFFFFFFF)
                 var high = UInt32((quot >> 64) & 0xFFFFFFFF)
-                return Decimal(low, mid, high, is_negative, 0)
+                return Decimal(low, mid, high, 0, is_negative)
 
             # If the result should be stored in UInt256
             else:
@@ -760,7 +760,7 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
                     var low = UInt32(quot & 0xFFFFFFFF)
                     var mid = UInt32((quot >> 32) & 0xFFFFFFFF)
                     var high = UInt32((quot >> 64) & 0xFFFFFFFF)
-                    return Decimal(low, mid, high, is_negative, 0)
+                    return Decimal(low, mid, high, 0, is_negative)
 
     # REMAINING CASES: Perform long division
     # 其他情況: 進行長除法
@@ -881,7 +881,7 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
             var low = UInt32(quot & 0xFFFFFFFF)
             var mid = UInt32((quot >> 32) & 0xFFFFFFFF)
             var high = UInt32((quot >> 64) & 0xFFFFFFFF)
-            return Decimal(low, mid, high, is_negative, scale_of_quot)
+            return Decimal(low, mid, high, scale_of_quot, is_negative)
 
         # Otherwise, we need to truncate the first 29 or 28 digits
         else:
@@ -901,7 +901,7 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
             var mid = UInt32((truncated_quot >> 32) & 0xFFFFFFFF)
             var high = UInt32((truncated_quot >> 64) & 0xFFFFFFFF)
 
-            return Decimal(low, mid, high, is_negative, scale_of_truncated_quot)
+            return Decimal(low, mid, high, scale_of_truncated_quot, is_negative)
 
     # SUB-CASE: Use UInt256 to store the quotient
     # Also the FALLBACK approach for the remaining cases
@@ -956,7 +956,7 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
             var low = UInt32(quot256 & 0xFFFFFFFF)
             var mid = UInt32((quot256 >> 32) & 0xFFFFFFFF)
             var high = UInt32((quot256 >> 64) & 0xFFFFFFFF)
-            return Decimal(low, mid, high, is_negative, scale_of_quot)
+            return Decimal(low, mid, high, scale_of_quot, is_negative)
 
         # Otherwise, we need to truncate the first 29 or 28 digits
         else:
@@ -988,4 +988,4 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
             var mid = UInt32((truncated_quot >> 32) & 0xFFFFFFFF)
             var high = UInt32((truncated_quot >> 64) & 0xFFFFFFFF)
 
-            return Decimal(low, mid, high, is_negative, scale_of_truncated_quot)
+            return Decimal(low, mid, high, scale_of_truncated_quot, is_negative)
