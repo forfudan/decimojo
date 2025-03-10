@@ -5,7 +5,7 @@ Tests for the utility functions in the decimojo.utility module.
 from testing import assert_equal, assert_true
 import max
 
-from decimojo.prelude import *
+from decimojo import dm, Decimal
 from decimojo.utility import truncate_to_max, number_of_digits
 
 

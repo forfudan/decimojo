@@ -3,7 +3,7 @@ Comprehensive test suite for Decimal division operations.
 Includes 100 test cases covering edge cases, precision limits, and various scenarios.
 """
 
-from decimojo.prelude import *
+from decimojo import dm, Decimal
 import testing
 
 

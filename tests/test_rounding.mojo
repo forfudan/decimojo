@@ -1,7 +1,7 @@
 """
 Test Decimal rounding methods with different rounding modes and precision levels.
 """
-from decimojo.prelude import *
+from decimojo import dm, Decimal, RoundingMode
 import testing
 
 

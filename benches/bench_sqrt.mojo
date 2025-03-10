@@ -3,7 +3,7 @@ Comprehensive benchmarks for Decimal square root operations.
 Compares performance against Python's decimal module with 20 diverse test cases.
 """
 
-from decimojo.prelude import *
+from decimojo import dm, Decimal
 from python import Python, PythonObject
 from time import perf_counter_ns
 import time

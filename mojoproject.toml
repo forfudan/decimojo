@@ -17,7 +17,7 @@ package = "magic run format && magic run mojo package src/decimojo && cp decimoj
 p = "clear && magic run package"
 
 # delete the package files in tests folder
-delete_package = "rm tests/decimojo.mojopkg"
+delete_package = "rm tests/decimojo.mojopkg && rm benches/decimojo.mojopkg"
 
 # debugs (run the testing files only)
 debug = "magic run package && magic run mojo tests/*.mojo && magic run delete_package"
@@ -34,11 +34,11 @@ test_sqrt = "magic run package && magic run mojo test tests/test_sqrt.mojo && ma
 test_round = "magic run package && magic run mojo test tests/test_rounding.mojo && magic run delete_package"
 
 # benches
-bench = "magic run package && cd benches && magic run mojo bench.mojo && cd .."
+bench = "magic run package && cd benches && magic run mojo bench.mojo && cd .. && magic run delete_package"
 b = "clear && magic run bench"
-bench_mul = "magic run package && cd benches && magic run mojo bench_multiply.mojo && cd .."
-bench_div = "magic run package && cd benches && magic run mojo bench_divide.mojo && cd .."
-bench_sqrt = "magic run package && cd benches && magic run mojo bench_sqrt.mojo && cd .."
+bench_mul = "magic run package && cd benches && magic run mojo bench_multiply.mojo && cd .. && magic run delete_package"
+bench_div = "magic run package && cd benches && magic run mojo bench_divide.mojo && cd .. && magic run delete_package"
+bench_sqrt = "magic run package && cd benches && magic run mojo bench_sqrt.mojo && cd .. && magic run delete_package"
 
 # before commit
 final = "magic run test && magic run bench"

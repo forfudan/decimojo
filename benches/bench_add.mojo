@@ -3,7 +3,7 @@ Comprehensive benchmarks for Decimal addition operations.
 Compares performance against Python's decimal module.
 """
 
-from decimojo.prelude import *
+from decimojo import dm, Decimal
 from python import Python, PythonObject
 from time import perf_counter_ns
 import time

@@ -22,10 +22,9 @@ DeciMojo combines "Decimal" and "Mojo" - reflecting both its purpose (decimal ar
 
 For brevity, you can refer to it as "deci" (derived from the Latin root "decimus" meaning "tenth").
 
-When you add `from decimojo.prelude import *` at the top of your script, this imports the `decimojo` module into your namespace with the shorter alias `dm` and directly imports the `Decimal` type. This is equivalent to:
+When you add `from decimojo import dm, Decimal` at the top of your script, this imports the `decimojo` module into your namespace with the shorter alias `dm` and directly imports the `Decimal` type. This is equivalent to:
 
 ```mojo
-import decimojo
 import decimojo as dm
 from decimojo import Decimal
 ```
@@ -88,7 +87,7 @@ Here are 8 key examples highlighting the most important features of the `Decimal
 ### 1. Fixed-Point Precision for Financial Calculations
 
 ```mojo
-from decimojo.prelude import *
+from decimojo import dm, Decimal
 
 # The classic floating-point problem
 print(0.1 + 0.2)  # 0.30000000000000004 (not exactly 0.3)

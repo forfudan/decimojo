@@ -1,7 +1,7 @@
 """
 Comprehensive tests for the sqrt function of the Decimal type.
 """
-from decimojo.prelude import *
+from decimojo import dm, Decimal
 from decimojo import sqrt
 import testing
 
