@@ -336,7 +336,7 @@ fn test_edge_cases() raises:
     var max_decimal = Decimal.MAX()
     var small_divisor = Decimal("0.0001")
     try:
-        var a43 = max_decimal / small_divisor
+        var _a43 = max_decimal / small_divisor
     except:
         print(
             "Division of very large number by very small number raised"
@@ -733,7 +733,7 @@ fn test_error_cases() raises:
 
     # 91. Division by zero
     try:
-        var result = Decimal("123") / Decimal("0")
+        var _result = Decimal("123") / Decimal("0")
         testing.assert_true(
             False, "Case 91: Expected division by zero to raise exception"
         )

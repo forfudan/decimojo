@@ -831,7 +831,7 @@ fn test_extreme_cases() raises:
     try:
         var a2 = Decimal("79228162514264337593543950335")  # MAX()
         var b2 = Decimal("1")
-        var result2 = a2 + b2
+        var _result2 = a2 + b2
         print("WARNING: Addition beyond MAX() didn't raise an error")
     except:
         print("Addition overflow correctly detected")
