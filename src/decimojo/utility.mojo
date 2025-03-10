@@ -50,7 +50,7 @@ fn bitcast[dtype: DType](dec: Decimal) -> Scalar[dtype]:
     return result
 
 
-fn scale_up(value: Decimal, owned scale_diff: Int) -> Decimal:
+fn scale_up(value: Decimal, owned level: Int) raises -> Decimal:
     """
     Increase the scale of a Decimal while keeping the value unchanged.
     Internally, this means multiplying the coefficient by 10^scale_diff
@@ -58,13 +58,13 @@ fn scale_up(value: Decimal, owned scale_diff: Int) -> Decimal:
 
     Args:
         value: The Decimal to scale up.
-        scale_diff: Number of decimal places to scale up by.
+        level: Number of decimal places to scale up by.
 
     Returns:
         A new Decimal with the scaled up value.
 
     Raises:
-        OverflowError: If the scaling would cause the coefficient to overflow.
+        Error: If the level is less than 0.
 
     Examples:
 
@@ -86,17 +86,23 @@ fn scale_up(value: Decimal, owned scale_diff: Int) -> Decimal:
     .
     """
 
-    var result = value
+    if level < 0:
+        raise Error("Error in `scale_up()`: Level must be greater than 0")
 
     # Early return if no scaling needed
-    if scale_diff <= 0:
-        return result
+    if level == 0:
+        return value
+
+    var result = value
 
     # Update the scale in the flags
-    var new_scale = value.scale() + scale_diff
+    var new_scale = value.scale() + level
+
+    # TODO: Check if multiplication by 10^level would cause overflow
+    # If yes, then raise an error
     if new_scale > Decimal.MAX_SCALE + 1:
         # Cannot scale beyond max precision, limit the scaling
-        scale_diff = Decimal.MAX_SCALE + 1 - value.scale()
+        level = Decimal.MAX_SCALE + 1 - value.scale()
         new_scale = Decimal.MAX_SCALE + 1
 
     # With UInt128, we can represent the coefficient as a single value
@@ -104,14 +110,16 @@ fn scale_up(value: Decimal, owned scale_diff: Int) -> Decimal:
         value.mid
     ) << 32 | UInt128(value.low)
 
-    # Check if multiplication by 10^scale_diff would cause overflow
-    var max_coefficient = ~UInt128(0) / UInt128(10**scale_diff)
+    # TODO: Check if multiplication by 10^level would cause overflow
+    # If yes, then raise an error
+    #
+    var max_coefficient = ~UInt128(0) / UInt128(10**level)
     if coefficient > max_coefficient:
         # Handle overflow case - limit to maximum value or raise error
         coefficient = ~UInt128(0)
     else:
         # No overflow - safe to multiply
-        coefficient *= UInt128(10**scale_diff)
+        coefficient *= UInt128(10**level)
 
     # Extract the 32-bit components from the UInt128
     result.low = UInt32(coefficient & 0xFFFFFFFF)

@@ -1041,51 +1041,27 @@ struct Decimal(
     # round
     # ===------------------------------------------------------------------=== #
 
-    fn __round__(
-        self, ndigits: Int = 0, mode: RoundingMode = RoundingMode.HALF_EVEN()
-    ) raises -> Self:
+    fn __round__(self, ndigits: Int) -> Self:
         """
         Rounds this Decimal to the specified number of decimal places.
+        If `ndigits` is not given, rounds to 0 decimal places.
+        If rounding causes overflow, returns the value itself.
 
-        Args:
-            ndigits: Number of decimal places to round to.
-                If 0 (default), rounds to the nearest integer.
-                If positive, rounds to the given number of decimal places.
-                If negative, rounds to the left of the decimal point.
-            mode: The rounding mode to use. Defaults to RoundingMode.HALF_EVEN.
-
-        Returns:
-            A new Decimal rounded to the specified precision
-
-        Raises:
-            Error: If the operation would result in overflow.
-
-        Examples:
-        ```
-        round(Decimal("3.14159"), 2)  # Returns 3.14
-        round("3.14159")   # Returns 3
-        round("1234.5", -2)  # Returns 1200
-        ```
-        .
+        raises:
+            Error: Calling `round()` failed.
         """
 
-        return decimojo.round(self, ndigits, mode)
-
-    fn __round__(self, ndigits: Int = 0) -> Self:
-        """
-        **OVERLOAD**
-        Rounds this Decimal to the specified number of decimal places.
-        """
-
-        return decimojo.round(self, ndigits, RoundingMode.HALF_EVEN())
+        try:
+            return decimojo.round(
+                self, ndigits=ndigits, rounding_mode=RoundingMode.HALF_EVEN()
+            )
+        except e:
+            return self
 
     fn __round__(self) -> Self:
-        """
-        **OVERLOAD**
-        Rounds this Decimal to the specified number of decimal places.
-        """
+        """**OVERLOAD**."""
 
-        return decimojo.round(self, 0, RoundingMode.HALF_EVEN())
+        return self.__round__(ndigits=0)
 
     # ===------------------------------------------------------------------=== #
     # Methematical methods that do not implement a trait (not a dunder)

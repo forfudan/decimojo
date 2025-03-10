@@ -31,7 +31,7 @@ fn round(
     number: Decimal,
     ndigits: Int = 0,
     rounding_mode: RoundingMode = RoundingMode.HALF_EVEN(),
-) -> Decimal:
+) raises -> Decimal:
     """
     Rounds the Decimal to the specified number of decimal places.
 
@@ -59,7 +59,10 @@ fn round(
 
     # If we need more decimal places, scale up
     if ndigits > current_scale:
-        return decimojo.utility.scale_up(number, ndigits - current_scale)
+        try:
+            return decimojo.utility.scale_up(number, ndigits - current_scale)
+        except e:
+            raise Error("Error in `round()`; ", e)
 
     # Otherwise, scale down with the specified rounding mode
     return number._scale_down(current_scale - ndigits, rounding_mode)

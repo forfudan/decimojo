@@ -182,6 +182,9 @@ fn _compare_abs(a: Decimal, b: Decimal) -> Int:
     - Positive value if |a| > |b|
     - Zero if |a| = |b|
     - Negative value if |a| < |b|
+
+    raises:
+        Error: Calling `scale_up()` failed.
     """
     # Normalize scales by scaling up the one with smaller scale
     var scale_a = a.scale()
@@ -192,10 +195,17 @@ fn _compare_abs(a: Decimal, b: Decimal) -> Int:
     var b_copy = b
 
     # Scale up the decimal with smaller scale to match the other
+    # TODO: Treat this error properly
     if scale_a < scale_b:
-        a_copy = decimojo.utility.scale_up(a, scale_b - scale_a)
+        try:
+            a_copy = decimojo.utility.scale_up(a, scale_b - scale_a)
+        except:
+            a_copy = a
     elif scale_b < scale_a:
-        b_copy = decimojo.utility.scale_up(b, scale_a - scale_b)
+        try:
+            b_copy = decimojo.utility.scale_up(b, scale_a - scale_b)
+        except:
+            b_copy = b
 
     # Now both have the same scale, compare integer components
     # Compare high parts first (most significant)
