@@ -56,6 +56,29 @@ Rome wasn't built in a day. DeciMojo is currently under active development, posi
 - Regular benchmarking against Python's `decimal` module (see `bench/` folder)
 - Performance optimization on other functions are acknowleged but not currently prioritized
 
+## Advantages
+
+DeciMojo provides exceptional computational precision without sacrificing performance. It maintains accuracy throughout complex calculations where floating-point or other decimal implementations might introduce subtle errors.
+
+Consider the square root of `15.9999`. When comparing DeciMojo's implementation with Python's decimal module (both rounded to 16 decimal places):
+
+- DeciMojo calculates: `3.9999874999804687`
+- Python's decimal returns: `3.9999874999804685`
+
+The mathematically correct value (to 50+ digits) is:
+`3.9999874999804686889646053303778122644631365491812...`
+
+When rounded to 16 decimal places, the correct result is `3.9999874999804687`, confirming that DeciMojo produces the more accurate result in this case.
+
+```log
+Function:                   sqrt()
+Decimal value:              15.9999
+DeciMojo result:            3.9999874999804686889646053305
+Python's decimal result:    3.9999874999804685
+```
+
+This precision advantage becomes increasingly important in financial, scientific, and engineering calculations where small rounding errors can compound into significant discrepancies.
+
 ## Examples
 
 The `Decimal` type can represent values with up to 29 significant digits and a maximum of 28 digits after the decimal point. When a value exceeds the maximum representable value (`2^96 - 1`), DeciMojo either raises an error or rounds the value to fit within these constraints. For example, the significant digits of `8.8888888888888888888888888888` (29 eights total with 28 after the decimal point) exceeds the maximum representable value (`2^96 - 1`) and is automatically rounded to `8.888888888888888888888888888` (28 eights total with 27 after the decimal point).

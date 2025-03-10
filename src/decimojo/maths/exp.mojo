@@ -173,45 +173,58 @@ fn sqrt(x: Decimal) raises -> Decimal:
     # max iterations is set to 100 to avoid infinite loop
     # log2(1e18) ~= 60, so 100 iterations should be enough
     while guess != prev_guess and iteration_count < 100:
-        # print("------------------------------------------------------")
-        # print("DEBUG: iteration_count", iteration_count)
-        # print("DEBUG: prev_guess", prev_guess)
-        # print("DEBUG: guess", guess)
-
         prev_guess = guess
         var division_result = x / guess
         var sum_result = guess + division_result
         guess = sum_result / Decimal(2, 0, 0, False, 0)
         iteration_count += 1
 
+        # print("------------------------------------------------------")
+        # print("DEBUG: iteration_count", iteration_count)
+        # print("DEBUG: prev guess", prev_guess)
+        # print("DEBUG: new guess ", guess)
+
     # print("DEBUG: iteration_count", iteration_count)
 
     # If exact square root found remove trailing zeros after the decimal point
-    # For example, sqrt(100) = 10, not 10.000000
+    # For example, sqrt(81) = 9, not 9.000000
     # For example, sqrt(100.0000) = 10.00 not 10.000000
     # Exact square means that the coefficient of guess after removing trailing zeros
     # is equal to the coefficient of x
 
     var guess_coef = guess.coefficient()
-    var num_digits_x_ceof = decimojo.utility.number_of_digits(x_coef)
-    var num_digits_x_sqrt_coef = (num_digits_x_ceof + 1) >> 1
-    var num_digits_guess_coef = decimojo.utility.number_of_digits(guess_coef)
-    var num_digits_to_decrease = num_digits_guess_coef - num_digits_x_sqrt_coef
 
-    testing.assert_true(
-        num_digits_to_decrease >= 0, "sqrt of x has fewer digits than expected"
-    )
-    for _ in range(num_digits_to_decrease):
-        if guess_coef % 10 == 0:
-            guess_coef //= 10
-        else:
-            break
-    else:
-        var low = UInt32(guess_coef & 0xFFFFFFFF)
-        var mid = UInt32((guess_coef >> 32) & 0xFFFFFFFF)
-        var high = UInt32((guess_coef >> 64) & 0xFFFFFFFF)
-        return Decimal(
-            low, mid, high, False, guess.scale() - num_digits_to_decrease
+    # No need to do this if the last digit of the coefficient of guess is not zero
+    if guess_coef % 10 == 0:
+        var num_digits_x_ceof = decimojo.utility.number_of_digits(x_coef)
+        var num_digits_x_sqrt_coef = (num_digits_x_ceof + 1) >> 1
+        var num_digits_guess_coef = decimojo.utility.number_of_digits(
+            guess_coef
         )
+        var num_digits_to_decrease = num_digits_guess_coef - num_digits_x_sqrt_coef
+
+        testing.assert_true(
+            num_digits_to_decrease >= 0,
+            "sqrt of x has fewer digits than expected",
+        )
+        for _ in range(num_digits_to_decrease):
+            if guess_coef % 10 == 0:
+                guess_coef //= 10
+            else:
+                break
+        else:
+            # print("DEBUG: guess", guess)
+            # print("DEBUG: guess_coef after removing trailing zeros", guess_coef)
+            if guess_coef * guess_coef == x_coef:
+                var low = UInt32(guess_coef & 0xFFFFFFFF)
+                var mid = UInt32((guess_coef >> 32) & 0xFFFFFFFF)
+                var high = UInt32((guess_coef >> 64) & 0xFFFFFFFF)
+                return Decimal(
+                    low,
+                    mid,
+                    high,
+                    False,
+                    guess.scale() - num_digits_to_decrease,
+                )
 
     return guess
