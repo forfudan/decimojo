@@ -24,7 +24,11 @@ from .decimal import Decimal
 from .decimal import Decimal as D
 
 from .rounding_mode import RoundingMode
-from .rounding_mode import ROUND_DOWN, ROUND_HALF_UP, ROUND_HALF_EVEN, ROUND_UP
+
+alias ROUND_DOWN = RoundingMode.DOWN
+alias ROUND_HALF_UP = RoundingMode.HALF_UP
+alias ROUND_HALF_EVEN = RoundingMode.HALF_EVEN
+alias ROUND_UP = RoundingMode.UP
 
 from .maths import (
     add,

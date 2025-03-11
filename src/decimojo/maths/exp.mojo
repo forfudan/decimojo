@@ -145,14 +145,14 @@ fn sqrt(x: Decimal) raises -> Decimal:
     # For numbers with even scale
     elif x_scale % 2 == 0:
         var float_sqrt = builtin_math.sqrt(Float64(x_coef))
-        guess = Decimal(UInt128(float_sqrt), negative=False, scale=x_scale >> 1)
+        guess = Decimal(UInt128(float_sqrt), scale=x_scale >> 1, sign=False)
         # print("DEBUG: scale is even")
 
     # For numbers with odd scale
     else:
         var float_sqrt = builtin_math.sqrt(Float64(x_coef)) * Float64(3.15625)
         guess = Decimal(
-            UInt128(float_sqrt), negative=False, scale=(x_scale + 1) >> 1
+            UInt128(float_sqrt), scale=(x_scale + 1) >> 1, sign=False
         )
         # print("DEBUG: scale is odd")
 

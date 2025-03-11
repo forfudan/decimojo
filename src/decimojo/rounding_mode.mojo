@@ -5,13 +5,6 @@
 # ===----------------------------------------------------------------------=== #
 
 
-# alias
-alias ROUND_DOWN = RoundingMode.DOWN()
-alias ROUND_HALF_UP = RoundingMode.HALF_UP()
-alias ROUND_HALF_EVEN = RoundingMode.HALF_EVEN()
-alias ROUND_UP = RoundingMode.UP()
-
-
 struct RoundingMode:
     """
     Represents different rounding modes for decimal operations.
@@ -22,6 +15,12 @@ struct RoundingMode:
     - HALF_EVEN: Round to nearest even digit if equidistant (banker's rounding)
     - UP: Round away from zero
     """
+
+    # alias
+    alias ROUND_DOWN = RoundingMode.DOWN()
+    alias ROUND_HALF_UP = RoundingMode.HALF_UP()
+    alias ROUND_HALF_EVEN = RoundingMode.HALF_EVEN()
+    alias ROUND_UP = RoundingMode.UP()
 
     # Internal value
     var value: Int

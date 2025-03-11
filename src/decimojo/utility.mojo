@@ -170,9 +170,9 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
 
     else:
         # Calculate how many digits we need to truncate
-        # Calculate how many digits to keep (MAX_VALUE_DIGITS = 29)
-        var num_digits = number_of_digits(value)
-        var digits_to_remove = num_digits - Decimal.MAX_VALUE_DIGITS
+        # Calculate how many digits to keep (MAX_NUM_DIGITS = 29)
+        var ndigits = number_of_digits(value)
+        var digits_to_remove = ndigits - Decimal.MAX_NUM_DIGITS
 
         # Collect digits for rounding decision
         var divisor = ValueType(10) ** ValueType(digits_to_remove)
@@ -262,69 +262,78 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
             return truncated_value
 
 
-# TODO: Evalulate whether this can replace truncate_to_max in some cases.
+# TODO: Evaluate whether this can replace truncate_to_max in some cases.
 # TODO: Add rounding modes to this function.
-fn truncate_to_digits[
+fn round_to_keep_first_n_digits[
     dtype: DType, //
-](value: Scalar[dtype], num_digits: Int) -> Scalar[dtype]:
+](
+    value: Scalar[dtype],
+    ndigits: Int,
+    rounding_mode: RoundingMode = RoundingMode.ROUND_HALF_EVEN,
+) -> Scalar[dtype]:
     """
-    Truncates a UInt256 or UInt128 value to the specified number of digits.
-    Uses banker's rounding (ROUND_HALF_EVEN) for any truncated digits.
+    Rounds and keeps the first n digits of a integral value.
+    Default to use banker's rounding (ROUND_HALF_EVEN) for any truncated digits.
     `792281625142643375935439503356` with digits 2 will be truncated to `79`.
     `997` with digits 2 will be truncated to `100`.
 
-    This is useful in two cases:
+    Parameters:
+        dtype: Must be either uint128 or uint256.
+
+    Args:
+        value: The integral value to truncate.
+        ndigits: The number of significant digits to evaluate.
+        rounding_mode: The rounding mode to use.
+
+    Constraints:
+        `dtype` must be either `DType.uint128` or `DType.uint256`.
+
+    Returns:
+        The truncated value.
+
+    Notes:
+
+    This function is useful in two cases:
+
     (1) When you want to evaluate whether the coefficient will overflow after
     rounding, just look the first N digits (after rounding). If the truncated
     value is larger than the maximum, then it will overflow. Then you need to
     either raise an error (in case scale = 0 or integral part overflows),
     or keep only the first 28 digits in the coefficient.
+
     (2) When you want to round a value.
 
-    The function is useful in the following cases.
+    There are some examples:
 
-    When you want to apply a scale of 31 to the coefficient `997`, it will be
+    - When you want to apply a scale of 31 to the coefficient `997`, it will be
     `0.0000000000000000000000000000997` with 31 digits. However, we can only
     store 28 digits in the coefficient (Decimal.MAX_SCALE = 28).
     Therefore, we need to truncate the coefficient to 0 (`3 - (31 - 28)`) digits
     and round it to the nearest even number.
     The truncated ceofficient will be `1`.
     Note that `truncated_digits = 1` which is not equal to
-    `num_digits = 0`, meaning there is a rounding to next digit.
+    `ndigits = 0`, meaning there is a rounding to next digit.
     The final decimal value will be `0.0000000000000000000000000001`.
 
-    When you want to apply a scale of 29 to the coefficient `234567`, it will be
-    `0.00000000000000000000000234567` with 29 digits. However, we can only
+    - When you want to apply a scale of 29 to the coefficient `234567`, it will
+    be `0.00000000000000000000000234567` with 29 digits. However, we can only
     store 28 digits in the coefficient (Decimal.MAX_SCALE = 28).
     Therefore, we need to truncate the coefficient to 5 (`6 - (29 - 28)`) digits
     and round it to the nearest even number.
-    The truncated ceofficient will be `23457`.
+    The truncated coefficient will be `23457`.
     The final decimal value will be `0.0000000000000000000000023457`.
 
-    When you want to apply a scale of 5 to the coefficient `234567`, it will be
-    `2.34567` with 5 digits.
-    Since `num_digits_to_keep = 6 - (5 - 28) = 29`,
+    - When you want to apply a scale of 5 to the coefficient `234567`, it will
+    be `2.34567` with 5 digits.
+    Since `ndigits_to_keep = 6 - (5 - 28) = 29`,
     it is greater and equal to the number of digits of the input value.
     The function will return the value as it is.
 
-    It can also be used for rounding function. For example, if you want to round
-    `12.34567` (`1234567` with scale `5`) to 2 digits,
+    - It can also be used for rounding function. For example, if you want to
+    round `12.34567` (`1234567` with scale `5`) to 2 digits,
     the function input will be `234567` and `4 = (7 - 5) + 2`.
     That is (number of digits - scale) + number of rounding points.
     The output is `1235`.
-
-    Parameters:
-        dtype: Must be either uint128 or uint256.
-
-    Args:
-        value: The UInt256 value to truncate.
-        num_digits: The number of significant digits to evalulate.
-
-    Constraints:
-        `dtype` must be either `DType.uint128` or `DType.uint256`.
-
-    Returns:
-        The truncated UInt256 value, guaranteed to fit within 96 bits.
     """
 
     alias ValueType = Scalar[dtype]
@@ -334,49 +343,66 @@ fn truncate_to_digits[
         "must be uint128 or uint256",
     ]()
 
-    if num_digits < 0:
+    # CASE: The number of digits is less than 0
+    # Return 0.
+    #
+    # Example:
+    # 123_456 keep -1 digits => 0
+    if ndigits < 0:
         return 0
 
-    var num_significant_digits = number_of_digits(value)
-    # If the number of digits is less than or equal to the specified digits,
-    # return the value
-    if num_significant_digits <= num_digits:
+    var ndigits_of_x = number_of_digits(value)
+
+    # CASE: If the number of digits is greater than or equal to the specified digits
+    # Return the value.
+    #
+    # Example:
+    # 123_456 keep 7 digits => 123_456
+    if ndigits >= ndigits_of_x:
         return value
 
+    # CASE: If the number of digits is less than the specified digits
+    # Return the value.
+    #
+    # Example:
+    # 123_456 keep 4 digits => 1_235
     else:
         # Calculate how many digits we need to truncate
-        # Calculate how many digits to keep (MAX_VALUE_DIGITS = 29)
-        var num_digits_to_remove = num_significant_digits - num_digits
+        # Calculate how many digits to keep (MAX_NUM_DIGITS = 29)
+        var ndigits_to_remove = ndigits_of_x - ndigits
 
         # Collect digits for rounding decision
-        divisor = ValueType(10) ** ValueType(num_digits_to_remove)
-        truncated_value = value // divisor
+        var divisor = ValueType(10) ** ValueType(ndigits_to_remove)
+        var truncated_value = value // divisor
         var remainder = value % divisor
 
-        # Get the most significant digit of the remainder for rounding
-        var rounding_digit = remainder // 10 ** (num_digits_to_remove - 1)
+        # If RoundingMode is ROUND_DOWN, just truncate the value
+        if rounding_mode == RoundingMode.ROUND_DOWN:
+            pass
 
-        # Check if we need to round up based on banker's rounding (ROUND_HALF_EVEN)
-        var round_up = False
+        # If RoundingMode is ROUND_UP, round up the value if remainder is greater than 0
+        elif rounding_mode == RoundingMode.ROUND_UP:
+            if remainder > 0:
+                truncated_value += 1
 
-        # If rounding digit is > 5, round up
-        if rounding_digit > 5:
-            round_up = True
-        # If rounding digit is 5, check if there are any non-zero digits after it
-        elif rounding_digit == 5:
-            var has_nonzero_after = remainder > 5 * 10 ** (
-                num_digits_to_remove - 1
-            )
-            # If there are non-zero digits after, round up
-            if has_nonzero_after:
-                round_up = True
-            # Otherwise, round to even (round up if last kept digit is odd)
+        # If RoundingMode is ROUND_HALF_UP, round up the value if remainder is greater than 5
+        elif rounding_mode == RoundingMode.ROUND_HALF_UP:
+            var cutoff_value = 5 * 10 ** (ndigits_to_remove - 1)
+            if remainder >= cutoff_value:
+                truncated_value += 1
+
+        # If RoundingMode is ROUND_HALF_EVEN, round to nearest even digit if equidistant
+        else:
+            var cutoff_value = 5 * 10 ** (ndigits_to_remove - 1)
+            if remainder > cutoff_value:
+                truncated_value += 1
+            elif remainder == cutoff_value:
+                # If truncated_value is even, do not round up
+                # If truncated_value is odd, round up
+                truncated_value += truncated_value % 2
             else:
-                round_up = (truncated_value % 2) == 1
-
-        # Apply rounding if needed
-        if round_up:
-            truncated_value += 1
+                # Do nothing
+                pass
 
         return truncated_value
 

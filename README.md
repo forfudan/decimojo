@@ -146,7 +146,7 @@ print(precise)  # 0.1234567890123456789012345678
 
 # Truncation to specific number of digits
 var large_num = Decimal("123456.789")
-print(truncate_to_digits(large_num, 4))  # 1235 (banker's rounded)
+print(round_to_keep_first_n_digits(large_num, 4))  # 1235 (banker's rounded)
 ```
 
 ### 4. Sign Handling and Absolute Value
