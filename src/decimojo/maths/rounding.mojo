@@ -21,8 +21,8 @@ Implements functions for mathematical operations on Decimal objects.
 
 import testing
 
-from decimojo.decimal import Decimal
-from decimojo.rounding_mode import RoundingMode
+from ..decimal import Decimal
+from ..rounding_mode import RoundingMode
 
 # ===------------------------------------------------------------------------===#
 # Rounding
@@ -145,4 +145,5 @@ fn round(
             return Decimal.ZERO()
 
     # Add a fallback raise even if it seems unreachable
-    raise Error("Error in `round()`: Unreachable code path reached")
+    testing.assert_true(False, "Unreachable code path reached")
+    return number

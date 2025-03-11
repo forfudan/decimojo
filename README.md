@@ -25,8 +25,7 @@ For brevity, you can refer to it as "deci" (derived from the Latin root "decimus
 When you add `from decimojo import dm, Decimal` at the top of your script, this imports the `decimojo` module into your namespace with the shorter alias `dm` and directly imports the `Decimal` type. This is equivalent to:
 
 ```mojo
-import decimojo as dm
-from decimojo import Decimal
+from decimojo.prelude import dm, Decimal, RoundingMode
 ```
 
 ## Advantages

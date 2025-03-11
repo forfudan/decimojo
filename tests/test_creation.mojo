@@ -1,7 +1,7 @@
 """
 Test Decimal creation from integer, float, or string values.
 """
-from decimojo import Decimal
+from decimojo.prelude import dm, Decimal, RoundingMode
 import testing
 
 
@@ -399,7 +399,7 @@ fn test_decimal_from_components() raises:
 
     # Test case 12: Overflow scale protection
     try:
-        var overflow_scale = Decimal(123, 0, 0, 100, False)
+        var _overflow_scale = Decimal(123, 0, 0, 100, False)
     except:
         print("Successfully caught overflow scale error")
 

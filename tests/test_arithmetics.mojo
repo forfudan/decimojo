@@ -2,7 +2,7 @@
 Test Decimal arithmetic operations including addition, subtraction, and negation.
 """
 
-from decimojo import dm, Decimal
+from decimojo.prelude import dm, Decimal, RoundingMode
 import testing
 
 

@@ -3,7 +3,7 @@ Test Decimal conversion methods: __int__, __float__, and __str__
 for different numerical cases.
 """
 
-from decimojo import dm, Decimal
+from decimojo.prelude import dm, Decimal, RoundingMode
 import testing
 import time
 

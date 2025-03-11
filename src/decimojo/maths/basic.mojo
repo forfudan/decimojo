@@ -23,8 +23,8 @@ Implements functions for mathematical operations on Decimal objects.
 
 import testing
 
-from decimojo.decimal import Decimal
-from decimojo.rounding_mode import RoundingMode
+from ..decimal import Decimal
+from ..rounding_mode import RoundingMode
 
 
 # TODO: Like `multiply` use combined bits to determine the appropriate method

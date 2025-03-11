@@ -27,7 +27,7 @@
 Implements functions for comparison operations on Decimal objects.
 """
 
-from decimojo.decimal import Decimal
+from .decimal import Decimal
 
 
 fn greater(a: Decimal, b: Decimal) -> Bool:
