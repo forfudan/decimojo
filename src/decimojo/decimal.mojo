@@ -714,12 +714,8 @@ struct Decimal(
         """
         Initializes a Decimal from a floating-point value.
         The reliability of this method is limited by the precision of Float64.
-        Because Float64 is reliable up to 15 significant digits and marginally
-        reliable up to 17 siginficant digits, this method will extract the first
-        17 significant digits from the value is there are decimal places.
-        If the integral part of the value exceeds 17 digits, the method will
-        extract the number of digits equal to the number of digits in the
-        integral part, but only the first 15 digits are reliable.
+        Float64 is reliable up to 15 significant digits and marginally
+        reliable up to 16 siginficant digits. Be careful when using this method.
 
         Args:
             value: The floating-point value to convert to Decimal.
@@ -728,8 +724,8 @@ struct Decimal(
             The Decimal representation of the floating-point value.
 
         Raises:
-            Error: If the input is infinity or NaN.
             Error: If the input is too large to be transformed into Decimal.
+            Error: If the input is infinity or NaN.
 
         Example:
         ```mojo
@@ -742,8 +738,8 @@ struct Decimal(
         .
         """
 
-        # Only take the first 17 significant digits because it is reliable
-        var ndigits: Int = 17
+        # Only take the first 28 significant digits because it is reliable
+        var ndigits: Int = 28
 
         # CASE: Zero
         if value == Float64(0):
@@ -757,11 +753,22 @@ struct Decimal(
         else:
             abs_value = value
 
+        # Early exit if the value is too large
+        if UInt128(abs_value) > Decimal.MAX_AS_UINT128:
+            raise Error(
+                String(
+                    "Error in `from_float`: The float value {} is too"
+                    " large (>=2^96) to be transformed into Decimal"
+                ).format(value)
+            )
+
         # Extract binary exponent using IEEE 754 bit manipulation
         var bits: UInt64 = UnsafePointer[Float64].address_of(abs_value).bitcast[
             UInt64
         ]().load()
-        var biased_exponent: UInt64 = (bits >> 52) & 0x7FF
+        var biased_exponent: Int = Int((bits >> 52) & 0x7FF)
+
+        # print("DEBUG: biased_exponent = ", biased_exponent)
 
         # CASE: Denormalized number that is very close to zero
         if biased_exponent == 0:
@@ -772,7 +779,8 @@ struct Decimal(
             raise Error("Cannot convert infinity or NaN to Decimal")
 
         # Get unbias exponent
-        var binary_exp: UInt64 = biased_exponent - 1023
+        var binary_exp: Int = biased_exponent - 1023
+        # print("DEBUG: binary_exp = ", binary_exp)
 
         # Convert binary exponent to approximate decimal exponent
         # log10(2^exp) = exp * log10(2)
@@ -786,38 +794,42 @@ struct Decimal(
         elif power_check < 1.0:
             decimal_exp -= 1
 
-        # Since the int part of the value exceeds ndigits
-        # We just take out its int part as Decimal
-        if decimal_exp >= ndigits:
-            var coefficient = UInt128(abs_value)
-            if coefficient > Decimal.MAX_AS_UINT128:
-                raise Error(
-                    String(
-                        "Error in `from_float`: The float value {} is too"
-                        " large (>=2^96) to be transformed into Decimal"
-                    ).format(value)
-                )
-            var low = UInt32(coefficient & 0xFFFFFFFF)
-            var mid = UInt32((coefficient >> 32) & 0xFFFFFFFF)
-            var high = UInt32((coefficient >> 64) & 0xFFFFFFFF)
+        # print("DEBUG: decimal_exp = ", decimal_exp)
 
-            # Return both the significant digits and the scale
-            return Decimal(low, mid, high, 0, is_negative)
+        var coefficient: UInt128 = UInt128(abs_value)
+        var remainder = abs(abs_value - Float64(coefficient))
+        # print("DEBUG: integer_part = ", coefficient)
+        # print("DEBUG: remainder = ", remainder)
 
-        else:
-            # Calculate scale needed for exactly ndigits significant digits
-            var scale: UInt32 = ndigits - 1 - decimal_exp
-            # Scale the value to get n significant digits
-            var scaled_value: Float64 = abs_value * 10 ** Float64(scale)
+        var scale = 0
+        var temp_coef: UInt128
+        var num_trailing_zeros: Int = 0
+        while scale < Decimal.MAX_SCALE:
+            remainder *= 10
+            var int_part = UInt128(remainder)
+            remainder = abs(remainder - Float64(int_part))
+            temp_coef = coefficient * 10 + int_part
+            if temp_coef > Decimal.MAX_AS_UINT128:
+                break
+            coefficient = temp_coef
+            scale += 1
+            if int_part == 0:
+                num_trailing_zeros += 1
+            else:
+                num_trailing_zeros = 0
+            # print("DEBUG: coefficient = ", coefficient)
+            # print("DEBUG: scale = ", scale)
+            # print("DEBUG: remainder = ", remainder)
 
-            # Truncate to integer (no rounding)
-            var coefficient = UInt64(scaled_value)
+        coefficient = coefficient // UInt128(10) ** num_trailing_zeros
+        scale -= num_trailing_zeros
 
-            var low = UInt32(coefficient & 0xFFFFFFFF)
-            var mid = UInt32((coefficient >> 32) & 0xFFFFFFFF)
+        var low = UInt32(coefficient & 0xFFFFFFFF)
+        var mid = UInt32((coefficient >> 32) & 0xFFFFFFFF)
+        var high = UInt32((coefficient >> 64) & 0xFFFFFFFF)
 
-            # Return both the significant digits and the scale
-            return Decimal(low, mid, 0, scale, is_negative)
+        # Return both the significant digits and the scale
+        return Decimal(low, mid, high, scale, is_negative)
 
     # ===------------------------------------------------------------------=== #
     # Output dunders, type-transfer dunders, and other type-transfer methods
