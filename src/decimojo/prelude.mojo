@@ -16,5 +16,5 @@ from decimojo.prelude import *
 """
 
 import decimojo as dm
-from .decimal import Decimal
-from .rounding_mode import RoundingMode
+from decimojo.decimal import Decimal
+from decimojo.rounding_mode import RoundingMode

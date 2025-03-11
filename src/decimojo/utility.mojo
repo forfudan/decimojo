@@ -11,7 +11,7 @@
 
 from memory import UnsafePointer
 
-from .decimal import Decimal
+from decimojo.decimal import Decimal
 
 
 # UNSAFE

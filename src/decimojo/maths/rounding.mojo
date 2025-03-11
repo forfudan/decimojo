@@ -21,9 +21,9 @@ Implements functions for mathematical operations on Decimal objects.
 
 import testing
 
-from ..decimal import Decimal
-from ..rounding_mode import RoundingMode
-import ..utility
+from decimojo.decimal import Decimal
+from decimojo.rounding_mode import RoundingMode
+import decimojo.utility
 
 # ===------------------------------------------------------------------------===#
 # Rounding
@@ -63,7 +63,7 @@ fn round(
         return number
 
     var x_coef = number.coefficient()
-    var ndigits_of_x = utility.number_of_digits(x_coef)
+    var ndigits_of_x = decimojo.utility.number_of_digits(x_coef)
 
     # CASE: If ndigits is larger than the current scale
     # Scale up the coefficient of the number to the desired scale
@@ -129,7 +129,7 @@ fn round(
         var ndigits_to_keep = ndigits_of_x + scale_diff
 
         # Keep the first `ndigits_to_keep` digits with specified rounding mode
-        var res_coef = utility.round_to_keep_first_n_digits(
+        var res_coef = decimojo.utility.round_to_keep_first_n_digits(
             x_coef, ndigits=ndigits_to_keep, rounding_mode=rounding_mode
         )
 
