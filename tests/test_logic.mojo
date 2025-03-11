@@ -2,7 +2,7 @@
 Test Decimal logic operations for comparison, including basic comparisons,
 edge cases, special handling for zero values, and operator overloads.
 """
-from decimojo import Decimal
+from decimojo.prelude import dm, Decimal, RoundingMode
 from decimojo.logic import (
     greater,
     greater_equal,

@@ -11,11 +11,13 @@
 #
 # Organization of methods:
 # - Constructors and life time methods
+# - Constructing methods that are not dunders
 # - Output dunders, type-transfer dunders, and other type-transfer methods
 # - Basic unary arithmetic operation dunders
 # - Basic binary arithmetic operation dunders
 # - Basic binary logic operation dunders
-# - Other dunders that implements tratis
+# - Other dunders that implements traits
+# - Mathematical methods that do not implement a trait (not a dunder)
 # - Other methods
 # - Internal methods
 #
@@ -34,7 +36,11 @@
 Implements basic object methods for working with decimal numbers.
 """
 
-from .rounding_mode import RoundingMode
+import decimojo.logic
+import decimojo.maths
+from decimojo.rounding_mode import RoundingMode
+import decimojo.str
+import decimojo.utility
 
 
 @register_passable
@@ -91,9 +97,9 @@ struct Decimal(
     alias MAX_AS_UINT256 = UInt256(79228162514264337593543950335)
     alias MAX_AS_INT256 = Int256(79228162514264337593543950335)
     alias MAX_AS_STRING = String("79228162514264337593543950335")
-    """Maximum value as a string of a 128-bit Decimal."""
-    alias MAX_VALUE_DIGITS = 29
-    """Length of the max value as a string. For 128-bit Decimal, it is 29 digits"""
+    """Maximum value as a string."""
+    alias MAX_NUM_DIGITS = 29
+    """Number of digits of the max value 79228162514264337593543950335."""
     alias SIGN_MASK = UInt32(0x80000000)
     """Sign mask. `0b1000_0000_0000_0000_0000_0000_0000_0000`.
     1 bit for sign (0 is positive and 1 is negative)."""
@@ -114,7 +120,7 @@ struct Decimal(
         Returns a Decimal representing positive infinity.
         Internal representation: `0b0000_0000_0000_0000_0000_0000_0001`.
         """
-        return Decimal(0, 0, 0, 0x00000001)
+        return Decimal.from_raw_words(0, 0, 0, 0x00000001)
 
     @staticmethod
     fn NEGATIVE_INFINITY() -> Decimal:
@@ -122,7 +128,7 @@ struct Decimal(
         Returns a Decimal representing negative infinity.
         Internal representation: `0b1000_0000_0000_0000_0000_0000_0001`.
         """
-        return Decimal(0, 0, 0, 0x80000001)
+        return Decimal.from_raw_words(0, 0, 0, 0x80000001)
 
     @staticmethod
     fn NAN() -> Decimal:
@@ -130,7 +136,7 @@ struct Decimal(
         Returns a Decimal representing Not a Number (NaN).
         Internal representation: `0b0000_0000_0000_0000_0000_0000_0010`.
         """
-        return Decimal(0, 0, 0, 0x00000010)
+        return Decimal.from_raw_words(0, 0, 0, 0x00000010)
 
     @staticmethod
     fn NEGATIVE_NAN() -> Decimal:
@@ -138,28 +144,28 @@ struct Decimal(
         Returns a Decimal representing negative Not a Number.
         Internal representation: `0b1000_0000_0000_0000_0000_0000_0010`.
         """
-        return Decimal(0, 0, 0, 0x80000010)
+        return Decimal.from_raw_words(0, 0, 0, 0x80000010)
 
     @staticmethod
     fn ZERO() -> Decimal:
         """
         Returns a Decimal representing 0.
         """
-        return Decimal(0, 0, 0, 0)
+        return Decimal.from_raw_words(0, 0, 0, 0)
 
     @staticmethod
     fn ONE() -> Decimal:
         """
         Returns a Decimal representing 1.
         """
-        return Decimal(1, 0, 0, 0)
+        return Decimal.from_raw_words(1, 0, 0, 0)
 
     @staticmethod
     fn NEGATIVE_ONE() -> Decimal:
         """
         Returns a Decimal representing -1.
         """
-        return Decimal(1, 0, 0, Decimal.SIGN_MASK)
+        return Decimal.from_raw_words(1, 0, 0, Decimal.SIGN_MASK)
 
     @staticmethod
     fn MAX() -> Decimal:
@@ -167,14 +173,16 @@ struct Decimal(
         Returns the maximum possible Decimal value.
         This is equivalent to 79228162514264337593543950335.
         """
-        return Decimal(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0)
+        return Decimal.from_raw_words(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0)
 
     @staticmethod
     fn MIN() -> Decimal:
         """Returns the minimum possible Decimal value (negative of MAX).
         This is equivalent to -79228162514264337593543950335.
         """
-        return Decimal(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, Decimal.SIGN_MASK)
+        return Decimal.from_raw_words(
+            0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, Decimal.SIGN_MASK
+        )
 
     # ===------------------------------------------------------------------=== #
     # Constructors and life time dunder methods
@@ -195,8 +203,8 @@ struct Decimal(
         mid: UInt32,
         high: UInt32,
         scale: UInt32,
-        negative: Bool,
-    ):
+        sign: Bool,
+    ) raises:
         """
         Initializes a Decimal with five components.
         If the scale is greater than MAX_SCALE, it is set to MAX_SCALE.
@@ -206,8 +214,17 @@ struct Decimal(
             mid: Middle 32 bits of coefficient.
             high: Most significant 32 bits of coefficient.
             scale: Number of decimal places (0-28).
-            negative: True if the number is negative.
+            sign: True if the number is negative.
         """
+
+        if scale > Self.MAX_SCALE:
+            raise Error(
+                String(
+                    "Error in Decimal constructor with five components: Scale"
+                    " must be between 0 and 28, but got {}"
+                ).format(scale)
+            )
+
         self.low = low
         self.mid = mid
         self.high = high
@@ -219,33 +236,10 @@ struct Decimal(
         flags |= (scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
 
         # Set the sign bit if negative
-        if negative:
+        if sign:
             flags |= Self.SIGN_MASK
 
         self.flags = flags
-
-        # Now check if we need to round due to exceeding MAX_SCALE
-        if scale > Self.MAX_SCALE:
-            # We need to properly round the value, not just change the scale
-            var scale_diff = scale - Self.MAX_SCALE
-            # The 'self' is already initialized above, so we can call _scale_down on it
-            self = self._scale_down(Int(scale_diff), RoundingMode.HALF_EVEN())
-
-        # No else needed as the value is already properly set if scale <= MAX_SCALE
-
-    fn __init__(
-        out self, low: UInt32, mid: UInt32, high: UInt32, flags: UInt32
-    ):
-        """
-        Initializes a Decimal with internal representation fields.
-        Uses the full constructor to properly handle scaling and rounding.
-        """
-        # Extract sign and scale from flags
-        var is_negative = (flags & Self.SIGN_MASK) != 0
-        var scale = (flags & Self.SCALE_MASK) >> Self.SCALE_SHIFT
-
-        # Use the previous constructor which handles scale rounding properly
-        self = Self(low, mid, high, scale, is_negative)
 
     fn __init__(out self, integer: Int):
         """
@@ -326,8 +320,8 @@ struct Decimal(
 
     # TODO: Add arguments to specify the scale and sign for all integer constructors
     fn __init__(
-        out self, integer: UInt128, scale: UInt32 = 0, negative: Bool = False
-    ):
+        out self, integer: UInt128, scale: UInt32 = 0, sign: Bool = False
+    ) raises:
         """
         Initializes a Decimal from an UInt128 value.
         ***WARNING***: This constructor can only handle values up to 96 bits.
@@ -336,11 +330,17 @@ struct Decimal(
         var mid = UInt32((integer >> 32) & 0xFFFFFFFF)
         var high = UInt32((integer >> 64) & 0xFFFFFFFF)
 
-        self = Decimal(low, mid, high, scale, negative)
+        try:
+            self = Decimal(low, mid, high, scale, sign)
+        except e:
+            raise Error(
+                "Error in Decimal constructor with UInt128, scale, and sign: ",
+                e,
+            )
 
     fn __init__(
-        out self, integer: UInt256, scale: UInt32 = 0, negative: Bool = False
-    ):
+        out self, integer: UInt256, scale: UInt32 = 0, sign: Bool = False
+    ) raises:
         """
         Initializes a Decimal from an UInt256 value.
         ***WARNING***: This constructor can only handle values up to 96 bits.
@@ -349,7 +349,14 @@ struct Decimal(
         var mid = UInt32((integer >> 32) & 0xFFFFFFFF)
         var high = UInt32((integer >> 64) & 0xFFFFFFFF)
 
-        self = Decimal(low, mid, high, scale, negative)
+        try:
+            self = Decimal(low, mid, high, scale, sign)
+        except e:
+            raise Error(
+                "Error in Decimal constructor with UInt256, scale, and sign: ",
+                e,
+            )
+        self = Decimal(low, mid, high, scale, sign)
 
     fn __init__(out self, s: String) raises:
         """
@@ -534,8 +541,8 @@ struct Decimal(
         else:
             string_of_integral_part = String("0")
 
-        if (len(string_of_integral_part) > Decimal.MAX_VALUE_DIGITS) or (
-            len(string_of_integral_part) == Decimal.MAX_VALUE_DIGITS
+        if (len(string_of_integral_part) > Decimal.MAX_NUM_DIGITS) or (
+            len(string_of_integral_part) == Decimal.MAX_NUM_DIGITS
             and (string_of_integral_part > Self.MAX_AS_STRING)
         ):
             raise Error(
@@ -547,8 +554,8 @@ struct Decimal(
         # Check if the coefficient is too large
         # Recursively re-calculate the coefficient string after truncating and rounding
         # until it fits within the Decimal limits
-        while (len(string_of_coefficient) > Decimal.MAX_VALUE_DIGITS) or (
-            len(string_of_coefficient) == Decimal.MAX_VALUE_DIGITS
+        while (len(string_of_coefficient) > Decimal.MAX_NUM_DIGITS) or (
+            len(string_of_coefficient) == Decimal.MAX_NUM_DIGITS
             and (string_of_coefficient > Self.MAX_AS_STRING)
         ):
             var raw_length_of_coefficient = len(string_of_coefficient)
@@ -556,10 +563,10 @@ struct Decimal(
             # If string_of_coefficient has more than 29 digits, truncate it to 29.
             # If string_of_coefficient has 29 digits and larger than MAX_AS_STRING, truncate it to 28.
             var rounding_digit = string_of_coefficient[
-                min(Decimal.MAX_VALUE_DIGITS, len(string_of_coefficient) - 1)
+                min(Decimal.MAX_NUM_DIGITS, len(string_of_coefficient) - 1)
             ]
             string_of_coefficient = string_of_coefficient[
-                : min(Decimal.MAX_VALUE_DIGITS, len(string_of_coefficient) - 1)
+                : min(Decimal.MAX_NUM_DIGITS, len(string_of_coefficient) - 1)
             ]
 
             scale = scale - (
@@ -592,8 +599,8 @@ struct Decimal(
                     result_chars.insert(0, String("1"))
 
                     # If adding a digit would exceed max length, drop the last digit and reduce scale
-                    if len(result_chars) > Decimal.MAX_VALUE_DIGITS:
-                        result_chars = result_chars[: Decimal.MAX_VALUE_DIGITS]
+                    if len(result_chars) > Decimal.MAX_NUM_DIGITS:
+                        result_chars = result_chars[: Decimal.MAX_NUM_DIGITS]
                         if scale > 0:
                             scale -= 1
 
@@ -678,6 +685,27 @@ struct Decimal(
         self.mid = other.mid
         self.high = other.high
         self.flags = other.flags
+
+    # ===------------------------------------------------------------------=== #
+    # Constructing methods that are not dunders
+    # ===------------------------------------------------------------------=== #
+
+    @staticmethod
+    fn from_raw_words(
+        low: UInt32, mid: UInt32, high: UInt32, flags: UInt32
+    ) -> Self:
+        """
+        Initializes a Decimal with internal representation fields.
+        We do not check whether the scale is within the valid range.
+        """
+
+        var result = Decimal()
+        result.low = low
+        result.mid = mid
+        result.high = high
+        result.flags = flags
+
+        return result
 
     # ===------------------------------------------------------------------=== #
     # Output dunders, type-transfer dunders, and other type-transfer methods
@@ -814,7 +842,9 @@ struct Decimal(
         Returns:
             The absolute value of this Decimal.
         """
-        var result = Decimal(self.low, self.mid, self.high, self.flags)
+        var result = Decimal.from_raw_words(
+            self.low, self.mid, self.high, self.flags
+        )
         result.flags &= ~Self.SIGN_MASK  # Clear sign bit
 
         return result
@@ -825,7 +855,9 @@ struct Decimal(
         if self.is_zero():
             return Decimal.ZERO()
 
-        var result = Decimal(self.low, self.mid, self.high, self.flags)
+        var result = Decimal.from_raw_words(
+            self.low, self.mid, self.high, self.flags
+        )
         result.flags ^= Self.SIGN_MASK  # Flip sign bit
         return result
 
@@ -848,21 +880,21 @@ struct Decimal(
         """
 
         try:
-            return decimojo.add(self, other)
+            return decimojo.maths.add(self, other)
         except e:
             raise Error("Error in `__add__()`; ", e)
 
     fn __add__(self, other: Float64) raises -> Self:
-        return decimojo.add(self, Decimal(other))
+        return decimojo.maths.add(self, Decimal(other))
 
     fn __add__(self, other: Int) raises -> Self:
-        return decimojo.add(self, Decimal(other))
+        return decimojo.maths.add(self, Decimal(other))
 
     fn __radd__(self, other: Float64) raises -> Self:
-        return decimojo.add(Decimal(other), self)
+        return decimojo.maths.add(Decimal(other), self)
 
     fn __radd__(self, other: Int) raises -> Self:
-        return decimojo.add(Decimal(other), self)
+        return decimojo.maths.add(Decimal(other), self)
 
     fn __sub__(self, other: Decimal) raises -> Self:
         """
@@ -887,52 +919,52 @@ struct Decimal(
         """
 
         try:
-            return decimojo.subtract(self, other)
+            return decimojo.maths.subtract(self, other)
         except e:
             raise Error("Error in `__sub__()`; ", e)
 
     fn __sub__(self, other: Float64) raises -> Self:
-        return decimojo.subtract(self, Decimal(other))
+        return decimojo.maths.subtract(self, Decimal(other))
 
     fn __sub__(self, other: Int) raises -> Self:
-        return decimojo.subtract(self, Decimal(other))
+        return decimojo.maths.subtract(self, Decimal(other))
 
     fn __rsub__(self, other: Float64) raises -> Self:
-        return decimojo.subtract(Decimal(other), self)
+        return decimojo.maths.subtract(Decimal(other), self)
 
     fn __rsub__(self, other: Int) raises -> Self:
-        return decimojo.subtract(Decimal(other), self)
+        return decimojo.maths.subtract(Decimal(other), self)
 
     fn __mul__(self, other: Decimal) raises -> Self:
         """
         Multiplies two Decimal values and returns a new Decimal containing the product.
         """
 
-        return decimojo.multiply(self, other)
+        return decimojo.maths.multiply(self, other)
 
     fn __mul__(self, other: Float64) raises -> Self:
-        return decimojo.multiply(self, Decimal(other))
+        return decimojo.maths.multiply(self, Decimal(other))
 
     fn __mul__(self, other: Int) raises -> Self:
-        return decimojo.multiply(self, Decimal(other))
+        return decimojo.maths.multiply(self, Decimal(other))
 
     fn __truediv__(self, other: Decimal) raises -> Self:
         """
         Divides this Decimal by another Decimal and returns a new Decimal containing the result.
         """
-        return decimojo.true_divide(self, other)
+        return decimojo.maths.true_divide(self, other)
 
     fn __truediv__(self, other: Float64) raises -> Self:
-        return decimojo.true_divide(self, Decimal(other))
+        return decimojo.maths.true_divide(self, Decimal(other))
 
     fn __truediv__(self, other: Int) raises -> Self:
-        return decimojo.true_divide(self, Decimal(other))
+        return decimojo.maths.true_divide(self, Decimal(other))
 
     fn __rtruediv__(self, other: Float64) raises -> Self:
-        return decimojo.true_divide(Decimal(other), self)
+        return decimojo.maths.true_divide(Decimal(other), self)
 
     fn __rtruediv__(self, other: Int) raises -> Self:
-        return decimojo.true_divide(Decimal(other), self)
+        return decimojo.maths.true_divide(Decimal(other), self)
 
     fn __pow__(self, exponent: Decimal) raises -> Self:
         """
@@ -974,7 +1006,7 @@ struct Decimal(
         Returns:
             True if self is greater than other, False otherwise.
         """
-        return decimojo.greater(self, other)
+        return decimojo.logic.greater(self, other)
 
     fn __ge__(self, other: Decimal) -> Bool:
         """
@@ -986,7 +1018,7 @@ struct Decimal(
         Returns:
             True if self is greater than or equal to other, False otherwise.
         """
-        return decimojo.greater_equal(self, other)
+        return decimojo.logic.greater_equal(self, other)
 
     fn __lt__(self, other: Decimal) -> Bool:
         """
@@ -998,7 +1030,7 @@ struct Decimal(
         Returns:
             True if self is less than other, False otherwise.
         """
-        return decimojo.less(self, other)
+        return decimojo.logic.less(self, other)
 
     fn __le__(self, other: Decimal) -> Bool:
         """
@@ -1010,7 +1042,7 @@ struct Decimal(
         Returns:
             True if self is less than or equal to other, False otherwise.
         """
-        return decimojo.less_equal(self, other)
+        return decimojo.logic.less_equal(self, other)
 
     fn __eq__(self, other: Decimal) -> Bool:
         """
@@ -1022,7 +1054,7 @@ struct Decimal(
         Returns:
             True if self is equal to other, False otherwise.
         """
-        return decimojo.equal(self, other)
+        return decimojo.logic.equal(self, other)
 
     fn __ne__(self, other: Decimal) -> Bool:
         """
@@ -1034,63 +1066,70 @@ struct Decimal(
         Returns:
             True if self is not equal to other, False otherwise.
         """
-        return decimojo.not_equal(self, other)
+        return decimojo.logic.not_equal(self, other)
 
     # ===------------------------------------------------------------------=== #
-    # Other dunders that implements tratis
+    # Other dunders that implements traits
     # round
     # ===------------------------------------------------------------------=== #
 
-    fn __round__(
-        self, ndigits: Int = 0, mode: RoundingMode = RoundingMode.HALF_EVEN()
+    fn __round__(self, ndigits: Int) -> Self:
+        """
+        Rounds this Decimal to the specified number of decimal places.
+        If `ndigits` is not given, rounds to 0 decimal places.
+        If rounding causes overflow, returns the value itself.
+
+        raises:
+            Error: Calling `round()` failed.
+        """
+
+        try:
+            return decimojo.maths.round(
+                self, ndigits=ndigits, rounding_mode=RoundingMode.HALF_EVEN()
+            )
+        except e:
+            return self
+
+    fn __round__(self) -> Self:
+        """**OVERLOAD**."""
+
+        return self.__round__(ndigits=0)
+
+    # ===------------------------------------------------------------------=== #
+    # Mathematical methods that do not implement a trait (not a dunder)
+    # round, sqrt
+    # ===------------------------------------------------------------------=== #
+
+    fn round(
+        self,
+        ndigits: Int = 0,
+        rounding_mode: RoundingMode = RoundingMode.ROUND_HALF_EVEN,
     ) raises -> Self:
         """
         Rounds this Decimal to the specified number of decimal places.
+        Compared to `__round__`, this method:
+        (1) Allows specifying the rounding mode.
+        (2) Raises an error if the operation would result in overflow.
 
         Args:
-            ndigits: Number of decimal places to round to.
-                If 0 (default), rounds to the nearest integer.
-                If positive, rounds to the given number of decimal places.
-                If negative, rounds to the left of the decimal point.
-            mode: The rounding mode to use. Defaults to RoundingMode.HALF_EVEN.
+            ndigits: The number of decimal places to round to.
+                Default is 0.
+            rounding_mode: The rounding mode to use.
+                Default is RoundingMode.ROUND_HALF_EVEN.
 
         Returns:
-            A new Decimal rounded to the specified precision
+            The rounded Decimal value.
 
         Raises:
-            Error: If the operation would result in overflow.
-
-        Examples:
-        ```
-        round(Decimal("3.14159"), 2)  # Returns 3.14
-        round("3.14159")   # Returns 3
-        round("1234.5", -2)  # Returns 1200
-        ```
-        .
+            Error: If calling `round()` failed.
         """
 
-        return decimojo.round(self, ndigits, mode)
-
-    fn __round__(self, ndigits: Int = 0) -> Self:
-        """
-        **OVERLOAD**
-        Rounds this Decimal to the specified number of decimal places.
-        """
-
-        return decimojo.round(self, ndigits, RoundingMode.HALF_EVEN())
-
-    fn __round__(self) -> Self:
-        """
-        **OVERLOAD**
-        Rounds this Decimal to the specified number of decimal places.
-        """
-
-        return decimojo.round(self, 0, RoundingMode.HALF_EVEN())
-
-    # ===------------------------------------------------------------------=== #
-    # Methematical methods that do not implement a trait (not a dunder)
-    # sqrt
-    # ===------------------------------------------------------------------=== #
+        try:
+            return decimojo.maths.round(
+                self, ndigits=ndigits, rounding_mode=rounding_mode
+            )
+        except e:
+            raise Error("Error in `Decimal.round()`; ", e)
 
     fn sqrt(self) raises -> Self:
         """
@@ -1103,7 +1142,7 @@ struct Decimal(
             Error: If the operation would result in overflow.
         """
 
-        return decimojo.sqrt(self)
+        return decimojo.maths.sqrt(self)
 
     # ===------------------------------------------------------------------=== #
     # Other methods
@@ -1161,6 +1200,26 @@ struct Decimal(
     fn is_negative(self) -> Bool:
         """Returns True if this Decimal is negative."""
         return (self.flags & Self.SIGN_MASK) != 0
+
+    fn is_one(self) -> Bool:
+        """
+        Returns True if this Decimal represents the value 1.
+        If 10^scale == coefficient, then it's one.
+        `1` and `1.00` are considered ones.
+        """
+        if self.is_negative():
+            return False
+
+        var scale = self.scale()
+        var coef = self.coefficient()
+
+        if scale == 0 and coef == 1:
+            return True
+
+        if UInt128(10) ** scale == coef:
+            return True
+
+        return False
 
     fn is_zero(self) -> Bool:
         """
@@ -1224,8 +1283,8 @@ struct Decimal(
         - Zero if |self| = |other|
         - Negative value if |self| < |other|
         """
-        var abs_self = decimojo.absolute(self)
-        var abs_other = decimojo.absolute(other)
+        var abs_self = decimojo.maths.absolute(self)
+        var abs_other = decimojo.maths.absolute(other)
 
         if abs_self > abs_other:
             return 1
@@ -1342,57 +1401,6 @@ struct Decimal(
         # Apply rounding if needed
         if should_round_up:
             coefficient += 1
-
-        # Extract the 32-bit components from the UInt128
-        result.low = UInt32(coefficient & 0xFFFFFFFF)
-        result.mid = UInt32((coefficient >> 32) & 0xFFFFFFFF)
-        result.high = UInt32((coefficient >> 64) & 0xFFFFFFFF)
-
-        # Set the new scale
-        result.flags = (self.flags & ~Self.SCALE_MASK) | (
-            UInt32(new_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
-        )
-
-        return result
-
-    fn _scale_up(self, owned scale_diff: Int) -> Decimal:
-        """
-        Internal method to scale up a decimal by:
-            - multiplying coefficient by 10^scale_diff
-            - increase the scale by scale_diff
-
-        Args:
-            scale_diff: Number of decimal places to scale up by
-
-        Returns:
-            A new Decimal with the scaled up value
-        """
-        var result = self
-
-        # Early return if no scaling needed
-        if scale_diff <= 0:
-            return result
-
-        # Update the scale in the flags
-        var new_scale = self.scale() + scale_diff
-        if new_scale > Self.MAX_SCALE + 1:
-            # Cannot scale beyond max precision, limit the scaling
-            scale_diff = Self.MAX_SCALE + 1 - self.scale()
-            new_scale = Self.MAX_SCALE + 1
-
-        # With UInt128, we can represent the coefficient as a single value
-        var coefficient = UInt128(self.high) << 64 | UInt128(
-            self.mid
-        ) << 32 | UInt128(self.low)
-
-        # Check if multiplication by 10^scale_diff would cause overflow
-        var max_coefficient = ~UInt128(0) / UInt128(10**scale_diff)
-        if coefficient > max_coefficient:
-            # Handle overflow case - limit to maximum value or raise error
-            coefficient = ~UInt128(0)
-        else:
-            # No overflow - safe to multiply
-            coefficient *= UInt128(10**scale_diff)
 
         # Extract the 32-bit components from the UInt128
         result.low = UInt32(coefficient & 0xFFFFFFFF)

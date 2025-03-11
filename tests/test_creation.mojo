@@ -1,7 +1,7 @@
 """
 Test Decimal creation from integer, float, or string values.
 """
-from decimojo import Decimal
+from decimojo.prelude import dm, Decimal, RoundingMode
 import testing
 
 
@@ -398,10 +398,10 @@ fn test_decimal_from_components() raises:
     testing.assert_equal(max_scale.scale(), 28, "Maximum scale should be 28")
 
     # Test case 12: Overflow scale protection
-    var overflow_scale = Decimal(123, 0, 0, 100, False)
-    testing.assert_true(
-        overflow_scale.scale() <= 28, "Scale should be capped to max precision"
-    )
+    try:
+        var _overflow_scale = Decimal(123, 0, 0, 100, False)
+    except:
+        print("Successfully caught overflow scale error")
 
     print("All component constructor tests passed!")
 

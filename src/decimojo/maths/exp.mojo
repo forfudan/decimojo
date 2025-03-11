@@ -19,6 +19,8 @@
 import math as builtin_math
 import testing
 
+import decimojo.utility
+
 
 fn power(base: Decimal, exponent: Decimal) raises -> Decimal:
     """
@@ -128,9 +130,6 @@ fn sqrt(x: Decimal) raises -> Decimal:
     if x.is_zero():
         return Decimal.ZERO()
 
-    if x == Decimal.ONE():
-        return Decimal.ONE()
-
     var x_coef: UInt128 = x.coefficient()
     var x_scale = x.scale()
 
@@ -148,18 +147,16 @@ fn sqrt(x: Decimal) raises -> Decimal:
     # For numbers with even scale
     elif x_scale % 2 == 0:
         var float_sqrt = builtin_math.sqrt(Float64(x_coef))
-        guess = Decimal(UInt128(float_sqrt), negative=False, scale=x_scale >> 1)
+        guess = Decimal(UInt128(float_sqrt), scale=x_scale >> 1, sign=False)
         # print("DEBUG: scale is even")
 
     # For numbers with odd scale
     else:
         var float_sqrt = builtin_math.sqrt(Float64(x_coef)) * Float64(3.15625)
         guess = Decimal(
-            UInt128(float_sqrt), negative=False, scale=(x_scale + 1) >> 1
+            UInt128(float_sqrt), scale=(x_scale + 1) >> 1, sign=False
         )
         # print("DEBUG: scale is odd")
-
-    # print("DEBUG: initial guess", guess)
 
     # print("DEBUG: initial guess", guess)
     testing.assert_false(guess.is_zero(), "Initial guess should not be zero")
@@ -197,7 +194,7 @@ fn sqrt(x: Decimal) raises -> Decimal:
     # No need to do this if the last digit of the coefficient of guess is not zero
     if guess_coef % 10 == 0:
         var num_digits_x_ceof = decimojo.utility.number_of_digits(x_coef)
-        var num_digits_x_sqrt_coef = (num_digits_x_ceof + 1) >> 1
+        var num_digits_x_sqrt_coef = (num_digits_x_ceof >> 1) + 1
         var num_digits_guess_coef = decimojo.utility.number_of_digits(
             guess_coef
         )
@@ -215,7 +212,9 @@ fn sqrt(x: Decimal) raises -> Decimal:
         else:
             # print("DEBUG: guess", guess)
             # print("DEBUG: guess_coef after removing trailing zeros", guess_coef)
-            if guess_coef * guess_coef == x_coef:
+            if (guess_coef * guess_coef == x_coef) or (
+                guess_coef * guess_coef == x_coef * 10
+            ):
                 var low = UInt32(guess_coef & 0xFFFFFFFF)
                 var mid = UInt32((guess_coef >> 32) & 0xFFFFFFFF)
                 var high = UInt32((guess_coef >> 64) & 0xFFFFFFFF)

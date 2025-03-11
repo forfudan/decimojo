@@ -25,8 +25,7 @@ For brevity, you can refer to it as "deci" (derived from the Latin root "decimus
 When you add `from decimojo import dm, Decimal` at the top of your script, this imports the `decimojo` module into your namespace with the shorter alias `dm` and directly imports the `Decimal` type. This is equivalent to:
 
 ```mojo
-import decimojo as dm
-from decimojo import Decimal
+from decimojo.prelude import dm, Decimal, RoundingMode
 ```
 
 ## Advantages
@@ -146,7 +145,7 @@ print(precise)  # 0.1234567890123456789012345678
 
 # Truncation to specific number of digits
 var large_num = Decimal("123456.789")
-print(truncate_to_digits(large_num, 4))  # 1235 (banker's rounded)
+print(round_to_keep_first_n_digits(large_num, 4))  # 1235 (banker's rounded)
 ```
 
 ### 4. Sign Handling and Absolute Value

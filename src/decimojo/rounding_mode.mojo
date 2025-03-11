@@ -17,13 +17,14 @@ struct RoundingMode:
     """
 
     # alias
-    alias down = Self.DOWN()
-    alias half_up = Self.HALF_UP()
-    alias half_even = Self.HALF_EVEN()
-    alias up = Self.UP()
+    alias ROUND_DOWN = Self.DOWN()
+    alias ROUND_HALF_UP = Self.HALF_UP()
+    alias ROUND_HALF_EVEN = Self.HALF_EVEN()
+    alias ROUND_UP = Self.UP()
 
     # Internal value
     var value: Int
+    """Internal value representing the rounding mode."""
 
     # Static constants for each rounding mode
     @staticmethod
@@ -51,3 +52,18 @@ struct RoundingMode:
 
     fn __eq__(self, other: Self) -> Bool:
         return self.value == other.value
+
+    fn __eq__(self, other: String) -> Bool:
+        return String(self) == other
+
+    fn __str__(self) -> String:
+        if self == Self.DOWN():
+            return "ROUND_DOWN"
+        elif self == Self.HALF_UP():
+            return "ROUND_HALF_UP"
+        elif self == Self.HALF_EVEN():
+            return "ROUND_HALF_EVEN"
+        elif self == Self.UP():
+            return "ROUND_UP"
+        else:
+            return "UNKNOWN_ROUNDING_MODE"
