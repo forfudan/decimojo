@@ -74,20 +74,11 @@ fn run_benchmark(
 
     # Get Python decimal module for quantize operation
     var pydecimal = Python.import_module("decimal")
-
-    # Create quantize pattern for Python (e.g., '0.01' for 2 decimal places)
-    var quantize_pattern: String = ""
-    if places <= 0:
-        quantize_pattern = "1" + "0" * (-places) if places < 0 else "1"
-    else:
-        quantize_pattern = "0." + "0" * (places - 1) + "1"
-
-    var py_pattern = pydecimal.Decimal(quantize_pattern)
-    var py_rounding = pydecimal.ROUND_HALF_EVEN  # Banker's rounding
+    var py = Python.import_module("builtins")
 
     # Execute the operations once to verify correctness
     var mojo_result = round(d_mojo, places)
-    var py_result = d_py.quantize(py_pattern, py_rounding)
+    var py_result = py.round(d_py, ndigits=places)
 
     # Display results for verification
     log_print("Mojo result:     " + String(mojo_result), log_file)
@@ -104,7 +95,7 @@ fn run_benchmark(
     # Benchmark Python implementation
     t0 = perf_counter_ns()
     for _ in range(iterations):
-        _ = d_py.quantize(py_pattern, py_rounding)
+        _ = py.round(d_py, ndigits=places)
     var python_time = (perf_counter_ns() - t0) / iterations
 
     # Calculate speedup factor
