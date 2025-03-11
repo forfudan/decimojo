@@ -18,6 +18,7 @@
 
 import math as builtin_math
 import testing
+import ..utility
 
 
 fn power(base: Decimal, exponent: Decimal) raises -> Decimal:
@@ -191,11 +192,9 @@ fn sqrt(x: Decimal) raises -> Decimal:
 
     # No need to do this if the last digit of the coefficient of guess is not zero
     if guess_coef % 10 == 0:
-        var num_digits_x_ceof = decimojo.utility.number_of_digits(x_coef)
+        var num_digits_x_ceof = utility.number_of_digits(x_coef)
         var num_digits_x_sqrt_coef = (num_digits_x_ceof >> 1) + 1
-        var num_digits_guess_coef = decimojo.utility.number_of_digits(
-            guess_coef
-        )
+        var num_digits_guess_coef = utility.number_of_digits(guess_coef)
         var num_digits_to_decrease = num_digits_guess_coef - num_digits_x_sqrt_coef
 
         testing.assert_true(

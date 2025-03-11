@@ -28,6 +28,7 @@ Implements functions for comparison operations on Decimal objects.
 """
 
 from .decimal import Decimal
+import .utility
 
 
 fn greater(a: Decimal, b: Decimal) -> Bool:
@@ -198,12 +199,12 @@ fn _compare_abs(a: Decimal, b: Decimal) -> Int:
     # TODO: Treat this error properly
     if scale_a < scale_b:
         try:
-            a_copy = decimojo.utility.scale_up(a, scale_b - scale_a)
+            a_copy = utility.scale_up(a, scale_b - scale_a)
         except:
             a_copy = a
     elif scale_b < scale_a:
         try:
-            b_copy = decimojo.utility.scale_up(b, scale_a - scale_b)
+            b_copy = utility.scale_up(b, scale_a - scale_b)
         except:
             b_copy = b
 

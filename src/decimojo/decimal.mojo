@@ -36,7 +36,11 @@
 Implements basic object methods for working with decimal numbers.
 """
 
+import .logic
+import .maths
 from .rounding_mode import RoundingMode
+import .str
+import .utility
 
 
 @register_passable
@@ -664,7 +668,7 @@ struct Decimal(
             # Use maximum precision
             # Convert float to string ith high precision to capture all significant digits
             # The format ensures we get up to MAX_SCALE decimal places
-            float_str = decimojo.str._float_to_decimal_str(f, Self.MAX_SCALE)
+            float_str = str._float_to_decimal_str(f, Self.MAX_SCALE)
         else:
             # Use default string representation
             # Convert float to string with Mojo's default precision
@@ -876,21 +880,21 @@ struct Decimal(
         """
 
         try:
-            return decimojo.add(self, other)
+            return maths.add(self, other)
         except e:
             raise Error("Error in `__add__()`; ", e)
 
     fn __add__(self, other: Float64) raises -> Self:
-        return decimojo.add(self, Decimal(other))
+        return maths.add(self, Decimal(other))
 
     fn __add__(self, other: Int) raises -> Self:
-        return decimojo.add(self, Decimal(other))
+        return maths.add(self, Decimal(other))
 
     fn __radd__(self, other: Float64) raises -> Self:
-        return decimojo.add(Decimal(other), self)
+        return maths.add(Decimal(other), self)
 
     fn __radd__(self, other: Int) raises -> Self:
-        return decimojo.add(Decimal(other), self)
+        return maths.add(Decimal(other), self)
 
     fn __sub__(self, other: Decimal) raises -> Self:
         """
@@ -915,52 +919,52 @@ struct Decimal(
         """
 
         try:
-            return decimojo.subtract(self, other)
+            return maths.subtract(self, other)
         except e:
             raise Error("Error in `__sub__()`; ", e)
 
     fn __sub__(self, other: Float64) raises -> Self:
-        return decimojo.subtract(self, Decimal(other))
+        return maths.subtract(self, Decimal(other))
 
     fn __sub__(self, other: Int) raises -> Self:
-        return decimojo.subtract(self, Decimal(other))
+        return maths.subtract(self, Decimal(other))
 
     fn __rsub__(self, other: Float64) raises -> Self:
-        return decimojo.subtract(Decimal(other), self)
+        return maths.subtract(Decimal(other), self)
 
     fn __rsub__(self, other: Int) raises -> Self:
-        return decimojo.subtract(Decimal(other), self)
+        return maths.subtract(Decimal(other), self)
 
     fn __mul__(self, other: Decimal) raises -> Self:
         """
         Multiplies two Decimal values and returns a new Decimal containing the product.
         """
 
-        return decimojo.multiply(self, other)
+        return maths.multiply(self, other)
 
     fn __mul__(self, other: Float64) raises -> Self:
-        return decimojo.multiply(self, Decimal(other))
+        return maths.multiply(self, Decimal(other))
 
     fn __mul__(self, other: Int) raises -> Self:
-        return decimojo.multiply(self, Decimal(other))
+        return maths.multiply(self, Decimal(other))
 
     fn __truediv__(self, other: Decimal) raises -> Self:
         """
         Divides this Decimal by another Decimal and returns a new Decimal containing the result.
         """
-        return decimojo.true_divide(self, other)
+        return maths.true_divide(self, other)
 
     fn __truediv__(self, other: Float64) raises -> Self:
-        return decimojo.true_divide(self, Decimal(other))
+        return maths.true_divide(self, Decimal(other))
 
     fn __truediv__(self, other: Int) raises -> Self:
-        return decimojo.true_divide(self, Decimal(other))
+        return maths.true_divide(self, Decimal(other))
 
     fn __rtruediv__(self, other: Float64) raises -> Self:
-        return decimojo.true_divide(Decimal(other), self)
+        return maths.true_divide(Decimal(other), self)
 
     fn __rtruediv__(self, other: Int) raises -> Self:
-        return decimojo.true_divide(Decimal(other), self)
+        return maths.true_divide(Decimal(other), self)
 
     fn __pow__(self, exponent: Decimal) raises -> Self:
         """
@@ -1002,7 +1006,7 @@ struct Decimal(
         Returns:
             True if self is greater than other, False otherwise.
         """
-        return decimojo.greater(self, other)
+        return logic.greater(self, other)
 
     fn __ge__(self, other: Decimal) -> Bool:
         """
@@ -1014,7 +1018,7 @@ struct Decimal(
         Returns:
             True if self is greater than or equal to other, False otherwise.
         """
-        return decimojo.greater_equal(self, other)
+        return logic.greater_equal(self, other)
 
     fn __lt__(self, other: Decimal) -> Bool:
         """
@@ -1026,7 +1030,7 @@ struct Decimal(
         Returns:
             True if self is less than other, False otherwise.
         """
-        return decimojo.less(self, other)
+        return logic.less(self, other)
 
     fn __le__(self, other: Decimal) -> Bool:
         """
@@ -1038,7 +1042,7 @@ struct Decimal(
         Returns:
             True if self is less than or equal to other, False otherwise.
         """
-        return decimojo.less_equal(self, other)
+        return logic.less_equal(self, other)
 
     fn __eq__(self, other: Decimal) -> Bool:
         """
@@ -1050,7 +1054,7 @@ struct Decimal(
         Returns:
             True if self is equal to other, False otherwise.
         """
-        return decimojo.equal(self, other)
+        return logic.equal(self, other)
 
     fn __ne__(self, other: Decimal) -> Bool:
         """
@@ -1062,7 +1066,7 @@ struct Decimal(
         Returns:
             True if self is not equal to other, False otherwise.
         """
-        return decimojo.not_equal(self, other)
+        return logic.not_equal(self, other)
 
     # ===------------------------------------------------------------------=== #
     # Other dunders that implements traits
@@ -1080,7 +1084,7 @@ struct Decimal(
         """
 
         try:
-            return decimojo.round(
+            return maths.round(
                 self, ndigits=ndigits, rounding_mode=RoundingMode.HALF_EVEN()
             )
         except e:
@@ -1121,7 +1125,7 @@ struct Decimal(
         """
 
         try:
-            return decimojo.round(
+            return maths.round(
                 self, ndigits=ndigits, rounding_mode=rounding_mode
             )
         except e:
@@ -1138,7 +1142,7 @@ struct Decimal(
             Error: If the operation would result in overflow.
         """
 
-        return decimojo.sqrt(self)
+        return maths.sqrt(self)
 
     # ===------------------------------------------------------------------=== #
     # Other methods
@@ -1158,7 +1162,7 @@ struct Decimal(
         # Fast implementation using bitcast
         # Use bitcast to directly convert the three 32-bit parts to a UInt128
         # UInt128 must little-endian on memory
-        return decimojo.utility.bitcast[DType.uint128](self)
+        return utility.bitcast[DType.uint128](self)
 
         # Alternative implementation using arithmetic
         # Combine the three 32-bit parts into a single Int128
@@ -1279,8 +1283,8 @@ struct Decimal(
         - Zero if |self| = |other|
         - Negative value if |self| < |other|
         """
-        var abs_self = decimojo.absolute(self)
-        var abs_other = decimojo.absolute(other)
+        var abs_self = maths.absolute(self)
+        var abs_other = maths.absolute(other)
 
         if abs_self > abs_other:
             return 1
