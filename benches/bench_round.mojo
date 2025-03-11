@@ -607,7 +607,8 @@ fn main() raises:
     log_print("\nIndividual speedup factors:", log_file)
     for i in range(len(speedup_factors)):
         log_print(
-            String("Case {}: {}×").format(i + 1, speedup_factors[i]), log_file
+            String("Case {}: {}×").format(i + 1, round(speedup_factors[i], 2)),
+            log_file,
         )
 
     # Close the log file
