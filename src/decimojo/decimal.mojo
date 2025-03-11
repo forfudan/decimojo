@@ -36,6 +36,8 @@
 Implements basic object methods for working with decimal numbers.
 """
 
+from memory import UnsafePointer
+
 import decimojo.logic
 import decimojo.maths
 from decimojo.rounding_mode import RoundingMode
@@ -120,7 +122,7 @@ struct Decimal(
         Returns a Decimal representing positive infinity.
         Internal representation: `0b0000_0000_0000_0000_0000_0000_0001`.
         """
-        return Decimal.from_raw_words(0, 0, 0, 0x00000001)
+        return Decimal.from_words(0, 0, 0, 0x00000001)
 
     @staticmethod
     fn NEGATIVE_INFINITY() -> Decimal:
@@ -128,7 +130,7 @@ struct Decimal(
         Returns a Decimal representing negative infinity.
         Internal representation: `0b1000_0000_0000_0000_0000_0000_0001`.
         """
-        return Decimal.from_raw_words(0, 0, 0, 0x80000001)
+        return Decimal.from_words(0, 0, 0, 0x80000001)
 
     @staticmethod
     fn NAN() -> Decimal:
@@ -136,7 +138,7 @@ struct Decimal(
         Returns a Decimal representing Not a Number (NaN).
         Internal representation: `0b0000_0000_0000_0000_0000_0000_0010`.
         """
-        return Decimal.from_raw_words(0, 0, 0, 0x00000010)
+        return Decimal.from_words(0, 0, 0, 0x00000010)
 
     @staticmethod
     fn NEGATIVE_NAN() -> Decimal:
@@ -144,28 +146,28 @@ struct Decimal(
         Returns a Decimal representing negative Not a Number.
         Internal representation: `0b1000_0000_0000_0000_0000_0000_0010`.
         """
-        return Decimal.from_raw_words(0, 0, 0, 0x80000010)
+        return Decimal.from_words(0, 0, 0, 0x80000010)
 
     @staticmethod
     fn ZERO() -> Decimal:
         """
         Returns a Decimal representing 0.
         """
-        return Decimal.from_raw_words(0, 0, 0, 0)
+        return Decimal.from_words(0, 0, 0, 0)
 
     @staticmethod
     fn ONE() -> Decimal:
         """
         Returns a Decimal representing 1.
         """
-        return Decimal.from_raw_words(1, 0, 0, 0)
+        return Decimal.from_words(1, 0, 0, 0)
 
     @staticmethod
     fn NEGATIVE_ONE() -> Decimal:
         """
         Returns a Decimal representing -1.
         """
-        return Decimal.from_raw_words(1, 0, 0, Decimal.SIGN_MASK)
+        return Decimal.from_words(1, 0, 0, Decimal.SIGN_MASK)
 
     @staticmethod
     fn MAX() -> Decimal:
@@ -173,14 +175,14 @@ struct Decimal(
         Returns the maximum possible Decimal value.
         This is equivalent to 79228162514264337593543950335.
         """
-        return Decimal.from_raw_words(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0)
+        return Decimal.from_words(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0)
 
     @staticmethod
     fn MIN() -> Decimal:
         """Returns the minimum possible Decimal value (negative of MAX).
         This is equivalent to -79228162514264337593543950335.
         """
-        return Decimal.from_raw_words(
+        return Decimal.from_words(
             0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, Decimal.SIGN_MASK
         )
 
@@ -691,7 +693,7 @@ struct Decimal(
     # ===------------------------------------------------------------------=== #
 
     @staticmethod
-    fn from_raw_words(
+    fn from_words(
         low: UInt32, mid: UInt32, high: UInt32, flags: UInt32
     ) -> Self:
         """
@@ -706,6 +708,116 @@ struct Decimal(
         result.flags = flags
 
         return result
+
+    @staticmethod
+    fn from_float(value: Float64) raises -> Decimal:
+        """
+        Initializes a Decimal from a floating-point value.
+        The reliability of this method is limited by the precision of Float64.
+        Because Float64 is reliable up to 15 significant digits and marginally
+        reliable up to 17 siginficant digits, this method will extract the first
+        17 significant digits from the value is there are decimal places.
+        If the integral part of the value exceeds 17 digits, the method will
+        extract the number of digits equal to the number of digits in the
+        integral part, but only the first 15 digits are reliable.
+
+        Args:
+            value: The floating-point value to convert to Decimal.
+
+        Returns:
+            The Decimal representation of the floating-point value.
+
+        Raises:
+            Error: If the input is infinity or NaN.
+            Error: If the input is too large to be transformed into Decimal.
+
+        Example:
+        ```mojo
+        from decimojo import Decimal
+        print(Decimal.from_float(Float64(3.1415926535897932383279502)))
+        # 3.1415926535897932 (17 significant digits)
+        print(Decimal.from_float(12345678901234567890.12345678901234567890))
+        # 12345678901234567168 (20 significant digits, but only 15 are reliable)
+        ```
+        .
+        """
+
+        # Only take the first 17 significant digits because it is reliable
+        var ndigits: Int = 17
+
+        # CASE: Zero
+        if value == Float64(0):
+            return Decimal.ZERO()
+
+        # Get the positive value of the input
+        var abs_value: Float64 = value
+        var is_negative: Bool = value < 0
+        if is_negative:
+            abs_value = -value
+        else:
+            abs_value = value
+
+        # Extract binary exponent using IEEE 754 bit manipulation
+        var bits: UInt64 = UnsafePointer[Float64].address_of(abs_value).bitcast[
+            UInt64
+        ]().load()
+        var biased_exponent: UInt64 = (bits >> 52) & 0x7FF
+
+        # CASE: Denormalized number that is very close to zero
+        if biased_exponent == 0:
+            return Decimal.ZERO()
+
+        # CASE: Infinity or NaN
+        if biased_exponent == 0x7FF:
+            raise Error("Cannot convert infinity or NaN to Decimal")
+
+        # Get unbias exponent
+        var binary_exp: UInt64 = biased_exponent - 1023
+
+        # Convert binary exponent to approximate decimal exponent
+        # log10(2^exp) = exp * log10(2)
+        var decimal_exp: Int = Int(Float64(binary_exp) * 0.301029995663981)
+        # print("DEBUG: decimal_exp = ", decimal_exp)
+
+        # Fine-tune decimal exponent
+        var power_check: Float64 = abs_value / Float64(10) ** decimal_exp
+        if power_check >= 10.0:
+            decimal_exp += 1
+        elif power_check < 1.0:
+            decimal_exp -= 1
+
+        # Since the int part of the value exceeds ndigits
+        # We just take out its int part as Decimal
+        if decimal_exp >= ndigits:
+            var coefficient = UInt128(abs_value)
+            if coefficient > Decimal.MAX_AS_UINT128:
+                raise Error(
+                    String(
+                        "Error in `from_float`: The float value {} is too"
+                        " large (>=2^96) to be transformed into Decimal"
+                    ).format(value)
+                )
+            var low = UInt32(coefficient & 0xFFFFFFFF)
+            var mid = UInt32((coefficient >> 32) & 0xFFFFFFFF)
+            var high = UInt32((coefficient >> 64) & 0xFFFFFFFF)
+
+            # Return both the significant digits and the scale
+            return Decimal(low, mid, high, 0, is_negative)
+
+        else:
+            # Calculate scale needed for exactly ndigits significant digits
+            var scale: UInt32 = ndigits - 1 - decimal_exp
+            # Scale the value to get n significant digits
+            var scaled_value: Float64 = abs_value * 10 ** Float64(scale)
+
+            # Truncate to integer (no rounding)
+            var coefficient = UInt64(scaled_value)
+
+            var low = UInt32(coefficient & 0xFFFFFFFF)
+            var mid = UInt32((coefficient >> 32) & 0xFFFFFFFF)
+
+            # Return both the significant digits and the scale
+            return Decimal(low, mid, 0, scale, is_negative)
 
     # ===------------------------------------------------------------------=== #
     # Output dunders, type-transfer dunders, and other type-transfer methods
@@ -842,7 +954,7 @@ struct Decimal(
         Returns:
             The absolute value of this Decimal.
         """
-        var result = Decimal.from_raw_words(
+        var result = Decimal.from_words(
             self.low, self.mid, self.high, self.flags
         )
         result.flags &= ~Self.SIGN_MASK  # Clear sign bit
@@ -855,7 +967,7 @@ struct Decimal(
         if self.is_zero():
             return Decimal.ZERO()
 
-        var result = Decimal.from_raw_words(
+        var result = Decimal.from_words(
             self.low, self.mid, self.high, self.flags
         )
         result.flags ^= Self.SIGN_MASK  # Flip sign bit
