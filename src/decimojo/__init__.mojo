@@ -25,11 +25,6 @@ from .decimal import Decimal as D
 
 from .rounding_mode import RoundingMode
 
-alias ROUND_DOWN = RoundingMode.DOWN
-alias ROUND_HALF_UP = RoundingMode.HALF_UP
-alias ROUND_HALF_EVEN = RoundingMode.HALF_EVEN
-alias ROUND_UP = RoundingMode.UP
-
 from .maths import (
     add,
     subtract,
@@ -40,4 +35,5 @@ from .maths import (
     round,
     absolute,
 )
+
 from .logic import greater, greater_equal, less, less_equal, equal, not_equal

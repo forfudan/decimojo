@@ -73,7 +73,6 @@ fn run_benchmark(
     log_print("Round to:        " + String(places) + " places", log_file)
 
     # Get Python decimal module for quantize operation
-    var pydecimal = Python.import_module("decimal")
     var py = Python.import_module("builtins")
 
     # Execute the operations once to verify correctness

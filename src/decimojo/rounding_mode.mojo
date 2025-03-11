@@ -17,10 +17,10 @@ struct RoundingMode:
     """
 
     # alias
-    alias ROUND_DOWN = RoundingMode.DOWN()
-    alias ROUND_HALF_UP = RoundingMode.HALF_UP()
-    alias ROUND_HALF_EVEN = RoundingMode.HALF_EVEN()
-    alias ROUND_UP = RoundingMode.UP()
+    alias ROUND_DOWN = Self.DOWN()
+    alias ROUND_HALF_UP = Self.HALF_UP()
+    alias ROUND_HALF_EVEN = Self.HALF_EVEN()
+    alias ROUND_UP = Self.UP()
 
     # Internal value
     var value: Int
