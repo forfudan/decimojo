@@ -98,6 +98,8 @@ fn run_benchmark(
     for _ in range(iterations):
         _ = round(d_mojo, places)
     var mojo_time = (perf_counter_ns() - t0) / iterations
+    if mojo_time == 0:
+        mojo_time = 1  # Prevent division by zero
 
     # Benchmark Python implementation
     t0 = perf_counter_ns()

@@ -11,6 +11,7 @@
 #
 # Organization of methods:
 # - Constructors and life time methods
+# - Constructing methods that are not dunders
 # - Output dunders, type-transfer dunders, and other type-transfer methods
 # - Basic unary arithmetic operation dunders
 # - Basic binary arithmetic operation dunders
@@ -115,7 +116,7 @@ struct Decimal(
         Returns a Decimal representing positive infinity.
         Internal representation: `0b0000_0000_0000_0000_0000_0000_0001`.
         """
-        return Decimal(0, 0, 0, 0x00000001)
+        return Decimal.from_raw_words(0, 0, 0, 0x00000001)
 
     @staticmethod
     fn NEGATIVE_INFINITY() -> Decimal:
@@ -123,7 +124,7 @@ struct Decimal(
         Returns a Decimal representing negative infinity.
         Internal representation: `0b1000_0000_0000_0000_0000_0000_0001`.
         """
-        return Decimal(0, 0, 0, 0x80000001)
+        return Decimal.from_raw_words(0, 0, 0, 0x80000001)
 
     @staticmethod
     fn NAN() -> Decimal:
@@ -131,7 +132,7 @@ struct Decimal(
         Returns a Decimal representing Not a Number (NaN).
         Internal representation: `0b0000_0000_0000_0000_0000_0000_0010`.
         """
-        return Decimal(0, 0, 0, 0x00000010)
+        return Decimal.from_raw_words(0, 0, 0, 0x00000010)
 
     @staticmethod
     fn NEGATIVE_NAN() -> Decimal:
@@ -139,28 +140,28 @@ struct Decimal(
         Returns a Decimal representing negative Not a Number.
         Internal representation: `0b1000_0000_0000_0000_0000_0000_0010`.
         """
-        return Decimal(0, 0, 0, 0x80000010)
+        return Decimal.from_raw_words(0, 0, 0, 0x80000010)
 
     @staticmethod
     fn ZERO() -> Decimal:
         """
         Returns a Decimal representing 0.
         """
-        return Decimal(0, 0, 0, 0)
+        return Decimal.from_raw_words(0, 0, 0, 0)
 
     @staticmethod
     fn ONE() -> Decimal:
         """
         Returns a Decimal representing 1.
         """
-        return Decimal(1, 0, 0, 0)
+        return Decimal.from_raw_words(1, 0, 0, 0)
 
     @staticmethod
     fn NEGATIVE_ONE() -> Decimal:
         """
         Returns a Decimal representing -1.
         """
-        return Decimal(1, 0, 0, Decimal.SIGN_MASK)
+        return Decimal.from_raw_words(1, 0, 0, Decimal.SIGN_MASK)
 
     @staticmethod
     fn MAX() -> Decimal:
@@ -168,14 +169,16 @@ struct Decimal(
         Returns the maximum possible Decimal value.
         This is equivalent to 79228162514264337593543950335.
         """
-        return Decimal(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0)
+        return Decimal.from_raw_words(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0)
 
     @staticmethod
     fn MIN() -> Decimal:
         """Returns the minimum possible Decimal value (negative of MAX).
         This is equivalent to -79228162514264337593543950335.
         """
-        return Decimal(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, Decimal.SIGN_MASK)
+        return Decimal.from_raw_words(
+            0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, Decimal.SIGN_MASK
+        )
 
     # ===------------------------------------------------------------------=== #
     # Constructors and life time dunder methods
@@ -197,7 +200,7 @@ struct Decimal(
         high: UInt32,
         scale: UInt32,
         sign: Bool,
-    ):
+    ) raises:
         """
         Initializes a Decimal with five components.
         If the scale is greater than MAX_SCALE, it is set to MAX_SCALE.
@@ -209,6 +212,15 @@ struct Decimal(
             scale: Number of decimal places (0-28).
             sign: True if the number is negative.
         """
+
+        if scale > Self.MAX_SCALE:
+            raise Error(
+                String(
+                    "Error in Decimal constructor with five components: Scale"
+                    " must be between 0 and 28, but got {}"
+                ).format(scale)
+            )
+
         self.low = low
         self.mid = mid
         self.high = high
@@ -224,29 +236,6 @@ struct Decimal(
             flags |= Self.SIGN_MASK
 
         self.flags = flags
-
-        # Now check if we need to round due to exceeding MAX_SCALE
-        if scale > Self.MAX_SCALE:
-            # We need to properly round the value, not just change the scale
-            var scale_diff = scale - Self.MAX_SCALE
-            # The 'self' is already initialized above, so we can call _scale_down on it
-            self = self._scale_down(Int(scale_diff), RoundingMode.HALF_EVEN())
-
-        # No else needed as the value is already properly set if scale <= MAX_SCALE
-
-    fn __init__(
-        out self, low: UInt32, mid: UInt32, high: UInt32, flags: UInt32
-    ):
-        """
-        Initializes a Decimal with internal representation fields.
-        Uses the full constructor to properly handle scaling and rounding.
-        """
-        # Extract sign and scale from flags
-        var is_negative = (flags & Self.SIGN_MASK) != 0
-        var scale = (flags & Self.SCALE_MASK) >> Self.SCALE_SHIFT
-
-        # Use the previous constructor which handles scale rounding properly
-        self = Self(low, mid, high, scale, is_negative)
 
     fn __init__(out self, integer: Int):
         """
@@ -328,7 +317,7 @@ struct Decimal(
     # TODO: Add arguments to specify the scale and sign for all integer constructors
     fn __init__(
         out self, integer: UInt128, scale: UInt32 = 0, sign: Bool = False
-    ):
+    ) raises:
         """
         Initializes a Decimal from an UInt128 value.
         ***WARNING***: This constructor can only handle values up to 96 bits.
@@ -337,11 +326,17 @@ struct Decimal(
         var mid = UInt32((integer >> 32) & 0xFFFFFFFF)
         var high = UInt32((integer >> 64) & 0xFFFFFFFF)
 
-        self = Decimal(low, mid, high, scale, sign)
+        try:
+            self = Decimal(low, mid, high, scale, sign)
+        except e:
+            raise Error(
+                "Error in Decimal constructor with UInt128, scale, and sign: ",
+                e,
+            )
 
     fn __init__(
         out self, integer: UInt256, scale: UInt32 = 0, sign: Bool = False
-    ):
+    ) raises:
         """
         Initializes a Decimal from an UInt256 value.
         ***WARNING***: This constructor can only handle values up to 96 bits.
@@ -350,6 +345,13 @@ struct Decimal(
         var mid = UInt32((integer >> 32) & 0xFFFFFFFF)
         var high = UInt32((integer >> 64) & 0xFFFFFFFF)
 
+        try:
+            self = Decimal(low, mid, high, scale, sign)
+        except e:
+            raise Error(
+                "Error in Decimal constructor with UInt256, scale, and sign: ",
+                e,
+            )
         self = Decimal(low, mid, high, scale, sign)
 
     fn __init__(out self, s: String) raises:
@@ -681,6 +683,27 @@ struct Decimal(
         self.flags = other.flags
 
     # ===------------------------------------------------------------------=== #
+    # Constructing methods that are not dunders
+    # ===------------------------------------------------------------------=== #
+
+    @staticmethod
+    fn from_raw_words(
+        low: UInt32, mid: UInt32, high: UInt32, flags: UInt32
+    ) -> Self:
+        """
+        Initializes a Decimal with internal representation fields.
+        We do not check whether the scale is within the valid range.
+        """
+
+        var result = Decimal()
+        result.low = low
+        result.mid = mid
+        result.high = high
+        result.flags = flags
+
+        return result
+
+    # ===------------------------------------------------------------------=== #
     # Output dunders, type-transfer dunders, and other type-transfer methods
     # ===------------------------------------------------------------------=== #
 
@@ -815,7 +838,9 @@ struct Decimal(
         Returns:
             The absolute value of this Decimal.
         """
-        var result = Decimal(self.low, self.mid, self.high, self.flags)
+        var result = Decimal.from_raw_words(
+            self.low, self.mid, self.high, self.flags
+        )
         result.flags &= ~Self.SIGN_MASK  # Clear sign bit
 
         return result
@@ -826,7 +851,9 @@ struct Decimal(
         if self.is_zero():
             return Decimal.ZERO()
 
-        var result = Decimal(self.low, self.mid, self.high, self.flags)
+        var result = Decimal.from_raw_words(
+            self.low, self.mid, self.high, self.flags
+        )
         result.flags ^= Self.SIGN_MASK  # Flip sign bit
         return result
 

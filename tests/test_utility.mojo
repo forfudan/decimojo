@@ -267,7 +267,7 @@ fn test_bitcast() raises:
     assert_equal(large_scale_coef, large_scale_bits)
 
     # Test case 6: Custom bit pattern
-    var test_decimal = Decimal(12345, 67890, 0xABCDEF, 0x55)
+    var test_decimal = Decimal.from_raw_words(12345, 67890, 0xABCDEF, 0x55)
     var test_coef = test_decimal.coefficient()
     var test_bits = dm.utility.bitcast[DType.uint128](test_decimal)
     assert_equal(test_coef, test_bits)
