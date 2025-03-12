@@ -28,6 +28,11 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Install GLIBC
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libc6=2.39-3ubuntu1.5
+
       - name: Install magic
         run: |
           curl -ssL https://magic.modular.com/deb181c4-455c-4abe-a263-afcff49ccf67 | bash
