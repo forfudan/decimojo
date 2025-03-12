@@ -46,7 +46,6 @@ jobs:
 
       - name: Magic install
         run: |
-          magic self-update --version 0.7.0
           magic install
 
       - name: Build package
