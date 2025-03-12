@@ -8,6 +8,10 @@ platforms = ["osx-arm64", "linux-64"]
 readme = "README.md"
 version = "0.1.0"
 
+[system-requirements]
+linux = "4.4"
+libc = { family = "glibc", version = "2.39" }
+
 [tasks]
 # format the code
 format = "magic run mojo format ./"

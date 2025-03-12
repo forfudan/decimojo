@@ -9,7 +9,10 @@
 #
 # ===----------------------------------------------------------------------=== #
 #
-# Organization of methods:
+# Organization of files and methods of Decimal:
+# - Internal representation fields
+# - Constants (aliases)
+# - Special values (methods)
 # - Constructors and life time methods
 # - Constructing methods that are not dunders
 # - Output dunders, type-transfer dunders, and other type-transfer methods
@@ -35,6 +38,8 @@
 """
 Implements basic object methods for working with decimal numbers.
 """
+
+from memory import UnsafePointer
 
 import decimojo.logic
 import decimojo.maths
@@ -120,7 +125,7 @@ struct Decimal(
         Returns a Decimal representing positive infinity.
         Internal representation: `0b0000_0000_0000_0000_0000_0000_0001`.
         """
-        return Decimal.from_raw_words(0, 0, 0, 0x00000001)
+        return Decimal.from_words(0, 0, 0, 0x00000001)
 
     @staticmethod
     fn NEGATIVE_INFINITY() -> Decimal:
@@ -128,7 +133,7 @@ struct Decimal(
         Returns a Decimal representing negative infinity.
         Internal representation: `0b1000_0000_0000_0000_0000_0000_0001`.
         """
-        return Decimal.from_raw_words(0, 0, 0, 0x80000001)
+        return Decimal.from_words(0, 0, 0, 0x80000001)
 
     @staticmethod
     fn NAN() -> Decimal:
@@ -136,7 +141,7 @@ struct Decimal(
         Returns a Decimal representing Not a Number (NaN).
         Internal representation: `0b0000_0000_0000_0000_0000_0000_0010`.
         """
-        return Decimal.from_raw_words(0, 0, 0, 0x00000010)
+        return Decimal.from_words(0, 0, 0, 0x00000010)
 
     @staticmethod
     fn NEGATIVE_NAN() -> Decimal:
@@ -144,28 +149,28 @@ struct Decimal(
         Returns a Decimal representing negative Not a Number.
         Internal representation: `0b1000_0000_0000_0000_0000_0000_0010`.
         """
-        return Decimal.from_raw_words(0, 0, 0, 0x80000010)
+        return Decimal.from_words(0, 0, 0, 0x80000010)
 
     @staticmethod
     fn ZERO() -> Decimal:
         """
         Returns a Decimal representing 0.
         """
-        return Decimal.from_raw_words(0, 0, 0, 0)
+        return Decimal.from_words(0, 0, 0, 0)
 
     @staticmethod
     fn ONE() -> Decimal:
         """
         Returns a Decimal representing 1.
         """
-        return Decimal.from_raw_words(1, 0, 0, 0)
+        return Decimal.from_words(1, 0, 0, 0)
 
     @staticmethod
     fn NEGATIVE_ONE() -> Decimal:
         """
         Returns a Decimal representing -1.
         """
-        return Decimal.from_raw_words(1, 0, 0, Decimal.SIGN_MASK)
+        return Decimal.from_words(1, 0, 0, Decimal.SIGN_MASK)
 
     @staticmethod
     fn MAX() -> Decimal:
@@ -173,14 +178,14 @@ struct Decimal(
         Returns the maximum possible Decimal value.
         This is equivalent to 79228162514264337593543950335.
         """
-        return Decimal.from_raw_words(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0)
+        return Decimal.from_words(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0)
 
     @staticmethod
     fn MIN() -> Decimal:
         """Returns the minimum possible Decimal value (negative of MAX).
         This is equivalent to -79228162514264337593543950335.
         """
-        return Decimal.from_raw_words(
+        return Decimal.from_words(
             0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, Decimal.SIGN_MASK
         )
 
@@ -656,26 +661,16 @@ struct Decimal(
         if is_negative:
             self.flags |= Self.SIGN_MASK
 
-    # TODO: Use generic floating-point type if possible.
-    fn __init__(out self, f: Float64, *, MAX_SCALE: Bool = True) raises:
+    fn __init__(out self, value: Float64) raises:
         """
         Initializes a Decimal from a floating-point value.
-        You may lose precision because float representation is inexact.
+        See `from_float` for more information.
         """
-        var float_str: String
 
-        if MAX_SCALE:
-            # Use maximum precision
-            # Convert float to string ith high precision to capture all significant digits
-            # The format ensures we get up to MAX_SCALE decimal places
-            float_str = decimojo.str._float_to_decimal_str(f, Self.MAX_SCALE)
-        else:
-            # Use default string representation
-            # Convert float to string with Mojo's default precision
-            float_str = String(f)
-
-        # Use the string constructor which already handles overflow correctly
-        self = Decimal(float_str)
+        try:
+            self = Decimal.from_float(value)
+        except e:
+            raise Error("Error in `Decimal__init__()` with Float64: ", e)
 
     fn __copyinit__(out self, other: Self):
         """
@@ -691,7 +686,7 @@ struct Decimal(
     # ===------------------------------------------------------------------=== #
 
     @staticmethod
-    fn from_raw_words(
+    fn from_words(
         low: UInt32, mid: UInt32, high: UInt32, flags: UInt32
     ) -> Self:
         """
@@ -706,6 +701,125 @@ struct Decimal(
         result.flags = flags
 
         return result
+
+    @staticmethod
+    fn from_float(value: Float64) raises -> Decimal:
+        """
+        Initializes a Decimal from a floating-point value.
+        The reliability of this method is limited by the precision of Float64.
+        Float64 is reliable up to 15 significant digits and marginally
+        reliable up to 16 siginficant digits. Be careful when using this method.
+
+        Args:
+            value: The floating-point value to convert to Decimal.
+
+        Returns:
+            The Decimal representation of the floating-point value.
+
+        Raises:
+            Error: If the input is too large to be transformed into Decimal.
+            Error: If the input is infinity or NaN.
+
+        Example:
+        ```mojo
+        from decimojo import Decimal
+        print(Decimal.from_float(Float64(3.1415926535897932383279502)))
+        # 3.1415926535897932 (17 significant digits)
+        print(Decimal.from_float(12345678901234567890.12345678901234567890))
+        # 12345678901234567168 (20 significant digits, but only 15 are reliable)
+        ```
+        .
+        """
+
+        # CASE: Zero
+        if value == Float64(0):
+            return Decimal.ZERO()
+
+        # Get the positive value of the input
+        var abs_value: Float64 = value
+        var is_negative: Bool = value < 0
+        if is_negative:
+            abs_value = -value
+        else:
+            abs_value = value
+
+        # Early exit if the value is too large
+        if UInt128(abs_value) > Decimal.MAX_AS_UINT128:
+            raise Error(
+                String(
+                    "Error in `from_float`: The float value {} is too"
+                    " large (>=2^96) to be transformed into Decimal"
+                ).format(value)
+            )
+
+        # Extract binary exponent using IEEE 754 bit manipulation
+        var bits: UInt64 = UnsafePointer[Float64].address_of(abs_value).bitcast[
+            UInt64
+        ]().load()
+        var biased_exponent: Int = Int((bits >> 52) & 0x7FF)
+
+        # print("DEBUG: biased_exponent = ", biased_exponent)
+
+        # CASE: Denormalized number that is very close to zero
+        if biased_exponent == 0:
+            return Decimal(0, 0, 0, Decimal.MAX_SCALE, is_negative)
+
+        # CASE: Infinity or NaN
+        if biased_exponent == 0x7FF:
+            raise Error("Cannot convert infinity or NaN to Decimal")
+
+        # Get unbias exponent
+        var binary_exp: Int = biased_exponent - 1023
+        # print("DEBUG: binary_exp = ", binary_exp)
+
+        # Convert binary exponent to approximate decimal exponent
+        # log10(2^exp) = exp * log10(2)
+        var decimal_exp: Int = Int(Float64(binary_exp) * 0.301029995663981)
+        # print("DEBUG: decimal_exp = ", decimal_exp)
+
+        # Fine-tune decimal exponent
+        var power_check: Float64 = abs_value / Float64(10) ** decimal_exp
+        if power_check >= 10.0:
+            decimal_exp += 1
+        elif power_check < 1.0:
+            decimal_exp -= 1
+
+        # print("DEBUG: decimal_exp = ", decimal_exp)
+
+        var coefficient: UInt128 = UInt128(abs_value)
+        var remainder = abs(abs_value - Float64(coefficient))
+        # print("DEBUG: integer_part = ", coefficient)
+        # print("DEBUG: remainder = ", remainder)
+
+        var scale = 0
+        var temp_coef: UInt128
+        var num_trailing_zeros: Int = 0
+        while scale < Decimal.MAX_SCALE:
+            remainder *= 10
+            var int_part = UInt128(remainder)
+            remainder = abs(remainder - Float64(int_part))
+            temp_coef = coefficient * 10 + int_part
+            if temp_coef > Decimal.MAX_AS_UINT128:
+                break
+            coefficient = temp_coef
+            scale += 1
+            if int_part == 0:
+                num_trailing_zeros += 1
+            else:
+                num_trailing_zeros = 0
+            # print("DEBUG: coefficient = ", coefficient)
+            # print("DEBUG: scale = ", scale)
+            # print("DEBUG: remainder = ", remainder)
+
+        coefficient = coefficient // UInt128(10) ** num_trailing_zeros
+        scale -= num_trailing_zeros
+
+        var low = UInt32(coefficient & 0xFFFFFFFF)
+        var mid = UInt32((coefficient >> 32) & 0xFFFFFFFF)
+        var high = UInt32((coefficient >> 64) & 0xFFFFFFFF)
+
+        # Return both the significant digits and the scale
+        return Decimal(low, mid, high, scale, is_negative)
 
     # ===------------------------------------------------------------------=== #
     # Output dunders, type-transfer dunders, and other type-transfer methods
@@ -842,7 +956,7 @@ struct Decimal(
         Returns:
             The absolute value of this Decimal.
         """
-        var result = Decimal.from_raw_words(
+        var result = Decimal.from_words(
             self.low, self.mid, self.high, self.flags
         )
         result.flags &= ~Self.SIGN_MASK  # Clear sign bit
@@ -855,7 +969,7 @@ struct Decimal(
         if self.is_zero():
             return Decimal.ZERO()
 
-        var result = Decimal.from_raw_words(
+        var result = Decimal.from_words(
             self.low, self.mid, self.high, self.flags
         )
         result.flags ^= Self.SIGN_MASK  # Flip sign bit

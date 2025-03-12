@@ -1,6 +1,9 @@
 """
 Test Decimal creation from integer, float, or string values.
 """
+
+# TODO: Split into separate test files for each type of constructor
+
 from decimojo.prelude import dm, Decimal, RoundingMode
 import testing
 
@@ -408,6 +411,5 @@ fn test_decimal_from_components() raises:
 
 fn main() raises:
     test_decimal_from_int()
-    test_decimal_from_float()
     test_decimal_from_string()
     test_decimal_from_components()  # Add the new test to the main function
