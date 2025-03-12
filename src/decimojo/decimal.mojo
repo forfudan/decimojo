@@ -322,7 +322,7 @@ struct Decimal(
         self.high = 0
         self.flags = 0
 
-    # TODO: Add arguments to specify the scale and sign for all integer constructors
+    # TODO: Create method `from_uint128` to handle UInt128 values
     fn __init__(
         out self, integer: UInt128, scale: UInt32 = 0, sign: Bool = False
     ) raises:
