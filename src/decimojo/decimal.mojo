@@ -44,7 +44,6 @@ from memory import UnsafePointer
 import decimojo.logic
 import decimojo.maths
 from decimojo.rounding_mode import RoundingMode
-import decimojo.str
 import decimojo.utility
 
 
