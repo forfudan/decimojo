@@ -9,7 +9,10 @@
 #
 # ===----------------------------------------------------------------------=== #
 #
-# Organization of methods:
+# Organization of files and methods of Decimal:
+# - Internal representation fields
+# - Constants (aliases)
+# - Special values (methods)
 # - Constructors and life time methods
 # - Constructing methods that are not dunders
 # - Output dunders, type-transfer dunders, and other type-transfer methods
@@ -658,26 +661,16 @@ struct Decimal(
         if is_negative:
             self.flags |= Self.SIGN_MASK
 
-    # TODO: Use generic floating-point type if possible.
-    fn __init__(out self, f: Float64, *, MAX_SCALE: Bool = True) raises:
+    fn __init__(out self, value: Float64) raises:
         """
         Initializes a Decimal from a floating-point value.
-        You may lose precision because float representation is inexact.
+        See `from_float` for more information.
         """
-        var float_str: String
 
-        if MAX_SCALE:
-            # Use maximum precision
-            # Convert float to string ith high precision to capture all significant digits
-            # The format ensures we get up to MAX_SCALE decimal places
-            float_str = decimojo.str._float_to_decimal_str(f, Self.MAX_SCALE)
-        else:
-            # Use default string representation
-            # Convert float to string with Mojo's default precision
-            float_str = String(f)
-
-        # Use the string constructor which already handles overflow correctly
-        self = Decimal(float_str)
+        try:
+            self = Decimal.from_float(value)
+        except e:
+            raise Error("Error in `Decimal__init__()` with Float64: ", e)
 
     fn __copyinit__(out self, other: Self):
         """
@@ -738,9 +731,6 @@ struct Decimal(
         .
         """
 
-        # Only take the first 28 significant digits because it is reliable
-        var ndigits: Int = 28
-
         # CASE: Zero
         if value == Float64(0):
             return Decimal.ZERO()
@@ -772,7 +762,7 @@ struct Decimal(
 
         # CASE: Denormalized number that is very close to zero
         if biased_exponent == 0:
-            return Decimal.ZERO()
+            return Decimal(0, 0, 0, Decimal.MAX_SCALE, is_negative)
 
         # CASE: Infinity or NaN
         if biased_exponent == 0x7FF:
