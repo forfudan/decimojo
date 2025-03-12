@@ -31,6 +31,7 @@ jobs:
       - name: Install GLIBC
         run: |
           sudo apt-get update
+          mkdir $HOME/glibc/ && cd $HOME/glibc
           wget http://ftp.gnu.org/gnu/libc/glibc-2.39.tar.gz
           tar -xvf glibc-2.39.tar.gz
           cd glibc-2.39
