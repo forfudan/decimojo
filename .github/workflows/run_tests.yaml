@@ -31,7 +31,15 @@ jobs:
       - name: Install GLIBC
         run: |
           sudo apt-get update
-          sudo apt-get install -y libc6=2.39-3ubuntu1.5
+          wget http://ftp.gnu.org/gnu/libc/glibc-2.39.tar.gz
+          tar -xvf glibc-2.39.tar.gz
+          cd glibc-2.39
+          mkdir build 
+          mkdir glibc-2.39-install
+          cd build
+          ~/glibc/glibc-2.39/configure --prefix=$HOME/glibc/glibc-2.39-install
+          make -j
+          make install
 
       - name: Install magic
         run: |
