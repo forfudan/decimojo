@@ -393,7 +393,9 @@ fn round_to_keep_first_n_digits[
 
         # If RoundingMode is ROUND_HALF_EVEN, round to nearest even digit if equidistant
         else:
-            var cutoff_value = 5 * 10 ** (ndigits_to_remove - 1)
+            var cutoff_value: ValueType = 5 * ValueType(10) ** (
+                ndigits_to_remove - 1
+            )
             if remainder > cutoff_value:
                 truncated_value += 1
             elif remainder == cutoff_value:
@@ -401,7 +403,6 @@ fn round_to_keep_first_n_digits[
                 # If truncated_value is odd, round up
                 truncated_value += truncated_value % 2
             else:
-                # Do nothing
                 pass
 
         return truncated_value

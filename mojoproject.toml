@@ -37,6 +37,8 @@ test_div = "magic run package && magic run mojo test tests/test_division.mojo &&
 test_sqrt = "magic run package && magic run mojo test tests/test_sqrt.mojo && magic run delete_package"
 test_round = "magic run package && magic run mojo test tests/test_round.mojo && magic run delete_package"
 test_creation = "magic run package && magic run mojo test tests/test_creation.mojo && magic run delete_package"
+test_from_float = "magic run package && magic run mojo test tests/test_from_float.mojo && magic run delete_package"
+test_from_string = "magic run package && magic run mojo test tests/test_from_string.mojo && magic run delete_package"
 
 # benches
 bench = "magic run package && cd benches && magic run mojo bench.mojo && cd .. && magic run delete_package"
@@ -45,6 +47,8 @@ bench_mul = "magic run package && cd benches && magic run mojo bench_multiply.mo
 bench_div = "magic run package && cd benches && magic run mojo bench_divide.mojo && cd .. && magic run delete_package"
 bench_sqrt = "magic run package && cd benches && magic run mojo bench_sqrt.mojo && cd .. && magic run delete_package"
 bench_round = "magic run package && cd benches && magic run mojo bench_round.mojo && cd .. && magic run delete_package"
+bench_from_float = "magic run package && cd benches && magic run mojo bench_from_float.mojo && cd .. && magic run delete_package"
+bench_from_string = "magic run package && cd benches && magic run mojo bench_from_string.mojo && cd .. && magic run delete_package"
 
 # before commit
 final = "magic run test && magic run bench"
