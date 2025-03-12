@@ -44,9 +44,13 @@ jobs:
           . $HOME/venv/bin/activate
           echo PATH=$PATH >> $GITHUB_ENV
 
+      - name: Magic install
+        run: |
+          magic self-update --version 0.7.0
+          magic install
+
       - name: Build package
         run: |
-          magic install
           magic run mojo package src/decimojo
           cp decimojo.mojopkg tests/
           cp decimojo.mojopkg benches/
@@ -55,3 +59,13 @@ jobs:
         run: |
           magic run mojo test tests
           magic run bench
+
+      - name: Install pre-commit
+        run: |
+          pip install pre-commit
+          pre-commit install
+      
+      - name: Run pre-commit
+        run: | 
+          magic install
+          pre-commit run --all-files
