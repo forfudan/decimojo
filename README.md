@@ -6,76 +6,21 @@ A fixed-point decimal arithmetic library implemented in [the Mojo programming la
 
 DeciMojo provides a Decimal type implementation for Mojo with fixed-precision arithmetic, designed to handle financial calculations and other scenarios where floating-point rounding errors are problematic.
 
-Repo: [https://github.com/forFudan/DeciMojo](https://github.com/forFudan/DeciMojo)
+## Installation
 
-## Objective
+DeciMojo can be directly added to your project environment by typing `magic add decimojo` in the Modular CLI. This command fetches the latest version of DeciMojo and makes it available for import in your Mojo project.
 
-Financial calculations and data analysis require precise decimal arithmetic that floating-point numbers cannot reliably provide. As someone working in finance and credit risk model validation, I needed a dependable correctly-rounded, fixed-precision numeric type when migrating my personal projects from Python to Mojo.
-
-Since Mojo currently lacks a native Decimal type in its standard library, I decided to create my own implementation to fill that gap.
-
-This project draws inspiration from several established decimal implementations and documentation, e.g., [Python built-in `Decimal` type](https://docs.python.org/3/library/decimal.html), [Rust `rust_decimal` crate](https://docs.rs/rust_decimal/latest/rust_decimal/index.html), [Microsoft's `Decimal` implementation](https://learn.microsoft.com/en-us/dotnet/api/system.decimal.getbits?view=net-9.0&redirectedfrom=MSDN#System_Decimal_GetBits_System_Decimal_), [General Decimal Arithmetic Specification](https://speleotrove.com/decimal/decarith.html), etc. Many thanks to these predecessors for their contributions and their commitment to open knowledge sharing.
-
-## Nomenclature
-
-DeciMojo combines "Decimal" and "Mojo" - reflecting both its purpose (decimal arithmetic) and the programming language it's implemented in. The name emphasizes the project's focus on bringing precise decimal calculations to the Mojo ecosystem.
-
-For brevity, you can refer to it as "deci" (derived from the Latin root "decimus" meaning "tenth").
-
-When you add `from decimojo import dm, Decimal` at the top of your script, this imports the `decimojo` module into your namespace with the shorter alias `dm` and directly imports the `Decimal` type. This is equivalent to:
+To use DeciMojo, import the necessary components from the `decimojo.prelude` module. This module provides convenient access to the most commonly used classes and functions, including `dm` (an alias for the `decimojo` module itself),  `Decimal` and `RoundingMode`.
 
 ```mojo
 from decimojo.prelude import dm, Decimal, RoundingMode
+
+fn main() raises:
+    print(dm.sqrt(Decimal("3.1415926")))
+    # Output: 1.7724538357881143980200972894
 ```
 
-## Advantages
-
-DeciMojo provides exceptional computational precision without sacrificing performance. It maintains accuracy throughout complex calculations where floating-point or other decimal implementations might introduce subtle errors.
-
-Consider the square root of `15.9999`. When comparing DeciMojo's implementation with Python's decimal module (both rounded to 16 decimal places):
-
-- DeciMojo calculates: `3.9999874999804687`
-- Python's decimal returns: `3.9999874999804685`
-
-The mathematically correct value (to 50+ digits) is:
-`3.9999874999804686889646053303778122644631365491812...`
-
-When rounded to 16 decimal places, the correct result is `3.9999874999804687`, confirming that DeciMojo produces the more accurate result in this case.
-
-```log
-Function:                   sqrt()
-Decimal value:              15.9999
-DeciMojo result:            3.9999874999804686889646053305
-Python's decimal result:    3.9999874999804685
-```
-
-This precision advantage becomes increasingly important in financial, scientific, and engineering calculations where small rounding errors can compound into significant discrepancies.
-
-## Status
-
-Rome wasn't built in a day. DeciMojo is currently under active development, positioned between the **"make it work"** and **"make it right"** phases, with a stronger emphasis on the latter. Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/forFudan/decimojo/issues).
-
-### Make it Work ✅ (MOSTLY COMPLETED)
-
-- Core decimal implementation exists and functions
-- Basic arithmetic operations (+, -, *, /) are implemented
-- Type conversions to/from various formats work
-- String representation and parsing are functional
-- Construction from different sources (strings, numbers) is supported
-
-### Make it Right 🔄 (IN PROGRESS)
-
-- Edge case handling is being addressed (division by zero, zero to negative power)
-- Scale and precision management shows sophistication
-- Financial calculations demonstrate proper rounding
-- High precision support is implemented (up to 28 decimal places)
-- The examples show robust handling of various scenarios
-
-### Make it Fast ⏳ (IN PROGRESS & FUTURE WORK)
-
-- Core arithmetic operations (+, -, *, /) have been optimized for performance, with comprehensive benchmarking reports available comparing performance against Python's built-in decimal module ([PR#16](https://github.com/forFudan/DeciMojo/pull/16), [PR#20](https://github.com/forFudan/DeciMojo/pull/20), [PR#21](https://github.com/forFudan/DeciMojo/pull/21)).
-- Regular benchmarking against Python's `decimal` module (see `bench/` folder)
-- Performance optimization on other functions are acknowledged but not currently prioritized
+The Github repo of the project is at [https://github.com/forFudan/DeciMojo](https://github.com/forFudan/DeciMojo).
 
 ## Examples
 
@@ -247,6 +192,70 @@ var denominator = (Decimal("1") + monthly_rate) ** 360 - Decimal("1")
 var payment = principal * (numerator / denominator)
 print("Monthly payment: $" + String(round(payment, 2)))  # $1,073.64
 ```
+
+
+## Advantages
+
+DeciMojo provides exceptional computational precision without sacrificing performance. It maintains accuracy throughout complex calculations where floating-point or other decimal implementations might introduce subtle errors.
+
+Consider the square root of `15.9999`. When comparing DeciMojo's implementation with Python's decimal module (both rounded to 16 decimal places):
+
+- DeciMojo calculates: `3.9999874999804687`
+- Python's decimal returns: `3.9999874999804685`
+
+The mathematically correct value (to 50+ digits) is:
+`3.9999874999804686889646053303778122644631365491812...`
+
+When rounded to 16 decimal places, the correct result is `3.9999874999804687`, confirming that DeciMojo produces the more accurate result in this case.
+
+```log
+Function:                   sqrt()
+Decimal value:              15.9999
+DeciMojo result:            3.9999874999804686889646053305
+Python's decimal result:    3.9999874999804685
+```
+
+This precision advantage becomes increasingly important in financial, scientific, and engineering calculations where small rounding errors can compound into significant discrepancies.
+
+## Objective
+
+Financial calculations and data analysis require precise decimal arithmetic that floating-point numbers cannot reliably provide. As someone working in finance and credit risk model validation, I needed a dependable correctly-rounded, fixed-precision numeric type when migrating my personal projects from Python to Mojo.
+
+Since Mojo currently lacks a native Decimal type in its standard library, I decided to create my own implementation to fill that gap.
+
+This project draws inspiration from several established decimal implementations and documentation, e.g., [Python built-in `Decimal` type](https://docs.python.org/3/library/decimal.html), [Rust `rust_decimal` crate](https://docs.rs/rust_decimal/latest/rust_decimal/index.html), [Microsoft's `Decimal` implementation](https://learn.microsoft.com/en-us/dotnet/api/system.decimal.getbits?view=net-9.0&redirectedfrom=MSDN#System_Decimal_GetBits_System_Decimal_), [General Decimal Arithmetic Specification](https://speleotrove.com/decimal/decarith.html), etc. Many thanks to these predecessors for their contributions and their commitment to open knowledge sharing.
+
+## Nonmenclature
+
+DeciMojo combines "Decimal" and "Mojo" - reflecting both its purpose (decimal arithmetic) and the programming language it's implemented in. The name emphasizes the project's focus on bringing precise decimal calculations to the Mojo ecosystem.
+
+For brevity, you can refer to it as "deci" (derived from the Latin root "decimus" meaning "tenth").
+
+## Status
+
+Rome wasn't built in a day. DeciMojo is currently under active development, positioned between the **"make it work"** and **"make it right"** phases, with a stronger emphasis on the latter. Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/forFudan/decimojo/issues).
+
+### Make it Work ✅ (MOSTLY COMPLETED)
+
+- Core decimal implementation exists and functions
+- Basic arithmetic operations (+, -, *, /) are implemented
+- Type conversions to/from various formats work
+- String representation and parsing are functional
+- Construction from different sources (strings, numbers) is supported
+
+### Make it Right 🔄 (IN PROGRESS)
+
+- Edge case handling is being addressed (division by zero, zero to negative power)
+- Scale and precision management shows sophistication
+- Financial calculations demonstrate proper rounding
+- High precision support is implemented (up to 28 decimal places)
+- The examples show robust handling of various scenarios
+
+### Make it Fast ⏳ (IN PROGRESS & FUTURE WORK)
+
+- Core arithmetic operations (+, -, *, /) have been optimized for performance, with comprehensive benchmarking reports available comparing performance against Python's built-in decimal module ([PR#16](https://github.com/forFudan/DeciMojo/pull/16), [PR#20](https://github.com/forFudan/DeciMojo/pull/20), [PR#21](https://github.com/forFudan/DeciMojo/pull/21)).
+- Regular benchmarking against Python's `decimal` module (see `bench/` folder)
+- Performance optimization on other functions are acknowledged but not currently prioritized
 
 ## Tests and benches
 
