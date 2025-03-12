@@ -13,7 +13,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-22.04"]
+        os: ["macos-14"]
+        # os: ["ubuntu-22.04"]
 
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
@@ -28,19 +29,19 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install GLIBC
-        run: |
-          sudo apt-get update
-          mkdir $HOME/glibc/ && cd $HOME/glibc
-          wget http://ftp.gnu.org/gnu/libc/glibc-2.39.tar.gz
-          tar -xvf glibc-2.39.tar.gz
-          cd glibc-2.39
-          mkdir build 
-          mkdir glibc-2.39-install
-          cd build
-          ~/glibc/glibc-2.39/configure --prefix=$HOME/glibc/glibc-2.39-install
-          make -j
-          make install
+      # - name: Install GLIBC
+      #   run: |
+      #     sudo apt-get update
+      #     mkdir $HOME/glibc/ && cd $HOME/glibc
+      #     wget http://ftp.gnu.org/gnu/libc/glibc-2.39.tar.gz
+      #     tar -xvf glibc-2.39.tar.gz
+      #     cd glibc-2.39
+      #     mkdir build 
+      #     mkdir glibc-2.39-install
+      #     cd build
+      #     ~/glibc/glibc-2.39/configure --prefix=$HOME/glibc/glibc-2.39-install
+      #     make -j
+      #     make install
 
       - name: Install magic
         run: |
