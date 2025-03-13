@@ -322,7 +322,7 @@ struct Decimal(
         self.high = 0
         self.flags = 0
 
-    # TODO: Add arguments to specify the scale and sign for all integer constructors
+    # TODO: Create method `from_uint128` to handle UInt128 values
     fn __init__(
         out self, integer: UInt128, scale: UInt32 = 0, sign: Bool = False
     ) raises:
@@ -362,303 +362,15 @@ struct Decimal(
             )
         self = Decimal(low, mid, high, scale, sign)
 
-    fn __init__(out self, s: String) raises:
+    fn __init__(out self, value: String) raises:
         """
         Initializes a Decimal from a string representation.
-        Supports standard decimal notation and scientific notation.
-
-        Args:
-            s: String representation of a decimal number (e.g., "1234.5678" or "1.23e5").
-
-        Notes
-        -----
-        The logic I used to implement this method is as follows:
-
-        First, loop the string input (also differentiate the scientific notation and normal notation) and:
-        - Judge whether it is negative.
-        - Get the scale.
-        - Extract the all the significant digits as a new string `string_of_coefficient`
-
-        Next, check overflow:
-        - If integral part of `string_of_coefficient` is larger than the max possible value of a Decimal (Decimal.MAX_AS_STRING), then raise an error that decimal is too big (first compare number of digit then compare the string).
-        - Else, truncate the first 29 digits of the `string_of_coefficient` (also do rounding). Check whether his new sub-string exceeds the `MAX_AS_STRING`. Yes, it exceeds the `MAX_AS_STRING`, then truncate the first 28 digits of the `string_of_coefficient` with rounding.
-
-        Finally, transfer the string into low, mid, and high. Construct the `flag`. Use `Decimal(low, mid, high, flags)` return the decimal.
+        See `from_string()` for more information.
         """
-        # Initialize fields to zero
-        self.low = 0
-        self.mid = 0
-        self.high = 0
-        self.flags = 0
-
-        # Check for empty string
-        if len(s) == 0:
-            return
-
-        # Check for scientific notation
-        var scientific_notation = False
-        var exp_position = -1
-        var exponent = 0
-
-        # Look for 'e' or 'E' in the string to determine scientific notation
-        for i in range(len(s)):
-            if s[i] == String("e") or s[i] == String("E"):
-                scientific_notation = True
-                exp_position = i
-                break
-
-        # Parse the string based on whether it's scientific notation or not
-        var parsing_str = s
-
-        # Handle scientific notation
-        if scientific_notation:
-            # Extract the mantissa and exponent
-            var mantissa_str = s[:exp_position]
-            var exp_str = s[exp_position + 1 :]
-
-            # Check if exponent is negative
-            var exp_negative = False
-            if len(exp_str) > 0 and exp_str[0] == String("-"):
-                exp_negative = True
-                exp_str = exp_str[1:]
-            elif len(exp_str) > 0 and exp_str[0] == String("+"):
-                exp_str = exp_str[1:]
-
-            # Parse the exponent
-            for i in range(len(exp_str)):
-                var c = exp_str[i]
-                if c >= String("0") and c <= String("9"):
-                    exponent = exponent * 10 + (ord(c) - ord(String("0")))
-                else:
-                    raise Error("Invalid character in exponent: " + c)
-
-            if exp_negative:
-                exponent = -exponent
-
-            # Adjust the mantissa based on the exponent
-            parsing_str = mantissa_str
-
-        # STEP 1: Determine sign and extract significant digits
-        var is_negative = len(parsing_str) > 0 and parsing_str[0] == String("-")
-        var start_pos = 1 if is_negative else 0
-        var decimal_pos = parsing_str.find(String("."))
-        var has_decimal = decimal_pos >= 0
-
-        # Extract significant digits and calculate scale
-        var string_of_coefficient = String("")
-        var scale = 0
-        var found_significant = False
-
-        for i in range(start_pos, len(parsing_str)):
-            var c = parsing_str[i]
-
-            if c == String("."):
-                continue  # Skip decimal point
-            elif c == String(",") or c == String("_"):
-                continue  # Skip separators
-            elif c >= String("0") and c <= String("9"):
-                # Count digits after decimal point for scale
-                if has_decimal and i > decimal_pos:
-                    scale += 1
-
-                # Skip leading zeros for the coefficient
-                if c != String("0") or found_significant:
-                    found_significant = True
-                    string_of_coefficient += c
-            else:
-                raise Error("Invalid character in decimal string: " + c)
-
-        # If no significant digits found, result is zero
-        if len(string_of_coefficient) == 0:
-            # Set the flags for scale and sign
-            self.flags = UInt32((scale << Self.SCALE_SHIFT) & Self.SCALE_MASK)
-            if is_negative:
-                self.flags |= Self.SIGN_MASK
-            return  # Already initialized to zero
-
-        # Adjust scale for scientific notation
-        if scientific_notation:
-            if exponent > 0:
-                # Move decimal point right
-                if scale <= exponent:
-                    # Append zeros if needed
-                    string_of_coefficient += String("0") * (exponent - scale)
-                    scale = 0
-                else:
-                    scale -= exponent
-            else:
-                # Move decimal point left (increase scale)
-                scale += -exponent
-
-        # STEP 2: If scale  > MAX_SCALE,
-        # round the coefficient string after truncating
-        # and re-calculate the scale
-        if scale > Self.MAX_SCALE:
-            var diff_scale = scale - Self.MAX_SCALE
-            var kept_digits = len(string_of_coefficient) - diff_scale
-
-            # Truncate the coefficient string to 29 digits
-            if kept_digits < 0:
-                string_of_coefficient = String("0")
-            else:
-                string_of_coefficient = string_of_coefficient[:kept_digits]
-
-            # Apply rounding if needed
-            if kept_digits < len(string_of_coefficient):
-                if string_of_coefficient[kept_digits] >= String("5"):
-                    # Same rounding logic as above
-                    var carry = 1
-                    var result_chars = List[String]()
-
-                    for i in range(len(string_of_coefficient)):
-                        result_chars.append(string_of_coefficient[i])
-
-                    var pos = Self.MAX_SCALE
-                    while pos >= 0 and carry > 0:
-                        var digit = ord(result_chars[pos]) - ord(String("0"))
-                        digit += carry
-
-                        if digit < 10:
-                            result_chars[pos] = chr(digit + ord(String("0")))
-                            carry = 0
-                        else:
-                            result_chars[pos] = String("0")
-                            carry = 1
-                        pos -= 1
-
-                    if carry > 0:
-                        result_chars.insert(0, String("1"))
-
-                    string_of_coefficient = String("")
-                    for ch in result_chars:
-                        string_of_coefficient += ch[]
-
-            scale = Self.MAX_SCALE
-
-        # STEP 2: Check for overflow
-        # Check if the integral part of the coefficient is too large
-        var string_of_integral_part: String
-        if len(string_of_coefficient) > scale:
-            string_of_integral_part = string_of_coefficient[
-                : len(string_of_coefficient) - scale
-            ]
-        else:
-            string_of_integral_part = String("0")
-
-        if (len(string_of_integral_part) > Decimal.MAX_NUM_DIGITS) or (
-            len(string_of_integral_part) == Decimal.MAX_NUM_DIGITS
-            and (string_of_integral_part > Self.MAX_AS_STRING)
-        ):
-            raise Error(
-                "\nError in init from string: Integral part of the Decimal"
-                " value too large: "
-                + s
-            )
-
-        # Check if the coefficient is too large
-        # Recursively re-calculate the coefficient string after truncating and rounding
-        # until it fits within the Decimal limits
-        while (len(string_of_coefficient) > Decimal.MAX_NUM_DIGITS) or (
-            len(string_of_coefficient) == Decimal.MAX_NUM_DIGITS
-            and (string_of_coefficient > Self.MAX_AS_STRING)
-        ):
-            var raw_length_of_coefficient = len(string_of_coefficient)
-
-            # If string_of_coefficient has more than 29 digits, truncate it to 29.
-            # If string_of_coefficient has 29 digits and larger than MAX_AS_STRING, truncate it to 28.
-            var rounding_digit = string_of_coefficient[
-                min(Decimal.MAX_NUM_DIGITS, len(string_of_coefficient) - 1)
-            ]
-            string_of_coefficient = string_of_coefficient[
-                : min(Decimal.MAX_NUM_DIGITS, len(string_of_coefficient) - 1)
-            ]
-
-            scale = scale - (
-                raw_length_of_coefficient - len(string_of_coefficient)
-            )
-
-            # Apply rounding if needed
-            if rounding_digit >= String("5"):
-                # Same rounding logic as above
-                var carry = 1
-                var result_chars = List[String]()
-
-                for i in range(len(string_of_coefficient)):
-                    result_chars.append(string_of_coefficient[i])
-
-                var pos = len(result_chars) - 1
-                while pos >= 0 and carry > 0:
-                    var digit = ord(result_chars[pos]) - ord(String("0"))
-                    digit += carry
-
-                    if digit < 10:
-                        result_chars[pos] = chr(digit + ord(String("0")))
-                        carry = 0
-                    else:
-                        result_chars[pos] = String("0")
-                        carry = 1
-                    pos -= 1
-
-                if carry > 0:
-                    result_chars.insert(0, String("1"))
-
-                    # If adding a digit would exceed max length, drop the last digit and reduce scale
-                    if len(result_chars) > Decimal.MAX_NUM_DIGITS:
-                        result_chars = result_chars[: Decimal.MAX_NUM_DIGITS]
-                        if scale > 0:
-                            scale -= 1
-
-                string_of_coefficient = String("")
-                for ch in result_chars:
-                    string_of_coefficient += ch[]
-
-        # Check if the coefficient exceeds MAX_AS_STRING
-        if len(string_of_coefficient) == len(Self.MAX_AS_STRING):
-            var is_greater = False
-            for i in range(len(string_of_coefficient)):
-                if string_of_coefficient[i] > Self.MAX_AS_STRING[i]:
-                    is_greater = True
-                    break
-                elif string_of_coefficient[i] < Self.MAX_AS_STRING[i]:
-                    break
-
-            if is_greater:
-                raise Error(
-                    "\nError in init from string: Decimal value too large: " + s
-                )
-        elif len(string_of_coefficient) > len(Self.MAX_AS_STRING):
-            raise Error(
-                "\nError in init from string: Decimal value too large: " + s
-            )
-
-        # Step 3: Convert the coefficient string to low/mid/high parts
-        var low: UInt32 = 0
-        var mid: UInt32 = 0
-        var high: UInt32 = 0
-
-        for i in range(len(string_of_coefficient)):
-            var digit = UInt32(ord(string_of_coefficient[i]) - ord(String("0")))
-
-            # Multiply current value by 10 and add the new digit
-            # Use 64-bit arithmetic for the calculation
-            var low64 = UInt64(low) * 10 + UInt64(digit)
-            var mid64 = UInt64(mid) * 10 + (low64 >> 32)
-            var high64 = UInt64(high) * 10 + (mid64 >> 32)
-
-            # Extract 32-bit parts
-            low = UInt32(low64 & 0xFFFFFFFF)
-            mid = UInt32(mid64 & 0xFFFFFFFF)
-            high = UInt32(high64 & 0xFFFFFFFF)
-
-        # Step 4: Set the final result
-        self.low = low
-        self.mid = mid
-        self.high = high
-
-        # Set the flags for scale and sign
-        self.flags = UInt32((scale << Self.SCALE_SHIFT) & Self.SCALE_MASK)
-        if is_negative:
-            self.flags |= Self.SIGN_MASK
+        try:
+            self = Decimal.from_string(value)
+        except e:
+            raise Error("Error in `Decimal__init__()` with String: ", e)
 
     fn __init__(out self, value: Float64) raises:
         """
@@ -700,6 +412,264 @@ struct Decimal(
         result.flags = flags
 
         return result
+
+    @staticmethod
+    fn from_string(value: String) raises -> Decimal:
+        """
+        Initializes a Decimal from a string representation.
+
+        Args:
+            value: The string representation of the Decimal.
+
+        Returns:
+            The Decimal representation of the string.
+
+        Raises:
+            Error: If an error occurs during the conversion, forward the error.
+
+        Notes:
+
+        Only the following characters are allowed in the input string:
+        - Digits 0-9.
+        - Decimal point ".". It can only appear once.
+        - Negative sign "-". It can only appear before the first digit.
+        - Positive sign "+". It can only appear before the first digit or after exponent "e" or "E".
+        - Exponential notation "e" or "E". It can only appear once after the digits.
+        - Space " ". It can appear anywhere in the string, but it is ignored.
+        - Comma ",". It can appear anywhere between digits, but it is ignored.
+        - Underscore "_". It can appear anywhere between digits, but it is ignored.
+        """
+
+        var value_string_slice = value.as_string_slice()
+        var value_bytes = value_string_slice.as_bytes()
+        var value_bytes_len = len(value_bytes)
+
+        if value_bytes_len == 0:
+            return Decimal.ZERO()
+
+        if value_bytes_len != value_string_slice.char_length():
+            raise Error(
+                "There are invalid characters in decimal string: {}".format(
+                    value
+                )
+            )
+
+        # Yuhao's notes:
+        # We scan each char in the string input.
+        var mantissa_sign_read = False
+        var mantissa_start = False
+        var mantissa_significant_start = False
+        var decimal_point_read = False
+        var exponent_notation_read = False
+        var exponent_sign_read = False
+        var exponent_start = False
+        var unexpected_end_char = False
+
+        var mantissa_sign: Bool = False  # True if negative
+        var exponent_sign: Bool = False  # True if negative
+        var coef: UInt128 = 0
+        var scale: UInt32 = 0
+        var raw_exponent: UInt32 = 0
+        var num_mantissa_digits: UInt32 = 0
+
+        for code in value_bytes:
+            # If the char is " ", skip it
+            if code[] == 32:
+                pass
+            # If the char is "," or "_", skip it
+            elif code[] == 44 or code[] == 95:
+                unexpected_end_char = True
+            # If the char is "-"
+            elif code[] == 45:
+                unexpected_end_char = True
+                if exponent_sign_read:
+                    raise Error("Minus sign cannot appear twice in exponent.")
+                elif exponent_notation_read:
+                    exponent_sign = True
+                    exponent_sign_read = True
+                elif mantissa_sign_read:
+                    raise Error(
+                        "Minus sign can only appear once at the begining."
+                    )
+                else:
+                    mantissa_sign = True
+                    mantissa_sign_read = True
+            # If the char is "+"
+            elif code[] == 43:
+                unexpected_end_char = True
+                if exponent_sign_read:
+                    raise Error("Plus sign cannot appear twice in exponent.")
+                elif exponent_notation_read:
+                    exponent_sign_read = True
+                elif mantissa_sign_read:
+                    raise Error(
+                        "Plus sign can only appear once at the begining."
+                    )
+                else:
+                    mantissa_sign_read = True
+            # If the char is "."
+            elif code[] == 46:
+                unexpected_end_char = False
+                if decimal_point_read:
+                    raise Error("Decimal point can only appear once.")
+                else:
+                    decimal_point_read = True
+                    mantissa_sign_read = True
+            # If the char is "e" or "E"
+            elif code[] == 101 or code[] == 69:
+                unexpected_end_char = True
+                if exponent_notation_read:
+                    raise Error("Exponential notation can only appear once.")
+                if not mantissa_start:
+                    raise Error("Exponential notation must follow a number.")
+                else:
+                    exponent_notation_read = True
+            # If the char is a digit 0
+            elif code[] == 48:
+                unexpected_end_char = False
+
+                # Exponent part
+                if exponent_notation_read:
+                    exponent_sign_read = True
+                    exponent_start = True
+                    raw_exponent = raw_exponent * 10
+
+                # Mantissa part
+                else:
+                    # Skip the digit if mantissa is too long
+                    if num_mantissa_digits > Decimal.MAX_NUM_DIGITS + 8:  # 37
+                        continue
+
+                    mantissa_sign_read = True
+                    mantissa_start = True
+
+                    if mantissa_significant_start:
+                        num_mantissa_digits += 1
+                        coef = coef * 10
+
+                    if decimal_point_read:
+                        scale += 1
+
+            # If the char is a digit 1 - 9
+            elif code[] >= 49 and code[] <= 57:
+                unexpected_end_char = False
+
+                # Exponent part
+                if exponent_notation_read:
+                    # Raise an error if the exponent part is too large
+                    if (not exponent_sign) and (
+                        raw_exponent > Decimal.MAX_NUM_DIGITS * 2
+                    ):
+                        raise Error(
+                            "Exponent part is too large: {}".format(
+                                raw_exponent
+                            )
+                        )
+
+                    # Skip the digit if exponent is negatively too large
+                    elif (exponent_sign) and (
+                        raw_exponent > Decimal.MAX_NUM_DIGITS * 2
+                    ):
+                        continue
+
+                    else:
+                        exponent_start = True
+                        raw_exponent = raw_exponent * 10 + UInt32(code[] - 48)
+
+                # Mantissa part
+                else:
+                    # Skip the digit if mantissa is too long
+                    if num_mantissa_digits > Decimal.MAX_NUM_DIGITS + 8:  # 37
+                        continue
+
+                    mantissa_significant_start = True
+                    mantissa_start = True
+
+                    num_mantissa_digits += 1
+                    coef = coef * 10 + UInt128(code[] - 48)
+
+                    if decimal_point_read:
+                        scale += 1
+
+            else:
+                raise Error(
+                    "Invalid character in decimal string: {}".format(
+                        chr(Int(code[]))
+                    )
+                )
+
+        if unexpected_end_char:
+            raise Error("Unexpected end character in decimal string.")
+
+        # print("DEBUG: coef = ", coef)
+        # print("DEBUG: scale = ", scale)
+        # print("DEBUG: raw_exponent = ", raw_exponent)
+        # print("DEBUG: exponent_sign = ", exponent_sign)
+
+        if raw_exponent != 0:
+            # If exponent is negative, increase the scale
+            if exponent_sign:
+                scale = scale + raw_exponent
+            # If exponent is positive, decrease the scale until 0
+            # then increase the coefficient
+            else:
+                if scale >= raw_exponent:
+                    scale = scale - raw_exponent
+                else:
+                    coef = coef * (UInt128(10) ** UInt128(raw_exponent - scale))
+                    scale = 0
+
+        # print("DEBUG: coef = ", coef)
+        # print("DEBUG: scale = ", scale)
+
+        # TODO: The following part can be written into a function
+        # because it is used in many cases
+        if coef <= Decimal.MAX_AS_UINT128:
+            if scale > Decimal.MAX_SCALE:
+                coef = decimojo.utility.round_to_keep_first_n_digits(
+                    coef,
+                    Int(num_mantissa_digits) - Int(scale - Decimal.MAX_SCALE),
+                )
+                # print("DEBUG: coef = ", coef)
+                # print(
+                #     "DEBUG: kept digits =",
+                #     Int(num_mantissa_digits) - Int(scale - Decimal.MAX_SCALE),
+                # )
+                scale = Decimal.MAX_SCALE
+
+            return Decimal(coef, scale, mantissa_sign)
+
+        else:
+            var ndigits_coef = decimojo.utility.number_of_digits(coef)
+            var ndigits_quot_int_part = ndigits_coef - scale
+
+            var truncated_coef = decimojo.utility.round_to_keep_first_n_digits(
+                coef, Decimal.MAX_NUM_DIGITS
+            )
+            var scale_of_truncated_coef = (
+                Decimal.MAX_NUM_DIGITS - ndigits_quot_int_part
+            )
+
+            if truncated_coef > Decimal.MAX_AS_UINT128:
+                truncated_coef = decimojo.utility.round_to_keep_first_n_digits(
+                    coef, Decimal.MAX_NUM_DIGITS - 1
+                )
+                scale_of_truncated_coef -= 1
+
+            if scale_of_truncated_coef > Decimal.MAX_SCALE:
+                var num_digits_truncated_coef = decimojo.utility.number_of_digits(
+                    truncated_coef
+                )
+                truncated_coef = decimojo.utility.round_to_keep_first_n_digits(
+                    truncated_coef,
+                    num_digits_truncated_coef
+                    - Int(scale_of_truncated_coef - Decimal.MAX_SCALE),
+                )
+                scale_of_truncated_coef = Decimal.MAX_SCALE
+
+            return Decimal(
+                truncated_coef, scale_of_truncated_coef, mantissa_sign
+            )
 
     @staticmethod
     fn from_float(value: Float64) raises -> Decimal:
