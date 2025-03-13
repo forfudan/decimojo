@@ -4,7 +4,7 @@
 # https://github.com/forFudan/decimojo/blob/main/LICENSE
 # ===----------------------------------------------------------------------=== #
 #
-# Implements logic operations for the Decimal type
+# Implements comparison operations for the Decimal type
 #
 # ===----------------------------------------------------------------------=== #
 #
@@ -89,10 +89,10 @@ fn compare_absolute(x: Decimal, y: Decimal) -> Int8:
         (3) -1 if |x| < |y|.
     """
 
-    var x_coef = x.coefficient()
-    var y_coef = y.coefficient()
-    var x_scale = x.scale()
-    var y_scale = y.scale()
+    var x_coef: UInt128 = x.coefficient()
+    var y_coef: UInt128 = y.coefficient()
+    var x_scale: Int = x.scale()
+    var y_scale: Int = y.scale()
 
     # CASE: The scales are the same
     # Compare the coefficients directly
@@ -146,32 +146,7 @@ fn greater(a: Decimal, b: Decimal) -> Bool:
         True if a is greater than b, False otherwise.
     """
 
-    # Special case: either are zero
-    if a.is_zero() and b.is_zero():
-        return False  # Zero equals zero
-
-    # Sepcial case:
-    if a.is_zero():
-        return b.is_negative()  # a=0 > b only if b is negative
-    if b.is_zero():
-        return (
-            not a.is_negative() and not a.is_zero()
-        )  # a > b=0 only if a is positive and non-zero
-
-    # If they have different signs, positive is always greater
-    if a.is_negative() != b.is_negative():
-        return not a.is_negative()  # a > b if a is positive and b is negative
-
-    # Now we know they have the same sign
-    # Compare absolute values, considering the sign
-    var compare_result = compare_absolute(a, b)
-
-    if a.is_negative():
-        # For negative numbers, the one with smaller absolute value is greater
-        return compare_result < 0
-    else:
-        # For positive numbers, the one with larger absolute value is greater
-        return compare_result > 0
+    return compare(a, b) == 1
 
 
 fn less(a: Decimal, b: Decimal) -> Bool:
@@ -185,8 +160,8 @@ fn less(a: Decimal, b: Decimal) -> Bool:
     Returns:
         True if a is less than b, False otherwise.
     """
-    # We can use the greater function with arguments reversed
-    return greater(b, a)
+
+    return compare(a, b) == -1
 
 
 fn greater_equal(a: Decimal, b: Decimal) -> Bool:
@@ -200,32 +175,8 @@ fn greater_equal(a: Decimal, b: Decimal) -> Bool:
     Returns:
         True if a is greater than or equal to b, False otherwise.
     """
-    # Handle special case where either or both are zero
-    if a.is_zero() and b.is_zero():
-        return True  # Zero equals zero
-    if a.is_zero():
-        return (
-            b.is_zero() or b.is_negative()
-        )  # a=0 >= b only if b is zero or negative
-    if b.is_zero():
-        return (
-            a.is_negative() == False
-        )  # a >= b=0 only if a is positive or zero
 
-    # If they have different signs, positive is always greater
-    if a.is_negative() != b.is_negative():
-        return not a.is_negative()  # a >= b if a is positive and b is negative
-
-    # Now we know they have the same sign
-    # Compare absolute values, considering the sign
-    var compare_result = compare_absolute(a, b)
-
-    if a.is_negative():
-        # For negative numbers, the one with smaller or equal absolute value is greater or equal
-        return compare_result <= 0
-    else:
-        # For positive numbers, the one with larger or equal absolute value is greater or equal
-        return compare_result >= 0
+    return not less(a, b)
 
 
 fn less_equal(a: Decimal, b: Decimal) -> Bool:
@@ -239,8 +190,8 @@ fn less_equal(a: Decimal, b: Decimal) -> Bool:
     Returns:
         True if a is less than or equal to b, False otherwise.
     """
-    # We can use the greater_equal function with arguments reversed
-    return greater_equal(b, a)
+
+    return not greater(a, b)
 
 
 fn equal(a: Decimal, b: Decimal) -> Bool:
@@ -254,16 +205,8 @@ fn equal(a: Decimal, b: Decimal) -> Bool:
     Returns:
         True if a equals b, False otherwise.
     """
-    # If both are zero, they are equal regardless of scale or sign
-    if a.is_zero() and b.is_zero():
-        return True
 
-    # If signs differ, they're not equal
-    if a.is_negative() != b.is_negative():
-        return False
-
-    # Compare absolute values
-    return compare_absolute(a, b) == 0
+    return compare(a, b) == 0
 
 
 fn not_equal(a: Decimal, b: Decimal) -> Bool:
@@ -277,5 +220,5 @@ fn not_equal(a: Decimal, b: Decimal) -> Bool:
     Returns:
         True if a is not equal to b, False otherwise.
     """
-    # Simply negate the equal function
-    return not equal(a, b)
+
+    return compare(a, b) != 0

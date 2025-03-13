@@ -286,6 +286,44 @@ fn subtract(x1: Decimal, x2: Decimal) raises -> Decimal:
         raise Error("Error in `subtract()`; ", e)
 
 
+fn negative(x: Decimal) -> Decimal:
+    """
+    Returns the negative of a Decimal number.
+
+    Args:
+        x: The Decimal value to compute the negative of.
+
+    Returns:
+        A new Decimal containing the negative of x.
+    """
+
+    var result = x
+
+    if x.is_zero():
+        # Set the sign bit to 0 and keep the scale bits
+        result.flags &= ~Decimal.SIGN_MASK
+
+    else:
+        result.flags ^= Decimal.SIGN_MASK  # Flip sign bit
+
+    return result
+
+
+fn absolute(x: Decimal) -> Decimal:
+    """
+    Returns the absolute value of a Decimal number.
+
+    Args:
+        x: The Decimal value to compute the absolute value of.
+
+    Returns:
+        A new Decimal containing the absolute value of x.
+    """
+    if x.is_negative():
+        return -x
+    return x
+
+
 fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     """
     Multiplies two Decimal values and returns a new Decimal containing the product.

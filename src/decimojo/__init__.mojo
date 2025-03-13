@@ -29,4 +29,11 @@ from .maths import (
     absolute,
 )
 
-from .logic import greater, greater_equal, less, less_equal, equal, not_equal
+from .comparison import (
+    greater,
+    greater_equal,
+    less,
+    less_equal,
+    equal,
+    not_equal,
+)
