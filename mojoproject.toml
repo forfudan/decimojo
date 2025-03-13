@@ -39,6 +39,8 @@ test_round = "magic run package && magic run mojo test tests/test_round.mojo && 
 test_creation = "magic run package && magic run mojo test tests/test_creation.mojo && magic run delete_package"
 test_from_float = "magic run package && magic run mojo test tests/test_from_float.mojo && magic run delete_package"
 test_from_string = "magic run package && magic run mojo test tests/test_from_string.mojo && magic run delete_package"
+test_logic = "magic run package && magic run mojo test tests/test_logic.mojo && magic run delete_package"
+
 
 # benches
 bench = "magic run package && cd benches && magic run mojo bench.mojo && cd .. && magic run delete_package"
@@ -49,6 +51,7 @@ bench_sqrt = "magic run package && cd benches && magic run mojo bench_sqrt.mojo 
 bench_round = "magic run package && cd benches && magic run mojo bench_round.mojo && cd .. && magic run delete_package"
 bench_from_float = "magic run package && cd benches && magic run mojo bench_from_float.mojo && cd .. && magic run delete_package"
 bench_from_string = "magic run package && cd benches && magic run mojo bench_from_string.mojo && cd .. && magic run delete_package"
+bench_logic = "magic run package && cd benches && magic run mojo bench_logic.mojo && cd .. && magic run delete_package"
 
 # before commit
 final = "magic run test && magic run bench"

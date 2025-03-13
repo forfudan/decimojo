@@ -27,6 +27,8 @@
 Implements functions for comparison operations on Decimal objects.
 """
 
+import testing
+
 from decimojo.decimal import Decimal
 import decimojo.utility
 
@@ -42,9 +44,12 @@ fn greater(a: Decimal, b: Decimal) -> Bool:
     Returns:
         True if a is greater than b, False otherwise.
     """
-    # Handle special case where either or both are zero
+
+    # Special case: either are zero
     if a.is_zero() and b.is_zero():
         return False  # Zero equals zero
+
+    # Sepcial case:
     if a.is_zero():
         return b.is_negative()  # a=0 > b only if b is negative
     if b.is_zero():
@@ -58,7 +63,7 @@ fn greater(a: Decimal, b: Decimal) -> Bool:
 
     # Now we know they have the same sign
     # Compare absolute values, considering the sign
-    var compare_result = _compare_abs(a, b)
+    var compare_result = compare_absolute_values(a, b)
 
     if a.is_negative():
         # For negative numbers, the one with smaller absolute value is greater
@@ -97,7 +102,7 @@ fn greater_equal(a: Decimal, b: Decimal) -> Bool:
 
     # Now we know they have the same sign
     # Compare absolute values, considering the sign
-    var compare_result = _compare_abs(a, b)
+    var compare_result = compare_absolute_values(a, b)
 
     if a.is_negative():
         # For negative numbers, the one with smaller or equal absolute value is greater or equal
@@ -157,7 +162,7 @@ fn equal(a: Decimal, b: Decimal) -> Bool:
         return False
 
     # Compare absolute values
-    return _compare_abs(a, b) == 0
+    return compare_absolute_values(a, b) == 0
 
 
 fn not_equal(a: Decimal, b: Decimal) -> Bool:
@@ -175,57 +180,61 @@ fn not_equal(a: Decimal, b: Decimal) -> Bool:
     return not equal(a, b)
 
 
-fn _compare_abs(a: Decimal, b: Decimal) -> Int:
+fn compare_absolute(x: Decimal, y: Decimal) -> Int8:
     """
-    Internal helper to compare absolute values of two Decimal numbers.
+    Compares the absolute values of two Decimal numbers and returns the result.
+
+    Args:
+        x: First Decimal value.
+        y: Second Decimal value.
 
     Returns:
-    - Positive value if |a| > |b|
-    - Zero if |a| = |b|
-    - Negative value if |a| < |b|
-
-    raises:
-        Error: Calling `scale_up()` failed.
+        Terinary value indicating the comparison result:
+        (1) Positive value if |x| > |y|.
+        (2) Zero if |x| = |y|.
+        (3) Negative value if |x| < |y|.
     """
-    # Normalize scales by scaling up the one with smaller scale
-    var scale_a = a.scale()
-    var scale_b = b.scale()
 
-    # Create temporary copies that we will scale
-    var a_copy = a
-    var b_copy = b
+    var x_coef = x.coefficient()
+    var y_coef = y.coefficient()
+    var x_scale = x.scale()
+    var y_scale = y.scale()
 
-    # Scale up the decimal with smaller scale to match the other
-    # TODO: Treat this error properly
-    if scale_a < scale_b:
-        try:
-            a_copy = decimojo.utility.scale_up(a, scale_b - scale_a)
-        except:
-            a_copy = a
-    elif scale_b < scale_a:
-        try:
-            b_copy = decimojo.utility.scale_up(b, scale_a - scale_b)
-        except:
-            b_copy = b
+    # CASE: The scales are the same
+    # Compare the coefficients directly
+    if x_scale == y_scale:
+        if x_coef > y_coef:
+            return 1
+        elif x_coef < y_coef:
+            return -1
+        else:
+            return 0
 
-    # Now both have the same scale, compare integer components
-    # Compare high parts first (most significant)
-    if a_copy.high > b_copy.high:
-        return 1
-    if a_copy.high < b_copy.high:
-        return -1
+    # CASE: The scales are different
+    # Compare the integral part first
+    # If the integral part is the same, compare the fractional part
+    else:
+        var x_int = x_coef // UInt128(10) ** (x_scale)
+        var y_int = y_coef // UInt128(10) ** (y_scale)
 
-    # High parts equal, compare mid parts
-    if a_copy.mid > b_copy.mid:
-        return 1
-    if a_copy.mid < b_copy.mid:
-        return -1
+        if x_int > y_int:
+            return 1
+        elif x_int < y_int:
+            return -1
+        else:
+            var x_frac = x_coef % (UInt128(10) ** (x_scale))
+            var y_frac = y_coef % (UInt128(10) ** (y_scale))
 
-    # Mid parts equal, compare low parts (least significant)
-    if a_copy.low > b_copy.low:
-        return 1
-    if a_copy.low < b_copy.low:
-        return -1
+            # Adjust the fractional part to have the same scale
+            var scale_diff = x_scale - y_scale
+            if scale_diff > 0:
+                y_frac *= UInt128(10) ** scale_diff
+            else:
+                x_frac *= UInt128(10) ** (-scale_diff)
 
-    # All components are equal
-    return 0
+            if x_frac > y_frac:
+                return 1
+            elif x_frac < y_frac:
+                return -1
+            else:
+                return 0
