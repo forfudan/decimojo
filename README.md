@@ -2,6 +2,8 @@
 
 A fixed-point decimal arithmetic library implemented in [the Mojo programming language 🔥](https://www.modular.com/mojo).
 
+**[中文·漢字»](https://github.com/forFudan/DeciMojo/blob/main/docs/README_ZH.md)**
+
 ## Overview
 
 DeciMojo provides a Decimal type implementation for Mojo with fixed-precision arithmetic, designed to handle financial calculations and other scenarios where floating-point rounding errors are problematic.
@@ -16,15 +18,17 @@ To use DeciMojo, import the necessary components from the `decimojo.prelude` mod
 from decimojo.prelude import dm, Decimal, RoundingMode
 
 fn main() raises:
-    print(dm.sqrt(Decimal("3.1415926")))
-    # Output: 1.7724538357881143980200972894
+    var r = Decimal("3")           # radius
+    var pi = Decimal("3.1415926")  # pi
+    var area = pi * r * r          # area of a circle
+    print(area)                    # 28.2743334
 ```
 
 The Github repo of the project is at [https://github.com/forFudan/DeciMojo](https://github.com/forFudan/DeciMojo).
 
 ## Examples
 
-The `Decimal` type can represent values with up to 29 significant digits and a maximum of 28 digits after the decimal point. When a value exceeds the maximum representable value (`2^96 - 1`), DeciMojo either raises an error or rounds the value to fit within these constraints. For example, the significant digits of `8.8888888888888888888888888888` (29 eights total with 28 after the decimal point) exceeds the maximum representable value (`2^96 - 1`) and is automatically rounded to `8.888888888888888888888888888` (28 eights total with 27 after the decimal point).
+The `Decimal` type can represent values with up to 29 significant digits and a maximum of 28 digits after the decimal point. When a value exceeds the maximum representable value (`2^96 - 1`), DeciMojo either raises an error or rounds the value to fit within these constraints. For example, the significant digits of `8.8888888888888888888888888888` (29 eights total with 28 after the decimal point) exceeds the maximum representable value (`2^96 - 1`) and is automatically rounded to `8.888888888888888888888888889` (28 eights total with 27 after the decimal point).
 
 Here are 8 key examples highlighting the most important features of the `Decimal` type in its current state:
 
@@ -87,10 +91,6 @@ print(d2.round_to_scale(1))  # 123.5 (banker's rounding)
 # High precision is preserved (up to 28 decimal places)
 var precise = Decimal("0.1234567890123456789012345678")
 print(precise)  # 0.1234567890123456789012345678
-
-# Truncation to specific number of digits
-var large_num = Decimal("123456.789")
-print(round_to_keep_first_n_digits(large_num, 4))  # 1235 (banker's rounded)
 ```
 
 ### 4. Sign Handling and Absolute Value
@@ -117,15 +117,13 @@ print(Decimal("-5") * Decimal("-3"))     # 15
 ### 5. Advanced Mathematical Operations
 
 ```mojo
-from decimojo.mathematics import sqrt
-
 # Highly accurate square root implementation
-var root2 = sqrt(Decimal("2"))
-print(root2)  # 1.4142135623730950488016887242...
+var root2 = Decimal("2").sqrt()
+print(root2)  # 1.4142135623730950488016887242
 
 # Square root of imperfect squares
-var root_15_9999 = sqrt(Decimal("15.9999"))
-print(root_15_9999)  # 3.9999874999804686889646053305...
+var root_15_9999 = Decimal("15.9999").sqrt()
+print(root_15_9999)  # 3.9999874999804686889646053305
 
 # Integer powers with fast binary exponentiation
 var cubed = Decimal("3") ** 3
@@ -193,7 +191,6 @@ var payment = principal * (numerator / denominator)
 print("Monthly payment: $" + String(round(payment, 2)))  # $1,073.64
 ```
 
-
 ## Advantages
 
 DeciMojo provides exceptional computational precision without sacrificing performance. It maintains accuracy throughout complex calculations where floating-point or other decimal implementations might introduce subtle errors.
@@ -255,7 +252,7 @@ Rome wasn't built in a day. DeciMojo is currently under active development, posi
 
 - Core arithmetic operations (+, -, *, /) have been optimized for performance, with comprehensive benchmarking reports available comparing performance against Python's built-in decimal module ([PR#16](https://github.com/forFudan/DeciMojo/pull/16), [PR#20](https://github.com/forFudan/DeciMojo/pull/20), [PR#21](https://github.com/forFudan/DeciMojo/pull/21)).
 - Regular benchmarking against Python's `decimal` module (see `bench/` folder)
-- Performance optimization on other functions are acknowledged but not currently prioritized
+- Performance optimization for other functions is progressing gradually but is not currently a priority
 
 ## Tests and benches
 
@@ -266,7 +263,7 @@ After cloning the repo onto your local disk, you can:
 
 ## Citation
 
-If you find DeciMojo useful for your research, consider listing it in your citations 😀.
+If you find DeciMojo useful for your research, consider listing it in your citations.
 
 ```tex
 @software{Zhu.2025,

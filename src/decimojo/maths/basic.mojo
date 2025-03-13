@@ -914,6 +914,8 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
         var ndigits_quot = decimojo.utility.number_of_digits(quot)
         var ndigits_quot_int_part = ndigits_quot - scale_of_quot
 
+        # TODO: 可以考慮先降 scale 再判斷是否超出最大值.
+        # TODO: 爲降 scale 引入 round_to_remove_last_n_digits 函數
         # If quot is within MAX, return the result
         if quot <= Decimal.MAX_AS_UINT128:
             if scale_of_quot > Decimal.MAX_SCALE:
