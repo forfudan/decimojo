@@ -454,3 +454,88 @@ fn number_of_bits[dtype: DType, //](owned value: Scalar[dtype]) -> Int:
         count += 1
 
     return count
+
+
+# ===----------------------------------------------------------------------=== #
+# Cache for powers of 10
+#
+# Yuhao's notes:
+# This is a module-level cache for powers of 10.
+# It is used to store the powers of 10 up to the required value.
+# The cache is initialized with the first value (10^0 = 1).
+# When a new power of 10 is requested, it is calculated and added to the cache.
+# This cache is used to avoid recalculating the same powers of 10 multiple times.
+#
+# TODO: Currently, this won't work when you create a mojopkg to use.
+# When Mojo supports module-level variables, this part can be used.
+# ===----------------------------------------------------------------------=== #
+
+
+# Module-level cache for powers of 10
+var _power_of_10_as_uint128_cache = List[UInt128]()
+var _power_of_10_as_uint256_cache = List[UInt256]()
+
+
+# Initialize with the first value
+@always_inline
+fn _init_power_of_10_as_uint128_cache():
+    if len(_power_of_10_as_uint128_cache) == 0:
+        _power_of_10_as_uint128_cache.append(1)  # 10^0 = 1
+
+
+@always_inline
+fn _init_power_of_10_as_uint256_cache():
+    if len(_power_of_10_as_uint256_cache) == 0:
+        _power_of_10_as_uint256_cache.append(1)  # 10^0 = 1
+
+
+@always_inline
+fn power_of_10_as_uint128(n: Int) raises -> UInt128:
+    """
+    Returns 10^n using cached values when available.
+    """
+
+    # Check for negative exponent
+    if n < 0:
+        raise Error(
+            "power_of_10() requires non-negative exponent, got {}".format(n)
+        )
+
+    # Initialize cache if needed
+    if len(_power_of_10_as_uint128_cache) == 0:
+        _init_power_of_10_as_uint128_cache()
+
+    # Extend cache if needed
+    while len(_power_of_10_as_uint128_cache) <= n:
+        var next_power = _power_of_10_as_uint128_cache[
+            len(_power_of_10_as_uint128_cache) - 1
+        ] * 10
+        _power_of_10_as_uint128_cache.append(next_power)
+
+    return _power_of_10_as_uint128_cache[n]
+
+
+@always_inline
+fn power_of_10_as_uint256(n: Int) raises -> UInt256:
+    """
+    Returns 10^n using cached values when available.
+    """
+
+    # Check for negative exponent
+    if n < 0:
+        raise Error(
+            "power_of_10() requires non-negative exponent, got {}".format(n)
+        )
+
+    # Initialize cache if needed
+    if len(_power_of_10_as_uint256_cache) == 0:
+        _init_power_of_10_as_uint256_cache()
+
+    # Extend cache if needed
+    while len(_power_of_10_as_uint256_cache) <= n:
+        var next_power = _power_of_10_as_uint256_cache[
+            len(_power_of_10_as_uint256_cache) - 1
+        ] * 10
+        _power_of_10_as_uint256_cache.append(next_power)
+
+    return _power_of_10_as_uint256_cache[n]
