@@ -107,7 +107,7 @@ fn round(
 
             # In other cases, return the result
             else:
-                return Decimal(
+                return Decimal.from_uint128(
                     res_coef, scale=ndigits, sign=number.is_negative()
                 )
 
@@ -134,12 +134,16 @@ fn round(
         )
 
         if ndigits >= 0:
-            return Decimal(res_coef, scale=ndigits, sign=number.is_negative())
+            return Decimal.from_uint128(
+                res_coef, scale=ndigits, sign=number.is_negative()
+            )
 
         # if `ndigits` is negative and `ndigits_to_keep` >= 0, scale up the result
         elif ndigits_to_keep >= 0:
             res_coef *= UInt128(10) ** (-ndigits)
-            return Decimal(res_coef, scale=0, sign=number.is_negative())
+            return Decimal.from_uint128(
+                res_coef, scale=0, sign=number.is_negative()
+            )
 
         # if `ndigits` is negative and `ndigits_to_keep` < 0, return 0
         else:

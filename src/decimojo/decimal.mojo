@@ -229,20 +229,13 @@ struct Decimal(
                 ).format(scale)
             )
 
+        var flags: UInt32 = 0
+        flags |= (scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
+        flags |= sign << 31
+
         self.low = low
         self.mid = mid
         self.high = high
-
-        # First set the flags without capping to initialize properly
-        var flags: UInt32 = 0
-
-        # Set the initial scale (may be higher than MAX_SCALE)
-        flags |= (scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
-
-        # Set the sign bit if negative
-        if sign:
-            flags |= Self.SIGN_MASK
-
         self.flags = flags
 
     fn __init__(out self, integer: Int):
@@ -253,114 +246,22 @@ struct Decimal(
         Since Int is a 64-bit type in Mojo, this constructor can only
         handle values up to 64 bits. The `high` field will always be 0.
         """
+
+        # Initialize flags
         self.flags = 0
 
-        if integer == 0:
-            self.low = 0
-            self.mid = 0
-            self.high = 0
-            return
-
-        if integer < 0:
-            # Set sign bit for negative integers
+        # Set sign bit if negative
+        var is_negative = integer < 0
+        if is_negative:
             self.flags = Self.SIGN_MASK
 
-            # Handle negative value by taking absolute value first
-            abs_value = UInt64(-integer)
+        # Take absolute value
+        var abs_value = UInt64(integer if integer >= 0 else -integer)
 
-            # Set the coefficient fields
-            # `high` will always be 0 because Int is 64-bit
-            self.low = UInt32(abs_value & 0xFFFFFFFF)
-            self.mid = UInt32((abs_value >> 32) & 0xFFFFFFFF)
-            self.high = 0
-        else:
-            # Positive integer
-            self.low = UInt32(integer & 0xFFFFFFFF)
-            self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
-            self.high = 0
-
-    fn __init__(out self, integer: Int128):
-        """
-        Initializes a Decimal from an Int128 value.
-        ***WARNING***: This constructor can only handle values up to 96 bits.
-        """
-        self.flags = 0
-
-        if integer == 0:
-            self.low = 0
-            self.mid = 0
-            self.high = 0
-            return
-
-        if integer < 0:
-            # Set sign bit for negative integers
-            self.flags = Self.SIGN_MASK
-
-            # Handle negative value by taking absolute value first
-            var abs_value = -integer
-
-            # Set the coefficient fields
-            # `high` will always be 0 because Int is 64-bit
-            self.low = UInt32(abs_value & 0xFFFFFFFF)
-            self.mid = UInt32((abs_value >> 32) & 0xFFFFFFFF)
-            self.high = UInt32((abs_value >> 64) & 0xFFFFFFFF)
-        else:
-            # Positive integer
-            print(integer)
-            self.low = UInt32(integer & 0xFFFFFFFF)
-            self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
-            self.high = UInt32((integer >> 64) & 0xFFFFFFFF)
-
-    # TODO: Add arguments to specify the scale and sign
-    fn __init__(out self, integer: UInt64):
-        """
-        Initializes a Decimal from an UInt64 value.
-        The `high` word will always be 0.
-        """
-        self.low = UInt32(integer & 0xFFFFFFFF)
-        self.mid = UInt32((integer >> 32) & 0xFFFFFFFF)
+        # Set the coefficient fields (same for both positive and negative)
+        self.low = UInt32(abs_value & 0xFFFFFFFF)
+        self.mid = UInt32((abs_value >> 32) & 0xFFFFFFFF)
         self.high = 0
-        self.flags = 0
-
-    # TODO: Create method `from_uint128` to handle UInt128 values
-    fn __init__(
-        out self, integer: UInt128, scale: UInt32 = 0, sign: Bool = False
-    ) raises:
-        """
-        Initializes a Decimal from an UInt128 value.
-        ***WARNING***: This constructor can only handle values up to 96 bits.
-        """
-        var low = UInt32(integer & 0xFFFFFFFF)
-        var mid = UInt32((integer >> 32) & 0xFFFFFFFF)
-        var high = UInt32((integer >> 64) & 0xFFFFFFFF)
-
-        try:
-            self = Decimal(low, mid, high, scale, sign)
-        except e:
-            raise Error(
-                "Error in Decimal constructor with UInt128, scale, and sign: ",
-                e,
-            )
-
-    fn __init__(
-        out self, integer: UInt256, scale: UInt32 = 0, sign: Bool = False
-    ) raises:
-        """
-        Initializes a Decimal from an UInt256 value.
-        ***WARNING***: This constructor can only handle values up to 96 bits.
-        """
-        var low = UInt32(integer & 0xFFFFFFFF)
-        var mid = UInt32((integer >> 32) & 0xFFFFFFFF)
-        var high = UInt32((integer >> 64) & 0xFFFFFFFF)
-
-        try:
-            self = Decimal(low, mid, high, scale, sign)
-        except e:
-            raise Error(
-                "Error in Decimal constructor with UInt256, scale, and sign: ",
-                e,
-            )
-        self = Decimal(low, mid, high, scale, sign)
 
     fn __init__(out self, value: String) raises:
         """
@@ -410,6 +311,50 @@ struct Decimal(
         result.mid = mid
         result.high = high
         result.flags = flags
+
+        return result
+
+    @staticmethod
+    fn from_uint128(
+        value: UInt128, scale: UInt32 = 0, sign: Bool = False
+    ) raises -> Decimal:
+        """
+        Initializes a Decimal from a UInt128 value.
+
+        Args:
+            value: The UInt128 value to convert to Decimal.
+            scale: The number of decimal places (0-28).
+            sign: True if the number is negative.
+
+        Returns:
+            The Decimal representation of the UInt128 value.
+
+        Raises:
+            Error: If the most significant word of the UInt128 is not zero.
+            Error: If the scale is greater than MAX_SCALE.
+        """
+
+        if value >> 96 != 0:
+            raise Error(
+                String(
+                    "Error in Decimal constructor with UInt128: Value must"
+                    " fit in 96 bits, but got {}"
+                ).format(value)
+            )
+
+        if scale > Self.MAX_SCALE:
+            raise Error(
+                String(
+                    "Error in Decimal constructor with five components: Scale"
+                    " must be between 0 and 28, but got {}"
+                ).format(scale)
+            )
+
+        var result = UnsafePointer[UInt128].address_of(value).bitcast[
+            Decimal
+        ]()[]
+        result.flags |= (scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
+        result.flags |= sign << 31
 
         return result
 
@@ -637,7 +582,7 @@ struct Decimal(
                 # )
                 scale = Decimal.MAX_SCALE
 
-            return Decimal(coef, scale, mantissa_sign)
+            return Decimal.from_uint128(coef, scale, mantissa_sign)
 
         else:
             var ndigits_coef = decimojo.utility.number_of_digits(coef)
@@ -667,7 +612,7 @@ struct Decimal(
                 )
                 scale_of_truncated_coef = Decimal.MAX_SCALE
 
-            return Decimal(
+            return Decimal.from_uint128(
                 truncated_coef, scale_of_truncated_coef, mantissa_sign
             )
 
