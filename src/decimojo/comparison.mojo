@@ -96,28 +96,37 @@ fn compare_absolute(x: Decimal, y: Decimal) -> Int8:
 
     # CASE: The scales are the same
     # Compare the coefficients directly
+    if x_scale == y_scale and x_coef == y_coef:
+        return 0
     if x_scale == y_scale:
-        if x_coef > y_coef:
-            return 1
-        elif x_coef < y_coef:
-            return -1
-        else:
-            return 0
+        return (Int8(x_coef > y_coef)) - (Int8(x_coef < y_coef))
 
     # CASE: The scales are different
     # Compare the integral part first
     # If the integral part is the same, compare the fractional part
     else:
-        var x_int = x_coef // UInt128(10) ** (x_scale)
-        var y_int = y_coef // UInt128(10) ** (y_scale)
+        # Early return if integer parts have different lengths
+        # Get number of integer digits
+        var x_int_digits = decimojo.utility.number_of_digits(x_coef) - x_scale
+        var y_int_digits = decimojo.utility.number_of_digits(y_coef) - y_scale
+        if x_int_digits > y_int_digits:
+            return 1
+        if x_int_digits < y_int_digits:
+            return -1
+
+        # If interger parts have the same length, compare the integer parts
+        var x_scale_power = UInt128(10) ** (x_scale)
+        var y_scale_power = UInt128(10) ** (y_scale)
+        var x_int = x_coef // x_scale_power
+        var y_int = y_coef // y_scale_power
 
         if x_int > y_int:
             return 1
         elif x_int < y_int:
             return -1
         else:
-            var x_frac = x_coef % (UInt128(10) ** (x_scale))
-            var y_frac = y_coef % (UInt128(10) ** (y_scale))
+            var x_frac = x_coef % x_scale_power
+            var y_frac = y_coef % y_scale_power
 
             # Adjust the fractional part to have the same scale
             var scale_diff = x_scale - y_scale
@@ -176,7 +185,7 @@ fn greater_equal(a: Decimal, b: Decimal) -> Bool:
         True if a is greater than or equal to b, False otherwise.
     """
 
-    return not less(a, b)
+    return compare(a, b) >= 0
 
 
 fn less_equal(a: Decimal, b: Decimal) -> Bool:
