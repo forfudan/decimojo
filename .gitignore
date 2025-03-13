@@ -10,6 +10,7 @@ magic.lock
 # VSCode environments
 .vscode
 tempCodeRunnerFile.mojo
+/temp*.mojo
 # macOS environments
 .DS_Store
 # log files

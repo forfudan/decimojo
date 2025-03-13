@@ -18,7 +18,7 @@
 # - Output dunders, type-transfer dunders, and other type-transfer methods
 # - Basic unary arithmetic operation dunders
 # - Basic binary arithmetic operation dunders
-# - Basic binary logic operation dunders
+# - Basic comparison operation dunders
 # - Other dunders that implements traits
 # - Mathematical methods that do not implement a trait (not a dunder)
 # - Other methods
@@ -41,7 +41,7 @@ Implements basic object methods for working with decimal numbers.
 
 from memory import UnsafePointer
 
-import decimojo.logic
+import decimojo.comparison
 import decimojo.maths
 from decimojo.rounding_mode import RoundingMode
 import decimojo.utility
@@ -925,24 +925,18 @@ struct Decimal(
         Returns:
             The absolute value of this Decimal.
         """
-        var result = Decimal.from_words(
-            self.low, self.mid, self.high, self.flags
-        )
-        result.flags &= ~Self.SIGN_MASK  # Clear sign bit
 
-        return result
+        return decimojo.maths.absolute(self)
 
     fn __neg__(self) -> Self:
-        """Unary negation operator."""
-        # Special case for negative zero
-        if self.is_zero():
-            return Decimal.ZERO()
+        """
+        Returns the negation of this Decimal.
 
-        var result = Decimal.from_words(
-            self.low, self.mid, self.high, self.flags
-        )
-        result.flags ^= Self.SIGN_MASK  # Flip sign bit
-        return result
+        Returns:
+            The negation of this Decimal.
+        """
+
+        return decimojo.maths.negative(self)
 
     # ===------------------------------------------------------------------=== #
     # Basic binary arithmetic operation dunders
@@ -1075,7 +1069,7 @@ struct Decimal(
         return decimal.power(self, Decimal(exponent))
 
     # ===------------------------------------------------------------------=== #
-    # Basic binary logic operation dunders
+    # Basic binary comparison operation dunders
     # __gt__, __ge__, __lt__, __le__, __eq__, __ne__
     # ===------------------------------------------------------------------=== #
 
@@ -1089,19 +1083,7 @@ struct Decimal(
         Returns:
             True if self is greater than other, False otherwise.
         """
-        return decimojo.logic.greater(self, other)
-
-    fn __ge__(self, other: Decimal) -> Bool:
-        """
-        Greater than or equal comparison operator.
-
-        Args:
-            other: The Decimal to compare with.
-
-        Returns:
-            True if self is greater than or equal to other, False otherwise.
-        """
-        return decimojo.logic.greater_equal(self, other)
+        return decimojo.comparison.greater(self, other)
 
     fn __lt__(self, other: Decimal) -> Bool:
         """
@@ -1113,7 +1095,19 @@ struct Decimal(
         Returns:
             True if self is less than other, False otherwise.
         """
-        return decimojo.logic.less(self, other)
+        return decimojo.comparison.less(self, other)
+
+    fn __ge__(self, other: Decimal) -> Bool:
+        """
+        Greater than or equal comparison operator.
+
+        Args:
+            other: The Decimal to compare with.
+
+        Returns:
+            True if self is greater than or equal to other, False otherwise.
+        """
+        return decimojo.comparison.greater_equal(self, other)
 
     fn __le__(self, other: Decimal) -> Bool:
         """
@@ -1125,7 +1119,7 @@ struct Decimal(
         Returns:
             True if self is less than or equal to other, False otherwise.
         """
-        return decimojo.logic.less_equal(self, other)
+        return decimojo.comparison.less_equal(self, other)
 
     fn __eq__(self, other: Decimal) -> Bool:
         """
@@ -1137,7 +1131,7 @@ struct Decimal(
         Returns:
             True if self is equal to other, False otherwise.
         """
-        return decimojo.logic.equal(self, other)
+        return decimojo.comparison.equal(self, other)
 
     fn __ne__(self, other: Decimal) -> Bool:
         """
@@ -1149,7 +1143,7 @@ struct Decimal(
         Returns:
             True if self is not equal to other, False otherwise.
         """
-        return decimojo.logic.not_equal(self, other)
+        return decimojo.comparison.not_equal(self, other)
 
     # ===------------------------------------------------------------------=== #
     # Other dunders that implements traits

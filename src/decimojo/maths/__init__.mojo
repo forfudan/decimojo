@@ -25,12 +25,13 @@
 # lcm(a: Decimal, b: Decimal): Returns least common multiple of a and b
 # ===----------------------------------------------------------------------=== #
 
-from .basic import (
+from .arithmetics import (
     add,
     subtract,
+    negative,
+    absolute,
     multiply,
     true_divide,
 )
 from .exp import power, sqrt
 from .rounding import round
-from .misc import absolute
