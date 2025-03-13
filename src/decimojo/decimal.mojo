@@ -1085,18 +1085,6 @@ struct Decimal(
         """
         return decimojo.comparison.greater(self, other)
 
-    fn __ge__(self, other: Decimal) -> Bool:
-        """
-        Greater than or equal comparison operator.
-
-        Args:
-            other: The Decimal to compare with.
-
-        Returns:
-            True if self is greater than or equal to other, False otherwise.
-        """
-        return decimojo.comparison.greater_equal(self, other)
-
     fn __lt__(self, other: Decimal) -> Bool:
         """
         Less than comparison operator.
@@ -1108,6 +1096,18 @@ struct Decimal(
             True if self is less than other, False otherwise.
         """
         return decimojo.comparison.less(self, other)
+
+    fn __ge__(self, other: Decimal) -> Bool:
+        """
+        Greater than or equal comparison operator.
+
+        Args:
+            other: The Decimal to compare with.
+
+        Returns:
+            True if self is greater than or equal to other, False otherwise.
+        """
+        return decimojo.comparison.greater_equal(self, other)
 
     fn __le__(self, other: Decimal) -> Bool:
         """
