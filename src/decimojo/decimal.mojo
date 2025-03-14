@@ -188,6 +188,20 @@ struct Decimal(
             0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, Decimal.SIGN_MASK
         )
 
+    @staticmethod
+    fn PI() -> Decimal:
+        """
+        Returns the value of pi (π) as a Decimal.
+        """
+        return Decimal.from_words(0x41B65F29, 0xB143885, 0x6582A536, 0x1C0000)
+
+    @staticmethod
+    fn E() -> Decimal:
+        """
+        Returns the value of Euler's number (e) as a Decimal.
+        """
+        return Decimal.from_words(0x857AED5A, 0xEBECDE35, 0x57D519AB, 0x1C0000)
+
     # ===------------------------------------------------------------------=== #
     # Constructors and life time dunder methods
     # ===------------------------------------------------------------------=== #
