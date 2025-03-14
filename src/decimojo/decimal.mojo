@@ -863,13 +863,13 @@ struct Decimal(
         """
         return 'Decimal("' + self.__str__() + '")'
 
-    fn repr_words(self) -> String:
+    fn repr_from_words(self) -> String:
         """
         Returns a string representation of the Decimal's internal words.
-        Decimal(low, mid, high, flags).
+        Decimal.from_words(low, mid, high, flags).
         """
         return (
-            "Decinal("
+            "Decimal.from_words("
             + hex(self.low)
             + ", "
             + hex(self.mid)

@@ -120,3 +120,162 @@ fn factorial(n: Int) raises -> Decimal:
         return Decimal.from_words(
             1484783616, 3018206259, 590286795, 0
         )  # 10888869450418352160768000000
+
+
+fn factorial_reciprocal(n: Int) raises -> Decimal:
+    """Calculates the reciprocal of factorial of a non-negative integer (1/n!).
+
+    Args:
+        n: The non-negative integer to calculate the reciprocal factorial of.
+
+    Returns:
+        The reciprocal of factorial of n (1/n!).
+
+    Notes:
+        This function is optimized for Taylor series calculations.
+        The function uses pre-computed values for speed.
+        For n > 27, the result is effectively 0 at Decimal precision.
+    """
+
+    # 1/0! = 1, Decimal.from_words(0x1, 0x0, 0x0, 0x0)
+    # 1/1! = 1, Decimal.from_words(0x1, 0x0, 0x0, 0x0)
+    # 1/2! = 0.5, Decimal.from_words(0x5, 0x0, 0x0, 0x10000)
+    # 1/3! = 0.1666666666666666666666666667, Decimal.from_words(0x82aaaaab, 0xa5b8065, 0x562a265, 0x1c0000)
+    # 1/4! = 0.0416666666666666666666666667, Decimal.from_words(0x60aaaaab, 0x4296e019, 0x158a899, 0x1c0000)
+    # 1/5! = 0.0083333333333333333333333333, Decimal.from_words(0x13555555, 0xd516005, 0x44ee85, 0x1c0000)
+    # 1/6! = 0.0013888888888888888888888889, Decimal.from_words(0x2de38e39, 0x2ce2e556, 0xb7d16, 0x1c0000)
+    # 1/7! = 0.0001984126984126984126984127, Decimal.from_words(0xe1fbefbf, 0xbd44fc30, 0x1a427, 0x1c0000)
+    # 1/8! = 0.0000248015873015873015873016, Decimal.from_words(0x1c3f7df8, 0xf7a89f86, 0x3484, 0x1c0000)
+    # 1/9! = 0.0000027557319223985890652557, Decimal.from_words(0xca3ff18d, 0xe2a0f547, 0x5d5, 0x1c0000)
+    # 1/10! = 0.0000002755731922398589065256, Decimal.from_words(0x94399828, 0x63767eed, 0x95, 0x1c0000)
+    # 1/11! = 0.0000000250521083854417187751, Decimal.from_words(0xb06253a7, 0x94adae72, 0xd, 0x1c0000)
+    # 1/12! = 0.0000000020876756987868098979, Decimal.from_words(0xe40831a3, 0x21b923de, 0x1, 0x1c0000)
+    # 1/13! = 0.0000000001605904383682161460, Decimal.from_words(0x4c9e2b34, 0x16495187, 0x0, 0x1c0000)
+    # 1/14! = 0.0000000000114707455977297247, Decimal.from_words(0xce9d955f, 0x19785d2, 0x0, 0x1c0000)
+    # 1/15! = 0.0000000000007647163731819816, Decimal.from_words(0xdc63d28, 0x1b2b0e, 0x0, 0x1c0000)
+    # 1/16! = 0.0000000000000477947733238739, Decimal.from_words(0xe0dc63d3, 0x1b2b0, 0x0, 0x1c0000)
+    # 1/17! = 0.0000000000000028114572543455, Decimal.from_words(0xef1c05df, 0x1991, 0x0, 0x1c0000)
+    # 1/18! = 0.0000000000000001561920696859, Decimal.from_words(0xa9ba721b, 0x16b, 0x0, 0x1c0000)
+    # 1/19! = 0.0000000000000000082206352466, Decimal.from_words(0x23e16452, 0x13, 0x0, 0x1c0000)
+    # 1/20! = 0.0000000000000000004110317623, Decimal.from_words(0xf4fe7837, 0x0, 0x0, 0x1c0000)
+    # 1/21! = 0.0000000000000000000195729411, Decimal.from_words(0xbaa9803, 0x0, 0x0, 0x1c0000)
+    # 1/22! = 0.0000000000000000000008896791, Decimal.from_words(0x87c117, 0x0, 0x0, 0x1c0000)
+    # 1/23! = 0.0000000000000000000000386817, Decimal.from_words(0x5e701, 0x0, 0x0, 0x1c0000)
+    # 1/24! = 0.0000000000000000000000016117, Decimal.from_words(0x3ef5, 0x0, 0x0, 0x1c0000)
+    # 1/25! = 0.0000000000000000000000000645, Decimal.from_words(0x285, 0x0, 0x0, 0x1c0000)
+    # 1/26! = 0.0000000000000000000000000025, Decimal.from_words(0x19, 0x0, 0x0, 0x1c0000)
+    # 1/27! = 0.0000000000000000000000000001, Decimal.from_words(0x1, 0x0, 0x0, 0x1c0000)
+
+    if n < 0:
+        raise Error("Factorial reciprocal is not defined for negative numbers")
+
+    # For n > 27, 1/n! is essentially 0 at Decimal precision
+    # Return 0 with max scale
+    if n > 27:
+        return Decimal.from_words(0, 0, 0, 0x001C0000)
+
+    # Directly return pre-computed reciprocal factorials
+    if n == 0 or n == 1:
+        return Decimal.from_words(0x1, 0x0, 0x0, 0x0)  # 1
+    elif n == 2:
+        return Decimal.from_words(0x5, 0x0, 0x0, 0x10000)  # 0.5
+    elif n == 3:
+        return Decimal.from_words(
+            0x82AAAAAB, 0xA5B8065, 0x562A265, 0x1C0000
+        )  # 0.1666...
+    elif n == 4:
+        return Decimal.from_words(
+            0x60AAAAAB, 0x4296E019, 0x158A899, 0x1C0000
+        )  # 0.0416...
+    elif n == 5:
+        return Decimal.from_words(
+            0x13555555, 0xD516005, 0x44EE85, 0x1C0000
+        )  # 0.0083...
+    elif n == 6:
+        return Decimal.from_words(
+            0x2DE38E39, 0x2CE2E556, 0xB7D16, 0x1C0000
+        )  # 0.0013...
+    elif n == 7:
+        return Decimal.from_words(
+            0xE1FBEFBF, 0xBD44FC30, 0x1A427, 0x1C0000
+        )  # 0.0001...
+    elif n == 8:
+        return Decimal.from_words(
+            0x1C3F7DF8, 0xF7A89F86, 0x3484, 0x1C0000
+        )  # 0.0000248...
+    elif n == 9:
+        return Decimal.from_words(
+            0xCA3FF18D, 0xE2A0F547, 0x5D5, 0x1C0000
+        )  # 0.0000027...
+    elif n == 10:
+        return Decimal.from_words(
+            0x94399828, 0x63767EED, 0x95, 0x1C0000
+        )  # 0.00000027...
+    elif n == 11:
+        return Decimal.from_words(
+            0xB06253A7, 0x94ADAE72, 0xD, 0x1C0000
+        )  # 0.000000025...
+    elif n == 12:
+        return Decimal.from_words(
+            0xE40831A3, 0x21B923DE, 0x1, 0x1C0000
+        )  # 0.0000000020...
+    elif n == 13:
+        return Decimal.from_words(
+            0x4C9E2B34, 0x16495187, 0x0, 0x1C0000
+        )  # 0.0000000001...
+    elif n == 14:
+        return Decimal.from_words(
+            0xCE9D955F, 0x19785D2, 0x0, 0x1C0000
+        )  # 0.00000000001...
+    elif n == 15:
+        return Decimal.from_words(
+            0xDC63D28, 0x1B2B0E, 0x0, 0x1C0000
+        )  # 0.0000000000007...
+    elif n == 16:
+        return Decimal.from_words(
+            0xE0DC63D3, 0x1B2B0, 0x0, 0x1C0000
+        )  # 0.00000000000004...
+    elif n == 17:
+        return Decimal.from_words(
+            0xEF1C05DF, 0x1991, 0x0, 0x1C0000
+        )  # 0.000000000000002...
+    elif n == 18:
+        return Decimal.from_words(
+            0xA9BA721B, 0x16B, 0x0, 0x1C0000
+        )  # 0.0000000000000001...
+    elif n == 19:
+        return Decimal.from_words(
+            0x23E16452, 0x13, 0x0, 0x1C0000
+        )  # 0.0000000000000000082...
+    elif n == 20:
+        return Decimal.from_words(
+            0xF4FE7837, 0x0, 0x0, 0x1C0000
+        )  # 0.0000000000000000004...
+    elif n == 21:
+        return Decimal.from_words(
+            0xBAA9803, 0x0, 0x0, 0x1C0000
+        )  # 0.0000000000000000000195...
+    elif n == 22:
+        return Decimal.from_words(
+            0x87C117, 0x0, 0x0, 0x1C0000
+        )  # 0.0000000000000000000008...
+    elif n == 23:
+        return Decimal.from_words(
+            0x5E701, 0x0, 0x0, 0x1C0000
+        )  # 0.0000000000000000000000386...
+    elif n == 24:
+        return Decimal.from_words(
+            0x3EF5, 0x0, 0x0, 0x1C0000
+        )  # 0.0000000000000000000000016...
+    elif n == 25:
+        return Decimal.from_words(
+            0x285, 0x0, 0x0, 0x1C0000
+        )  # 0.0000000000000000000000000645
+    elif n == 26:
+        return Decimal.from_words(
+            0x19, 0x0, 0x0, 0x1C0000
+        )  # 0.0000000000000000000000000025
+    else:  # n == 27
+        return Decimal.from_words(
+            0x1, 0x0, 0x0, 0x1C0000
+        )  # 0.0000000000000000000000000001

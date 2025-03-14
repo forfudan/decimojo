@@ -1,12 +1,13 @@
 """
-Comprehensive tests for the factorial function in the DeciMojo library.
+Comprehensive tests for the `factorial()` and the `factorial_reciprocal()`
+functions in the DeciMojo library.
 Tests various cases including edge cases and error handling for factorials 
 in the range 0 to 27, which is the maximum range supported by Decimal.
 """
 
 import testing
 from decimojo.prelude import dm, Decimal, RoundingMode
-from decimojo.special import factorial
+from decimojo.special import factorial, factorial_reciprocal
 
 
 fn test_basic_factorials() raises:
@@ -223,6 +224,34 @@ fn run_test_with_error_handling(
         raise e
 
 
+fn test_factorial_reciprocal() raises:
+    """Test that factorial_reciprocal equals 1 divided by factorial."""
+    print("Testing factorial_reciprocal function...")
+
+    # Test for all values in the supported range (0-27)
+    var all_equal = True
+    for i in range(28):
+        var a = Decimal(1) / factorial(i)
+        var b = factorial_reciprocal(i)
+
+        var equal = a == b
+        if not equal:
+            all_equal = False
+            print("Mismatch at " + String(i) + ":")
+            print("  1/" + String(i) + "! = " + String(a))
+            print("  reciprocal = " + String(b))
+
+    testing.assert_true(
+        all_equal,
+        (
+            "factorial_reciprocal(n) should equal Decimal(1)/factorial(n) for"
+            " all n"
+        ),
+    )
+
+    print("✓ Factorial reciprocal tests passed!")
+
+
 fn main() raises:
     print("=========================================")
     print("Running Factorial Function Tests (0-27)")
@@ -241,6 +270,9 @@ fn main() raises:
     )
     run_test_with_error_handling(
         test_factorial_of_zero, "Factorial of zero test"
+    )
+    run_test_with_error_handling(
+        test_factorial_reciprocal, "Factorial reciprocal test"
     )
 
     print("All factorial function tests passed!")
