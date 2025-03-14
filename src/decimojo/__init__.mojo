@@ -51,10 +51,7 @@ from .comparison import (
     not_equal,
 )
 
-from .exponential import (
-    power,
-    sqrt,
-)
+from .exponential import power, sqrt, exp
 
 from .rounding import round
 

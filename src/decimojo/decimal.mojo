@@ -968,7 +968,7 @@ struct Decimal(
         try:
             return decimojo.arithmetics.add(self, other)
         except e:
-            raise Error("Error in `__add__()`; ", e)
+            raise Error("Error in `__add__()`: ", e)
 
     fn __add__(self, other: Float64) raises -> Self:
         return decimojo.arithmetics.add(self, Decimal(other))
@@ -1007,7 +1007,7 @@ struct Decimal(
         try:
             return decimojo.arithmetics.subtract(self, other)
         except e:
-            raise Error("Error in `__sub__()`; ", e)
+            raise Error("Error in `__sub__()`: ", e)
 
     fn __sub__(self, other: Float64) raises -> Self:
         return decimojo.arithmetics.subtract(self, Decimal(other))
@@ -1183,8 +1183,21 @@ struct Decimal(
 
     # ===------------------------------------------------------------------=== #
     # Mathematical methods that do not implement a trait (not a dunder)
-    # round, sqrt
+    # exp, round, sqrt
     # ===------------------------------------------------------------------=== #
+
+    fn exp(self) raises -> Self:
+        """
+        Calculates the exponential of this Decimal.
+
+        Returns:
+            The exponential of this Decimal.
+        """
+
+        try:
+            return decimojo.exponential.exp(self)
+        except e:
+            raise Error("Error in `Decimal.exp()`: ", e)
 
     fn round(
         self,
@@ -1215,7 +1228,7 @@ struct Decimal(
                 self, ndigits=ndigits, rounding_mode=rounding_mode
             )
         except e:
-            raise Error("Error in `Decimal.round()`; ", e)
+            raise Error("Error in `Decimal.round()`: ", e)
 
     fn sqrt(self) raises -> Self:
         """
