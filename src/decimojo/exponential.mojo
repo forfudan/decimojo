@@ -261,16 +261,10 @@ fn exp(x: Decimal) raises -> Decimal:
     Returns:
         A Decimal approximation of e^x.
 
-    Raises:
-        Error: If x is greater than 66 to avoid overflow.
-
     Notes:
         Because ln(2^96-1) ~= 66.54212933375474970405428366,
         the x value should be no greater than 66 to avoid overflow.
     """
-
-    if x > Decimal("66"):
-        raise Error("x should be less than 66 to avoid overflow.")
 
     # Handle special cases
     if x.is_zero():
@@ -279,13 +273,7 @@ fn exp(x: Decimal) raises -> Decimal:
     if x.is_negative():
         return Decimal.ONE() / exp(-x)
 
-    if x.is_one():
-        return Decimal.E()
-
     # For x < 1, use Taylor series expansion
-    if x < Decimal("1"):
-        return exp_series(x)
-
     # For x > 1, use optimized range reduction with smaller chunks
     # Yuhao's notes:
     # e^50 is more accurate than (e^2)^25 if e^2 needs to be approximated
@@ -305,15 +293,68 @@ fn exp(x: Decimal) raises -> Decimal:
 
     var exp_chunk: Decimal
     var remainder: Decimal
+    var x_int = Int(x)
 
-    if x < Decimal("2"):  # 1 < x < 2
+    if x.is_one():
+        return Decimal.E()
+
+    elif x_int < 1:
+        if x < Decimal(0.01):
+            return exp_series(x)
+
+        elif x < Decimal(0.05):
+            # chunk = 0.01
+            num_chunks = (x * 100).round(0, RoundingMode.ROUND_DOWN)
+            # Use precise e^(chunk) = e^0.01
+            exp_chunk = Decimal.from_words(
+                0xDB32A629, 0xBC6A8DA6, 0x20A2F06C, 0x1C0000
+            )
+            remainder = x - num_chunks * Decimal("0.01")
+
+        elif x < Decimal(0.1):
+            # chunk = 0.05
+            num_chunks = (x * 20).round(0, RoundingMode.ROUND_DOWN)
+            # Use precise e^(chunk) = e^0.05
+            exp_chunk = Decimal.from_words(
+                0x22877AAB, 0x47F300D6, 0x21F7E923, 0x1C0000
+            )
+            remainder = x - num_chunks * Decimal("0.05")
+
+        elif x < Decimal(0.2):
+            # chunk = 0.1
+            num_chunks = (x * 10).round(0, RoundingMode.ROUND_DOWN)
+            # Use precise e^(chunk) = e^0.1
+            exp_chunk = Decimal.from_words(
+                0x1079E8F9, 0x2C369C6C, 0x23B5C273, 0x1C0000
+            )
+            remainder = x - num_chunks * Decimal("0.1")
+
+        elif x < Decimal(0.5):
+            # chunk = 0.2
+            num_chunks = (x * 5).round(0, RoundingMode.ROUND_DOWN)
+            # Use precise e^(chunk) = e^0.2
+            exp_chunk = Decimal.from_words(
+                0x716CF2CA, 0xF042F48C, 0x277734F1, 0x1C0000
+            )
+            remainder = x - num_chunks * Decimal("0.2")
+
+        else:
+            # chunk = 0.5
+            num_chunks = Decimal.ONE()
+            # Use precise e^(chunk) = e^0.5
+            exp_chunk = Decimal.from_words(
+                0x8E99DD66, 0xC210E35C, 0x3545E717, 0x1C0000
+            )
+            remainder = x - Decimal("0.5")
+
+    elif x_int < 2:  # 1 < x < 2
         # chunk = 1
         num_chunks = Decimal.ONE()
         # Use precise e^(chunk) = e^1
         exp_chunk = Decimal.E()
         remainder = x - num_chunks
 
-    elif x < Decimal("5"):  # 2 <= x < 5
+    elif x_int < 5:  # 2 <= x < 5
         # chunk = 2
         num_chunks = (x * 0.5).round(0, RoundingMode.ROUND_DOWN)
         # Use precise e^(chunk) = e^2
@@ -322,7 +363,7 @@ fn exp(x: Decimal) raises -> Decimal:
         )
         remainder = x - num_chunks * Decimal("2")
 
-    elif x < Decimal("10"):
+    elif x_int < 10:
         # chunk = 5
         num_chunks = (x * 0.2).round(0, RoundingMode.ROUND_DOWN)
         # Use precise e^(chunk) = e^5
@@ -331,7 +372,7 @@ fn exp(x: Decimal) raises -> Decimal:
         )
         remainder = x - num_chunks * Decimal("5")
 
-    elif x < Decimal("20"):
+    elif x_int < 20:
         # chunk = 10
         num_chunks = (x * 0.1).round(0, RoundingMode.ROUND_DOWN)
         # Use precise e^(chunk) = e^10
@@ -340,7 +381,7 @@ fn exp(x: Decimal) raises -> Decimal:
         )
         remainder = x - num_chunks * Decimal("10")
 
-    elif x < Decimal("50"):
+    elif x_int < 50:
         # chunk = 20
         num_chunks = (x * 0.05).round(0, RoundingMode.ROUND_DOWN)
         # Use precise e^(chunk) = e^20
@@ -380,18 +421,12 @@ fn exp_series(x: Decimal) raises -> Decimal:
     Returns:
         A Decimal approximation of e^x.
 
-    Raises:
-        Error: If x is greater than 66 to avoid overflow.
-
     Notes:
 
     Sum terms of Taylor series: e^x = 1 + x + x²/2! + x³/3! + ...
     Because ln(2^96-1) ~= 66.54212933375474970405428366,
     the x value should be no greater than 66 to avoid overflow.
     """
-
-    if x > Decimal("66"):
-        raise Error("x should be less than 66 to avoid overflow.")
 
     var max_terms = 500
 

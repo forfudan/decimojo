@@ -53,6 +53,7 @@ bench_round = "magic run package && cd benches && magic run mojo bench_round.moj
 bench_from_float = "magic run package && cd benches && magic run mojo bench_from_float.mojo && cd .. && magic run delete_package"
 bench_from_string = "magic run package && cd benches && magic run mojo bench_from_string.mojo && cd .. && magic run delete_package"
 bench_comparison = "magic run package && cd benches && magic run mojo bench_comparison.mojo && cd .. && magic run delete_package"
+bench_exp = "magic run package && cd benches && magic run mojo bench_exp.mojo && cd .. && magic run delete_package"
 
 # before commit
 final = "magic run test && magic run bench"
