@@ -297,9 +297,24 @@ fn main() raises:
         log_file,
     )
 
+    # Case 11: Decimal multiplication with many digits after the decimal point
+    var case11_a_mojo = Decimal.E()
+    var case11_b_mojo = Decimal.E05()
+    var case11_a_py = pydecimal.Decimal("1").exp()
+    var case11_b_py = pydecimal.Decimal("0.5").exp()
+    run_benchmark(
+        "e * e^0.5",
+        case11_a_mojo,
+        case11_b_mojo,
+        case11_a_py,
+        case11_b_py,
+        iterations,
+        log_file,
+    )
+
     # Display summary
     log_print("\n=== Multiplication Benchmark Summary ===", log_file)
-    log_print("Benchmarked:      10 different multiplication cases", log_file)
+    log_print("Benchmarked:      11 different multiplication cases", log_file)
     log_print(
         "Each case ran:    " + String(iterations) + " iterations", log_file
     )
