@@ -1,7 +1,22 @@
 # ===----------------------------------------------------------------------=== #
-# Distributed under the Apache 2.0 License with LLVM Exceptions.
-# See LICENSE and the LLVM License for more information.
-# https://github.com/forFudan/decimojo/blob/main/LICENSE
+#
+# DeciMojo: A fixed-point decimal arithmetic library in Mojo
+# https://github.com/forFudan/DeciMojo
+#
+# Copyright 2025 Yuhao Zhu
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 # ===----------------------------------------------------------------------=== #
 #
 # Implements basic object methods for the Decimal type
@@ -41,8 +56,10 @@ Implements basic object methods for working with decimal numbers.
 
 from memory import UnsafePointer
 
+import decimojo.arithmetics
 import decimojo.comparison
-import decimojo.maths
+import decimojo.exponential
+import decimojo.rounding
 from decimojo.rounding_mode import RoundingMode
 import decimojo.utility
 
@@ -117,6 +134,9 @@ struct Decimal(
     alias NAN_MASK = UInt32(0x00000002)
     """Not a Number mask. `0b0000_0000_0000_0000_0000_0000_0000_0010`."""
 
+    # TODO: Move these special values to top of the module
+    # when Mojo support global variables in the future.
+    #
     # Special values
     @staticmethod
     fn INFINITY() -> Decimal:
@@ -187,6 +207,113 @@ struct Decimal(
         return Decimal.from_words(
             0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, Decimal.SIGN_MASK
         )
+
+    @staticmethod
+    fn PI() -> Decimal:
+        """
+        Returns the value of pi (π) as a Decimal.
+
+        Returns:
+            A Decimal representation of pi with maximum precision.
+        """
+        return Decimal.from_words(0x41B65F29, 0xB143885, 0x6582A536, 0x1C0000)
+
+    @staticmethod
+    fn E() -> Decimal:
+        """
+        Returns the value of Euler's number (e) as a Decimal.
+
+        Returns:
+            A Decimal representation of Euler's number with maximum precision.
+        """
+        return Decimal.from_words(0x857AED5A, 0xEBECDE35, 0x57D519AB, 0x1C0000)
+
+    @staticmethod
+    fn E2() -> Decimal:
+        return Decimal.from_words(0xE4DFDCAE, 0x89F7E295, 0xEEC0D6E9, 0x1C0000)
+
+    @staticmethod
+    fn E3() -> Decimal:
+        return Decimal.from_words(0x236454F7, 0x62055A80, 0x40E65DE2, 0x1B0000)
+
+    @staticmethod
+    fn E4() -> Decimal:
+        return Decimal.from_words(0x7121EFD3, 0xFB318FB5, 0xB06A87FB, 0x1B0000)
+
+    @staticmethod
+    fn E5() -> Decimal:
+        return Decimal.from_words(0xD99BD974, 0x9F4BE5C7, 0x2FF472E3, 0x1A0000)
+
+    @staticmethod
+    fn E6() -> Decimal:
+        return Decimal.from_words(0xADB57A66, 0xBD7A423F, 0x825AD8FF, 0x1A0000)
+
+    @staticmethod
+    fn E7() -> Decimal:
+        return Decimal.from_words(0x22313FCF, 0x64D5D12F, 0x236F230A, 0x190000)
+
+    @staticmethod
+    fn E8() -> Decimal:
+        return Decimal.from_words(0x1E892E63, 0xD1BF8B5C, 0x6051E812, 0x190000)
+
+    @staticmethod
+    fn E9() -> Decimal:
+        return Decimal.from_words(0x34FAB691, 0xE7CD8DEA, 0x1A2EB6C3, 0x180000)
+
+    @staticmethod
+    fn E10() -> Decimal:
+        return Decimal.from_words(0xBA7F4F65, 0x58692B62, 0x472BDD8F, 0x180000)
+
+    @staticmethod
+    fn E11() -> Decimal:
+        return Decimal.from_words(0x8C2C6D20, 0x2A86F9E7, 0xC176BAAE, 0x180000)
+
+    @staticmethod
+    fn E12() -> Decimal:
+        return Decimal.from_words(0xE924992A, 0x31CDC314, 0x3496C2C4, 0x170000)
+
+    @staticmethod
+    fn E13() -> Decimal:
+        return Decimal.from_words(0x220130DB, 0xC386029A, 0x8EF393FB, 0x170000)
+
+    @staticmethod
+    fn E14() -> Decimal:
+        return Decimal.from_words(0x3A24795C, 0xC412DF01, 0x26DBB5A0, 0x160000)
+
+    @staticmethod
+    fn E15() -> Decimal:
+        """Returns the value of e^15 as a Decimal."""
+        return Decimal.from_words(0x6C1248BD, 0x90456557, 0x69A0AD8C, 0x160000)
+
+    @staticmethod
+    fn E16() -> Decimal:
+        """Returns the value of e^16 as a Decimal."""
+        return Decimal.from_words(0xB46A97D, 0x90655BBD, 0x1CB66B18, 0x150000)
+
+    @staticmethod
+    fn E32() -> Decimal:
+        """Returns the value of e^32 as a Decimal."""
+        return Decimal.from_words(0x18420EB, 0xCC2501E6, 0xFF24A138, 0xF0000)
+
+    @staticmethod
+    fn E05() -> Decimal:
+        """Returns the value of e^0.5 = e^(1/2) as a Decimal."""
+        return Decimal.from_words(0x8E99DD66, 0xC210E35C, 0x3545E717, 0x1C0000)
+
+    @staticmethod
+    fn E025() -> Decimal:
+        """Returns the value of e^0.25 = e^(1/4) as a Decimal."""
+        return Decimal.from_words(0xB43646F1, 0x2654858A, 0x297D3595, 0x1C0000)
+
+    @staticmethod
+    fn LN10() -> Decimal:
+        """
+        Returns the natural logarithm of 10 as a Decimal.
+
+        Returns:
+            A Decimal representation of ln(10) with maximum precision.
+        """
+        return Decimal.from_words(0x9FA69733, 0x1414B220, 0x4A668998, 0x1C0000)
 
     # ===------------------------------------------------------------------=== #
     # Constructors and life time dunder methods
@@ -816,6 +943,23 @@ struct Decimal(
         """
         return 'Decimal("' + self.__str__() + '")'
 
+    fn repr_from_words(self) -> String:
+        """
+        Returns a string representation of the Decimal's internal words.
+        Decimal.from_words(low, mid, high, flags).
+        """
+        return (
+            "Decimal.from_words("
+            + hex(self.low)
+            + ", "
+            + hex(self.mid)
+            + ", "
+            + hex(self.high)
+            + ", "
+            + hex(self.flags)
+            + ")"
+        )
+
     fn to_int128(self) -> Int128:
         """
         Returns the signed integral part of the Decimal.
@@ -871,7 +1015,7 @@ struct Decimal(
             The absolute value of this Decimal.
         """
 
-        return decimojo.maths.absolute(self)
+        return decimojo.arithmetics.absolute(self)
 
     fn __neg__(self) -> Self:
         """
@@ -881,7 +1025,7 @@ struct Decimal(
             The negation of this Decimal.
         """
 
-        return decimojo.maths.negative(self)
+        return decimojo.arithmetics.negative(self)
 
     # ===------------------------------------------------------------------=== #
     # Basic binary arithmetic operation dunders
@@ -902,21 +1046,21 @@ struct Decimal(
         """
 
         try:
-            return decimojo.maths.add(self, other)
+            return decimojo.arithmetics.add(self, other)
         except e:
-            raise Error("Error in `__add__()`; ", e)
+            raise Error("Error in `__add__()`: ", e)
 
     fn __add__(self, other: Float64) raises -> Self:
-        return decimojo.maths.add(self, Decimal(other))
+        return decimojo.arithmetics.add(self, Decimal(other))
 
     fn __add__(self, other: Int) raises -> Self:
-        return decimojo.maths.add(self, Decimal(other))
+        return decimojo.arithmetics.add(self, Decimal(other))
 
     fn __radd__(self, other: Float64) raises -> Self:
-        return decimojo.maths.add(Decimal(other), self)
+        return decimojo.arithmetics.add(Decimal(other), self)
 
     fn __radd__(self, other: Int) raises -> Self:
-        return decimojo.maths.add(Decimal(other), self)
+        return decimojo.arithmetics.add(Decimal(other), self)
 
     fn __sub__(self, other: Decimal) raises -> Self:
         """
@@ -941,52 +1085,52 @@ struct Decimal(
         """
 
         try:
-            return decimojo.maths.subtract(self, other)
+            return decimojo.arithmetics.subtract(self, other)
         except e:
-            raise Error("Error in `__sub__()`; ", e)
+            raise Error("Error in `__sub__()`: ", e)
 
     fn __sub__(self, other: Float64) raises -> Self:
-        return decimojo.maths.subtract(self, Decimal(other))
+        return decimojo.arithmetics.subtract(self, Decimal(other))
 
     fn __sub__(self, other: Int) raises -> Self:
-        return decimojo.maths.subtract(self, Decimal(other))
+        return decimojo.arithmetics.subtract(self, Decimal(other))
 
     fn __rsub__(self, other: Float64) raises -> Self:
-        return decimojo.maths.subtract(Decimal(other), self)
+        return decimojo.arithmetics.subtract(Decimal(other), self)
 
     fn __rsub__(self, other: Int) raises -> Self:
-        return decimojo.maths.subtract(Decimal(other), self)
+        return decimojo.arithmetics.subtract(Decimal(other), self)
 
     fn __mul__(self, other: Decimal) raises -> Self:
         """
         Multiplies two Decimal values and returns a new Decimal containing the product.
         """
 
-        return decimojo.maths.multiply(self, other)
+        return decimojo.arithmetics.multiply(self, other)
 
     fn __mul__(self, other: Float64) raises -> Self:
-        return decimojo.maths.multiply(self, Decimal(other))
+        return decimojo.arithmetics.multiply(self, Decimal(other))
 
     fn __mul__(self, other: Int) raises -> Self:
-        return decimojo.maths.multiply(self, Decimal(other))
+        return decimojo.arithmetics.multiply(self, Decimal(other))
 
     fn __truediv__(self, other: Decimal) raises -> Self:
         """
         Divides this Decimal by another Decimal and returns a new Decimal containing the result.
         """
-        return decimojo.maths.true_divide(self, other)
+        return decimojo.arithmetics.true_divide(self, other)
 
     fn __truediv__(self, other: Float64) raises -> Self:
-        return decimojo.maths.true_divide(self, Decimal(other))
+        return decimojo.arithmetics.true_divide(self, Decimal(other))
 
     fn __truediv__(self, other: Int) raises -> Self:
-        return decimojo.maths.true_divide(self, Decimal(other))
+        return decimojo.arithmetics.true_divide(self, Decimal(other))
 
     fn __rtruediv__(self, other: Float64) raises -> Self:
-        return decimojo.maths.true_divide(Decimal(other), self)
+        return decimojo.arithmetics.true_divide(Decimal(other), self)
 
     fn __rtruediv__(self, other: Int) raises -> Self:
-        return decimojo.maths.true_divide(Decimal(other), self)
+        return decimojo.arithmetics.true_divide(Decimal(other), self)
 
     fn __pow__(self, exponent: Decimal) raises -> Self:
         """
@@ -1106,7 +1250,7 @@ struct Decimal(
         """
 
         try:
-            return decimojo.maths.round(
+            return decimojo.rounding.round(
                 self, ndigits=ndigits, rounding_mode=RoundingMode.HALF_EVEN()
             )
         except e:
@@ -1119,8 +1263,21 @@ struct Decimal(
 
     # ===------------------------------------------------------------------=== #
     # Mathematical methods that do not implement a trait (not a dunder)
-    # round, sqrt
+    # exp, round, sqrt
     # ===------------------------------------------------------------------=== #
+
+    fn exp(self) raises -> Self:
+        """
+        Calculates the exponential of this Decimal.
+
+        Returns:
+            The exponential of this Decimal.
+        """
+
+        try:
+            return decimojo.exponential.exp(self)
+        except e:
+            raise Error("Error in `Decimal.exp()`: ", e)
 
     fn round(
         self,
@@ -1147,11 +1304,11 @@ struct Decimal(
         """
 
         try:
-            return decimojo.maths.round(
+            return decimojo.rounding.round(
                 self, ndigits=ndigits, rounding_mode=rounding_mode
             )
         except e:
-            raise Error("Error in `Decimal.round()`; ", e)
+            raise Error("Error in `Decimal.round()`: ", e)
 
     fn sqrt(self) raises -> Self:
         """
@@ -1164,7 +1321,7 @@ struct Decimal(
             Error: If the operation would result in overflow.
         """
 
-        return decimojo.maths.sqrt(self)
+        return decimojo.exponential.sqrt(self)
 
     # ===------------------------------------------------------------------=== #
     # Other methods
@@ -1305,8 +1462,8 @@ struct Decimal(
         - Zero if |self| = |other|
         - Negative value if |self| < |other|
         """
-        var abs_self = decimojo.maths.absolute(self)
-        var abs_other = decimojo.maths.absolute(other)
+        var abs_self = decimojo.arithmetics.absolute(self)
+        var abs_other = decimojo.arithmetics.absolute(other)
 
         if abs_self > abs_other:
             return 1

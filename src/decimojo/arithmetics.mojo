@@ -1,7 +1,22 @@
 # ===----------------------------------------------------------------------=== #
-# Distributed under the Apache 2.0 License with LLVM Exceptions.
-# See LICENSE and the LLVM License for more information.
-# https://github.com/forFudan/decimojo/blob/main/LICENSE
+#
+# DeciMojo: A fixed-point decimal arithmetic library in Mojo
+# https://github.com/forFudan/DeciMojo
+#
+# Copyright 2025 Yuhao Zhu
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 # ===----------------------------------------------------------------------=== #
 #
 # Implements basic arithmetic functions for the Decimal type
@@ -44,31 +59,59 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
     Raises:
         Error: If the operation would overflow.
     """
+    var x1_coef = x1.coefficient()
+    var x2_coef = x2.coefficient()
+    var x1_scale = x1.scale()
+    var x2_scale = x2.scale()
 
-    # Special case for zero
-    if x1.is_zero():
-        return Decimal(
-            x2.low,
-            x2.mid,
-            x2.high,
-            max(x1.scale(), x2.scale()),
-            x1.flags & x2.flags == Decimal.SIGN_MASK,
-        )
+    # Special case for zeros
 
-    elif x2.is_zero():
-        return Decimal(
-            x1.low,
-            x1.mid,
-            x1.high,
-            max(x1.scale(), x2.scale()),
-            x1.flags & x2.flags == Decimal.SIGN_MASK,
+    if x1_coef == 0 and x2_coef == 0:
+        var scale = max(x1_scale, x2_scale)
+        return Decimal(0, 0, 0, scale, False)
+
+    elif x1_coef == 0:
+        var sum_coef = x2_coef
+        var scale = min(
+            max(x1_scale, x2_scale),
+            Decimal.MAX_NUM_DIGITS
+            - decimojo.utility.number_of_digits(x2.to_uint128()),
         )
+        ## If x2_coef > 7922816251426433759354395033
+        if (
+            (x2_coef > Decimal.MAX_AS_UINT128 // 10)
+            and (scale > 0)
+            and (scale > x2_scale)
+        ):
+            scale -= 1
+        sum_coef *= UInt128(10) ** (scale - x2_scale)
+        var low = UInt32(sum_coef & 0xFFFFFFFF)
+        var mid = UInt32((sum_coef >> 32) & 0xFFFFFFFF)
+        var high = UInt32((sum_coef >> 64) & 0xFFFFFFFF)
+        return Decimal(low, mid, high, scale, x2.is_negative())
+
+    elif x2_coef == 0:
+        var sum_coef = x1_coef
+        var scale = min(
+            max(x1_scale, x2_scale),
+            Decimal.MAX_NUM_DIGITS
+            - decimojo.utility.number_of_digits(x1.to_uint128()),
+        )
+        ## If x1_coef > 7922816251426433759354395033
+        if (
+            (x1_coef > Decimal.MAX_AS_UINT128 // 10)
+            and (scale > 0)
+            and (scale > x1_scale)
+        ):
+            scale -= 1
+        sum_coef *= UInt128(10) ** (scale - x1_scale)
+        var low = UInt32(sum_coef & 0xFFFFFFFF)
+        var mid = UInt32((sum_coef >> 32) & 0xFFFFFFFF)
+        var high = UInt32((sum_coef >> 64) & 0xFFFFFFFF)
+        return Decimal(low, mid, high, scale, x1.is_negative())
 
     # Integer addition with scale of 0 (true integers)
-    elif x1.scale() == 0 and x2.scale() == 0:
-        var x1_coef = x1.coefficient()
-        var x2_coef = x2.coefficient()
-
+    elif x1_scale == 0 and x2_scale == 0:
         # Same sign: add absolute values and keep the sign
         if x1.is_negative() == x2.is_negative():
             # Add directly using UInt128 arithmetic
@@ -118,7 +161,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
 
             # Determine the scale for the result
             var scale = min(
-                max(x1.scale(), x2.scale()),
+                max(x1_scale, x2_scale),
                 Decimal.MAX_NUM_DIGITS
                 - decimojo.utility.number_of_digits(summation),
             )
@@ -138,7 +181,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
         else:
             var diff: UInt128
             var is_negative: Bool
-            if x1.coefficient() > x2.coefficient():
+            if x1_coef > x2_coef:
                 diff = x1.to_uint128() - x2.to_uint128()
                 is_negative = x1.is_negative()
             else:
@@ -147,7 +190,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
 
             # Determine the scale for the result
             var scale = min(
-                max(x1.scale(), x2.scale()),
+                max(x1_scale, x2_scale),
                 Decimal.MAX_NUM_DIGITS
                 - decimojo.utility.number_of_digits(diff),
             )
@@ -164,11 +207,11 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
             return Decimal(low, mid, high, scale, is_negative)
 
     # Float addition with the same scale
-    elif x1.scale() == x2.scale():
+    elif x1_scale == x2_scale:
         var summation: Int128  # 97-bit signed integer can be stored in Int128
-        summation = (-1) ** x1.is_negative() * Int128(x1.coefficient()) + (
+        summation = (-1) ** x1.is_negative() * Int128(x1_coef) + (
             -1
-        ) ** x2.is_negative() * Int128(x2.coefficient())
+        ) ** x2.is_negative() * Int128(x2_coef)
 
         var is_negative = summation < 0
         if is_negative:
@@ -180,7 +223,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
 
         # If the summation fits in 96 bits, we can use the original scale
         if summation < Decimal.MAX_AS_INT128:
-            final_scale = x1.scale()
+            final_scale = x1_scale
 
         # Otherwise, we need to truncate the summation to fit in 96 bits
         else:
@@ -191,7 +234,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
                 truncated_summation
             ) - (
                 decimojo.utility.number_of_digits(summation)
-                - max(x1.scale(), x2.scale())
+                - max(x1_scale, x2_scale)
             )
 
         # Extract the 32-bit components from the Int256 difference
@@ -204,23 +247,21 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
     # Float addition which with different scales
     else:
         var summation: Int256
-        if x1.scale() == x2.scale():
-            summation = (-1) ** x1.is_negative() * Int256(x1.coefficient()) + (
+        if x1_scale == x2_scale:
+            summation = (-1) ** x1.is_negative() * Int256(x1_coef) + (
                 -1
-            ) ** x2.is_negative() * Int256(x2.coefficient())
-        elif x1.scale() > x2.scale():
-            summation = (-1) ** x1.is_negative() * Int256(x1.coefficient()) + (
+            ) ** x2.is_negative() * Int256(x2_coef)
+        elif x1_scale > x2_scale:
+            summation = (-1) ** x1.is_negative() * Int256(x1_coef) + (
                 -1
-            ) ** x2.is_negative() * Int256(x2.coefficient()) * Int256(10) ** (
-                x1.scale() - x2.scale()
+            ) ** x2.is_negative() * Int256(x2_coef) * Int256(10) ** (
+                x1_scale - x2_scale
             )
         else:
-            summation = (-1) ** x1.is_negative() * Int256(
-                x1.coefficient()
-            ) * Int256(10) ** (x2.scale() - x1.scale()) + (
-                -1
-            ) ** x2.is_negative() * Int256(
-                x2.coefficient()
+            summation = (-1) ** x1.is_negative() * Int256(x1_coef) * Int256(
+                10
+            ) ** (x2_scale - x1_scale) + (-1) ** x2.is_negative() * Int256(
+                x2_coef
             )
 
         var is_negative = summation < 0
@@ -233,7 +274,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
 
         # If the summation fits in 96 bits, we can use the original scale
         if summation < Decimal.MAX_AS_INT256:
-            final_scale = max(x1.scale(), x2.scale())
+            final_scale = max(x1_scale, x2_scale)
 
         # Otherwise, we need to truncate the summation to fit in 96 bits
         else:
@@ -244,7 +285,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
                 truncated_summation
             ) - (
                 decimojo.utility.number_of_digits(summation)
-                - max(x1.scale(), x2.scale())
+                - max(x1_scale, x2_scale)
             )
 
         # Extract the 32-bit components from the Int256 difference
@@ -344,6 +385,13 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     """Combined scale of the two operands."""
     var is_negative = x1.is_negative() != x2.is_negative()
 
+    # SPECIAL CASE: true one
+    # Return the other operand
+    if x1.low == 1 and x1.mid == 0 and x1.high == 0 and x1.flags == 0:
+        return x2
+    if x2.low == 1 and x2.mid == 0 and x2.high == 0 and x2.flags == 0:
+        return x1
+
     # SPECIAL CASE: zero
     # Return zero while preserving the scale
     if x1_coef == 0 or x2_coef == 0:
@@ -436,17 +484,14 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     # Used to determine the appropriate multiplication method
     # The coefficient of result would be the sum of the two numbers of bits
     var x1_num_bits = decimojo.utility.number_of_bits(x1_coef)
-    """Number of significant bits in the coefficient of x1."""
     var x2_num_bits = decimojo.utility.number_of_bits(x2_coef)
-    """Number of significant bits in the coefficient of x2."""
     var combined_num_bits = x1_num_bits + x2_num_bits
-    """Number of significant bits in the coefficient of the result."""
 
     # SPECIAL CASE: Both operands are true integers
     if x1_scale == 0 and x2_scale == 0:
         # Small integers, use UInt64 multiplication
         if combined_num_bits <= 64:
-            var prod: UInt64 = UInt64(x1.low) * UInt64(x2.low)
+            var prod: UInt64 = UInt64(x1_coef) * UInt64(x2_coef)
             var low = UInt32(prod & 0xFFFFFFFF)
             var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
             return Decimal(low, mid, 0, 0, is_negative)
