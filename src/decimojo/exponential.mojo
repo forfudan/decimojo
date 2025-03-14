@@ -251,9 +251,6 @@ fn exp(x: Decimal) raises -> Decimal:
     """
     Calculates e^x for any Decimal value using optimized range reduction.
     x should be no greater than 66 to avoid overflow.
-    A special algorithm is used to reduce the number of multiplications
-    and improve accuracy. This function can achieve high accuracy at a
-    high speed for a wide range of input values.
 
     Args:
         x: The exponent.
