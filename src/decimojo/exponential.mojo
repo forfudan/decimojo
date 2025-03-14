@@ -293,111 +293,115 @@ fn exp(x: Decimal) raises -> Decimal:
 
     var exp_chunk: Decimal
     var remainder: Decimal
+    var num_chunks: Int
     var x_int = Int(x)
 
     if x.is_one():
         return Decimal.E()
 
     elif x_int < 1:
-        if x < Decimal(0.01):
-            return exp_series(x)
+        return exp_series(x)
 
-        elif x < Decimal(0.05):
-            # chunk = 0.01
-            num_chunks = (x * 100).round(0, RoundingMode.ROUND_DOWN)
-            # Use precise e^(chunk) = e^0.01
-            exp_chunk = Decimal.from_words(
-                0xDB32A629, 0xBC6A8DA6, 0x20A2F06C, 0x1C0000
-            )
-            remainder = x - num_chunks * Decimal("0.01")
+        # TODO: Improve from float so that exact float can be stored in Decimal
+        # if x < Decimal(0.01):
+        #     return exp_series(x)
 
-        elif x < Decimal(0.1):
-            # chunk = 0.05
-            num_chunks = (x * 20).round(0, RoundingMode.ROUND_DOWN)
-            # Use precise e^(chunk) = e^0.05
-            exp_chunk = Decimal.from_words(
-                0x22877AAB, 0x47F300D6, 0x21F7E923, 0x1C0000
-            )
-            remainder = x - num_chunks * Decimal("0.05")
+        # elif x < Decimal(0.05):
+        #     # chunk = 0.01
+        #     num_chunks = (x * 100).round(0, RoundingMode.ROUND_DOWN)
+        #     # Use precise e^(chunk) = e^0.01
+        #     exp_chunk = Decimal.from_words(
+        #         0xDB32A629, 0xBC6A8DA6, 0x20A2F06C, 0x1C0000
+        #     )
+        #     remainder = x - num_chunks * Decimal("0.01")
 
-        elif x < Decimal(0.2):
-            # chunk = 0.1
-            num_chunks = (x * 10).round(0, RoundingMode.ROUND_DOWN)
-            # Use precise e^(chunk) = e^0.1
-            exp_chunk = Decimal.from_words(
-                0x1079E8F9, 0x2C369C6C, 0x23B5C273, 0x1C0000
-            )
-            remainder = x - num_chunks * Decimal("0.1")
+        # elif x < Decimal(0.1):
+        #     # chunk = 0.05
+        #     num_chunks = (x * 20).round(0, RoundingMode.ROUND_DOWN)
+        #     # Use precise e^(chunk) = e^0.05
+        #     exp_chunk = Decimal.from_words(
+        #         0x22877AAB, 0x47F300D6, 0x21F7E923, 0x1C0000
+        #     )
+        #     remainder = x - num_chunks * Decimal("0.05")
 
-        elif x < Decimal(0.5):
-            # chunk = 0.2
-            num_chunks = (x * 5).round(0, RoundingMode.ROUND_DOWN)
-            # Use precise e^(chunk) = e^0.2
-            exp_chunk = Decimal.from_words(
-                0x716CF2CA, 0xF042F48C, 0x277734F1, 0x1C0000
-            )
-            remainder = x - num_chunks * Decimal("0.2")
+        # elif x < Decimal(0.2):
+        #     # chunk = 0.1
+        #     num_chunks = (x * 10).round(0, RoundingMode.ROUND_DOWN)
+        #     # Use precise e^(chunk) = e^0.1
+        #     exp_chunk = Decimal.from_words(
+        #         0x1079E8F9, 0x2C369C6C, 0x23B5C273, 0x1C0000
+        #     )
+        #     remainder = x - num_chunks * Decimal("0.1")
 
-        else:
-            # chunk = 0.5
-            num_chunks = Decimal.ONE()
-            # Use precise e^(chunk) = e^0.5
-            exp_chunk = Decimal.from_words(
-                0x8E99DD66, 0xC210E35C, 0x3545E717, 0x1C0000
-            )
-            remainder = x - Decimal("0.5")
+        # elif x < Decimal(0.5):
+        #     # chunk = 0.2
+        #     num_chunks = (x * 5).round(0, RoundingMode.ROUND_DOWN)
+        #     # Use precise e^(chunk) = e^0.2
+        #     exp_chunk = Decimal.from_words(
+        #         0x716CF2CA, 0xF042F48C, 0x277734F1, 0x1C0000
+        #     )
+        #     remainder = x - num_chunks * Decimal("0.2")
+
+        # else:
+        #     # chunk = 0.5
+        #     num_chunks = Decimal.ONE()
+        #     # Use precise e^(chunk) = e^0.5
+        #     exp_chunk = Decimal.from_words(
+        #         0x8E99DD66, 0xC210E35C, 0x3545E717, 0x1C0000
+        #     )
+        #     remainder = x - Decimal("0.5")
 
     elif x_int < 2:  # 1 < x < 2
         # chunk = 1
-        num_chunks = Decimal.ONE()
+        num_chunks = 1
         # Use precise e^(chunk) = e^1
         exp_chunk = Decimal.E()
         remainder = x - num_chunks
 
-    elif x_int < 5:  # 2 <= x < 5
+    elif x_int < 4:  # 2 <= x < 4
         # chunk = 2
-        num_chunks = (x * 0.5).round(0, RoundingMode.ROUND_DOWN)
+        num_chunks = x_int >> 1
         # Use precise e^(chunk) = e^2
         exp_chunk = Decimal.from_words(
             0xE4DFDCAE, 0x89F7E295, 0xEEC0D6E9, 0x1C0000
         )
-        remainder = x - num_chunks * Decimal("2")
+        remainder = x - (num_chunks << 1)
 
-    elif x_int < 10:
-        # chunk = 5
-        num_chunks = (x * 0.2).round(0, RoundingMode.ROUND_DOWN)
-        # Use precise e^(chunk) = e^5
+    elif x_int < 8:
+        # chunk = 4
+        num_chunks = x_int >> 2
+        # Use precise e^(chunk) = e^4
         exp_chunk = Decimal.from_words(
-            0xD99BD974, 0x9F4BE5C7, 0x2FF472E3, 0x1A0000
+            0x7121EFD3, 0xFB318FB5, 0xB06A87FB, 0x1B0000
         )
-        remainder = x - num_chunks * Decimal("5")
+        remainder = x - (num_chunks << 2)
 
-    elif x_int < 20:
-        # chunk = 10
-        num_chunks = (x * 0.1).round(0, RoundingMode.ROUND_DOWN)
-        # Use precise e^(chunk) = e^10
+    elif x_int < 16:
+        # chunk = 8
+        num_chunks = x_int >> 3
+        # Use precise e^(chunk) = e^8
         exp_chunk = Decimal.from_words(
-            0xBA7F4F65, 0x58692B62, 0x472BDD8F, 0x180000
+            0x1E892E63, 0xD1BF8B5C, 0x6051E812, 0x190000
         )
-        remainder = x - num_chunks * Decimal("10")
+        remainder = x - (num_chunks << 3)
 
-    elif x_int < 50:
-        # chunk = 20
-        num_chunks = (x * 0.05).round(0, RoundingMode.ROUND_DOWN)
-        # Use precise e^(chunk) = e^20
+    elif x_int < 32:
+        # chunk = 16
+        num_chunks = x_int >> 4
+        # Use precise e^(chunk) = e^16
         exp_chunk = Decimal.from_words(
-            0x8D6833AE, 0x6363FE17, 0x9CC3ECA2, 0x140000
+            0xB46A97D, 0x90655BBD, 0x1CB66B18, 0x150000
         )
-        remainder = x - num_chunks * Decimal("20")
+        remainder = x - (num_chunks << 4)
 
     else:
-        # chunk = 50
-        num_chunks = (x * 0.02).round(0, RoundingMode.ROUND_DOWN)
-        # Use precise e^(chunk) = e^50
+        # chunk = 32
+        num_chunks = x_int >> 5
+        # Use precise e^(chunk) = e^32
         exp_chunk = Decimal.from_words(
-            0xAA35916D, 0xE556BD50, 0xA786E102, 0x70000
+            0x18420EB, 0xCC2501E6, 0xFF24A138, 0xF0000
         )
-        remainder = x - num_chunks * Decimal("50")
+        remainder = x - (num_chunks << 5)
 
     # Calculate e^(chunk * num_chunks) = (e^chunk)^num_chunks
     var exp_main = power(exp_chunk, num_chunks)
