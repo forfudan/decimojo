@@ -63,51 +63,7 @@ fn power(base: Decimal, exponent: Decimal) raises -> Decimal:
     # Convert exponent to integer
     var exp_value = Int(exponent)
 
-    # Special cases
-    if exp_value == 0:
-        # x^0 = 1 (including 0^0 = 1 by convention)
-        return Decimal.ONE()
-
-    if exp_value == 1:
-        # x^1 = x
-        return base
-
-    if base.is_zero():
-        # 0^n = 0 for n > 0
-        if exp_value > 0:
-            return Decimal.ZERO()
-        else:
-            # 0^n is undefined for n < 0
-            raise Error("Zero cannot be raised to a negative power")
-
-    if base.coefficient() == 1 and base.scale() == 0:
-        # 1^n = 1 for any n
-        return Decimal.ONE()
-
-    # Handle negative exponents: x^(-n) = 1/(x^n)
-    var negative_exponent = exp_value < 0
-    if negative_exponent:
-        exp_value = -exp_value
-
-    # Binary exponentiation for efficiency
-    var result = Decimal.ONE()
-    var current_base = base
-
-    while exp_value > 0:
-        if exp_value & 1:  # exp_value is odd
-            result = result * current_base
-
-        exp_value >>= 1  # exp_value = exp_value / 2
-
-        if exp_value > 0:
-            current_base = current_base * current_base
-
-    # For negative exponents, take the reciprocal
-    if negative_exponent:
-        # For 1/x, use division
-        result = Decimal.ONE() / result
-
-    return result
+    return power(base, exp_value)
 
 
 fn power(base: Decimal, exponent: Int) raises -> Decimal:
@@ -121,7 +77,53 @@ fn power(base: Decimal, exponent: Int) raises -> Decimal:
     Returns:
         A new Decimal containing the result.
     """
-    return power(base, Decimal(exponent))
+
+    # Special cases
+    if exponent == 0:
+        # x^0 = 1 (including 0^0 = 1 by convention)
+        return Decimal.ONE()
+
+    if exponent == 1:
+        # x^1 = x
+        return base
+
+    if base.is_zero():
+        # 0^n = 0 for n > 0
+        if exponent > 0:
+            return Decimal.ZERO()
+        else:
+            # 0^n is undefined for n < 0
+            raise Error("Zero cannot be raised to a negative power")
+
+    if base.coefficient() == 1 and base.scale() == 0:
+        # 1^n = 1 for any n
+        return Decimal.ONE()
+
+    # Handle negative exponents: x^(-n) = 1/(x^n)
+    var negative_exponent = exponent < 0
+    var abs_exp = exponent
+    if negative_exponent:
+        abs_exp = -exponent
+
+    # Binary exponentiation for efficiency
+    var result = Decimal.ONE()
+    var current_base = base
+
+    while abs_exp > 0:
+        if abs_exp & 1:  # exp_value is odd
+            result = result * current_base
+
+        abs_exp >>= 1  # exp_value = exp_value / 2
+
+        if abs_exp > 0:
+            current_base = current_base * current_base
+
+    # For negative exponents, take the reciprocal
+    if negative_exponent:
+        # For 1/x, use division
+        result = Decimal.ONE() / result
+
+    return result
 
 
 fn sqrt(x: Decimal) raises -> Decimal:
@@ -290,135 +292,95 @@ fn exp(x: Decimal) raises -> Decimal:
 
     var exp_chunk: Decimal
     var remainder: Decimal
-    var num_chunks: Int
+    var num_chunks: Int = 1
     var x_int = Int(x)
 
     if x.is_one():
         return Decimal.E()
 
     elif x_int < 1:
-        if x == Decimal.from_uint128(5, scale=1):
-            return Decimal.from_words(
-                0x8E99DD66, 0xC210E35C, 0x3545E717, 0x1C0000
-            )
+        var d05 = Decimal(5, 0, 0, scale=1, sign=False)  # 0.5
+        var d025 = Decimal(25, 0, 0, scale=2, sign=False)  # 0.25
 
-        # For fractional values, use Padé approximant
-        # e^x ≈ (1 + x/2 + x²/10)/(1 - x/2 + x²/10)
-        var x2 = x * x
-        var term = x2 / Decimal("10")
-        var numerator = Decimal.ONE() + (x / Decimal("2")) + term
-        var denominator = Decimal.ONE() - (x / Decimal("2")) + term
+        if x < d025:  # 0 < x < 0.25
+            return exp_series(x)
 
-        # For values close to 0.5, this approximation is extremely accurate
-        if abs(x - Decimal("0.5")) < Decimal("0.1"):
-            return numerator / denominator
+        elif x < d05:  # 0.25 <= x < 0.5
+            exp_chunk = Decimal.E025()
+            remainder = x - d025
 
-        # For other values, we need limited series calculation
-        # Use a modified series that converges faster for this range
-        return exp_series(x)
+        else:  # 0.5 <= x < 1
+            exp_chunk = Decimal.E05()
+            remainder = x - d05
 
-        # TODO: Improve from float so that exact float can be stored in Decimal
-        # if x < Decimal(0.01):
-        #     return exp_series(x)
-
-        # elif x < Decimal(0.05):
-        #     # chunk = 0.01
-        #     num_chunks = (x * 100).round(0, RoundingMode.ROUND_DOWN)
-        #     # Use precise e^(chunk) = e^0.01
-        #     exp_chunk = Decimal.from_words(
-        #         0xDB32A629, 0xBC6A8DA6, 0x20A2F06C, 0x1C0000
-        #     )
-        #     remainder = x - num_chunks * Decimal("0.01")
-
-        # elif x < Decimal(0.1):
-        #     # chunk = 0.05
-        #     num_chunks = (x * 20).round(0, RoundingMode.ROUND_DOWN)
-        #     # Use precise e^(chunk) = e^0.05
-        #     exp_chunk = Decimal.from_words(
-        #         0x22877AAB, 0x47F300D6, 0x21F7E923, 0x1C0000
-        #     )
-        #     remainder = x - num_chunks * Decimal("0.05")
-
-        # elif x < Decimal(0.2):
-        #     # chunk = 0.1
-        #     num_chunks = (x * 10).round(0, RoundingMode.ROUND_DOWN)
-        #     # Use precise e^(chunk) = e^0.1
-        #     exp_chunk = Decimal.from_words(
-        #         0x1079E8F9, 0x2C369C6C, 0x23B5C273, 0x1C0000
-        #     )
-        #     remainder = x - num_chunks * Decimal("0.1")
-
-        # elif x < Decimal(0.5):
-        #     # chunk = 0.2
-        #     num_chunks = (x * 5).round(0, RoundingMode.ROUND_DOWN)
-        #     # Use precise e^(chunk) = e^0.2
-        #     exp_chunk = Decimal.from_words(
-        #         0x716CF2CA, 0xF042F48C, 0x277734F1, 0x1C0000
-        #     )
-        #     remainder = x - num_chunks * Decimal("0.2")
-
-        # else:
-        #     # chunk = 0.5
-        #     num_chunks = Decimal.ONE()
-        #     # Use precise e^(chunk) = e^0.5
-        #     exp_chunk = Decimal.from_words(
-        #         0x8E99DD66, 0xC210E35C, 0x3545E717, 0x1C0000
-        #     )
-        #     remainder = x - Decimal("0.5")
-
-    elif x_int < 2:  # 1 < x < 2
-        # chunk = 1
-        num_chunks = 1
-        # Use precise e^(chunk) = e^1
+    elif x_int == 1:  # 1 <= x < 2, chunk = 1
         exp_chunk = Decimal.E()
-        remainder = x - num_chunks
+        remainder = x - x_int
 
-    elif x_int < 4:  # 2 <= x < 4
-        # chunk = 2
-        num_chunks = x_int >> 1
-        # Use precise e^(chunk) = e^2
-        exp_chunk = Decimal.from_words(
-            0xE4DFDCAE, 0x89F7E295, 0xEEC0D6E9, 0x1C0000
-        )
-        remainder = x - (num_chunks << 1)
+    elif x_int == 2:  # 2 <= x < 3, chunk = 2
+        exp_chunk = Decimal.E2()
+        remainder = x - x_int
 
-    elif x_int < 8:
-        # chunk = 4
-        num_chunks = x_int >> 2
-        # Use precise e^(chunk) = e^4
-        exp_chunk = Decimal.from_words(
-            0x7121EFD3, 0xFB318FB5, 0xB06A87FB, 0x1B0000
-        )
-        remainder = x - (num_chunks << 2)
+    elif x_int == 3:  # 3 <= x < 4, chunk = 3
+        exp_chunk = Decimal.E3()
+        remainder = x - x_int
 
-    elif x_int < 16:
-        # chunk = 8
-        num_chunks = x_int >> 3
-        # Use precise e^(chunk) = e^8
-        exp_chunk = Decimal.from_words(
-            0x1E892E63, 0xD1BF8B5C, 0x6051E812, 0x190000
-        )
-        remainder = x - (num_chunks << 3)
+    elif x_int == 4:  # 4 <= x < 5, chunk = 4
+        exp_chunk = Decimal.E4()
+        remainder = x - x_int
 
-        print("DEBUG: num_chunks", num_chunks)
-        print("DEBUG: remainder", remainder)
+    elif x_int == 5:  # 5 <= x < 6, chunk = 5
+        exp_chunk = Decimal.E5()
+        remainder = x - x_int
 
-    elif x_int < 32:
-        # chunk = 16
+    elif x_int == 6:  # 6 <= x < 7, chunk = 6
+        exp_chunk = Decimal.E6()
+        remainder = x - x_int
+
+    elif x_int == 7:  # 7 <= x < 8, chunk = 7
+        exp_chunk = Decimal.E7()
+        remainder = x - x_int
+
+    elif x_int == 8:  # 8 <= x < 9, chunk = 8
+        exp_chunk = Decimal.E8()
+        remainder = x - x_int
+
+    elif x_int == 9:  # 9 <= x < 10, chunk = 9
+        exp_chunk = Decimal.E9()
+        remainder = x - x_int
+
+    elif x_int == 10:  # 10 <= x < 11, chunk = 10
+        exp_chunk = Decimal.E10()
+        remainder = x - x_int
+
+    elif x_int == 11:  # 11 <= x < 12, chunk = 11
+        exp_chunk = Decimal.E11()
+        remainder = x - x_int
+
+    elif x_int == 12:  # 12 <= x < 13, chunk = 12
+        exp_chunk = Decimal.E12()
+        remainder = x - x_int
+
+    elif x_int == 13:  # 13 <= x < 14, chunk = 13
+        exp_chunk = Decimal.E13()
+        remainder = x - x_int
+
+    elif x_int == 14:  # 14 <= x < 15, chunk = 14
+        exp_chunk = Decimal.E14()
+        remainder = x - x_int
+
+    elif x_int == 15:  # 15 <= x < 16, chunk = 15
+        exp_chunk = Decimal.E15()
+        remainder = x - x_int
+
+    elif x_int < 32:  # 16 <= x < 32, chunk = 16
         num_chunks = x_int >> 4
-        # Use precise e^(chunk) = e^16
-        exp_chunk = Decimal.from_words(
-            0xB46A97D, 0x90655BBD, 0x1CB66B18, 0x150000
-        )
+        exp_chunk = Decimal.E16()
         remainder = x - (num_chunks << 4)
 
-    else:
-        # chunk = 32
+    else:  # chunk = 32
         num_chunks = x_int >> 5
-        # Use precise e^(chunk) = e^32
-        exp_chunk = Decimal.from_words(
-            0x18420EB, 0xCC2501E6, 0xFF24A138, 0xF0000
-        )
+        exp_chunk = Decimal.E32()
         remainder = x - (num_chunks << 5)
 
     # Calculate e^(chunk * num_chunks) = (e^chunk)^num_chunks
@@ -471,17 +433,13 @@ fn exp_series(x: Decimal) raises -> Decimal:
     # => term[x] / term[x-1] = x / i
 
     for i in range(1, max_terms + 1):
-        # print("DEBUG: i =", i)
         term_add_on = x / Decimal(i)
-        # print("DEBUG: term_add_on", i, "=", term_add_on)
 
         term = term * term_add_on
         # Check for convergence
         if term.is_zero():
             break
-        # print("DEBUG: term", i, "=", term)
 
         result = result + term
-        # print("DEBUG: result", i, "=", result)
 
     return result
