@@ -247,11 +247,13 @@ fn sqrt(x: Decimal) raises -> Decimal:
     return guess
 
 
-fn exp_series(x: Decimal) raises -> Decimal:
+fn exp(x: Decimal) raises -> Decimal:
     """
-    Calculates e^x using Taylor series expansion.
-    Sum terms of Taylor series: e^x = 1 + x + x²/2! + x³/3! + ...
+    Calculates e^x for any Decimal value using optimized range reduction.
     x should be no greater than 66 to avoid overflow.
+    A special algorithm is used to reduce the number of multiplications
+    and improve accuracy. This function can achieve high accuracy at a
+    high speed for a wide range of input values.
 
     Args:
         x: The exponent.
@@ -259,8 +261,131 @@ fn exp_series(x: Decimal) raises -> Decimal:
     Returns:
         A Decimal approximation of e^x.
 
+    Raises:
+        Error: If x is greater than 66 to avoid overflow.
+
+    Notes:
+        Because ln(2^96-1) ~= 66.54212933375474970405428366,
+        the x value should be no greater than 66 to avoid overflow.
+    """
+
+    if x > Decimal("66"):
+        raise Error("x should be less than 66 to avoid overflow.")
+
+    # Handle special cases
+    if x.is_zero():
+        return Decimal.ONE()
+
+    if x.is_negative():
+        return Decimal.ONE() / exp(-x)
+
+    if x.is_one():
+        return Decimal.E()
+
+    # For x < 1, use Taylor series expansion
+    if x < Decimal("1"):
+        return exp_series(x)
+
+    # For x > 1, use optimized range reduction with smaller chunks
+    # Yuhao's notes:
+    # e^50 is more accurate than (e^2)^25 if e^2 needs to be approximated
+    #   because estimating e^x would introduce errors
+    # e^50 is less accurate than (e^2)^25 if e^2 is precomputed
+    #   because too many multiplications would introduce errors
+    # So we need to find a way to reduce both the number of multiplications
+    #   and the error introduced by approximating e^x
+    # This helps improve accuracy as well as speed.
+    # My solution is to factorize x into a combination of integers and
+    #   a fractional part smaller than 1.
+    # Then use precomputed e^integer values to calculate e^x
+    # For example, e^59.12 = (e^50)^1 * (e^5)^1 * (e^2)^2 * e^0.12
+    # This way, we just need to do 4 multiplications instead of 59.
+    # The fractional part is then calculated using the series expansion.
+    # Because the fractional part is <1, the series converges quickly.
+
+    var exp_chunk: Decimal
+    var remainder: Decimal
+
+    if x < Decimal("2"):  # 1 < x < 2
+        # chunk = 1
+        num_chunks = Decimal.ONE()
+        # Use precise e^(chunk) = e^1
+        exp_chunk = Decimal.E()
+        remainder = x - num_chunks
+
+    elif x < Decimal("5"):  # 2 <= x < 5
+        # chunk = 2
+        num_chunks = (x * 0.5).round(0, RoundingMode.ROUND_DOWN)
+        # Use precise e^(chunk) = e^2
+        exp_chunk = Decimal.from_words(
+            0xE4DFDCAE, 0x89F7E295, 0xEEC0D6E9, 0x1C0000
+        )
+        remainder = x - num_chunks * Decimal("2")
+
+    elif x < Decimal("10"):
+        # chunk = 5
+        num_chunks = (x * 0.2).round(0, RoundingMode.ROUND_DOWN)
+        # Use precise e^(chunk) = e^5
+        exp_chunk = Decimal.from_words(
+            0xD99BD974, 0x9F4BE5C7, 0x2FF472E3, 0x1A0000
+        )
+        remainder = x - num_chunks * Decimal("5")
+
+    elif x < Decimal("20"):
+        # chunk = 10
+        num_chunks = (x * 0.1).round(0, RoundingMode.ROUND_DOWN)
+        # Use precise e^(chunk) = e^10
+        exp_chunk = Decimal.from_words(
+            0xBA7F4F65, 0x58692B62, 0x472BDD8F, 0x180000
+        )
+        remainder = x - num_chunks * Decimal("10")
+
+    elif x < Decimal("50"):
+        # chunk = 20
+        num_chunks = (x * 0.05).round(0, RoundingMode.ROUND_DOWN)
+        # Use precise e^(chunk) = e^20
+        exp_chunk = Decimal.from_words(
+            0x8D6833AE, 0x6363FE17, 0x9CC3ECA2, 0x140000
+        )
+        remainder = x - num_chunks * Decimal("20")
+
+    else:
+        # chunk = 50
+        num_chunks = (x * 0.02).round(0, RoundingMode.ROUND_DOWN)
+        # Use precise e^(chunk) = e^50
+        exp_chunk = Decimal.from_words(
+            0xAA35916D, 0xE556BD50, 0xA786E102, 0x70000
+        )
+        remainder = x - num_chunks * Decimal("50")
+
+    # Calculate e^(chunk * num_chunks) = (e^chunk)^num_chunks
+    var exp_main = power(exp_chunk, num_chunks)
+
+    # Calculate e^remainder by calling exp() again
+    # If it is <1, then use Taylor's series
+    var exp_remainder = exp(remainder)
+
+    # Combine: e^x = e^(main+remainder) = e^main * e^remainder
+    return exp_main * exp_remainder
+
+
+fn exp_series(x: Decimal) raises -> Decimal:
+    """
+    Calculates e^x using Taylor series expansion.
+    Do not use this function for values larger than 1, but `exp()` instead.
+
+    Args:
+        x: The exponent.
+
+    Returns:
+        A Decimal approximation of e^x.
+
+    Raises:
+        Error: If x is greater than 66 to avoid overflow.
+
     Notes:
 
+    Sum terms of Taylor series: e^x = 1 + x + x²/2! + x³/3! + ...
     Because ln(2^96-1) ~= 66.54212933375474970405428366,
     the x value should be no greater than 66 to avoid overflow.
     """
@@ -289,18 +414,17 @@ fn exp_series(x: Decimal) raises -> Decimal:
     # => term[x] / term[x-1] = x / i
 
     for i in range(1, max_terms + 1):
-        print("DEBUG: i =", i)
+        # print("DEBUG: i =", i)
         term_add_on = x / Decimal(i)
-        print("DEBUG: term_add_on", i, "=", term_add_on)
+        # print("DEBUG: term_add_on", i, "=", term_add_on)
+
         term = term * term_add_on
-        print("DEBUG: term", i, "=", term)
-        result = result + term
-        print("DEBUG: result", i, "=", result)
-
-        print()
-
         # Check for convergence
-        if abs(term) < Decimal("1e-28"):
+        if term.is_zero():
             break
+        # print("DEBUG: term", i, "=", term)
+
+        result = result + term
+        # print("DEBUG: result", i, "=", result)
 
     return result
