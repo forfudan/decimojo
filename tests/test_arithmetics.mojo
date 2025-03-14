@@ -159,6 +159,19 @@ fn test_add() raises:
 
     print("Decimal addition tests passed!")
 
+    # Test case 18: Edge case with one equals 0
+    var a18 = Decimal("4563117171088016.3026696499898")
+    var b18 = Decimal("0.0000000000000000000000000000")
+    var result18 = a18 + b18
+    # 1234567890123456789.0123456789
+    testing.assert_equal(
+        String(result18),
+        "4563117171088016.3026696499898",
+        "Addition with zeros",
+    )
+
+    print("Decimal addition tests passed!")
+
 
 fn test_negation() raises:
     print("------------------------------------------------------")

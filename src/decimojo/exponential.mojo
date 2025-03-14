@@ -34,6 +34,7 @@
 import math as builtin_math
 import testing
 
+import decimojo.special
 import decimojo.utility
 
 
@@ -244,3 +245,62 @@ fn sqrt(x: Decimal) raises -> Decimal:
                 )
 
     return guess
+
+
+fn exp_series(x: Decimal) raises -> Decimal:
+    """
+    Calculates e^x using Taylor series expansion.
+    Sum terms of Taylor series: e^x = 1 + x + x²/2! + x³/3! + ...
+    x should be no greater than 66 to avoid overflow.
+
+    Args:
+        x: The exponent.
+
+    Returns:
+        A Decimal approximation of e^x.
+
+    Notes:
+
+    Because ln(2^96-1) ~= 66.54212933375474970405428366,
+    the x value should be no greater than 66 to avoid overflow.
+    """
+
+    if x > Decimal("66"):
+        raise Error("x should be less than 66 to avoid overflow.")
+
+    var max_terms = 500
+
+    # For x=0, e^0 = 1
+    if x.is_zero():
+        return Decimal.ONE()
+
+    # For x with very small magnitude, just use 1+x approximation
+    if abs(x) == Decimal("1e-28"):
+        return Decimal.ONE() + x
+
+    # Initialize result and term
+    var result = Decimal.ONE()
+    var term = Decimal.ONE()
+    var term_add_on: Decimal
+
+    # Calculate terms iteratively
+    # term[x] = x^i / i!
+    # term[x-1] = x^{i-1} / (i-1)!
+    # => term[x] / term[x-1] = x / i
+
+    for i in range(1, max_terms + 1):
+        print("DEBUG: i =", i)
+        term_add_on = x / Decimal(i)
+        print("DEBUG: term_add_on", i, "=", term_add_on)
+        term = term * term_add_on
+        print("DEBUG: term", i, "=", term)
+        result = result + term
+        print("DEBUG: result", i, "=", result)
+
+        print()
+
+        # Check for convergence
+        if abs(term) < Decimal("1e-28"):
+            break
+
+    return result
