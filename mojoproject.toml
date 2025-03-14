@@ -40,7 +40,7 @@ test_creation = "magic run package && magic run mojo test tests/test_creation.mo
 test_from_float = "magic run package && magic run mojo test tests/test_from_float.mojo && magic run delete_package"
 test_from_string = "magic run package && magic run mojo test tests/test_from_string.mojo && magic run delete_package"
 test_comparison = "magic run package && magic run mojo test tests/test_comparison.mojo && magic run delete_package"
-
+test_factorial = "magic run package && magic run mojo test tests/test_factorial.mojo && magic run delete_package"
 
 # benches
 bench = "magic run package && cd benches && magic run mojo bench.mojo && cd .. && magic run delete_package"

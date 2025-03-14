@@ -1,7 +1,22 @@
 # ===----------------------------------------------------------------------=== #
-# Distributed under the Apache 2.0 License with LLVM Exceptions.
-# See LICENSE and the LLVM License for more information.
-# https://github.com/forFudan/decimojo/blob/main/LICENSE
+#
+# DeciMojo: A fixed-point decimal arithmetic library in Mojo
+# https://github.com/forFudan/DeciMojo
+#
+# Copyright 2025 Yuhao Zhu
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 # ===----------------------------------------------------------------------=== #
 #
 # Implements basic arithmetic functions for the Decimal type
@@ -436,17 +451,14 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     # Used to determine the appropriate multiplication method
     # The coefficient of result would be the sum of the two numbers of bits
     var x1_num_bits = decimojo.utility.number_of_bits(x1_coef)
-    """Number of significant bits in the coefficient of x1."""
     var x2_num_bits = decimojo.utility.number_of_bits(x2_coef)
-    """Number of significant bits in the coefficient of x2."""
     var combined_num_bits = x1_num_bits + x2_num_bits
-    """Number of significant bits in the coefficient of the result."""
 
     # SPECIAL CASE: Both operands are true integers
     if x1_scale == 0 and x2_scale == 0:
         # Small integers, use UInt64 multiplication
         if combined_num_bits <= 64:
-            var prod: UInt64 = UInt64(x1.low) * UInt64(x2.low)
+            var prod: UInt64 = UInt64(x1_coef) * UInt64(x2_coef)
             var low = UInt32(prod & 0xFFFFFFFF)
             var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
             return Decimal(low, mid, 0, 0, is_negative)
