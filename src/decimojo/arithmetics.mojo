@@ -385,6 +385,13 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     """Combined scale of the two operands."""
     var is_negative = x1.is_negative() != x2.is_negative()
 
+    # SPECIAL CASE: true one
+    # Return the other operand
+    if x1.low == 1 and x1.mid == 0 and x1.high == 0 and x1.flags == 0:
+        return x2
+    if x2.low == 1 and x2.mid == 0 and x2.high == 0 and x2.flags == 0:
+        return x1
+
     # SPECIAL CASE: zero
     # Return zero while preserving the scale
     if x1_coef == 0 or x2_coef == 0:
