@@ -436,12 +436,13 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     # SPECIAL CASE: zero
     # Return zero while preserving the scale
     if x1_coef == 0 or x2_coef == 0:
-        var result = Decimal.ZERO()
-        var result_scale = min(combined_scale, Decimal.MAX_SCALE)
-        result.flags = UInt32(
-            (result_scale << Decimal.SCALE_SHIFT) & Decimal.SCALE_MASK
+        return Decimal(
+            0,
+            0,
+            0,
+            scale=min(combined_scale, Decimal.MAX_SCALE),
+            sign=is_negative,
         )
-        return result
 
     # SPECIAL CASE: Both operands have coefficient of 1
     if x1_coef == 1 and x2_coef == 1:
