@@ -40,6 +40,7 @@ test_round = "magic run package && magic run mojo test tests/test_round.mojo && 
 test_creation = "magic run package && magic run mojo test tests/test_creation.mojo && magic run delete_package"
 test_from_float = "magic run package && magic run mojo test tests/test_from_float.mojo && magic run delete_package"
 test_from_string = "magic run package && magic run mojo test tests/test_from_string.mojo && magic run delete_package"
+test_to_float = "magic run package && magic run mojo test tests/test_to_float.mojo && magic run delete_package"
 test_comparison = "magic run package && magic run mojo test tests/test_comparison.mojo && magic run delete_package"
 test_factorial = "magic run package && magic run mojo test tests/test_factorial.mojo && magic run delete_package"
 test_exp = "magic run package && magic run mojo test tests/test_exp.mojo && magic run delete_package"

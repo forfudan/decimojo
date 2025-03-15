@@ -967,7 +967,7 @@ struct Decimal(
             The floating-point representation of this Decimal.
         """
 
-        var result = Float64(self.coefficient()) / (10 ** self.scale())
+        var result = Float64(self.coefficient()) / (Float64(10) ** self.scale())
         result = -result if self.is_negative() else result
 
         return result
