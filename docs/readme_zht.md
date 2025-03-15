@@ -23,7 +23,7 @@ fn main() raises:
     print(area)                    # 3622.7141989037464
 ```
 
-此項目的 Github 倉庫位於 [https://github.com/forFudan/DeciMojo](https://github.com/forFudan/DeciMojo)。
+此項目的 Github 倉庫位於 [https://github.com/forFudan/decimojo](https://github.com/forFudan/decimojo)。
 
 ## 示例
 
@@ -254,7 +254,7 @@ DeciMojo 結合了 "Decimal" 和 "Mojo" 兩詞，反映了其目的（小數算�
 
 ### 讓它快速 ⏳（進行中 & 未來工作）
 
-- 核心算術運算（+, -, *, /）已針對性能進行了優化，並提供了與 Python 内置 decimal 模塊進行比較的全面基準測試報告（[PR#16](https://github.com/forFudan/DeciMojo/pull/16)、[PR#20](https://github.com/forFudan/DeciMojo/pull/20)、[PR#21](https://github.com/forFudan/DeciMojo/pull/21)）。
+- 核心算術運算（+, -, *, /）已針對性能進行了優化，並提供了與 Python 内置 decimal 模塊進行比較的全面基準測試報告（[PR#16](https://github.com/forFudan/decimojo/pull/16)、[PR#20](https://github.com/forFudan/decimojo/pull/20)、[PR#21](https://github.com/forFudan/decimojo/pull/21)）。
 - 定期對比 Python 的 `decimal` 模塊進行基準測試（見 `bench/` 文件夾）
 - 其他函數的性能優化正緩步進行，但不是當前優先事項
 
@@ -274,7 +274,7 @@ DeciMojo 結合了 "Decimal" 和 "Mojo" 兩詞，反映了其目的（小數算�
     author       = {Zhu, Yuhao},
     year         = {2025},
     title        = {DeciMojo: A fixed-point decimal arithmetic library in Mojo},
-    url          = {https://github.com/forFudan/DeciMojo},
+    url          = {https://github.com/forFudan/decimojo},
     version      = {0.1.0},
     note         = {Computer Software}
 }
