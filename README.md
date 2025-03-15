@@ -24,7 +24,7 @@ fn main() raises:
     print(area)                    # 28.2743334
 ```
 
-The Github repo of the project is at [https://github.com/forFudan/decimojo](https://github.com/forFudan/decimojo).
+The Github repo of the project is at [https://github.com/forfudan/decimojo](https://github.com/forfudan/decimojo).
 
 ## Examples
 
@@ -230,7 +230,7 @@ For brevity, you can refer to it as "deci" (derived from the Latin root "decimus
 
 ## Status
 
-Rome wasn't built in a day. DeciMojo is currently under active development, positioned between the **"make it work"** and **"make it right"** phases, with a stronger emphasis on the latter. Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/forFudan/decimojo/issues).
+Rome wasn't built in a day. DeciMojo is currently under active development, positioned between the **"make it work"** and **"make it right"** phases, with a stronger emphasis on the latter. Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/forfudan/decimojo/issues).
 
 ### Make it Work ✅ (MOSTLY COMPLETED)
 
@@ -250,7 +250,7 @@ Rome wasn't built in a day. DeciMojo is currently under active development, posi
 
 ### Make it Fast ⏳ (IN PROGRESS & FUTURE WORK)
 
-- Core arithmetic operations (+, -, *, /) have been optimized for performance, with comprehensive benchmarking reports available comparing performance against Python's built-in decimal module ([PR#16](https://github.com/forFudan/decimojo/pull/16), [PR#20](https://github.com/forFudan/decimojo/pull/20), [PR#21](https://github.com/forFudan/decimojo/pull/21)).
+- Core arithmetic operations (+, -, *, /) have been optimized for performance, with comprehensive benchmarking reports available comparing performance against Python's built-in decimal module ([PR#16](https://github.com/forfudan/decimojo/pull/16), [PR#20](https://github.com/forfudan/decimojo/pull/20), [PR#21](https://github.com/forfudan/decimojo/pull/21)).
 - Regular benchmarking against Python's `decimal` module (see `bench/` folder)
 - Performance optimization for other functions is progressing gradually but is not currently a priority
 
@@ -270,7 +270,7 @@ If you find DeciMojo useful for your research, consider listing it in your citat
     author       = {Zhu, Yuhao},
     year         = {2025},
     title        = {DeciMojo: A fixed-point decimal arithmetic library in Mojo},
-    url          = {https://github.com/forFudan/decimojo},
+    url          = {https://github.com/forfudan/decimojo},
     version      = {0.1.0},
     note         = {Computer Software}
 }

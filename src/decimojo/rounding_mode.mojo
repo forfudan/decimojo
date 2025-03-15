@@ -1,6 +1,6 @@
 # ===----------------------------------------------------------------------=== #
 # DeciMojo: A fixed-point decimal arithmetic library in Mojo
-# https://github.com/forFudan/decimojo
+# https://github.com/forfudan/decimojo
 #
 # Copyright 2025 Yuhao Zhu
 #
