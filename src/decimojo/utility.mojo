@@ -128,7 +128,7 @@ fn scale_up(value: Decimal, owned level: Int) raises -> Decimal:
     # TODO: Check if multiplication by 10^level would cause overflow
     # If yes, then raise an error
     #
-    var max_coefficient = ~UInt128(0) / UInt128(10**level)
+    var max_coefficient = ~UInt128(0) / UInt128(10) ** level
     if coefficient > max_coefficient:
         # Handle overflow case - limit to maximum value or raise error
         coefficient = ~UInt128(0)
@@ -190,7 +190,7 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
         var digits_to_remove = ndigits - Decimal.MAX_NUM_DIGITS
 
         # Collect digits for rounding decision
-        var divisor = ValueType(10) ** ValueType(digits_to_remove)
+        var divisor = power_of_10[dtype](digits_to_remove)
         var truncated_value = value // divisor
 
         if truncated_value == ValueType(Decimal.MAX_AS_UINT128):
@@ -204,7 +204,9 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
             var remainder = value % divisor
 
             # Get the most significant digit of the remainder for rounding
-            var rounding_digit = remainder // 10 ** (digits_to_remove - 1)
+            var rounding_digit = remainder // power_of_10[dtype](
+                digits_to_remove - 1
+            )
 
             # Check if we need to round up based on banker's rounding (ROUND_HALF_EVEN)
             var round_up = False
@@ -214,7 +216,7 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
                 round_up = True
             # If rounding digit is 5, check if there are any non-zero digits after it
             elif rounding_digit == 5:
-                var has_nonzero_after = remainder > 5 * 10 ** (
+                var has_nonzero_after = remainder > 5 * power_of_10[dtype](
                     digits_to_remove - 1
                 )
                 # If there are non-zero digits after, round up
@@ -245,12 +247,14 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
                 digits_to_remove += 1
 
             # Collect digits for rounding decision
-            divisor = ValueType(10) ** ValueType(digits_to_remove)
+            divisor = power_of_10[dtype](digits_to_remove)
             truncated_value = value // divisor
             var remainder = value % divisor
 
             # Get the most significant digit of the remainder for rounding
-            var rounding_digit = remainder // 10 ** (digits_to_remove - 1)
+            var rounding_digit = remainder // power_of_10[dtype](
+                digits_to_remove - 1
+            )
 
             # Check if we need to round up based on banker's rounding (ROUND_HALF_EVEN)
             var round_up = False
@@ -260,7 +264,7 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
                 round_up = True
             # If rounding digit is 5, check if there are any non-zero digits after it
             elif rounding_digit == 5:
-                var has_nonzero_after = remainder > 5 * 10 ** (
+                var has_nonzero_after = remainder > 5 * power_of_10[dtype](
                     digits_to_remove - 1
                 )
                 # If there are non-zero digits after, round up
@@ -387,7 +391,7 @@ fn round_to_keep_first_n_digits[
         var ndigits_to_remove = ndigits_of_x - ndigits
 
         # Collect digits for rounding decision
-        var divisor = ValueType(10) ** ValueType(ndigits_to_remove)
+        var divisor = power_of_10[dtype](ndigits_to_remove)
         var truncated_value = value // divisor
         var remainder = value % divisor
 
@@ -402,13 +406,13 @@ fn round_to_keep_first_n_digits[
 
         # If RoundingMode is ROUND_HALF_UP, round up the value if remainder is greater than 5
         elif rounding_mode == RoundingMode.ROUND_HALF_UP:
-            var cutoff_value = 5 * 10 ** (ndigits_to_remove - 1)
+            var cutoff_value = 5 * power_of_10[dtype](ndigits_to_remove - 1)
             if remainder >= cutoff_value:
                 truncated_value += 1
 
         # If RoundingMode is ROUND_HALF_EVEN, round to nearest even digit if equidistant
         else:
-            var cutoff_value: ValueType = 5 * ValueType(10) ** (
+            var cutoff_value: ValueType = 5 * power_of_10[dtype](
                 ndigits_to_remove - 1
             )
             if remainder > cutoff_value:
@@ -554,3 +558,85 @@ fn power_of_10_as_uint256(n: Int) raises -> UInt256:
         _power_of_10_as_uint256_cache.append(next_power)
 
     return _power_of_10_as_uint256_cache[n]
+
+
+@always_inline
+fn power_of_10[dtype: DType](n: Int) -> Scalar[dtype]:
+    """
+    Returns 10^n using cached values when available.
+    """
+
+    alias ValueType = Scalar[dtype]
+
+    if n == 0:
+        return ValueType(1)
+    if n == 1:
+        return ValueType(10)
+    if n == 2:
+        return ValueType(100)
+    if n == 3:
+        return ValueType(1000)
+    if n == 4:
+        return ValueType(10000)
+    if n == 5:
+        return ValueType(100000)
+    if n == 6:
+        return ValueType(1000000)
+    if n == 7:
+        return ValueType(10000000)
+    if n == 8:
+        return ValueType(100000000)
+    if n == 9:
+        return ValueType(1000000000)
+    if n == 10:
+        return ValueType(10000000000)
+    if n == 11:
+        return ValueType(100000000000)
+    if n == 12:
+        return ValueType(1000000000000)
+    if n == 13:
+        return ValueType(10000000000000)
+    if n == 14:
+        return ValueType(100000000000000)
+    if n == 15:
+        return ValueType(1000000000000000)
+    if n == 16:
+        return ValueType(10000000000000000)
+    if n == 17:
+        return ValueType(100000000000000000)
+    if n == 18:
+        return ValueType(1000000000000000000)
+    if n == 19:
+        return ValueType(10000000000000000000)
+    if n == 20:
+        return ValueType(100000000000000000000)
+    if n == 21:
+        return ValueType(1000000000000000000000)
+    if n == 22:
+        return ValueType(10000000000000000000000)
+    if n == 23:
+        return ValueType(100000000000000000000000)
+    if n == 24:
+        return ValueType(1000000000000000000000000)
+    if n == 25:
+        return ValueType(10000000000000000000000000)
+    if n == 26:
+        return ValueType(100000000000000000000000000)
+    if n == 27:
+        return ValueType(1000000000000000000000000000)
+    if n == 28:
+        return ValueType(10000000000000000000000000000)
+    if n == 29:
+        return ValueType(100000000000000000000000000000)
+    if n == 30:
+        return ValueType(1000000000000000000000000000000)
+    if n == 31:
+        return ValueType(10000000000000000000000000000000)
+    if n == 32:
+        return ValueType(100000000000000000000000000000000)
+    if n == 33:
+        return ValueType(1000000000000000000000000000000000)
+    if n == 34:
+        return ValueType(10000000000000000000000000000000000)
+
+    return ValueType(10) ** n

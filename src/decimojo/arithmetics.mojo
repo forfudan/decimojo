@@ -594,18 +594,19 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     # IMPORTANT: This means that the product will exceed Decimal's capacity
     # Either raises an error if intergral part overflows
     # Or truncates the product to fit into Decimal's capacity
+
     if combined_num_bits <= 128:
         var prod: UInt128 = x1_coef * x2_coef
+        # Truncated first 29 digits
+        var truncated_prod_at_max_length = decimojo.utility.round_to_keep_first_n_digits(
+            prod, Decimal.MAX_NUM_DIGITS
+        )
 
         # Check outflow
         # The number of digits of the integral part
         var num_digits_of_integral_part = decimojo.utility.number_of_digits(
             prod
         ) - combined_scale
-        # Truncated first 29 digits
-        var truncated_prod_at_max_length = decimojo.utility.round_to_keep_first_n_digits(
-            prod, Decimal.MAX_NUM_DIGITS
-        )
         if (num_digits_of_integral_part >= Decimal.MAX_NUM_DIGITS) & (
             truncated_prod_at_max_length > Decimal.MAX_AS_UINT128
         ):
@@ -651,17 +652,18 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     # IMPORTANT: This means that the product will exceed Decimal's capacity
     # Either raises an error if intergral part overflows
     # Or truncates the product to fit into Decimal's capacity
+
     var prod: UInt256 = UInt256(x1_coef) * UInt256(x2_coef)
+    # Truncated first 29 digits
+    var truncated_prod_at_max_length = decimojo.utility.round_to_keep_first_n_digits(
+        prod, Decimal.MAX_NUM_DIGITS
+    )
 
     # Check outflow
     # The number of digits of the integral part
     var num_digits_of_integral_part = decimojo.utility.number_of_digits(
         prod
     ) - combined_scale
-    # Truncated first 29 digits
-    var truncated_prod_at_max_length = decimojo.utility.round_to_keep_first_n_digits(
-        prod, Decimal.MAX_NUM_DIGITS
-    )
     # Check for overflow of the integral part after rounding
     if (num_digits_of_integral_part >= Decimal.MAX_NUM_DIGITS) & (
         truncated_prod_at_max_length > Decimal.MAX_AS_UINT256
@@ -686,7 +688,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
         prod = truncated_prod_at_max_length
 
     # I think combined_scale should always be smaller
-    final_scale = min(num_digits_of_decimal_part, combined_scale)
+    var final_scale = min(num_digits_of_decimal_part, combined_scale)
 
     if final_scale > Decimal.MAX_SCALE:
         var ndigits_prod = decimojo.utility.number_of_digits(prod)
