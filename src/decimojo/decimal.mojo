@@ -55,6 +55,7 @@ Implements basic object methods for working with decimal numbers.
 """
 
 from memory import UnsafePointer
+import testing
 
 import decimojo.arithmetics
 import decimojo.comparison
@@ -144,7 +145,7 @@ struct Decimal(
         Returns a Decimal representing positive infinity.
         Internal representation: `0b0000_0000_0000_0000_0000_0000_0001`.
         """
-        return Decimal.from_words(0, 0, 0, 0x00000001)
+        return Decimal(0, 0, 0, 0x00000001)
 
     @staticmethod
     fn NEGATIVE_INFINITY() -> Decimal:
@@ -152,7 +153,7 @@ struct Decimal(
         Returns a Decimal representing negative infinity.
         Internal representation: `0b1000_0000_0000_0000_0000_0000_0001`.
         """
-        return Decimal.from_words(0, 0, 0, 0x80000001)
+        return Decimal(0, 0, 0, 0x80000001)
 
     @staticmethod
     fn NAN() -> Decimal:
@@ -160,7 +161,7 @@ struct Decimal(
         Returns a Decimal representing Not a Number (NaN).
         Internal representation: `0b0000_0000_0000_0000_0000_0000_0010`.
         """
-        return Decimal.from_words(0, 0, 0, 0x00000010)
+        return Decimal(0, 0, 0, 0x00000010)
 
     @staticmethod
     fn NEGATIVE_NAN() -> Decimal:
@@ -168,28 +169,28 @@ struct Decimal(
         Returns a Decimal representing negative Not a Number.
         Internal representation: `0b1000_0000_0000_0000_0000_0000_0010`.
         """
-        return Decimal.from_words(0, 0, 0, 0x80000010)
+        return Decimal(0, 0, 0, 0x80000010)
 
     @staticmethod
     fn ZERO() -> Decimal:
         """
         Returns a Decimal representing 0.
         """
-        return Decimal.from_words(0, 0, 0, 0)
+        return Decimal(0, 0, 0, 0)
 
     @staticmethod
     fn ONE() -> Decimal:
         """
         Returns a Decimal representing 1.
         """
-        return Decimal.from_words(1, 0, 0, 0)
+        return Decimal(1, 0, 0, 0)
 
     @staticmethod
     fn NEGATIVE_ONE() -> Decimal:
         """
         Returns a Decimal representing -1.
         """
-        return Decimal.from_words(1, 0, 0, Decimal.SIGN_MASK)
+        return Decimal(1, 0, 0, Decimal.SIGN_MASK)
 
     @staticmethod
     fn MAX() -> Decimal:
@@ -197,16 +198,14 @@ struct Decimal(
         Returns the maximum possible Decimal value.
         This is equivalent to 79228162514264337593543950335.
         """
-        return Decimal.from_words(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0)
+        return Decimal(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0)
 
     @staticmethod
     fn MIN() -> Decimal:
         """Returns the minimum possible Decimal value (negative of MAX).
         This is equivalent to -79228162514264337593543950335.
         """
-        return Decimal.from_words(
-            0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, Decimal.SIGN_MASK
-        )
+        return Decimal(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, Decimal.SIGN_MASK)
 
     @staticmethod
     fn PI() -> Decimal:
@@ -216,7 +215,7 @@ struct Decimal(
         Returns:
             A Decimal representation of pi with maximum precision.
         """
-        return Decimal.from_words(0x41B65F29, 0xB143885, 0x6582A536, 0x1C0000)
+        return Decimal(0x41B65F29, 0xB143885, 0x6582A536, 0x1C0000)
 
     @staticmethod
     fn E() -> Decimal:
@@ -226,84 +225,84 @@ struct Decimal(
         Returns:
             A Decimal representation of Euler's number with maximum precision.
         """
-        return Decimal.from_words(0x857AED5A, 0xEBECDE35, 0x57D519AB, 0x1C0000)
+        return Decimal(0x857AED5A, 0xEBECDE35, 0x57D519AB, 0x1C0000)
 
     @staticmethod
     fn E2() -> Decimal:
-        return Decimal.from_words(0xE4DFDCAE, 0x89F7E295, 0xEEC0D6E9, 0x1C0000)
+        return Decimal(0xE4DFDCAE, 0x89F7E295, 0xEEC0D6E9, 0x1C0000)
 
     @staticmethod
     fn E3() -> Decimal:
-        return Decimal.from_words(0x236454F7, 0x62055A80, 0x40E65DE2, 0x1B0000)
+        return Decimal(0x236454F7, 0x62055A80, 0x40E65DE2, 0x1B0000)
 
     @staticmethod
     fn E4() -> Decimal:
-        return Decimal.from_words(0x7121EFD3, 0xFB318FB5, 0xB06A87FB, 0x1B0000)
+        return Decimal(0x7121EFD3, 0xFB318FB5, 0xB06A87FB, 0x1B0000)
 
     @staticmethod
     fn E5() -> Decimal:
-        return Decimal.from_words(0xD99BD974, 0x9F4BE5C7, 0x2FF472E3, 0x1A0000)
+        return Decimal(0xD99BD974, 0x9F4BE5C7, 0x2FF472E3, 0x1A0000)
 
     @staticmethod
     fn E6() -> Decimal:
-        return Decimal.from_words(0xADB57A66, 0xBD7A423F, 0x825AD8FF, 0x1A0000)
+        return Decimal(0xADB57A66, 0xBD7A423F, 0x825AD8FF, 0x1A0000)
 
     @staticmethod
     fn E7() -> Decimal:
-        return Decimal.from_words(0x22313FCF, 0x64D5D12F, 0x236F230A, 0x190000)
+        return Decimal(0x22313FCF, 0x64D5D12F, 0x236F230A, 0x190000)
 
     @staticmethod
     fn E8() -> Decimal:
-        return Decimal.from_words(0x1E892E63, 0xD1BF8B5C, 0x6051E812, 0x190000)
+        return Decimal(0x1E892E63, 0xD1BF8B5C, 0x6051E812, 0x190000)
 
     @staticmethod
     fn E9() -> Decimal:
-        return Decimal.from_words(0x34FAB691, 0xE7CD8DEA, 0x1A2EB6C3, 0x180000)
+        return Decimal(0x34FAB691, 0xE7CD8DEA, 0x1A2EB6C3, 0x180000)
 
     @staticmethod
     fn E10() -> Decimal:
-        return Decimal.from_words(0xBA7F4F65, 0x58692B62, 0x472BDD8F, 0x180000)
+        return Decimal(0xBA7F4F65, 0x58692B62, 0x472BDD8F, 0x180000)
 
     @staticmethod
     fn E11() -> Decimal:
-        return Decimal.from_words(0x8C2C6D20, 0x2A86F9E7, 0xC176BAAE, 0x180000)
+        return Decimal(0x8C2C6D20, 0x2A86F9E7, 0xC176BAAE, 0x180000)
 
     @staticmethod
     fn E12() -> Decimal:
-        return Decimal.from_words(0xE924992A, 0x31CDC314, 0x3496C2C4, 0x170000)
+        return Decimal(0xE924992A, 0x31CDC314, 0x3496C2C4, 0x170000)
 
     @staticmethod
     fn E13() -> Decimal:
-        return Decimal.from_words(0x220130DB, 0xC386029A, 0x8EF393FB, 0x170000)
+        return Decimal(0x220130DB, 0xC386029A, 0x8EF393FB, 0x170000)
 
     @staticmethod
     fn E14() -> Decimal:
-        return Decimal.from_words(0x3A24795C, 0xC412DF01, 0x26DBB5A0, 0x160000)
+        return Decimal(0x3A24795C, 0xC412DF01, 0x26DBB5A0, 0x160000)
 
     @staticmethod
     fn E15() -> Decimal:
         """Returns the value of e^15 as a Decimal."""
-        return Decimal.from_words(0x6C1248BD, 0x90456557, 0x69A0AD8C, 0x160000)
+        return Decimal(0x6C1248BD, 0x90456557, 0x69A0AD8C, 0x160000)
 
     @staticmethod
     fn E16() -> Decimal:
         """Returns the value of e^16 as a Decimal."""
-        return Decimal.from_words(0xB46A97D, 0x90655BBD, 0x1CB66B18, 0x150000)
+        return Decimal(0xB46A97D, 0x90655BBD, 0x1CB66B18, 0x150000)
 
     @staticmethod
     fn E32() -> Decimal:
         """Returns the value of e^32 as a Decimal."""
-        return Decimal.from_words(0x18420EB, 0xCC2501E6, 0xFF24A138, 0xF0000)
+        return Decimal(0x18420EB, 0xCC2501E6, 0xFF24A138, 0xF0000)
 
     @staticmethod
     fn E05() -> Decimal:
         """Returns the value of e^0.5 = e^(1/2) as a Decimal."""
-        return Decimal.from_words(0x8E99DD66, 0xC210E35C, 0x3545E717, 0x1C0000)
+        return Decimal(0x8E99DD66, 0xC210E35C, 0x3545E717, 0x1C0000)
 
     @staticmethod
     fn E025() -> Decimal:
         """Returns the value of e^0.25 = e^(1/4) as a Decimal."""
-        return Decimal.from_words(0xB43646F1, 0x2654858A, 0x297D3595, 0x1C0000)
+        return Decimal(0xB43646F1, 0x2654858A, 0x297D3595, 0x1C0000)
 
     @staticmethod
     fn LN10() -> Decimal:
@@ -313,7 +312,7 @@ struct Decimal(
         Returns:
             A Decimal representation of ln(10) with maximum precision.
         """
-        return Decimal.from_words(0x9FA69733, 0x1414B220, 0x4A668998, 0x1C0000)
+        return Decimal(0x9FA69733, 0x1414B220, 0x4A668998, 0x1C0000)
 
     # ===------------------------------------------------------------------=== #
     # Constructors and life time dunder methods
@@ -329,6 +328,20 @@ struct Decimal(
         self.flags = 0x00000000
 
     fn __init__(
+        out self, low: UInt32, mid: UInt32, high: UInt32, flags: UInt32
+    ):
+        """
+        Initializes a Decimal with four raw words of internal representation.
+        ***WARNING***: This method does not check the flags.
+        If you are not sure about the flags, use `Decimal.from_words()` instead.
+        """
+
+        self.low = low
+        self.mid = mid
+        self.high = high
+        self.flags = flags
+
+    fn __init__(
         out self,
         low: UInt32,
         mid: UInt32,
@@ -338,57 +351,25 @@ struct Decimal(
     ) raises:
         """
         Initializes a Decimal with five components.
-        If the scale is greater than MAX_SCALE, it is set to MAX_SCALE.
-
-        Args:
-            low: Least significant 32 bits of coefficient.
-            mid: Middle 32 bits of coefficient.
-            high: Most significant 32 bits of coefficient.
-            scale: Number of decimal places (0-28).
-            sign: True if the number is negative.
+        See `Decimal.from_components()` for more information.
         """
 
-        if scale > Self.MAX_SCALE:
+        try:
+            self = Decimal.from_components(low, mid, high, scale, sign)
+        except e:
             raise Error(
-                String(
-                    "Error in Decimal constructor with five components: Scale"
-                    " must be between 0 and 28, but got {}"
-                ).format(scale)
+                "Error in `Decimal.__init__()` with five components: ", e
             )
 
-        var flags: UInt32 = 0
-        flags |= (scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
-        flags |= sign << 31
-
-        self.low = low
-        self.mid = mid
-        self.high = high
-        self.flags = flags
-
-    fn __init__(out self, integer: Int):
+    fn __init__(out self, value: Int, scale: UInt32 = 0) raises:
         """
         Initializes a Decimal from an integer.
-
-        Notes:
-        Since Int is a 64-bit type in Mojo, this constructor can only
-        handle values up to 64 bits. The `high` field will always be 0.
+        See `from_int()` for more information.
         """
-
-        # Initialize flags
-        self.flags = 0
-
-        # Set sign bit if negative
-        var is_negative = integer < 0
-        if is_negative:
-            self.flags = Self.SIGN_MASK
-
-        # Take absolute value
-        var abs_value = UInt64(integer if integer >= 0 else -integer)
-
-        # Set the coefficient fields (same for both positive and negative)
-        self.low = UInt32(abs_value & 0xFFFFFFFF)
-        self.mid = UInt32((abs_value >> 32) & 0xFFFFFFFF)
-        self.high = 0
+        try:
+            self = Decimal.from_int(value, scale)
+        except e:
+            raise Error("Error in `Decimal.__init__()` with Int: ", e)
 
     fn __init__(out self, value: String) raises:
         """
@@ -425,21 +406,132 @@ struct Decimal(
     # ===------------------------------------------------------------------=== #
 
     @staticmethod
+    fn from_components(
+        low: UInt32,
+        mid: UInt32,
+        high: UInt32,
+        scale: UInt32,
+        sign: Bool,
+    ) raises -> Self:
+        """
+        Initializes a Decimal with five components.
+
+        Args:
+            low: Least significant 32 bits of coefficient.
+            mid: Middle 32 bits of coefficient.
+            high: Most significant 32 bits of coefficient.
+            scale: Number of decimal places (0-28).
+            sign: True if the number is negative.
+
+        Returns:
+            A Decimal instance with the given components.
+
+        Raises:
+            Error: If the scale is greater than MAX_SCALE.
+        """
+
+        if scale > Self.MAX_SCALE:
+            raise Error(
+                String(
+                    "Error in Decimal constructor with five components: Scale"
+                    " must be between 0 and 28, but got {}"
+                ).format(scale)
+            )
+
+        var flags: UInt32 = 0
+        flags |= (scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
+        flags |= sign << 31
+
+        return Decimal(low, mid, high, flags)
+
+    @staticmethod
     fn from_words(
         low: UInt32, mid: UInt32, high: UInt32, flags: UInt32
-    ) -> Self:
+    ) raises -> Self:
         """
-        Initializes a Decimal with internal representation fields.
-        We do not check whether the scale is within the valid range.
+        Initializes a Decimal with four raw words of internal representation.
+        Compared to `__init__()` with four words, this method checks the flags.
+
+        Args:
+            low: Least significant 32 bits of coefficient.
+            mid: Middle 32 bits of coefficient.
+            high: Most significant 32 bits of coefficient.
+            flags: Scale information and the sign.
+
+        Returns:
+            A Decimal instance with the given words.
+
+        Raises:
+            Error: If the `flags` word is invalid.
+            Error: If the scale is greater than MAX_SCALE.
         """
 
-        var result = Decimal()
-        result.low = low
-        result.mid = mid
-        result.high = high
-        result.flags = flags
+        # Check whether the `flags` word is valid.
+        testing.assert_true(
+            (flags & 0b0111_1111_0000_0000_1111_1111_1111_1111) == 0,
+            String(
+                "Error in Decimal constructor with four words: Flags must"
+                " have bits 0-15 and 24-30 set to zero, but got {}"
+            ).format(flags),
+        )
+        testing.assert_true(
+            ((flags & 0x00FF0000) >> Self.SCALE_SHIFT) <= Self.MAX_SCALE,
+            String(
+                "Error in Decimal constructor with four words: Scale must"
+                " be between 0 and 28, but got {}"
+            ).format((flags & 0x00FF0000) >> Self.SCALE_SHIFT),
+        )
 
-        return result
+        return Decimal(low, mid, high, flags)
+
+    @staticmethod
+    fn from_int(value: Int, scale: UInt32) raises -> Self:
+        """
+        Initializes a Decimal from an integer.
+
+        Args:
+            value: The integer value to convert to Decimal.
+            scale: The number of decimal places (0-28).
+
+        Returns:
+            The Decimal representation of the integer.
+
+        Raises:
+            Error: If the scale is greater than MAX_SCALE.
+
+        Notes:
+        Since Int is a 64-bit type in Mojo, the `high` field will always be 0.
+        """
+
+        var low: UInt32
+        var mid: UInt32
+        var high: UInt32
+        var flags: UInt32
+
+        if scale > Self.MAX_SCALE:
+            raise Error(
+                String(
+                    "Error in Decimal constructor with Int: Scale must be"
+                    " between 0 and 28, but got {}"
+                ).format(scale)
+            )
+
+        if value >= 0:
+            flags = 0
+            low = UInt32(value & 0xFFFFFFFF)
+            mid = UInt32((value >> 32) & 0xFFFFFFFF)
+            high = 0
+
+        else:
+            var abs_value = -value
+            flags = Self.SIGN_MASK
+            low = UInt32(abs_value & 0xFFFFFFFF)
+            mid = UInt32((abs_value >> 32) & 0xFFFFFFFF)
+            high = 0
+
+        flags |= (scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
+
+        return Decimal(low, mid, high, flags)
 
     @staticmethod
     fn from_uint128(

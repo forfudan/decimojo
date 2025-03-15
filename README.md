@@ -2,7 +2,7 @@
 
 A fixed-point decimal arithmetic library implemented in [the Mojo programming language 🔥](https://www.modular.com/mojo).
 
-**[中文·漢字»](https://github.com/forFudan/DeciMojo/blob/main/docs/README_ZH.md)**
+**[中文·漢字»](./docs/readme_zht)**
 
 ## Overview
 
