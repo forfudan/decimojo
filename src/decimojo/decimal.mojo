@@ -1,5 +1,4 @@
 # ===----------------------------------------------------------------------=== #
-#
 # DeciMojo: A fixed-point decimal arithmetic library in Mojo
 # https://github.com/forFudan/DeciMojo
 #
@@ -16,7 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 # ===----------------------------------------------------------------------=== #
 #
 # Implements basic object methods for the Decimal type
@@ -967,7 +965,7 @@ struct Decimal(
             The floating-point representation of this Decimal.
         """
 
-        var result = Float64(self.coefficient()) / (10 ** self.scale())
+        var result = Float64(self.coefficient()) / (Float64(10) ** self.scale())
         result = -result if self.is_negative() else result
 
         return result

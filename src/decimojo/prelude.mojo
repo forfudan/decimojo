@@ -1,5 +1,4 @@
 # ===----------------------------------------------------------------------=== #
-#
 # DeciMojo: A fixed-point decimal arithmetic library in Mojo
 # https://github.com/forFudan/DeciMojo
 #
@@ -16,7 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 # ===----------------------------------------------------------------------=== #
 
 """
