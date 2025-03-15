@@ -36,6 +36,7 @@
 Implements functions for mathematical operations on Decimal objects.
 """
 
+import time
 import testing
 
 from decimojo.decimal import Decimal
@@ -654,6 +655,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     # Or truncates the product to fit into Decimal's capacity
 
     var prod: UInt256 = UInt256(x1_coef) * UInt256(x2_coef)
+
     # Truncated first 29 digits
     var truncated_prod_at_max_length = decimojo.utility.round_to_keep_first_n_digits(
         prod, Decimal.MAX_NUM_DIGITS
@@ -664,6 +666,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     var num_digits_of_integral_part = decimojo.utility.number_of_digits(
         prod
     ) - combined_scale
+
     # Check for overflow of the integral part after rounding
     if (num_digits_of_integral_part >= Decimal.MAX_NUM_DIGITS) & (
         truncated_prod_at_max_length > Decimal.MAX_AS_UINT256
