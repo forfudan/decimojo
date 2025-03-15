@@ -372,12 +372,7 @@ fn round_to_keep_first_n_digits[
         return 0
 
     var ndigits_of_x: Int
-
-    @parameter
-    if dtype == DType.uint256:
-        ndigits_of_x = number_of_digits_uint256(UInt256(value))
-    else:
-        ndigits_of_x = number_of_digits(value)
+    ndigits_of_x = number_of_digits(value)
 
     # CASE: If the number of digits is greater than or equal to the specified digits
     # Return the value.
@@ -434,41 +429,35 @@ fn round_to_keep_first_n_digits[
         return truncated_value
 
 
-fn number_of_digits[dtype: DType, //](owned value: Scalar[dtype]) -> Int:
-    """
-    Returns the number of (significant) digits in an intergral value.
-
-    Constraints:
-        `dtype` must be integral.
-    """
-
-    constrained[
-        dtype.is_integral(),
-        "must be intergral",
-    ]()
-
-    if value < 0:
-        value = -value
-
-    var count = 0
-    while value > 0:
-        value //= 10
-        count += 1
-
-    return count
-
-
-# TODO: Do this also for UInt128
 @always_inline
-fn number_of_digits_uint256(value: UInt256) -> Int:
+fn number_of_digits[dtype: DType](value: Scalar[dtype]) -> Int:
     """
     Returns the number of (significant) digits in an integral value using binary search.
     This implementation is significantly faster than loop division.
+
+    Parameters:
+        dtype: The Mojo scalar type to calculate the number of digits for.
+
+    Args:
+        value: The integral value to calculate the number of digits for.
+
+    Constraints:
+        `dtype` must be either `DType.uint128` or `DType.uint256`.
+
+    Returns:
+        The number of digits in the integral value.
     """
+
+    constrained[
+        dtype == DType.uint128 or dtype == DType.uint256,
+        "must be uint128 or uint256",
+    ]()
+
+    alias ValueType = Scalar[dtype]
 
     # Handle edge cases
     if value == 0:
-        return 1
+        return 0
     # Binary search to determine the number of digits
     # First check small numbers with direct comparison (most common case)
     if value < 10:
@@ -492,108 +481,114 @@ fn number_of_digits_uint256(value: UInt256) -> Int:
 
     # For larger numbers, use binary search with limited indentation
     # Medium range: 10^10 to 10^19
-    if value < UInt256(10) ** 19:  # < 10^19
-        if value < UInt256(10) ** 13:  # < 10^13
-            if value < UInt256(10) ** 10:  # < 10^10
+    if value < ValueType(10) ** 19:  # < 10^19
+        if value < ValueType(10) ** 13:  # < 10^13
+            if value < ValueType(10) ** 10:  # < 10^10
                 return 10
-            if value < UInt256(10) ** 11:  # < 10^11
+            if value < ValueType(10) ** 11:  # < 10^11
                 return 11
-            if value < UInt256(10) ** 12:  # < 10^12
+            if value < ValueType(10) ** 12:  # < 10^12
                 return 12
             return 13
-        if value < UInt256(10) ** 16:  # < 10^16
-            if value < UInt256(10) ** 14:  # < 10^14
+        if value < ValueType(10) ** 16:  # < 10^16
+            if value < ValueType(10) ** 14:  # < 10^14
                 return 14
-            if value < UInt256(10) ** 15:  # < 10^15
+            if value < ValueType(10) ** 15:  # < 10^15
                 return 15
             return 16
-        if value < UInt256(10) ** 17:  # < 10^17
+        if value < ValueType(10) ** 17:  # < 10^17
             return 17
-        if value < UInt256(10) ** 18:  # < 10^18
+        if value < ValueType(10) ** 18:  # < 10^18
             return 18
         return 19
 
     # Large range: 10^19 to 10^38 (UInt128 max is ~10^38)
-    if value < UInt256(10) ** 37:  # < 10^37
-        if value < UInt256(10) ** 28:  # < 10^28
-            if value < UInt256(10) ** 22:  # < 10^22
-                if value < UInt256(10) ** 20:  # < 10^20
+    if value < ValueType(10) ** 37:  # < 10^37
+        if value < ValueType(10) ** 28:  # < 10^28
+            if value < ValueType(10) ** 22:  # < 10^22
+                if value < ValueType(10) ** 20:  # < 10^20
                     return 20
-                if value < UInt256(10) ** 21:  # < 10^21
+                if value < ValueType(10) ** 21:  # < 10^21
                     return 21
                 return 22
-            if value < UInt256(10) ** 24:  # < 10^24
-                if value < UInt256(10) ** 23:  # < 10^23
+            if value < ValueType(10) ** 24:  # < 10^24
+                if value < ValueType(10) ** 23:  # < 10^23
                     return 23
                 return 24
-            if value < UInt256(10) ** 25:  # < 10^25
+            if value < ValueType(10) ** 25:  # < 10^25
                 return 25
-            if value < UInt256(10) ** 26:  # < 10^26
+            if value < ValueType(10) ** 26:  # < 10^26
                 return 26
-            if value < UInt256(10) ** 27:  # < 10^27
+            if value < ValueType(10) ** 27:  # < 10^27
                 return 27
             return 28
-        if value < UInt256(10) ** 31:  # < 10^31
-            if value < UInt256(10) ** 29:  # < 10^29
+        if value < ValueType(10) ** 31:  # < 10^31
+            if value < ValueType(10) ** 29:  # < 10^29
                 return 29
-            if value < UInt256(10) ** 30:  # < 10^30
+            if value < ValueType(10) ** 30:  # < 10^30
                 return 30
             return 31
-        if value < UInt256(10) ** 33:  # < 10^33
-            if value < UInt256(10) ** 32:  # < 10^32
+        if value < ValueType(10) ** 33:  # < 10^33
+            if value < ValueType(10) ** 32:  # < 10^32
                 return 32
             return 33
-        if value < UInt256(10) ** 34:  # < 10^34
+        if value < ValueType(10) ** 34:  # < 10^34
             return 34
-        if value < UInt256(10) ** 35:  # < 10^35
+        if value < ValueType(10) ** 35:  # < 10^35
             return 35
-        if value < UInt256(10) ** 36:  # < 10^36
+        if value < ValueType(10) ** 36:  # < 10^36
             return 36
         return 37
 
     # Very large range: 10^37 to 10^77 (UInt256 max is ~10^77)
-    if value < UInt256(10) ** 38:  # < 10^38
+    if value < ValueType(10) ** 38:  # < 10^38
         return 38
-    if value < UInt256(10) ** 39:  # < 10^39
+
+    # For UInt128, the maximum number of digits is 39
+    # We can already return the result here
+    if dtype == DType.uint128:
+        return 39
+
+    if value < ValueType(10) ** 39:  # < 10^39
         return 39
 
     # Use additional binary searches for UInt256 range (10^39 to 10^77)
-    if value < UInt256(10) ** 58:  # < 10^58
-        if value < UInt256(10) ** 47:  # < 10^47
-            if value < UInt256(10) ** 43:  # < 10^43
-                if value < UInt256(10) ** 40:  # < 10^40
+    if value < ValueType(10) ** 58:  # < 10^58
+        if value < ValueType(10) ** 47:  # < 10^47
+            if value < ValueType(10) ** 43:  # < 10^43
+                if value < ValueType(10) ** 40:  # < 10^40
                     return 40
-                if value < UInt256(10) ** 41:  # < 10^41
+                if value < ValueType(10) ** 41:  # < 10^41
                     return 41
-                if value < UInt256(10) ** 42:  # < 10^42
+                if value < ValueType(10) ** 42:  # < 10^42
                     return 42
                 return 43
-            if value < UInt256(10) ** 44:  # < 10^44
+            if value < ValueType(10) ** 44:  # < 10^44
                 return 44
-            if value < UInt256(10) ** 45:  # < 10^45
+            if value < ValueType(10) ** 45:  # < 10^45
                 return 45
-            if value < UInt256(10) ** 46:  # < 10^46
+            if value < ValueType(10) ** 46:  # < 10^46
                 return 46
             return 47
-        if value < UInt256(10) ** 52:  # < 10^52
-            if value < UInt256(10) ** 48:  # < 10^48
+        if value < ValueType(10) ** 52:  # < 10^52
+            if value < ValueType(10) ** 48:  # < 10^48
                 return 48
-            if value < UInt256(10) ** 49:  # < 10^49
+            if value < ValueType(10) ** 49:  # < 10^49
                 return 49
-            if value < UInt256(10) ** 50:  # < 10^50
+            if value < ValueType(10) ** 50:  # < 10^50
                 return 50
-            if value < UInt256(10) ** 51:  # < 10^51
+            if value < ValueType(10) ** 51:  # < 10^51
                 return 51
             return 52
-        if value < UInt256(10) ** 54:  # < 10^54
-            if value < UInt256(10) ** 53:  # < 10^53
+        if value < ValueType(10) ** 54:  # < 10^54
+            if value < ValueType(10) ** 53:  # < 10^53
                 return 53
             return 54
-        if value < UInt256(10) ** 56:  # < 10^56
-            if value < UInt256(10) ** 55:  # < 10^55
+        if value < ValueType(10) ** 56:  # < 10^56
+            if value < ValueType(10) ** 55:  # < 10^55
                 return 55
             return 56
-        if value < UInt256(10) ** 57:  # < 10^57
+        if value < ValueType(10) ** 57:  # < 10^57
             return 57
         return 58
 

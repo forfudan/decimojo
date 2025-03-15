@@ -6,6 +6,7 @@ from bench_sqrt import main as bench_sqrt
 from bench_from_float import main as bench_from_float
 from bench_from_string import main as bench_from_string
 from bench_comparison import main as bench_comparison
+from bench_exp import main as bench_exp
 
 
 fn main() raises:
@@ -17,3 +18,4 @@ fn main() raises:
     bench_from_float()
     bench_from_string()
     bench_comparison()
+    bench_exp()
