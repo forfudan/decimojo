@@ -36,6 +36,7 @@
 Implements functions for mathematical operations on Decimal objects.
 """
 
+import time
 import testing
 
 from decimojo.decimal import Decimal
@@ -64,53 +65,57 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
     var x1_scale = x1.scale()
     var x2_scale = x2.scale()
 
-    # Special case for zeros
-
+    # CASE: Zeros
     if x1_coef == 0 and x2_coef == 0:
         var scale = max(x1_scale, x2_scale)
         return Decimal(0, 0, 0, scale, False)
 
     elif x1_coef == 0:
-        var sum_coef = x2_coef
-        var scale = min(
-            max(x1_scale, x2_scale),
-            Decimal.MAX_NUM_DIGITS
-            - decimojo.utility.number_of_digits(x2.to_uint128()),
-        )
-        ## If x2_coef > 7922816251426433759354395033
-        if (
-            (x2_coef > Decimal.MAX_AS_UINT128 // 10)
-            and (scale > 0)
-            and (scale > x2_scale)
-        ):
-            scale -= 1
-        sum_coef *= UInt128(10) ** (scale - x2_scale)
-        var low = UInt32(sum_coef & 0xFFFFFFFF)
-        var mid = UInt32((sum_coef >> 32) & 0xFFFFFFFF)
-        var high = UInt32((sum_coef >> 64) & 0xFFFFFFFF)
-        return Decimal(low, mid, high, scale, x2.is_negative())
+        if x1_scale <= x2_scale:
+            return x2
+
+        else:  # x1_scale > x2_scale
+            # Scale up x2_coef to match x1_scale
+
+            var sum_coef = x2_coef
+            var scale = min(
+                max(x1_scale, x2_scale),
+                Decimal.MAX_NUM_DIGITS
+                - decimojo.utility.number_of_digits(x2.to_uint128()),
+            )
+            ## If x2_coef > 7922816251426433759354395033
+            if (
+                (x2_coef > Decimal.MAX_AS_UINT128 // 10)
+                and (scale > 0)
+                and (scale > x2_scale)
+            ):
+                scale -= 1
+            sum_coef *= UInt128(10) ** (scale - x2_scale)
+            return Decimal.from_uint128(sum_coef, scale, x2.is_negative())
 
     elif x2_coef == 0:
-        var sum_coef = x1_coef
-        var scale = min(
-            max(x1_scale, x2_scale),
-            Decimal.MAX_NUM_DIGITS
-            - decimojo.utility.number_of_digits(x1.to_uint128()),
-        )
-        ## If x1_coef > 7922816251426433759354395033
-        if (
-            (x1_coef > Decimal.MAX_AS_UINT128 // 10)
-            and (scale > 0)
-            and (scale > x1_scale)
-        ):
-            scale -= 1
-        sum_coef *= UInt128(10) ** (scale - x1_scale)
-        var low = UInt32(sum_coef & 0xFFFFFFFF)
-        var mid = UInt32((sum_coef >> 32) & 0xFFFFFFFF)
-        var high = UInt32((sum_coef >> 64) & 0xFFFFFFFF)
-        return Decimal(low, mid, high, scale, x1.is_negative())
+        if x2_scale <= x1_scale:
+            return x1
 
-    # Integer addition with scale of 0 (true integers)
+        else:  # x2_scale > x1_scale
+            # Scale up x1_coef to match x2_scale
+            var sum_coef = x1_coef
+            var scale = min(
+                max(x1_scale, x2_scale),
+                Decimal.MAX_NUM_DIGITS
+                - decimojo.utility.number_of_digits(x1.to_uint128()),
+            )
+            ## If x1_coef > 7922816251426433759354395033
+            if (
+                (x1_coef > Decimal.MAX_AS_UINT128 // 10)
+                and (scale > 0)
+                and (scale > x1_scale)
+            ):
+                scale -= 1
+            sum_coef *= UInt128(10) ** (scale - x1_scale)
+            return Decimal.from_uint128(sum_coef, scale, x1.is_negative())
+
+    # CASE: Integer addition with scale of 0 (true integers)
     elif x1_scale == 0 and x2_scale == 0:
         # Same sign: add absolute values and keep the sign
         if x1.is_negative() == x2.is_negative():
@@ -147,7 +152,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
 
             return Decimal(low, mid, high, 0, is_negative)
 
-    # Integer addition with positive scales
+    # CASE: Integer addition with positive scales
     elif x1.is_integer() and x2.is_integer():
         # Same sign: add absolute values and keep the sign
         if x1.is_negative() == x2.is_negative():
@@ -206,94 +211,130 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
 
             return Decimal(low, mid, high, scale, is_negative)
 
-    # Float addition with the same scale
+    # CASE: Float addition with the same scale
     elif x1_scale == x2_scale:
-        var summation: Int128  # 97-bit signed integer can be stored in Int128
-        summation = (-1) ** x1.is_negative() * Int128(x1_coef) + (
-            -1
-        ) ** x2.is_negative() * Int128(x2_coef)
+        var summation: UInt128
+        var is_negative: Bool
 
-        var is_negative = summation < 0
-        if is_negative:
-            summation = -summation
-
-        # Now we need to truncate the summation to fit in 96 bits
-        var final_scale: Int
-        var truncated_summation = UInt128(summation)
+        if x1.is_negative() == x2.is_negative():
+            is_negative = x1.is_negative()
+            summation = x1_coef + x2_coef
+        else:  # Different signs
+            if x1_coef > x2_coef:
+                summation = x1_coef - x2_coef
+                is_negative = x1.is_negative()
+            elif x1_coef < x2_coef:
+                summation = x2_coef - x1_coef
+                is_negative = x2.is_negative()
+            else:  # x1_coef == x2_coef
+                return Decimal.from_uint128(UInt128(0), x1_scale, False)
 
         # If the summation fits in 96 bits, we can use the original scale
-        if summation < Decimal.MAX_AS_INT128:
-            final_scale = x1_scale
+        if summation < Decimal.MAX_AS_UINT128:
+            return Decimal.from_uint128(summation, x1_scale, is_negative)
 
-        # Otherwise, we need to truncate the summation to fit in 96 bits
+        # Otherwise, it is >= 29 digits
+        # we need to truncate the summation to fit in 96 bits
         else:
-            truncated_summation = decimojo.utility.truncate_to_max(
-                truncated_summation
+            var ndigits_summation = decimojo.utility.number_of_digits(summation)
+            var ndigits_int_summation = ndigits_summation - x1_scale
+            var final_scale = Decimal.MAX_NUM_DIGITS - ndigits_int_summation
+
+            var truncated_summation = decimojo.utility.round_to_keep_first_n_digits(
+                summation, Decimal.MAX_NUM_DIGITS
             )
-            final_scale = decimojo.utility.number_of_digits(
-                truncated_summation
-            ) - (
-                decimojo.utility.number_of_digits(summation)
-                - max(x1_scale, x2_scale)
+            if truncated_summation > Decimal.MAX_AS_UINT128:
+                truncated_summation = (
+                    decimojo.utility.round_to_keep_first_n_digits(
+                        summation, Decimal.MAX_NUM_DIGITS - 1
+                    )
+                )
+                final_scale -= 1
+
+            return Decimal.from_uint128(
+                truncated_summation, final_scale, is_negative
             )
 
-        # Extract the 32-bit components from the Int256 difference
-        low = UInt32(truncated_summation & 0xFFFFFFFF)
-        mid = UInt32((truncated_summation >> 32) & 0xFFFFFFFF)
-        high = UInt32((truncated_summation >> 64) & 0xFFFFFFFF)
+    # CASE: Float addition which with different scales
+    else:  # x1_scale != x2_scale
+        var summation: UInt256
+        var is_negative: Bool
 
-        return Decimal(low, mid, high, final_scale, is_negative)
-
-    # Float addition which with different scales
-    else:
-        var summation: Int256
-        if x1_scale == x2_scale:
-            summation = (-1) ** x1.is_negative() * Int256(x1_coef) + (
-                -1
-            ) ** x2.is_negative() * Int256(x2_coef)
-        elif x1_scale > x2_scale:
-            summation = (-1) ** x1.is_negative() * Int256(x1_coef) + (
-                -1
-            ) ** x2.is_negative() * Int256(x2_coef) * Int256(10) ** (
+        if x1_scale > x2_scale:
+            # Scale up x2_coef to match x1_scale
+            var x1_coef_scaled: UInt256 = UInt256(x1_coef)
+            var x2_coef_scaled: UInt256 = UInt256(x2_coef) * UInt256(10) ** (
                 x1_scale - x2_scale
             )
-        else:
-            summation = (-1) ** x1.is_negative() * Int256(x1_coef) * Int256(
-                10
-            ) ** (x2_scale - x1_scale) + (-1) ** x2.is_negative() * Int256(
-                x2_coef
+
+            if x1.is_negative() == x2.is_negative():
+                is_negative = x1.is_negative()
+                summation = x1_coef_scaled + x2_coef_scaled
+            else:  # Different signs
+                if x1_coef_scaled > x2_coef_scaled:
+                    summation = x1_coef_scaled - x2_coef_scaled
+                    is_negative = x1.is_negative()
+                elif x1_coef_scaled < x2_coef_scaled:
+                    summation = x2_coef_scaled * x1_coef_scaled
+                    is_negative = x2.is_negative()
+                else:
+                    return Decimal.from_uint128(UInt128(0), x1_scale, False)
+
+        else:  # x1_scale < x2_scale
+            # Scale up x1_coef to match x2_scale
+            var x1_coef_scaled: UInt256 = UInt256(x1_coef) * UInt256(10) ** (
+                x2_scale - x1_scale
             )
+            var x2_coef_scaled: UInt256 = UInt256(x2_coef)
 
-        var is_negative = summation < 0
-        if is_negative:
-            summation = -summation
-
-        # Now we need to truncate the summation to fit in 96 bits
-        var final_scale: Int
-        var truncated_summation = UInt256(summation)
+            if x1.is_negative() == x2.is_negative():
+                is_negative = x1.is_negative()
+                summation = x2_coef_scaled + x1_coef_scaled
+            else:  # Different signs
+                if x1_coef_scaled > x2_coef_scaled:
+                    summation = x1_coef_scaled - x2_coef_scaled
+                    is_negative = x1.is_negative()
+                elif x1_coef_scaled < x2_coef_scaled:
+                    summation = x2_coef_scaled - x1_coef_scaled
+                    is_negative = x2.is_negative()
+                else:
+                    return Decimal.from_uint128(UInt128(0), x2_scale, False)
 
         # If the summation fits in 96 bits, we can use the original scale
-        if summation < Decimal.MAX_AS_INT256:
-            final_scale = max(x1_scale, x2_scale)
+        if summation < Decimal.MAX_AS_UINT256:
+            return Decimal.from_uint128(
+                UInt128(summation & 0x00000000_FFFFFFFF_FFFFFFFF_FFFFFFFF),
+                max(x1_scale, x2_scale),
+                is_negative,
+            )
 
+        # Otherwise, it is >= 29 digits
         # Otherwise, we need to truncate the summation to fit in 96 bits
         else:
-            truncated_summation = decimojo.utility.truncate_to_max(
-                truncated_summation
+            var ndigits_summation = decimojo.utility.number_of_digits(summation)
+            var ndigits_int_summation = ndigits_summation - max(
+                x1_scale, x2_scale
             )
-            final_scale = decimojo.utility.number_of_digits(
-                truncated_summation
-            ) - (
-                decimojo.utility.number_of_digits(summation)
-                - max(x1_scale, x2_scale)
+            var final_scale = Decimal.MAX_NUM_DIGITS - ndigits_int_summation
+
+            truncated_summation = decimojo.utility.round_to_keep_first_n_digits(
+                summation, Decimal.MAX_NUM_DIGITS
             )
+            if truncated_summation > Decimal.MAX_AS_UINT256:
+                truncated_summation = (
+                    decimojo.utility.round_to_keep_first_n_digits(
+                        summation, Decimal.MAX_NUM_DIGITS - 1
+                    )
+                )
+                final_scale -= 1
 
-        # Extract the 32-bit components from the Int256 difference
-        low = UInt32(truncated_summation & 0xFFFFFFFF)
-        mid = UInt32((truncated_summation >> 32) & 0xFFFFFFFF)
-        high = UInt32((truncated_summation >> 64) & 0xFFFFFFFF)
-
-        return Decimal(low, mid, high, final_scale, is_negative)
+            return Decimal.from_uint128(
+                UInt128(
+                    truncated_summation & 0x00000000_FFFFFFFF_FFFFFFFF_FFFFFFFF
+                ),
+                final_scale,
+                is_negative,
+            )
 
 
 fn subtract(x1: Decimal, x2: Decimal) raises -> Decimal:
@@ -594,18 +635,19 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     # IMPORTANT: This means that the product will exceed Decimal's capacity
     # Either raises an error if intergral part overflows
     # Or truncates the product to fit into Decimal's capacity
+
     if combined_num_bits <= 128:
         var prod: UInt128 = x1_coef * x2_coef
+        # Truncated first 29 digits
+        var truncated_prod_at_max_length = decimojo.utility.round_to_keep_first_n_digits(
+            prod, Decimal.MAX_NUM_DIGITS
+        )
 
         # Check outflow
         # The number of digits of the integral part
         var num_digits_of_integral_part = decimojo.utility.number_of_digits(
             prod
         ) - combined_scale
-        # Truncated first 29 digits
-        var truncated_prod_at_max_length = decimojo.utility.round_to_keep_first_n_digits(
-            prod, Decimal.MAX_NUM_DIGITS
-        )
         if (num_digits_of_integral_part >= Decimal.MAX_NUM_DIGITS) & (
             truncated_prod_at_max_length > Decimal.MAX_AS_UINT128
         ):
@@ -651,17 +693,20 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     # IMPORTANT: This means that the product will exceed Decimal's capacity
     # Either raises an error if intergral part overflows
     # Or truncates the product to fit into Decimal's capacity
+
     var prod: UInt256 = UInt256(x1_coef) * UInt256(x2_coef)
+
+    # Truncated first 29 digits
+    var truncated_prod_at_max_length = decimojo.utility.round_to_keep_first_n_digits(
+        prod, Decimal.MAX_NUM_DIGITS
+    )
 
     # Check outflow
     # The number of digits of the integral part
     var num_digits_of_integral_part = decimojo.utility.number_of_digits(
         prod
     ) - combined_scale
-    # Truncated first 29 digits
-    var truncated_prod_at_max_length = decimojo.utility.round_to_keep_first_n_digits(
-        prod, Decimal.MAX_NUM_DIGITS
-    )
+
     # Check for overflow of the integral part after rounding
     if (num_digits_of_integral_part >= Decimal.MAX_NUM_DIGITS) & (
         truncated_prod_at_max_length > Decimal.MAX_AS_UINT256
@@ -686,7 +731,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
         prod = truncated_prod_at_max_length
 
     # I think combined_scale should always be smaller
-    final_scale = min(num_digits_of_decimal_part, combined_scale)
+    var final_scale = min(num_digits_of_decimal_part, combined_scale)
 
     if final_scale > Decimal.MAX_SCALE:
         var ndigits_prod = decimojo.utility.number_of_digits(prod)

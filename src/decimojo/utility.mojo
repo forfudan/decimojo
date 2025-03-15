@@ -25,6 +25,7 @@
 # ===----------------------------------------------------------------------=== #
 
 from memory import UnsafePointer
+import time
 
 from decimojo.decimal import Decimal
 
@@ -128,7 +129,7 @@ fn scale_up(value: Decimal, owned level: Int) raises -> Decimal:
     # TODO: Check if multiplication by 10^level would cause overflow
     # If yes, then raise an error
     #
-    var max_coefficient = ~UInt128(0) / UInt128(10**level)
+    var max_coefficient = ~UInt128(0) / UInt128(10) ** level
     if coefficient > max_coefficient:
         # Handle overflow case - limit to maximum value or raise error
         coefficient = ~UInt128(0)
@@ -190,7 +191,7 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
         var digits_to_remove = ndigits - Decimal.MAX_NUM_DIGITS
 
         # Collect digits for rounding decision
-        var divisor = ValueType(10) ** ValueType(digits_to_remove)
+        var divisor = power_of_10[dtype](digits_to_remove)
         var truncated_value = value // divisor
 
         if truncated_value == ValueType(Decimal.MAX_AS_UINT128):
@@ -204,7 +205,9 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
             var remainder = value % divisor
 
             # Get the most significant digit of the remainder for rounding
-            var rounding_digit = remainder // 10 ** (digits_to_remove - 1)
+            var rounding_digit = remainder // power_of_10[dtype](
+                digits_to_remove - 1
+            )
 
             # Check if we need to round up based on banker's rounding (ROUND_HALF_EVEN)
             var round_up = False
@@ -214,7 +217,7 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
                 round_up = True
             # If rounding digit is 5, check if there are any non-zero digits after it
             elif rounding_digit == 5:
-                var has_nonzero_after = remainder > 5 * 10 ** (
+                var has_nonzero_after = remainder > 5 * power_of_10[dtype](
                     digits_to_remove - 1
                 )
                 # If there are non-zero digits after, round up
@@ -245,12 +248,14 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
                 digits_to_remove += 1
 
             # Collect digits for rounding decision
-            divisor = ValueType(10) ** ValueType(digits_to_remove)
+            divisor = power_of_10[dtype](digits_to_remove)
             truncated_value = value // divisor
             var remainder = value % divisor
 
             # Get the most significant digit of the remainder for rounding
-            var rounding_digit = remainder // 10 ** (digits_to_remove - 1)
+            var rounding_digit = remainder // power_of_10[dtype](
+                digits_to_remove - 1
+            )
 
             # Check if we need to round up based on banker's rounding (ROUND_HALF_EVEN)
             var round_up = False
@@ -260,7 +265,7 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
                 round_up = True
             # If rounding digit is 5, check if there are any non-zero digits after it
             elif rounding_digit == 5:
-                var has_nonzero_after = remainder > 5 * 10 ** (
+                var has_nonzero_after = remainder > 5 * power_of_10[dtype](
                     digits_to_remove - 1
                 )
                 # If there are non-zero digits after, round up
@@ -366,7 +371,8 @@ fn round_to_keep_first_n_digits[
     if ndigits < 0:
         return 0
 
-    var ndigits_of_x = number_of_digits(value)
+    var ndigits_of_x: Int
+    ndigits_of_x = number_of_digits(value)
 
     # CASE: If the number of digits is greater than or equal to the specified digits
     # Return the value.
@@ -387,7 +393,7 @@ fn round_to_keep_first_n_digits[
         var ndigits_to_remove = ndigits_of_x - ndigits
 
         # Collect digits for rounding decision
-        var divisor = ValueType(10) ** ValueType(ndigits_to_remove)
+        var divisor = power_of_10[dtype](ndigits_to_remove)
         var truncated_value = value // divisor
         var remainder = value % divisor
 
@@ -402,13 +408,13 @@ fn round_to_keep_first_n_digits[
 
         # If RoundingMode is ROUND_HALF_UP, round up the value if remainder is greater than 5
         elif rounding_mode == RoundingMode.ROUND_HALF_UP:
-            var cutoff_value = 5 * 10 ** (ndigits_to_remove - 1)
+            var cutoff_value = 5 * power_of_10[dtype](ndigits_to_remove - 1)
             if remainder >= cutoff_value:
                 truncated_value += 1
 
         # If RoundingMode is ROUND_HALF_EVEN, round to nearest even digit if equidistant
         else:
-            var cutoff_value: ValueType = 5 * ValueType(10) ** (
+            var cutoff_value: ValueType = 5 * power_of_10[dtype](
                 ndigits_to_remove - 1
             )
             if remainder > cutoff_value:
@@ -423,28 +429,171 @@ fn round_to_keep_first_n_digits[
         return truncated_value
 
 
-fn number_of_digits[dtype: DType, //](owned value: Scalar[dtype]) -> Int:
+@always_inline
+fn number_of_digits[dtype: DType](value: Scalar[dtype]) -> Int:
     """
-    Returns the number of (significant) digits in an intergral value.
+    Returns the number of (significant) digits in an integral value using binary search.
+    This implementation is significantly faster than loop division.
+
+    Parameters:
+        dtype: The Mojo scalar type to calculate the number of digits for.
+
+    Args:
+        value: The integral value to calculate the number of digits for.
 
     Constraints:
-        `dtype` must be integral.
+        `dtype` must be either `DType.uint128` or `DType.uint256`.
+
+    Returns:
+        The number of digits in the integral value.
     """
 
     constrained[
-        dtype.is_integral(),
-        "must be intergral",
+        dtype == DType.uint128 or dtype == DType.uint256,
+        "must be uint128 or uint256",
     ]()
 
-    if value < 0:
-        value = -value
+    alias ValueType = Scalar[dtype]
 
-    var count = 0
-    while value > 0:
-        value //= 10
-        count += 1
+    # Handle edge cases
+    if value == 0:
+        return 0
+    # Binary search to determine the number of digits
+    # First check small numbers with direct comparison (most common case)
+    if value < 10:
+        return 1
+    if value < 100:
+        return 2
+    if value < 1000:
+        return 3
+    if value < 10000:
+        return 4
+    if value < 100000:
+        return 5
+    if value < 1000000:
+        return 6
+    if value < 10000000:
+        return 7
+    if value < 100000000:
+        return 8
+    if value < 1000000000:
+        return 9
 
-    return count
+    # For larger numbers, use binary search with limited indentation
+    # Medium range: 10^10 to 10^19
+    if value < ValueType(10) ** 19:  # < 10^19
+        if value < ValueType(10) ** 13:  # < 10^13
+            if value < ValueType(10) ** 10:  # < 10^10
+                return 10
+            if value < ValueType(10) ** 11:  # < 10^11
+                return 11
+            if value < ValueType(10) ** 12:  # < 10^12
+                return 12
+            return 13
+        if value < ValueType(10) ** 16:  # < 10^16
+            if value < ValueType(10) ** 14:  # < 10^14
+                return 14
+            if value < ValueType(10) ** 15:  # < 10^15
+                return 15
+            return 16
+        if value < ValueType(10) ** 17:  # < 10^17
+            return 17
+        if value < ValueType(10) ** 18:  # < 10^18
+            return 18
+        return 19
+
+    # Large range: 10^19 to 10^38 (UInt128 max is ~10^38)
+    if value < ValueType(10) ** 37:  # < 10^37
+        if value < ValueType(10) ** 28:  # < 10^28
+            if value < ValueType(10) ** 22:  # < 10^22
+                if value < ValueType(10) ** 20:  # < 10^20
+                    return 20
+                if value < ValueType(10) ** 21:  # < 10^21
+                    return 21
+                return 22
+            if value < ValueType(10) ** 24:  # < 10^24
+                if value < ValueType(10) ** 23:  # < 10^23
+                    return 23
+                return 24
+            if value < ValueType(10) ** 25:  # < 10^25
+                return 25
+            if value < ValueType(10) ** 26:  # < 10^26
+                return 26
+            if value < ValueType(10) ** 27:  # < 10^27
+                return 27
+            return 28
+        if value < ValueType(10) ** 31:  # < 10^31
+            if value < ValueType(10) ** 29:  # < 10^29
+                return 29
+            if value < ValueType(10) ** 30:  # < 10^30
+                return 30
+            return 31
+        if value < ValueType(10) ** 33:  # < 10^33
+            if value < ValueType(10) ** 32:  # < 10^32
+                return 32
+            return 33
+        if value < ValueType(10) ** 34:  # < 10^34
+            return 34
+        if value < ValueType(10) ** 35:  # < 10^35
+            return 35
+        if value < ValueType(10) ** 36:  # < 10^36
+            return 36
+        return 37
+
+    # Very large range: 10^37 to 10^77 (UInt256 max is ~10^77)
+    if value < ValueType(10) ** 38:  # < 10^38
+        return 38
+
+    # For UInt128, the maximum number of digits is 39
+    # We can already return the result here
+    if dtype == DType.uint128:
+        return 39
+
+    if value < ValueType(10) ** 39:  # < 10^39
+        return 39
+
+    # Use additional binary searches for UInt256 range (10^39 to 10^77)
+    if value < ValueType(10) ** 58:  # < 10^58
+        if value < ValueType(10) ** 47:  # < 10^47
+            if value < ValueType(10) ** 43:  # < 10^43
+                if value < ValueType(10) ** 40:  # < 10^40
+                    return 40
+                if value < ValueType(10) ** 41:  # < 10^41
+                    return 41
+                if value < ValueType(10) ** 42:  # < 10^42
+                    return 42
+                return 43
+            if value < ValueType(10) ** 44:  # < 10^44
+                return 44
+            if value < ValueType(10) ** 45:  # < 10^45
+                return 45
+            if value < ValueType(10) ** 46:  # < 10^46
+                return 46
+            return 47
+        if value < ValueType(10) ** 52:  # < 10^52
+            if value < ValueType(10) ** 48:  # < 10^48
+                return 48
+            if value < ValueType(10) ** 49:  # < 10^49
+                return 49
+            if value < ValueType(10) ** 50:  # < 10^50
+                return 50
+            if value < ValueType(10) ** 51:  # < 10^51
+                return 51
+            return 52
+        if value < ValueType(10) ** 54:  # < 10^54
+            if value < ValueType(10) ** 53:  # < 10^53
+                return 53
+            return 54
+        if value < ValueType(10) ** 56:  # < 10^56
+            if value < ValueType(10) ** 55:  # < 10^55
+                return 55
+            return 56
+        if value < ValueType(10) ** 57:  # < 10^57
+            return 57
+        return 58
+
+    # Digits more than 58 is not possible for Decimal products
+    return 59
 
 
 fn number_of_bits[dtype: DType, //](owned value: Scalar[dtype]) -> Int:
@@ -554,3 +703,153 @@ fn power_of_10_as_uint256(n: Int) raises -> UInt256:
         _power_of_10_as_uint256_cache.append(next_power)
 
     return _power_of_10_as_uint256_cache[n]
+
+
+@always_inline
+fn power_of_10[dtype: DType](n: Int) -> Scalar[dtype]:
+    """
+    Returns 10^n using cached values when available.
+    **WARNING**: The overflow is not checked in this function.
+    Make sure that the n is less than 29 for UInt128 and 77 for UInt256.
+
+    Parameters:
+        dtype: The Mojo scalar type to calculate the power of 10 for.
+
+    Args:
+        n: The exponent to raise 10 to.
+
+    Constraints:
+        `dtype` must be either `DType.uint128` or `DType.uint256`.
+
+    Returns:
+        The value of 10^n as a Mojo scalar.
+
+    Notes:
+        The powers of 10 is hard-coded up to 10^56 since it is twice the maximum
+        scale of Decimal (28). For larger values, the function calculates the
+        power of 10 using the built-in `**` operator.
+    """
+
+    alias ValueType = Scalar[dtype]
+
+    constrained[
+        dtype == DType.uint128 or dtype == DType.uint256,
+        "must be uint128 or uint256",
+    ]()
+
+    if n == 0:
+        return ValueType(1)
+    if n == 1:
+        return ValueType(10)
+    if n == 2:
+        return ValueType(100)
+    if n == 3:
+        return ValueType(1000)
+    if n == 4:
+        return ValueType(10000)
+    if n == 5:
+        return ValueType(100000)
+    if n == 6:
+        return ValueType(1000000)
+    if n == 7:
+        return ValueType(10000000)
+    if n == 8:
+        return ValueType(100000000)
+    if n == 9:
+        return ValueType(1000000000)
+    if n == 10:
+        return ValueType(10000000000)
+    if n == 11:
+        return ValueType(100000000000)
+    if n == 12:
+        return ValueType(1000000000000)
+    if n == 13:
+        return ValueType(10000000000000)
+    if n == 14:
+        return ValueType(100000000000000)
+    if n == 15:
+        return ValueType(1000000000000000)
+    if n == 16:
+        return ValueType(10000000000000000)
+    if n == 17:
+        return ValueType(100000000000000000)
+    if n == 18:
+        return ValueType(1000000000000000000)
+    if n == 19:
+        return ValueType(10000000000000000000)
+    if n == 20:
+        return ValueType(100000000000000000000)
+    if n == 21:
+        return ValueType(1000000000000000000000)
+    if n == 22:
+        return ValueType(10000000000000000000000)
+    if n == 23:
+        return ValueType(100000000000000000000000)
+    if n == 24:
+        return ValueType(1000000000000000000000000)
+    if n == 25:
+        return ValueType(10000000000000000000000000)
+    if n == 26:
+        return ValueType(100000000000000000000000000)
+    if n == 27:
+        return ValueType(1000000000000000000000000000)
+    if n == 28:
+        return ValueType(10000000000000000000000000000)
+    if n == 29:
+        return ValueType(100000000000000000000000000000)
+    if n == 30:
+        return ValueType(1000000000000000000000000000000)
+    if n == 31:
+        return ValueType(10000000000000000000000000000000)
+    if n == 32:
+        return ValueType(100000000000000000000000000000000)
+    if n == 33:
+        return ValueType(10) ** 33
+    if n == 34:
+        return ValueType(10) ** 34
+    if n == 35:
+        return ValueType(10) ** 35
+    if n == 36:
+        return ValueType(10) ** 36
+    if n == 37:
+        return ValueType(10) ** 37
+    if n == 38:
+        return ValueType(10) ** 38
+    if n == 39:
+        return ValueType(10) ** 39
+    if n == 40:
+        return ValueType(10) ** 40
+    if n == 41:
+        return ValueType(10) ** 41
+    if n == 42:
+        return ValueType(10) ** 42
+    if n == 43:
+        return ValueType(10) ** 43
+    if n == 44:
+        return ValueType(10) ** 44
+    if n == 45:
+        return ValueType(10) ** 45
+    if n == 46:
+        return ValueType(10) ** 46
+    if n == 47:
+        return ValueType(10) ** 47
+    if n == 48:
+        return ValueType(10) ** 48
+    if n == 49:
+        return ValueType(10) ** 49
+    if n == 50:
+        return ValueType(10) ** 50
+    if n == 51:
+        return ValueType(10) ** 51
+    if n == 52:
+        return ValueType(10) ** 52
+    if n == 53:
+        return ValueType(10) ** 53
+    if n == 54:
+        return ValueType(10) ** 54
+    if n == 55:
+        return ValueType(10) ** 55
+    if n == 56:
+        return ValueType(10) ** 56
+
+    return ValueType(10) ** n

@@ -823,32 +823,18 @@ fn test_sqrt_performance() raises:
 
     # Test case 7
     var num7 = Decimal("0.999999999")
-    var result7 = sqrt(num7)
-    var squared7 = result7 * result7
-    var diff7 = squared7 - num7
-    diff7 = -diff7 if diff7.is_negative() else diff7
-    var rel_diff7 = diff7 / num7
-    var diff_float7 = Float64(String(rel_diff7))
+    var result7 = String(sqrt(num7))
+    var expected_result7 = String("0.99999999949999999987")
     testing.assert_true(
-        diff_float7 < 0.00001,
-        "Square root calculation for "
-        + String(num7)
-        + " should be accurate within 0.001%",
+        result7.startswith(expected_result7), "sqrt(0.999999999)"
     )
 
     # Test case 8
     var num8 = Decimal("1.000000001")
-    var result8 = sqrt(num8)
-    var squared8 = result8 * result8
-    var diff8 = squared8 - num8
-    diff8 = -diff8 if diff8.is_negative() else diff8
-    var rel_diff8 = diff8 / num8
-    var diff_float8 = Float64(String(rel_diff8))
+    var result8 = String(sqrt(num8))
+    var expected_result8 = String("1.000000000499999999875")
     testing.assert_true(
-        diff_float8 < 0.00001,
-        "Square root calculation for "
-        + String(num8)
-        + " should be accurate within 0.001%",
+        result8.startswith(expected_result8), "sqrt(1.000000001)"
     )
 
     # Test case 9

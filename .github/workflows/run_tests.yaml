@@ -13,8 +13,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["macos-latest"]
-        # os: ["ubuntu-22.04"]
+        # os: ["macos-latest"]
+        os: ["ubuntu-22.04"]
 
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
