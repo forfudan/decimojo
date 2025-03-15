@@ -705,11 +705,29 @@ fn power_of_10_as_uint256(n: Int) raises -> UInt256:
     return _power_of_10_as_uint256_cache[n]
 
 
-# TODO: Use ValueType(10) ** n instead of ValueType(10......)
 @always_inline
 fn power_of_10[dtype: DType](n: Int) -> Scalar[dtype]:
     """
     Returns 10^n using cached values when available.
+    **WARNING**: The overflow is not checked in this function.
+    Make sure that the n is less than 29 for UInt128 and 77 for UInt256.
+
+    Parameters:
+        dtype: The Mojo scalar type to calculate the power of 10 for.
+
+    Args:
+        n: The exponent to raise 10 to.
+
+    Constraints:
+        `dtype` must be either `DType.uint128` or `DType.uint256`.
+
+    Returns:
+        The value of 10^n as a Mojo scalar.
+
+    Notes:
+        The powers of 10 is hard-coded up to 10^56 since it is twice the maximum
+        scale of Decimal (28). For larger values, the function calculates the
+        power of 10 using the built-in `**` operator.
     """
 
     alias ValueType = Scalar[dtype]
@@ -786,12 +804,52 @@ fn power_of_10[dtype: DType](n: Int) -> Scalar[dtype]:
     if n == 32:
         return ValueType(100000000000000000000000000000000)
     if n == 33:
-        return ValueType(1000000000000000000000000000000000)
+        return ValueType(10) ** 33
     if n == 34:
-        return ValueType(10000000000000000000000000000000000)
+        return ValueType(10) ** 34
     if n == 35:
-        return ValueType(100000000000000000000000000000000000)
+        return ValueType(10) ** 35
     if n == 36:
-        return ValueType(1000000000000000000000000000000000000)
+        return ValueType(10) ** 36
+    if n == 37:
+        return ValueType(10) ** 37
+    if n == 38:
+        return ValueType(10) ** 38
+    if n == 39:
+        return ValueType(10) ** 39
+    if n == 40:
+        return ValueType(10) ** 40
+    if n == 41:
+        return ValueType(10) ** 41
+    if n == 42:
+        return ValueType(10) ** 42
+    if n == 43:
+        return ValueType(10) ** 43
+    if n == 44:
+        return ValueType(10) ** 44
+    if n == 45:
+        return ValueType(10) ** 45
+    if n == 46:
+        return ValueType(10) ** 46
+    if n == 47:
+        return ValueType(10) ** 47
+    if n == 48:
+        return ValueType(10) ** 48
+    if n == 49:
+        return ValueType(10) ** 49
+    if n == 50:
+        return ValueType(10) ** 50
+    if n == 51:
+        return ValueType(10) ** 51
+    if n == 52:
+        return ValueType(10) ** 52
+    if n == 53:
+        return ValueType(10) ** 53
+    if n == 54:
+        return ValueType(10) ** 54
+    if n == 55:
+        return ValueType(10) ** 55
+    if n == 56:
+        return ValueType(10) ** 56
 
     return ValueType(10) ** n
