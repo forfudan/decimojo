@@ -57,6 +57,7 @@ import testing
 
 import decimojo.arithmetics
 import decimojo.comparison
+import decimojo.constants
 import decimojo.exponential
 import decimojo.rounding
 from decimojo.rounding_mode import RoundingMode
@@ -207,110 +208,13 @@ struct Decimal(
 
     @staticmethod
     fn PI() -> Decimal:
-        """
-        Returns the value of pi (π) as a Decimal.
-
-        Returns:
-            A Decimal representation of pi with maximum precision.
-        """
-        return Decimal(0x41B65F29, 0xB143885, 0x6582A536, 0x1C0000)
+        """Returns the value of pi (π) as a Decimal."""
+        return decimojo.constants.PI()
 
     @staticmethod
     fn E() -> Decimal:
-        """
-        Returns the value of Euler's number (e) as a Decimal.
-
-        Returns:
-            A Decimal representation of Euler's number with maximum precision.
-        """
-        return Decimal(0x857AED5A, 0xEBECDE35, 0x57D519AB, 0x1C0000)
-
-    @staticmethod
-    fn E2() -> Decimal:
-        return Decimal(0xE4DFDCAE, 0x89F7E295, 0xEEC0D6E9, 0x1C0000)
-
-    @staticmethod
-    fn E3() -> Decimal:
-        return Decimal(0x236454F7, 0x62055A80, 0x40E65DE2, 0x1B0000)
-
-    @staticmethod
-    fn E4() -> Decimal:
-        return Decimal(0x7121EFD3, 0xFB318FB5, 0xB06A87FB, 0x1B0000)
-
-    @staticmethod
-    fn E5() -> Decimal:
-        return Decimal(0xD99BD974, 0x9F4BE5C7, 0x2FF472E3, 0x1A0000)
-
-    @staticmethod
-    fn E6() -> Decimal:
-        return Decimal(0xADB57A66, 0xBD7A423F, 0x825AD8FF, 0x1A0000)
-
-    @staticmethod
-    fn E7() -> Decimal:
-        return Decimal(0x22313FCF, 0x64D5D12F, 0x236F230A, 0x190000)
-
-    @staticmethod
-    fn E8() -> Decimal:
-        return Decimal(0x1E892E63, 0xD1BF8B5C, 0x6051E812, 0x190000)
-
-    @staticmethod
-    fn E9() -> Decimal:
-        return Decimal(0x34FAB691, 0xE7CD8DEA, 0x1A2EB6C3, 0x180000)
-
-    @staticmethod
-    fn E10() -> Decimal:
-        return Decimal(0xBA7F4F65, 0x58692B62, 0x472BDD8F, 0x180000)
-
-    @staticmethod
-    fn E11() -> Decimal:
-        return Decimal(0x8C2C6D20, 0x2A86F9E7, 0xC176BAAE, 0x180000)
-
-    @staticmethod
-    fn E12() -> Decimal:
-        return Decimal(0xE924992A, 0x31CDC314, 0x3496C2C4, 0x170000)
-
-    @staticmethod
-    fn E13() -> Decimal:
-        return Decimal(0x220130DB, 0xC386029A, 0x8EF393FB, 0x170000)
-
-    @staticmethod
-    fn E14() -> Decimal:
-        return Decimal(0x3A24795C, 0xC412DF01, 0x26DBB5A0, 0x160000)
-
-    @staticmethod
-    fn E15() -> Decimal:
-        """Returns the value of e^15 as a Decimal."""
-        return Decimal(0x6C1248BD, 0x90456557, 0x69A0AD8C, 0x160000)
-
-    @staticmethod
-    fn E16() -> Decimal:
-        """Returns the value of e^16 as a Decimal."""
-        return Decimal(0xB46A97D, 0x90655BBD, 0x1CB66B18, 0x150000)
-
-    @staticmethod
-    fn E32() -> Decimal:
-        """Returns the value of e^32 as a Decimal."""
-        return Decimal(0x18420EB, 0xCC2501E6, 0xFF24A138, 0xF0000)
-
-    @staticmethod
-    fn E05() -> Decimal:
-        """Returns the value of e^0.5 = e^(1/2) as a Decimal."""
-        return Decimal(0x8E99DD66, 0xC210E35C, 0x3545E717, 0x1C0000)
-
-    @staticmethod
-    fn E025() -> Decimal:
-        """Returns the value of e^0.25 = e^(1/4) as a Decimal."""
-        return Decimal(0xB43646F1, 0x2654858A, 0x297D3595, 0x1C0000)
-
-    @staticmethod
-    fn LN10() -> Decimal:
-        """
-        Returns the natural logarithm of 10 as a Decimal.
-
-        Returns:
-            A Decimal representation of ln(10) with maximum precision.
-        """
-        return Decimal(0x9FA69733, 0x1414B220, 0x4A668998, 0x1C0000)
+        """Returns the value of Euler's number (e) as a Decimal."""
+        return decimojo.constants.E()
 
     # ===------------------------------------------------------------------=== #
     # Constructors and life time dunder methods

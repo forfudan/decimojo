@@ -32,6 +32,7 @@
 import math as builtin_math
 import testing
 
+import decimojo.constants
 import decimojo.special
 import decimojo.utility
 
@@ -294,7 +295,7 @@ fn exp(x: Decimal) raises -> Decimal:
     var x_int = Int(x)
 
     if x.is_one():
-        return Decimal.E()
+        return decimojo.constants.E()
 
     elif x_int < 1:
         var d05 = Decimal(5, 0, 0, scale=1, sign=False)  # 0.5
@@ -304,81 +305,81 @@ fn exp(x: Decimal) raises -> Decimal:
             return exp_series(x)
 
         elif x < d05:  # 0.25 <= x < 0.5
-            exp_chunk = Decimal.E025()
+            exp_chunk = decimojo.constants.E0D25()
             remainder = x - d025
 
         else:  # 0.5 <= x < 1
-            exp_chunk = Decimal.E05()
+            exp_chunk = decimojo.constants.E0D5()
             remainder = x - d05
 
     elif x_int == 1:  # 1 <= x < 2, chunk = 1
-        exp_chunk = Decimal.E()
+        exp_chunk = decimojo.constants.E()
         remainder = x - x_int
 
     elif x_int == 2:  # 2 <= x < 3, chunk = 2
-        exp_chunk = Decimal.E2()
+        exp_chunk = decimojo.constants.E2()
         remainder = x - x_int
 
     elif x_int == 3:  # 3 <= x < 4, chunk = 3
-        exp_chunk = Decimal.E3()
+        exp_chunk = decimojo.constants.E3()
         remainder = x - x_int
 
     elif x_int == 4:  # 4 <= x < 5, chunk = 4
-        exp_chunk = Decimal.E4()
+        exp_chunk = decimojo.constants.E4()
         remainder = x - x_int
 
     elif x_int == 5:  # 5 <= x < 6, chunk = 5
-        exp_chunk = Decimal.E5()
+        exp_chunk = decimojo.constants.E5()
         remainder = x - x_int
 
     elif x_int == 6:  # 6 <= x < 7, chunk = 6
-        exp_chunk = Decimal.E6()
+        exp_chunk = decimojo.constants.E6()
         remainder = x - x_int
 
     elif x_int == 7:  # 7 <= x < 8, chunk = 7
-        exp_chunk = Decimal.E7()
+        exp_chunk = decimojo.constants.E7()
         remainder = x - x_int
 
     elif x_int == 8:  # 8 <= x < 9, chunk = 8
-        exp_chunk = Decimal.E8()
+        exp_chunk = decimojo.constants.E8()
         remainder = x - x_int
 
     elif x_int == 9:  # 9 <= x < 10, chunk = 9
-        exp_chunk = Decimal.E9()
+        exp_chunk = decimojo.constants.E9()
         remainder = x - x_int
 
     elif x_int == 10:  # 10 <= x < 11, chunk = 10
-        exp_chunk = Decimal.E10()
+        exp_chunk = decimojo.constants.E10()
         remainder = x - x_int
 
     elif x_int == 11:  # 11 <= x < 12, chunk = 11
-        exp_chunk = Decimal.E11()
+        exp_chunk = decimojo.constants.E11()
         remainder = x - x_int
 
     elif x_int == 12:  # 12 <= x < 13, chunk = 12
-        exp_chunk = Decimal.E12()
+        exp_chunk = decimojo.constants.E12()
         remainder = x - x_int
 
     elif x_int == 13:  # 13 <= x < 14, chunk = 13
-        exp_chunk = Decimal.E13()
+        exp_chunk = decimojo.constants.E13()
         remainder = x - x_int
 
     elif x_int == 14:  # 14 <= x < 15, chunk = 14
-        exp_chunk = Decimal.E14()
+        exp_chunk = decimojo.constants.E14()
         remainder = x - x_int
 
     elif x_int == 15:  # 15 <= x < 16, chunk = 15
-        exp_chunk = Decimal.E15()
+        exp_chunk = decimojo.constants.E15()
         remainder = x - x_int
 
     elif x_int < 32:  # 16 <= x < 32, chunk = 16
         num_chunks = x_int >> 4
-        exp_chunk = Decimal.E16()
+        exp_chunk = decimojo.constants.E16()
         remainder = x - (num_chunks << 4)
 
     else:  # chunk = 32
         num_chunks = x_int >> 5
-        exp_chunk = Decimal.E32()
+        exp_chunk = decimojo.constants.E32()
         remainder = x - (num_chunks << 5)
 
     # Calculate e^(chunk * num_chunks) = (e^chunk)^num_chunks
@@ -471,7 +472,7 @@ fn ln(x: Decimal) raises -> Decimal:
         return Decimal.ZERO()
 
     # Special cases for common values
-    if x == Decimal.E():
+    if x == decimojo.constants.E():
         return Decimal.ONE()
 
     # For values close to 1, use series expansion directly
@@ -497,6 +498,7 @@ fn ln(x: Decimal) raises -> Decimal:
         while m < Decimal("0.5"):
             m = m * Decimal("2")
             p -= 1
+        print("DEBUG: m =", m, "p =", p)
 
     # Now 0.5 <= m < 2
     var ln_m: Decimal
@@ -505,54 +507,96 @@ fn ln(x: Decimal) raises -> Decimal:
     if m < Decimal.ONE():
         # For 0.5 <= m < 1
         if m >= Decimal("0.9"):
-            ln_m = ln_series((m - Decimal("0.9")) * INV0D9()) + LN0D9()
+            ln_m = (
+                ln_series((m - Decimal("0.9")) * decimojo.constants.INV0D9())
+                + decimojo.constants.LN0D9()
+            )
         elif m >= Decimal("0.8"):
-            ln_m = ln_series((m - Decimal("0.8")) * INV0D8()) + LN0D8()
+            ln_m = (
+                ln_series((m - Decimal("0.8")) * decimojo.constants.INV0D8())
+                + decimojo.constants.LN0D8()
+            )
+            print("DEBUG: ln_m = ", ln_m)
         elif m >= Decimal("0.7"):
-            ln_m = ln_series((m - Decimal("0.7")) * INV0D7()) + LN0D7()
+            ln_m = (
+                ln_series((m - Decimal("0.7")) * decimojo.constants.INV0D7())
+                + decimojo.constants.LN0D7()
+            )
         elif m >= Decimal("0.6"):
-            ln_m = ln_series((m - Decimal("0.6")) * INV0D6()) + LN0D6()
+            ln_m = (
+                ln_series((m - Decimal("0.6")) * decimojo.constants.INV0D6())
+                + decimojo.constants.LN0D6()
+            )
         else:  # 0.5 <= m < 0.6
-            ln_m = ln_series((m - Decimal("0.5")) * INV0D5()) + LN0D5()
-
-        return ln_m
+            ln_m = (
+                ln_series((m - Decimal("0.5")) * decimojo.constants.INV0D5())
+                + decimojo.constants.LN0D5()
+            )
 
     else:
-        print("DEBUG: m =", m)
         # For 1 < m < 2
         if m < Decimal("1.1"):  # 1 < m < 1.1
             ln_m = ln_series(m - Decimal("1"))
         elif m < Decimal("1.2"):  # 1.1 <= m < 1.2
-            ln_m = ln_series((m - Decimal("1.1")) * INV1D1()) + LN1D1()
+            ln_m = (
+                ln_series((m - Decimal("1.1")) * decimojo.constants.INV1D1())
+                + decimojo.constants.LN1D1()
+            )
         elif m < Decimal("1.3"):  # 1.2 <= m < 1.3
-            ln_m = ln_series((m - Decimal("1.2")) * INV1D2())
-            print("DEBUG: ln_m =", ln_m)
-            ln_m = ln_m + LN1D2()
-            print("DEBUG: ln_1.2 =", LN1D2())
+            ln_m = (
+                ln_series((m - Decimal("1.2")) * decimojo.constants.INV1D2())
+                + decimojo.constants.LN1D2()
+            )
+            print(
+                "DEBUG: ln_series =",
+                ln_series((m - Decimal("1.2")) * decimojo.constants.INV1D2()),
+            )
+            print("DEBUG: ln_1.2 =", decimojo.constants.LN1D2())
             print("DEBUG: ln_m =", ln_m)
         elif m < Decimal("1.4"):  # 1.3 <= m < 1.4
-            ln_m = ln_series((m - Decimal("1.3")) * INV1D3()) + LN1D3()
+            ln_m = (
+                ln_series((m - Decimal("1.3")) * decimojo.constants.INV1D3())
+                + decimojo.constants.LN1D3()
+            )
         elif m < Decimal("1.5"):  # 1.4 <= m < 1.5
-            ln_m = ln_series((m - Decimal("1.4")) * INV1D4()) + LN1D4()
+            ln_m = (
+                ln_series((m - Decimal("1.4")) * decimojo.constants.INV1D4())
+                + decimojo.constants.LN1D4()
+            )
         elif m < Decimal("1.6"):  # 1.5 <= m < 1.6
-            ln_m = ln_series((m - Decimal("1.5")) * INV1D5()) + LN1D5()
+            ln_m = (
+                ln_series((m - Decimal("1.5")) * decimojo.constants.INV1D5())
+                + decimojo.constants.LN1D5()
+            )
         elif m < Decimal("1.7"):  # 1.6 <= m < 1.7
-            ln_m = ln_series((m - Decimal("1.6")) * INV1D6()) + LN1D6()
+            ln_m = (
+                ln_series((m - Decimal("1.6")) * decimojo.constants.INV1D6())
+                + decimojo.constants.LN1D6()
+            )
         elif m < Decimal("1.8"):  # 1.7 <= m < 1.8
-            ln_m = ln_series((m - Decimal("1.7")) * INV1D7()) + LN1D7()
+            ln_m = (
+                ln_series((m - Decimal("1.7")) * decimojo.constants.INV1D7())
+                + decimojo.constants.LN1D7()
+            )
         elif m < Decimal("1.9"):  # 1.8 <= m < 1.9
-            ln_m = ln_series((m - Decimal("1.8")) * INV1D8()) + LN1D8()
+            ln_m = (
+                ln_series((m - Decimal("1.8")) * decimojo.constants.INV1D8())
+                + decimojo.constants.LN1D8()
+            )
         else:  # 1.9 <= m < 2
-            ln_m = ln_series((m - Decimal("1.9")) * INV1D9()) + LN1D9()
+            ln_m = (
+                ln_series((m - Decimal("1.9")) * decimojo.constants.INV1D9())
+                + decimojo.constants.LN1D9()
+            )
 
-        # Combine result: ln(x) = ln(m) + p*ln(2)
-        if p != 0:
-            print("DEBUG: ln_m =", ln_m)
-            print("DEBUG: LN2() =", LN2())
-            return ln_m + Decimal(p) * LN2()
-        else:
-            print("DEBUG: ln_m =", ln_m)
-            return ln_m
+    # Combine result: ln(x) = ln(m) + p*ln(2)
+    if p != 0:
+        print("DEBUG: ln_m =", ln_m)
+        print("DEBUG: LN2() =", decimojo.constants.LN2())
+        return ln_m + Decimal(p) * decimojo.constants.LN2()
+    else:
+        print("DEBUG: ln_m =", ln_m)
+        return ln_m
 
 
 fn ln_series(z: Decimal) raises -> Decimal:
@@ -608,240 +652,3 @@ fn ln_series(z: Decimal) raises -> Decimal:
 
     print("DEBUG: ln_series result =", result)
     return result
-
-
-# ===----------------------------------------------------------------------=== #
-#
-# Useful constants for exponential functions
-#
-# ===----------------------------------------------------------------------=== #
-
-
-# Define all inverse constants needed
-@always_inline
-fn INV0D5() -> Decimal:
-    """Returns 1/0.5 = 2.0."""
-    return Decimal(0x20000000, 0x0, 0x0, 0x1C0000)
-
-
-@always_inline
-fn INV0D6() -> Decimal:
-    """Returns 1/0.6 = 1.66666666666666666666666666666667..."""
-    return Decimal(0x1AAAAAAA, 0xAAAAAAAA, 0xAAAAAAAA, 0x1C0000)
-
-
-@always_inline
-fn INV0D7() -> Decimal:
-    """Returns 1/0.7 = 1.42857142857142857142857142857143..."""
-    return Decimal(0x16DB6DB6, 0xDB6DB6DB, 0x6DB6DB6D, 0x1C0000)
-
-
-@always_inline
-fn INV0D8() -> Decimal:
-    """Returns 1/0.8 = 1.25."""
-    return Decimal(0x14000000, 0x0, 0x0, 0x1C0000)
-
-
-@always_inline
-fn INV0D9() -> Decimal:
-    """Returns 1/0.9 = 1.11111111111111111111111111111111..."""
-    return Decimal(0x11C71C71, 0xC71C71C7, 0x1C71C71C, 0x1C0000)
-
-
-@always_inline
-fn INV1D1() -> Decimal:
-    """Returns 1/1.1 = 0.90909090909090909090909090909091..."""
-    return Decimal(0x9A2E8BA3, 0x4FC48DCC, 0x1D5FD2E1, 0x1C0000)
-
-
-@always_inline
-fn INV1D2() -> Decimal:
-    """Returns 1/1.2 = 0.83333333333333333333333333333333..."""
-    return Decimal(0x8D555555, 0x33C981FB, 0x1AED2BF9, 0x1C0000)
-
-
-@always_inline
-fn INV1D3() -> Decimal:
-    """Returns 1/1.3 = 0.76923076923076923076923076923077..."""
-    return Decimal(0xC4EC4EC4, 0xEC4EC4EC, 0x4EC4EC4E, 0x1C0000)
-
-
-@always_inline
-fn INV1D4() -> Decimal:
-    """Returns 1/1.4 = 0.71428571428571428571428571428571..."""
-    return Decimal(0xB6DB6DB6, 0xDB6DB6DB, 0x6DB6DB6D, 0x1C0000)
-
-
-@always_inline
-fn INV1D5() -> Decimal:
-    """Returns 1/1.5 = 0.66666666666666666666666666666667..."""
-    return Decimal(0xAAAAAAAA, 0xAAAAAAAA, 0xAAAAAAAA, 0x1C0000)
-
-
-@always_inline
-fn INV1D6() -> Decimal:
-    """Returns 1/1.6 = 0.625."""
-    return Decimal(0xA0000000, 0x0, 0x0, 0x1C0000)
-
-
-@always_inline
-fn INV1D7() -> Decimal:
-    """Returns 1/1.7 = 0.58823529411764705882352941176471..."""
-    return Decimal(0x9684BDA1, 0x2F684BDA, 0x12F684BD, 0x1C0000)
-
-
-@always_inline
-fn INV1D8() -> Decimal:
-    """Returns 1/1.8 = 0.55555555555555555555555555555556..."""
-    return Decimal(0x8E38E38E, 0x38E38E38, 0xE38E38E3, 0x1C0000)
-
-
-@always_inline
-fn INV1D9() -> Decimal:
-    """Returns 1/1.9 = 0.52631578947368421052631578947368..."""
-    return Decimal(0x86BCA1AF, 0x286BCA1A, 0xF286BCA1, 0x1C0000)
-
-
-# Define ln constants (precomputed)
-#
-# The repr of the magic numbers can be obtained by the following code:
-#
-# ```mojo
-# fn print_repr_from_words(value: String, ln_value: String) raises:
-#     """
-#     Prints the hex representation of a logarithm value.
-#     Args:
-#         value: The original value (for display purposes).
-#         ln_value: The natural logarithm as a String.
-#     """
-#     var log_decimal = Decimal(ln_value)
-#     print("ln(" + value + "): " + log_decimal.repr_from_words())
-# ```
-
-
-@always_inline
-fn LN2() -> Decimal:
-    """Returns ln(2) = 0.69314718055994530941723212145818..."""
-    return Decimal(0xAA7A65BF, 0x81F52F01, 0x1665943F, 0x1C0000)
-
-
-@always_inline
-fn LN10() -> Decimal:
-    """Returns ln(10) = 2.30258509299404568401799145468436..."""
-    return Decimal(0x9FA69733, 0x1414B220, 0x4A668998, 0x1C0000)
-
-
-# Constants for values less than 1
-@always_inline
-fn LN0D1() -> Decimal:
-    """Returns ln(0.1) = -2.30258509299404568401799145468436..."""
-    return Decimal(0x9FA69733, 0x1414B220, 0x4A668998, 0x801C0000)
-
-
-@always_inline
-fn LN0D2() -> Decimal:
-    """Returns ln(0.2) = -1.60943791243410037460075933322619..."""
-    return Decimal(0xF52C3174, 0x921F831E, 0x3400F558, 0x801C0000)
-
-
-@always_inline
-fn LN0D3() -> Decimal:
-    """Returns ln(0.3) = -1.20397280432593599262274621776184..."""
-    return Decimal(0x2B8E6822, 0x8258467, 0x26E70795, 0x801C0000)
-
-
-@always_inline
-fn LN0D4() -> Decimal:
-    """Returns ln(0.4) = -0.91629073187415506518352721176801..."""
-    return Decimal(0x4AB1CBB6, 0x102A541D, 0x1D9B6119, 0x801C0000)
-
-
-@always_inline
-fn LN0D5() -> Decimal:
-    """Returns ln(0.5) = -0.69314718055994530941723212145818..."""
-    return Decimal(0xAA7A65BF, 0x81F52F01, 0x1665943F, 0x801C0000)
-
-
-@always_inline
-fn LN0D6() -> Decimal:
-    """Returns ln(0.6) = -0.51082562376599068320551409630366..."""
-    return Decimal(0x81140263, 0x86305565, 0x10817355, 0x801C0000)
-
-
-@always_inline
-fn LN0D7() -> Decimal:
-    """Returns ln(0.7) = -0.35667494393873237891263871124118..."""
-    return Decimal(0x348BC5A8, 0x8B755D08, 0xB865892, 0x801C0000)
-
-
-@always_inline
-fn LN0D8() -> Decimal:
-    """Returns ln(0.8) = -0.22314355131420975576629509030983..."""
-    return Decimal(0xA03765F7, 0x8E35251B, 0x735CCD9, 0x801C0000)
-
-
-@always_inline
-fn LN0D9() -> Decimal:
-    """Returns ln(0.9) = -0.10536051565782630122750098083931..."""
-    return Decimal(0xB7763910, 0xFC3656AD, 0x3678591, 0x801C0000)
-
-
-# Constants for values greater than or equal to 1
-@always_inline
-fn LN1() -> Decimal:
-    """Returns ln(1) = 0."""
-    return Decimal(0x0, 0x0, 0x0, 0x0)
-
-
-@always_inline
-fn LN1D1() -> Decimal:
-    """Returns ln(1.1) = 0.09531017980432486004395212328077..."""
-    return Decimal(0x7212FFD1, 0x7D9A10, 0x3146328, 0x1C0000)
-
-
-@always_inline
-fn LN1D2() -> Decimal:
-    """Returns ln(1.2) = 0.18232155679395462621171802515451..."""
-    return Decimal(0x2966635C, 0xFBC4D99C, 0x5E420E9, 0x1C0000)
-
-
-@always_inline
-fn LN1D3() -> Decimal:
-    """Returns ln(1.3) = 0.26236426446749105203549598688095..."""
-    return Decimal(0xE0BE71FD, 0xC254E078, 0x87A39F0, 0x1C0000)
-
-
-@always_inline
-fn LN1D4() -> Decimal:
-    """Returns ln(1.4) = 0.33647223662121293050459341021699..."""
-    return Decimal(0x75EEA016, 0xF67FD1F9, 0xADF3BAC, 0x1C0000)
-
-
-@always_inline
-fn LN1D5() -> Decimal:
-    """Returns ln(1.5) = 0.40546510810816438197801311546435..."""
-    return Decimal(0xC99DC953, 0x89F9FEB7, 0xD19EDC3, 0x1C0000)
-
-
-@always_inline
-fn LN1D6() -> Decimal:
-    """Returns ln(1.6) = 0.47000362924573555365093703114834..."""
-    return Decimal(0xA42FFC8, 0xF3C009E6, 0xF2FC765, 0x1C0000)
-
-
-@always_inline
-fn LN1D7() -> Decimal:
-    """Returns ln(1.7) = 0.53062825106217039623154316318876..."""
-    return Decimal(0x64BB9ED0, 0x4AB9978F, 0x11254107, 0x1C0000)
-
-
-@always_inline
-fn LN1D8() -> Decimal:
-    """Returns ln(1.8) = 0.58778666490211900818973114061886..."""
-    return Decimal(0xF3042CAE, 0x85BED853, 0x12FE0EAD, 0x1C0000)
-
-
-@always_inline
-fn LN1D9() -> Decimal:
-    """Returns ln(1.9) = 0.64185388617239477599103597720349..."""
-    return Decimal(0x12F992DC, 0xE7374425, 0x14BD4A78, 0x1C0000)
