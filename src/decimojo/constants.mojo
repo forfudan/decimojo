@@ -23,6 +23,79 @@
 
 """Useful constants for Decimal type."""
 
+# ===----------------------------------------------------------------------=== #
+#
+# Integer constants
+# The prefix M stands for decimal (money).
+#
+# ===----------------------------------------------------------------------=== #
+
+
+@always_inline
+fn M0() -> Decimal:
+    """Returns 0 as a Decimal."""
+    return Decimal(0x0, 0x0, 0x0, 0x0)
+
+
+@always_inline
+fn M1() -> Decimal:
+    """Returns 1 as a Decimal."""
+    return Decimal(0x1, 0x0, 0x0, 0x0)
+
+
+@always_inline
+fn M2() -> Decimal:
+    """Returns 2 as a Decimal."""
+    return Decimal(0x2, 0x0, 0x0, 0x0)
+
+
+@always_inline
+fn M3() -> Decimal:
+    """Returns 3 as a Decimal."""
+    return Decimal(0x3, 0x0, 0x0, 0x0)
+
+
+@always_inline
+fn M4() -> Decimal:
+    """Returns 4 as a Decimal."""
+    return Decimal(0x4, 0x0, 0x0, 0x0)
+
+
+@always_inline
+fn M5() -> Decimal:
+    """Returns 5 as a Decimal."""
+    return Decimal(0x5, 0x0, 0x0, 0x0)
+
+
+@always_inline
+fn M6() -> Decimal:
+    """Returns 6 as a Decimal."""
+    return Decimal(0x6, 0x0, 0x0, 0x0)
+
+
+@always_inline
+fn M7() -> Decimal:
+    """Returns 7 as a Decimal."""
+    return Decimal(0x7, 0x0, 0x0, 0x0)
+
+
+@always_inline
+fn M8() -> Decimal:
+    """Returns 8 as a Decimal."""
+    return Decimal(0x8, 0x0, 0x0, 0x0)
+
+
+@always_inline
+fn M9() -> Decimal:
+    """Returns 9 as a Decimal."""
+    return Decimal(0x9, 0x0, 0x0, 0x0)
+
+
+@always_inline
+fn M10() -> Decimal:
+    """Returns 10 as a Decimal."""
+    return Decimal(0xA, 0x0, 0x0, 0x0)
+
 
 # ===----------------------------------------------------------------------=== #
 #
@@ -155,6 +228,91 @@ fn INV1D8() -> Decimal:
 fn INV1D9() -> Decimal:
     """Returns 1/1.9 = 0.52631578947368421052631578947368..."""
     return Decimal(0xAA1AF287, 0x2E2E6D0A, 0x11019509, 0x1C0000)
+
+
+# ===----------------------------------------------------------------------=== #
+#
+# N / (N+1) constants
+#
+# ===----------------------------------------------------------------------=== #
+
+
+@always_inline
+fn N_DIVIDE_NEXT(n: Int) raises -> Decimal:
+    """
+    Returns the pre-calculated value of n/(n+1) for n between 1 and 20.
+
+    Args:
+        n: An integer between 1 and 20, inclusive.
+
+    Returns:
+        A Decimal representing the value of n/(n+1).
+
+    Raises:
+        Error: If n is outside the range [1, 20].
+    """
+    if n == 1:
+        # 1/2 = 0.5
+        return Decimal(0x5, 0x0, 0x0, 0x10000)
+    elif n == 2:
+        # 2/3 = 0.66666666666666666666666666666667...
+        return Decimal(0xAAAAAAB, 0x296E0196, 0x158A8994, 0x1C0000)
+    elif n == 3:
+        # 3/4 = 0.75
+        return Decimal(0x4B, 0x0, 0x0, 0x20000)
+    elif n == 4:
+        # 4/5 = 0.8
+        return Decimal(0x8, 0x0, 0x0, 0x10000)
+    elif n == 5:
+        # 5/6 = 0.83333333333333333333333333333333...
+        return Decimal(0x8D555555, 0x33C981FB, 0x1AED2BF9, 0x1C0000)
+    elif n == 6:
+        # 6/7 = 0.85714285714285714285714285714286...
+        return Decimal(0x7B6DB6DB, 0xEC1FB8E5, 0x1BB21E99, 0x1C0000)
+    elif n == 7:
+        # 7/8 = 0.875
+        return Decimal(0x36B, 0x0, 0x0, 0x30000)
+    elif n == 8:
+        # 8/9 = 0.88888888888888888888888888888889...
+        return Decimal(0xB8E38E39, 0x373D5772, 0x1CB8B770, 0x1C0000)
+    elif n == 9:
+        # 9/10 = 0.9
+        return Decimal(0x9, 0x0, 0x0, 0x10000)
+    elif n == 10:
+        # 10/11 = 0.90909090909090909090909090909091...
+        return Decimal(0x9A2E8BA3, 0x4FC48DCC, 0x1D5FD2E1, 0x1C0000)
+    elif n == 11:
+        # 11/12 = 0.91666666666666666666666666666667...
+        return Decimal(0x4EAAAAAB, 0xB8F7422E, 0x1D9E7D2B, 0x1C0000)
+    elif n == 12:
+        # 12/13 = 0.92307692307692307692307692307692...
+        return Decimal(0xEC4EC4F, 0xAF849FBC, 0x1DD3836A, 0x1C0000)
+    elif n == 13:
+        # 13/14 = 0.92857142857142857142857142857143...
+        return Decimal(0x45B6DB6E, 0x15225DA3, 0x1E00F67C, 0x1C0000)
+    elif n == 14:
+        # 14/15 = 0.93333333333333333333333333333333...
+        return Decimal(0x75555555, 0xD39A0238, 0x1E285A35, 0x1C0000)
+    elif n == 15:
+        # 15/16 = 0.9375
+        return Decimal(0x249F, 0x0, 0x0, 0x40000)
+    elif n == 16:
+        # 16/17 = 0.94117647058823529411764705882353...
+        return Decimal(0x3C3C3C3C, 0xD50023D, 0x1E693AB3, 0x1C0000)
+    elif n == 17:
+        # 17/18 = 0.94444444444444444444444444444444...
+        return Decimal(0xE471C71C, 0x3AB12CE9, 0x1E8442E7, 0x1C0000)
+    elif n == 18:
+        # 18/19 = 0.94736842105263157894736842105263...
+        return Decimal(0xCBCA1AF3, 0x1FED2AAC, 0x1E9C72AA, 0x1C0000)
+    elif n == 19:
+        # 19/20 = 0.95
+        return Decimal(0x5F, 0x0, 0x0, 0x20000)
+    elif n == 20:
+        # 20/21 = 0.95238095238095238095238095238095...
+        return Decimal(0x33CF3CF4, 0xCD78948D, 0x1EC5E91C, 0x1C0000)
+    else:
+        raise Error("N_DIVIDE_NEXT: n must be between 1 and 20, inclusive")
 
 
 # ===----------------------------------------------------------------------=== #

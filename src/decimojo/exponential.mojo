@@ -418,7 +418,7 @@ fn exp_series(x: Decimal) raises -> Decimal:
         return Decimal.ONE()
 
     # For x with very small magnitude, just use 1+x approximation
-    if abs(x) == Decimal("1e-28"):
+    if abs(x) == Decimal(1, 0, 0, 28 << 16):
         return Decimal.ONE() + x
 
     # Initialize result and term
@@ -477,7 +477,7 @@ fn ln(x: Decimal) raises -> Decimal:
         return Decimal.ONE()
 
     # For values close to 1, use series expansion directly
-    if Decimal("0.95") <= x <= Decimal("1.05"):
+    if Decimal(95, 0, 0, 2 << 16) <= x <= Decimal(105, 0, 0, 2 << 16):
         return ln_series(x - Decimal.ONE())
 
     # For all other values, use range reduction
@@ -488,28 +488,28 @@ fn ln(x: Decimal) raises -> Decimal:
     var q: Int = 0
 
     # Step 1: handle powers of 10 for large values
-    if x >= Decimal("10"):
+    if x >= decimojo.constants.M10():
         # Repeatedly divide by 10 until m < 10
-        while m >= Decimal("10"):
-            m = m / Decimal("10")
+        while m >= decimojo.constants.M10():
+            m = m / decimojo.constants.M10()
             q += 1
-    elif x < Decimal("0.1"):
+    elif x < Decimal(1, 0, 0, 1 << 16):
         # Repeatedly multiply by 10 until m >= 0.1
-        while m < Decimal("0.1"):
-            m = m * Decimal("10")
+        while m < Decimal(1, 0, 0, 1 << 16):
+            m = m * decimojo.constants.M10()
             q -= 1
 
     # Now 0.1 <= m < 10
     # Step 2: normalize to [0.5, 2) using powers of 2
-    if m >= Decimal("2"):
+    if m >= decimojo.constants.M2():
         # Repeatedly divide by 2 until m < 2
-        while m >= Decimal("2"):
-            m = m / Decimal("2")
+        while m >= decimojo.constants.M2():
+            m = m / decimojo.constants.M2()
             p += 1
-    elif m < Decimal("0.5"):
+    elif m < Decimal(5, 0, 0, 1 << 16):
         # Repeatedly multiply by 2 until m >= 0.5
-        while m < Decimal("0.5"):
-            m = m * Decimal("2")
+        while m < Decimal(5, 0, 0, 1 << 16):
+            m = m * decimojo.constants.M2()
             p -= 1
 
     # Now 0.5 <= m < 2
@@ -518,79 +518,121 @@ fn ln(x: Decimal) raises -> Decimal:
     # Use precomputed values and series expansion for accuracy and performance
     if m < Decimal.ONE():
         # For 0.5 <= m < 1
-        if m >= Decimal("0.9"):
+        if m >= Decimal(9, 0, 0, 1 << 16):
             ln_m = (
-                ln_series((m - Decimal("0.9")) * decimojo.constants.INV0D9())
+                ln_series(
+                    (m - Decimal(9, 0, 0, 1 << 16))
+                    * decimojo.constants.INV0D9()
+                )
                 + decimojo.constants.LN0D9()
             )
-        elif m >= Decimal("0.8"):
+        elif m >= Decimal(8, 0, 0, 1 << 16):
             ln_m = (
-                ln_series((m - Decimal("0.8")) * decimojo.constants.INV0D8())
+                ln_series(
+                    (m - Decimal(8, 0, 0, 1 << 16))
+                    * decimojo.constants.INV0D8()
+                )
                 + decimojo.constants.LN0D8()
             )
-        elif m >= Decimal("0.7"):
+        elif m >= Decimal(7, 0, 0, 1 << 16):
             ln_m = (
-                ln_series((m - Decimal("0.7")) * decimojo.constants.INV0D7())
+                ln_series(
+                    (m - Decimal(7, 0, 0, 1 << 16))
+                    * decimojo.constants.INV0D7()
+                )
                 + decimojo.constants.LN0D7()
             )
-        elif m >= Decimal("0.6"):
+        elif m >= Decimal(6, 0, 0, 1 << 16):
             ln_m = (
-                ln_series((m - Decimal("0.6")) * decimojo.constants.INV0D6())
+                ln_series(
+                    (m - Decimal(6, 0, 0, 1 << 16))
+                    * decimojo.constants.INV0D6()
+                )
                 + decimojo.constants.LN0D6()
             )
         else:  # 0.5 <= m < 0.6
             ln_m = (
-                ln_series((m - Decimal("0.5")) * decimojo.constants.INV0D5())
+                ln_series(
+                    (m - Decimal(5, 0, 0, 1 << 16))
+                    * decimojo.constants.INV0D5()
+                )
                 + decimojo.constants.LN0D5()
             )
 
     else:
         # For 1 < m < 2
-        if m < Decimal("1.1"):  # 1 < m < 1.1
-            ln_m = ln_series(m - Decimal("1"))
-        elif m < Decimal("1.2"):  # 1.1 <= m < 1.2
+        if m < Decimal(11, 0, 0, 1 << 16):  # 1 < m < 1.1
+            ln_m = ln_series(m - Decimal.ONE())
+        elif m < Decimal(12, 0, 0, 1 << 16):  # 1.1 <= m < 1.2
             ln_m = (
-                ln_series((m - Decimal("1.1")) * decimojo.constants.INV1D1())
+                ln_series(
+                    (m - Decimal(11, 0, 0, 1 << 16))
+                    * decimojo.constants.INV1D1()
+                )
                 + decimojo.constants.LN1D1()
             )
-        elif m < Decimal("1.3"):  # 1.2 <= m < 1.3
+        elif m < Decimal(13, 0, 0, 1 << 16):  # 1.2 <= m < 1.3
             ln_m = (
-                ln_series((m - Decimal("1.2")) * decimojo.constants.INV1D2())
+                ln_series(
+                    (m - Decimal(12, 0, 0, 1 << 16))
+                    * decimojo.constants.INV1D2()
+                )
                 + decimojo.constants.LN1D2()
             )
-        elif m < Decimal("1.4"):  # 1.3 <= m < 1.4
+        elif m < Decimal(14, 0, 0, 1 << 16):  # 1.3 <= m < 1.4
             ln_m = (
-                ln_series((m - Decimal("1.3")) * decimojo.constants.INV1D3())
+                ln_series(
+                    (m - Decimal(13, 0, 0, 1 << 16))
+                    * decimojo.constants.INV1D3()
+                )
                 + decimojo.constants.LN1D3()
             )
-        elif m < Decimal("1.5"):  # 1.4 <= m < 1.5
+        elif m < Decimal(15, 0, 0, 1 << 16):  # 1.4 <= m < 1.5
             ln_m = (
-                ln_series((m - Decimal("1.4")) * decimojo.constants.INV1D4())
+                ln_series(
+                    (m - Decimal(14, 0, 0, 1 << 16))
+                    * decimojo.constants.INV1D4()
+                )
                 + decimojo.constants.LN1D4()
             )
-        elif m < Decimal("1.6"):  # 1.5 <= m < 1.6
+        elif m < Decimal(16, 0, 0, 1 << 16):  # 1.5 <= m < 1.6
             ln_m = (
-                ln_series((m - Decimal("1.5")) * decimojo.constants.INV1D5())
+                ln_series(
+                    (m - Decimal(15, 0, 0, 1 << 16))
+                    * decimojo.constants.INV1D5()
+                )
                 + decimojo.constants.LN1D5()
             )
-        elif m < Decimal("1.7"):  # 1.6 <= m < 1.7
+        elif m < Decimal(17, 0, 0, 1 << 16):  # 1.6 <= m < 1.7
             ln_m = (
-                ln_series((m - Decimal("1.6")) * decimojo.constants.INV1D6())
+                ln_series(
+                    (m - Decimal(16, 0, 0, 1 << 16))
+                    * decimojo.constants.INV1D6()
+                )
                 + decimojo.constants.LN1D6()
             )
-        elif m < Decimal("1.8"):  # 1.7 <= m < 1.8
+        elif m < Decimal(18, 0, 0, 1 << 16):  # 1.7 <= m < 1.8
             ln_m = (
-                ln_series((m - Decimal("1.7")) * decimojo.constants.INV1D7())
+                ln_series(
+                    (m - Decimal(17, 0, 0, 1 << 16))
+                    * decimojo.constants.INV1D7()
+                )
                 + decimojo.constants.LN1D7()
             )
-        elif m < Decimal("1.9"):  # 1.8 <= m < 1.9
+        elif m < Decimal(19, 0, 0, 1 << 16):  # 1.8 <= m < 1.9
             ln_m = (
-                ln_series((m - Decimal("1.8")) * decimojo.constants.INV1D8())
+                ln_series(
+                    (m - Decimal(18, 0, 0, 1 << 16))
+                    * decimojo.constants.INV1D8()
+                )
                 + decimojo.constants.LN1D8()
             )
         else:  # 1.9 <= m < 2
             ln_m = (
-                ln_series((m - Decimal("1.9")) * decimojo.constants.INV1D9())
+                ln_series(
+                    (m - Decimal(19, 0, 0, 1 << 16))
+                    * decimojo.constants.INV1D9()
+                )
                 + decimojo.constants.LN1D9()
             )
 
@@ -633,13 +675,13 @@ fn ln_series(z: Decimal) raises -> Decimal:
         return Decimal.ZERO()
 
     # For z with very small magnitude, just use z approximation
-    if abs(z) == Decimal("1e-28"):
+    if abs(z) == Decimal(1, 0, 0, 28 << 16):
         return z
 
     # Initialize result and term
     var result = Decimal.ZERO()
     var term = z
-    var neg = False
+    var neg: Bool = False
 
     # Calculate terms iteratively
     # term[i] = (-1)^(i+1) * z^i / i
@@ -650,14 +692,18 @@ fn ln_series(z: Decimal) raises -> Decimal:
         else:
             result = result + term
 
-        neg = not neg
-        term = term * z * Decimal(i) / Decimal(i + 1)
-        # print("DEBUG: term", i, "=", term)
-        # print("DEBUG: result", i, "=", result)
+        neg = not neg  # Alternate sign
+
+        if i <= 20:
+            term = term * z * decimojo.constants.N_DIVIDE_NEXT(i)
+        else:
+            term = term * z * Decimal(i) / Decimal(i + 1)
 
         # Check for convergence
         if term.is_zero():
+            # print("DEBUG: i = ", i)
             break
 
-    # print("DEBUG: ln_series result =", result)
+    # print("DEBUG: result =", result)
+
     return result
