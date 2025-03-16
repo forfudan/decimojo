@@ -1039,7 +1039,7 @@ struct Decimal(
         Decimal.from_words(low, mid, high, flags).
         """
         return (
-            "Decimal.from_words("
+            "Decimal("
             + hex(self.low)
             + ", "
             + hex(self.mid)
@@ -1368,6 +1368,12 @@ struct Decimal(
             return decimojo.exponential.exp(self)
         except e:
             raise Error("Error in `Decimal.exp()`: ", e)
+
+    fn ln(self) raises -> Self:
+        try:
+            return decimojo.exponential.ln(self)
+        except e:
+            raise Error("Error in `Decimal.ln()`: ", e)
 
     fn round(
         self,

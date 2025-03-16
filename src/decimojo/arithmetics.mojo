@@ -273,7 +273,7 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
                     summation = x1_coef_scaled - x2_coef_scaled
                     is_negative = x1.is_negative()
                 elif x1_coef_scaled < x2_coef_scaled:
-                    summation = x2_coef_scaled * x1_coef_scaled
+                    summation = x2_coef_scaled - x1_coef_scaled
                     is_negative = x2.is_negative()
                 else:
                     return Decimal.from_uint128(UInt128(0), x1_scale, False)

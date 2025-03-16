@@ -17,3 +17,4 @@ tempCodeRunnerFile.mojo
 *.log
 # local files
 /test*.mojo
+local
