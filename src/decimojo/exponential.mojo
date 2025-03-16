@@ -481,26 +481,36 @@ fn ln(x: Decimal) raises -> Decimal:
         return ln_series(x - Decimal.ONE())
 
     # For all other values, use range reduction
-    # Compute ln(x) as ln(m * 2^p) = ln(m) + p*ln(2)
-    # where 1 <= m < 2
+    # ln(x) = ln(m * 2^p * 10^q) = ln(m) + p*ln(2) + q*ln(10), where 1 <= m < 2
 
     var m: Decimal = x
     var p: Int = 0
+    var q: Int = 0
 
-    # Normalize m to range [0.5, 1) or [1, 2)
-    if x >= Decimal("2"):
+    # Step 1: handle powers of 10 for large values
+    if x >= Decimal("10"):
+        # Repeatedly divide by 10 until m < 10
+        while m >= Decimal("10"):
+            m = m / Decimal("10")
+            q += 1
+    elif x < Decimal("0.1"):
+        # Repeatedly multiply by 10 until m >= 0.1
+        while m < Decimal("0.1"):
+            m = m * Decimal("10")
+            q -= 1
+
+    # Now 0.1 <= m < 10
+    # Step 2: normalize to [0.5, 2) using powers of 2
+    if m >= Decimal("2"):
         # Repeatedly divide by 2 until m < 2
         while m >= Decimal("2"):
             m = m / Decimal("2")
             p += 1
-        # print("DEBUG: m =", m, "p =", p)
-
-    elif x < Decimal("0.5"):
+    elif m < Decimal("0.5"):
         # Repeatedly multiply by 2 until m >= 0.5
         while m < Decimal("0.5"):
             m = m * Decimal("2")
             p -= 1
-        # print("DEBUG: m =", m, "p =", p)
 
     # Now 0.5 <= m < 2
     var ln_m: Decimal
@@ -584,11 +594,18 @@ fn ln(x: Decimal) raises -> Decimal:
                 + decimojo.constants.LN1D9()
             )
 
-    # Combine result: ln(x) = ln(m) + p*ln(2)
+    # Combine result: ln(x) = ln(m) + p*ln(2) + q*ln(10)
+    var result = ln_m
+
+    # Add power of 2 contribution
     if p != 0:
-        return ln_m + Decimal(p) * decimojo.constants.LN2()
-    else:
-        return ln_m
+        result = result + Decimal(p) * decimojo.constants.LN2()
+
+    # Add power of 10 contribution
+    if q != 0:
+        result = result + Decimal(q) * decimojo.constants.LN10()
+
+    return result
 
 
 fn ln_series(z: Decimal) raises -> Decimal:

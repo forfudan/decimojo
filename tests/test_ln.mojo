@@ -33,15 +33,17 @@ fn test_basic_ln_values() raises:
     var result_ten = ln(ten)
     testing.assert_true(
         String(result_ten).startswith("2.30258509299404568401799145"),
-        "ln(10) should be approximately 2.302..., got " + String(result_ten),
+        "ln(10) should be approximately 2.30258509299404568401799145..., got "
+        + String(result_ten),
     )
 
     # Test case 4: ln(0.1)
     var tenth = Decimal("0.1")
     var result_tenth = ln(tenth)
     testing.assert_true(
-        String(result_tenth).startswith("-2.3025850929940456"),
-        "ln(0.1) should be approximately -2.3025850929940456..., got "
+        String(result_tenth).startswith("-2.302585092994045684017991454"),
+        "ln(0.1) should be approximately -2.302585092994045684017991454...,"
+        " got "
         + String(result_tenth),
     )
 
@@ -57,7 +59,9 @@ fn test_fractional_ln_values() raises:
     var result_half = ln(half)
     testing.assert_true(
         String(result_half).startswith("-0.693147180559945309417232121"),
-        "ln(0.5) should be approximately -0.693..., got " + String(result_half),
+        "ln(0.5) should be approximately -0.693147180559945309417232121...,"
+        " got "
+        + String(result_half),
     )
 
     # Test case 6: ln(2)
@@ -65,7 +69,8 @@ fn test_fractional_ln_values() raises:
     var result_two = ln(two)
     testing.assert_true(
         String(result_two).startswith("0.693147180559945309417232121"),
-        "ln(2) should be approximately 0.693..., got " + String(result_two),
+        "ln(2) should be approximately 0.693147180559945309417232121..., got "
+        + String(result_two),
     )
 
     # Test case 7: ln(5)
@@ -73,7 +78,8 @@ fn test_fractional_ln_values() raises:
     var result_five = ln(five)
     testing.assert_true(
         String(result_five).startswith("1.609437912434100374600759333"),
-        "ln(5) should be approximately 1.609..., got " + String(result_five),
+        "ln(5) should be approximately 1.609437912434100374600759333..., got "
+        + String(result_five),
     )
 
     print("✓ Fractional natural logarithm values tests passed!")
@@ -142,10 +148,9 @@ fn test_edge_cases() raises:
     var very_small = Decimal("0.000000000000000000000000001")
     var result_small = ln(very_small)
     testing.assert_true(
-        String(result_small).startswith("-62.1697"),
-        "ln of a very small number should be -62.1697..., but got {}".format(
-            result_small
-        ),
+        String(result_small).startswith("-62.16979751083923346848576927"),
+        "ln of a very small number should be -62.16979751083923346848576927...,"
+        " but got {}".format(result_small),
     )
 
     # Test case 14: ln of a very large number
