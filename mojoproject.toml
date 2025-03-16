@@ -45,6 +45,7 @@ test_comparison = "magic run package && magic run mojo test tests/test_compariso
 test_factorial = "magic run package && magic run mojo test tests/test_factorial.mojo && magic run delete_package"
 test_exp = "magic run package && magic run mojo test tests/test_exp.mojo && magic run delete_package"
 test_ln = "magic run package && magic run mojo test tests/test_ln.mojo && magic run delete_package"
+test_power = "magic run package && magic run mojo test tests/test_power.mojo && magic run delete_package"
 
 # benches
 bench = "magic run package && cd benches && magic run mojo bench.mojo && cd .. && magic run delete_package"
@@ -58,6 +59,7 @@ bench_from_string = "magic run package && cd benches && magic run mojo bench_fro
 bench_comparison = "magic run package && cd benches && magic run mojo bench_comparison.mojo && cd .. && magic run delete_package"
 bench_exp = "magic run package && cd benches && magic run mojo bench_exp.mojo && cd .. && magic run delete_package"
 bench_ln = "magic run package && cd benches && magic run mojo bench_ln.mojo && cd .. && magic run delete_package"
+bench_power = "magic run package && cd benches && magic run mojo bench_power.mojo && cd .. && magic run delete_package"
 
 # before commit
 final = "magic run test && magic run bench"

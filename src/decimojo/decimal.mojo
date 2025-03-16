@@ -1059,25 +1059,8 @@ struct Decimal(
     fn __sub__(self, other: Decimal) raises -> Self:
         """
         Subtracts the other Decimal from self and returns a new Decimal.
-
-        Args:
-            other: The Decimal to subtract from this Decimal.
-
-        Returns:
-            A new Decimal containing the difference
-
-        Notes:
-        This method is implemented using the existing `__add__()` and `__neg__()` methods.
-
-        Examples:
-        ```console
-        var a = Decimal("10.5")
-        var b = Decimal("3.2")
-        var result = a - b  # Returns 7.3
-        ```
-        .
+        See `subtract()` for more information.
         """
-
         try:
             return decimojo.arithmetics.subtract(self, other)
         except e:
@@ -1127,29 +1110,25 @@ struct Decimal(
         return decimojo.arithmetics.true_divide(Decimal(other), self)
 
     fn __pow__(self, exponent: Decimal) raises -> Self:
+        """Raises self to the power of exponent and returns a new Decimal.
+        See `power()` for more information.
         """
-        Raises self to the power of exponent and returns a new Decimal.
-
-        Currently supports integer exponents only.
-
-        Args:
-            exponent: The power to raise self to.
-                It must be an integer or effectively an integer (e.g., 2.0).
-
-        Returns:
-            A new Decimal containing the result of self^exponent
-
-        Raises:
-            Error: If exponent is not an integer or if the operation would overflow.
-        """
-
-        return decimal.power(self, exponent)
+        try:
+            return decimal.power(self, exponent)
+        except e:
+            raise Error("Error in `__pow__()`: ", e)
 
     fn __pow__(self, exponent: Int) raises -> Self:
-        return decimal.power(self, exponent)
+        try:
+            return decimal.power(self, exponent)
+        except e:
+            raise Error("Error in `__pow__()`: ", e)
 
     fn __pow__(self, exponent: Float64) raises -> Self:
-        return decimal.power(self, Decimal(exponent))
+        try:
+            return decimal.power(self, Decimal(exponent))
+        except e:
+            raise Error("Error in `__pow__()`: ", e)
 
     # ===------------------------------------------------------------------=== #
     # Basic binary comparison operation dunders
