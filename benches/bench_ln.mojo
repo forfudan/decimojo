@@ -71,7 +71,6 @@ fn run_benchmark(
     var mojo_decimal = Decimal(input_value)
     var pydecimal = Python.import_module("decimal")
     var py_decimal = pydecimal.Decimal(input_value)
-    var py_math = Python.import_module("math")
 
     # Execute the operations once to verify correctness
     var mojo_result = dm.exponential.ln(mojo_decimal)
