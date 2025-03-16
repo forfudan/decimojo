@@ -461,7 +461,8 @@ fn ln(x: Decimal) raises -> Decimal:
         This implementation uses range reduction to improve accuracy and performance.
     """
 
-    print("DEBUG: ln(x) called with x =", x)
+    # print("DEBUG: ln(x) called with x =", x)
+
     # Handle special cases
     if x.is_negative() or x.is_zero():
         raise Error(
@@ -483,8 +484,8 @@ fn ln(x: Decimal) raises -> Decimal:
     # Compute ln(x) as ln(m * 2^p) = ln(m) + p*ln(2)
     # where 1 <= m < 2
 
-    var m = x
-    var p = 0
+    var m: Decimal = x
+    var p: Int = 0
 
     # Normalize m to range [0.5, 1) or [1, 2)
     if x >= Decimal("2"):
@@ -492,13 +493,14 @@ fn ln(x: Decimal) raises -> Decimal:
         while m >= Decimal("2"):
             m = m / Decimal("2")
             p += 1
-        print("DEBUG: m =", m, "p =", p)
+        # print("DEBUG: m =", m, "p =", p)
+
     elif x < Decimal("0.5"):
         # Repeatedly multiply by 2 until m >= 0.5
         while m < Decimal("0.5"):
             m = m * Decimal("2")
             p -= 1
-        print("DEBUG: m =", m, "p =", p)
+        # print("DEBUG: m =", m, "p =", p)
 
     # Now 0.5 <= m < 2
     var ln_m: Decimal
@@ -516,7 +518,6 @@ fn ln(x: Decimal) raises -> Decimal:
                 ln_series((m - Decimal("0.8")) * decimojo.constants.INV0D8())
                 + decimojo.constants.LN0D8()
             )
-            print("DEBUG: ln_m = ", ln_m)
         elif m >= Decimal("0.7"):
             ln_m = (
                 ln_series((m - Decimal("0.7")) * decimojo.constants.INV0D7())
@@ -547,12 +548,6 @@ fn ln(x: Decimal) raises -> Decimal:
                 ln_series((m - Decimal("1.2")) * decimojo.constants.INV1D2())
                 + decimojo.constants.LN1D2()
             )
-            print(
-                "DEBUG: ln_series =",
-                ln_series((m - Decimal("1.2")) * decimojo.constants.INV1D2()),
-            )
-            print("DEBUG: ln_1.2 =", decimojo.constants.LN1D2())
-            print("DEBUG: ln_m =", ln_m)
         elif m < Decimal("1.4"):  # 1.3 <= m < 1.4
             ln_m = (
                 ln_series((m - Decimal("1.3")) * decimojo.constants.INV1D3())
@@ -591,17 +586,14 @@ fn ln(x: Decimal) raises -> Decimal:
 
     # Combine result: ln(x) = ln(m) + p*ln(2)
     if p != 0:
-        print("DEBUG: ln_m =", ln_m)
-        print("DEBUG: LN2() =", decimojo.constants.LN2())
         return ln_m + Decimal(p) * decimojo.constants.LN2()
     else:
-        print("DEBUG: ln_m =", ln_m)
         return ln_m
 
 
 fn ln_series(z: Decimal) raises -> Decimal:
     """
-    Calculates ln(1+z) using Taylor series expansion.
+    Calculates ln(1+z) using Taylor series expansion at 1.
     For best accuracy, |z| should be small (< 0.5).
 
     Args:
@@ -615,7 +607,7 @@ fn ln_series(z: Decimal) raises -> Decimal:
         This series converges fastest when |z| is small.
     """
 
-    print("DEBUG: ln_series(z) called with z =", z)
+    # print("DEBUG: ln_series(z) called with z =", z)
 
     var max_terms = 500
 
@@ -643,12 +635,12 @@ fn ln_series(z: Decimal) raises -> Decimal:
 
         neg = not neg
         term = term * z * Decimal(i) / Decimal(i + 1)
-        print("DEBUG: term", i, "=", term)
-        print("DEBUG: result", i, "=", result)
+        # print("DEBUG: term", i, "=", term)
+        # print("DEBUG: result", i, "=", result)
 
         # Check for convergence
         if term.is_zero():
             break
 
-    print("DEBUG: ln_series result =", result)
+    # print("DEBUG: ln_series result =", result)
     return result

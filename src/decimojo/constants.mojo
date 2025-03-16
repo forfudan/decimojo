@@ -317,6 +317,15 @@ fn E0D25() -> Decimal:
 # ```
 
 
+# Constants for integers
+
+
+@always_inline
+fn LN1() -> Decimal:
+    """Returns ln(1) = 0."""
+    return Decimal(0x0, 0x0, 0x0, 0x0)
+
+
 @always_inline
 fn LN2() -> Decimal:
     """Returns ln(2) = 0.69314718055994530941723212145818..."""
@@ -384,11 +393,7 @@ fn LN0D9() -> Decimal:
     return Decimal(0xB7763910, 0xFC3656AD, 0x3678591, 0x801C0000)
 
 
-# Constants for values greater than or equal to 1
-@always_inline
-fn LN1() -> Decimal:
-    """Returns ln(1) = 0."""
-    return Decimal(0x0, 0x0, 0x0, 0x0)
+# Constants for values greater than 1
 
 
 @always_inline
