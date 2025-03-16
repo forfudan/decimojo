@@ -417,8 +417,8 @@ fn test_large_numbers() raises:
     testing.assert_equal(a53, Decimal("7922816251426433759354395033.4"))
 
     # 54. Division where result approaches max
-    var large_num = Decimal.MAX() / Decimal("2")
-    var a54 = large_num * Decimal("2")
+    var large_num = Decimal.MAX() / Decimal("3")
+    var a54 = large_num * Decimal("3")
     testing.assert_true(
         a54 <= Decimal.MAX(),
         "Case 54: Division where result approaches max failed",

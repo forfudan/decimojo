@@ -1,5 +1,5 @@
 """
-Comprehensive benchmarks for Decimal exponential function (exp).
+Comprehensive benchmarks for Decimal natural logarithm function (ln).
 Compares performance against Python's decimal module with 20 diverse test cases.
 """
 
@@ -28,7 +28,7 @@ fn open_log_file() raises -> PythonObject:
 
     # Generate a timestamp for the filename
     var timestamp = String(datetime.datetime.now().isoformat())
-    var log_filename = log_dir + "/benchmark_exp_" + timestamp + ".log"
+    var log_filename = log_dir + "/benchmark_ln_" + timestamp + ".log"
 
     print("Saving benchmark results to:", log_filename)
     return python.open(log_filename, "w")
@@ -55,11 +55,11 @@ fn run_benchmark(
     mut speedup_factors: List[Float64],
 ) raises:
     """
-    Run a benchmark comparing Mojo Decimal exp with Python Decimal exp.
+    Run a benchmark comparing Mojo Decimal ln with Python Decimal ln.
 
     Args:
         name: Name of the benchmark case.
-        input_value: String representation of value for exp(x).
+        input_value: String representation of value for ln(x).
         iterations: Number of iterations to run.
         log_file: File object for logging results.
         speedup_factors: Mojo List to store speedup factors for averaging.
@@ -73,8 +73,8 @@ fn run_benchmark(
     var py_decimal = pydecimal.Decimal(input_value)
 
     # Execute the operations once to verify correctness
-    var mojo_result = dm.exponential.exp(mojo_decimal)
-    var py_result = py_decimal.exp()
+    var mojo_result = dm.exponential.ln(mojo_decimal)
+    var py_result = py_decimal.ln()
 
     # Display results for verification
     log_print("Mojo result:     " + String(mojo_result), log_file)
@@ -83,7 +83,7 @@ fn run_benchmark(
     # Benchmark Mojo implementation
     var t0 = perf_counter_ns()
     for _ in range(iterations):
-        _ = dm.exponential.exp(mojo_decimal)
+        _ = dm.exponential.ln(mojo_decimal)
     var mojo_time = (perf_counter_ns() - t0) / iterations
     if mojo_time == 0:
         mojo_time = 1  # Prevent division by zero
@@ -91,7 +91,7 @@ fn run_benchmark(
     # Benchmark Python implementation
     t0 = perf_counter_ns()
     for _ in range(iterations):
-        _ = py_decimal.exp()
+        _ = py_decimal.ln()
     var python_time = (perf_counter_ns() - t0) / iterations
 
     # Calculate speedup factor
@@ -100,11 +100,11 @@ fn run_benchmark(
 
     # Print results with speedup comparison
     log_print(
-        "Mojo exp():     " + String(mojo_time) + " ns per iteration",
+        "Mojo ln():     " + String(mojo_time) + " ns per iteration",
         log_file,
     )
     log_print(
-        "Python exp():   " + String(python_time) + " ns per iteration",
+        "Python ln():   " + String(python_time) + " ns per iteration",
         log_file,
     )
     log_print("Speedup factor:  " + String(speedup), log_file)
@@ -119,7 +119,9 @@ fn main() raises:
     var speedup_factors = List[Float64]()
 
     # Display benchmark header with system information
-    log_print("=== DeciMojo Exponential Function (exp) Benchmark ===", log_file)
+    log_print(
+        "=== DeciMojo Natural Logarithm Function (ln) Benchmark ===", log_file
+    )
     log_print("Time: " + String(datetime.datetime.now().isoformat()), log_file)
 
     # Try to get system info
@@ -152,187 +154,187 @@ fn main() raises:
 
     # Define benchmark cases
     log_print(
-        "\nRunning exponential function benchmarks with "
+        "\nRunning natural logarithm function benchmarks with "
         + String(iterations)
         + " iterations each",
         log_file,
     )
 
-    # Case 1: exp(0) = 1
+    # Case 1: ln(1) = 0
     run_benchmark(
-        "exp(0) = 1",
-        "0",
-        iterations,
-        log_file,
-        speedup_factors,
-    )
-
-    # Case 2: exp(1) ≈ e
-    run_benchmark(
-        "exp(1) ≈ e",
+        "ln(1) = 0",
         "1",
         iterations,
         log_file,
         speedup_factors,
     )
 
-    # Case 3: exp(2) ≈ 7.389...
+    # Case 2: ln(e) ≈ 1
     run_benchmark(
-        "exp(2)",
+        "ln(e) ≈ 1",
+        "2.718281828459045235360287471",
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 3: ln(2)
+    run_benchmark(
+        "ln(2)",
         "2",
         iterations,
         log_file,
         speedup_factors,
     )
 
-    # Case 4: exp(-1) = 1/e
+    # Case 4: ln(10)
     run_benchmark(
-        "exp(-1) = 1/e",
-        "-1",
-        iterations,
-        log_file,
-        speedup_factors,
-    )
-
-    # Case 5: exp(0.5) ≈ sqrt(e)
-    run_benchmark(
-        "exp(0.5) ≈ sqrt(e)",
-        "0.5",
-        iterations,
-        log_file,
-        speedup_factors,
-    )
-
-    # Case 6: exp(-0.5) ≈ 1/sqrt(e)
-    run_benchmark(
-        "exp(-0.5) ≈ 1/sqrt(e)",
-        "-0.5",
-        iterations,
-        log_file,
-        speedup_factors,
-    )
-
-    # Case 7: exp with small positive value
-    run_benchmark(
-        "Small positive value",
-        "0.0001",
-        iterations,
-        log_file,
-        speedup_factors,
-    )
-
-    # Case 8: exp with very small positive value
-    run_benchmark(
-        "Very small positive value",
-        "0.000000001",
-        iterations,
-        log_file,
-        speedup_factors,
-    )
-
-    # Case 9: exp with small negative value
-    run_benchmark(
-        "Small negative value",
-        "-0.0001",
-        iterations,
-        log_file,
-        speedup_factors,
-    )
-
-    # Case 10: exp with very small negative value
-    run_benchmark(
-        "Very small negative value",
-        "-0.000000001",
-        iterations,
-        log_file,
-        speedup_factors,
-    )
-
-    # Case 11: exp with moderate value (e^3)
-    run_benchmark(
-        "Moderate value (e^3)",
-        "3",
-        iterations,
-        log_file,
-        speedup_factors,
-    )
-
-    # Case 12: exp with moderate negative value (e^-3)
-    run_benchmark(
-        "Moderate negative value (e^-3)",
-        "-3",
-        iterations,
-        log_file,
-        speedup_factors,
-    )
-
-    # Case 13: exp with large value (e^10)
-    run_benchmark(
-        "Large value (e^10)",
+        "ln(10)",
         "10",
         iterations,
         log_file,
         speedup_factors,
     )
 
-    # Case 14: exp with large negative value (e^-10)
+    # Case 5: ln(0.5)
     run_benchmark(
-        "Large negative value (e^-10)",
-        "-10",
+        "ln(0.5)",
+        "0.5",
         iterations,
         log_file,
         speedup_factors,
     )
 
-    # Case 15: exp with Pi
+    # Case 6: ln(5)
     run_benchmark(
-        "exp(π)",
-        "3.14159265358979323846",
+        "ln(5)",
+        "5",
         iterations,
         log_file,
         speedup_factors,
     )
 
-    # Case 16: exp with high precision input
+    # Case 7: ln with small positive value
+    run_benchmark(
+        "Small positive value",
+        "1.0001",
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 8: ln with very small positive value
+    run_benchmark(
+        "Very small positive value",
+        "1.000000001",
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 9: ln with value slightly less than 1
+    run_benchmark(
+        "Value slightly less than 1",
+        "0.9999",
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 10: ln with value slightly greater than 1
+    run_benchmark(
+        "Value slightly greater than 1",
+        "1.0001",
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 11: ln with moderate value
+    run_benchmark(
+        "Moderate value",
+        "7.5",
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 12: ln with large value
+    run_benchmark(
+        "Large value",
+        "1000",
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 13: ln with very large value
+    run_benchmark(
+        "Very large value",
+        "1000000000",
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 14: ln with high precision input
     run_benchmark(
         "High precision input",
-        "1.234567890123456789",
+        "2.718281828459045235360287471",
         iterations,
         log_file,
         speedup_factors,
     )
 
-    # Case 17: exp with fractional value
+    # Case 15: ln with fractional value
     run_benchmark(
-        "Fractional value (e^1.5)",
-        "1.5",
+        "Fractional value",
+        "0.25",
         iterations,
         log_file,
         speedup_factors,
     )
 
-    # Case 18: exp with negative fractional value
+    # Case 16: ln with fractional value of many digits
     run_benchmark(
-        "Negative fractional value (e^-1.5)",
-        "-1.5",
+        "Fractional value with many digits",
+        "0.12345678901234567890123456789",
         iterations,
         log_file,
         speedup_factors,
     )
 
-    # Case 19: exp with approximate e value
+    # Case 17: ln with approximate e value
     run_benchmark(
         "Approximate e value",
-        "2.718281828459045",
+        "2.718",
         iterations,
         log_file,
         speedup_factors,
     )
 
-    # Case 20: exp with larger value (e^15)
+    # Case 18: ln with larger value
     run_benchmark(
-        "Larger value (e^15)",
-        "15",
+        "Larger value",
+        "150",
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 19: ln with value between 0 and 1
+    run_benchmark(
+        "Value between 0 and 1",
+        "0.75",
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 20: ln with value close to zero
+    run_benchmark(
+        "Value close to zero",
+        "0.00001",
         iterations,
         log_file,
         speedup_factors,
@@ -345,8 +347,10 @@ fn main() raises:
     var average_speedup = sum_speedup / Float64(len(speedup_factors))
 
     # Display summary
-    log_print("\n=== Exponential Function Benchmark Summary ===", log_file)
-    log_print("Benchmarked:      20 different exp() cases", log_file)
+    log_print(
+        "\n=== Natural Logarithm Function Benchmark Summary ===", log_file
+    )
+    log_print("Benchmarked:      20 different ln() cases", log_file)
     log_print(
         "Each case ran:    " + String(iterations) + " iterations", log_file
     )
