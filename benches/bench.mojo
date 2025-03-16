@@ -8,6 +8,8 @@ from bench_from_string import main as bench_from_string
 from bench_round import main as bench_round
 from bench_comparison import main as bench_comparison
 from bench_exp import main as bench_exp
+from bench_ln import main as bench_ln
+from bench_power import main as bench_power
 
 
 fn main() raises:
@@ -21,3 +23,5 @@ fn main() raises:
     bench_round()
     bench_comparison()
     bench_exp()
+    bench_ln()
+    bench_power()

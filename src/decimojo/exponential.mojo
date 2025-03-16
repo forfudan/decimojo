@@ -38,36 +38,66 @@ import decimojo.utility
 
 
 fn power(base: Decimal, exponent: Decimal) raises -> Decimal:
-    """
-    Raises base to the power of exponent and returns a new Decimal.
+    """Raises a Decimal base to an arbitrary Decimal exponent power.
 
-    Currently supports integer exponents only.
+    This function handles both integer and non-integer exponents using the
+    identity x^y = e^(y * ln(x)).
 
     Args:
-        base: The base value.
-        exponent: The power to raise base to.
-            It must be an integer or effectively an integer (e.g., 2.0).
+        base: The base Decimal value (must be positive).
+        exponent: The exponent Decimal value (can be any value).
 
     Returns:
-        A new Decimal containing the result of base^exponent
+        A new Decimal containing the result of base^exponent.
 
     Raises:
-        Error: If exponent is not an integer or if the operation would overflow.
-        Error: If zero is raised to a negative power.
+        Error: If the base is negative or the exponent is negative and not an integer.
+        Error: If an error occurs in calling the power() function with an integer exponent.
+        Error: If an error occurs in calling the sqrt() function with a Decimal exponent.
+        Error: If an error occurs in calling the ln() function with a Decimal base.
+        Error: If an error occurs in calling the exp() function with a Decimal exponent.
     """
-    # Check if exponent is an integer
-    if not exponent.is_integer():
-        raise Error("Power operation is only supported for integer exponents")
 
-    # Convert exponent to integer
-    var exp_value = Int(exponent)
+    # CASE: If the exponent is integer
+    if exponent.is_integer():
+        try:
+            return power(base, Int(exponent))
+        except e:
+            raise Error("Error in `power()` with Decimal exponent: ", e)
 
-    return power(base, exp_value)
+    # CASE: For negative bases, only integer exponents are supported
+    if base.is_negative():
+        raise Error(
+            "Negative base with non-integer exponent results in a complex"
+            " number"
+        )
+
+    # CASE: If the exponent is simple fractions
+    # 0.5
+    if exponent == decimojo.constants.M0D5():
+        try:
+            return sqrt(base)
+        except e:
+            raise Error("Error in `power()` with Decimal exponent: ", e)
+    # -0.5
+    if exponent == Decimal(5, 0, 0, 0x80010000):
+        try:
+            return Decimal.ONE() / sqrt(base)
+        except e:
+            raise Error("Error in `power()` with Decimal exponent: ", e)
+
+    # GENERAL CASE
+    # Use the identity x^y = e^(y * ln(x))
+    try:
+        var ln_base = ln(base)
+        var product = exponent * ln_base
+        return exp(product)
+    except e:
+        raise Error("Error in `power()` with Decimal exponent: ", e)
 
 
 fn power(base: Decimal, exponent: Int) raises -> Decimal:
-    """
-    Convenience method to raise base to an integer power.
+    """Raises a Decimal base to an integer power.
 
     Args:
         base: The base value.
@@ -126,8 +156,7 @@ fn power(base: Decimal, exponent: Int) raises -> Decimal:
 
 
 fn sqrt(x: Decimal) raises -> Decimal:
-    """
-    Computes the square root of a Decimal value using Newton-Raphson method.
+    """Computes the square root of a Decimal value using Newton-Raphson method.
 
     Args:
         x: The Decimal value to compute the square root of.
@@ -249,8 +278,7 @@ fn sqrt(x: Decimal) raises -> Decimal:
 
 
 fn exp(x: Decimal) raises -> Decimal:
-    """
-    Calculates e^x for any Decimal value using optimized range reduction.
+    """Calculates e^x for any Decimal value using optimized range reduction.
     x should be no greater than 66 to avoid overflow.
 
     Args:
@@ -298,8 +326,8 @@ fn exp(x: Decimal) raises -> Decimal:
         return decimojo.constants.E()
 
     elif x_int < 1:
-        var M0D5 = Decimal(5, 0, 0, 1 << 16)  # 0.5
-        var M0D25 = Decimal(25, 0, 0, 2 << 16)  # 0.25
+        var M0D5 = decimojo.constants.M0D5()
+        var M0D25 = decimojo.constants.M0D25()
 
         if x < M0D25:  # 0 < x < 0.25
             return exp_series(x)
@@ -394,8 +422,7 @@ fn exp(x: Decimal) raises -> Decimal:
 
 
 fn exp_series(x: Decimal) raises -> Decimal:
-    """
-    Calculates e^x using Taylor series expansion.
+    """Calculates e^x using Taylor series expansion.
     Do not use this function for values larger than 1, but `exp()` instead.
 
     Args:
@@ -445,8 +472,7 @@ fn exp_series(x: Decimal) raises -> Decimal:
 
 
 fn ln(x: Decimal) raises -> Decimal:
-    """
-    Calculates the natural logarithm (ln) of a Decimal value.
+    """Calculates the natural logarithm (ln) of a Decimal value.
 
     Args:
         x: The Decimal value to compute the natural logarithm of.
@@ -651,8 +677,7 @@ fn ln(x: Decimal) raises -> Decimal:
 
 
 fn ln_series(z: Decimal) raises -> Decimal:
-    """
-    Calculates ln(1+z) using Taylor series expansion at 1.
+    """Calculates ln(1+z) using Taylor series expansion at 1.
     For best accuracy, |z| should be small (< 0.5).
 
     Args:

@@ -495,8 +495,8 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
 
     # SPECIAL CASE: Both operands are true integers
     if x1_scale == 0 and x2_scale == 0:
-        print("DEBUG: Both operands are true integers")
-        print("DEBUG: combined_num_bits: ", combined_num_bits)
+        # print("DEBUG: Both operands are true integers")
+        # print("DEBUG: combined_num_bits: ", combined_num_bits)
         # Small integers, use UInt64 multiplication
         if combined_num_bits <= 64:
             var prod: UInt64 = UInt64(x1_coef) * UInt64(x2_coef)

@@ -25,11 +25,13 @@
 
 # ===----------------------------------------------------------------------=== #
 #
-# Integer constants
+# Integer and decimal constants
 # The prefix "M" stands for a decimal (money) value.
 # This is a convention in C.
 #
 # ===----------------------------------------------------------------------=== #
+
+# Integer constants
 
 
 @always_inline
@@ -96,6 +98,21 @@ fn M9() -> Decimal:
 fn M10() -> Decimal:
     """Returns 10 as a Decimal."""
     return Decimal(0xA, 0x0, 0x0, 0x0)
+
+
+# Decimal constants
+
+
+@always_inline
+fn M0D5() -> Decimal:
+    """Returns 0.5 as a Decimal."""
+    return Decimal(5, 0, 0, 0x10000)
+
+
+@always_inline
+fn M0D25() -> Decimal:
+    """Returns 0.25 as a Decimal."""
+    return Decimal(25, 0, 0, 0x20000)
 
 
 # ===----------------------------------------------------------------------=== #
