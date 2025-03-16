@@ -38,8 +38,7 @@ import decimojo.utility
 
 
 fn power(base: Decimal, exponent: Decimal) raises -> Decimal:
-    """
-    Raises a Decimal base to an arbitrary Decimal exponent power.
+    """Raises a Decimal base to an arbitrary Decimal exponent power.
 
     This function handles both integer and non-integer exponents using the
     identity x^y = e^(y * ln(x)).
@@ -98,8 +97,7 @@ fn power(base: Decimal, exponent: Decimal) raises -> Decimal:
 
 
 fn power(base: Decimal, exponent: Int) raises -> Decimal:
-    """
-    Convenience method to raise base to an integer power.
+    """Raises a Decimal base to an integer power.
 
     Args:
         base: The base value.
@@ -158,8 +156,7 @@ fn power(base: Decimal, exponent: Int) raises -> Decimal:
 
 
 fn sqrt(x: Decimal) raises -> Decimal:
-    """
-    Computes the square root of a Decimal value using Newton-Raphson method.
+    """Computes the square root of a Decimal value using Newton-Raphson method.
 
     Args:
         x: The Decimal value to compute the square root of.
@@ -281,8 +278,7 @@ fn sqrt(x: Decimal) raises -> Decimal:
 
 
 fn exp(x: Decimal) raises -> Decimal:
-    """
-    Calculates e^x for any Decimal value using optimized range reduction.
+    """Calculates e^x for any Decimal value using optimized range reduction.
     x should be no greater than 66 to avoid overflow.
 
     Args:
@@ -426,8 +422,7 @@ fn exp(x: Decimal) raises -> Decimal:
 
 
 fn exp_series(x: Decimal) raises -> Decimal:
-    """
-    Calculates e^x using Taylor series expansion.
+    """Calculates e^x using Taylor series expansion.
     Do not use this function for values larger than 1, but `exp()` instead.
 
     Args:
@@ -477,8 +472,7 @@ fn exp_series(x: Decimal) raises -> Decimal:
 
 
 fn ln(x: Decimal) raises -> Decimal:
-    """
-    Calculates the natural logarithm (ln) of a Decimal value.
+    """Calculates the natural logarithm (ln) of a Decimal value.
 
     Args:
         x: The Decimal value to compute the natural logarithm of.
@@ -683,8 +677,7 @@ fn ln(x: Decimal) raises -> Decimal:
 
 
 fn ln_series(z: Decimal) raises -> Decimal:
-    """
-    Calculates ln(1+z) using Taylor series expansion at 1.
+    """Calculates ln(1+z) using Taylor series expansion at 1.
     For best accuracy, |z| should be small (< 0.5).
 
     Args:
