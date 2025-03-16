@@ -298,19 +298,19 @@ fn exp(x: Decimal) raises -> Decimal:
         return decimojo.constants.E()
 
     elif x_int < 1:
-        var d05 = Decimal(5, 0, 0, scale=1, sign=False)  # 0.5
-        var d025 = Decimal(25, 0, 0, scale=2, sign=False)  # 0.25
+        var M0D5 = Decimal(5, 0, 0, 1 << 16)  # 0.5
+        var M0D25 = Decimal(25, 0, 0, 2 << 16)  # 0.25
 
-        if x < d025:  # 0 < x < 0.25
+        if x < M0D25:  # 0 < x < 0.25
             return exp_series(x)
 
-        elif x < d05:  # 0.25 <= x < 0.5
+        elif x < M0D5:  # 0.25 <= x < 0.5
             exp_chunk = decimojo.constants.E0D25()
-            remainder = x - d025
+            remainder = x - M0D25
 
         else:  # 0.5 <= x < 1
             exp_chunk = decimojo.constants.E0D5()
-            remainder = x - d05
+            remainder = x - M0D5
 
     elif x_int == 1:  # 1 <= x < 2, chunk = 1
         exp_chunk = decimojo.constants.E()

@@ -26,7 +26,8 @@
 # ===----------------------------------------------------------------------=== #
 #
 # Integer constants
-# The prefix M stands for decimal (money).
+# The prefix "M" stands for a decimal (money) value.
+# This is a convention in C.
 #
 # ===----------------------------------------------------------------------=== #
 
