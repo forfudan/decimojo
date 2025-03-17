@@ -633,74 +633,74 @@ fn number_of_bits[dtype: DType, //](owned value: Scalar[dtype]) -> Int:
 # ===----------------------------------------------------------------------=== #
 
 
-# Module-level cache for powers of 10
-var _power_of_10_as_uint128_cache = List[UInt128]()
-var _power_of_10_as_uint256_cache = List[UInt256]()
+# # Module-level cache for powers of 10
+# var _power_of_10_as_uint128_cache = List[UInt128]()
+# var _power_of_10_as_uint256_cache = List[UInt256]()
 
 
-# Initialize with the first value
-@always_inline
-fn _init_power_of_10_as_uint128_cache():
-    if len(_power_of_10_as_uint128_cache) == 0:
-        _power_of_10_as_uint128_cache.append(1)  # 10^0 = 1
+# # Initialize with the first value
+# @always_inline
+# fn _init_power_of_10_as_uint128_cache():
+#     if len(_power_of_10_as_uint128_cache) == 0:
+#         _power_of_10_as_uint128_cache.append(1)  # 10^0 = 1
 
 
-@always_inline
-fn _init_power_of_10_as_uint256_cache():
-    if len(_power_of_10_as_uint256_cache) == 0:
-        _power_of_10_as_uint256_cache.append(1)  # 10^0 = 1
+# @always_inline
+# fn _init_power_of_10_as_uint256_cache():
+#     if len(_power_of_10_as_uint256_cache) == 0:
+#         _power_of_10_as_uint256_cache.append(1)  # 10^0 = 1
 
 
-@always_inline
-fn power_of_10_as_uint128(n: Int) raises -> UInt128:
-    """
-    Returns 10^n using cached values when available.
-    """
+# @always_inline
+# fn power_of_10_as_uint128(n: Int) raises -> UInt128:
+#     """
+#     Returns 10^n using cached values when available.
+#     """
 
-    # Check for negative exponent
-    if n < 0:
-        raise Error(
-            "power_of_10() requires non-negative exponent, got {}".format(n)
-        )
+#     # Check for negative exponent
+#     if n < 0:
+#         raise Error(
+#             "power_of_10() requires non-negative exponent, got {}".format(n)
+#         )
 
-    # Initialize cache if needed
-    if len(_power_of_10_as_uint128_cache) == 0:
-        _init_power_of_10_as_uint128_cache()
+#     # Initialize cache if needed
+#     if len(_power_of_10_as_uint128_cache) == 0:
+#         _init_power_of_10_as_uint128_cache()
 
-    # Extend cache if needed
-    while len(_power_of_10_as_uint128_cache) <= n:
-        var next_power = _power_of_10_as_uint128_cache[
-            len(_power_of_10_as_uint128_cache) - 1
-        ] * 10
-        _power_of_10_as_uint128_cache.append(next_power)
+#     # Extend cache if needed
+#     while len(_power_of_10_as_uint128_cache) <= n:
+#         var next_power = _power_of_10_as_uint128_cache[
+#             len(_power_of_10_as_uint128_cache) - 1
+#         ] * 10
+#         _power_of_10_as_uint128_cache.append(next_power)
 
-    return _power_of_10_as_uint128_cache[n]
+#     return _power_of_10_as_uint128_cache[n]
 
 
-@always_inline
-fn power_of_10_as_uint256(n: Int) raises -> UInt256:
-    """
-    Returns 10^n using cached values when available.
-    """
+# @always_inline
+# fn power_of_10_as_uint256(n: Int) raises -> UInt256:
+#     """
+#     Returns 10^n using cached values when available.
+#     """
 
-    # Check for negative exponent
-    if n < 0:
-        raise Error(
-            "power_of_10() requires non-negative exponent, got {}".format(n)
-        )
+#     # Check for negative exponent
+#     if n < 0:
+#         raise Error(
+#             "power_of_10() requires non-negative exponent, got {}".format(n)
+#         )
 
-    # Initialize cache if needed
-    if len(_power_of_10_as_uint256_cache) == 0:
-        _init_power_of_10_as_uint256_cache()
+#     # Initialize cache if needed
+#     if len(_power_of_10_as_uint256_cache) == 0:
+#         _init_power_of_10_as_uint256_cache()
 
-    # Extend cache if needed
-    while len(_power_of_10_as_uint256_cache) <= n:
-        var next_power = _power_of_10_as_uint256_cache[
-            len(_power_of_10_as_uint256_cache) - 1
-        ] * 10
-        _power_of_10_as_uint256_cache.append(next_power)
+#     # Extend cache if needed
+#     while len(_power_of_10_as_uint256_cache) <= n:
+#         var next_power = _power_of_10_as_uint256_cache[
+#             len(_power_of_10_as_uint256_cache) - 1
+#         ] * 10
+#         _power_of_10_as_uint256_cache.append(next_power)
 
-    return _power_of_10_as_uint256_cache[n]
+#     return _power_of_10_as_uint256_cache[n]
 
 
 @always_inline

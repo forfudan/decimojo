@@ -1045,7 +1045,7 @@ struct Decimal(
 
         # Otherwise, get the integer part by dividing by 10^scale
         else:
-            res = self.coefficient() // 10 ** UInt128(self.scale())
+            res = self.coefficient() // UInt128(10) ** UInt128(self.scale())
 
         return res
 
