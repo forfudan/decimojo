@@ -42,7 +42,7 @@ fn bitcast[dtype: DType](dec: Decimal) -> Scalar[dtype]:
         dec: The Decimal to bitcast.
 
     Constraints:
-        `dtype` must be `DType.uint128`.
+        `dtype` must be `DType.uint128` or `DType.uint256`.
 
     Returns:
         The bitcasted Decimal (low, mid, high) as a Mojo scalar.
@@ -51,8 +51,8 @@ fn bitcast[dtype: DType](dec: Decimal) -> Scalar[dtype]:
 
     # Compile-time checker: ensure the dtype is either uint128 or uint256
     constrained[
-        dtype == DType.uint128,
-        "must be uint128",
+        dtype == DType.uint128 or dtype == DType.uint256,
+        "must be uint128 or uint256",
     ]()
 
     # Bitcast the Decimal to the desired Mojo scalar type
@@ -60,7 +60,7 @@ fn bitcast[dtype: DType](dec: Decimal) -> Scalar[dtype]:
         Scalar[dtype]
     ]().load()
     # Mask out the bits in flags
-    result &= 0x00000000_FFFFFFFF_FFFFFFFF_FFFFFFFF
+    result &= Scalar[dtype](0xFFFFFFFF_FFFFFFFF_FFFFFFFF)
     return result
 
 

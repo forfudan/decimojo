@@ -481,7 +481,7 @@ fn E0D25() -> Decimal:
 # The repr of the magic numbers can be obtained by the following code:
 #
 # ```mojo
-# fn print_repr_from_words(value: String, ln_value: String) raises:
+# fn print_repr_words(value: String, ln_value: String) raises:
 #     """
 #     Prints the hex representation of a logarithm value.
 #     Args:
@@ -489,7 +489,7 @@ fn E0D25() -> Decimal:
 #         ln_value: The natural logarithm as a String.
 #     """
 #     var log_decimal = Decimal(ln_value)
-#     print("ln(" + value + "): " + log_decimal.repr_from_words())
+#     print("ln(" + value + "): " + log_decimal.repr_words())
 # ```
 
 
