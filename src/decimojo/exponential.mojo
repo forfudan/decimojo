@@ -203,9 +203,24 @@ fn root(x: Decimal, n: Int) raises -> Decimal:
 
     # For numbers with zero scale (true integers)
     if x_scale == 0:
-        var float_root = pow(Float64(x_coef), 1 / Float64(n))
-        guess = Decimal.from_uint128(UInt128(round(float_root)))
-        pass
+        if n <= 4:
+            var float_root = pow(Float64(x_coef), 1 / Float64(n))
+            guess = Decimal.from_uint128(UInt128(round(float_root)), sign=False)
+            pass
+        elif n <= 8:
+            var float_root = pow(Float64(x_coef), 1 / Float64(n)) * Float64(
+                10
+            ) ** 8
+            guess = Decimal.from_uint128(
+                UInt128(round(float_root)), scale=8, sign=False
+            )
+        else:
+            var float_root = pow(Float64(x_coef), 1 / Float64(n)) * Float64(
+                10
+            ) ** 24
+            guess = Decimal.from_uint128(
+                UInt128(round(float_root)), scale=24, sign=False
+            )
 
     # Otherwise, use the following formulae:
     # let divmod(scale, n) = (x, y)
@@ -236,6 +251,8 @@ fn root(x: Decimal, n: Int) raises -> Decimal:
     # else:
     #     # For x < 1, use x as initial guess
     #     guess = x
+
+    # print("DEBUG: initial guess", guess)
 
     # Newton-Raphson method for n-th root
     # Formula: x_{k+1} = ((n-1)*x_k + a/x_k^(n-1))/n
