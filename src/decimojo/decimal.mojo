@@ -861,7 +861,7 @@ struct Decimal(
         return Decimal(low, mid, high, scale, is_negative)
 
     # ===------------------------------------------------------------------=== #
-    # Output dunders, type-transfer dunders, and other type-transfer methods
+    # Output dunders, type-transfer dunders
     # ===------------------------------------------------------------------=== #
 
     fn __float__(self) -> Float64:
@@ -941,10 +941,19 @@ struct Decimal(
         """
         return 'Decimal("' + self.__str__() + '")'
 
-    fn repr_from_words(self) -> String:
+    # ===------------------------------------------------------------------=== #
+    # Type-transfer or output methods that are not dunders
+    # ===------------------------------------------------------------------=== #
+
+    fn write_to[W: Writer](self, mut writer: W):
+        """Writes the Decimal to a writer.
+        This implement the `write` method of the `Writer` trait.
         """
-        Returns a string representation of the Decimal's internal words.
-        Decimal.from_words(low, mid, high, flags).
+        writer.write(String(self))
+
+    fn repr_words(self) -> String:
+        """Returns a string representation of the Decimal's internal words.
+        `Decimal.from_words(low, mid, high, flags)`.
         """
         return (
             "Decimal("
@@ -955,6 +964,26 @@ struct Decimal(
             + hex(self.high)
             + ", "
             + hex(self.flags)
+            + ")"
+        )
+
+    fn repr_components(self) -> String:
+        """Returns a string representation of the Decimal's five components.
+        `Decimal.from_components(low, mid, high, scale, sign)`.
+        """
+        var scale = UInt8((self.flags & Self.SCALE_MASK) >> Self.SCALE_SHIFT)
+        var sign = Bool((self.flags & Self.SIGN_MASK) == Self.SIGN_MASK)
+        return (
+            "Decimal(low="
+            + hex(self.low)
+            + ", mid="
+            + hex(self.mid)
+            + ", high="
+            + hex(self.high)
+            + ", scale="
+            + String(scale)
+            + ", sign="
+            + String(sign)
             + ")"
         )
 
@@ -993,12 +1022,6 @@ struct Decimal(
             res = self.coefficient() // 10 ** UInt128(self.scale())
 
         return res
-
-    fn write_to[W: Writer](self, mut writer: W):
-        """
-        Writes the Decimal to a writer.
-        """
-        writer.write(String(self))
 
     # ===------------------------------------------------------------------=== #
     # Basic unary operation dunders
