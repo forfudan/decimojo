@@ -204,28 +204,30 @@ fn root(x: Decimal, n: Int) raises -> Decimal:
     # For numbers with zero scale (true integers)
     if x_scale == 0:
         var float_root = pow(Float64(x_coef), 1 / Float64(n))
-        guess = Decimal.from_uint128(UInt128(float_root))
+        guess = Decimal.from_uint128(UInt128(round(float_root)))
+        pass
 
     # Otherwise, use the following formulae:
     # let divmod(scale, n) = (x, y)
+    # so scale = x * n + y = (x + 1) * n + (y - n)
     #   a^(1/n) / (10^scale)^(1/n)
     # = a^(1/n) / (10^(scale/n))
-    # = a^(1/n) / (10^((x * n + y) / n))
-    # = a^(1/n) / (10^(x + y/n))
-    # = a^(1/n) / 10^x / 10^(y/n)
-    # = a^(1/n) / 10^(y/n) / 10^x
+    # = a^(1/n) / (10^((x + 1) * n + y - n) / n))
+    # = a^(1/n) / (10^(x+1 + (y-n)/n))
+    # = a^(1/n) / 10^(x+1) / 10^((y-n)/n)
+    # = a^(1/n) / 10^((y/n-1) / 10^(x+1)
     else:
         var dividend = x_scale // n
         var remainder = x_scale % n
         var float_root = (
             Float64(x_coef) ** (Float64(1) / Float64(n))
-            / Float64(10) ** (Float64(remainder) / Float64(n))
+            / Float64(10) ** (Float64(remainder) / Float64(n) - 1)
         )
         guess = Decimal.from_uint128(
-            UInt128(float_root), scale=dividend, sign=False
+            UInt128(float_root), scale=dividend + 1, sign=False
         )
 
-    print("DEBUG: initial guess", guess)
+    # print("DEBUG: initial guess", guess)
     testing.assert_false(guess.is_zero(), "Initial guess should not be zero")
 
     # if x > Decimal.ONE():
@@ -325,7 +327,7 @@ fn sqrt(x: Decimal) raises -> Decimal:
     # For numbers with zero scale (true integers)
     if x_scale == 0:
         var float_sqrt = builtin_math.sqrt(Float64(x_coef))
-        guess = Decimal.from_uint128(UInt128(float_sqrt))
+        guess = Decimal.from_uint128(UInt128(round(float_sqrt)))
 
     # For numbers with even scale
     elif x_scale % 2 == 0:
