@@ -155,6 +155,80 @@ fn power(base: Decimal, exponent: Int) raises -> Decimal:
     return result
 
 
+fn root(x: Decimal, n: Int) raises -> Decimal:
+    """Calculates the n-th root of a Decimal value using Newton-Raphson method.
+
+    Args:
+        x: The Decimal value to compute the n-th root of.
+        n: The root to compute (must be positive).
+
+    Returns:
+        A new Decimal containing the n-th root of x.
+
+    Raises:
+        Error: If x is negative and n is even.
+        Error: If n is zero or negative.
+    """
+    # Special cases for n
+    if n <= 0:
+        raise Error("Error in `root()`: Cannot compute non-positive root")
+
+    if n == 1:
+        return x
+
+    if n == 2:
+        return sqrt(x)
+
+    # Special cases for x
+    if x.is_zero():
+        return Decimal.ZERO()
+
+    if x.is_one():
+        return Decimal.ONE()
+
+    if x.is_negative():
+        if n % 2 == 0:
+            raise Error(
+                "Error in `root()`: Cannot compute even root of a negative"
+                " number"
+            )
+        # For odd roots of negative numbers, compute |x|^(1/n) and negate
+        return -root(-x, n)
+
+    # Newton-Raphson method for n-th root
+    # Formula: x_{k+1} = ((n-1)*x_k + a/x_k^(n-1))/n
+
+    # Initial guess
+    var guess: Decimal
+    if x > Decimal.ONE():
+        # For x > 1, use x/n as initial guess
+        guess = x / Decimal(n)
+    else:
+        # For x < 1, use x as initial guess
+        guess = x
+
+    var prev_guess = Decimal.ZERO()
+    var n_decimal = Decimal(n)
+    var n_minus_1 = n - 1
+    var n_minus_1_decimal = Decimal(n_minus_1)
+
+    # Newton-Raphson iteration
+    for _ in range(100):  # 100 iterations max
+        prev_guess = guess
+
+        # Calculate guess^(n-1)
+        var pow_n_minus_1 = power(guess, n_minus_1)
+
+        # x_{k+1} = ((n-1)*x_k + a/x_k^(n-1))/n
+        guess = (n_minus_1_decimal * guess + x / pow_n_minus_1) / n_decimal
+
+        # Check for convergence
+        if guess == prev_guess:
+            break
+
+    return guess
+
+
 fn sqrt(x: Decimal) raises -> Decimal:
     """Computes the square root of a Decimal value using Newton-Raphson method.
 
@@ -179,7 +253,7 @@ fn sqrt(x: Decimal) raises -> Decimal:
     var x_coef: UInt128 = x.coefficient()
     var x_scale = x.scale()
 
-    # Initial guess - a good guess helps converge faster
+    # Initial guess
     # use floating point approach to quickly find a good guess
 
     var guess: Decimal
