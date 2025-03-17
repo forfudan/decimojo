@@ -71,7 +71,7 @@ struct Decimal(
     Absable,
     Comparable,
     Floatable,
-    Intable,
+    IntableRaising,
     Roundable,
     Writable,
 ):
@@ -878,19 +878,15 @@ struct Decimal(
 
         return result
 
-    fn __int__(self) -> Int:
+    fn __int__(self) raises -> Int:
         """
-        Converts this Decimal to an Int value.
-        ***WARNING***: If the Decimal is too large to fit in an Int,
-        this will become the maximum or minimum Int value.
-
-        Returns:
-            The Int representation of this Decimal.
+        Returns the integral part of the Decimal as Int.
+        See `to_int()` for more information.
         """
-
-        var res = Int(self.to_uint128())
-
-        return -res if self.is_negative() else res
+        try:
+            return self.to_int()
+        except e:
+            raise Error("Error in `Decimal.__int__()` with Int: ", e)
 
     fn __str__(self) -> String:
         """
@@ -987,10 +983,44 @@ struct Decimal(
             + ")"
         )
 
+    fn to_int(self) raises -> Int:
+        """Returns the integral part of the Decimal as Int.
+        If the Decimal is too large to fit in Int, an error is raised.
+
+        Returns:
+            The signed integral part of the Decimal.
+
+        Raises:
+            Error: If the Decimal is too large to fit in Int.
+        """
+        try:
+            return Int(self.to_int64())
+        except e:
+            raise Error("Error in `to_int()`: ", e)
+
+    fn to_int64(self) raises -> Int64:
+        """Returns the integral part of the Decimal as Int64.
+        If the Decimal is too large to fit in Int64, an error is raised.
+
+        Returns:
+            The signed integral part of the Decimal.
+
+        Raises:
+            Error: If the Decimal is too large to fit in Int64.
+        """
+        var result = self.to_int128()
+
+        if result > Int128(Int64.MAX):
+            raise Error("Decimal is too large to fit in Int64")
+
+        if result < Int128(Int64.MIN):
+            raise Error("Decimal is too small to fit in Int64")
+
+        return Int64(result & 0xFFFF_FFFF_FFFF_FFFF)
+
     fn to_int128(self) -> Int128:
         """
         Returns the signed integral part of the Decimal.
-        Compared to `__int__` method, the returned value will not be truncated.
         """
 
         var res = Int128(self.to_uint128())
@@ -998,11 +1028,7 @@ struct Decimal(
         return -res if self.is_negative() else res
 
     fn to_uint128(self) -> UInt128:
-        """
-        Returns the unsigned integral part of the Decimal.
-        Compared to `__int__` method, the returned value will not be truncated.
-        """
-
+        """Returns the absolute integral part of the Decimal as UInt128."""
         var res: UInt128
 
         if self.is_zero():
