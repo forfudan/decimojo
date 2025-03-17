@@ -207,17 +207,24 @@ fn root(x: Decimal, n: Int) raises -> Decimal:
         # For x < 1, use x as initial guess
         guess = x
 
+    print("DEBUG: initial guess", guess)
+
     var prev_guess = Decimal.ZERO()
     var n_decimal = Decimal(n)
     var n_minus_1 = n - 1
     var n_minus_1_decimal = Decimal(n_minus_1)
 
     # Newton-Raphson iteration
-    for _ in range(100):  # 100 iterations max
+    for _step in range(100):  # 100 iterations max
         prev_guess = guess
 
         # Calculate guess^(n-1)
         var pow_n_minus_1 = power(guess, n_minus_1)
+
+        print("DEBUG: step = ", _step)
+        print("DEBUG: guess = ", guess)
+        print("DEBUG: n_minus_1 = ", n_minus_1)
+        print("DEBUG: pow_n_minus_1 = ", pow_n_minus_1)
 
         # x_{k+1} = ((n-1)*x_k + a/x_k^(n-1))/n
         guess = (n_minus_1_decimal * guess + x / pow_n_minus_1) / n_decimal
@@ -225,7 +232,6 @@ fn root(x: Decimal, n: Int) raises -> Decimal:
         # Check for convergence
         if guess == prev_guess:
             break
-
     return guess
 
 
