@@ -31,6 +31,8 @@
 # - Output dunders, type-transfer dunders, and other type-transfer methods
 # - Basic unary arithmetic operation dunders
 # - Basic binary arithmetic operation dunders
+# - Basic binary arithmetic operation dunders with reflected operands
+# - Basic binary augmented arithmetic operation dunders
 # - Basic comparison operation dunders
 # - Other dunders that implements traits
 # - Mathematical methods that do not implement a trait (not a dunder)
@@ -79,8 +81,8 @@ struct Decimal(
     Internal Representation
     -----------------------
     Each decimal uses a 128-bit on memory, where:
-    - 96 bits for the coefficient (mantissa), which is 96-bit unsigned integers
-    stored as three 32 bit integer (little-endian).
+    - 96 bits for the coefficient (significand), which is 96-bit unsigned
+    integers stored as three 32 bit integer (little-endian).
         - Bit 0 to 31 are stored in the low field: least significant bits.
         - Bit 32 to 63 are stored in the mid field: middle bits.
         - Bit 64 to 95 are stored in the high field: most significant bits.
@@ -126,9 +128,9 @@ struct Decimal(
     1 bit for sign (0 is positive and 1 is negative)."""
     alias SCALE_MASK = UInt32(0x00FF0000)
     """Scale mask. `0b0000_0000_1111_1111_0000_0000_0000_0000`.
-    Bits 16 to 23 must contain an exponent between 0 and 28."""
+    Bits 16 to 23 must contain an scale between 0 and 28."""
     alias SCALE_SHIFT = UInt32(16)
-    """Bits 16 to 23 must contain an exponent between 0 and 28."""
+    """Bits 16 to 23 must contain an scale between 0 and 28."""
     alias INFINITY_MASK = UInt32(0x00000001)
     """Infinity mask. `0b0000_0000_0000_0000_0000_0000_0000_0001`."""
     alias NAN_MASK = UInt32(0x00000002)
@@ -499,11 +501,13 @@ struct Decimal(
         - Digits 0-9.
         - Decimal point ".". It can only appear once.
         - Negative sign "-". It can only appear before the first digit.
-        - Positive sign "+". It can only appear before the first digit or after exponent "e" or "E".
-        - Exponential notation "e" or "E". It can only appear once after the digits.
-        - Space " ". It can appear anywhere in the string, but it is ignored.
-        - Comma ",". It can appear anywhere between digits, but it is ignored.
-        - Underscore "_". It can appear anywhere between digits, but it is ignored.
+        - Positive sign "+". It can only appear before the first digit or after
+            exponent "e" or "E".
+        - Exponential notation "e" or "E". It can only appear once after the
+            digits.
+        - Space " ". It can appear anywhere in the string it is ignored.
+        - Comma ",". It can appear anywhere between digits it is ignored.
+        - Underscore "_". It can appear anywhere between digits it is ignored.
         """
 
         var value_string_slice = value.as_string_slice()
@@ -1023,96 +1027,58 @@ struct Decimal(
 
     # ===------------------------------------------------------------------=== #
     # Basic binary arithmetic operation dunders
-    # add, sub, mul, truediv, pow
+    # These methods are called to implement the binary arithmetic operations
+    # (+, -, *, @, /, //, %, divmod(), pow(), **, <<, >>, &, ^, |)
     # ===------------------------------------------------------------------=== #
-    fn __add__(self, other: Decimal) raises -> Self:
-        """
-        Adds two Decimal values and returns a new Decimal containing the sum.
-
-        Args:
-            other: The Decimal to add to this Decimal.
-
-        Returns:
-            A new Decimal containing the sum.
-
-        Raises:
-            Error: If an error occurs during the addition, forward the error.
-        """
-
+    fn __add__(self, other: Self) raises -> Self:
         try:
             return decimojo.arithmetics.add(self, other)
         except e:
             raise Error("Error in `__add__()`: ", e)
 
-    fn __add__(self, other: Float64) raises -> Self:
-        return decimojo.arithmetics.add(self, Decimal(other))
-
     fn __add__(self, other: Int) raises -> Self:
-        return decimojo.arithmetics.add(self, Decimal(other))
+        try:
+            return decimojo.arithmetics.add(self, Decimal(other))
+        except e:
+            raise Error("Error in `__add__()`: ", e)
 
-    fn __radd__(self, other: Float64) raises -> Self:
-        return decimojo.arithmetics.add(Decimal(other), self)
-
-    fn __radd__(self, other: Int) raises -> Self:
-        return decimojo.arithmetics.add(Decimal(other), self)
-
-    fn __sub__(self, other: Decimal) raises -> Self:
-        """
-        Subtracts the other Decimal from self and returns a new Decimal.
-        See `subtract()` for more information.
-        """
+    fn __sub__(self, other: Self) raises -> Self:
         try:
             return decimojo.arithmetics.subtract(self, other)
         except e:
             raise Error("Error in `__sub__()`: ", e)
 
-    fn __sub__(self, other: Float64) raises -> Self:
-        return decimojo.arithmetics.subtract(self, Decimal(other))
-
     fn __sub__(self, other: Int) raises -> Self:
-        return decimojo.arithmetics.subtract(self, Decimal(other))
+        try:
+            return decimojo.arithmetics.subtract(self, Decimal(other))
+        except e:
+            raise Error("Error in `__sub__()`: ", e)
 
-    fn __rsub__(self, other: Float64) raises -> Self:
-        return decimojo.arithmetics.subtract(Decimal(other), self)
-
-    fn __rsub__(self, other: Int) raises -> Self:
-        return decimojo.arithmetics.subtract(Decimal(other), self)
-
-    fn __mul__(self, other: Decimal) raises -> Self:
-        """
-        Multiplies two Decimal values and returns a new Decimal containing the product.
-        """
-
-        return decimojo.arithmetics.multiply(self, other)
-
-    fn __mul__(self, other: Float64) raises -> Self:
-        return decimojo.arithmetics.multiply(self, Decimal(other))
+    fn __mul__(self, other: Self) raises -> Self:
+        try:
+            return decimojo.arithmetics.multiply(self, other)
+        except e:
+            raise Error("Error in `__mul__()`: ", e)
 
     fn __mul__(self, other: Int) raises -> Self:
-        return decimojo.arithmetics.multiply(self, Decimal(other))
+        try:
+            return decimojo.arithmetics.multiply(self, Decimal(other))
+        except e:
+            raise Error("Error in `__mul__()`: ", e)
 
-    fn __truediv__(self, other: Decimal) raises -> Self:
-        """
-        Divides this Decimal by another Decimal and returns a new Decimal containing the result.
-        """
-        return decimojo.arithmetics.true_divide(self, other)
-
-    fn __truediv__(self, other: Float64) raises -> Self:
-        return decimojo.arithmetics.true_divide(self, Decimal(other))
+    fn __truediv__(self, other: Self) raises -> Self:
+        try:
+            return decimojo.arithmetics.true_divide(self, other)
+        except e:
+            raise Error("Error in `__truediv__()`: ", e)
 
     fn __truediv__(self, other: Int) raises -> Self:
-        return decimojo.arithmetics.true_divide(self, Decimal(other))
+        try:
+            return decimojo.arithmetics.true_divide(self, Decimal(other))
+        except e:
+            raise Error("Error in `__truediv__()`: ", e)
 
-    fn __rtruediv__(self, other: Float64) raises -> Self:
-        return decimojo.arithmetics.true_divide(Decimal(other), self)
-
-    fn __rtruediv__(self, other: Int) raises -> Self:
-        return decimojo.arithmetics.true_divide(Decimal(other), self)
-
-    fn __pow__(self, exponent: Decimal) raises -> Self:
-        """Raises self to the power of exponent and returns a new Decimal.
-        See `power()` for more information.
-        """
+    fn __pow__(self, exponent: Self) raises -> Self:
         try:
             return decimal.power(self, exponent)
         except e:
@@ -1124,11 +1090,115 @@ struct Decimal(
         except e:
             raise Error("Error in `__pow__()`: ", e)
 
-    fn __pow__(self, exponent: Float64) raises -> Self:
+    # ===------------------------------------------------------------------=== #
+    # Basic binary arithmetic operation dunders with reflected operands
+    # These methods are called to implement the binary arithmetic operations
+    # with reflected operands
+    # (+, -, *, @, /, //, %, divmod(), pow(), **, <<, >>, &, ^, |)
+    # ===------------------------------------------------------------------=== #
+
+    fn __radd__(self, other: Float64) raises -> Self:
         try:
-            return decimal.power(self, Decimal(exponent))
+            return decimojo.arithmetics.add(Decimal(other), self)
         except e:
-            raise Error("Error in `__pow__()`: ", e)
+            raise Error("Error in `__radd__()`: ", e)
+
+    fn __radd__(self, other: Int) raises -> Self:
+        try:
+            return decimojo.arithmetics.add(Decimal(other), self)
+        except e:
+            raise Error("Error in `__radd__()`: ", e)
+
+    fn __rsub__(self, other: Float64) raises -> Self:
+        try:
+            return decimojo.arithmetics.subtract(Decimal(other), self)
+        except e:
+            raise Error("Error in `__rsub__()`: ", e)
+
+    fn __rsub__(self, other: Int) raises -> Self:
+        try:
+            return decimojo.arithmetics.subtract(Decimal(other), self)
+        except e:
+            raise Error("Error in `__rsub__()`: ", e)
+
+    fn __rmul__(self, other: Float64) raises -> Self:
+        try:
+            return decimojo.arithmetics.multiply(Decimal(other), self)
+        except e:
+            raise Error("Error in `__rmul__()`: ", e)
+
+    fn __rmul__(self, other: Int) raises -> Self:
+        try:
+            return decimojo.arithmetics.multiply(Decimal(other), self)
+        except e:
+            raise Error("Error in `__rmul__()`: ", e)
+
+    fn __rtruediv__(self, other: Float64) raises -> Self:
+        try:
+            return decimojo.arithmetics.true_divide(Decimal(other), self)
+        except e:
+            raise Error("Error in `__rtruediv__()`: ", e)
+
+    fn __rtruediv__(self, other: Int) raises -> Self:
+        try:
+            return decimojo.arithmetics.true_divide(Decimal(other), self)
+        except e:
+            raise Error("Error in `__rtruediv__()`: ", e)
+
+    # ===------------------------------------------------------------------=== #
+    # Basic binary augmented arithmetic assignments dunders
+    # These methods are called to implement the binary augmented arithmetic
+    # assignments
+    # (+=, -=, *=, @=, /=, //=, %=, **=, <<=, >>=, &=, ^=, |=)
+    # ===------------------------------------------------------------------=== #
+
+    fn __iadd__(mut self, other: Self) raises:
+        try:
+            self = decimojo.arithmetics.add(self, other)
+        except e:
+            raise Error("Error in `__iadd__()`: ", e)
+
+    fn __iadd__(mut self, other: Int) raises:
+        try:
+            self = decimojo.arithmetics.add(self, Decimal(other))
+        except e:
+            raise Error("Error in `__iadd__()`: ", e)
+
+    fn __isub__(mut self, other: Self) raises:
+        try:
+            self = decimojo.arithmetics.subtract(self, other)
+        except e:
+            raise Error("Error in `__isub__()`: ", e)
+
+    fn __isub__(mut self, other: Int) raises:
+        try:
+            self = decimojo.arithmetics.subtract(self, Decimal(other))
+        except e:
+            raise Error("Error in `__isub__()`: ", e)
+
+    fn __imul__(mut self, other: Self) raises:
+        try:
+            self = decimojo.arithmetics.multiply(self, other)
+        except e:
+            raise Error("Error in `__imul__()`: ", e)
+
+    fn __imul__(mut self, other: Int) raises:
+        try:
+            self = decimojo.arithmetics.multiply(self, Decimal(other))
+        except e:
+            raise Error("Error in `__imul__()`: ", e)
+
+    fn __itruediv__(mut self, other: Self) raises:
+        try:
+            self = decimojo.arithmetics.true_divide(self, other)
+        except e:
+            raise Error("Error in `__itruediv__()`: ", e)
+
+    fn __itruediv__(mut self, other: Int) raises:
+        try:
+            self = decimojo.arithmetics.true_divide(self, Decimal(other))
+        except e:
+            raise Error("Error in `__itruediv__()`: ", e)
 
     # ===------------------------------------------------------------------=== #
     # Basic binary comparison operation dunders
@@ -1236,7 +1306,7 @@ struct Decimal(
 
     # ===------------------------------------------------------------------=== #
     # Mathematical methods that do not implement a trait (not a dunder)
-    # exp, round, sqrt
+    # exp, ln, round, sqrt
     # ===------------------------------------------------------------------=== #
 
     fn exp(self) raises -> Self:
@@ -1331,8 +1401,7 @@ struct Decimal(
         # )
 
     fn is_integer(self) -> Bool:
-        """
-        Determines whether this Decimal value represents an integer.
+        """Determines whether this Decimal value represents an integer.
         A Decimal represents an integer when it has no fractional part
         (i.e., all digits after the decimal point are zero).
 
@@ -1340,19 +1409,22 @@ struct Decimal(
             True if this Decimal represents an integer value, False otherwise.
         """
 
-        # If scale is 0, it's already an integer
-        if self.scale() == 0:
-            return True
-
         # If value is zero, it's an integer regardless of scale
         if self.is_zero():
+            return True
+
+        var scale = self.scale()
+
+        # If scale is 0, it's already an integer
+        if scale == 0:
             return True
 
         # For a value to be an integer, it must be divisible by 10^scale
         # If coefficient % 10^scale == 0, then all decimal places are zeros
         # If it divides evenly, it's an integer
         return (
-            self.coefficient() % (UInt128(10) ** UInt128(self.scale()))
+            self.coefficient()
+            % decimojo.utility.power_of_10[DType.uint128](scale)
         ) == 0
 
     fn is_negative(self) -> Bool:
@@ -1360,8 +1432,7 @@ struct Decimal(
         return (self.flags & Self.SIGN_MASK) != 0
 
     fn is_one(self) -> Bool:
-        """
-        Returns True if this Decimal represents the value 1.
+        """Returns True if this Decimal represents the value 1.
         If 10^scale == coefficient, then it's one.
         `1` and `1.00` are considered ones.
         """
@@ -1374,14 +1445,13 @@ struct Decimal(
         if scale == 0 and coef == 1:
             return True
 
-        if UInt128(10) ** scale == coef:
+        if coef == decimojo.utility.power_of_10[DType.uint128](scale):
             return True
 
         return False
 
     fn is_zero(self) -> Bool:
-        """
-        Returns True if this Decimal represents zero.
+        """Returns True if this Decimal represents zero.
         A decimal is zero when all coefficient parts (low, mid, high) are zero,
         regardless of its sign or scale.
         """
@@ -1404,55 +1474,51 @@ struct Decimal(
         Calculates the exponent for scientific notation representation of a Decimal.
         The exponent is the power of 10 needed to represent the value in scientific notation.
         """
+        # Special case for zero
+        if self.is_zero():
+            return self.scale()
 
         return self.number_of_significant_digits() - 1 - self.scale()
 
     fn number_of_significant_digits(self) -> Int:
         """
-        Returns the number of significant digits in this Decimal.
-        The number of significant digits is the total number of digits in the coefficient,
-        excluding leading and trailing zeros.
+        Returns the number of significant digits in the Decimal.
+        The number of significant digits is the total number of digits in the
+        coefficient, excluding leading zeros but including trailing zeros.
+
+        Returns:
+            The number of significant digits in the Decimal.
+
+        Example:
+
+        ```mojo
+        from decimojo import Decimal
+        print(Decimal("123.4500").number_of_significant_digits())
+        # 7
+        print(Decimal("0.0001234500").number_of_significant_digits())
+        # 7
+        ```
+
+        End of example.
         """
 
+        var coef = self.coefficient()
+
         # Special case for zero
-        if self.coefficient() == 0:
+        if coef == 0:
             return 0  # Zero has zero significant digit
 
-        # Count digits using integer division
-        var digit_count = 0
-        var temp = self.coefficient()
-
-        while temp > 0:
-            temp //= 10
-            digit_count += 1
-
-        return digit_count
+        else:
+            return decimojo.utility.number_of_digits(coef)
 
     # ===------------------------------------------------------------------=== #
     # Internal methods
     # ===------------------------------------------------------------------=== #
 
-    fn _abs_compare(self, other: Decimal) raises -> Int:
-        """
-        Compares absolute values of two Decimal numbers, ignoring signs.
-
-        Returns:
-        - Positive value if |self| > |other|
-        - Zero if |self| = |other|
-        - Negative value if |self| < |other|
-        """
-        var abs_self = decimojo.arithmetics.absolute(self)
-        var abs_other = decimojo.arithmetics.absolute(other)
-
-        if abs_self > abs_other:
-            return 1
-        elif abs_self < abs_other:
-            return -1
-        else:
-            return 0
-
     fn internal_representation(value: Decimal):
-        # Show internal representation details
+        """
+        Prints the internal representation details of a Decimal.
+        """
         print("\nInternal Representation Details:")
         print("--------------------------------")
         print("Decimal:       ", value)
@@ -1468,106 +1534,3 @@ struct Decimal(
         print("high byte:     ", hex(value.high))
         print("flags byte:    ", hex(value.flags))
         print("--------------------------------")
-
-    fn _scale_down(
-        self,
-        owned scale_diff: Int,
-        rounding_mode: RoundingMode = RoundingMode.HALF_EVEN(),
-    ) -> Decimal:
-        """
-        Internal method to scale down a decimal by dividing by 10^scale_diff.
-
-        Args:
-            scale_diff: Number of decimal places to scale down by
-            rounding_mode: Rounding mode to use
-
-        Returns:
-            A new Decimal with the scaled down value
-        """
-        var result = self
-
-        # Early return if no scaling needed
-        if scale_diff <= 0:
-            return result
-
-        # Update the scale in the flags
-        var new_scale = self.scale() - scale_diff
-        if new_scale < 0:
-            # Cannot scale below zero, limit the scaling
-            scale_diff = self.scale()
-            new_scale = 0
-
-        # With UInt128, we can represent the coefficient as a single value
-        var coefficient = UInt128(self.high) << 64 | UInt128(
-            self.mid
-        ) << 32 | UInt128(self.low)
-
-        # Collect all digits that will be removed for rounding decision
-        var removed_digits = List[UInt8]()
-
-        # Calculate coefficient / 10^scale_diff and collect remainder digits
-        for _ in range(scale_diff):
-            var last_digit = UInt8(coefficient % 10)
-            coefficient //= 10
-            removed_digits.append(last_digit)
-
-        # After collecting digits, reverse the list for correct rounding
-        var reversed_digits = List[UInt8]()
-        for i in range(len(removed_digits) - 1, -1, -1):
-            reversed_digits.append(removed_digits[i])
-        removed_digits = reversed_digits
-
-        # Now we have all the digits to be removed, apply proper rounding
-        var should_round_up = False
-
-        if rounding_mode == RoundingMode.DOWN():
-            # Truncate (do nothing)
-            should_round_up = False
-        elif rounding_mode == RoundingMode.UP():
-            # Always round up if any non-zero digit was removed
-            for digit in removed_digits:
-                if digit[] != 0:
-                    should_round_up = True
-                    break
-        elif rounding_mode == RoundingMode.HALF_UP():
-            # Round up if first removed digit >= 5
-            if len(removed_digits) > 0 and removed_digits[0] >= 5:
-                should_round_up = True
-        elif rounding_mode == RoundingMode.HALF_EVEN():
-            # Apply banker's rounding
-            if len(removed_digits) > 0:
-                var first_digit = removed_digits[0]
-                if first_digit > 5:
-                    # Round up
-                    should_round_up = True
-                elif first_digit == 5:
-                    # For banker's rounding:
-                    # 1. If there are other non-zero digits after 5, round up
-                    # 2. Otherwise, round to nearest even (round up if odd)
-                    var has_non_zero_after = False
-                    for i in range(1, len(removed_digits)):
-                        if removed_digits[i] != 0:
-                            has_non_zero_after = True
-                            break
-
-                    if has_non_zero_after:
-                        should_round_up = True
-                    else:
-                        # Round to even - check if the low digit is odd
-                        should_round_up = (coefficient & 1) == 1
-
-        # Apply rounding if needed
-        if should_round_up:
-            coefficient += 1
-
-        # Extract the 32-bit components from the UInt128
-        result.low = UInt32(coefficient & 0xFFFFFFFF)
-        result.mid = UInt32((coefficient >> 32) & 0xFFFFFFFF)
-        result.high = UInt32((coefficient >> 64) & 0xFFFFFFFF)
-
-        # Set the new scale
-        result.flags = (self.flags & ~Self.SCALE_MASK) | (
-            UInt32(new_scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
-        )
-
-        return result
