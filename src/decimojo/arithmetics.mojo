@@ -495,8 +495,6 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
 
     # SPECIAL CASE: Both operands are true integers
     if x1_scale == 0 and x2_scale == 0:
-        # print("DEBUG: Both operands are true integers")
-        # print("DEBUG: combined_num_bits: ", combined_num_bits)
         # Small integers, use UInt64 multiplication
         if combined_num_bits <= 64:
             var prod: UInt64 = UInt64(x1_coef) * UInt64(x2_coef)
@@ -526,8 +524,12 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     # SPECIAL CASE: Both operands are integers but with scales
     # Examples: 123.0 * 456.00
     if x1.is_integer() and x2.is_integer():
-        var x1_integral_part = x1_coef // (UInt128(10) ** UInt128(x1_scale))
-        var x2_integral_part = x2_coef // (UInt128(10) ** UInt128(x2_scale))
+        var x1_integral_part = x1_coef // decimojo.utility.power_of_10[
+            DType.uint128
+        ](x1_scale)
+        var x2_integral_part = x2_coef // decimojo.utility.power_of_10[
+            DType.uint128
+        ](x2_scale)
         var prod: UInt256 = UInt256(x1_integral_part) * UInt256(
             x2_integral_part
         )
@@ -538,8 +540,11 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
             var final_scale = min(
                 Decimal.MAX_NUM_DIGITS - num_digits, combined_scale
             )
-            # Scale up before it overflows
-            prod = prod * 10**final_scale
+            # Scale up by adding trailing zeros
+            prod = prod * decimojo.utility.power_of_10[DType.uint256](
+                final_scale
+            )
+            # If it overflows, remove the last zero
             if prod > Decimal.MAX_AS_UINT256:
                 prod = prod // 10
                 final_scale -= 1
@@ -719,11 +724,6 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
         Error: If x2 is zero.
     """
 
-    # print("----------------------------------------")
-    # print("DEBUG divide()")
-    # print("DEBUG: x1", x1)
-    # print("DEBUG: x2", x2)
-
     # Treatment for special cases
     # 對各類特殊情況進行處理
 
@@ -772,12 +772,6 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
 
         # diff_scale < 0, then times 10 ** (-diff_scale)
         else:
-            # print("DEBUG: x1_coef", x1_coef)
-            # print("DEBUG: x1_scale", x1_scale)
-            # print("DEBUG: x2_coef", x2_coef)
-            # print("DEBUG: x2_scale", x2_scale)
-            # print("DEBUG: diff_scale", diff_scale)
-
             # If the result can be stored in UInt128
             if (
                 decimojo.utility.number_of_digits(x1_coef) - diff_scale
@@ -789,7 +783,6 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
             # If the result should be stored in UInt256
             else:
                 var quot = UInt256(x1_coef) * UInt256(10) ** (-diff_scale)
-                # print("DEBUG: quot", quot)
                 if quot > Decimal.MAX_AS_UINT256:
                     raise Error("Error in `true_divide()`: Decimal overflow")
                 else:
