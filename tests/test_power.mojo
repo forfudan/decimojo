@@ -12,7 +12,7 @@ fn test_integer_powers() raises:
     print("Testing integer powers...")
 
     # Test case 1: Positive base, positive exponent
-    var base1 = Decimal("2")
+    var base1 = Decimal(2)
     var exponent1 = 3
     var result1 = power(base1, exponent1)
     testing.assert_equal(
@@ -20,7 +20,7 @@ fn test_integer_powers() raises:
     )
 
     # Test case 2: Positive base, zero exponent
-    var base2 = Decimal("5")
+    var base2 = Decimal(5)
     var exponent2 = 0
     var result2 = power(base2, exponent2)
     testing.assert_equal(
@@ -28,7 +28,7 @@ fn test_integer_powers() raises:
     )
 
     # Test case 3: Positive base, negative exponent
-    var base3 = Decimal("2")
+    var base3 = Decimal(2)
     var exponent3 = -2
     var result3 = power(base3, exponent3)
     testing.assert_equal(
@@ -59,7 +59,7 @@ fn test_decimal_powers() raises:
     print("Testing decimal powers...")
 
     # Test case 1: Positive base, simple fractional exponent (0.5)
-    var base1 = Decimal("9")
+    var base1 = Decimal(9)
     var exponent1 = Decimal("0.5")
     var result1 = power(base1, exponent1)
     testing.assert_equal(
@@ -67,7 +67,7 @@ fn test_decimal_powers() raises:
     )
 
     # Test case 2: Positive base, more complex fractional exponent
-    var base2 = Decimal("2")
+    var base2 = Decimal(2)
     var exponent2 = Decimal("1.5")
     var result2 = power(base2, exponent2)
     testing.assert_true(
@@ -87,7 +87,7 @@ fn test_decimal_powers() raises:
     )
 
     # Test case 4: Base > 1, exponent < 0
-    var base4 = Decimal("4")
+    var base4 = Decimal(4)
     var exponent4 = Decimal("-0.5")
     var result4 = power(base4, exponent4)
     testing.assert_equal(
@@ -102,16 +102,16 @@ fn test_edge_cases() raises:
     print("Testing power edge cases...")
 
     # Test case 1: Zero base, positive exponent
-    var base1 = Decimal("0")
-    var exponent1 = Decimal("2")
+    var base1 = Decimal(0)
+    var exponent1 = Decimal(2)
     var result1 = power(base1, exponent1)
     testing.assert_equal(
         String(result1), "0", "0^2 should be 0, got " + String(result1)
     )
 
     # Test case 2: Zero base, negative exponent (should raise error)
-    var base2 = Decimal("0")
-    var exponent2 = Decimal("-2")
+    var base2 = Decimal(0)
+    var exponent2 = Decimal(-2)
     var exception_caught = False
     try:
         var _result = power(base2, exponent2)
@@ -125,15 +125,15 @@ fn test_edge_cases() raises:
     )
 
     # Test case 3: Negative base, integer exponent
-    var base3 = Decimal("-2")
-    var exponent3 = Decimal("3")
+    var base3 = Decimal(-2)
+    var exponent3 = Decimal(3)
     var result3 = power(base3, exponent3)
     testing.assert_equal(
         String(result3), "-8", "(-2)^3 should be -8, got " + String(result3)
     )
 
     # Test case 4: Negative base, non-integer exponent (should raise error)
-    var base4 = Decimal("-2")
+    var base4 = Decimal(-2)
     var exponent4 = Decimal("0.5")
     exception_caught = False
     try:

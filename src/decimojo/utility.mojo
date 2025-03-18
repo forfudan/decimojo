@@ -428,7 +428,7 @@ fn round_to_keep_first_n_digits[
 
 
 @always_inline
-fn number_of_digits[dtype: DType](value: Scalar[dtype]) -> Int:
+fn number_of_digits[dtype: DType, //](value: Scalar[dtype]) -> Int:
     """
     Returns the number of (significant) digits in an integral value using binary search.
     This implementation is significantly faster than loop division.

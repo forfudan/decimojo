@@ -12,28 +12,28 @@ fn test_basic_integer_conversions() raises:
     print("Testing basic integer conversions to float...")
 
     # Test case 1: Zero
-    var zero = Decimal("0")
+    var zero = Decimal(0)
     var zero_float = Float64(zero)
     testing.assert_equal(
         zero_float, 0.0, "Decimal('0') should convert to float 0.0"
     )
 
     # Test case 2: One
-    var one = Decimal("1")
+    var one = Decimal(1)
     var one_float = Float64(one)
     testing.assert_equal(
         one_float, 1.0, "Decimal('1') should convert to float 1.0"
     )
 
     # Test case 3: Ten
-    var ten = Decimal("10")
+    var ten = Decimal(10)
     var ten_float = Float64(ten)
     testing.assert_equal(
         ten_float, 10.0, "Decimal('10') should convert to float 10.0"
     )
 
     # Test case 4: Large integer
-    var large_int = Decimal("123456")
+    var large_int = Decimal(123456)
     var large_int_float = Float64(large_int)
     testing.assert_equal(large_int_float, 123456.0)
 
