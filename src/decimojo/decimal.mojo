@@ -291,14 +291,6 @@ struct Decimal(
     # Constructing methods that are not dunders
     # ===------------------------------------------------------------------=== #
 
-    fn copy(self) -> Self:
-        """Returns a copy of the Decimal."""
-        return Decimal(self.low, self.mid, self.high, self.flags)
-
-    fn clone(self) -> Self:
-        """Returns a copy of the Decimal."""
-        return Decimal(self.low, self.mid, self.high, self.flags)
-
     @staticmethod
     fn from_components(
         low: UInt32,
@@ -888,6 +880,14 @@ struct Decimal(
 
         # Return both the significant digits and the scale
         return Decimal(low, mid, high, scale, is_negative)
+
+    fn copy(self) -> Self:
+        """Returns a copy of the Decimal."""
+        return Decimal(self.low, self.mid, self.high, self.flags)
+
+    fn clone(self) -> Self:
+        """Returns a copy of the Decimal."""
+        return Decimal(self.low, self.mid, self.high, self.flags)
 
     # ===------------------------------------------------------------------=== #
     # Output dunders, type-transfer dunders
