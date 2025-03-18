@@ -295,6 +295,10 @@ struct Decimal(
         """Returns a copy of the Decimal."""
         return Decimal(self.low, self.mid, self.high, self.flags)
 
+    fn clone(self) -> Self:
+        """Returns a copy of the Decimal."""
+        return Decimal(self.low, self.mid, self.high, self.flags)
+
     @staticmethod
     fn from_components(
         low: UInt32,
