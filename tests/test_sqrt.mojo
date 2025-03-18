@@ -11,7 +11,7 @@ fn test_perfect_squares() raises:
 
     # Test case 1: sqrt(1) = 1
     try:
-        var d1 = Decimal("1")
+        var d1 = Decimal(1)
         print("  Testing sqrt(1)...")
         var result1 = sqrt(d1)
         print("  Got result: " + String(result1))
@@ -28,7 +28,7 @@ fn test_perfect_squares() raises:
 
     # Test case 2: sqrt(4) = 2
     try:
-        var d2 = Decimal("4")
+        var d2 = Decimal(4)
         print("  Testing sqrt(4)...")
         var result2 = sqrt(d2)
         print("  Got result: " + String(result2))
@@ -45,7 +45,7 @@ fn test_perfect_squares() raises:
 
     # Test case 3: sqrt(9) = 3
     try:
-        var d3 = Decimal("9")
+        var d3 = Decimal(9)
         print("  Testing sqrt(9)...")
         var result3 = sqrt(d3)
         print("  Got result: " + String(result3))
@@ -62,7 +62,7 @@ fn test_perfect_squares() raises:
 
     # Test case 4: sqrt(16) = 4
     try:
-        var d4 = Decimal("16")
+        var d4 = Decimal(16)
         print("  Testing sqrt(16)...")
         var result4 = sqrt(d4)
         print("  Got result: " + String(result4))
@@ -79,7 +79,7 @@ fn test_perfect_squares() raises:
 
     # Test case 5: sqrt(25) = 5
     try:
-        var d5 = Decimal("25")
+        var d5 = Decimal(25)
         print("  Testing sqrt(25)...")
         var result5 = sqrt(d5)
         print("  Got result: " + String(result5))
@@ -96,7 +96,7 @@ fn test_perfect_squares() raises:
 
     # Test case 6: sqrt(36) = 6
     try:
-        var d6 = Decimal("36")
+        var d6 = Decimal(36)
         print("  Testing sqrt(36)...")
         var result6 = sqrt(d6)
         print("  Got result: " + String(result6))
@@ -113,7 +113,7 @@ fn test_perfect_squares() raises:
 
     # Test case 7: sqrt(49) = 7
     try:
-        var d7 = Decimal("49")
+        var d7 = Decimal(49)
         print("  Testing sqrt(49)...")
         var result7 = sqrt(d7)
         print("  Got result: " + String(result7))
@@ -130,7 +130,7 @@ fn test_perfect_squares() raises:
 
     # Test case 8: sqrt(64) = 8
     try:
-        var d8 = Decimal("64")
+        var d8 = Decimal(64)
         print("  Testing sqrt(64)...")
         var result8 = sqrt(d8)
         print("  Got result: " + String(result8))
@@ -147,7 +147,7 @@ fn test_perfect_squares() raises:
 
     # Test case 9: sqrt(81) = 9
     try:
-        var d9 = Decimal("81")
+        var d9 = Decimal(81)
         print("  Testing sqrt(81)...")
         var result9 = sqrt(d9)
         print("  Got result: " + String(result9))
@@ -164,7 +164,7 @@ fn test_perfect_squares() raises:
 
     # Test case 10: sqrt(100) = 10
     try:
-        var d10 = Decimal("100")
+        var d10 = Decimal(100)
         print("  Testing sqrt(100)...")
         var result10 = sqrt(d10)
         print("  Got result: " + String(result10))
@@ -181,7 +181,7 @@ fn test_perfect_squares() raises:
 
     # Test case 11: sqrt(10000) = 100
     try:
-        var d11 = Decimal("10000")
+        var d11 = Decimal(10000)
         print("  Testing sqrt(10000)...")
         var result11 = sqrt(d11)
         print("  Got result: " + String(result11))
@@ -198,7 +198,7 @@ fn test_perfect_squares() raises:
 
     # Test case 12: sqrt(1000000) = 1000
     try:
-        var d12 = Decimal("1000000")
+        var d12 = Decimal(1000000)
         print("  Testing sqrt(1000000)...")
         var result12 = sqrt(d12)
         print("  Got result: " + String(result12))
@@ -221,7 +221,7 @@ fn test_non_perfect_squares() raises:
 
     # Test case 1
     try:
-        var d1 = Decimal("2")
+        var d1 = Decimal(2)
         var expected_prefix1 = "1.414213562373095048801688724"
         var result1 = sqrt(d1)
         var result_str1 = String(result1)
@@ -239,7 +239,7 @@ fn test_non_perfect_squares() raises:
         raise e
 
     # Test case 2
-    var d2 = Decimal("3")
+    var d2 = Decimal(3)
     var expected_prefix2 = "1.73205080756887729352744634"
     var result2 = sqrt(d2)
     var result_str2 = String(result2)
@@ -254,7 +254,7 @@ fn test_non_perfect_squares() raises:
     )
 
     # Test case 3
-    var d3 = Decimal("5")
+    var d3 = Decimal(5)
     var expected_prefix3 = "2.23606797749978969640917366"
     var result3 = sqrt(d3)
     var result_str3 = String(result3)
@@ -269,7 +269,7 @@ fn test_non_perfect_squares() raises:
     )
 
     # Test case 4
-    var d4 = Decimal("10")
+    var d4 = Decimal(10)
     var expected_prefix4 = "3.162277660168379331998893544"
     var result4 = sqrt(d4)
     var result_str4 = String(result4)
@@ -284,7 +284,7 @@ fn test_non_perfect_squares() raises:
     )
 
     # Test case 5
-    var d5 = Decimal("50")
+    var d5 = Decimal(50)
     var expected_prefix5 = "7.071067811865475244008443621"
     var result5 = sqrt(d5)
     var result_str5 = String(result5)
@@ -299,7 +299,7 @@ fn test_non_perfect_squares() raises:
     )
 
     # Test case 6
-    var d6 = Decimal("99")
+    var d6 = Decimal(99)
     var expected_prefix6 = "9.949874371066199547344798210"
     var result6 = sqrt(d6)
     var result_str6 = String(result6)
@@ -314,7 +314,7 @@ fn test_non_perfect_squares() raises:
     )
 
     # Test case 7
-    var d7 = Decimal("999")
+    var d7 = Decimal(999)
     var expected_prefix7 = "31.6069612585582165452042139"
     var result7 = sqrt(d7)
     var result_str7 = String(result7)
@@ -416,7 +416,7 @@ fn test_edge_cases() raises:
 
     # Test sqrt(0) = 0
     try:
-        var zero = Decimal("0")
+        var zero = Decimal(0)
         var result_zero = sqrt(zero)
         testing.assert_equal(String(result_zero), "0", "sqrt(0) should be 0")
     except e:
@@ -425,7 +425,7 @@ fn test_edge_cases() raises:
 
     # Test sqrt(1) = 1
     try:
-        var one = Decimal("1")
+        var one = Decimal(1)
         var result_one = sqrt(one)
         testing.assert_equal(String(result_one), "1", "sqrt(1) should be 1")
     except e:
@@ -434,9 +434,7 @@ fn test_edge_cases() raises:
 
     # Test very small positive number
     try:
-        var very_small = Decimal(
-            "0." + "0" * 27 + "1"
-        )  # Smallest possible positive decimal
+        var very_small = Decimal(1, 28)  # Smallest possible positive decimal
         var result_small = sqrt(very_small)
         testing.assert_equal(
             String(result_small),
@@ -452,7 +450,9 @@ fn test_edge_cases() raises:
 
     # Test very large number
     try:
-        var very_large = Decimal("1" + "0" * 27)  # Large decimal
+        var very_large = Decimal.from_uint128(
+            decimojo.utility.power_of_10[DType.uint128](27)
+        )  # Large decimal
         var result_large = sqrt(very_large)
         testing.assert_true(
             String(result_large).startswith("31622776601683.79331998893544"),
@@ -465,7 +465,7 @@ fn test_edge_cases() raises:
     # Test negative number exception
     var negative_exception_caught = False
     try:
-        var negative = Decimal("-1")
+        var negative = Decimal(-1)
         var _result_negative = sqrt(negative)
         testing.assert_equal(
             True, False, "sqrt() of negative should raise exception"
@@ -494,7 +494,7 @@ fn test_precision() raises:
     var expected_sqrt2 = "1.414213562373095048801688724"  # First 10 decimal places of sqrt(2)
 
     # Test precision for irrational numbers
-    var two = Decimal("2")
+    var two = Decimal(2)
     var result = sqrt(two)
 
     # Check at least 10 decimal places (should be enough for most applications)
@@ -504,7 +504,9 @@ fn test_precision() raises:
     )
 
     # Test high precision values
-    var precise_value = Decimal("2.0000000000000000000000000")
+    var precise_value = Decimal.from_uint128(
+        UInt128(20000000000000000000000000), 25
+    )
     var precise_result = sqrt(precise_value)
     testing.assert_true(
         String(precise_result).startswith(expected_sqrt2),
@@ -512,7 +514,7 @@ fn test_precision() raises:
     )
 
     # Check that results are appropriately rounded
-    var d = Decimal("1894128.128951235")
+    var d = Decimal(1894128128951235, 9)
     var sqrt_d = sqrt(d)
     testing.assert_true(
         String(sqrt_d).startswith("1376.27327553478091940498131"),
@@ -531,7 +533,7 @@ fn test_mathematical_identities() raises:
 
     # Test that sqrt(x)² = x - Expanded for each test number
     # Test number 1
-    var num1 = Decimal("2")
+    var num1 = Decimal(2)
     var sqrt_num1 = sqrt(num1)
     var squared1 = sqrt_num1 * sqrt_num1
     var original_rounded1 = round(num1, 10)
@@ -547,7 +549,7 @@ fn test_mathematical_identities() raises:
     )
 
     # Test number 2
-    var num2 = Decimal("3")
+    var num2 = Decimal(3)
     var sqrt_num2 = sqrt(num2)
     var squared2 = sqrt_num2 * sqrt_num2
     var original_rounded2 = round(num2, 10)
@@ -561,7 +563,7 @@ fn test_mathematical_identities() raises:
     )
 
     # Test number 3
-    var num3 = Decimal("5")
+    var num3 = Decimal(5)
     var sqrt_num3 = sqrt(num3)
     var squared3 = sqrt_num3 * sqrt_num3
     var original_rounded3 = round(num3, 10)
@@ -575,7 +577,7 @@ fn test_mathematical_identities() raises:
     )
 
     # Test number 4
-    var num4 = Decimal("7")
+    var num4 = Decimal(7)
     var sqrt_num4 = sqrt(num4)
     var squared4 = sqrt_num4 * sqrt_num4
     var original_rounded4 = round(num4, 10)
@@ -589,7 +591,7 @@ fn test_mathematical_identities() raises:
     )
 
     # Test number 5
-    var num5 = Decimal("10")
+    var num5 = Decimal(10)
     var sqrt_num5 = sqrt(num5)
     var squared5 = sqrt_num5 * sqrt_num5
     var original_rounded5 = round(num5, 10)
@@ -603,7 +605,7 @@ fn test_mathematical_identities() raises:
     )
 
     # Test number 6
-    var num6 = Decimal("0.5")
+    var num6 = Decimal(5, 1)
     var sqrt_num6 = sqrt(num6)
     var squared6 = sqrt_num6 * sqrt_num6
     var original_rounded6 = round(num6, 10)
@@ -617,7 +619,7 @@ fn test_mathematical_identities() raises:
     )
 
     # Test number 7
-    var num7 = Decimal("0.25")
+    var num7 = Decimal(25, 2)
     var sqrt_num7 = sqrt(num7)
     var squared7 = sqrt_num7 * sqrt_num7
     var original_rounded7 = round(num7, 10)
@@ -631,7 +633,7 @@ fn test_mathematical_identities() raises:
     )
 
     # Test number 8
-    var num8 = Decimal("1.44")
+    var num8 = Decimal(144, 2)
     var sqrt_num8 = sqrt(num8)
     var squared8 = sqrt_num8 * sqrt_num8
     var original_rounded8 = round(num8, 10)
@@ -647,8 +649,8 @@ fn test_mathematical_identities() raises:
     # Test that sqrt(x*y) = sqrt(x) * sqrt(y) - Expanded for each pair
     # Pair 1: 4 and 9
     try:
-        var x1 = Decimal("4")
-        var y1 = Decimal("9")
+        var x1 = Decimal(4)
+        var y1 = Decimal(9)
         var product1 = x1 * y1
         var sqrt_product1 = sqrt(product1)
         var sqrt_x1 = sqrt(x1)
@@ -676,8 +678,8 @@ fn test_mathematical_identities() raises:
         raise e
 
     # Pair 2: 16 and 25
-    var x2 = Decimal("16")
-    var y2 = Decimal("25")
+    var x2 = Decimal(16)
+    var y2 = Decimal(25)
     var product2 = x2 * y2
     var sqrt_product2 = sqrt(product2)
     var sqrt_x2 = sqrt(x2)
@@ -699,8 +701,8 @@ fn test_mathematical_identities() raises:
     )
 
     # Pair 3: 2 and 8
-    var x3 = Decimal("2")
-    var y3 = Decimal("8")
+    var x3 = Decimal(2)
+    var y3 = Decimal(8)
     var product3 = x3 * y3
     var sqrt_product3 = sqrt(product3)
     var sqrt_x3 = sqrt(x3)
@@ -762,7 +764,7 @@ fn test_sqrt_performance() raises:
     )
 
     # Test case 3
-    var num3 = Decimal("1")
+    var num3 = Decimal(1)
     var result3 = sqrt(num3)
     var squared3 = result3 * result3
     var diff3 = squared3 - num3
@@ -777,7 +779,7 @@ fn test_sqrt_performance() raises:
     )
 
     # Test case 4
-    var num4 = Decimal("10")
+    var num4 = Decimal(10)
     var result4 = sqrt(num4)
     var squared4 = result4 * result4
     var diff4 = squared4 - num4
@@ -792,7 +794,7 @@ fn test_sqrt_performance() raises:
     )
 
     # Test case 5
-    var num5 = Decimal("10000")
+    var num5 = Decimal(10000)
     var result5 = sqrt(num5)
     var squared5 = result5 * result5
     var diff5 = squared5 - num5

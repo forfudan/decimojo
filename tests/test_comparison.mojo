@@ -19,38 +19,38 @@ fn test_equality() raises:
     print("Testing decimal equality...")
 
     # Test case 1: Equal decimals
-    var a1 = Decimal("123.45")
-    var b1 = Decimal("123.45")
+    var a1 = Decimal(12345, 2)
+    var b1 = Decimal(12345, 2)
     testing.assert_true(equal(a1, b1), "Equal decimals should be equal")
 
     # Test case 2: Equal with different scales
     var a2 = Decimal("123.450")
-    var b2 = Decimal("123.45")
+    var b2 = Decimal(12345, 2)
     testing.assert_true(
         equal(a2, b2), "Equal decimals with different scales should be equal"
     )
 
     # Test case 3: Different values
-    var a3 = Decimal("123.45")
+    var a3 = Decimal(12345, 2)
     var b3 = Decimal("123.46")
     testing.assert_false(
         equal(a3, b3), "Different decimals should not be equal"
     )
 
     # Test case 4: Zeros with different scales
-    var a4 = Decimal("0")
+    var a4 = Decimal(0)
     var b4 = Decimal("0.00")
     testing.assert_true(
         equal(a4, b4), "Zeros with different scales should be equal"
     )
 
     # Test case 5: Zero and negative zero
-    var a5 = Decimal("0")
+    var a5 = Decimal(0)
     var b5 = Decimal("-0")
     testing.assert_true(equal(a5, b5), "Zero and negative zero should be equal")
 
     # Test case 6: Same absolute value but different signs
-    var a6 = Decimal("123.45")
+    var a6 = Decimal(12345, 2)
     var b6 = Decimal("-123.45")
     testing.assert_false(
         equal(a6, b6),
@@ -65,30 +65,30 @@ fn test_inequality() raises:
     print("Testing decimal inequality...")
 
     # Test case 1: Equal decimals
-    var a1 = Decimal("123.45")
-    var b1 = Decimal("123.45")
+    var a1 = Decimal(12345, 2)
+    var b1 = Decimal(12345, 2)
     testing.assert_false(
         not_equal(a1, b1), "Equal decimals should not be unequal"
     )
 
     # Test case 2: Equal with different scales
-    var a2 = Decimal("123.450")
-    var b2 = Decimal("123.45")
+    var a2 = Decimal(123450, 3)
+    var b2 = Decimal(12345, 2)
     testing.assert_false(
         not_equal(a2, b2),
         "Equal decimals with different scales should not be unequal",
     )
 
     # Test case 3: Different values
-    var a3 = Decimal("123.45")
-    var b3 = Decimal("123.46")
+    var a3 = Decimal(12345, 2)
+    var b3 = Decimal(12346, 2)
     testing.assert_true(
         not_equal(a3, b3), "Different decimals should be unequal"
     )
 
     # Test case 4: Same absolute value but different signs
-    var a4 = Decimal("123.45")
-    var b4 = Decimal("-123.45")
+    var a4 = Decimal(12345, 2)
+    var b4 = Decimal(-12345, 2)
     testing.assert_true(
         not_equal(a4, b4),
         "Same absolute value but different signs should be unequal",
@@ -101,23 +101,23 @@ fn test_greater() raises:
     print("Testing greater than comparison...")
 
     # Test case 1: Larger decimal
-    var a1 = Decimal("123.46")
-    var b1 = Decimal("123.45")
+    var a1 = Decimal(12346, 2)
+    var b1 = Decimal(12345, 2)
     testing.assert_true(greater(a1, b1), "123.46 should be greater than 123.45")
     testing.assert_false(
         greater(b1, a1), "123.45 should not be greater than 123.46"
     )
 
     # Test case 2: Equal decimals
-    var a2 = Decimal("123.45")
-    var b2 = Decimal("123.45")
+    var a2 = Decimal(12345, 2)
+    var b2 = Decimal(12345, 2)
     testing.assert_false(
         greater(a2, b2), "Equal decimals should not be greater"
     )
 
     # Test case 3: Positive vs. negative
-    var a3 = Decimal("123.45")
-    var b3 = Decimal("-123.45")
+    var a3 = Decimal(12345, 2)
+    var b3 = Decimal(-12345, 2)
     testing.assert_true(
         greater(a3, b3), "Positive should be greater than negative"
     )
@@ -133,20 +133,20 @@ fn test_greater() raises:
     )
 
     # Test case 5: Zero vs. positive
-    var a5 = Decimal("0")
-    var b5 = Decimal("123.45")
+    var a5 = Decimal(0)
+    var b5 = Decimal(12345, 2)
     testing.assert_false(
         greater(a5, b5), "Zero should not be greater than positive"
     )
 
     # Test case 6: Zero vs. negative
-    var a6 = Decimal("0")
+    var a6 = Decimal(0)
     var b6 = Decimal("-123.45")
     testing.assert_true(greater(a6, b6), "Zero should be greater than negative")
 
     # Test case 7: Different scales
     var a7 = Decimal("123.5")
-    var b7 = Decimal("123.45")
+    var b7 = Decimal(12345, 2)
     testing.assert_true(greater(a7, b7), "123.5 should be greater than 123.45")
 
     print("Greater than tests passed!")
@@ -157,21 +157,21 @@ fn test_greater_equal() raises:
 
     # Test case 1: Larger decimal
     var a1 = Decimal("123.46")
-    var b1 = Decimal("123.45")
+    var b1 = Decimal(12345, 2)
     testing.assert_true(
         greater_equal(a1, b1),
         "123.46 should be greater than or equal to 123.45",
     )
 
     # Test case 2: Equal decimals
-    var a2 = Decimal("123.45")
-    var b2 = Decimal("123.45")
+    var a2 = Decimal(12345, 2)
+    var b2 = Decimal(12345, 2)
     testing.assert_true(
         greater_equal(a2, b2), "Equal decimals should be greater than or equal"
     )
 
     # Test case 3: Positive vs. negative
-    var a3 = Decimal("123.45")
+    var a3 = Decimal(12345, 2)
     var b3 = Decimal("-123.45")
     testing.assert_true(
         greater_equal(a3, b3),
@@ -180,14 +180,14 @@ fn test_greater_equal() raises:
 
     # Test case 4: Equal values with different scales
     var a4 = Decimal("123.450")
-    var b4 = Decimal("123.45")
+    var b4 = Decimal(12345, 2)
     testing.assert_true(
         greater_equal(a4, b4),
         "Equal values with different scales should be greater than or equal",
     )
 
     # Test case 5: Smaller decimal
-    var a5 = Decimal("123.45")
+    var a5 = Decimal(12345, 2)
     var b5 = Decimal("123.46")
     testing.assert_false(
         greater_equal(a5, b5),
@@ -201,18 +201,18 @@ fn test_less() raises:
     print("Testing less than comparison...")
 
     # Test case 1: Smaller decimal
-    var a1 = Decimal("123.45")
+    var a1 = Decimal(12345, 2)
     var b1 = Decimal("123.46")
     testing.assert_true(less(a1, b1), "123.45 should be less than 123.46")
 
     # Test case 2: Equal decimals
-    var a2 = Decimal("123.45")
-    var b2 = Decimal("123.45")
+    var a2 = Decimal(12345, 2)
+    var b2 = Decimal(12345, 2)
     testing.assert_false(less(a2, b2), "Equal decimals should not be less")
 
     # Test case 3: Negative vs. positive
     var a3 = Decimal("-123.45")
-    var b3 = Decimal("123.45")
+    var b3 = Decimal(12345, 2)
     testing.assert_true(less(a3, b3), "Negative should be less than positive")
 
     # Test case 4: Negative with larger absolute value
@@ -221,8 +221,8 @@ fn test_less() raises:
     testing.assert_true(less(a4, b4), "-123.46 should be less than -123.45")
 
     # Test case 5: Zero vs. positive
-    var a5 = Decimal("0")
-    var b5 = Decimal("123.45")
+    var a5 = Decimal(0)
+    var b5 = Decimal(12345, 2)
     testing.assert_true(less(a5, b5), "Zero should be less than positive")
 
     print("Less than tests passed!")
@@ -232,29 +232,29 @@ fn test_less_equal() raises:
     print("Testing less than or equal comparison...")
 
     # Test case 1: Smaller decimal
-    var a1 = Decimal("123.45")
+    var a1 = Decimal(12345, 2)
     var b1 = Decimal("123.46")
     testing.assert_true(
         less_equal(a1, b1), "123.45 should be less than or equal to 123.46"
     )
 
     # Test case 2: Equal decimals
-    var a2 = Decimal("123.45")
-    var b2 = Decimal("123.45")
+    var a2 = Decimal(12345, 2)
+    var b2 = Decimal(12345, 2)
     testing.assert_true(
         less_equal(a2, b2), "Equal decimals should be less than or equal"
     )
 
     # Test case 3: Negative vs. positive
     var a3 = Decimal("-123.45")
-    var b3 = Decimal("123.45")
+    var b3 = Decimal(12345, 2)
     testing.assert_true(
         less_equal(a3, b3), "Negative should be less than or equal to positive"
     )
 
     # Test case 4: Equal values with different scales
     var a4 = Decimal("123.450")
-    var b4 = Decimal("123.45")
+    var b4 = Decimal(12345, 2)
     testing.assert_true(
         less_equal(a4, b4),
         "Equal values with different scales should be less than or equal",
@@ -262,7 +262,7 @@ fn test_less_equal() raises:
 
     # Test case 5: Larger decimal
     var a5 = Decimal("123.46")
-    var b5 = Decimal("123.45")
+    var b5 = Decimal(12345, 2)
     testing.assert_false(
         less_equal(a5, b5), "123.46 should not be less than or equal to 123.45"
     )
@@ -273,7 +273,7 @@ fn test_less_equal() raises:
 fn test_zero_comparison() raises:
     print("Testing zero comparison cases...")
 
-    var zero = Decimal("0")
+    var zero = Decimal(0)
     var pos = Decimal("0.0000000000000000001")  # Very small positive
     var neg = Decimal("-0.0000000000000000001")  # Very small negative
     var zero_scale = Decimal("0.00000")  # Zero with different scale
@@ -376,7 +376,7 @@ fn test_edge_cases() raises:
     var neg_large = Decimal("-1000")
     var neg_small = Decimal("-0.001")
     var pos_small = Decimal("0.001")
-    var pos_large = Decimal("1000")
+    var pos_large = Decimal(1000)
 
     # Transitivity: if a > b and b > c then a > c
     testing.assert_true(greater(pos_large, pos_small), "1000 > 0.001")
@@ -393,7 +393,7 @@ fn test_exact_comparison() raises:
     print("Testing exact comparison with precision handling...")
 
     # Test case 1: Scale handling with zeros
-    var zero1 = Decimal("0")
+    var zero1 = Decimal(0)
     var zero2 = Decimal("0.0")
     var zero3 = Decimal("0.00000")
 
@@ -424,12 +424,12 @@ fn test_comparison_operators() raises:
     print("Testing comparison operators...")
 
     # Create test values
-    var a = Decimal("123.45")
+    var a = Decimal(12345, 2)
     var b = Decimal("67.89")
-    var c = Decimal("123.45")  # Equal to a
+    var c = Decimal(12345, 2)  # Equal to a
     var d = Decimal("123.450")  # Equal to a with different scale
     var e = Decimal("-50.0")  # Negative number
-    var f = Decimal("0")  # Zero
+    var f = Decimal(0)  # Zero
     var g = Decimal("-0.0")  # Negative zero (equal to zero)
 
     # Greater than

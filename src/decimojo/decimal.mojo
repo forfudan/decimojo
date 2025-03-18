@@ -246,7 +246,13 @@ struct Decimal(
                 "Error in `Decimal.__init__()` with five components: ", e
             )
 
-    fn __init__(out self, value: Int, scale: UInt32 = 0) raises:
+    fn __init__(out self, value: Int):
+        """Initializes a Decimal from an integer.
+        See `from_int()` for more information.
+        """
+        self = Decimal.from_int(value)
+
+    fn __init__(out self, value: Int, scale: UInt32) raises:
         """Initializes a Decimal from an integer.
         See `from_int()` for more information.
         """
@@ -367,8 +373,47 @@ struct Decimal(
         return Decimal(low, mid, high, flags)
 
     @staticmethod
-    fn from_int(value: Int, scale: UInt32) raises -> Self:
+    fn from_int(value: Int) -> Self:
         """Initializes a Decimal from an integer.
+
+        Args:
+            value: The integer value to convert to Decimal.
+
+        Returns:
+            The Decimal representation of the integer.
+
+        Notes:
+
+        Since Int is a 64-bit type in Mojo, the `high` field will always be 0.
+
+        Examples:
+        ```mojo
+        from decimojo import Decimal
+        var dec1 = Decimal.from_int(-123) # -123
+        var dec2 = Decimal.from_int(1) # 1
+        ```
+        End of examples.
+        """
+
+        var low: UInt32
+        var mid: UInt32
+        var flags: UInt32
+
+        if value >= 0:
+            flags = 0
+            low = UInt32(value & 0xFFFFFFFF)
+            mid = UInt32((value >> 32) & 0xFFFFFFFF)
+        else:
+            var abs_value = -value
+            flags = Self.SIGN_MASK
+            low = UInt32(abs_value & 0xFFFFFFFF)
+            mid = UInt32((abs_value >> 32) & 0xFFFFFFFF)
+
+        return Decimal(low, mid, 0, flags)
+
+    @staticmethod
+    fn from_int(value: Int, scale: UInt32) raises -> Self:
+        """Initializes a Decimal from an integer and a scale.
 
         Args:
             value: The integer value to convert to Decimal.
@@ -383,11 +428,18 @@ struct Decimal(
         Notes:
 
         Since Int is a 64-bit type in Mojo, the `high` field will always be 0.
+
+        Examples:
+        ```mojo
+        from decimojo import Decimal
+        var dec1 = Decimal.from_int(-123, scale=2) # -1.23
+        var dec2 = Decimal.from_int(1, scale=5) # 0.00001
+        ```
+        End of examples.
         """
 
         var low: UInt32
         var mid: UInt32
-        var high: UInt32
         var flags: UInt32
 
         if scale > Self.MAX_SCALE:
@@ -402,18 +454,16 @@ struct Decimal(
             flags = 0
             low = UInt32(value & 0xFFFFFFFF)
             mid = UInt32((value >> 32) & 0xFFFFFFFF)
-            high = 0
 
         else:
             var abs_value = -value
             flags = Self.SIGN_MASK
             low = UInt32(abs_value & 0xFFFFFFFF)
             mid = UInt32((abs_value >> 32) & 0xFFFFFFFF)
-            high = 0
 
         flags |= (scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
 
-        return Decimal(low, mid, high, flags)
+        return Decimal(low, mid, 0, flags)
 
     @staticmethod
     fn from_uint128(

@@ -14,7 +14,7 @@ fn test_basic_ln_values() raises:
     print("Testing basic natural logarithm values...")
 
     # Test case 1: ln(1) = 0
-    var one = Decimal("1")
+    var one = Decimal(1)
     var result1 = ln(one)
     testing.assert_equal(
         String(result1), "0", "ln(1) should be 0, got " + String(result1)
@@ -29,7 +29,7 @@ fn test_basic_ln_values() raises:
     )
 
     # Test case 3: ln(10)
-    var ten = Decimal("10")
+    var ten = Decimal(10)
     var result_ten = ln(ten)
     testing.assert_true(
         String(result_ten).startswith("2.30258509299404568401799145"),
@@ -65,7 +65,7 @@ fn test_fractional_ln_values() raises:
     )
 
     # Test case 6: ln(2)
-    var two = Decimal("2")
+    var two = Decimal(2)
     var result_two = ln(two)
     testing.assert_true(
         String(result_two).startswith("0.693147180559945309417232121"),
@@ -74,7 +74,7 @@ fn test_fractional_ln_values() raises:
     )
 
     # Test case 7: ln(5)
-    var five = Decimal("5")
+    var five = Decimal(5)
     var result_five = ln(five)
     testing.assert_true(
         String(result_five).startswith("1.609437912434100374600759333"),
@@ -90,8 +90,8 @@ fn test_mathematical_identities() raises:
     print("Testing mathematical identities for natural logarithm...")
 
     # Test case 8: ln(a * b) = ln(a) + ln(b)
-    var a = Decimal("2")
-    var b = Decimal("3")
+    var a = Decimal(2)
+    var b = Decimal(3)
     var ln_a_times_b = ln(a * b)
     var ln_a_plus_ln_b = ln(a) + ln(b)
     testing.assert_true(
@@ -108,7 +108,7 @@ fn test_mathematical_identities() raises:
     )
 
     # Test case 10: ln(e^x) = x
-    var x = Decimal("5")
+    var x = Decimal(5)
     var ln_e_to_x = ln(dm.exponential.exp(x))
     testing.assert_true(
         abs(ln_e_to_x - x) < Decimal("0.0000000001"),
@@ -123,7 +123,7 @@ fn test_edge_cases() raises:
     print("Testing edge cases for natural logarithm function...")
 
     # Test case 11: ln(0) should raise an exception
-    var zero = Decimal("0")
+    var zero = Decimal(0)
     var exception_caught = False
     try:
         var _ln0 = ln(zero)
@@ -133,7 +133,7 @@ fn test_edge_cases() raises:
     testing.assert_equal(exception_caught, True)
 
     # Test case 12: ln of a negative number should raise an exception
-    var neg_one = Decimal("-1")
+    var neg_one = Decimal(-1)
     exception_caught = False
     try:
         var _ln = ln(neg_one)
@@ -171,7 +171,7 @@ fn test_precision() raises:
     print("Testing precision of natural logarithm calculations...")
 
     # Test case 15: ln(2) with high precision
-    var two = Decimal("2")
+    var two = Decimal(2)
     var result_two = ln(two)
     testing.assert_true(
         String(result_two).startswith("0.693147180559945309417232121"),
@@ -179,7 +179,7 @@ fn test_precision() raises:
     )
 
     # Test case 16: ln(10) with high precision
-    var ten = Decimal("10")
+    var ten = Decimal(10)
     var result_ten = ln(ten)
     testing.assert_true(
         String(result_ten).startswith("2.30258509299404568401"),
@@ -220,7 +220,7 @@ fn test_special_cases() raises:
     print("Testing special cases for natural logarithm function...")
 
     # Test case 19: ln(1) = 0 (revisited)
-    var one = Decimal("1")
+    var one = Decimal(1)
     var result_one = ln(one)
     testing.assert_equal(String(result_one), "0", "ln(1) should be exactly 0")
 
@@ -228,7 +228,7 @@ fn test_special_cases() raises:
     var e = Decimal("2.718281828459045235360287471")
     var result_e = ln(e)
     testing.assert_true(
-        abs(result_e - Decimal("1")) < Decimal("0.0000000001"),
+        abs(result_e - Decimal(1)) < Decimal("0.0000000001"),
         "ln(e) should be very close to 1",
     )
 

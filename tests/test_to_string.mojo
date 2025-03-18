@@ -25,7 +25,7 @@ fn test_str_conversion() raises:
     testing.assert_equal(s2, "-789.012")
 
     # Test zero
-    var d3 = Decimal("0")
+    var d3 = Decimal(0)
     var s3 = String(d3)
     print("String(0) =", s3)
     testing.assert_equal(s3, "0")
