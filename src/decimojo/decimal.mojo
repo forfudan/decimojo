@@ -138,60 +138,45 @@ struct Decimal(
 
     # TODO: Move these special values to top of the module
     # when Mojo support global variables in the future.
-    #
+
     # Special values
     @staticmethod
     fn INFINITY() -> Decimal:
-        """
-        Returns a Decimal representing positive infinity.
+        """Returns a Decimal representing positive infinity.
         Internal representation: `0b0000_0000_0000_0000_0000_0000_0001`.
         """
         return Decimal(0, 0, 0, 0x00000001)
 
     @staticmethod
     fn NEGATIVE_INFINITY() -> Decimal:
-        """
-        Returns a Decimal representing negative infinity.
+        """Returns a Decimal representing negative infinity.
         Internal representation: `0b1000_0000_0000_0000_0000_0000_0001`.
         """
         return Decimal(0, 0, 0, 0x80000001)
 
     @staticmethod
     fn NAN() -> Decimal:
-        """
-        Returns a Decimal representing Not a Number (NaN).
+        """Returns a Decimal representing Not a Number (NaN).
         Internal representation: `0b0000_0000_0000_0000_0000_0000_0010`.
         """
         return Decimal(0, 0, 0, 0x00000010)
 
     @staticmethod
     fn NEGATIVE_NAN() -> Decimal:
-        """
-        Returns a Decimal representing negative Not a Number.
+        """Returns a Decimal representing negative Not a Number.
         Internal representation: `0b1000_0000_0000_0000_0000_0000_0010`.
         """
         return Decimal(0, 0, 0, 0x80000010)
 
     @staticmethod
     fn ZERO() -> Decimal:
-        """
-        Returns a Decimal representing 0.
-        """
+        """Returns a Decimal representing 0."""
         return Decimal(0, 0, 0, 0)
 
     @staticmethod
     fn ONE() -> Decimal:
-        """
-        Returns a Decimal representing 1.
-        """
+        """Returns a Decimal representing 1."""
         return Decimal(1, 0, 0, 0)
-
-    @staticmethod
-    fn NEGATIVE_ONE() -> Decimal:
-        """
-        Returns a Decimal representing -1.
-        """
-        return Decimal(1, 0, 0, Decimal.SIGN_MASK)
 
     @staticmethod
     fn MAX() -> Decimal:
@@ -223,9 +208,7 @@ struct Decimal(
     # ===------------------------------------------------------------------=== #
 
     fn __init__(out self):
-        """
-        Initializes a decimal instance with value 0.
-        """
+        """Initializes a decimal instance with value 0."""
         self.low = 0x00000000
         self.mid = 0x00000000
         self.high = 0x00000000
@@ -234,8 +217,7 @@ struct Decimal(
     fn __init__(
         out self, low: UInt32, mid: UInt32, high: UInt32, flags: UInt32
     ):
-        """
-        Initializes a Decimal with four raw words of internal representation.
+        """Initializes a Decimal with four raw words of internal representation.
         ***WARNING***: This method does not check the flags.
         If you are not sure about the flags, use `Decimal.from_words()` instead.
         """
@@ -253,8 +235,7 @@ struct Decimal(
         scale: UInt32,
         sign: Bool,
     ) raises:
-        """
-        Initializes a Decimal with five components.
+        """Initializes a Decimal with five components.
         See `Decimal.from_components()` for more information.
         """
 
@@ -266,8 +247,7 @@ struct Decimal(
             )
 
     fn __init__(out self, value: Int, scale: UInt32 = 0) raises:
-        """
-        Initializes a Decimal from an integer.
+        """Initializes a Decimal from an integer.
         See `from_int()` for more information.
         """
         try:
@@ -276,8 +256,7 @@ struct Decimal(
             raise Error("Error in `Decimal.__init__()` with Int: ", e)
 
     fn __init__(out self, value: String) raises:
-        """
-        Initializes a Decimal from a string representation.
+        """Initializes a Decimal from a string representation.
         See `from_string()` for more information.
         """
         try:
@@ -286,8 +265,7 @@ struct Decimal(
             raise Error("Error in `Decimal__init__()` with String: ", e)
 
     fn __init__(out self, value: Float64) raises:
-        """
-        Initializes a Decimal from a floating-point value.
+        """Initializes a Decimal from a floating-point value.
         See `from_float` for more information.
         """
 
@@ -297,9 +275,7 @@ struct Decimal(
             raise Error("Error in `Decimal__init__()` with Float64: ", e)
 
     fn __copyinit__(out self, other: Self):
-        """
-        Initializes a Decimal by copying another Decimal.
-        """
+        """Initializes a Decimal by copying another Decimal."""
         self.low = other.low
         self.mid = other.mid
         self.high = other.high
@@ -309,6 +285,10 @@ struct Decimal(
     # Constructing methods that are not dunders
     # ===------------------------------------------------------------------=== #
 
+    fn copy(self) -> Self:
+        """Returns a copy of the Decimal."""
+        return Decimal(self.low, self.mid, self.high, self.flags)
+
     @staticmethod
     fn from_components(
         low: UInt32,
@@ -317,8 +297,7 @@ struct Decimal(
         scale: UInt32,
         sign: Bool,
     ) raises -> Self:
-        """
-        Initializes a Decimal with five components.
+        """Initializes a Decimal with five components.
 
         Args:
             low: Least significant 32 bits of coefficient.
@@ -352,8 +331,7 @@ struct Decimal(
     fn from_words(
         low: UInt32, mid: UInt32, high: UInt32, flags: UInt32
     ) raises -> Self:
-        """
-        Initializes a Decimal with four raw words of internal representation.
+        """Initializes a Decimal with four raw words of internal representation.
         Compared to `__init__()` with four words, this method checks the flags.
 
         Args:
@@ -390,8 +368,7 @@ struct Decimal(
 
     @staticmethod
     fn from_int(value: Int, scale: UInt32) raises -> Self:
-        """
-        Initializes a Decimal from an integer.
+        """Initializes a Decimal from an integer.
 
         Args:
             value: The integer value to convert to Decimal.
@@ -404,6 +381,7 @@ struct Decimal(
             Error: If the scale is greater than MAX_SCALE.
 
         Notes:
+
         Since Int is a 64-bit type in Mojo, the `high` field will always be 0.
         """
 
@@ -441,8 +419,7 @@ struct Decimal(
     fn from_uint128(
         value: UInt128, scale: UInt32 = 0, sign: Bool = False
     ) raises -> Decimal:
-        """
-        Initializes a Decimal from a UInt128 value.
+        """Initializes a Decimal from a UInt128 value.
 
         Args:
             value: The UInt128 value to convert to Decimal.
@@ -483,8 +460,7 @@ struct Decimal(
 
     @staticmethod
     fn from_string(value: String) raises -> Decimal:
-        """
-        Initializes a Decimal from a string representation.
+        """Initializes a Decimal from a string representation.
 
         Args:
             value: The string representation of the Decimal.
@@ -743,8 +719,7 @@ struct Decimal(
 
     @staticmethod
     fn from_float(value: Float64) raises -> Decimal:
-        """
-        Initializes a Decimal from a floating-point value.
+        """Initializes a Decimal from a floating-point value.
         The reliability of this method is limited by the precision of Float64.
         Float64 is reliable up to 15 significant digits and marginally
         reliable up to 16 siginficant digits. Be careful when using this method.
@@ -865,8 +840,7 @@ struct Decimal(
     # ===------------------------------------------------------------------=== #
 
     fn __float__(self) -> Float64:
-        """
-        Converts this Decimal to a floating-point value.
+        """Converts this Decimal to a floating-point value.
         Because Decimal is fixed-point, this may lose precision.
 
         Returns:
@@ -879,8 +853,7 @@ struct Decimal(
         return result
 
     fn __int__(self) raises -> Int:
-        """
-        Returns the integral part of the Decimal as Int.
+        """Returns the integral part of the Decimal as Int.
         See `to_int()` for more information.
         """
         try:
@@ -889,8 +862,7 @@ struct Decimal(
             raise Error("Error in `Decimal.__int__()` with Int: ", e)
 
     fn __str__(self) -> String:
-        """
-        Returns string representation of the Decimal.
+        """Returns string representation of the Decimal.
         Preserves trailing zeros after decimal point to match the scale.
         """
         # Get the coefficient as a string (absolute value)
@@ -932,9 +904,7 @@ struct Decimal(
         return result
 
     fn __repr__(self) -> String:
-        """
-        Returns a string representation of the Decimal.
-        """
+        """Returns a string representation of the Decimal."""
         return 'Decimal("' + self.__str__() + '")'
 
     # ===------------------------------------------------------------------=== #
@@ -1019,9 +989,7 @@ struct Decimal(
         return Int64(result & 0xFFFF_FFFF_FFFF_FFFF)
 
     fn to_int128(self) -> Int128:
-        """
-        Returns the signed integral part of the Decimal.
-        """
+        """Returns the signed integral part of the Decimal."""
 
         var res = Int128(self.to_uint128())
 
@@ -1055,8 +1023,7 @@ struct Decimal(
     # ===------------------------------------------------------------------=== #
 
     fn __abs__(self) -> Self:
-        """
-        Returns the absolute value of this Decimal.
+        """Returns the absolute value of this Decimal.
 
         Returns:
             The absolute value of this Decimal.
@@ -1065,8 +1032,7 @@ struct Decimal(
         return decimojo.arithmetics.absolute(self)
 
     fn __neg__(self) -> Self:
-        """
-        Returns the negation of this Decimal.
+        """Returns the negation of this Decimal.
 
         Returns:
             The negation of this Decimal.
@@ -1255,8 +1221,7 @@ struct Decimal(
     # ===------------------------------------------------------------------=== #
 
     fn __gt__(self, other: Decimal) -> Bool:
-        """
-        Greater than comparison operator.
+        """Greater than comparison operator.
 
         Args:
             other: The Decimal to compare with.
@@ -1267,8 +1232,7 @@ struct Decimal(
         return decimojo.comparison.greater(self, other)
 
     fn __lt__(self, other: Decimal) -> Bool:
-        """
-        Less than comparison operator.
+        """Less than comparison operator.
 
         Args:
             other: The Decimal to compare with.
@@ -1279,8 +1243,7 @@ struct Decimal(
         return decimojo.comparison.less(self, other)
 
     fn __ge__(self, other: Decimal) -> Bool:
-        """
-        Greater than or equal comparison operator.
+        """Greater than or equal comparison operator.
 
         Args:
             other: The Decimal to compare with.
@@ -1291,8 +1254,7 @@ struct Decimal(
         return decimojo.comparison.greater_equal(self, other)
 
     fn __le__(self, other: Decimal) -> Bool:
-        """
-        Less than or equal comparison operator.
+        """Less than or equal comparison operator.
 
         Args:
             other: The Decimal to compare with.
@@ -1303,8 +1265,7 @@ struct Decimal(
         return decimojo.comparison.less_equal(self, other)
 
     fn __eq__(self, other: Decimal) -> Bool:
-        """
-        Equality comparison operator.
+        """Equality comparison operator.
 
         Args:
             other: The Decimal to compare with.
@@ -1315,8 +1276,7 @@ struct Decimal(
         return decimojo.comparison.equal(self, other)
 
     fn __ne__(self, other: Decimal) -> Bool:
-        """
-        Inequality comparison operator.
+        """Inequality comparison operator.
 
         Args:
             other: The Decimal to compare with.
@@ -1332,8 +1292,7 @@ struct Decimal(
     # ===------------------------------------------------------------------=== #
 
     fn __round__(self, ndigits: Int) -> Self:
-        """
-        Rounds this Decimal to the specified number of decimal places.
+        """Rounds this Decimal to the specified number of decimal places.
         If `ndigits` is not given, rounds to 0 decimal places.
         If rounding causes overflow, returns the value itself.
 
@@ -1359,11 +1318,8 @@ struct Decimal(
     # ===------------------------------------------------------------------=== #
 
     fn exp(self) raises -> Self:
-        """
-        Calculates the exponential of this Decimal.
-
-        Returns:
-            The exponential of this Decimal.
+        """Calculates the exponential of this Decimal.
+        See `exp()` for more information.
         """
 
         try:
@@ -1372,6 +1328,9 @@ struct Decimal(
             raise Error("Error in `Decimal.exp()`: ", e)
 
     fn ln(self) raises -> Self:
+        """Calculates the natural logarithm of this Decimal.
+        See `ln()` for more information.
+        """
         try:
             return decimojo.exponential.ln(self)
         except e:
@@ -1382,8 +1341,7 @@ struct Decimal(
         ndigits: Int = 0,
         rounding_mode: RoundingMode = RoundingMode.ROUND_HALF_EVEN,
     ) raises -> Self:
-        """
-        Rounds this Decimal to the specified number of decimal places.
+        """Rounds this Decimal to the specified number of decimal places.
         Compared to `__round__`, this method:
         (1) Allows specifying the rounding mode.
         (2) Raises an error if the operation would result in overflow.
@@ -1431,8 +1389,7 @@ struct Decimal(
     # ===------------------------------------------------------------------=== #
 
     fn coefficient(self) -> UInt128:
-        """
-        Returns the unscaled integer coefficient as an UInt128 value.
+        """Returns the unscaled integer coefficient as an UInt128 value.
         This is the absolute value of the decimal digits without considering
         the scale.
         The value of the coefficient is: `high * 2**64 + mid * 2**32 + low`.
@@ -1535,8 +1492,7 @@ struct Decimal(
         return self.number_of_significant_digits() - 1 - self.scale()
 
     fn number_of_significant_digits(self) -> Int:
-        """
-        Returns the number of significant digits in the Decimal.
+        """Returns the number of significant digits in the Decimal.
         The number of significant digits is the total number of digits in the
         coefficient, excluding leading zeros but including trailing zeros.
 
@@ -1570,9 +1526,7 @@ struct Decimal(
     # ===------------------------------------------------------------------=== #
 
     fn internal_representation(value: Decimal):
-        """
-        Prints the internal representation details of a Decimal.
-        """
+        """Prints the internal representation details of a Decimal."""
         print("\nInternal Representation Details:")
         print("--------------------------------")
         print("Decimal:       ", value)
