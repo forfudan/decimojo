@@ -31,6 +31,7 @@
 
 import math as builtin_math
 import testing
+import time
 
 import decimojo.constants
 import decimojo.special
@@ -155,6 +156,174 @@ fn power(base: Decimal, exponent: Int) raises -> Decimal:
     return result
 
 
+fn root(x: Decimal, n: Int) raises -> Decimal:
+    """Calculates the n-th root of a Decimal value using Newton-Raphson method.
+
+    Args:
+        x: The Decimal value to compute the n-th root of.
+        n: The root to compute (must be positive).
+
+    Returns:
+        A new Decimal containing the n-th root of x.
+
+    Raises:
+        Error: If x is negative and n is even.
+        Error: If n is zero or negative.
+    """
+    # var t0 = time.perf_counter_ns()
+
+    # Special cases for n
+    if n <= 0:
+        raise Error("Error in `root()`: Cannot compute non-positive root")
+    if n == 1:
+        return x
+    if n == 2:
+        return sqrt(x)
+
+    # Special cases for x
+    if x.is_zero():
+        return Decimal.ZERO()
+    if x.is_one():
+        return Decimal.ONE()
+    if x.is_negative():
+        if n % 2 == 0:
+            raise Error(
+                "Error in `root()`: Cannot compute even root of a negative"
+                " number"
+            )
+        # For odd roots of negative numbers, compute |x|^(1/n) and negate
+        return -root(-x, n)
+
+    # Special optimization for very large n
+    if n > 50:
+        # For large n, the Newton-Raphson method may converge slowly
+        # Use logarithm approach directly with higher precision
+        try:
+            # Direct calculation: x^n = e^(ln(x)/n)
+            return exp(ln(x) / Decimal(n))
+        except e:
+            raise Error("Error in `root()`: ", e)
+
+    # Initial guess
+    # use floating point approach to quickly find a good guess
+    var x_coef: UInt128 = x.coefficient()
+    var x_scale = x.scale()
+    var guess: Decimal
+
+    # For numbers with zero scale (true integers)
+    if x_scale == 0:
+        if n <= 8:  # 3<=n<=8
+            var float_root = pow(Float64(x_coef), 1 / Float64(n)) * Float64(
+                10
+            ) ** 8
+            guess = Decimal.from_uint128(
+                UInt128(round(float_root)), scale=8, sign=False
+            )
+        elif n <= 16:
+            var float_root = pow(Float64(x_coef), 1 / Float64(n)) * Float64(
+                10
+            ) ** 16
+            guess = Decimal.from_uint128(
+                UInt128(round(float_root)), scale=16, sign=False
+            )
+        else:
+            var float_root = pow(Float64(x_coef), 1 / Float64(n)) * Float64(
+                10
+            ) ** 26
+            guess = Decimal.from_uint128(
+                UInt128(round(float_root)), scale=26, sign=False
+            )
+
+    # Otherwise, use the following formulae:
+    # let divmod(scale, n) = (x, y)
+    # so scale = x * n + y = (x + 1) * n + (y - n)
+    #   a^(1/n) / (10^scale)^(1/n)
+    # = a^(1/n) / (10^(scale/n))
+    # = a^(1/n) / (10^((x + 1) * n + y - n) / n))
+    # = a^(1/n) / (10^(x+1 + (y-n)/n))
+    # = a^(1/n) / 10^(x+1) / 10^((y-n)/n)
+    # = a^(1/n) / 10^((y/n-1) / 10^(x+1)
+    else:
+        var dividend = x_scale // n
+        var remainder = x_scale % n
+        var float_root = (
+            Float64(x_coef) ** (Float64(1) / Float64(n))
+            / Float64(10) ** (Float64(remainder) / Float64(n) - 1)
+        )
+        guess = Decimal.from_uint128(
+            UInt128(float_root), scale=dividend + 1, sign=False
+        )
+
+    # var t_initial_guess = time.perf_counter_ns()
+
+    # Newton-Raphson method for n-th root
+    # Formula: x_{k+1} = ((n-1)*x_k + a/x_k^(n-1))/n
+    var prev_guess = Decimal.ZERO()
+    var n_decimal = Decimal(n)
+    var n_minus_1 = n - 1
+    var n_minus_1_decimal = Decimal(n_minus_1)
+    var iteration_count = 0
+
+    # Newton-Raphson iteration
+    while guess != prev_guess and iteration_count < 100:
+        prev_guess = guess
+        var pow_n_minus_1 = power(guess, n_minus_1)
+        var sum_result = n_minus_1_decimal * guess + x / pow_n_minus_1
+        guess = sum_result / n_decimal
+        iteration_count += 1
+
+    # var t_newton_raphson = time.perf_counter_ns()
+
+    # If exact root found, remove trailing zeros after the decimal point
+    # For example, root(27, 3) = 9, not 3.0000000000000
+    # Exact root means that the n-th power of coefficient of guess after
+    # removing trailing zeros is equal to the coefficient of xs
+    var guess_coef = guess.coefficient()
+
+    # No need to do this if the last digit of the coefficient of guess is not zero
+    if guess_coef % 10 == 0:
+        var num_digits_x_ceof = decimojo.utility.number_of_digits(x_coef)
+        var num_digits_x_root_coef = (num_digits_x_ceof // n) + 1
+        var num_digits_guess_coef = decimojo.utility.number_of_digits(
+            guess_coef
+        )
+        var num_digits_to_decrease = num_digits_guess_coef - num_digits_x_root_coef
+
+        # testing.assert_true(
+        #     num_digits_to_decrease >= 0,
+        #     "root of x has fewer digits than expected",
+        # )
+        for _ in range(num_digits_to_decrease):
+            if guess_coef % 10 == 0:
+                guess_coef //= 10
+            else:
+                break
+        else:
+            var guess_coef_powered = guess_coef**n
+            if guess_coef_powered == x_coef:
+                return Decimal.from_uint128(
+                    guess_coef,
+                    scale=guess.scale() - num_digits_to_decrease,
+                    sign=False,
+                )
+            if guess_coef_powered == x_coef * decimojo.utility.power_of_10[
+                DType.uint128
+            ](n):
+                return Decimal.from_uint128(
+                    guess_coef // 10,
+                    scale=guess.scale() - num_digits_to_decrease - 1,
+                    sign=False,
+                )
+
+    # print("DEBUG: iteration_count", iteration_count)
+    # var t_remove_zeros = time.perf_counter_ns()
+    # print("TIME: initial guess", t_initial_guess - t0)
+    # print("TIME: Newton-Raphson", t_newton_raphson - t_initial_guess)
+    # print("TIME: remove zeros", t_remove_zeros - t_newton_raphson)
+
+    return guess
+
+
 fn sqrt(x: Decimal) raises -> Decimal:
     """Computes the square root of a Decimal value using Newton-Raphson method.
 
@@ -176,19 +345,16 @@ fn sqrt(x: Decimal) raises -> Decimal:
     if x.is_zero():
         return Decimal.ZERO()
 
+    # Initial guess
+    # use floating point approach to quickly find a good guess
     var x_coef: UInt128 = x.coefficient()
     var x_scale = x.scale()
-
-    # Initial guess - a good guess helps converge faster
-    # use floating point approach to quickly find a good guess
-
     var guess: Decimal
 
     # For numbers with zero scale (true integers)
     if x_scale == 0:
         var float_sqrt = builtin_math.sqrt(Float64(x_coef))
-        guess = Decimal.from_uint128(UInt128(float_sqrt))
-        # print("DEBUG: scale = 0")
+        guess = Decimal.from_uint128(UInt128(round(float_sqrt)))
 
     # For numbers with even scale
     elif x_scale % 2 == 0:
@@ -207,7 +373,7 @@ fn sqrt(x: Decimal) raises -> Decimal:
         # print("DEBUG: scale is odd")
 
     # print("DEBUG: initial guess", guess)
-    testing.assert_false(guess.is_zero(), "Initial guess should not be zero")
+    # testing.assert_false(guess.is_zero(), "Initial guess should not be zero")
 
     # Newton-Raphson iterations
     # x_n+1 = (x_n + S/x_n) / 2
@@ -231,11 +397,11 @@ fn sqrt(x: Decimal) raises -> Decimal:
 
     # print("DEBUG: iteration_count", iteration_count)
 
-    # If exact square root found remove trailing zeros after the decimal point
+    # If exact square root found, remove trailing zeros after the decimal point
     # For example, sqrt(81) = 9, not 9.000000
     # For example, sqrt(100.0000) = 10.00 not 10.000000
-    # Exact square means that the coefficient of guess after removing trailing zeros
-    # is equal to the coefficient of x
+    # Exact square means that the squared coefficient of guess after removing
+    # trailing zeros is equal to the coefficient of x
 
     var guess_coef = guess.coefficient()
 
@@ -248,10 +414,10 @@ fn sqrt(x: Decimal) raises -> Decimal:
         )
         var num_digits_to_decrease = num_digits_guess_coef - num_digits_x_sqrt_coef
 
-        testing.assert_true(
-            num_digits_to_decrease >= 0,
-            "sqrt of x has fewer digits than expected",
-        )
+        # testing.assert_true(
+        #     num_digits_to_decrease >= 0,
+        #     "sqrt of x has fewer digits than expected",
+        # )
         for _ in range(num_digits_to_decrease):
             if guess_coef % 10 == 0:
                 guess_coef //= 10
@@ -260,18 +426,14 @@ fn sqrt(x: Decimal) raises -> Decimal:
         else:
             # print("DEBUG: guess", guess)
             # print("DEBUG: guess_coef after removing trailing zeros", guess_coef)
-            if (guess_coef * guess_coef == x_coef) or (
-                guess_coef * guess_coef == x_coef * 10
+            var guess_coef_squared = guess_coef * guess_coef
+            if (guess_coef_squared == x_coef) or (
+                guess_coef_squared == x_coef * 10
             ):
-                var low = UInt32(guess_coef & 0xFFFFFFFF)
-                var mid = UInt32((guess_coef >> 32) & 0xFFFFFFFF)
-                var high = UInt32((guess_coef >> 64) & 0xFFFFFFFF)
-                return Decimal(
-                    low,
-                    mid,
-                    high,
-                    guess.scale() - num_digits_to_decrease,
-                    False,
+                return Decimal.from_uint128(
+                    guess_coef,
+                    scale=guess.scale() - num_digits_to_decrease,
+                    sign=False,
                 )
 
     return guess

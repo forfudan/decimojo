@@ -1408,18 +1408,23 @@ struct Decimal(
         except e:
             raise Error("Error in `Decimal.round()`: ", e)
 
+    fn root(self, n: Int) raises -> Self:
+        """Calculates the n-th root of this Decimal.
+        See `root()` for more information.
+        """
+        try:
+            return decimojo.exponential.root(self, n)
+        except e:
+            raise Error("Error in `Decimal.root()`: ", e)
+
     fn sqrt(self) raises -> Self:
+        """Calculates the square root of this Decimal.
+        See `sqrt()` for more information.
         """
-        Calculates the square root of this Decimal.
-
-        Returns:
-            The square root of this Decimal.
-
-        Raises:
-            Error: If the operation would result in overflow.
-        """
-
-        return decimojo.exponential.sqrt(self)
+        try:
+            return decimojo.exponential.sqrt(self)
+        except e:
+            raise Error("Error in `Decimal.sqrt()`: ", e)
 
     # ===------------------------------------------------------------------=== #
     # Other methods
