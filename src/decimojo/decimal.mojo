@@ -907,10 +907,7 @@ struct Decimal(
         """Returns the integral part of the Decimal as Int.
         See `to_int()` for more information.
         """
-        try:
-            return self.to_int()
-        except e:
-            raise Error("Error in `Decimal.__int__()` with Int: ", e)
+        return self.to_int()
 
     fn __str__(self) -> String:
         """Returns string representation of the Decimal.
@@ -1127,6 +1124,17 @@ struct Decimal(
             result += "E" + String(exponent)
 
         return result
+
+    fn as_tuple(self) -> Tuple[Bool, UInt128, Int]:
+        """Returns a tuple representation of the number.
+        Tuple(sign, signficand, exponent).
+
+        Returns:
+            A tuple representation of the number.
+        """
+        return Tuple[Bool, UInt128, Int](
+            self.is_negative(), self.coefficient(), self.scale()
+        )
 
     # ===------------------------------------------------------------------=== #
     # Basic unary operation dunders
