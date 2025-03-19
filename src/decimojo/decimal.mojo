@@ -16,42 +16,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===----------------------------------------------------------------------=== #
-#
-# Implements basic object methods for the Decimal type
-# which supports correctly-rounded, fixed-point arithmetic.
-#
-# ===----------------------------------------------------------------------=== #
-#
-# Organization of files and methods of Decimal:
-# - Internal representation fields
-# - Constants (aliases)
-# - Special values (methods)
-# - Constructors and life time methods
-# - Constructing methods that are not dunders
-# - Output dunders, type-transfer dunders, and other type-transfer methods
-# - Basic unary arithmetic operation dunders
-# - Basic binary arithmetic operation dunders
-# - Basic binary arithmetic operation dunders with reflected operands
-# - Basic binary augmented arithmetic operation dunders
-# - Basic comparison operation dunders
-# - Other dunders that implements traits
-# - Mathematical methods that do not implement a trait (not a dunder)
-# - Other methods
-# - Internal methods
-#
-# ===----------------------------------------------------------------------=== #
-# Docstring style:
-# 1. Description
-# 2. Parameters
-# 3. Args
-# 4. Constraints
-# 4) Returns
-# 5) Raises
-# 9) Examples
-# ===----------------------------------------------------------------------=== #
 
-"""
-Implements basic object methods for working with decimal numbers.
+"""Implements basic object methods for the Decimal type.
+
+This module contains the basic object methods for the Decimal type.
+These methods include constructors, life time methods, output dunders,
+type-transfer dunders, basic arithmetic operation dunders, comparison
+operation dunders, and other dunders that implement traits, as well as
+mathematical methods that do not implement a trait.
 """
 
 from memory import UnsafePointer
@@ -66,7 +38,7 @@ from decimojo.rounding_mode import RoundingMode
 import decimojo.utility
 
 
-@register_passable
+@register_passable("trivial")
 struct Decimal(
     Absable,
     Comparable,
@@ -75,11 +47,12 @@ struct Decimal(
     Roundable,
     Writable,
 ):
-    """
-    Correctly-rounded fixed-precision number.
+    """Represents a fixed-point decimal number with 96-bit precision.
 
-    Internal Representation
-    -----------------------
+    Notes:
+
+    Internal Representation:
+
     Each decimal uses a 128-bit on memory, where:
     - 96 bits for the coefficient (significand), which is 96-bit unsigned
     integers stored as three 32 bit integer (little-endian).
@@ -97,11 +70,30 @@ struct Decimal(
     The value of the coefficient is: `high * 2**64 + mid * 2**32 + low`
     The final value is: `(-1)**sign * coefficient * 10**(-scale)`
 
-    Reference
-    ---------
+    Reference:
+
     - General Decimal Arithmetic Specification Version 1.70 – 7 Apr 2009 (https://speleotrove.com/decimal/decarith.html)
     - https://learn.microsoft.com/en-us/dotnet/api/system.decimal.getbits?view=net-9.0&redirectedfrom=MSDN#System_Decimal_GetBits_System_Decimal_
     """
+
+    # ===------------------------------------------------------------------=== #
+    # Organization of fields and methods:
+    # - Internal representation fields
+    # - Constants (aliases)
+    # - Special values (methods)
+    # - Constructors and life time methods
+    # - Constructing methods that are not dunders
+    # - Output dunders, type-transfer dunders, and other type-transfer methods
+    # - Basic unary arithmetic operation dunders
+    # - Basic binary arithmetic operation dunders
+    # - Basic binary arithmetic operation dunders with reflected operands
+    # - Basic binary augmented arithmetic operation dunders
+    # - Basic comparison operation dunders
+    # - Other dunders that implements traits
+    # - Mathematical methods that do not implement a trait (not a dunder)
+    # - Other methods
+    # - Internal methods
+    # ===------------------------------------------------------------------=== #
 
     # Internal representation fields
     var low: UInt32
@@ -279,13 +271,6 @@ struct Decimal(
             self = Decimal.from_float(value)
         except e:
             raise Error("Error in `Decimal__init__()` with Float64: ", e)
-
-    fn __copyinit__(out self, other: Self):
-        """Initializes a Decimal by copying another Decimal."""
-        self.low = other.low
-        self.mid = other.mid
-        self.high = other.high
-        self.flags = other.flags
 
     # ===------------------------------------------------------------------=== #
     # Constructing methods that are not dunders
@@ -917,45 +902,9 @@ struct Decimal(
 
     fn __str__(self) -> String:
         """Returns string representation of the Decimal.
-        Preserves trailing zeros after decimal point to match the scale.
+        See `to_str()` for more information.
         """
-        # Get the coefficient as a string (absolute value)
-        var coef = String(self.coefficient())
-        var scale = self.scale()
-        var result: String
-
-        # Handle zero as a special case
-        if coef == "0":
-            if scale == 0:
-                result = "0"
-            else:
-                result = "0." + "0" * scale
-
-        # For non-zero values, format according to scale
-        elif scale == 0:
-            # No decimal places needed
-            result = coef
-        elif scale >= len(coef):
-            # Need leading zeros after decimal point
-            result = "0." + "0" * (scale - len(coef)) + coef
-        else:
-            # Insert decimal point at appropriate position
-            var insert_pos = len(coef) - scale
-            result = coef[:insert_pos] + "." + coef[insert_pos:]
-
-            # Ensure we have exactly 'scale' digits after decimal point
-            var decimal_point_pos = result.find(".")
-            var current_decimals = len(result) - decimal_point_pos - 1
-
-            if current_decimals < scale:
-                # Add trailing zeros if needed
-                result += "0" * (scale - current_decimals)
-
-        # Add negative sign if needed
-        if self.is_negative():
-            result = "-" + result
-
-        return result
+        return self.to_str()
 
     fn __repr__(self) -> String:
         """Returns a string representation of the Decimal."""
@@ -1071,6 +1020,102 @@ struct Decimal(
 
         return res
 
+    fn to_str(self) -> String:
+        """Returns string representation of the Decimal.
+        Preserves trailing zeros after decimal point to match the scale.
+        """
+        # Get the coefficient as a string (absolute value)
+        var coef = String(self.coefficient())
+        var scale = self.scale()
+        var result: String
+
+        # Handle zero as a special case
+        if coef == "0":
+            if scale == 0:
+                result = "0"
+            else:
+                result = "0." + "0" * scale
+
+        # For non-zero values, format according to scale
+        elif scale == 0:
+            # No decimal places needed
+            result = coef
+        elif scale >= len(coef):
+            # Need leading zeros after decimal point
+            result = "0." + "0" * (scale - len(coef)) + coef
+        else:
+            # Insert decimal point at appropriate position
+            var insert_pos = len(coef) - scale
+            result = coef[:insert_pos] + "." + coef[insert_pos:]
+
+            # Ensure we have exactly 'scale' digits after decimal point
+            var decimal_point_pos = result.find(".")
+            var current_decimals = len(result) - decimal_point_pos - 1
+
+            if current_decimals < scale:
+                # Add trailing zeros if needed
+                result += "0" * (scale - current_decimals)
+
+        # Add negative sign if needed
+        if self.is_negative():
+            result = "-" + result
+
+        return result
+
+    fn to_str_scientific(self) raises -> String:
+        """Returns a string representation of this Decimal in scientific notation.
+
+        Returns:
+            A string representation of this Decimal in scientific notation.
+
+        Raises:
+            Error: If significant_digits is not between 1 and 28.
+
+        Notes:
+
+        Scientific notation format: M.NNNNe±XX where:
+        - M is the first significant digit.
+        - NNNN is the remaining significant digits.
+        - ±XX is the exponent.
+        """
+        var scale: Int = self.scale()
+        var coef = self.coefficient()
+
+        # Special case: zero
+        if self.is_zero():
+            if scale == 0:
+                return String("0")
+            else:
+                return String("0E-") + String("0") * self.scale()
+
+        while coef % 10 == 0:
+            coef = coef // 10
+            scale -= 1
+
+        # 0.00100: coef=100, scale=5
+        # => 0.001: coef=1, scale=3, ndigits_fractional_part=0
+        # => 1.0e-3: coef=1, exponent=-3
+        var ndigits_coef = decimojo.utility.number_of_digits(coef)
+        var ndigits_fractional_part = ndigits_coef - 1
+        var exponent = ndigits_fractional_part - scale
+
+        # Format in scientific notation:
+        # sign, first digit, decimal point, remaining digits
+        var coef_str = String(coef)
+        var result: String = String("-") if self.is_negative() else String("")
+        if len(coef_str) == 1:
+            result = result + coef_str + String(".0")
+        else:
+            result = result + coef_str[0] + String(".") + coef_str[1:]
+
+        # Add exponent (E+XX or E-XX)
+        if exponent >= 0:
+            result += "E+" + String(exponent)
+        else:
+            result += "E" + String(exponent)
+
+        return result
+
     # ===------------------------------------------------------------------=== #
     # Basic unary operation dunders
     # neg
@@ -1166,23 +1211,11 @@ struct Decimal(
     # (+, -, *, @, /, //, %, divmod(), pow(), **, <<, >>, &, ^, |)
     # ===------------------------------------------------------------------=== #
 
-    fn __radd__(self, other: Float64) raises -> Self:
-        try:
-            return decimojo.arithmetics.add(Decimal(other), self)
-        except e:
-            raise Error("Error in `__radd__()`: ", e)
-
     fn __radd__(self, other: Int) raises -> Self:
         try:
             return decimojo.arithmetics.add(Decimal(other), self)
         except e:
             raise Error("Error in `__radd__()`: ", e)
-
-    fn __rsub__(self, other: Float64) raises -> Self:
-        try:
-            return decimojo.arithmetics.subtract(Decimal(other), self)
-        except e:
-            raise Error("Error in `__rsub__()`: ", e)
 
     fn __rsub__(self, other: Int) raises -> Self:
         try:
@@ -1190,23 +1223,11 @@ struct Decimal(
         except e:
             raise Error("Error in `__rsub__()`: ", e)
 
-    fn __rmul__(self, other: Float64) raises -> Self:
-        try:
-            return decimojo.arithmetics.multiply(Decimal(other), self)
-        except e:
-            raise Error("Error in `__rmul__()`: ", e)
-
     fn __rmul__(self, other: Int) raises -> Self:
         try:
             return decimojo.arithmetics.multiply(Decimal(other), self)
         except e:
             raise Error("Error in `__rmul__()`: ", e)
-
-    fn __rtruediv__(self, other: Float64) raises -> Self:
-        try:
-            return decimojo.arithmetics.true_divide(Decimal(other), self)
-        except e:
-            raise Error("Error in `__rtruediv__()`: ", e)
 
     fn __rtruediv__(self, other: Int) raises -> Self:
         try:

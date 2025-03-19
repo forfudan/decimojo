@@ -17,6 +17,9 @@
 # limitations under the License.
 # ===----------------------------------------------------------------------=== #
 
+"""Implements the RoundingMode for different rounding modes.
+"""
+
 
 struct RoundingMode:
     """
@@ -27,6 +30,11 @@ struct RoundingMode:
     - HALF_UP: Round away from zero if >= 0.5
     - HALF_EVEN: Round to nearest even digit if equidistant (banker's rounding)
     - UP: Round away from zero
+
+    Notes:
+
+    Currently, enum is not available in Mojo. This module provides a workaround
+    to define a custom enum-like class for rounding modes.
     """
 
     # alias
