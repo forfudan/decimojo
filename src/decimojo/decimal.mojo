@@ -132,6 +132,7 @@ struct Decimal(
     # when Mojo support global variables in the future.
 
     # Special values
+    @always_inline
     @staticmethod
     fn INFINITY() -> Decimal:
         """Returns a Decimal representing positive infinity.
@@ -139,6 +140,7 @@ struct Decimal(
         """
         return Decimal(0, 0, 0, 0x00000001)
 
+    @always_inline
     @staticmethod
     fn NEGATIVE_INFINITY() -> Decimal:
         """Returns a Decimal representing negative infinity.
@@ -146,6 +148,7 @@ struct Decimal(
         """
         return Decimal(0, 0, 0, 0x80000001)
 
+    @always_inline
     @staticmethod
     fn NAN() -> Decimal:
         """Returns a Decimal representing Not a Number (NaN).
@@ -153,6 +156,7 @@ struct Decimal(
         """
         return Decimal(0, 0, 0, 0x00000010)
 
+    @always_inline
     @staticmethod
     fn NEGATIVE_NAN() -> Decimal:
         """Returns a Decimal representing negative Not a Number.
@@ -160,16 +164,19 @@ struct Decimal(
         """
         return Decimal(0, 0, 0, 0x80000010)
 
+    @always_inline
     @staticmethod
     fn ZERO() -> Decimal:
         """Returns a Decimal representing 0."""
         return Decimal(0, 0, 0, 0)
 
+    @always_inline
     @staticmethod
     fn ONE() -> Decimal:
         """Returns a Decimal representing 1."""
         return Decimal(1, 0, 0, 0)
 
+    @always_inline
     @staticmethod
     fn MAX() -> Decimal:
         """
@@ -178,6 +185,7 @@ struct Decimal(
         """
         return Decimal(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0)
 
+    @always_inline
     @staticmethod
     fn MIN() -> Decimal:
         """Returns the minimum possible Decimal value (negative of MAX).
@@ -185,11 +193,13 @@ struct Decimal(
         """
         return Decimal(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, Decimal.SIGN_MASK)
 
+    @always_inline
     @staticmethod
     fn PI() -> Decimal:
         """Returns the value of pi (π) as a Decimal."""
         return decimojo.constants.PI()
 
+    @always_inline
     @staticmethod
     fn E() -> Decimal:
         """Returns the value of Euler's number (e) as a Decimal."""
@@ -866,10 +876,12 @@ struct Decimal(
         # Return both the significant digits and the scale
         return Decimal(low, mid, high, scale, is_negative)
 
+    @always_inline
     fn copy(self) -> Self:
         """Returns a copy of the Decimal."""
         return Decimal(self.low, self.mid, self.high, self.flags)
 
+    @always_inline
     fn clone(self) -> Self:
         """Returns a copy of the Decimal."""
         return Decimal(self.low, self.mid, self.high, self.flags)
@@ -1121,22 +1133,18 @@ struct Decimal(
     # neg
     # ===------------------------------------------------------------------=== #
 
+    @always_inline
     fn __abs__(self) -> Self:
         """Returns the absolute value of this Decimal.
-
-        Returns:
-            The absolute value of this Decimal.
+        See `absolute()` for more information.
         """
-
         return decimojo.arithmetics.absolute(self)
 
+    @always_inline
     fn __neg__(self) -> Self:
         """Returns the negation of this Decimal.
-
-        Returns:
-            The negation of this Decimal.
+        See `negative()` for more information.
         """
-
         return decimojo.arithmetics.negative(self)
 
     # ===------------------------------------------------------------------=== #
@@ -1144,65 +1152,46 @@ struct Decimal(
     # These methods are called to implement the binary arithmetic operations
     # (+, -, *, @, /, //, %, divmod(), pow(), **, <<, >>, &, ^, |)
     # ===------------------------------------------------------------------=== #
+
+    @always_inline
     fn __add__(self, other: Self) raises -> Self:
-        try:
-            return decimojo.arithmetics.add(self, other)
-        except e:
-            raise Error("Error in `__add__()`: ", e)
+        return decimojo.arithmetics.add(self, other)
 
+    @always_inline
     fn __add__(self, other: Int) raises -> Self:
-        try:
-            return decimojo.arithmetics.add(self, Decimal(other))
-        except e:
-            raise Error("Error in `__add__()`: ", e)
+        return decimojo.arithmetics.add(self, Decimal(other))
 
+    @always_inline
     fn __sub__(self, other: Self) raises -> Self:
-        try:
-            return decimojo.arithmetics.subtract(self, other)
-        except e:
-            raise Error("Error in `__sub__()`: ", e)
+        return decimojo.arithmetics.subtract(self, other)
 
+    @always_inline
     fn __sub__(self, other: Int) raises -> Self:
-        try:
-            return decimojo.arithmetics.subtract(self, Decimal(other))
-        except e:
-            raise Error("Error in `__sub__()`: ", e)
+        return decimojo.arithmetics.subtract(self, Decimal(other))
 
+    @always_inline
     fn __mul__(self, other: Self) raises -> Self:
-        try:
-            return decimojo.arithmetics.multiply(self, other)
-        except e:
-            raise Error("Error in `__mul__()`: ", e)
+        return decimojo.arithmetics.multiply(self, other)
 
+    @always_inline
     fn __mul__(self, other: Int) raises -> Self:
-        try:
-            return decimojo.arithmetics.multiply(self, Decimal(other))
-        except e:
-            raise Error("Error in `__mul__()`: ", e)
+        return decimojo.arithmetics.multiply(self, Decimal(other))
 
+    @always_inline
     fn __truediv__(self, other: Self) raises -> Self:
-        try:
-            return decimojo.arithmetics.true_divide(self, other)
-        except e:
-            raise Error("Error in `__truediv__()`: ", e)
+        return decimojo.arithmetics.true_divide(self, other)
 
+    @always_inline
     fn __truediv__(self, other: Int) raises -> Self:
-        try:
-            return decimojo.arithmetics.true_divide(self, Decimal(other))
-        except e:
-            raise Error("Error in `__truediv__()`: ", e)
+        return decimojo.arithmetics.true_divide(self, Decimal(other))
 
+    @always_inline
     fn __pow__(self, exponent: Self) raises -> Self:
-        try:
-            return decimal.power(self, exponent)
-        except e:
-            raise Error("Error in `__pow__()`: ", e)
+        return decimal.power(self, exponent)
 
+    @always_inline
     fn __pow__(self, exponent: Int) raises -> Self:
-        try:
-            return decimal.power(self, exponent)
-        except e:
-            raise Error("Error in `__pow__()`: ", e)
+        return decimal.power(self, exponent)
 
     # ===------------------------------------------------------------------=== #
     # Basic binary arithmetic operation dunders with reflected operands
@@ -1211,24 +1200,28 @@ struct Decimal(
     # (+, -, *, @, /, //, %, divmod(), pow(), **, <<, >>, &, ^, |)
     # ===------------------------------------------------------------------=== #
 
+    @always_inline
     fn __radd__(self, other: Int) raises -> Self:
         try:
             return decimojo.arithmetics.add(Decimal(other), self)
         except e:
             raise Error("Error in `__radd__()`: ", e)
 
+    @always_inline
     fn __rsub__(self, other: Int) raises -> Self:
         try:
             return decimojo.arithmetics.subtract(Decimal(other), self)
         except e:
             raise Error("Error in `__rsub__()`: ", e)
 
+    @always_inline
     fn __rmul__(self, other: Int) raises -> Self:
         try:
             return decimojo.arithmetics.multiply(Decimal(other), self)
         except e:
             raise Error("Error in `__rmul__()`: ", e)
 
+    @always_inline
     fn __rtruediv__(self, other: Int) raises -> Self:
         try:
             return decimojo.arithmetics.true_divide(Decimal(other), self)
@@ -1242,122 +1235,82 @@ struct Decimal(
     # (+=, -=, *=, @=, /=, //=, %=, **=, <<=, >>=, &=, ^=, |=)
     # ===------------------------------------------------------------------=== #
 
+    @always_inline
     fn __iadd__(mut self, other: Self) raises:
-        try:
-            self = decimojo.arithmetics.add(self, other)
-        except e:
-            raise Error("Error in `__iadd__()`: ", e)
+        self = decimojo.arithmetics.add(self, other)
 
+    @always_inline
     fn __iadd__(mut self, other: Int) raises:
-        try:
-            self = decimojo.arithmetics.add(self, Decimal(other))
-        except e:
-            raise Error("Error in `__iadd__()`: ", e)
+        self = decimojo.arithmetics.add(self, Decimal(other))
 
+    @always_inline
     fn __isub__(mut self, other: Self) raises:
-        try:
-            self = decimojo.arithmetics.subtract(self, other)
-        except e:
-            raise Error("Error in `__isub__()`: ", e)
+        self = decimojo.arithmetics.subtract(self, other)
 
+    @always_inline
     fn __isub__(mut self, other: Int) raises:
-        try:
-            self = decimojo.arithmetics.subtract(self, Decimal(other))
-        except e:
-            raise Error("Error in `__isub__()`: ", e)
+        self = decimojo.arithmetics.subtract(self, Decimal(other))
 
+    @always_inline
     fn __imul__(mut self, other: Self) raises:
-        try:
-            self = decimojo.arithmetics.multiply(self, other)
-        except e:
-            raise Error("Error in `__imul__()`: ", e)
+        self = decimojo.arithmetics.multiply(self, other)
 
+    @always_inline
     fn __imul__(mut self, other: Int) raises:
-        try:
-            self = decimojo.arithmetics.multiply(self, Decimal(other))
-        except e:
-            raise Error("Error in `__imul__()`: ", e)
+        self = decimojo.arithmetics.multiply(self, Decimal(other))
 
+    @always_inline
     fn __itruediv__(mut self, other: Self) raises:
-        try:
-            self = decimojo.arithmetics.true_divide(self, other)
-        except e:
-            raise Error("Error in `__itruediv__()`: ", e)
+        self = decimojo.arithmetics.true_divide(self, other)
 
+    @always_inline
     fn __itruediv__(mut self, other: Int) raises:
-        try:
-            self = decimojo.arithmetics.true_divide(self, Decimal(other))
-        except e:
-            raise Error("Error in `__itruediv__()`: ", e)
+        self = decimojo.arithmetics.true_divide(self, Decimal(other))
 
     # ===------------------------------------------------------------------=== #
     # Basic binary comparison operation dunders
     # __gt__, __ge__, __lt__, __le__, __eq__, __ne__
     # ===------------------------------------------------------------------=== #
 
+    @always_inline
     fn __gt__(self, other: Decimal) -> Bool:
         """Greater than comparison operator.
-
-        Args:
-            other: The Decimal to compare with.
-
-        Returns:
-            True if self is greater than other, False otherwise.
+        See `greater()` for more information.
         """
         return decimojo.comparison.greater(self, other)
 
+    @always_inline
     fn __lt__(self, other: Decimal) -> Bool:
         """Less than comparison operator.
-
-        Args:
-            other: The Decimal to compare with.
-
-        Returns:
-            True if self is less than other, False otherwise.
+        See `less()` for more information.
         """
         return decimojo.comparison.less(self, other)
 
+    @always_inline
     fn __ge__(self, other: Decimal) -> Bool:
         """Greater than or equal comparison operator.
-
-        Args:
-            other: The Decimal to compare with.
-
-        Returns:
-            True if self is greater than or equal to other, False otherwise.
+        See `greater_equal()` for more information.
         """
         return decimojo.comparison.greater_equal(self, other)
 
+    @always_inline
     fn __le__(self, other: Decimal) -> Bool:
         """Less than or equal comparison operator.
-
-        Args:
-            other: The Decimal to compare with.
-
-        Returns:
-            True if self is less than or equal to other, False otherwise.
+        See `less_equal()` for more information.
         """
         return decimojo.comparison.less_equal(self, other)
 
+    @always_inline
     fn __eq__(self, other: Decimal) -> Bool:
         """Equality comparison operator.
-
-        Args:
-            other: The Decimal to compare with.
-
-        Returns:
-            True if self is equal to other, False otherwise.
+        See `equal()` for more information.
         """
         return decimojo.comparison.equal(self, other)
 
+    @always_inline
     fn __ne__(self, other: Decimal) -> Bool:
         """Inequality comparison operator.
-
-        Args:
-            other: The Decimal to compare with.
-
-        Returns:
-            True if self is not equal to other, False otherwise.
+        See `not_equal()` for more information.
         """
         return decimojo.comparison.not_equal(self, other)
 
@@ -1366,6 +1319,7 @@ struct Decimal(
     # round
     # ===------------------------------------------------------------------=== #
 
+    @always_inline
     fn __round__(self, ndigits: Int) -> Self:
         """Rounds this Decimal to the specified number of decimal places.
         If `ndigits` is not given, rounds to 0 decimal places.
@@ -1374,7 +1328,6 @@ struct Decimal(
         raises:
             Error: Calling `round()` failed.
         """
-
         try:
             return decimojo.rounding.round(
                 self, ndigits=ndigits, rounding_mode=RoundingMode.HALF_EVEN()
@@ -1382,35 +1335,22 @@ struct Decimal(
         except e:
             return self
 
+    @always_inline
     fn __round__(self) -> Self:
         """**OVERLOAD**."""
-
-        return self.__round__(ndigits=0)
+        try:
+            return decimojo.rounding.round(
+                self, ndigits=0, rounding_mode=RoundingMode.HALF_EVEN()
+            )
+        except e:
+            return self
 
     # ===------------------------------------------------------------------=== #
     # Mathematical methods that do not implement a trait (not a dunder)
     # exp, ln, round, sqrt
     # ===------------------------------------------------------------------=== #
 
-    fn exp(self) raises -> Self:
-        """Calculates the exponential of this Decimal.
-        See `exp()` for more information.
-        """
-
-        try:
-            return decimojo.exponential.exp(self)
-        except e:
-            raise Error("Error in `Decimal.exp()`: ", e)
-
-    fn ln(self) raises -> Self:
-        """Calculates the natural logarithm of this Decimal.
-        See `ln()` for more information.
-        """
-        try:
-            return decimojo.exponential.ln(self)
-        except e:
-            raise Error("Error in `Decimal.ln()`: ", e)
-
+    @always_inline
     fn round(
         self,
         ndigits: Int = 0,
@@ -1433,36 +1373,63 @@ struct Decimal(
         Raises:
             Error: If calling `round()` failed.
         """
+        return decimojo.rounding.round(
+            self, ndigits=ndigits, rounding_mode=rounding_mode
+        )
 
-        try:
-            return decimojo.rounding.round(
-                self, ndigits=ndigits, rounding_mode=rounding_mode
-            )
-        except e:
-            raise Error("Error in `Decimal.round()`: ", e)
+    @always_inline
+    fn exp(self) raises -> Self:
+        """Calculates the exponential of this Decimal.
+        See `exp()` for more information.
+        """
+        return decimojo.exponential.exp(self)
 
+    @always_inline
+    fn ln(self) raises -> Self:
+        """Calculates the natural logarithm of this Decimal.
+        See `ln()` for more information.
+        """
+        return decimojo.exponential.ln(self)
+
+    @always_inline
+    fn log10(self) raises -> Decimal:
+        """Computes the base-10 logarithm of this Decimal."""
+        return decimojo.exponential.log10(self)
+
+    @always_inline
+    fn log(self, base: Decimal) raises -> Decimal:
+        """Computes the logarithm of this Decimal with an arbitrary base."""
+        return decimojo.exponential.log(self, base)
+
+    @always_inline
+    fn power(self, exponent: Int) raises -> Decimal:
+        """Raises this Decimal to the power of an integer."""
+        return decimojo.exponential.power(self, Decimal(exponent))
+
+    @always_inline
+    fn power(self, exponent: Decimal) raises -> Decimal:
+        """Raises this Decimal to the power of another Decimal."""
+        return decimojo.exponential.power(self, exponent)
+
+    @always_inline
     fn root(self, n: Int) raises -> Self:
         """Calculates the n-th root of this Decimal.
         See `root()` for more information.
         """
-        try:
-            return decimojo.exponential.root(self, n)
-        except e:
-            raise Error("Error in `Decimal.root()`: ", e)
+        return decimojo.exponential.root(self, n)
 
+    @always_inline
     fn sqrt(self) raises -> Self:
         """Calculates the square root of this Decimal.
         See `sqrt()` for more information.
         """
-        try:
-            return decimojo.exponential.sqrt(self)
-        except e:
-            raise Error("Error in `Decimal.sqrt()`: ", e)
+        return decimojo.exponential.sqrt(self)
 
     # ===------------------------------------------------------------------=== #
     # Other methods
     # ===------------------------------------------------------------------=== #
 
+    @always_inline
     fn coefficient(self) -> UInt128:
         """Returns the unscaled integer coefficient as an UInt128 value.
         This is the absolute value of the decimal digits without considering
@@ -1486,6 +1453,7 @@ struct Decimal(
         #     | UInt128(self.low)
         # )
 
+    @always_inline
     fn is_integer(self) -> Bool:
         """Determines whether this Decimal value represents an integer.
         A Decimal represents an integer when it has no fractional part
@@ -1513,10 +1481,12 @@ struct Decimal(
             % decimojo.utility.power_of_10[DType.uint128](scale)
         ) == 0
 
+    @always_inline
     fn is_negative(self) -> Bool:
         """Returns True if this Decimal is negative."""
         return (self.flags & Self.SIGN_MASK) != 0
 
+    @always_inline
     fn is_one(self) -> Bool:
         """Returns True if this Decimal represents the value 1.
         If 10^scale == coefficient, then it's one.
@@ -1536,6 +1506,7 @@ struct Decimal(
 
         return False
 
+    @always_inline
     fn is_zero(self) -> Bool:
         """Returns True if this Decimal represents zero.
         A decimal is zero when all coefficient parts (low, mid, high) are zero,
@@ -1543,18 +1514,22 @@ struct Decimal(
         """
         return self.low == 0 and self.mid == 0 and self.high == 0
 
+    @always_inline
     fn is_infinity(self) -> Bool:
         """Returns True if this Decimal is positive or negative infinity."""
         return (self.flags & Self.INFINITY_MASK) != 0
 
+    @always_inline
     fn is_nan(self) -> Bool:
         """Returns True if this Decimal is NaN (Not a Number)."""
         return (self.flags & Self.NAN_MASK) != 0
 
+    @always_inline
     fn scale(self) -> Int:
         """Returns the scale (number of decimal places) of this Decimal."""
         return Int((self.flags & Self.SCALE_MASK) >> Self.SCALE_SHIFT)
 
+    @always_inline
     fn scientific_exponent(self) -> Int:
         """
         Calculates the exponent for scientific notation representation of a Decimal.
@@ -1566,6 +1541,7 @@ struct Decimal(
 
         return self.number_of_significant_digits() - 1 - self.scale()
 
+    @always_inline
     fn number_of_significant_digits(self) -> Int:
         """Returns the number of significant digits in the Decimal.
         The number of significant digits is the total number of digits in the
@@ -1583,7 +1559,6 @@ struct Decimal(
         print(Decimal("0.0001234500").number_of_significant_digits())
         # 7
         ```
-
         End of example.
         """
 
@@ -1592,7 +1567,6 @@ struct Decimal(
         # Special case for zero
         if coef == 0:
             return 0  # Zero has zero significant digit
-
         else:
             return decimojo.utility.number_of_digits(coef)
 
