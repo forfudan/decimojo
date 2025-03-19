@@ -16,18 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===----------------------------------------------------------------------=== #
-#
-# Implements exponential functions for the Decimal type
-#
-# ===----------------------------------------------------------------------=== #
-#
-# List of functions in this module:
-#
-# power(base: Decimal, exponent: Decimal): Raises base to the power of exponent (integer exponents only)
-# power(base: Decimal, exponent: Int): Convenience method for integer exponents
-# sqrt(x: Decimal): Computes the square root of x using Newton-Raphson method
-#
-# ===----------------------------------------------------------------------=== #
+
+"""Implements exponential functions for the Decimal type."""
 
 import math as builtin_math
 import testing
@@ -36,6 +26,10 @@ import time
 import decimojo.constants
 import decimojo.special
 import decimojo.utility
+
+# ===----------------------------------------------------------------------=== #
+# Power and root functions
+# ===----------------------------------------------------------------------=== #
 
 
 fn power(base: Decimal, exponent: Decimal) raises -> Decimal:
@@ -439,6 +433,11 @@ fn sqrt(x: Decimal) raises -> Decimal:
     return guess
 
 
+# ===----------------------------------------------------------------------=== #
+# Exponential functions
+# ===----------------------------------------------------------------------=== #
+
+
 fn exp(x: Decimal) raises -> Decimal:
     """Calculates e^x for any Decimal value using optimized range reduction.
     x should be no greater than 66 to avoid overflow.
@@ -631,6 +630,11 @@ fn exp_series(x: Decimal) raises -> Decimal:
         result = result + term
 
     return result
+
+
+# ===----------------------------------------------------------------------=== #
+# Logarithmic functions
+# ===----------------------------------------------------------------------=== #
 
 
 fn ln(x: Decimal) raises -> Decimal:
@@ -894,3 +898,89 @@ fn ln_series(z: Decimal) raises -> Decimal:
     # print("DEBUG: result =", result)
 
     return result
+
+
+fn log(x: Decimal, base: Decimal) raises -> Decimal:
+    """Calculates the logarithm of a Decimal with respect to an arbitrary base.
+
+    Args:
+        x: The Decimal value to compute the logarithm of.
+        base: The base of the logarithm (must be positive and not equal to 1).
+
+    Returns:
+        A Decimal approximation of log_base(x).
+
+    Raises:
+        Error: If x is less than or equal to zero.
+        Error: If base is less than or equal to zero or equal to 1.
+
+    Notes:
+
+    This implementation uses the identity log_base(x) = ln(x) / ln(base).
+    """
+    # Special cases: x <= 0
+    if x.is_negative() or x.is_zero():
+        raise Error(
+            "Error in log(): Cannot compute logarithm of a non-positive number"
+        )
+
+    # Special cases: base <= 0
+    if base.is_negative() or base.is_zero():
+        raise Error(
+            "Error in log(): Cannot use non-positive base for logarithm"
+        )
+
+    # Special case: base = 1
+    if base.is_one():
+        raise Error("Error in log(): Cannot use base 1 for logarithm")
+
+    # Special case: x = 1
+    # log_base(1) = 0 for any valid base
+    if x.is_one():
+        return Decimal.ZERO()
+
+    # Special case: x = base
+    # log_base(base) = 1 for any valid base
+    if x == base:
+        return Decimal.ONE()
+
+    # Use the identity: log_base(x) = ln(x) / ln(base)
+    var ln_x = ln(x)
+    var ln_base = ln(base)
+
+    return ln_x / ln_base
+
+
+fn log10(x: Decimal) raises -> Decimal:
+    """Calculates the base-10 logarithm (log10) of a Decimal value.
+
+    Args:
+        x: The Decimal value to compute the base-10 logarithm of.
+
+    Returns:
+        A Decimal approximation of log10(x).
+
+    Raises:
+        Error: If x is less than or equal to zero.
+
+    Notes:
+        This implementation uses the identity log10(x) = ln(x) / ln(10).
+    """
+    # Special cases: x <= 0
+    if x.is_negative() or x.is_zero():
+        raise Error(
+            "Error in log10(): Cannot compute logarithm of a non-positive"
+            " number"
+        )
+
+    # Special case: x = 1
+    if x.is_one():
+        return Decimal.ZERO()
+
+    # Special case: x = 10
+    if x == Decimal(10, 0, 0, 0):
+        return Decimal.ONE()
+
+    # Use the identity: log10(x) = ln(x) / ln(10)
+    var ln_x = ln(x)
+    return ln_x / decimojo.constants.LN10()
