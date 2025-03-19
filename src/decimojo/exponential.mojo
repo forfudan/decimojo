@@ -944,6 +944,10 @@ fn log(x: Decimal, base: Decimal) raises -> Decimal:
     if x == base:
         return Decimal.ONE()
 
+    # Special case: base = 10
+    if base == Decimal(10, 0, 0, 0):
+        return log10(x)
+
     # Use the identity: log_base(x) = ln(x) / ln(base)
     var ln_x = ln(x)
     var ln_base = ln(base)
@@ -973,14 +977,37 @@ fn log10(x: Decimal) raises -> Decimal:
             " number"
         )
 
-    # Special case: x = 1
-    if x.is_one():
+    var x_scale = x.scale()
+    var x_coef = x.coefficient()
+
+    # Sepcial case: x = 10^(-n)
+    if x_coef == 1:
+        # Special case: x = 1
+        if x_scale == 0:
+            return Decimal.ZERO()
+        else:
+            return Decimal(x_scale, 0, 0, 0x8000_0000)
+
+    var ten_to_power_of_scale = decimojo.utility.power_of_10[DType.uint128](
+        x_scale
+    )
+
+    # Special case: x = 1.00...0
+    if x_coef == ten_to_power_of_scale:
         return Decimal.ZERO()
 
-    # Special case: x = 10
-    if x == Decimal(10, 0, 0, 0):
-        return Decimal.ONE()
+    # Special case: x = 10^n
+    # First get the integral part of x
+    if x_coef % ten_to_power_of_scale == 0:
+        var integeral_part = x_coef // ten_to_power_of_scale
+        var exponent = 0
+        while integeral_part % 10 == 0:
+            integeral_part //= 10
+            exponent += 1
+        if integeral_part == 1:
+            return Decimal(exponent, 0, 0, 0)
+        else:
+            pass
 
     # Use the identity: log10(x) = ln(x) / ln(10)
-    var ln_x = ln(x)
-    return ln_x / decimojo.constants.LN10()
+    return ln(x) / decimojo.constants.LN10()

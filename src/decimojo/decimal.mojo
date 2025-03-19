@@ -1351,30 +1351,6 @@ struct Decimal(
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn exp(self) raises -> Self:
-        """Calculates the exponential of this Decimal.
-        See `exp()` for more information.
-        """
-        return decimojo.exponential.exp(self)
-
-    @always_inline
-    fn ln(self) raises -> Self:
-        """Calculates the natural logarithm of this Decimal.
-        See `ln()` for more information.
-        """
-        return decimojo.exponential.ln(self)
-
-    @always_inline
-    fn log10(self) raises -> Decimal:
-        """Computes the base-10 logarithm of this Decimal."""
-        return decimojo.exponential.log10(self)
-
-    @always_inline
-    fn log(self, base: Decimal) raises -> Decimal:
-        """Computes the logarithm of this Decimal with an arbitrary base."""
-        return decimojo.exponential.log(self, base)
-
-    @always_inline
     fn round(
         self,
         ndigits: Int = 0,
@@ -1400,6 +1376,40 @@ struct Decimal(
         return decimojo.rounding.round(
             self, ndigits=ndigits, rounding_mode=rounding_mode
         )
+
+    @always_inline
+    fn exp(self) raises -> Self:
+        """Calculates the exponential of this Decimal.
+        See `exp()` for more information.
+        """
+        return decimojo.exponential.exp(self)
+
+    @always_inline
+    fn ln(self) raises -> Self:
+        """Calculates the natural logarithm of this Decimal.
+        See `ln()` for more information.
+        """
+        return decimojo.exponential.ln(self)
+
+    @always_inline
+    fn log10(self) raises -> Decimal:
+        """Computes the base-10 logarithm of this Decimal."""
+        return decimojo.exponential.log10(self)
+
+    @always_inline
+    fn log(self, base: Decimal) raises -> Decimal:
+        """Computes the logarithm of this Decimal with an arbitrary base."""
+        return decimojo.exponential.log(self, base)
+
+    @always_inline
+    fn power(self, exponent: Int) raises -> Decimal:
+        """Raises this Decimal to the power of an integer."""
+        return decimojo.exponential.power(self, Decimal(exponent))
+
+    @always_inline
+    fn power(self, exponent: Decimal) raises -> Decimal:
+        """Raises this Decimal to the power of another Decimal."""
+        return decimojo.exponential.power(self, exponent)
 
     @always_inline
     fn root(self, n: Int) raises -> Self:
