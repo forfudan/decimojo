@@ -29,23 +29,9 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # - name: Install GLIBC
-      #   run: |
-      #     sudo apt-get update
-      #     mkdir $HOME/glibc/ && cd $HOME/glibc
-      #     wget http://ftp.gnu.org/gnu/libc/glibc-2.39.tar.gz
-      #     tar -xvf glibc-2.39.tar.gz
-      #     cd glibc-2.39
-      #     mkdir build 
-      #     mkdir glibc-2.39-install
-      #     cd build
-      #     ~/glibc/glibc-2.39/configure --prefix=$HOME/glibc/glibc-2.39-install
-      #     make -j
-      #     make install
-
       - name: Install magic
         run: |
-          curl -ssL https://magic.modular.com/deb181c4-455c-4abe-a263-afcff49ccf67 | bash
+          curl -ssL https://magic.modular.com/ | MAGIC_VERSION=0.7.0 bash
       
       - name: Add path
         run: |
