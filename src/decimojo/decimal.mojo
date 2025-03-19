@@ -16,42 +16,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===----------------------------------------------------------------------=== #
-#
-# Implements basic object methods for the Decimal type
-# which supports correctly-rounded, fixed-point arithmetic.
-#
-# ===----------------------------------------------------------------------=== #
-#
-# Organization of files and methods of Decimal:
-# - Internal representation fields
-# - Constants (aliases)
-# - Special values (methods)
-# - Constructors and life time methods
-# - Constructing methods that are not dunders
-# - Output dunders, type-transfer dunders, and other type-transfer methods
-# - Basic unary arithmetic operation dunders
-# - Basic binary arithmetic operation dunders
-# - Basic binary arithmetic operation dunders with reflected operands
-# - Basic binary augmented arithmetic operation dunders
-# - Basic comparison operation dunders
-# - Other dunders that implements traits
-# - Mathematical methods that do not implement a trait (not a dunder)
-# - Other methods
-# - Internal methods
-#
-# ===----------------------------------------------------------------------=== #
-# Docstring style:
-# 1. Description
-# 2. Parameters
-# 3. Args
-# 4. Constraints
-# 4) Returns
-# 5) Raises
-# 9) Examples
-# ===----------------------------------------------------------------------=== #
 
-"""
-Implements basic object methods for working with decimal numbers.
+"""Implements basic object methods for the Decimal type.
+
+This module contains the basic object methods for the Decimal type.
+These methods include constructors, life time methods, output dunders,
+type-transfer dunders, basic arithmetic operation dunders, comparison
+operation dunders, and other dunders that implement traits, as well as
+mathematical methods that do not implement a trait.
 """
 
 from memory import UnsafePointer
@@ -66,7 +38,7 @@ from decimojo.rounding_mode import RoundingMode
 import decimojo.utility
 
 
-@register_passable
+@register_passable("trivial")
 struct Decimal(
     Absable,
     Comparable,
@@ -75,11 +47,12 @@ struct Decimal(
     Roundable,
     Writable,
 ):
-    """
-    Correctly-rounded fixed-precision number.
+    """Represents a fixed-point decimal number with 96-bit precision.
 
-    Internal Representation
-    -----------------------
+    Notes:
+
+    Internal Representation:
+
     Each decimal uses a 128-bit on memory, where:
     - 96 bits for the coefficient (significand), which is 96-bit unsigned
     integers stored as three 32 bit integer (little-endian).
@@ -97,11 +70,30 @@ struct Decimal(
     The value of the coefficient is: `high * 2**64 + mid * 2**32 + low`
     The final value is: `(-1)**sign * coefficient * 10**(-scale)`
 
-    Reference
-    ---------
+    Reference:
+
     - General Decimal Arithmetic Specification Version 1.70 – 7 Apr 2009 (https://speleotrove.com/decimal/decarith.html)
     - https://learn.microsoft.com/en-us/dotnet/api/system.decimal.getbits?view=net-9.0&redirectedfrom=MSDN#System_Decimal_GetBits_System_Decimal_
     """
+
+    # ===------------------------------------------------------------------=== #
+    # Organization of fields and methods:
+    # - Internal representation fields
+    # - Constants (aliases)
+    # - Special values (methods)
+    # - Constructors and life time methods
+    # - Constructing methods that are not dunders
+    # - Output dunders, type-transfer dunders, and other type-transfer methods
+    # - Basic unary arithmetic operation dunders
+    # - Basic binary arithmetic operation dunders
+    # - Basic binary arithmetic operation dunders with reflected operands
+    # - Basic binary augmented arithmetic operation dunders
+    # - Basic comparison operation dunders
+    # - Other dunders that implements traits
+    # - Mathematical methods that do not implement a trait (not a dunder)
+    # - Other methods
+    # - Internal methods
+    # ===------------------------------------------------------------------=== #
 
     # Internal representation fields
     var low: UInt32
@@ -279,13 +271,6 @@ struct Decimal(
             self = Decimal.from_float(value)
         except e:
             raise Error("Error in `Decimal__init__()` with Float64: ", e)
-
-    fn __copyinit__(out self, other: Self):
-        """Initializes a Decimal by copying another Decimal."""
-        self.low = other.low
-        self.mid = other.mid
-        self.high = other.high
-        self.flags = other.flags
 
     # ===------------------------------------------------------------------=== #
     # Constructing methods that are not dunders
