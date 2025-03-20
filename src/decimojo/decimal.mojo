@@ -1368,22 +1368,22 @@ struct Decimal(
         Compared to `__round__`, this method:
         (1) Allows specifying the rounding mode.
         (2) Raises an error if the operation would result in overflow.
-
-        Args:
-            ndigits: The number of decimal places to round to.
-                Default is 0.
-            rounding_mode: The rounding mode to use.
-                Default is RoundingMode.ROUND_HALF_EVEN.
-
-        Returns:
-            The rounded Decimal value.
-
-        Raises:
-            Error: If calling `round()` failed.
+        See `round()` for more information.
         """
         return decimojo.rounding.round(
             self, ndigits=ndigits, rounding_mode=rounding_mode
         )
+
+    @always_inline
+    fn quantize(
+        self,
+        exp: Decimal,
+        rounding_mode: RoundingMode = RoundingMode.ROUND_HALF_EVEN,
+    ) raises -> Self:
+        """Quantizes this Decimal to the specified exponent.
+        See `quantize()` for more information.
+        """
+        return decimojo.rounding.quantize(self, exp, rounding_mode)
 
     @always_inline
     fn exp(self) raises -> Self:
