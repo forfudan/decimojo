@@ -51,7 +51,7 @@ from .comparison import (
 
 from .exponential import power, root, sqrt, exp, ln, log, log10
 
-from .rounding import round
+from .rounding import round, quantize
 
 from .special import (
     factorial,

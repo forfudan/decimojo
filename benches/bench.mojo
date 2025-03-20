@@ -7,6 +7,7 @@ from bench_from_float import main as bench_from_float
 from bench_from_string import main as bench_from_string
 from bench_from_int import main as bench_from_int
 from bench_round import main as bench_round
+from bench_quantize import main as bench_quantize
 from bench_comparison import main as bench_comparison
 from bench_exp import main as bench_exp
 from bench_ln import main as bench_ln
@@ -25,6 +26,7 @@ fn main() raises:
     bench_from_string()
     bench_from_int()
     bench_round()
+    bench_quantize()
     bench_comparison()
     bench_exp()
     bench_ln()

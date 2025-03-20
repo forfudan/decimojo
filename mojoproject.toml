@@ -8,6 +8,9 @@ platforms = ["osx-arm64", "linux-64"]
 readme = "README.md"
 version = "0.1.0"
 
+[dependencies]
+max = ">=25.1,<25.3"
+
 [tasks]
 # format the code
 format = "magic run mojo format ./"
@@ -34,6 +37,7 @@ test_divide = "magic run package && magic run mojo test tests/test_divide.mojo &
 test_sqrt = "magic run package && magic run mojo test tests/test_sqrt.mojo && magic run delete_package"
 test_root = "magic run package && magic run mojo test tests/test_root.mojo && magic run delete_package"
 test_round = "magic run package && magic run mojo test tests/test_round.mojo && magic run delete_package"
+test_quantize  = "magic run package && magic run mojo test tests/test_quantize.mojo && magic run delete_package"
 test_from_components = "magic run package && magic run mojo test tests/test_from_components.mojo && magic run delete_package"
 test_from_float = "magic run package && magic run mojo test tests/test_from_float.mojo && magic run delete_package"
 test_from_string = "magic run package && magic run mojo test tests/test_from_string.mojo && magic run delete_package"
@@ -55,6 +59,7 @@ bench_divide = "magic run package && cd benches && magic run mojo bench_divide.m
 bench_sqrt = "magic run package && cd benches && magic run mojo bench_sqrt.mojo && cd .. && magic run delete_package"
 bench_root = "magic run package && cd benches && magic run mojo bench_root.mojo && cd .. && magic run delete_package"
 bench_round = "magic run package && cd benches && magic run mojo bench_round.mojo && cd .. && magic run delete_package"
+bench_quantize = "magic run package && cd benches && magic run mojo bench_quantize.mojo && cd .. && magic run delete_package"
 bench_from_float = "magic run package && cd benches && magic run mojo bench_from_float.mojo && cd .. && magic run delete_package"
 bench_from_string = "magic run package && cd benches && magic run mojo bench_from_string.mojo && cd .. && magic run delete_package"
 bench_from_int = "magic run package && cd benches && magic run mojo bench_from_int.mojo && cd .. && magic run delete_package"
@@ -63,10 +68,3 @@ bench_exp = "magic run package && cd benches && magic run mojo bench_exp.mojo &&
 bench_ln = "magic run package && cd benches && magic run mojo bench_ln.mojo && cd .. && magic run delete_package"
 bench_log10 = "magic run package && cd benches && magic run mojo bench_log10.mojo && cd .. && magic run delete_package"
 bench_power = "magic run package && cd benches && magic run mojo bench_power.mojo && cd .. && magic run delete_package"
-
-# before commit
-final = "magic run test && magic run bench"
-f = "clear && magic run final"
-
-[dependencies]
-max = ">=25.1,<25.3"

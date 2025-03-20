@@ -165,3 +165,59 @@ fn round(
     # Add a fallback raise even if it seems unreachable
     testing.assert_true(False, "Unreachable code path reached")
     return number
+
+
+fn quantize(
+    value: Decimal,
+    exp: Decimal,
+    rounding_mode: RoundingMode = RoundingMode.ROUND_HALF_EVEN,
+) raises -> Decimal:
+    """Rounds the value according to the exponent of the second operand.
+    Unlike `round()`, the scale is determined by the scale of the second
+    operand, not a number of digits. `quantize()` returns the same value as
+    `round()` when the scale of the second operand is non-negative.
+
+    Args:
+        value: The Decimal value to quantize.
+        exp: A Decimal whose scale (exponent) will be used for the result.
+        rounding_mode: The rounding mode to use.
+            Defaults to ROUND_HALF_EVEN (banker's rounding).
+
+    Returns:
+        A new Decimal with the same value as the first operand (except for
+        rounding) and the same scale (exponent) as the second operand.
+
+    Raises:
+        Error: If the resulting number doesn't fit within the valid range.
+
+    Examples:
+
+    ```mojo
+    from decimojo import Decimal
+    _ = Decimal("1.2345").quantize(Decimal("0.001"))  # -> Decimal("1.234")
+    _ = Decimal("1.2345").quantize(Decimal("0.01"))   # -> Decimal("1.23")
+    _ = Decimal("1.2345").quantize(Decimal("0.1"))    # -> Decimal("1.2")
+    _ = Decimal("1.2345").quantize(Decimal("1"))      # -> Decimal("1")
+    _ = Decimal("1.2345").quantize(Decimal("10"))     # -> Decimal("1")
+    # Compare with round()
+    _ = Decimal("1.2345").round(-1)                   # -> Decimal("0")
+    ```
+    End of examples.
+    """
+
+    # Determine the scale of the target exponent
+    var target_scale = exp.scale()
+    # Determine the scale of the value
+    var value_scale = value.scale()
+
+    # If the scales are already the same, no quantization needed
+    if target_scale == value_scale:
+        return value
+
+    # If the target scale is non-negative, round the value to the target scale
+    elif target_scale >= 0:
+        return round(value, target_scale, rounding_mode)
+
+    # If the target scale is negative, round the value to integer
+    else:
+        return round(value, 0, rounding_mode)
