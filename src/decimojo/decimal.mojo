@@ -69,11 +69,6 @@ struct Decimal(
 
     The value of the coefficient is: `high * 2**64 + mid * 2**32 + low`
     The final value is: `(-1)**sign * coefficient * 10**(-scale)`
-
-    Reference:
-
-    - General Decimal Arithmetic Specification Version 1.70 – 7 Apr 2009 (https://speleotrove.com/decimal/decarith.html)
-    - https://learn.microsoft.com/en-us/dotnet/api/system.decimal.getbits?view=net-9.0&redirectedfrom=MSDN#System_Decimal_GetBits_System_Decimal_
     """
 
     # ===------------------------------------------------------------------=== #
@@ -1187,11 +1182,27 @@ struct Decimal(
 
     @always_inline
     fn __truediv__(self, other: Self) raises -> Self:
-        return decimojo.arithmetics.true_divide(self, other)
+        return decimojo.arithmetics.divide(self, other)
 
     @always_inline
     fn __truediv__(self, other: Int) raises -> Self:
-        return decimojo.arithmetics.true_divide(self, Decimal(other))
+        return decimojo.arithmetics.divide(self, Decimal(other))
+
+    @always_inline
+    fn __floordiv__(self, other: Self) raises -> Self:
+        return decimojo.arithmetics.floor_divide(self, other)
+
+    @always_inline
+    fn __floordiv__(self, other: Int) raises -> Self:
+        return decimojo.arithmetics.floor_divide(self, Decimal(other))
+
+    @always_inline
+    fn __mod__(self, other: Self) raises -> Self:
+        return decimojo.arithmetics.modulo(self, other)
+
+    @always_inline
+    fn __mod__(self, other: Int) raises -> Self:
+        return decimojo.arithmetics.modulo(self, Decimal(other))
 
     @always_inline
     fn __pow__(self, exponent: Self) raises -> Self:
@@ -1210,31 +1221,27 @@ struct Decimal(
 
     @always_inline
     fn __radd__(self, other: Int) raises -> Self:
-        try:
-            return decimojo.arithmetics.add(Decimal(other), self)
-        except e:
-            raise Error("Error in `__radd__()`: ", e)
+        return decimojo.arithmetics.add(Decimal(other), self)
 
     @always_inline
     fn __rsub__(self, other: Int) raises -> Self:
-        try:
-            return decimojo.arithmetics.subtract(Decimal(other), self)
-        except e:
-            raise Error("Error in `__rsub__()`: ", e)
+        return decimojo.arithmetics.subtract(Decimal(other), self)
 
     @always_inline
     fn __rmul__(self, other: Int) raises -> Self:
-        try:
-            return decimojo.arithmetics.multiply(Decimal(other), self)
-        except e:
-            raise Error("Error in `__rmul__()`: ", e)
+        return decimojo.arithmetics.multiply(Decimal(other), self)
 
     @always_inline
     fn __rtruediv__(self, other: Int) raises -> Self:
-        try:
-            return decimojo.arithmetics.true_divide(Decimal(other), self)
-        except e:
-            raise Error("Error in `__rtruediv__()`: ", e)
+        return decimojo.arithmetics.divide(Decimal(other), self)
+
+    @always_inline
+    fn __rfloordiv__(self, other: Int) raises -> Self:
+        return decimojo.arithmetics.floor_divide(Decimal(other), self)
+
+    @always_inline
+    fn __rmod__(self, other: Int) raises -> Self:
+        return decimojo.arithmetics.modulo(Decimal(other), self)
 
     # ===------------------------------------------------------------------=== #
     # Basic binary augmented arithmetic assignments dunders
@@ -1269,11 +1276,19 @@ struct Decimal(
 
     @always_inline
     fn __itruediv__(mut self, other: Self) raises:
-        self = decimojo.arithmetics.true_divide(self, other)
+        self = decimojo.arithmetics.divide(self, other)
 
     @always_inline
     fn __itruediv__(mut self, other: Int) raises:
-        self = decimojo.arithmetics.true_divide(self, Decimal(other))
+        self = decimojo.arithmetics.divide(self, Decimal(other))
+
+    @always_inline
+    fn __ifloordiv__(mut self, other: Self) raises:
+        self = decimojo.arithmetics.floor_divide(self, other)
+
+    @always_inline
+    fn __ifloordiv__(mut self, other: Int) raises:
+        self = decimojo.arithmetics.floor_divide(self, Decimal(other))
 
     # ===------------------------------------------------------------------=== #
     # Basic binary comparison operation dunders
@@ -1338,7 +1353,9 @@ struct Decimal(
         """
         try:
             return decimojo.rounding.round(
-                self, ndigits=ndigits, rounding_mode=RoundingMode.HALF_EVEN()
+                self,
+                ndigits=ndigits,
+                rounding_mode=RoundingMode.ROUND_HALF_EVEN,
             )
         except e:
             return self
@@ -1348,7 +1365,7 @@ struct Decimal(
         """**OVERLOAD**."""
         try:
             return decimojo.rounding.round(
-                self, ndigits=0, rounding_mode=RoundingMode.HALF_EVEN()
+                self, ndigits=0, rounding_mode=RoundingMode.ROUND_HALF_EVEN
             )
         except e:
             return self
@@ -1536,18 +1553,6 @@ struct Decimal(
     fn scale(self) -> Int:
         """Returns the scale (number of decimal places) of this Decimal."""
         return Int((self.flags & Self.SCALE_MASK) >> Self.SCALE_SHIFT)
-
-    @always_inline
-    fn scientific_exponent(self) -> Int:
-        """
-        Calculates the exponent for scientific notation representation of a Decimal.
-        The exponent is the power of 10 needed to represent the value in scientific notation.
-        """
-        # Special case for zero
-        if self.is_zero():
-            return self.scale()
-
-        return self.number_of_significant_digits() - 1 - self.scale()
 
     @always_inline
     fn number_of_significant_digits(self) -> Int:

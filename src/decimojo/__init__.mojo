@@ -37,7 +37,9 @@ from .arithmetics import (
     absolute,
     negative,
     multiply,
-    true_divide,
+    divide,
+    floor_divide,
+    modulo,
 )
 
 from .comparison import (
