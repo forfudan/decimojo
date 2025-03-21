@@ -714,7 +714,7 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     return Decimal(low, mid, high, final_scale, is_negative)
 
 
-fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
+fn divide(x1: Decimal, x2: Decimal) raises -> Decimal:
     """
     Divides x1 by x2 and returns a new Decimal containing the quotient.
     Uses a simpler string-based long division approach as fallback.
@@ -1150,7 +1150,7 @@ fn floor_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
         A new Decimal containing the integral part of x1 / x2.
     """
     try:
-        return true_divide(x1, x2).round(0, RoundingMode.ROUND_DOWN)
+        return divide(x1, x2).round(0, RoundingMode.ROUND_DOWN)
     except e:
         raise Error("Error in `divide()`: ", e)
 

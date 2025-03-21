@@ -1182,11 +1182,11 @@ struct Decimal(
 
     @always_inline
     fn __truediv__(self, other: Self) raises -> Self:
-        return decimojo.arithmetics.true_divide(self, other)
+        return decimojo.arithmetics.divide(self, other)
 
     @always_inline
     fn __truediv__(self, other: Int) raises -> Self:
-        return decimojo.arithmetics.true_divide(self, Decimal(other))
+        return decimojo.arithmetics.divide(self, Decimal(other))
 
     @always_inline
     fn __floordiv__(self, other: Self) raises -> Self:
@@ -1233,7 +1233,7 @@ struct Decimal(
 
     @always_inline
     fn __rtruediv__(self, other: Int) raises -> Self:
-        return decimojo.arithmetics.true_divide(Decimal(other), self)
+        return decimojo.arithmetics.divide(Decimal(other), self)
 
     @always_inline
     fn __rfloordiv__(self, other: Int) raises -> Self:
@@ -1276,11 +1276,11 @@ struct Decimal(
 
     @always_inline
     fn __itruediv__(mut self, other: Self) raises:
-        self = decimojo.arithmetics.true_divide(self, other)
+        self = decimojo.arithmetics.divide(self, other)
 
     @always_inline
     fn __itruediv__(mut self, other: Int) raises:
-        self = decimojo.arithmetics.true_divide(self, Decimal(other))
+        self = decimojo.arithmetics.divide(self, Decimal(other))
 
     @always_inline
     fn __ifloordiv__(mut self, other: Self) raises:
