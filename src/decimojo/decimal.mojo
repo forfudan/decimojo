@@ -69,11 +69,6 @@ struct Decimal(
 
     The value of the coefficient is: `high * 2**64 + mid * 2**32 + low`
     The final value is: `(-1)**sign * coefficient * 10**(-scale)`
-
-    Reference:
-
-    - General Decimal Arithmetic Specification Version 1.70 – 7 Apr 2009 (https://speleotrove.com/decimal/decarith.html)
-    - https://learn.microsoft.com/en-us/dotnet/api/system.decimal.getbits?view=net-9.0&redirectedfrom=MSDN#System_Decimal_GetBits_System_Decimal_
     """
 
     # ===------------------------------------------------------------------=== #
@@ -1536,18 +1531,6 @@ struct Decimal(
     fn scale(self) -> Int:
         """Returns the scale (number of decimal places) of this Decimal."""
         return Int((self.flags & Self.SCALE_MASK) >> Self.SCALE_SHIFT)
-
-    @always_inline
-    fn scientific_exponent(self) -> Int:
-        """
-        Calculates the exponent for scientific notation representation of a Decimal.
-        The exponent is the power of 10 needed to represent the value in scientific notation.
-        """
-        # Special case for zero
-        if self.is_zero():
-            return self.scale()
-
-        return self.number_of_significant_digits() - 1 - self.scale()
 
     @always_inline
     fn number_of_significant_digits(self) -> Int:
