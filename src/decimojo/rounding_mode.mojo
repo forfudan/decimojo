@@ -38,10 +38,10 @@ struct RoundingMode:
     """
 
     # alias
-    alias ROUND_DOWN = Self.DOWN()
-    alias ROUND_HALF_UP = Self.HALF_UP()
-    alias ROUND_HALF_EVEN = Self.HALF_EVEN()
-    alias ROUND_UP = Self.UP()
+    alias ROUND_DOWN = Self.down()
+    alias ROUND_HALF_UP = Self.half_up()
+    alias ROUND_HALF_EVEN = Self.half_even()
+    alias ROUND_UP = Self.up()
 
     # Internal value
     var value: Int
@@ -49,22 +49,22 @@ struct RoundingMode:
 
     # Static constants for each rounding mode
     @staticmethod
-    fn DOWN() -> Self:
+    fn down() -> Self:
         """Truncate (toward zero)."""
         return Self(0)
 
     @staticmethod
-    fn HALF_UP() -> Self:
+    fn half_up() -> Self:
         """Round away from zero if >= 0.5."""
         return Self(1)
 
     @staticmethod
-    fn HALF_EVEN() -> Self:
+    fn half_even() -> Self:
         """Round to nearest even digit if equidistant (banker's rounding)."""
         return Self(2)
 
     @staticmethod
-    fn UP() -> Self:
+    fn up() -> Self:
         """Round away from zero."""
         return Self(3)
 
@@ -78,13 +78,13 @@ struct RoundingMode:
         return String(self) == other
 
     fn __str__(self) -> String:
-        if self == Self.DOWN():
+        if self == Self.ROUND_DOWN:
             return "ROUND_DOWN"
-        elif self == Self.HALF_UP():
+        elif self == Self.ROUND_UP:
             return "ROUND_HALF_UP"
-        elif self == Self.HALF_EVEN():
+        elif self == Self.ROUND_HALF_EVEN:
             return "ROUND_HALF_EVEN"
-        elif self == Self.UP():
+        elif self == Self.ROUND_UP:
             return "ROUND_UP"
         else:
             return "UNKNOWN_ROUNDING_MODE"
