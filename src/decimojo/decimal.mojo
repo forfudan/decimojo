@@ -1189,6 +1189,22 @@ struct Decimal(
         return decimojo.arithmetics.true_divide(self, Decimal(other))
 
     @always_inline
+    fn __floordiv__(self, other: Self) raises -> Self:
+        return decimojo.arithmetics.floor_divide(self, other)
+
+    @always_inline
+    fn __floordiv__(self, other: Int) raises -> Self:
+        return decimojo.arithmetics.floor_divide(self, Decimal(other))
+
+    @always_inline
+    fn __mod__(self, other: Self) raises -> Self:
+        return decimojo.arithmetics.modulo(self, other)
+
+    @always_inline
+    fn __mod__(self, other: Int) raises -> Self:
+        return decimojo.arithmetics.modulo(self, Decimal(other))
+
+    @always_inline
     fn __pow__(self, exponent: Self) raises -> Self:
         return decimal.power(self, exponent)
 
@@ -1205,31 +1221,27 @@ struct Decimal(
 
     @always_inline
     fn __radd__(self, other: Int) raises -> Self:
-        try:
-            return decimojo.arithmetics.add(Decimal(other), self)
-        except e:
-            raise Error("Error in `__radd__()`: ", e)
+        return decimojo.arithmetics.add(Decimal(other), self)
 
     @always_inline
     fn __rsub__(self, other: Int) raises -> Self:
-        try:
-            return decimojo.arithmetics.subtract(Decimal(other), self)
-        except e:
-            raise Error("Error in `__rsub__()`: ", e)
+        return decimojo.arithmetics.subtract(Decimal(other), self)
 
     @always_inline
     fn __rmul__(self, other: Int) raises -> Self:
-        try:
-            return decimojo.arithmetics.multiply(Decimal(other), self)
-        except e:
-            raise Error("Error in `__rmul__()`: ", e)
+        return decimojo.arithmetics.multiply(Decimal(other), self)
 
     @always_inline
     fn __rtruediv__(self, other: Int) raises -> Self:
-        try:
-            return decimojo.arithmetics.true_divide(Decimal(other), self)
-        except e:
-            raise Error("Error in `__rtruediv__()`: ", e)
+        return decimojo.arithmetics.true_divide(Decimal(other), self)
+
+    @always_inline
+    fn __rfloordiv__(self, other: Int) raises -> Self:
+        return decimojo.arithmetics.floor_divide(Decimal(other), self)
+
+    @always_inline
+    fn __rmod__(self, other: Int) raises -> Self:
+        return decimojo.arithmetics.modulo(Decimal(other), self)
 
     # ===------------------------------------------------------------------=== #
     # Basic binary augmented arithmetic assignments dunders
@@ -1269,6 +1281,14 @@ struct Decimal(
     @always_inline
     fn __itruediv__(mut self, other: Int) raises:
         self = decimojo.arithmetics.true_divide(self, Decimal(other))
+
+    @always_inline
+    fn __ifloordiv__(mut self, other: Self) raises:
+        self = decimojo.arithmetics.floor_divide(self, other)
+
+    @always_inline
+    fn __ifloordiv__(mut self, other: Int) raises:
+        self = decimojo.arithmetics.floor_divide(self, Decimal(other))
 
     # ===------------------------------------------------------------------=== #
     # Basic binary comparison operation dunders

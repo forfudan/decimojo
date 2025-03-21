@@ -38,6 +38,8 @@ from .arithmetics import (
     negative,
     multiply,
     true_divide,
+    floor_divide,
+    modulo,
 )
 
 from .comparison import (

@@ -134,9 +134,12 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
             if x1_coef > x2_coef:
                 diff = x1_coef - x2_coef
                 is_negative = x1.is_negative()
-            else:
+            elif x1_coef < x2_coef:
                 diff = x2_coef - x1_coef
                 is_negative = x2.is_negative()
+            else:  # x1_coef == x2_coef
+                diff = UInt128(0)
+                is_negative = False
 
             return Decimal.from_uint128(diff, 0, is_negative)
 
@@ -172,9 +175,12 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
             if x1_coef > x2_coef:
                 diff = x1.to_uint128() - x2.to_uint128()
                 is_negative = x1.is_negative()
-            else:
+            elif x1_coef < x2_coef:
                 diff = x2.to_uint128() - x1.to_uint128()
                 is_negative = x2.is_negative()
+            else:  # x1_coef == x2_coef
+                diff = UInt128(0)
+                is_negative = False
 
             # Determine the scale for the result
             var scale = min(
@@ -1130,3 +1136,37 @@ fn true_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
             var high = UInt32((truncated_quot >> 64) & 0xFFFFFFFF)
 
             return Decimal(low, mid, high, scale_of_truncated_quot, is_negative)
+
+
+fn floor_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
+    """Returns the integral part of the true quotient (truncating towards zero).
+    The following identity always holds: x_1 == (x_1 // x_2) * x_2 + x_1 % x_2.
+
+    Args:
+        x1: The dividend.
+        x2: The divisor.
+
+    Returns:
+        A new Decimal containing the integral part of x1 / x2.
+    """
+    try:
+        return true_divide(x1, x2).round(0, RoundingMode.ROUND_DOWN)
+    except e:
+        raise Error("Error in `divide()`: ", e)
+
+
+fn modulo(x1: Decimal, x2: Decimal) raises -> Decimal:
+    """Returns the remainder of the division of x1 by x2.
+    The following identity always holds: x_1 == (x_1 // x_2) * x_2 + x_1 % x_2.
+
+    Args:
+        x1: The dividend.
+        x2: The divisor.
+
+    Returns:
+        A new Decimal containing the remainder of x1 / x2.
+    """
+    try:
+        return x1 - (floor_divide(x1, x2) * x2)
+    except e:
+        raise Error("Error in `modulo()`: ", e)
