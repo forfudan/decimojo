@@ -120,26 +120,26 @@ Rome wasn't built in a day. DeciMojo is currently under active development. For 
 
 ### Make it Right 🔄 (MOSTLY COMPLETED)
 
-- Reorganized codebase with modular structure (decimal, arithmetics, comparison, exponential)
-- Edge case handling for all operations (division by zero, zero to negative power)
-- Scale and precision management with sophisticated rounding strategies
-- Financial calculations with banker's rounding (ROUND_HALF_EVEN)
-- High-precision advanced mathematical functions (sqrt, root, ln, exp, log10, power)
-- Proper implementation of traits (Absable, Comparable, Floatable, Roundable, etc.)
+- Reorganized codebase with modular structure (decimal, arithmetics, comparison, exponential).
+- Edge case handling for all operations (division by zero, zero to negative power).
+- Scale and precision management with sophisticated rounding strategies.
+- Financial calculations with banker's rounding (ROUND_HALF_EVEN).
+- High-precision advanced mathematical functions (sqrt, root, ln, exp, log10, power).
+- Proper implementation of traits (Absable, Comparable, Floatable, Roundable, etc).
 
 ### Make it Fast ⚡ (SIGNIFICANT PROGRESS)
 
 DeciMojo delivers exceptional performance compared to Python's `decimal` module while maintaining precise calculations. This performance difference stems from fundamental design choices:
 
-- **DeciMojo**: Uses a fixed 128-bit representation (96-bit coefficient + 32-bit flags) with a maximum of 28 decimal places, optimized for modern hardware and Mojo's performance capabilities
-- **Python decimal**: Implements arbitrary precision that can represent numbers with unlimited significant digits but requires dynamic memory allocation and more complex algorithms
+- **DeciMojo**: Uses a fixed 128-bit representation (96-bit coefficient + 32-bit flags) with a maximum of 28 decimal places, optimized for modern hardware and Mojo's performance capabilities.
+- **Python decimal**: Implements arbitrary precision that can represent numbers with unlimited significant digits but requires dynamic memory allocation and more complex algorithms.
 
 This architectural difference explains our benchmarking results:
 
-- Core arithmetic operations (+, -, *, /) achieve 100x-3500x speedup over Python's decimal module
-- Special case handling (powers of 0, 1, etc.) shows up to 3500x performance improvement
-- Advanced mathematical functions (sqrt, ln, exp) demonstrate 5x-600x better performance
-- Only specific edge cases (like computing 10^(1/100)) occasionally perform better in Python due to its arbitrary precision algorithms
+- Core arithmetic operations (+, -, *, /) achieve 100x-3500x speedup over Python's decimal module.
+- Special case handling (powers of 0, 1, etc.) shows up to 3500x performance improvement.
+- Advanced mathematical functions (sqrt, ln, exp) demonstrate 5x-600x better performance.
+- Only specific edge cases (like computing 10^(1/100)) occasionally perform better in Python due to its arbitrary precision algorithms.
 
 Regular benchmarks against Python's `decimal` module are available in the `bench/` folder, documenting both the performance advantages and the few specific operations where different approaches are needed.
 
