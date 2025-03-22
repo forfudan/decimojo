@@ -38,7 +38,7 @@ fn main() raises:
     print(a + b)                                     # Addition: 246.45
     print(a - b)                                     # Subtraction: 0.45
     print(a * b)                                     # Multiplication: 15184.35
-    print(a / b)                                     # Division: 1.00365853658536585365853658537
+    print(a / b)                                     # Division: 1.0036585365853658536585365854
     
     # === Rounding & Precision ===
     print(a.round(1))                                # Round to 1 decimal place: 123.5
@@ -60,11 +60,11 @@ fn main() raises:
     
     # === Mathematical Functions ===
     print(Decimal("2").sqrt())                       # Square root: 1.4142135623730950488016887242
-    print(Decimal("100").root(3))                    # Cube root: 4.6415888336127788924100763509
-    print(Decimal("2.71828").ln())                   # Natural log: 0.9999999999999999999999999995
+    print(Decimal("100").root(3))                    # Cube root: 4.641588833612778892410076351
+    print(Decimal("2.71828").ln())                   # Natural log: 0.9999993273472820031578910056
     print(Decimal("10").log10())                     # Base-10 log: 1
-    print(Decimal("16").log(Decimal("2")))           # Log base 2: 4
-    print(Decimal("10").exp())                       # e^10: 22026.4657948067165463556
+    print(Decimal("16").log(Decimal("2")))           # Log base 2: 3.9999999999999999999999999999
+    print(Decimal("10").exp())                       # e^10: 22026.465794806716516957900645
     print(Decimal("2").power(10))                    # Power: 1024
     
     # === Sign Handling ===
@@ -80,7 +80,7 @@ fn main() raises:
     print(Decimal.MAX())                             # Maximum value: 79228162514264337593543950335
     
     # === Convenience Methods ===
-    print(Decimal("123.400").is_integer())           # Check if integer: True
+    print(Decimal("123.400").is_integer())           # Check if integer: False
     print(a.number_of_significant_digits())          # Count significant digits: 5
     print(Decimal("12.34").to_str_scientific())      # Scientific notation: 1.234E+1
 ```
