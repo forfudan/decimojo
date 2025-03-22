@@ -299,7 +299,7 @@ fn main() raises:
 
     # Case 11: Decimal multiplication with many digits after the decimal point
     var case11_a_mojo = Decimal.E()
-    var case11_b_mojo = dm.constants.E0D5()
+    var case11_b_mojo = dm.decimal.constants.E0D5()
     var case11_a_py = pydecimal.Decimal("1").exp()
     var case11_b_py = pydecimal.Decimal("0.5").exp()
     run_benchmark(

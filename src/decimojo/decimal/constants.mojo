@@ -23,6 +23,8 @@
 
 """Useful constants for Decimal type."""
 
+from decimojo.decimal.decimal import Decimal
+
 # ===----------------------------------------------------------------------=== #
 #
 # Integer and decimal constants

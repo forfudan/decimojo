@@ -5,8 +5,8 @@ and edge cases to ensure proper calculation of the natural logarithm.
 """
 
 import testing
-from decimojo.prelude import dm, Decimal, RoundingMode
-from decimojo.exponential import ln
+from decimojo import Decimal, RoundingMode
+from decimojo.decimal.exponential import ln
 
 
 fn test_basic_ln_values() raises:
@@ -15,14 +15,14 @@ fn test_basic_ln_values() raises:
 
     # Test case 1: ln(1) = 0
     var one = Decimal(1)
-    var result1 = ln(one)
+    var result1 = one.ln()
     testing.assert_equal(
         String(result1), "0", "ln(1) should be 0, got " + String(result1)
     )
 
     # Test case 2: ln(e) = 1
     var e = Decimal("2.718281828459045235360287471")
-    var result_e = ln(e)
+    var result_e = e.ln()
     testing.assert_true(
         String(result_e).startswith("1.00000000000000000000"),
         "ln(e) should be approximately 1, got " + String(result_e),
@@ -109,7 +109,7 @@ fn test_mathematical_identities() raises:
 
     # Test case 10: ln(e^x) = x
     var x = Decimal(5)
-    var ln_e_to_x = ln(dm.exponential.exp(x))
+    var ln_e_to_x = ln(x.exp())
     testing.assert_true(
         abs(ln_e_to_x - x) < Decimal("0.0000000001"),
         "ln(e^x) should equal x within tolerance",

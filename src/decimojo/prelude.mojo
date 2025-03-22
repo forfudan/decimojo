@@ -35,5 +35,5 @@ from decimojo.prelude import *
 """
 
 import decimojo as dm
-from decimojo.decimal import Decimal
+from decimojo.decimal.decimal import Decimal
 from decimojo.rounding_mode import RoundingMode

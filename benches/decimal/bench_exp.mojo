@@ -73,7 +73,7 @@ fn run_benchmark(
     var py_decimal = pydecimal.Decimal(input_value)
 
     # Execute the operations once to verify correctness
-    var mojo_result = dm.exponential.exp(mojo_decimal)
+    var mojo_result = mojo_decimal.exp()
     var py_result = py_decimal.exp()
 
     # Display results for verification
@@ -83,7 +83,7 @@ fn run_benchmark(
     # Benchmark Mojo implementation
     var t0 = perf_counter_ns()
     for _ in range(iterations):
-        _ = dm.exponential.exp(mojo_decimal)
+        _ = mojo_decimal.exp()
     var mojo_time = (perf_counter_ns() - t0) / iterations
     if mojo_time == 0:
         mojo_time = 1  # Prevent division by zero

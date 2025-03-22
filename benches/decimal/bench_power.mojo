@@ -1,6 +1,6 @@
 """
-Comprehensive benchmarks for Decimal nth root function (root).
-Compares performance against Python's decimal module with diverse test cases.
+Comprehensive benchmarks for Decimal power function.
+Compares performance against Python's decimal module.
 """
 
 from decimojo.prelude import dm, Decimal, RoundingMode
@@ -28,7 +28,7 @@ fn open_log_file() raises -> PythonObject:
 
     # Generate a timestamp for the filename
     var timestamp = String(datetime.datetime.now().isoformat())
-    var log_filename = log_dir + "/benchmark_root_" + timestamp + ".log"
+    var log_filename = log_dir + "/benchmark_power_" + timestamp + ".log"
 
     print("Saving benchmark results to:", log_filename)
     return python.open(log_filename, "w")
@@ -49,131 +49,70 @@ fn log_print(msg: String, log_file: PythonObject) raises:
 
 fn run_benchmark(
     name: String,
-    value: String,
-    nth_root: Int,
+    base_value: String,
+    exponent_value: String,
     iterations: Int,
     log_file: PythonObject,
     mut speedup_factors: List[Float64],
 ) raises:
     """
-    Run a benchmark comparing Mojo Decimal root with Python Decimal power(1/n).
+    Run a benchmark comparing Mojo Decimal power with Python Decimal power.
 
     Args:
         name: Name of the benchmark case.
-        value: String representation of the number to find the nth root of.
-        nth_root: The root value (2 for square root, 3 for cube root, etc.).
+        base_value: String representation of the base Decimal.
+        exponent_value: String representation of the exponent Decimal.
         iterations: Number of iterations to run.
         log_file: File object for logging results.
         speedup_factors: Mojo List to store speedup factors for averaging.
     """
     log_print("\nBenchmark:       " + name, log_file)
-    log_print("Value:           " + value, log_file)
-    log_print("Root:            " + String(nth_root), log_file)
+    log_print("Base:            " + base_value, log_file)
+    log_print("Exponent:        " + exponent_value, log_file)
 
     # Set up Mojo and Python values
-    var mojo_decimal = Decimal(value)
+    var mojo_base = Decimal(base_value)
+    var mojo_exponent = Decimal(exponent_value)
     var pydecimal = Python.import_module("decimal")
-    var py_decimal = pydecimal.Decimal(value)
-    var py_root = pydecimal.Decimal(String(nth_root))
-    var py_frac = pydecimal.Decimal(1) / py_root
-
-    # Special case: Python can't directly compute odd root of negative number
-    var is_negative_odd_root = value.startswith("-") and nth_root % 2 == 1
-    var py_result: PythonObject
+    var py_base = pydecimal.Decimal(base_value)
+    var py_exponent = pydecimal.Decimal(exponent_value)
 
     # Execute the operations once to verify correctness
-    var mojo_result = dm.exponential.root(mojo_decimal, nth_root)
-
-    # Handle Python calculation, accounting for negative odd root limitation
-    if is_negative_odd_root:
-        # For negative numbers with odd roots in Python, we need to:
-        # 1. Take absolute value
-        # 2. Compute the root
-        # 3. Negate the result
-        var abs_py_decimal = py_decimal.copy_abs()
-        py_result = -(abs_py_decimal**py_frac)
-        log_print(
-            (
-                "Note: Python doesn't directly support odd roots of negative"
-                " numbers."
-            ),
-            log_file,
-        )
-        log_print(
-            "      Using abs() and then negating the result for comparison.",
-            log_file,
-        )
-    else:
-        try:
-            py_result = py_decimal**py_frac
-        except:
-            log_print(
-                "Python cannot compute this root. Skipping Python benchmark.",
-                log_file,
-            )
-            py_result = Python.evaluate(
-                "None"
-            )  # Correct way to get Python's None
+    var mojo_result = dm.decimal.exponential.power(mojo_base, mojo_exponent)
+    var py_result = py_base**py_exponent
 
     # Display results for verification
     log_print("Mojo result:     " + String(mojo_result), log_file)
-    if not (
-        py_result is Python.evaluate("None")
-    ):  # Correct way to check for None
-        log_print("Python result:   " + String(py_result), log_file)
-    else:
-        log_print("Python result:   ERROR - cannot compute", log_file)
+    log_print("Python result:   " + String(py_result), log_file)
 
     # Benchmark Mojo implementation
     var t0 = perf_counter_ns()
     for _ in range(iterations):
-        _ = dm.exponential.root(mojo_decimal, nth_root)
+        _ = dm.decimal.exponential.power(mojo_base, mojo_exponent)
     var mojo_time = (perf_counter_ns() - t0) / iterations
     if mojo_time == 0:
         mojo_time = 1  # Prevent division by zero
 
-    # Benchmark Python implementation (if possible)
-    var python_time: Float64 = 0
-    if not is_negative_odd_root and not (
-        py_result is Python.evaluate("None")
-    ):  # Correct way to check for None
-        t0 = perf_counter_ns()
-        for _ in range(iterations):
-            _ = py_decimal**py_frac
-        python_time = (perf_counter_ns() - t0) / iterations
-    elif is_negative_odd_root:
-        # For negative numbers with odd roots, benchmark our workaround
-        var abs_py_decimal = py_decimal.copy_abs()
-        t0 = perf_counter_ns()
-        for _ in range(iterations):
-            _ = -(abs_py_decimal**py_frac)
-        python_time = (perf_counter_ns() - t0) / iterations
-    else:
-        log_print("Python benchmark skipped", log_file)
-        python_time = 0
+    # Benchmark Python implementation
+    t0 = perf_counter_ns()
+    for _ in range(iterations):
+        _ = py_base**py_exponent
+    var python_time = (perf_counter_ns() - t0) / iterations
 
-    # Calculate speedup factor (if Python benchmark ran)
-    if python_time > 0:
-        var speedup = python_time / mojo_time
-        speedup_factors.append(Float64(speedup))
+    # Calculate speedup factor
+    var speedup = python_time / mojo_time
+    speedup_factors.append(Float64(speedup))
 
-        # Print results with speedup comparison
-        log_print(
-            "Mojo root():     " + String(mojo_time) + " ns per iteration",
-            log_file,
-        )
-        log_print(
-            "Python root():   " + String(python_time) + " ns per iteration",
-            log_file,
-        )
-        log_print("Speedup factor:  " + String(speedup), log_file)
-    else:
-        log_print(
-            "Mojo root():     " + String(mojo_time) + " ns per iteration",
-            log_file,
-        )
-        log_print("Python root():   N/A", log_file)
-        log_print("Speedup factor:  N/A", log_file)
+    # Print results with speedup comparison
+    log_print(
+        "Mojo power():     " + String(mojo_time) + " ns per iteration",
+        log_file,
+    )
+    log_print(
+        "Python power():   " + String(python_time) + " ns per iteration",
+        log_file,
+    )
+    log_print("Speedup factor:  " + String(speedup), log_file)
 
 
 fn main() raises:
@@ -185,7 +124,7 @@ fn main() raises:
     var speedup_factors = List[Float64]()
 
     # Display benchmark header with system information
-    log_print("=== DeciMojo Root Function Benchmark ===", log_file)
+    log_print("=== DeciMojo Power Function Benchmark ===", log_file)
     log_print("Time: " + String(datetime.datetime.now().isoformat()), log_file)
 
     # Try to get system info
@@ -218,157 +157,207 @@ fn main() raises:
 
     # Define benchmark cases
     log_print(
-        "\nRunning root function benchmarks with "
+        "\nRunning power function benchmarks with "
         + String(iterations)
         + " iterations each",
         log_file,
     )
 
-    # Case 1: Square root of perfect square
+    # Case 1: Integer base and exponent
     run_benchmark(
-        "Square root of perfect square",
-        "9",
-        2,
-        iterations,
-        log_file,
-        speedup_factors,
-    )
-
-    # Case 2: Square root of non-perfect square
-    run_benchmark(
-        "Square root of non-perfect square",
+        "Integer base and exponent",
         "2",
-        2,
+        "3",
         iterations,
         log_file,
         speedup_factors,
     )
 
-    # Case 3: Cube root of perfect cube
+    # Case 2: Decimal base and integer exponent
     run_benchmark(
-        "Cube root of perfect cube",
-        "8",
-        3,
+        "Decimal base and integer exponent",
+        "2.5",
+        "2",
         iterations,
         log_file,
         speedup_factors,
     )
 
-    # Case 4: Cube root of non-perfect cube
+    # Case 3: Integer base and decimal exponent
     run_benchmark(
-        "Cube root of non-perfect cube",
-        "10",
-        3,
+        "Integer base and decimal exponent",
+        "9",
+        "0.5",
         iterations,
         log_file,
         speedup_factors,
     )
 
-    # Case 5: Fourth root of perfect power
+    # Case 4: Decimal base and exponent
     run_benchmark(
-        "Fourth root of perfect power",
-        "16",
-        4,
+        "Decimal base and exponent",
+        "2.0",
+        "1.5",
         iterations,
         log_file,
         speedup_factors,
     )
 
-    # Case 6: Fifth root of perfect power
+    # Case 5: Negative exponent
     run_benchmark(
-        "Fifth root of perfect power",
-        "32",
-        5,
+        "Negative exponent",
+        "4",
+        "-0.5",
         iterations,
         log_file,
         speedup_factors,
     )
 
-    # Case 7: Root of decimal < 1
+    # Case 6: Large base and exponent
     run_benchmark(
-        "Root of decimal < 1",
-        "0.25",
-        2,
+        "Large base and exponent",
+        "12345",
+        "2",
         iterations,
         log_file,
         speedup_factors,
     )
 
-    # Case 8: Root of decimal < 1
+    # Case 7: Small base and exponent
     run_benchmark(
-        "Root of small decimal",
-        "0.0625",
-        4,
+        "Small base and exponent",
+        "0.5",
+        "0.5",
         iterations,
         log_file,
         speedup_factors,
     )
 
-    # Case 9: High precision decimal
+    # Case 8: High precision base and exponent
     run_benchmark(
-        "High precision decimal",
-        "2.7182818284590452353602874",
-        2,
+        "High precision base and exponent",
+        "1.234567890123456789",
+        "2.345678901234567890",
         iterations,
         log_file,
         speedup_factors,
     )
 
-    # Case 10: Large integer
+    # Case 9: Base close to 1
     run_benchmark(
-        "Large integer",
-        "1000000",
-        2,
+        "Base close to 1",
+        "1.000000001",
+        "2",
         iterations,
         log_file,
         speedup_factors,
     )
 
-    # Case 11: Large root
+    # Case 10: Exponent close to 1
     run_benchmark(
-        "Large root",
-        "10",
-        100,
+        "Exponent close to 1",
+        "2",
+        "1.000000001",
         iterations,
         log_file,
         speedup_factors,
     )
 
-    # Case 12: Odd root of negative number
+    # Case 11: Zero base and positive exponent
     run_benchmark(
-        "Odd root of negative number",
-        "-27",
-        3,
-        iterations,
-        log_file,
-        speedup_factors,
-    )
-
-    # Case 13: Root of 1 (any root)
-    run_benchmark(
-        "Root of 1 (any root)",
-        "1",
-        7,
-        iterations,
-        log_file,
-        speedup_factors,
-    )
-
-    # Case 14: Root of 0
-    run_benchmark(
-        "Root of 0",
+        "Zero base and positive exponent",
         "0",
-        3,
+        "2",
         iterations,
         log_file,
         speedup_factors,
     )
 
-    # Case 15: Custom decimal
+    # Case 12: One base and any exponent
     run_benchmark(
-        "Custom decimal",
-        "123.456",
-        2,
+        "One base and any exponent",
+        "1",
+        "3.14",
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 13: Large base and small exponent
+    run_benchmark(
+        "Large base and small exponent",
+        "1000000",
+        "0.1",
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 14: Small base and large exponent
+    run_benchmark(
+        "Small base and large exponent",
+        "0.00001",
+        "10",
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 15: Base greater than 1 and negative exponent
+    run_benchmark(
+        "Base greater than 1 and negative exponent",
+        "2",
+        "-3",
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 16: Base less than 1 and negative exponent
+    run_benchmark(
+        "Base less than 1 and negative exponent",
+        "0.5",
+        "-2",
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 17: Base with many digits and exponent with few digits
+    run_benchmark(
+        "Base with many digits and exponent with few digits",
+        "1.234567890123456789",
+        "2",
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 18: Base with few digits and exponent with many digits
+    run_benchmark(
+        "Base with few digits and exponent with many digits",
+        "2",
+        "1.234567890123456789",
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 19: Base and exponent with alternating digits
+    run_benchmark(
+        "Base and exponent with alternating digits",
+        "1.01010101",
+        "2.02020202",
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 20: Base and exponent with specific pattern
+    run_benchmark(
+        "Base and exponent with specific pattern",
+        "3.14159",
+        "2.71828",
         iterations,
         log_file,
         speedup_factors,
@@ -381,8 +370,8 @@ fn main() raises:
     var average_speedup = sum_speedup / Float64(len(speedup_factors))
 
     # Display summary
-    log_print("\n=== Root Function Benchmark Summary ===", log_file)
-    log_print("Benchmarked:      15 different root() cases", log_file)
+    log_print("\n=== Power Function Benchmark Summary ===", log_file)
+    log_print("Benchmarked:      20 different power() cases", log_file)
     log_print(
         "Each case ran:    " + String(iterations) + " iterations", log_file
     )

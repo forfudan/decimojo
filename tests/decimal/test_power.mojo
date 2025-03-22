@@ -4,7 +4,7 @@ Comprehensive tests for the power function of the Decimal type.
 
 import testing
 from decimojo.prelude import dm, Decimal, RoundingMode
-from decimojo.exponential import power
+from decimojo.decimal.exponential import power
 
 
 fn test_integer_powers() raises:

@@ -6,7 +6,7 @@ and edge cases to ensure proper calculation of e^x.
 
 import testing
 from decimojo.prelude import dm, Decimal, RoundingMode
-from decimojo.exponential import exp
+from decimojo.decimal.exponential import exp
 
 
 fn test_basic_exp_values() raises:

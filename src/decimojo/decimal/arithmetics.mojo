@@ -37,7 +37,7 @@ Implements functions for mathematical operations on Decimal objects.
 import time
 import testing
 
-from decimojo.decimal import Decimal
+from decimojo.decimal.decimal import Decimal
 from decimojo.rounding_mode import RoundingMode
 import decimojo.utility
 

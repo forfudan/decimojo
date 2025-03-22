@@ -25,7 +25,7 @@
 from memory import UnsafePointer
 import time
 
-from decimojo.decimal import Decimal
+from decimojo.decimal.decimal import Decimal
 
 
 # UNSAFE
