@@ -6,44 +6,17 @@ A fixed-point decimal mathematics library for [the Mojo programming language ðŸ”
 
 ## Overview
 
-DeciMojo offers a complete fixed-precision decimal mathematics implementation for Mojo, providing exact calculations for financial modeling, scientific computing, and any application where floating-point approximation errors are unacceptable. Beyond basic arithmetic, DeciMojo delivers advanced mathematical functions with guaranteed precision.
+DeciMojo provides a comprehensive fixed-point decimal mathematics library for Mojo, delivering exact calculations for financial modeling, scientific computing, and applications where floating-point approximation errors are unacceptable. Beyond basic arithmetic, the library includes advanced mathematical functions with guaranteed precision.
 
-### Current Implementation
-
-- **Decimal**: A 128-bit fixed-point decimal type supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed_precision], featuring comprehensive mathematical functions including logarithms, exponentiation, roots, and more.
-
-### Future Roadmap
-
-- **BigInt**: Arbitrary-precision integer type with unlimited digits.
-- **BigDecimal**: Arbitrary-precision decimal type with configurable precision[^arbitrary_precision].
-- **BigComplex**: Arbitrary-precision complex number type built on BigDecimal.
+The core type is Decimal: A 128-bit fixed-point decimal implementation supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed_precision]. It features a complete set of mathematical functions including logarithms, exponentiation, roots, and trigonometric operations.
 
 ## Installation
 
 DeciMojo is available in the [modular-community](https://repo.prefix.dev/modular-community) package repository. You can install it using any of these methods:
 
-### `magic` CLI
+From the `magic` CLI, simply run ```magic add decimojo```. This fetches the latest version and makes it immediately available for import.
 
-From the magic CLI, simply run:
-
-```console
-magic add decimojo
-```
-
-This fetches the latest version and makes it immediately available for import.
-
-### `toml` file
-
-For projects with a mojoproject.toml file, add the dependency:
-
-```toml
-[dependencies]
-decimojo = ">=0.1.0"
-```
-
-Then run `magic install` to download and install the package.
-
-### Local package
+For projects with a `mojoproject.toml`file, add the dependency ```decimojo = ">=0.1.0"```. Then run `magic install` to download and install the package.
 
 For the latest development version, clone the [GitHub repository](https://github.com/forfudan/decimojo) and build the package locally.
 
@@ -167,9 +140,9 @@ Regular benchmarks against Python's `decimal` module are available in the `bench
 
 ### Future Extensions ðŸš€ (PLANNED)
 
-- **BigInt**: Arbitrary-precision integer type with unlimited digits
-- **BigDecimal**: Arbitrary-precision decimal type with configurable precision
-- **BigComplex**: Arbitrary-precision complex number type built on BigDecimal
+- **BigInt**: Arbitrary-precision integer type with unlimited digits.
+- **BigDecimal**: Arbitrary-precision decimal type with configurable precision[^arbitrary_precision].
+- **BigComplex**: Arbitrary-precision complex number type built on BigDecimal.
 
 ## Tests and benches
 
