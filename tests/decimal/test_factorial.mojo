@@ -7,7 +7,7 @@ in the range 0 to 27, which is the maximum range supported by Decimal.
 
 import testing
 from decimojo.prelude import dm, Decimal, RoundingMode
-from decimojo.special import factorial, factorial_reciprocal
+from decimojo.decimal.special import factorial, factorial_reciprocal
 
 
 fn test_basic_factorials() raises:

@@ -27,11 +27,11 @@ from decimojo.prelude import dm, Decimal, RoundingMode
 ```
 """
 
-from .decimal import Decimal
+from .decimal.decimal import Decimal
 
 from .rounding_mode import RoundingMode
 
-from .arithmetics import (
+from .decimal.arithmetics import (
     add,
     subtract,
     absolute,
@@ -42,7 +42,7 @@ from .arithmetics import (
     modulo,
 )
 
-from .comparison import (
+from .decimal.comparison import (
     greater,
     greater_equal,
     less,
@@ -51,10 +51,10 @@ from .comparison import (
     not_equal,
 )
 
-from .exponential import power, root, sqrt, exp, ln, log, log10
+from .decimal.exponential import power, root, sqrt, exp, ln, log, log10
 
-from .rounding import round, quantize
+from .decimal.rounding import round, quantize
 
-from .special import (
+from .decimal.special import (
     factorial,
 )

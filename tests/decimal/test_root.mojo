@@ -6,7 +6,7 @@ and edge cases to ensure proper calculation of x^(1/n).
 
 import testing
 from decimojo.prelude import dm, Decimal, RoundingMode
-from decimojo.exponential import root
+from decimojo.decimal.exponential import root
 
 
 fn test_basic_root_calculations() raises:

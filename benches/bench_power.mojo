@@ -78,7 +78,7 @@ fn run_benchmark(
     var py_exponent = pydecimal.Decimal(exponent_value)
 
     # Execute the operations once to verify correctness
-    var mojo_result = dm.exponential.power(mojo_base, mojo_exponent)
+    var mojo_result = dm.decimal.exponential.power(mojo_base, mojo_exponent)
     var py_result = py_base**py_exponent
 
     # Display results for verification
@@ -88,7 +88,7 @@ fn run_benchmark(
     # Benchmark Mojo implementation
     var t0 = perf_counter_ns()
     for _ in range(iterations):
-        _ = dm.exponential.power(mojo_base, mojo_exponent)
+        _ = dm.decimal.exponential.power(mojo_base, mojo_exponent)
     var mojo_time = (perf_counter_ns() - t0) / iterations
     if mojo_time == 0:
         mojo_time = 1  # Prevent division by zero

@@ -44,7 +44,7 @@ Implements functions for comparison operations on Decimal objects.
 
 import testing
 
-from decimojo.decimal import Decimal
+from decimojo.decimal.decimal import Decimal
 import decimojo.utility
 
 

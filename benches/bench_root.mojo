@@ -82,7 +82,7 @@ fn run_benchmark(
     var py_result: PythonObject
 
     # Execute the operations once to verify correctness
-    var mojo_result = dm.exponential.root(mojo_decimal, nth_root)
+    var mojo_result = dm.decimal.exponential.root(mojo_decimal, nth_root)
 
     # Handle Python calculation, accounting for negative odd root limitation
     if is_negative_odd_root:
@@ -127,7 +127,7 @@ fn run_benchmark(
     # Benchmark Mojo implementation
     var t0 = perf_counter_ns()
     for _ in range(iterations):
-        _ = dm.exponential.root(mojo_decimal, nth_root)
+        _ = dm.decimal.exponential.root(mojo_decimal, nth_root)
     var mojo_time = (perf_counter_ns() - t0) / iterations
     if mojo_time == 0:
         mojo_time = 1  # Prevent division by zero

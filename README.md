@@ -1,18 +1,28 @@
 # DeciMojo
 
-A fixed-point decimal arithmetic library implemented in [the Mojo programming language 🔥](https://www.modular.com/mojo).
+A fixed-point decimal mathematics library for [the Mojo programming language 🔥](https://www.modular.com/mojo).
 
 **[中文·漢字»](./docs/readme_zht.md)**
 
 ## Overview
 
-DeciMojo provides a Decimal type implementation for Mojo with fixed-precision arithmetic, designed to handle financial calculations and other scenarios where floating-point rounding errors are problematic.
+DeciMojo offers a complete fixed-precision decimal mathematics implementation for Mojo, providing exact calculations for financial modeling, scientific computing, and any application where floating-point approximation errors are unacceptable. Beyond basic arithmetic, DeciMojo delivers advanced mathematical functions with guaranteed precision.
+
+### Current Implementation
+
+- **Decimal**: A 128-bit fixed-point decimal type supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed_precision], featuring comprehensive mathematical functions including logarithms, exponentiation, roots, and more.
+
+### Future Roadmap
+
+- **BigInt**: Arbitrary-precision integer type with unlimited digits
+- **BigDecimal**: Arbitrary-precision decimal type with configurable precision[^arbitrary_precision]
+- **BigComplex**: Arbitrary-precision complex number type built on BigDecimal
 
 ## Installation
 
 DeciMojo can be directly added to your project environment by typing `magic add decimojo` in the Modular CLI. This command fetches the latest version of DeciMojo and makes it available for import in your Mojo project.
 
-To use DeciMojo, import the necessary components from the `decimojo.prelude` module. This module provides convenient access to the most commonly used classes and functions, including `dm` (an alias for the `decimojo` module itself),  `Decimal` and `RoundingMode`.
+To use DeciMojo, import the necessary components from the `decimojo.prelude` module. This module provides convenient access to the most commonly used classes and functions, including `dm` (an alias for the `decimojo` module itself), `Decimal` and `RoundingMode`.
 
 ```mojo
 from decimojo.prelude import dm, Decimal, RoundingMode
@@ -191,29 +201,6 @@ var payment = principal * (numerator / denominator)
 print("Monthly payment: $" + String(round(payment, 2)))  # $1,073.64
 ```
 
-## Advantages
-
-DeciMojo provides exceptional computational precision without sacrificing performance. It maintains accuracy throughout complex calculations where floating-point or other decimal implementations might introduce subtle errors.
-
-Consider the square root of `15.9999`. When comparing DeciMojo's implementation with Python's decimal module (both rounded to 16 decimal places):
-
-- DeciMojo calculates: `3.9999874999804687`
-- Python's decimal returns: `3.9999874999804685`
-
-The mathematically correct value (to 50+ digits) is:
-`3.9999874999804686889646053303778122644631365491812...`
-
-When rounded to 16 decimal places, the correct result is `3.9999874999804687`, confirming that DeciMojo produces the more accurate result in this case.
-
-```log
-Function:                   sqrt()
-Decimal value:              15.9999
-DeciMojo result:            3.9999874999804686889646053305
-Python's decimal result:    3.9999874999804685
-```
-
-This precision advantage becomes increasingly important in financial, scientific, and engineering calculations where small rounding errors can compound into significant discrepancies.
-
 ## Objective
 
 Financial calculations and data analysis require precise decimal arithmetic that floating-point numbers cannot reliably provide. As someone working in finance and credit risk model validation, I needed a dependable correctly-rounded, fixed-precision numeric type when migrating my personal projects from Python to Mojo.
@@ -279,3 +266,6 @@ If you find DeciMojo useful for your research, consider listing it in your citat
 ## License
 
 This repository and its contributions are licensed under the Apache License v2.0.
+
+[^fixed_precision]: Similar to `System.Decimal` (C#/.NET), `rust_decimal` in Rust, `DECIMAL/NUMERIC` in SQL Server, etc.
+[^arbitrary_precision]: Similar to `decimal` and `mpmath` in Python, `java.math.BigDecimal` in Java, etc.
