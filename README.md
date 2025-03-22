@@ -20,6 +20,11 @@ For projects with a `mojoproject.toml`file, add the dependency ```decimojo = ">=
 
 For the latest development version, clone the [GitHub repository](https://github.com/forfudan/decimojo) and build the package locally.
 
+| `decimojo` | `mojo` |
+| ---------- | ------ |
+| v0.1.0     | >=25.1 |
+| v0.2.0     | >=25.2 |
+
 ## Quick start
 
 Here is a comprehensive quick-start guide showcasing each major function of the `Decimal` type.
