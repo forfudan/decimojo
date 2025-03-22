@@ -115,25 +115,14 @@ struct BigInt:
             else:
                 self.words.append(word)
 
-    fn __init__(out self, words: Self._words_type, sign: Bool):
-        """Initializes a BigInt from raw components.
-        ***Notes:*** This method does not check the validity of words.
-        To check whether the words are valid, use `BigInt.from_components()`.
+    fn __init__(out self, value: String) raises:
+        """Initializes a BigInt from a string representation.
+        See `from_string()` for more information.
         """
-        self.words = Self._words_type(capacity=len(words))
-        for word in words:
-            self.words.append(word[])
-        self.sign = sign
-
-    fn __init__(out self, words: List[UInt32], sign: Bool):
-        """Initializes a BigInt from raw components.
-        ***Notes:*** This method does not check the validity of words.
-        To check whether the words are valid, use `BigInt.from_components()`.
-        """
-        self.words = Self._words_type(capacity=len(words))
-        for word in words:
-            self.words.append(word[])
-        self.sign = sign
+        try:
+            self = Self.from_string(value)
+        except e:
+            raise Error("Error in `BigInt.__init__()` with String: ", e)
 
     # ===------------------------------------------------------------------=== #
     # Constructing methods that are not dunders
@@ -233,18 +222,33 @@ struct BigInt:
         var sign: Bool
         coef_string, scale, sign = decimojo.str.parse_string_of_number(value)
 
+        # Check if the number is zero
+        if coef_string == "0":
+            return Self()
+
         # Check whether the number is an integer
         # If the fractional part is not zero, raise an error
         # If the fractional part is zero, remove the fractional part
         if scale > 0:
+            if scale >= len(coef_string):
+                raise Error(
+                    "Error in `from_string`: The number is not an integer."
+                )
             for i in range(1, scale + 1):
                 if coef_string[-i] != "0":
                     raise Error(
                         "Error in `from_string`: The number is not an integer."
                     )
-
             coef_string = coef_string[:-scale]
             scale = 0
+
+        var number_of_digits = len(coef_string) - scale
+        var number_of_words = number_of_digits // 9
+        if number_of_digits % 9 != 0:
+            number_of_words += 1
+
+        var result = Self(empty=True, capacity=number_of_words)
+        result.sign = sign
 
         if scale == 0:
             # This is a true integer
@@ -271,18 +275,10 @@ struct BigInt:
 
         else:  # scale < 0
             # This is a true integer with postive exponent
-            var number_of_digits = len(coef_string) - scale
-            var number_of_words = number_of_digits // 9
-            if number_of_digits % 9 != 0:
-                number_of_words += 1
-
-            var result = Self(empty=True, capacity=number_of_words)
-            result.sign = sign
-
             var number_of_trailing_zero_words = -scale // 9
             var remaining_trailing_zero_digits = -scale % 9
 
-            for i in range(number_of_trailing_zero_words):
+            for _ in range(number_of_trailing_zero_words):
                 result.words.append(UInt32(0))
 
             coef_string += "0" * remaining_trailing_zero_digits
@@ -301,8 +297,28 @@ struct BigInt:
             return result
 
     # ===------------------------------------------------------------------=== #
+    # Output dunders, type-transfer dunders
+    # ===------------------------------------------------------------------=== #
+
+    fn __str__(self) -> String:
+        """Returns string representation of the BigInt.
+        See `to_str()` for more information.
+        """
+        return self.to_str()
+
+    fn __repr__(self) -> String:
+        """Returns a string representation of the BigInt."""
+        return 'BigInt("' + self.__str__() + '")'
+
+    # ===------------------------------------------------------------------=== #
     # Type-transfer or output methods that are not dunders
     # ===------------------------------------------------------------------=== #
+
+    fn write_to[W: Writer](self, mut writer: W):
+        """Writes the BigInt to a writer.
+        This implement the `write` method of the `Writer` trait.
+        """
+        writer.write(String(self))
 
     fn to_str(self) -> String:
         """Returns string representation of the BigInt."""
@@ -343,28 +359,14 @@ struct BigInt:
         return result^
 
     # ===------------------------------------------------------------------=== #
-    # Output dunders, type-transfer dunders
+    # Basic binary arithmetic operation dunders
+    # These methods are called to implement the binary arithmetic operations
+    # (+, -, *, @, /, //, %, divmod(), pow(), **, <<, >>, &, ^, |)
     # ===------------------------------------------------------------------=== #
 
-    fn __str__(self) -> String:
-        """Returns string representation of the BigInt.
-        See `to_str()` for more information.
-        """
-        return self.to_str()
-
-    fn __repr__(self) -> String:
-        """Returns a string representation of the BigInt."""
-        return 'BigInt("' + self.__str__() + '")'
-
-    # ===------------------------------------------------------------------=== #
-    # Type-transfer or output methods that are not dunders
-    # ===------------------------------------------------------------------=== #
-
-    fn write_to[W: Writer](self, mut writer: W):
-        """Writes the BigInt to a writer.
-        This implement the `write` method of the `Writer` trait.
-        """
-        writer.write(String(self))
+    @always_inline
+    fn __add__(self, other: Self) raises -> Self:
+        return decimojo.big_int.arithmetics.add(self, other)
 
     # ===------------------------------------------------------------------=== #
     # Internal methods

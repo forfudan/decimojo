@@ -64,7 +64,8 @@ fn parse_string_of_number(value: String) raises -> Tuple[String, Int, Bool]:
 
     if value_bytes_len != value_string_slice.char_length():
         raise Error(
-            "There are invalid characters in decimal string: {}".format(value)
+            "There are invalid characters in the string of the number: {}"
+            .format(value)
         )
 
     # Yuhao's notes:
@@ -173,16 +174,19 @@ fn parse_string_of_number(value: String) raises -> Tuple[String, Int, Bool]:
 
         else:
             raise Error(
-                "Invalid character in decimal string: {}".format(
+                "Invalid character in the string of the number: {}".format(
                     chr(Int(code[]))
                 )
             )
 
     if unexpected_end_char:
-        raise Error("Unexpected end character in decimal string.")
+        raise Error("Unexpected end character in the string of the number.")
 
     if len(coef_string) == 0:
-        raise Error("No digits found in decimal string.")
+        if mantissa_start:
+            coef_string = "0"
+        else:
+            raise Error("No digits found in the string of the number.")
 
     if raw_exponent != 0:
         if exponent_sign:

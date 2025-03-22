@@ -1,12 +1,12 @@
 # DeciMojo
 
-A fixed-point decimal mathematics library for [the Mojo programming language 🔥](https://www.modular.com/mojo).
+A comprehensive decimal mathematics library for [Mojo](https://www.modular.com/mojo).
 
 **[中文·漢字»](./docs/readme_zht.md)**　|　**[Repository on GitHub»](https://github.com/forfudan/decimojo)**
 
 ## Overview
 
-DeciMojo provides a comprehensive fixed-point decimal mathematics library for Mojo, delivering exact calculations for financial modeling, scientific computing, and applications where floating-point approximation errors are unacceptable. Beyond basic arithmetic, the library includes advanced mathematical functions with guaranteed precision.
+DeciMojo provides a comprehensive high-precision decimal mathematics library for Mojo, delivering exact calculations for financial modeling, scientific computing, and applications where floating-point approximation errors are unacceptable. Beyond basic arithmetic, the library includes advanced mathematical functions with guaranteed precision.
 
 The core type is Decimal: A 128-bit fixed-point decimal implementation supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed_precision]. It features a complete set of mathematical functions including logarithms, exponentiation, roots, and trigonometric operations.
 
@@ -102,9 +102,9 @@ This project draws inspiration from several established decimal implementations 
 
 ## Nonmenclature
 
-DeciMojo combines "Decimal" and "Mojo" - reflecting both its purpose (decimal arithmetic) and the programming language it's implemented in. The name emphasizes the project's focus on bringing precise decimal calculations to the Mojo ecosystem.
+DeciMojo combines "Deci" and "Mojo" - reflecting its purpose and implementation language. "Deci" (from Latin "decimus" meaning "tenth") highlights our focus on the decimal numeral system that humans naturally use for counting and calculations.
 
-For brevity, you can refer to it as "deci" (derived from the Latin root "decimus" meaning "tenth").
+The name emphasizes our mission: bringing precise, reliable decimal calculations to the Mojo ecosystem, addressing the fundamental need for exact arithmetic that floating-point representations cannot provide.
 
 ## Status
 
@@ -164,7 +164,7 @@ If you find DeciMojo useful for your research, consider listing it in your citat
 @software{Zhu.2025,
     author       = {Zhu, Yuhao},
     year         = {2025},
-    title        = {DeciMojo: A fixed-point decimal arithmetic library in Mojo},
+    title        = {DeciMojo: A comprehensive decimal mathematics library for Mojo},
     url          = {https://github.com/forfudan/decimojo},
     version      = {0.1.0},
     note         = {Computer Software}
