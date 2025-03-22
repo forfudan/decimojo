@@ -6,46 +6,24 @@ A fixed-point decimal mathematics library for [the Mojo programming language �
 
 ## Overview
 
-DeciMojo offers a complete fixed-precision decimal mathematics implementation for Mojo, providing exact calculations for financial modeling, scientific computing, and any application where floating-point approximation errors are unacceptable. Beyond basic arithmetic, DeciMojo delivers advanced mathematical functions with guaranteed precision.
+DeciMojo provides a comprehensive fixed-point decimal mathematics library for Mojo, delivering exact calculations for financial modeling, scientific computing, and applications where floating-point approximation errors are unacceptable. Beyond basic arithmetic, the library includes advanced mathematical functions with guaranteed precision.
 
-### Current Implementation
-
-- **Decimal**: A 128-bit fixed-point decimal type supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed_precision], featuring comprehensive mathematical functions including logarithms, exponentiation, roots, and more.
-
-### Future Roadmap
-
-- **BigInt**: Arbitrary-precision integer type with unlimited digits.
-- **BigDecimal**: Arbitrary-precision decimal type with configurable precision[^arbitrary_precision].
-- **BigComplex**: Arbitrary-precision complex number type built on BigDecimal.
+The core type is Decimal: A 128-bit fixed-point decimal implementation supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed_precision]. It features a complete set of mathematical functions including logarithms, exponentiation, roots, and trigonometric operations.
 
 ## Installation
 
 DeciMojo is available in the [modular-community](https://repo.prefix.dev/modular-community) package repository. You can install it using any of these methods:
 
-### `magic` CLI
+From the `magic` CLI, simply run ```magic add decimojo```. This fetches the latest version and makes it immediately available for import.
 
-From the magic CLI, simply run:
-
-```console
-magic add decimojo
-```
-
-This fetches the latest version and makes it immediately available for import.
-
-### `toml` file
-
-For projects with a mojoproject.toml file, add the dependency:
-
-```toml
-[dependencies]
-decimojo = ">=0.1.0"
-```
-
-Then run `magic install` to download and install the package.
-
-### Local package
+For projects with a `mojoproject.toml`file, add the dependency ```decimojo = ">=0.1.0"```. Then run `magic install` to download and install the package.
 
 For the latest development version, clone the [GitHub repository](https://github.com/forfudan/decimojo) and build the package locally.
+
+| `decimojo` | `mojo` |
+| ---------- | ------ |
+| v0.1.0     | >=25.1 |
+| v0.2.0     | >=25.2 |
 
 ## Quick start
 
@@ -65,7 +43,7 @@ fn main() raises:
     print(a + b)                                     # Addition: 246.45
     print(a - b)                                     # Subtraction: 0.45
     print(a * b)                                     # Multiplication: 15184.35
-    print(a / b)                                     # Division: 1.00365853658536585365853658537
+    print(a / b)                                     # Division: 1.0036585365853658536585365854
     
     # === Rounding & Precision ===
     print(a.round(1))                                # Round to 1 decimal place: 123.5
@@ -87,11 +65,11 @@ fn main() raises:
     
     # === Mathematical Functions ===
     print(Decimal("2").sqrt())                       # Square root: 1.4142135623730950488016887242
-    print(Decimal("100").root(3))                    # Cube root: 4.6415888336127788924100763509
-    print(Decimal("2.71828").ln())                   # Natural log: 0.9999999999999999999999999995
+    print(Decimal("100").root(3))                    # Cube root: 4.641588833612778892410076351
+    print(Decimal("2.71828").ln())                   # Natural log: 0.9999993273472820031578910056
     print(Decimal("10").log10())                     # Base-10 log: 1
-    print(Decimal("16").log(Decimal("2")))           # Log base 2: 4
-    print(Decimal("10").exp())                       # e^10: 22026.4657948067165463556
+    print(Decimal("16").log(Decimal("2")))           # Log base 2: 3.9999999999999999999999999999
+    print(Decimal("10").exp())                       # e^10: 22026.465794806716516957900645
     print(Decimal("2").power(10))                    # Power: 1024
     
     # === Sign Handling ===
@@ -107,7 +85,7 @@ fn main() raises:
     print(Decimal.MAX())                             # Maximum value: 79228162514264337593543950335
     
     # === Convenience Methods ===
-    print(Decimal("123.400").is_integer())           # Check if integer: True
+    print(Decimal("123.400").is_integer())           # Check if integer: False
     print(a.number_of_significant_digits())          # Count significant digits: 5
     print(Decimal("12.34").to_str_scientific())      # Scientific notation: 1.234E+1
 ```
@@ -142,34 +120,34 @@ Rome wasn't built in a day. DeciMojo is currently under active development. For 
 
 ### Make it Right 🔄 (MOSTLY COMPLETED)
 
-- Reorganized codebase with modular structure (decimal, arithmetics, comparison, exponential)
-- Edge case handling for all operations (division by zero, zero to negative power)
-- Scale and precision management with sophisticated rounding strategies
-- Financial calculations with banker's rounding (ROUND_HALF_EVEN)
-- High-precision advanced mathematical functions (sqrt, root, ln, exp, log10, power)
-- Proper implementation of traits (Absable, Comparable, Floatable, Roundable, etc.)
+- Reorganized codebase with modular structure (decimal, arithmetics, comparison, exponential).
+- Edge case handling for all operations (division by zero, zero to negative power).
+- Scale and precision management with sophisticated rounding strategies.
+- Financial calculations with banker's rounding (ROUND_HALF_EVEN).
+- High-precision advanced mathematical functions (sqrt, root, ln, exp, log10, power).
+- Proper implementation of traits (Absable, Comparable, Floatable, Roundable, etc).
 
 ### Make it Fast ⚡ (SIGNIFICANT PROGRESS)
 
 DeciMojo delivers exceptional performance compared to Python's `decimal` module while maintaining precise calculations. This performance difference stems from fundamental design choices:
 
-- **DeciMojo**: Uses a fixed 128-bit representation (96-bit coefficient + 32-bit flags) with a maximum of 28 decimal places, optimized for modern hardware and Mojo's performance capabilities
-- **Python decimal**: Implements arbitrary precision that can represent numbers with unlimited significant digits but requires dynamic memory allocation and more complex algorithms
+- **DeciMojo**: Uses a fixed 128-bit representation (96-bit coefficient + 32-bit flags) with a maximum of 28 decimal places, optimized for modern hardware and Mojo's performance capabilities.
+- **Python decimal**: Implements arbitrary precision that can represent numbers with unlimited significant digits but requires dynamic memory allocation and more complex algorithms.
 
 This architectural difference explains our benchmarking results:
 
-- Core arithmetic operations (+, -, *, /) achieve 100x-3500x speedup over Python's decimal module
-- Special case handling (powers of 0, 1, etc.) shows up to 3500x performance improvement
-- Advanced mathematical functions (sqrt, ln, exp) demonstrate 5x-600x better performance
-- Only specific edge cases (like computing 10^(1/100)) occasionally perform better in Python due to its arbitrary precision algorithms
+- Core arithmetic operations (+, -, *, /) achieve 100x-3500x speedup over Python's decimal module.
+- Special case handling (powers of 0, 1, etc.) shows up to 3500x performance improvement.
+- Advanced mathematical functions (sqrt, ln, exp) demonstrate 5x-600x better performance.
+- Only specific edge cases (like computing 10^(1/100)) occasionally perform better in Python due to its arbitrary precision algorithms.
 
 Regular benchmarks against Python's `decimal` module are available in the `bench/` folder, documenting both the performance advantages and the few specific operations where different approaches are needed.
 
 ### Future Extensions 🚀 (PLANNED)
 
-- **BigInt**: Arbitrary-precision integer type with unlimited digits
-- **BigDecimal**: Arbitrary-precision decimal type with configurable precision
-- **BigComplex**: Arbitrary-precision complex number type built on BigDecimal
+- **BigInt**: Arbitrary-precision integer type with unlimited digits.
+- **BigDecimal**: Arbitrary-precision decimal type with configurable precision[^arbitrary_precision].
+- **BigComplex**: Arbitrary-precision complex number type built on BigDecimal.
 
 ## Tests and benches
 
