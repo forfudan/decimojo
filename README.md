@@ -145,7 +145,7 @@ Regular benchmarks against Python's `decimal` module are available in the `bench
 
 ### Future Extensions 🚀 (PLANNED)
 
-- **BigInt**: Arbitrary-precision integer type with unlimited digits.
+- **BigInt**: Arbitrary-precision integer type with unlimited digits[^integer].
 - **BigDecimal**: Arbitrary-precision decimal type with configurable precision[^arbitrary_precision].
 - **BigComplex**: Arbitrary-precision complex number type built on BigDecimal.
 
@@ -176,4 +176,5 @@ If you find DeciMojo useful for your research, consider listing it in your citat
 This repository and its contributions are licensed under the Apache License v2.0.
 
 [^fixed_precision]: The `Decimal` type can represent values with up to 29 significant digits and a maximum of 28 digits after the decimal point. When a value exceeds the maximum representable value (`2^96 - 1`), DeciMojo either raises an error or rounds the value to fit within these constraints. For example, the significant digits of `8.8888888888888888888888888888` (29 eights total with 28 after the decimal point) exceeds the maximum representable value (`2^96 - 1`) and is automatically rounded to `8.888888888888888888888888889` (28 eights total with 27 after the decimal point). DeciMojo's `Decimal` type is similar to `System.Decimal` (C#/.NET), `rust_decimal` in Rust, `DECIMAL/NUMERIC` in SQL Server, etc.
+[^integer]: Integers are a special case of decimal numbers (with zero fractional part). Our BigInt implementation serves both as a standalone arbitrary-precision integer type and as the foundation for our upcoming BigDecimal implementation.
 [^arbitrary_precision]: Similar to `decimal` and `mpmath` in Python, `java.math.BigDecimal` in Java, etc.
