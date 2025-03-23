@@ -38,9 +38,9 @@ fn add(x1: BigInt, x2: BigInt) raises -> BigInt:
     """
 
     # If one of the numbers is zero, return the other number
-    if len(x1.words) == 1 and x1.words[0] == 0:
+    if x1.is_zero():
         return x2
-    if len(x2.words) == 1 and x2.words[0] == 0:
+    if x2.is_zero():
         return x1
 
     # If signs are different, we use `subtract` instead
@@ -81,7 +81,7 @@ fn add(x1: BigInt, x2: BigInt) raises -> BigInt:
     if carry > 0:
         result.words.append(carry)
 
-    return result
+    return result^
 
 
 fn subtract(x1: BigInt, x2: BigInt) raises -> BigInt:
@@ -157,7 +157,7 @@ fn subtract(x1: BigInt, x2: BigInt) raises -> BigInt:
     while len(result.words) > 1 and result.words[len(result.words) - 1] == 0:
         result.words.resize(len(result.words) - 1)
 
-    return result
+    return result^
 
 
 fn negative(x: BigInt) -> BigInt:
@@ -171,7 +171,7 @@ fn negative(x: BigInt) -> BigInt:
     """
     var result = x
     result.sign = not result.sign
-    return result
+    return result^
 
 
 fn absolute(x: BigInt) -> BigInt:
@@ -184,8 +184,6 @@ fn absolute(x: BigInt) -> BigInt:
         A new BigInt containing the absolute value of x.
     """
     if x.sign:
-        var result = x
-        result.sign = False
-        return result
+        return -x
     else:
         return x
