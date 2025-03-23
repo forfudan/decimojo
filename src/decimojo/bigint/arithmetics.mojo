@@ -187,3 +187,77 @@ fn absolute(x: BigInt) -> BigInt:
         return -x
     else:
         return x
+
+
+fn multiply(x1: BigInt, x2: BigInt) raises -> BigInt:
+    """Returns the product of two BigInt numbers.
+
+    Args:
+        x1: The first BigInt operand (multiplicand).
+        x2: The second BigInt operand (multiplier).
+
+    Returns:
+        The product of the two BigInt numbers.
+    """
+    # CASE: One of the operands is zero
+    if x1.is_zero() or x2.is_zero():
+        return BigInt.from_raw_words(UInt32(0), sign=x1.sign != x2.sign)
+
+    # CASE: One of the operands is one or negative one
+    if x1.is_one_or_minus_one():
+        var result = x2
+        result.sign = x1.sign != x2.sign
+        return result^
+
+    if x2.is_one_or_minus_one():
+        var result = x1
+        result.sign = x1.sign != x2.sign
+        return result^
+
+    # The maximum number of words in the result is the sum of the words in the operands
+    var max_result_len = len(x1.words) + len(x2.words)
+    var result = BigInt(empty=True, capacity=max_result_len)
+    result.sign = x1.sign != x2.sign
+
+    # Initialize result words with zeros
+    for _ in range(max_result_len):
+        result.words.append(0)
+
+    # Perform the multiplication word by word (from least significant to most significant)
+    # x1 = x1[0] + x1[1] * 10^9
+    # x2 = x2[0] + x2[1] * 10^9
+    # x1 * x2 = x1[0] * x2[0] + (x1[0] * x2[1] + x1[1] * x2[0]) * 10^9 + x1[1] * x2[1] * 10^18
+    var carry: UInt64 = 0
+    for i in range(len(x1.words)):
+        # Skip if the word is zero
+        if x1.words[i] == 0:
+            continue
+
+        carry = UInt64(0)
+
+        for j in range(len(x2.words)):
+            # Skip if the word is zero
+            if x2.words[j] == 0:
+                continue
+
+            # Calculate the product of the current words
+            # plus the carry from the previous multiplication
+            # plus the value already at this position in the result
+            var product = UInt64(x1.words[i]) * UInt64(
+                x2.words[j]
+            ) + carry + UInt64(result.words[i + j])
+
+            # The lower 9 digits (base 10^9) go into the current word
+            # The upper digits become the carry for the next position
+            result.words[i + j] = UInt32(product % 1_000_000_000)
+            carry = product // 1_000_000_000
+
+        # If there is a carry left, add it to the next position
+        if carry > 0:
+            result.words[i + len(x2.words)] += UInt32(carry)
+
+    # Remove trailing zeros
+    while len(result.words) > 1 and result.words[len(result.words) - 1] == 0:
+        result.words.resize(len(result.words) - 1)
+
+    return result^
