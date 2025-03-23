@@ -1,14 +1,16 @@
 # DeciMojo
 
-A fixed-point decimal mathematics library for [the Mojo programming language 🔥](https://www.modular.com/mojo).
+A comprehensive decimal mathematics library for [Mojo](https://www.modular.com/mojo).
 
 **[中文·漢字»](./docs/readme_zht.md)**　|　**[Repository on GitHub»](https://github.com/forfudan/decimojo)**
 
 ## Overview
 
-DeciMojo provides a comprehensive fixed-point decimal mathematics library for Mojo, delivering exact calculations for financial modeling, scientific computing, and applications where floating-point approximation errors are unacceptable. Beyond basic arithmetic, the library includes advanced mathematical functions with guaranteed precision.
+DeciMojo provides a comprehensive decimal mathematics library for Mojo, delivering exact calculations for financial modeling, scientific computing, and applications where floating-point approximation errors are unacceptable. Beyond basic arithmetic, the library includes advanced mathematical functions with guaranteed precision.
 
 The core type is Decimal: A 128-bit fixed-point decimal implementation supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed_precision]. It features a complete set of mathematical functions including logarithms, exponentiation, roots, and trigonometric operations.
+
+The library is expanding to include `BigInt` and `BigDecimal` types that support arbitrary precision, allowing for calculations with unlimited digits. These extensions are currently under active development.
 
 ## Installation
 
@@ -102,9 +104,9 @@ This project draws inspiration from several established decimal implementations 
 
 ## Nonmenclature
 
-DeciMojo combines "Decimal" and "Mojo" - reflecting both its purpose (decimal arithmetic) and the programming language it's implemented in. The name emphasizes the project's focus on bringing precise decimal calculations to the Mojo ecosystem.
+DeciMojo combines "Deci" and "Mojo" - reflecting its purpose and implementation language. "Deci" (from Latin "decimus" meaning "tenth") highlights our focus on the decimal numeral system that humans naturally use for counting and calculations.
 
-For brevity, you can refer to it as "deci" (derived from the Latin root "decimus" meaning "tenth").
+The name emphasizes our mission: bringing precise, reliable decimal calculations to the Mojo ecosystem, addressing the fundamental need for exact arithmetic that floating-point representations cannot provide.
 
 ## Status
 
@@ -145,7 +147,7 @@ Regular benchmarks against Python's `decimal` module are available in the `bench
 
 ### Future Extensions 🚀 (PLANNED)
 
-- **BigInt**: Arbitrary-precision integer type with unlimited digits.
+- **BigInt**: Arbitrary-precision integer type with unlimited digits[^integer].
 - **BigDecimal**: Arbitrary-precision decimal type with configurable precision[^arbitrary_precision].
 - **BigComplex**: Arbitrary-precision complex number type built on BigDecimal.
 
@@ -164,7 +166,7 @@ If you find DeciMojo useful for your research, consider listing it in your citat
 @software{Zhu.2025,
     author       = {Zhu, Yuhao},
     year         = {2025},
-    title        = {DeciMojo: A fixed-point decimal arithmetic library in Mojo},
+    title        = {DeciMojo: A comprehensive decimal mathematics library for Mojo},
     url          = {https://github.com/forfudan/decimojo},
     version      = {0.1.0},
     note         = {Computer Software}
@@ -176,4 +178,5 @@ If you find DeciMojo useful for your research, consider listing it in your citat
 This repository and its contributions are licensed under the Apache License v2.0.
 
 [^fixed_precision]: The `Decimal` type can represent values with up to 29 significant digits and a maximum of 28 digits after the decimal point. When a value exceeds the maximum representable value (`2^96 - 1`), DeciMojo either raises an error or rounds the value to fit within these constraints. For example, the significant digits of `8.8888888888888888888888888888` (29 eights total with 28 after the decimal point) exceeds the maximum representable value (`2^96 - 1`) and is automatically rounded to `8.888888888888888888888888889` (28 eights total with 27 after the decimal point). DeciMojo's `Decimal` type is similar to `System.Decimal` (C#/.NET), `rust_decimal` in Rust, `DECIMAL/NUMERIC` in SQL Server, etc.
+[^integer]: Integers are a special case of decimal numbers (with zero fractional part). Our BigInt implementation serves both as a standalone arbitrary-precision integer type and as the foundation for our upcoming BigDecimal implementation.
 [^arbitrary_precision]: Similar to `decimal` and `mpmath` in Python, `java.math.BigDecimal` in Java, etc.
