@@ -9,7 +9,7 @@ readme = "README.md"
 version = "0.1.0"
 
 [dependencies]
-max = ">=25.1,<25.3"
+max = ">=25.2,<25.3"
 
 [tasks]
 # format the code
