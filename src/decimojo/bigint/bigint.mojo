@@ -25,6 +25,7 @@ mathematical methods that do not implement a trait.
 
 from memory import UnsafePointer
 import testing
+import time
 
 import decimojo.bigint.arithmetics
 import decimojo.bigint.comparison
@@ -244,7 +245,7 @@ struct BigInt(Absable, IntableRaising, Writable):
     @staticmethod
     fn from_string(value: String) raises -> BigInt:
         """Initializes a BigInt from a string representation.
-        The string is normalized with `deciomojo.str.parse_string_of_number()`.
+        The string is normalized with `deciomojo.str.parse_numeric_string()`.
 
         Args:
             value: The string representation of the BigInt.
@@ -252,33 +253,32 @@ struct BigInt(Absable, IntableRaising, Writable):
         Returns:
             The BigInt representation of the string.
         """
-
-        var coef_string: String
+        var coef: List[UInt8]
         var scale: Int
         var sign: Bool
-        coef_string, scale, sign = decimojo.str.parse_string_of_number(value)
+        coef, scale, sign = decimojo.str.parse_numeric_string(value)
 
         # Check if the number is zero
-        if coef_string == "0":
-            return Self()
+        if len(coef) == 1 and coef[0] == UInt8(0):
+            return Self.from_raw_words(UInt32(0), sign=sign)
 
         # Check whether the number is an integer
         # If the fractional part is not zero, raise an error
         # If the fractional part is zero, remove the fractional part
         if scale > 0:
-            if scale >= len(coef_string):
+            if scale >= len(coef):
                 raise Error(
                     "Error in `from_string`: The number is not an integer."
                 )
             for i in range(1, scale + 1):
-                if coef_string[-i] != "0":
+                if coef[-i] != 0:
                     raise Error(
                         "Error in `from_string`: The number is not an integer."
                     )
-            coef_string = coef_string[:-scale]
+            coef.resize(-scale)
             scale = 0
 
-        var number_of_digits = len(coef_string) - scale
+        var number_of_digits = len(coef) - scale
         var number_of_words = number_of_digits // 9
         if number_of_digits % 9 != 0:
             number_of_words += 1
@@ -288,23 +288,24 @@ struct BigInt(Absable, IntableRaising, Writable):
 
         if scale == 0:
             # This is a true integer
-            var number_of_digits = len(coef_string)
+            var number_of_digits = len(coef)
             var number_of_words = number_of_digits // 9
             if number_of_digits % 9 != 0:
                 number_of_words += 1
-
-            var result = Self(empty=True, capacity=number_of_words)
-            result.sign = sign
 
             var end: Int = number_of_digits
             var start: Int
             while end >= 9:
                 start = end - 9
-                var word = UInt32(Int(coef_string[start:end]))
+                var word: UInt32 = 0
+                for digit in coef[start:end]:
+                    word = word * 10 + UInt32(digit[])
                 result.words.append(word)
                 end = start
             if end > 0:
-                var word = UInt32(Int(coef_string[0:end]))
+                var word: UInt32 = 0
+                for digit in coef[0:end]:
+                    word = word * 10 + UInt32(digit[])
                 result.words.append(word)
 
             return result
@@ -317,17 +318,22 @@ struct BigInt(Absable, IntableRaising, Writable):
             for _ in range(number_of_trailing_zero_words):
                 result.words.append(UInt32(0))
 
-            coef_string += "0" * remaining_trailing_zero_digits
+            for _ in range(remaining_trailing_zero_digits):
+                coef.append(UInt8(0))
 
             var end: Int = number_of_digits + scale + remaining_trailing_zero_digits
             var start: Int
             while end >= 9:
                 start = end - 9
-                var word = UInt32(Int(coef_string[start:end]))
+                var word: UInt32 = 0
+                for digit in coef[start:end]:
+                    word = word * 10 + UInt32(digit[])
                 result.words.append(word)
                 end = start
             if end > 0:
-                var word = UInt32(Int(coef_string[0:end]))
+                var word: UInt32 = 0
+                for digit in coef[0:end]:
+                    word = word * 10 + UInt32(digit[])
                 result.words.append(word)
 
             return result
@@ -463,6 +469,21 @@ struct BigInt(Absable, IntableRaising, Writable):
     @always_inline
     fn __sub__(self, other: Self) raises -> Self:
         return decimojo.bigint.arithmetics.subtract(self, other)
+
+    # ===------------------------------------------------------------------=== #
+    # Basic binary augmented arithmetic assignments dunders
+    # These methods are called to implement the binary augmented arithmetic
+    # assignments
+    # (+=, -=, *=, @=, /=, //=, %=, **=, <<=, >>=, &=, ^=, |=)
+    # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn __iadd__(mut self, other: Self) raises:
+        self = decimojo.bigint.arithmetics.add(self, other)
+
+    @always_inline
+    fn __isub__(mut self, other: Self) raises:
+        self = decimojo.bigint.arithmetics.subtract(self, other)
 
     # ===------------------------------------------------------------------=== #
     # Other methods

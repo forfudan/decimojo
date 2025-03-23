@@ -16,8 +16,12 @@
 
 """String manipulation functions."""
 
+import time
 
-fn parse_string_of_number(value: String) raises -> Tuple[String, Int, Bool]:
+
+fn parse_numeric_string(
+    value: String,
+) raises -> Tuple[List[UInt8], Int, Bool]:
     """Parse the string of a number into normalized parts.
 
     Args:
@@ -25,7 +29,7 @@ fn parse_string_of_number(value: String) raises -> Tuple[String, Int, Bool]:
 
     Returns:
         A tuple of:
-        - Normalized string which represents an integer.
+        - Normalized coefficient as List[UInt8] which represents an integer.
         - Scale of the number.
         - Sign of the number.
 
@@ -45,12 +49,13 @@ fn parse_string_of_number(value: String) raises -> Tuple[String, Int, Bool]:
 
     Examples:
     ```console
-    parse_string("123")             -> ("123", 0)
-    parse_string("123.456")         -> ("123456", 3)
-    parse_string("123.456e3")       -> ("123456", 0)
-    parse_string("123.456e-3")      -> ("123456", 6)
-    parse_string("123.456e+10")     -> ("123456", -7)
-    parse_string("0.00123456")      -> ("123456", 8)
+    parse_string("123")             -> (123, 0, False)
+    parse_string("123.456")         -> (123456, 3, False)
+    parse_string("123.456e3")       -> (123456, 0, False)
+    parse_string("123.456e-3")      -> (123456, 6, False)
+    parse_string("123.456e+10")     -> (123456, -7, False)
+    parse_string("0.00123456")      -> (123456, 8, False)
+    parse_string("-123")            -> (123, 0, True)
     ```
     End of examples.
     """
@@ -60,7 +65,7 @@ fn parse_string_of_number(value: String) raises -> Tuple[String, Int, Bool]:
     var value_bytes_len = len(value_bytes)
 
     if value_bytes_len == 0:
-        return Tuple(String(""), 0, False)
+        raise Error("Error in `parse_numeric_string`: Empty string.")
 
     if value_bytes_len != value_string_slice.char_length():
         raise Error(
@@ -81,19 +86,20 @@ fn parse_string_of_number(value: String) raises -> Tuple[String, Int, Bool]:
 
     var mantissa_sign: Bool = False  # True if negative
     var exponent_sign: Bool = False  # True if negative
-    var coef_string: String = ""
+    var coef: List[UInt8] = List[UInt8](capacity=value_bytes_len)
     var scale: Int = 0
     var raw_exponent: Int = 0
 
-    for code in value_bytes:
+    for code_ptr in value_bytes:
+        var code = code_ptr[]
         # If the char is " ", skip it
-        if code[] == 32:
+        if code == 32:
             pass
         # If the char is "," or "_", skip it
-        elif code[] == 44 or code[] == 95:
+        elif code == 44 or code == 95:
             unexpected_end_char = True
         # If the char is "-"
-        elif code[] == 45:
+        elif code == 45:
             unexpected_end_char = True
             if exponent_sign_read:
                 raise Error("Minus sign cannot appear twice in exponent.")
@@ -106,7 +112,7 @@ fn parse_string_of_number(value: String) raises -> Tuple[String, Int, Bool]:
                 mantissa_sign = True
                 mantissa_sign_read = True
         # If the char is "+"
-        elif code[] == 43:
+        elif code == 43:
             unexpected_end_char = True
             if exponent_sign_read:
                 raise Error("Plus sign cannot appear twice in exponent.")
@@ -117,7 +123,7 @@ fn parse_string_of_number(value: String) raises -> Tuple[String, Int, Bool]:
             else:
                 mantissa_sign_read = True
         # If the char is "."
-        elif code[] == 46:
+        elif code == 46:
             unexpected_end_char = False
             if decimal_point_read:
                 raise Error("Decimal point can only appear once.")
@@ -125,7 +131,7 @@ fn parse_string_of_number(value: String) raises -> Tuple[String, Int, Bool]:
                 decimal_point_read = True
                 mantissa_sign_read = True
         # If the char is "e" or "E"
-        elif code[] == 101 or code[] == 69:
+        elif code == 101 or code == 69:
             unexpected_end_char = True
             if exponent_notation_read:
                 raise Error("Exponential notation can only appear once.")
@@ -135,7 +141,7 @@ fn parse_string_of_number(value: String) raises -> Tuple[String, Int, Bool]:
                 exponent_notation_read = True
 
         # If the char is a digit 0
-        elif code[] == 48:
+        elif code == 48:
             unexpected_end_char = False
 
             # Exponent part
@@ -150,41 +156,42 @@ fn parse_string_of_number(value: String) raises -> Tuple[String, Int, Bool]:
                 mantissa_start = True
 
                 if mantissa_significant_start:
-                    coef_string += "0"
+                    coef.append(0)
 
                 if decimal_point_read:
                     scale += 1
 
         # If the char is a digit 1 - 9
-        elif code[] >= 49 and code[] <= 57:
+        elif code >= 49 and code <= 57:
             unexpected_end_char = False
 
             # Exponent part
             if exponent_notation_read:
                 exponent_start = True
-                raw_exponent = raw_exponent * 10 + Int(code[] - 48)
+                raw_exponent = raw_exponent * 10 + Int(code - 48)
 
             # Mantissa part
             else:
                 mantissa_significant_start = True
                 mantissa_start = True
-                coef_string += String(code[] - 48)
+                coef.append(code - 48)
                 if decimal_point_read:
                     scale += 1
 
         else:
             raise Error(
                 "Invalid character in the string of the number: {}".format(
-                    chr(Int(code[]))
+                    chr(Int(code))
                 )
             )
 
     if unexpected_end_char:
         raise Error("Unexpected end character in the string of the number.")
 
-    if len(coef_string) == 0:
+    if len(coef) == 0:
+        # For example, "0000."
         if mantissa_start:
-            coef_string = "0"
+            coef.append(0)
         else:
             raise Error("No digits found in the string of the number.")
 
@@ -200,4 +207,4 @@ fn parse_string_of_number(value: String) raises -> Tuple[String, Int, Bool]:
             # 1.234e8 -> 1234e5 -> 1234 and scale = -5
             scale -= raw_exponent
 
-    return Tuple(coef_string, scale, mantissa_sign)
+    return Tuple(coef, scale, mantissa_sign)
