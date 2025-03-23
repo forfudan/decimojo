@@ -26,11 +26,13 @@ mathematical methods that do not implement a trait.
 from memory import UnsafePointer
 import testing
 
+import decimojo.bigint.arithmetics
+import decimojo.bigint.comparison
 import decimojo.str
 
 
 @value
-struct BigInt:
+struct BigInt(Absable, IntableRaising, Writable):
     """Represents an integer with arbitrary precision.
 
     Notes:
@@ -62,6 +64,13 @@ struct BigInt:
 
     # ===------------------------------------------------------------------=== #
     # Constructors and life time dunder methods
+    #
+    # __init__(out self)
+    # __init__(out self, empty: Bool)
+    # __init__(out self, empty: Bool, capacity: Int)
+    # __init__(out self, *words: UInt32, sign: Bool) raises
+    # __init__(out self, value: Int) raises
+    # __init__(out self, value: String) raises
     # ===------------------------------------------------------------------=== #
 
     fn __init__(out self):
@@ -99,22 +108,42 @@ struct BigInt:
     fn __init__(out self, *words: UInt32, sign: Bool) raises:
         """Initializes a BigInt from raw components.
 
+        Args:
+            words: The UInt32 words representing the coefficient.
+                Each UInt32 word represents digits ranging from 0 to 10^9 - 1.
+                The words are stored in little-endian order.
+            sign: The sign of the BigInt.
+
         Notes:
 
         This method checks whether the words are smaller than `999_999_999`.
+
+        Example:
+        ```console
+        BigInt(123456789, 987654321, sign=False) # 987654321_123456789
+        BigInt(123456789, 987654321, sign=True)  # -987654321_123456789
+        ```
+
+        End of examples.
         """
-        self.words = Self._words_type()
+        self.words = Self._words_type(capacity=len(words))
         self.sign = sign
 
         # Check if the words are valid
         for word in words:
             if word > Self.MAX_OF_WORD:
                 raise Error(
-                    "Error in `from_components`: Word value exceeds maximum"
+                    "Error in `BigInt.__init__()`: Word value exceeds maximum"
                     " value of 999_999_999"
                 )
             else:
                 self.words.append(word)
+
+    fn __init__(out self, value: Int) raises:
+        """Initializes a BigInt from an Int.
+        See `from_int()` for more information.
+        """
+        self = Self.from_int(value)
 
     fn __init__(out self, value: String) raises:
         """Initializes a BigInt from a string representation.
@@ -127,44 +156,50 @@ struct BigInt:
 
     # ===------------------------------------------------------------------=== #
     # Constructing methods that are not dunders
+    #
+    # from_raw_words(*words: UInt32, sign: Bool) -> Self
+    # from_int(value: Int) -> Self
+    # from_uint128(value: UInt128, sign: Bool = False) -> Self
+    # from_string(value: String) -> Self
     # ===------------------------------------------------------------------=== #
 
     @staticmethod
-    fn from_components(*words: UInt32, sign: Bool = False) raises -> Self:
-        """Creates a BigInt from raw components.
+    fn from_raw_words(*words: UInt32, sign: Bool) -> Self:
+        """Initializes a BigInt from raw words without validating the words.
+
+        Args:
+            words: The UInt32 words representing the coefficient.
+                Each UInt32 word represents digits ranging from 0 to 10^9 - 1.
+                The words are stored in little-endian order.
+            sign: The sign of the BigInt.
 
         Notes:
 
-        Compare to `BigInt.__init__()`, this method checks the validity of words
-        by checking if the words are smaller than `999_999_999`.
+        This method does not validate whether the words are smaller than
+        `999_999_999`.
         """
 
-        var result = Self(empty=True)
+        result = Self(empty=True, capacity=len(words))
         result.sign = sign
-
-        # Check if the words are valid
         for word in words:
-            if word > Self.MAX_OF_WORD:
-                raise Error(
-                    "Error in `from_components`: Word value exceeds maximum"
-                    " value of 999_999_999"
-                )
-            else:
-                result.words.append(word)
-
-        return result
+            result.words.append(word)
+        return result^
 
     @staticmethod
-    fn from_int(value: Int) -> Self:
+    fn from_int(value: Int) raises -> Self:
         """Creates a BigInt from an integer."""
         if value == 0:
             return Self()
 
         var result = Self(empty=True)
-
         var remainder: Int
         var quotient: Int
         if value < 0:
+            # Handle the case of Int.MIN due to asymmetry of Int.MIN and Int.MAX
+            if value == Int.MIN:
+                return Self.from_raw_words(
+                    UInt32(854775807), UInt32(223372036), UInt32(9), sign=True
+                )
             result.sign = True
             remainder = -value
         else:
@@ -301,6 +336,12 @@ struct BigInt:
     # Output dunders, type-transfer dunders
     # ===------------------------------------------------------------------=== #
 
+    fn __int__(self) raises -> Int:
+        """Returns the number as Int.
+        See `to_int()` for more information.
+        """
+        return self.to_int()
+
     fn __str__(self) -> String:
         """Returns string representation of the BigInt.
         See `to_str()` for more information.
@@ -320,6 +361,37 @@ struct BigInt:
         This implement the `write` method of the `Writer` trait.
         """
         writer.write(String(self))
+
+    fn to_int(self) raises -> Int:
+        """Returns the number as Int.
+
+        Returns:
+            The number as Int.
+
+        Raises:
+            Error: If the number is too large or too small to fit in Int.
+        """
+
+        # 2^63-1 = 9_223_372_036_854_775_807
+        # is larger than 10^18 -1 but smaller than 10^27 - 1
+
+        if len(self.words) > 3:
+            raise Error(
+                "Error in `BigInt.to_int()`: The number exceeds the size of Int"
+            )
+
+        var value: Int128 = 0
+        for i in range(len(self.words)):
+            value += Int128(self.words[i]) * Int128(Self.BASE_OF_WORD) ** i
+
+        value = -value if self.sign else value
+
+        if value < Int128(Int.MIN) or value > Int128(Int.MAX):
+            raise Error(
+                "Error in `BigInt.to_int()`: The number exceeds the size of Int"
+            )
+
+        return Int(value)
 
     fn to_str(self) -> String:
         """Returns string representation of the BigInt."""
