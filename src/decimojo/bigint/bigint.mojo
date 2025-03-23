@@ -46,12 +46,13 @@ struct BigInt(Absable, IntableRaising, Writable):
         which can be of arbitrary length stored in little-endian order.
         Each UInt32 word represents digits ranging from 0 to 10^9 - 1.
     - A Bool value for the sign.
+
+    The value of the BigInt is calculated as follows:
+
+    x = x[0] * 10^0 + x[1] * 10^9 + x[2] * 10^18 + ... x[n] * 10^(9n)
     """
 
-    # Internal representation fields
-    alias _words_type = List[UInt32, hint_trivial_type=True]
-
-    var words: Self._words_type
+    var words: List[UInt32]
     """A list of UInt32 words representing the coefficient."""
     var sign: Bool
     """Sign information."""
@@ -76,7 +77,7 @@ struct BigInt(Absable, IntableRaising, Writable):
 
     fn __init__(out self):
         """Initializes a BigInt with value 0."""
-        self.words = Self._words_type(UInt32(0))
+        self.words = List[UInt32](UInt32(0))
         self.sign = False
 
     fn __init__(out self, empty: Bool):
@@ -87,7 +88,7 @@ struct BigInt(Absable, IntableRaising, Writable):
                 If True, the BigInt is empty.
                 If False, the BigInt is intialized with value 0.
         """
-        self.words = Self._words_type()
+        self.words = List[UInt32]()
         self.sign = False
         if not empty:
             self.words.append(UInt32(0))
@@ -101,7 +102,7 @@ struct BigInt(Absable, IntableRaising, Writable):
                 If False, the BigInt is intialized with value 0.
             capacity: The capacity of the BigInt.
         """
-        self.words = Self._words_type(capacity=capacity)
+        self.words = List[UInt32](capacity=capacity)
         self.sign = False
         if not empty:
             self.words.append(UInt32(0))
@@ -127,7 +128,7 @@ struct BigInt(Absable, IntableRaising, Writable):
 
         End of examples.
         """
-        self.words = Self._words_type(capacity=len(words))
+        self.words = List[UInt32](capacity=len(words))
         self.sign = sign
 
         # Check if the words are valid
@@ -470,6 +471,10 @@ struct BigInt(Absable, IntableRaising, Writable):
     fn __sub__(self, other: Self) raises -> Self:
         return decimojo.bigint.arithmetics.subtract(self, other)
 
+    @always_inline
+    fn __mul__(self, other: Self) raises -> Self:
+        return decimojo.bigint.arithmetics.multiply(self, other)
+
     # ===------------------------------------------------------------------=== #
     # Basic binary augmented arithmetic assignments dunders
     # These methods are called to implement the binary augmented arithmetic
@@ -485,6 +490,10 @@ struct BigInt(Absable, IntableRaising, Writable):
     fn __isub__(mut self, other: Self) raises:
         self = decimojo.bigint.arithmetics.subtract(self, other)
 
+    @always_inline
+    fn __imul__(mut self, other: Self) raises:
+        self = decimojo.bigint.arithmetics.multiply(self, other)
+
     # ===------------------------------------------------------------------=== #
     # Other methods
     # ===------------------------------------------------------------------=== #
@@ -493,6 +502,16 @@ struct BigInt(Absable, IntableRaising, Writable):
     fn is_zero(self) -> Bool:
         """Returns True if this BigInt represents zero."""
         return len(self.words) == 1 and self.words[0] == 0
+
+    @always_inline
+    fn is_one_or_minus_one(self) -> Bool:
+        """Returns True if this BigInt represents one or negative one."""
+        return len(self.words) == 1 and self.words[0] == 1
+
+    @always_inline
+    fn is_negative(self) -> Bool:
+        """Returns True if this BigInt is negative."""
+        return self.sign
 
     # ===------------------------------------------------------------------=== #
     # Internal methods
