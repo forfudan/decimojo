@@ -28,7 +28,7 @@ fn open_log_file() raises -> PythonObject:
 
     # Generate a timestamp for the filename
     var timestamp = String(datetime.datetime.now().isoformat())
-    var log_filename = log_dir + "/benchmark_floor_divide_" + timestamp + ".log"
+    var log_filename = log_dir + "/benchmark_truncate_divide_" + timestamp + ".log"
 
     print("Saving benchmark results to:", log_filename)
     return python.open(log_filename, "w")
@@ -47,7 +47,7 @@ fn log_print(msg: String, log_file: PythonObject) raises:
     log_file.flush()  # Ensure the message is written immediately
 
 
-fn run_benchmark_floor_divide(
+fn run_benchmark_truncate_divide(
     name: String,
     dividend: String,
     divisor: String,
@@ -168,7 +168,7 @@ fn main() raises:
     )
 
     # Case 1: Basic integer floor division with no remainder
-    run_benchmark_floor_divide(
+    run_benchmark_truncate_divide(
         "Integer division, no remainder",
         "10",
         "2",
@@ -178,7 +178,7 @@ fn main() raises:
     )
 
     # Case 2: Basic integer floor division with remainder
-    run_benchmark_floor_divide(
+    run_benchmark_truncate_divide(
         "Integer division, with remainder",
         "10",
         "3",
@@ -188,7 +188,7 @@ fn main() raises:
     )
 
     # Case 3: Division with decimal values
-    run_benchmark_floor_divide(
+    run_benchmark_truncate_divide(
         "Decimal division",
         "10.5",
         "2.5",
@@ -198,7 +198,7 @@ fn main() raises:
     )
 
     # Case 4: Division resulting in a decimal value
-    run_benchmark_floor_divide(
+    run_benchmark_truncate_divide(
         "Division resulting in integer",
         "5",
         "2",
@@ -208,7 +208,7 @@ fn main() raises:
     )
 
     # Case 5: Division with different decimal places
-    run_benchmark_floor_divide(
+    run_benchmark_truncate_divide(
         "Different decimal places",
         "10.75",
         "1.5",
@@ -218,7 +218,7 @@ fn main() raises:
     )
 
     # Case 6: Negative dividend, positive divisor
-    run_benchmark_floor_divide(
+    run_benchmark_truncate_divide(
         "Negative dividend, positive divisor",
         "-10",
         "3",
@@ -228,7 +228,7 @@ fn main() raises:
     )
 
     # Case 7: Positive dividend, negative divisor
-    run_benchmark_floor_divide(
+    run_benchmark_truncate_divide(
         "Positive dividend, negative divisor",
         "10",
         "-3",
@@ -238,7 +238,7 @@ fn main() raises:
     )
 
     # Case 8: Negative dividend, negative divisor
-    run_benchmark_floor_divide(
+    run_benchmark_truncate_divide(
         "Negative dividend, negative divisor",
         "-10",
         "-3",
@@ -248,7 +248,7 @@ fn main() raises:
     )
 
     # Case 9: Decimal values, negative dividend, positive divisor
-    run_benchmark_floor_divide(
+    run_benchmark_truncate_divide(
         "Decimal, negative dividend, positive divisor",
         "-10.5",
         "3.5",
@@ -258,7 +258,7 @@ fn main() raises:
     )
 
     # Case 10: Division by 1
-    run_benchmark_floor_divide(
+    run_benchmark_truncate_divide(
         "Division by 1",
         "10",
         "1",
@@ -268,7 +268,7 @@ fn main() raises:
     )
 
     # Case 11: Zero dividend
-    run_benchmark_floor_divide(
+    run_benchmark_truncate_divide(
         "Zero dividend",
         "0",
         "5",
@@ -278,7 +278,7 @@ fn main() raises:
     )
 
     # Case 12: Division by a decimal < 1
-    run_benchmark_floor_divide(
+    run_benchmark_truncate_divide(
         "Division by decimal < 1",
         "10",
         "0.5",
@@ -288,7 +288,7 @@ fn main() raises:
     )
 
     # Case 13: Division resulting in a negative zero
-    run_benchmark_floor_divide(
+    run_benchmark_truncate_divide(
         "Division resulting in zero",
         "0",
         "-5",
@@ -298,7 +298,7 @@ fn main() raises:
     )
 
     # Case 14: Large number division
-    run_benchmark_floor_divide(
+    run_benchmark_truncate_divide(
         "Large number division",
         "1000000000",
         "7",
@@ -308,7 +308,7 @@ fn main() raises:
     )
 
     # Case 15: Small number division
-    run_benchmark_floor_divide(
+    run_benchmark_truncate_divide(
         "Small number division",
         "0.0000001",
         "0.0000002",
@@ -318,7 +318,7 @@ fn main() raises:
     )
 
     # Case 16: Very large dividend and divisor
-    run_benchmark_floor_divide(
+    run_benchmark_truncate_divide(
         "Large dividend and divisor",
         "123456789012345",
         "987654321",
@@ -328,7 +328,7 @@ fn main() raises:
     )
 
     # Case 17: High precision dividend
-    run_benchmark_floor_divide(
+    run_benchmark_truncate_divide(
         "High precision dividend",
         "3.14159265358979323846",
         "1.5",
@@ -338,7 +338,7 @@ fn main() raises:
     )
 
     # Case 18: Very close values
-    run_benchmark_floor_divide(
+    run_benchmark_truncate_divide(
         "Very close values",
         "1.0000001",
         "1",
@@ -348,7 +348,7 @@ fn main() raises:
     )
 
     # Case 19: Power of 10 values
-    run_benchmark_floor_divide(
+    run_benchmark_truncate_divide(
         "Power of 10 values",
         "10000",
         "100",
@@ -358,7 +358,7 @@ fn main() raises:
     )
 
     # Case 20: Edge values not quite reaching the next integer
-    run_benchmark_floor_divide(
+    run_benchmark_truncate_divide(
         "Edge values",
         "9.9999999",
         "2",

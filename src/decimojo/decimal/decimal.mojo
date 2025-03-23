@@ -1190,18 +1190,24 @@ struct Decimal(
 
     @always_inline
     fn __floordiv__(self, other: Self) raises -> Self:
-        return decimojo.decimal.arithmetics.floor_divide(self, other)
+        """Performs truncate division with // operator."""
+        return decimojo.decimal.arithmetics.truncate_divide(self, other)
 
     @always_inline
     fn __floordiv__(self, other: Int) raises -> Self:
-        return decimojo.decimal.arithmetics.floor_divide(self, Decimal(other))
+        """Performs truncate division with // operator."""
+        return decimojo.decimal.arithmetics.truncate_divide(
+            self, Decimal(other)
+        )
 
     @always_inline
     fn __mod__(self, other: Self) raises -> Self:
+        """Performs truncate modulo."""
         return decimojo.decimal.arithmetics.modulo(self, other)
 
     @always_inline
     fn __mod__(self, other: Int) raises -> Self:
+        """Performs truncate modulo."""
         return decimojo.decimal.arithmetics.modulo(self, Decimal(other))
 
     @always_inline
@@ -1237,10 +1243,14 @@ struct Decimal(
 
     @always_inline
     fn __rfloordiv__(self, other: Int) raises -> Self:
-        return decimojo.decimal.arithmetics.floor_divide(Decimal(other), self)
+        """Performs truncate division with // operator."""
+        return decimojo.decimal.arithmetics.truncate_divide(
+            Decimal(other), self
+        )
 
     @always_inline
     fn __rmod__(self, other: Int) raises -> Self:
+        """Performs truncate modulo."""
         return decimojo.decimal.arithmetics.modulo(Decimal(other), self)
 
     # ===------------------------------------------------------------------=== #
@@ -1284,11 +1294,20 @@ struct Decimal(
 
     @always_inline
     fn __ifloordiv__(mut self, other: Self) raises:
-        self = decimojo.decimal.arithmetics.floor_divide(self, other)
+        """Performs truncate division with // operator."""
+        self = decimojo.decimal.arithmetics.truncate_divide(self, other)
 
     @always_inline
     fn __ifloordiv__(mut self, other: Int) raises:
-        self = decimojo.decimal.arithmetics.floor_divide(self, Decimal(other))
+        """Performs truncate division with // operator."""
+        self = decimojo.decimal.arithmetics.truncate_divide(
+            self, Decimal(other)
+        )
+
+    @always_inline
+    fn __imod__(mut self, other: Self) raises:
+        """Performs truncate modulo."""
+        self = decimojo.decimal.arithmetics.modulo(self, other)
 
     # ===------------------------------------------------------------------=== #
     # Basic binary comparison operation dunders

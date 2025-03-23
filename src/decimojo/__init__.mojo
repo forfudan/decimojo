@@ -38,7 +38,7 @@ from .decimal.arithmetics import (
     negative,
     multiply,
     divide,
-    floor_divide,
+    truncate_divide,
     modulo,
 )
 
