@@ -245,7 +245,7 @@ struct BigInt(Absable, IntableRaising, Writable):
     @staticmethod
     fn from_string(value: String) raises -> BigInt:
         """Initializes a BigInt from a string representation.
-        The string is normalized with `deciomojo.str.parse_string_of_number()`.
+        The string is normalized with `deciomojo.str.parse_numeric_string()`.
 
         Args:
             value: The string representation of the BigInt.
@@ -256,7 +256,7 @@ struct BigInt(Absable, IntableRaising, Writable):
         var coef: List[UInt8]
         var scale: Int
         var sign: Bool
-        coef, scale, sign = decimojo.str.parse_string_of_number(value)
+        coef, scale, sign = decimojo.str.parse_numeric_string(value)
 
         # Check if the number is zero
         if len(coef) == 1 and coef[0] == UInt8(0):

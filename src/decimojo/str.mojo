@@ -19,7 +19,7 @@
 import time
 
 
-fn parse_string_of_number(
+fn parse_numeric_string(
     value: String,
 ) raises -> Tuple[List[UInt8], Int, Bool]:
     """Parse the string of a number into normalized parts.
@@ -65,7 +65,7 @@ fn parse_string_of_number(
     var value_bytes_len = len(value_bytes)
 
     if value_bytes_len == 0:
-        raise Error("Error in `parse_string_of_number`: Empty string.")
+        raise Error("Error in `parse_numeric_string`: Empty string.")
 
     if value_bytes_len != value_string_slice.char_length():
         raise Error(
