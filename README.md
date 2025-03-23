@@ -6,9 +6,11 @@ A comprehensive decimal mathematics library for [Mojo](https://www.modular.com/m
 
 ## Overview
 
-DeciMojo provides a comprehensive high-precision decimal mathematics library for Mojo, delivering exact calculations for financial modeling, scientific computing, and applications where floating-point approximation errors are unacceptable. Beyond basic arithmetic, the library includes advanced mathematical functions with guaranteed precision.
+DeciMojo provides a comprehensive decimal mathematics library for Mojo, delivering exact calculations for financial modeling, scientific computing, and applications where floating-point approximation errors are unacceptable. Beyond basic arithmetic, the library includes advanced mathematical functions with guaranteed precision.
 
 The core type is Decimal: A 128-bit fixed-point decimal implementation supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed_precision]. It features a complete set of mathematical functions including logarithms, exponentiation, roots, and trigonometric operations.
+
+The library is expanding to include `BigInt` and `BigDecimal` types that support arbitrary precision, allowing for calculations with unlimited digits. These extensions are currently under active development.
 
 ## Installation
 

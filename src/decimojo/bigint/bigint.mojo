@@ -58,6 +58,7 @@ struct BigInt:
     # ===------------------------------------------------------------------=== #
 
     alias MAX_OF_WORD = UInt32(999_999_999)
+    alias BASE_OF_WORD = UInt32(1_000_000_000)
 
     # ===------------------------------------------------------------------=== #
     # Constructors and life time dunder methods
@@ -359,6 +360,25 @@ struct BigInt:
         return result^
 
     # ===------------------------------------------------------------------=== #
+    # Basic unary operation dunders
+    # neg
+    # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn __abs__(self) -> Self:
+        """Returns the absolute value of this number.
+        See `absolute()` for more information.
+        """
+        return decimojo.bigint.arithmetics.absolute(self)
+
+    @always_inline
+    fn __neg__(self) -> Self:
+        """Returns the negation of this number.
+        See `negative()` for more information.
+        """
+        return decimojo.bigint.arithmetics.negative(self)
+
+    # ===------------------------------------------------------------------=== #
     # Basic binary arithmetic operation dunders
     # These methods are called to implement the binary arithmetic operations
     # (+, -, *, @, /, //, %, divmod(), pow(), **, <<, >>, &, ^, |)
@@ -366,7 +386,20 @@ struct BigInt:
 
     @always_inline
     fn __add__(self, other: Self) raises -> Self:
-        return decimojo.big_int.arithmetics.add(self, other)
+        return decimojo.bigint.arithmetics.add(self, other)
+
+    @always_inline
+    fn __sub__(self, other: Self) raises -> Self:
+        return decimojo.bigint.arithmetics.subtract(self, other)
+
+    # ===------------------------------------------------------------------=== #
+    # Other methods
+    # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn is_zero(self) -> Bool:
+        """Returns True if this BigInt represents zero."""
+        return len(self.words) == 1 and self.words[0] == 0
 
     # ===------------------------------------------------------------------=== #
     # Internal methods
