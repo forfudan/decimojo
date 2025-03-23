@@ -2,7 +2,7 @@ from bench_add import main as bench_add
 from bench_subtract import main as bench_subtract
 from bench_multiply import main as bench_multiply
 from bench_divide import main as bench_divide
-from bench_floor_divide import main as bench_floor_divide
+from bench_truncate_divide import main as bench_truncate_divide
 from bench_modulo import main as bench_modulo
 from bench_sqrt import main as bench_sqrt
 from bench_from_float import main as bench_from_float
@@ -23,7 +23,7 @@ fn main() raises:
     bench_subtract()
     bench_multiply()
     bench_divide()
-    bench_floor_divide()
+    bench_truncate_divide()
     bench_modulo()
     bench_sqrt()
     bench_from_float()

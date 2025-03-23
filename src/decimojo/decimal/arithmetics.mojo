@@ -1138,8 +1138,8 @@ fn divide(x1: Decimal, x2: Decimal) raises -> Decimal:
             return Decimal(low, mid, high, scale_of_truncated_quot, is_negative)
 
 
-fn floor_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
-    """Returns the integral part of the true quotient (truncating towards zero).
+fn truncate_divide(x1: Decimal, x2: Decimal) raises -> Decimal:
+    """Returns the integral part of the quotient (truncating towards zero).
     The following identity always holds: x_1 == (x_1 // x_2) * x_2 + x_1 % x_2.
 
     Args:
@@ -1167,6 +1167,6 @@ fn modulo(x1: Decimal, x2: Decimal) raises -> Decimal:
         A new Decimal containing the remainder of x1 / x2.
     """
     try:
-        return x1 - (floor_divide(x1, x2) * x2)
+        return x1 - (truncate_divide(x1, x2) * x2)
     except e:
         raise Error("Error in `modulo()`: ", e)
