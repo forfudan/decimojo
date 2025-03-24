@@ -261,3 +261,181 @@ fn multiply(x1: BigInt, x2: BigInt) raises -> BigInt:
         result.words.resize(len(result.words) - 1)
 
     return result^
+
+
+fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
+    """Returns the quotient of two BigInt numbers, truncating toward zero.
+
+    Args:
+        x1: The dividend.
+        x2: The divisor.
+
+    Returns:
+        The quotient of x1 / x2, truncated toward zero.
+
+    Raises:
+        ValueError: If the divisor is zero.
+    """
+    # CASE: Division by zero
+    if x2.is_zero():
+        raise Error("Error in `truncate_divide`: Division by zero")
+
+    # CASE: Dividend is zero
+    if x1.is_zero():
+        return BigInt()
+
+    # CASE: Division by one or negative one
+    if x2.is_one_or_minus_one():
+        var result = x1
+        # If divisor is -1, negate the result
+        if x2.sign:
+            result.sign = not result.sign
+        return result
+
+    # CASE: Single word division
+    if len(x1.words) == 1 and len(x2.words) == 1:
+        var result = BigInt.from_raw_words(
+            UInt32(x1.words[0] // x2.words[0]), sign=x1.sign != x2.sign
+        )
+        return result
+
+    # CASE: |dividend| < |divisor|
+    if x1.compare_absolute(x2) < 0:
+        return BigInt()  # Return zero
+
+    # CASE: |dividend| == |divisor|
+    if x1.compare_absolute(x2) == 0:
+        return BigInt.from_raw_words(UInt32(1), sign=x1.sign != x2.sign)
+
+    # CASE: |dividend| > |divisor|
+    # Initialize the result and prepare for long division
+    var result = BigInt(empty=True, capacity=len(x1.words))
+
+    # Create a working copy of the dividend which will be modified during division
+    # The dividend is always positive during the division algorithm
+    var remainder = -x1 if x1.sign else x1
+
+    # Normalized divisor
+    # This makes the trial division more accurate
+    var normalized_divisor = -x2 if x2.sign else x2
+
+    # Perform the division algorithm (long division for base-10^9)
+    var n_words_remainder = len(remainder.words)
+    var n_words_advisor = len(normalized_divisor.words)
+    var positions = n_words_remainder - n_words_advisor
+
+    # Initialize result words with zeros
+    for _ in range(positions + 1):
+        result.words.append(0)
+
+    # Process from most significant to least significant position
+    for i in range(positions, -1, -1):
+        # Calculate the trial quotient using the 2 most significant words
+        var trial_numerator: UInt64 = 0
+        if i + n_words_advisor < n_words_remainder:
+            trial_numerator = (
+                UInt64(remainder.words[i + n_words_advisor]) * 1_000_000_000
+            )
+
+        if i + n_words_advisor - 1 < n_words_remainder:
+            trial_numerator += UInt64(remainder.words[i + n_words_advisor - 1])
+
+        var trial_quotient = trial_numerator // UInt64(
+            normalized_divisor.words[n_words_advisor - 1]
+        )
+
+        # Ensure the trial quotient isn't too large (should be <= 999,999,999)
+        if trial_quotient >= 1_000_000_000:
+            trial_quotient = 999_999_999
+
+        # Make a trial product: divisor * trial_quotient
+        var trial_product = normalized_divisor * BigInt.from_raw_words(
+            UInt32(trial_quotient), sign=False
+        )
+
+        # Shift the trial product left by i words (multiply by 10^(9*i))
+        var shifted_product = BigInt(
+            empty=True, capacity=len(trial_product.words) + i
+        )
+        for _ in range(i):
+            shifted_product.words.append(0)
+        for j in range(len(trial_product.words)):
+            shifted_product.words.append(trial_product.words[j])
+
+        # Check if trial quotient is too large (shifted_product > remainder)
+        while shifted_product.compare_absolute(remainder) > 0:
+            trial_quotient -= 1
+
+            # Recalculate the trial product
+            trial_product = normalized_divisor * BigInt.from_raw_words(
+                UInt32(trial_quotient), sign=False
+            )
+
+            # Recalculate the shifted product
+            shifted_product = BigInt(
+                empty=True, capacity=len(trial_product.words) + i
+            )
+            for _ in range(i):
+                shifted_product.words.append(0)
+            for j in range(len(trial_product.words)):
+                shifted_product.words.append(trial_product.words[j])
+
+            print("DEBUG: trial_quotient =", trial_quotient)
+            print("DEBUG: trial_product =", trial_product)
+            print("DEBUG: shifted_product =", shifted_product)
+            print("DEBUG: remainder =", remainder)
+
+        # Store the quotient digit
+        result.words[i] = UInt32(trial_quotient)
+
+        # Subtract: remainder = remainder - shifted_product
+        remainder = subtract(remainder, shifted_product)
+
+    # Remove leading zeros in the result
+    while len(result.words) > 1 and result.words[len(result.words) - 1] == 0:
+        result.words.resize(len(result.words) - 1)
+
+    # Set the sign
+    result.sign = x1.sign != x2.sign
+
+    return result^
+
+
+fn truncate_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
+    """Returns the remainder of two BigInt numbers, truncating toward zero.
+    The remainder has the same sign as the dividend and satisfies:
+    x1 = truncate_divide(x1, x2) * x2 + truncate_modulo(x1, x2).
+
+    Args:
+        x1: The dividend.
+        x2: The divisor.
+
+    Returns:
+        The remainder of x1 being divided by x2, with the same sign as x1.
+
+    Raises:
+        ValueError: If the divisor is zero.
+    """
+    # CASE: Division by zero
+    if x2.is_zero():
+        raise Error("Error in `truncate_modulo`: Division by zero")
+
+    # CASE: Dividend is zero
+    if x1.is_zero():
+        return BigInt()  # Return zero
+
+    # CASE: Divisor is one or negative one - no remainder
+    if x2.is_one_or_minus_one():
+        return BigInt()  # Always divisible with no remainder
+
+    # CASE: |dividend| < |divisor| - the remainder is the dividend itself
+    if decimojo.bigint.comparison.compare_absolute(x1, x2) < 0:
+        return x1
+
+    # Calculate quotient with truncation
+    var quotient = truncate_divide(x1, x2)
+
+    # Calculate remainder: dividend - (divisor * quotient)
+    var remainder = subtract(x1, multiply(x2, quotient))
+
+    return remainder
