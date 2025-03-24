@@ -8,9 +8,12 @@ A comprehensive decimal mathematics library for [Mojo](https://www.modular.com/m
 
 DeciMojo provides a comprehensive decimal mathematics library for Mojo, delivering exact calculations for financial modeling, scientific computing, and applications where floating-point approximation errors are unacceptable. Beyond basic arithmetic, the library includes advanced mathematical functions with guaranteed precision.
 
-The core type is Decimal: A 128-bit fixed-point decimal implementation supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed_precision]. It features a complete set of mathematical functions including logarithms, exponentiation, roots, and trigonometric operations.
+The core types are:
 
-The library is expanding to include `BigInt` and `BigDecimal` types that support arbitrary precision, allowing for calculations with unlimited digits. These extensions are currently under active development.
+- A 128-bit fixed-point decimal implementation (`Decimal`) supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed_precision]. It features a complete set of mathematical functions including logarithms, exponentiation, roots, and trigonometric operations.
+- A fully implemented arbitrary-precision integer type (`BigInt`) supporting unlimited digits. It features base-10^9 internal representation and basic arithmetic operations.
+
+The library is expanding to include `BigDecimal` types that support arbitrary precision, allowing for calculations with unlimited digits and decimal places. These extensions are currently under active development.
 
 ## Installation
 
@@ -94,6 +97,35 @@ fn main() raises:
 
 [Click here for 8 key examples](./docs/examples.md) highlighting the most important features of the `Decimal` type.
 
+### BigInt Quick Start
+
+```mojo
+from decimojo.bigint import BigInt
+
+fn main() raises:
+    # === Construction ===
+    var a = BigInt("12345678901234567890")         # From string
+    var b = BigInt(12345)                          # From integer
+    
+    # === Basic Arithmetic ===
+    print(a + b)                                   # Addition: 12345678901234580235
+    print(a - b)                                   # Subtraction: 12345678901234555545
+    print(a * b)                                   # Multiplication: 152415787814108380241050
+    print(a.truncate_divide(b))                    # Division: 999650944609516
+    
+    # === Comparison ===
+    print(a > b)                                   # Greater than: True
+    print(a == BigInt("12345678901234567890"))     # Equality: True
+    print(a.is_zero())                             # Check for zero: False
+    
+    # === Type Conversions ===
+    print(a.to_str())                              # To string: "12345678901234567890"
+    
+    # === Sign Handling ===
+    print(-a)                                      # Negation: -12345678901234567890
+    print(abs(BigInt("-12345678901234567890")))    # Absolute value: 12345678901234567890
+    print(a.is_negative())                         # Check if negative: False
+
 ## Objective
 
 Financial calculations and data analysis require precise decimal arithmetic that floating-point numbers cannot reliably provide. As someone working in finance and credit risk model validation, I needed a dependable correctly-rounded, fixed-precision numeric type when migrating my personal projects from Python to Mojo.
@@ -147,9 +179,8 @@ Regular benchmarks against Python's `decimal` module are available in the `bench
 
 ### Future Extensions 🚀 (PLANNED)
 
-- **BigInt**: Arbitrary-precision integer type with unlimited digits[^integer].
-- **BigDecimal**: Arbitrary-precision decimal type with configurable precision[^arbitrary_precision].
-- **BigComplex**: Arbitrary-precision complex number type built on BigDecimal.
+- **BigDecimal**: 🔄 **IN PROGRESS** - Arbitrary-precision decimal type with configurable precision[^arbitrary_precision].
+- **BigComplex**: 📝 **PLANNED** - Arbitrary-precision complex number type built on BigDecimal.
 
 ## Tests and benches
 

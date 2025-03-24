@@ -18,19 +18,22 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-DeciMojo: A fixed-point decimal arithmetic library in Mojo.
+DeciMojo: A comprehensive decimal mathematics library for Mojo.
 
 You can import a list of useful objects in one line, e.g., 
 
 ```mojo
-from decimojo.prelude import dm, Decimal, RoundingMode
+from decimojo import Decimal, BigInt, RoundingMode
 ```
 """
 
+# Core types
 from .decimal.decimal import Decimal
-
+from .bigint.bigint import BigInt
+from .biguint.biguint import BigUInt
 from .rounding_mode import RoundingMode
 
+# Core functions
 from .decimal.arithmetics import (
     add,
     subtract,
@@ -41,7 +44,6 @@ from .decimal.arithmetics import (
     truncate_divide,
     modulo,
 )
-
 from .decimal.comparison import (
     greater,
     greater_equal,
@@ -50,11 +52,6 @@ from .decimal.comparison import (
     equal,
     not_equal,
 )
-
 from .decimal.exponential import power, root, sqrt, exp, ln, log, log10
-
 from .decimal.rounding import round, quantize
-
-from .decimal.special import (
-    factorial,
-)
+from .decimal.special import factorial
