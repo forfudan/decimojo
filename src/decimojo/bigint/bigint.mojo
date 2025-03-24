@@ -406,6 +406,9 @@ struct BigInt(Absable, IntableRaising, Writable):
         if len(self.words) == 0:
             return String("Unitilialized BigInt")
 
+        if self.is_zero():
+            return String("0")
+
         var result = String("-") if self.sign else String("")
 
         for i in range(len(self.words) - 1, -1, -1):
@@ -495,6 +498,31 @@ struct BigInt(Absable, IntableRaising, Writable):
         self = decimojo.bigint.arithmetics.multiply(self, other)
 
     # ===------------------------------------------------------------------=== #
+    # Mathematical methods that do not implement a trait (not a dunder)
+    # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn compare_absolute(self, other: Self) -> Int8:
+        """Compares the absolute values of two BigInts.
+        See `compare_absolute()` for more information.
+        """
+        return decimojo.bigint.comparison.compare_absolute(self, other)
+
+    @always_inline
+    fn truncate_divide(self, other: Self) raises -> Self:
+        """Performs a truncated division of two BigInts.
+        See `truncate_divide()` for more information.
+        """
+        return decimojo.bigint.arithmetics.truncate_divide(self, other)
+
+    @always_inline
+    fn truncate_modulo(self, other: Self) raises -> Self:
+        """Performs a truncated modulo of two BigInts.
+        See `truncate_modulo()` for more information.
+        """
+        return decimojo.bigint.arithmetics.truncate_modulo(self, other)
+
+    # ===------------------------------------------------------------------=== #
     # Other methods
     # ===------------------------------------------------------------------=== #
 
@@ -512,6 +540,26 @@ struct BigInt(Absable, IntableRaising, Writable):
     fn is_negative(self) -> Bool:
         """Returns True if this BigInt is negative."""
         return self.sign
+
+    fn is_abs_power_of_10(x: BigInt) -> Bool:
+        """Check if abs(x) is a power of 10."""
+        for i in range(len(x.words) - 1):
+            if x.words[i] != 0:
+                return False
+        var word = x.words[len(x.words) - 1]
+        if (
+            (word == 1)
+            or (word == 10)
+            or (word == 100)
+            or (word == 1000)
+            or (word == 10_000)
+            or (word == 100_000)
+            or (word == 1_000_000)
+            or (word == 10_000_000)
+            or (word == 100_000_000)
+        ):
+            return True
+        return False
 
     # ===------------------------------------------------------------------=== #
     # Internal methods

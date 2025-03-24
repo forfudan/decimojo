@@ -121,7 +121,7 @@ fn test_negation() raises:
     # Test case 3: Negate zero
     var a3 = BigInt("0")
     var result3 = -a3
-    testing.assert_equal(String(result3), "-0", "Negating zero (signed zero)")
+    testing.assert_equal(String(result3), "0", "Negating zero (signed zero)")
 
     # Test case 4: Double negation
     var a4 = BigInt("123")
