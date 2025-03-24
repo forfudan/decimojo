@@ -15,26 +15,26 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-Implements basic arithmetic functions for the BigInt type.
+Implements basic arithmetic functions for the BigUInt type.
 """
 
 import time
 import testing
 
-from decimojo.bigint.bigint import BigInt
-import decimojo.bigint.comparison
+from decimojo.biguint.biguint import BigUInt
+import decimojo.biguint.comparison
 from decimojo.rounding_mode import RoundingMode
 
 
-fn add(x1: BigInt, x2: BigInt) raises -> BigInt:
-    """Returns the sum of two BigInts.
+fn add(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Returns the sum of two unsigned integers.
 
     Args:
-        x1: The first BigInt operand.
-        x2: The second BigInt operand.
+        x1: The first unsigned integer operand.
+        x2: The second unsigned integer operand.
 
     Returns:
-        The sum of the two BigInts.
+        The sum of the two unsigned integers.
     """
 
     # If one of the numbers is zero, return the other number
@@ -43,17 +43,10 @@ fn add(x1: BigInt, x2: BigInt) raises -> BigInt:
     if x2.is_zero():
         return x1
 
-    # If signs are different, we use `subtract` instead
-    if x1.sign != x2.sign:
-        return subtract(x1, -x2)
-
-    # At this point, both numbers have the same sign
-    # The result will have the same sign as the operands
     # The result will have at most one more word than the longer operand
-    var result = BigInt(
+    var result = BigUInt(
         empty=True, capacity=max(len(x1.words), len(x2.words)) + 1
     )
-    result.sign = x1.sign  # Result has the same sign as the operands
 
     var carry: UInt32 = 0
     var ith: Int = 0
@@ -84,12 +77,12 @@ fn add(x1: BigInt, x2: BigInt) raises -> BigInt:
     return result^
 
 
-fn subtract(x1: BigInt, x2: BigInt) raises -> BigInt:
-    """Returns the difference of two numbers.
+fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Returns the difference of two unsigned integers.
 
     Args:
-        x1: The first number (minuend).
-        x2: The second number (subtrahend).
+        x1: The first unsigned integer (minuend).
+        x2: The second unsigned integer (subtrahend).
 
     Returns:
         The result of subtracting x2 from x1.
@@ -97,61 +90,41 @@ fn subtract(x1: BigInt, x2: BigInt) raises -> BigInt:
     # If the subtrahend is zero, return the minuend
     if x2.is_zero():
         return x1
-    # If the minuend is zero, return the negated subtrahend
     if x1.is_zero():
-        return -x2
+        # x2 is not zero, so the result is negative, raise an error
+        raise Error("Error in `subtract`: Underflow due to x1 < x2")
 
-    # If signs are different, we use `add` instead
-    if x1.sign != x2.sign:
-        return add(x1, -x2)
-
-    # At this point, both numbers have the same sign
-    # We need to determine which number has the larger absolute value
-    var comparison_result = decimojo.bigint.comparison.compare_absolute(x1, x2)
+    # We need to determine which number has the larger magnitude
+    var comparison_result = x1.compare(x2)
 
     if comparison_result == 0:
         # |x1| = |x2|
-        return BigInt()  # Return zero
+        return BigUInt()  # Return zero
 
+    if comparison_result < 0:
+        raise Error("Error in `subtract`: Underflow due to x1 < x2")
+
+    # Now it is safe to subtract the smaller number from the larger one
     # The result will have no more words than the larger operand
-    var result = BigInt(empty=True, capacity=max(len(x1.words), len(x2.words)))
+    var result = BigUInt(empty=True, capacity=max(len(x1.words), len(x2.words)))
     var borrow: Int32 = 0
     var ith: Int = 0
     var difference: Int32 = 0  # Int32 is sufficient for the difference
 
-    if comparison_result > 0:
-        # |x1| > |x2|
-        result.sign = x1.sign
-        while ith < len(x1.words):
-            # Subtract the borrow
-            difference = Int32(x1.words[ith]) - borrow
-            # Subtract smaller's word if available
-            if ith < len(x2.words):
-                difference -= Int32(x2.words[ith])
-            # Handle borrowing if needed
-            if difference < Int32(0):
-                difference += Int32(1_000_000_000)
-                borrow = Int32(1)
-            else:
-                borrow = Int32(0)
-            result.words.append(UInt32(difference))
-            ith += 1
-
-    else:
-        # |x1| < |x2|
-        # Same as above, but we swap x1 and x2
-        result.sign = not x2.sign
-        while ith < len(x2.words):
-            difference = Int32(x2.words[ith]) - borrow
-            if ith < len(x1.words):
-                difference -= Int32(x1.words[ith])
-            if difference < Int32(0):
-                difference += Int32(1_000_000_000)
-                borrow = Int32(1)
-            else:
-                borrow = Int32(0)
-            result.words.append(UInt32(difference))
-            ith += 1
+    while ith < len(x1.words):
+        # Subtract the borrow
+        difference = Int32(x1.words[ith]) - borrow
+        # Subtract smaller's word if available
+        if ith < len(x2.words):
+            difference -= Int32(x2.words[ith])
+        # Handle borrowing if needed
+        if difference < Int32(0):
+            difference += Int32(1_000_000_000)
+            borrow = Int32(1)
+        else:
+            borrow = Int32(0)
+        result.words.append(UInt32(difference))
+        ith += 1
 
     # Remove trailing zeros
     while len(result.words) > 1 and result.words[len(result.words) - 1] == 0:
@@ -160,64 +133,59 @@ fn subtract(x1: BigInt, x2: BigInt) raises -> BigInt:
     return result^
 
 
-fn negative(x: BigInt) -> BigInt:
-    """Returns the negative of a BigInt number.
+fn negative(x: BigUInt) raises -> BigUInt:
+    """Returns the negative of a BigUInt number if it is zero.
 
     Args:
-        x: The BigInt value to compute the negative of.
+        x: The BigUInt value to compute the negative of.
 
     Returns:
-        A new BigInt containing the negative of x.
+        A new BigUInt containing the negative of x.
     """
-    var result = x
-    result.sign = not result.sign
-    return result^
+    if not x.is_zero():
+        raise Error(
+            "Error in `negative`: Negative of non-zero unsigned integer is"
+            " undefined"
+        )
+    return BigUInt()  # Return zero
 
 
-fn absolute(x: BigInt) -> BigInt:
-    """Returns the absolute value of a BigInt number.
+fn absolute(x: BigUInt) -> BigUInt:
+    """Returns the absolute value of a BigUInt number.
 
     Args:
-        x: The BigInt value to compute the absolute value of.
+        x: The BigUInt value to compute the absolute value of.
 
     Returns:
-        A new BigInt containing the absolute value of x.
+        A new BigUInt containing the absolute value of x.
     """
-    if x.sign:
-        return -x
-    else:
-        return x
+    return x
 
 
-fn multiply(x1: BigInt, x2: BigInt) raises -> BigInt:
-    """Returns the product of two BigInt numbers.
+fn multiply(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Returns the product of two BigUInt numbers.
 
     Args:
-        x1: The first BigInt operand (multiplicand).
-        x2: The second BigInt operand (multiplier).
+        x1: The first BigUInt operand (multiplicand).
+        x2: The second BigUInt operand (multiplier).
 
     Returns:
-        The product of the two BigInt numbers.
+        The product of the two BigUInt numbers.
     """
     # CASE: One of the operands is zero
     if x1.is_zero() or x2.is_zero():
-        return BigInt.from_raw_words(UInt32(0), sign=x1.sign != x2.sign)
+        return BigUInt.from_raw_words(UInt32(0))
 
     # CASE: One of the operands is one or negative one
-    if x1.is_one_or_minus_one():
-        var result = x2
-        result.sign = x1.sign != x2.sign
-        return result^
+    if x1.is_one():
+        return x2
 
-    if x2.is_one_or_minus_one():
-        var result = x1
-        result.sign = x1.sign != x2.sign
-        return result^
+    if x2.is_one():
+        return x1
 
     # The maximum number of words in the result is the sum of the words in the operands
     var max_result_len = len(x1.words) + len(x2.words)
-    var result = BigInt(empty=True, capacity=max_result_len)
-    result.sign = x1.sign != x2.sign
+    var result = BigUInt(empty=True, capacity=max_result_len)
 
     # Initialize result words with zeros
     for _ in range(max_result_len):
@@ -263,8 +231,8 @@ fn multiply(x1: BigInt, x2: BigInt) raises -> BigInt:
     return result^
 
 
-fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
-    """Returns the quotient of two BigInt numbers, truncating toward zero.
+fn truncate_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Returns the quotient of two BigUInt numbers, truncating toward zero.
 
     Args:
         x1: The dividend.
@@ -275,6 +243,9 @@ fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
 
     Raises:
         ValueError: If the divisor is zero.
+
+    Notes:
+        It is equal to floored division for positive numbers.
     """
     # CASE: Division by zero
     if x2.is_zero():
@@ -282,37 +253,42 @@ fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
 
     # CASE: Dividend is zero
     if x1.is_zero():
-        return BigInt()  # Return zero
+        return BigUInt()  # Return zero
 
-    # CASE: Division by one or negative one
-    if x2.is_one_or_minus_one():
-        var result = x1  # Copy dividend
-        # If divisor is -1, negate the result
-        if x2.sign:
-            result.sign = not result.sign
-        return result
+    # CASE: Division by one
+    if x2.is_one():
+        return x1
+
+    # CASE: dividend < divisor
+    if x1.compare(x2) < 0:
+        return BigUInt()  # Return zero
+
+    # CASE: dividend == divisor
+    if x1.compare(x2) == 0:
+        return BigUInt.from_raw_words(UInt32(1))
 
     # CASE: Single words division
     if len(x1.words) == 1 and len(x2.words) == 1:
-        var result = BigInt.from_raw_words(
-            UInt32(x1.words[0] // x2.words[0]), sign=x1.sign != x2.sign
-        )
+        var result = BigUInt.from_raw_words(UInt32(x1.words[0] // x2.words[0]))
         return result
 
+    # TODO
+    # CASE: Duo, quad, or octa words division by means of UInt64, UInt128, or UInt256
+
     # CASE: Powers of 10
-    if BigInt.is_abs_power_of_10(x2):
+    if BigUInt.is_abs_power_of_10(x2):
         # Divisor is 10^n
         # Remove the last words (10^9) and shift the rest
-        var result: BigInt
+        var result: BigUInt
         if len(x2.words) == 1:
             result = x1
         else:
             var word_shift = len(x2.words) - 1
             # If we need to drop more words than exists, result is zero
             if word_shift >= len(x1.words):
-                return BigInt()
+                return BigUInt()
             # Create result with the remaining words
-            result = BigInt(empty=True)
+            result = BigUInt(empty=True)
             for i in range(word_shift, len(x1.words)):
                 result.words.append(x1.words[i])
 
@@ -332,21 +308,12 @@ fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
         ):
             result.words.resize(len(result.words) - 1)
 
-        result.sign = x1.sign != x2.sign
         return result
-
-    # CASE: |dividend| < |divisor|
-    if x1.compare_absolute(x2) < 0:
-        return BigInt()  # Return zero
-
-    # CASE: |dividend| == |divisor|
-    if x1.compare_absolute(x2) == 0:
-        return BigInt.from_raw_words(UInt32(1), sign=x1.sign != x2.sign)
 
     # CASE: division by a single-word number
     if len(x2.words) == 1:
         var divisor_value = x2.words[0]
-        var result = BigInt(empty=True)
+        var result = BigUInt(empty=True)
         var temp_remainder: UInt64 = 0
 
         # Process from most significant word to least significant
@@ -369,19 +336,17 @@ fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
 
         # To match the expected base-10^9 representation,
         # we need to reverse the order of the words in the result
-        var reversed_result = BigInt(empty=True, capacity=len(result.words))
+        var reversed_result = BigUInt(empty=True, capacity=len(result.words))
         for i in range(len(result.words) - 1, -1, -1):
             reversed_result.words.append(result.words[i])
 
-        # Set the sign
-        reversed_result.sign = x1.sign != x2.sign
         return reversed_result
 
     # CASE: multi-word divisors
     # Initialize result and working copy of dividend
-    var result = BigInt(empty=True, capacity=len(x1.words))
-    var remainder = absolute(x1)
-    var normalized_divisor = absolute(x2)
+    var result = BigUInt(empty=True, capacity=len(x1.words))
+    var remainder = x1
+    var normalized_divisor = x2
 
     # Calculate the number of significant words in each operand
     var n = len(remainder.words)
@@ -394,7 +359,7 @@ fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
 
     # If divisor has more significant digits than dividend, result is zero
     if m > n:
-        return BigInt()
+        return BigUInt()
 
     # Shift divisor left to align with dividend
     var d = n - m
@@ -428,19 +393,19 @@ fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
         var q = min(dividend_part // divisor_high, UInt64(999_999_999))
 
         # Create trial product: q * divisor
-        var trial_product = normalized_divisor * BigInt.from_raw_words(
-            UInt32(q), sign=False
+        var trial_product = normalized_divisor * BigUInt.from_raw_words(
+            UInt32(q)
         )
 
         # Shift trial product left j positions
-        var shifted_product = BigInt(empty=True)
+        var shifted_product = BigUInt(empty=True)
         for _ in range(j):
             shifted_product.words.append(0)
         for word in trial_product.words:
             shifted_product.words.append(word[])
 
         # Use binary search for quotient adjustment
-        if shifted_product.compare_absolute(remainder) > 0:
+        if shifted_product.compare(remainder) > 0:
             # Initial estimate was too high, use binary search to find correct q
             var low: UInt64 = 0
             var high: UInt64 = q - 1
@@ -449,18 +414,18 @@ fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
                 var mid: UInt64 = (low + high) / 2
 
                 # Recalculate trial product with new q
-                trial_product = normalized_divisor * BigInt.from_raw_words(
-                    UInt32(mid), sign=False
+                trial_product = normalized_divisor * BigUInt.from_raw_words(
+                    UInt32(mid)
                 )
 
                 # Recalculate shifted product
-                shifted_product = BigInt(empty=True)
+                shifted_product = BigUInt(empty=True)
                 for _ in range(j):
                     shifted_product.words.append(0)
                 for word in trial_product.words:
                     shifted_product.words.append(word[])
 
-                if shifted_product.compare_absolute(remainder) <= 0:
+                if shifted_product.compare(remainder) <= 0:
                     # This quotient works, try a larger one
                     q = mid  # Keep track of best quotient found so far
                     low = mid + 1
@@ -469,12 +434,12 @@ fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
                     high = mid - 1
 
             # Recalculate final product with best q found
-            trial_product = normalized_divisor * BigInt.from_raw_words(
-                UInt32(q), sign=False
+            trial_product = normalized_divisor * BigUInt.from_raw_words(
+                UInt32(q)
             )
 
             # Recalculate final shifted product
-            shifted_product = BigInt(empty=True)
+            shifted_product = BigUInt(empty=True)
             for _ in range(j):
                 shifted_product.words.append(0)
             for word in trial_product.words:
@@ -493,13 +458,11 @@ fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
     while len(result.words) > 1 and result.words[len(result.words) - 1] == 0:
         result.words.resize(len(result.words) - 1)
 
-    # Set the sign
-    result.sign = x1.sign != x2.sign
     return result
 
 
-fn truncate_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
-    """Returns the remainder of two BigInt numbers, truncating toward zero.
+fn truncate_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Returns the remainder of two BigUInt numbers, truncating toward zero.
     The remainder has the same sign as the dividend and satisfies:
     x1 = truncate_divide(x1, x2) * x2 + truncate_modulo(x1, x2).
 
@@ -512,6 +475,9 @@ fn truncate_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
 
     Raises:
         ValueError: If the divisor is zero.
+
+    Notes:
+        It is equal to floored modulo for positive numbers.
     """
     # CASE: Division by zero
     if x2.is_zero():
@@ -519,14 +485,14 @@ fn truncate_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
 
     # CASE: Dividend is zero
     if x1.is_zero():
-        return BigInt()  # Return zero
+        return BigUInt()  # Return zero
 
-    # CASE: Divisor is one or negative one - no remainder
-    if x2.is_one_or_minus_one():
-        return BigInt()  # Always divisible with no remainder
+    # CASE: Divisor is one - no remainder
+    if x2.is_one():
+        return BigUInt()  # Always divisible with no remainder
 
     # CASE: |dividend| < |divisor| - the remainder is the dividend itself
-    if decimojo.bigint.comparison.compare_absolute(x1, x2) < 0:
+    if x1.compare(x2) < 0:
         return x1
 
     # Calculate quotient with truncation
