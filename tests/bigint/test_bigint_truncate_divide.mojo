@@ -155,6 +155,7 @@ fn test_large_number_division() raises:
         String(expected1),
         "Large number division gave incorrect result",
     )
+    print("passed: {} / {} = {}".format(a1, b1, result1))
 
     # Test case 2: Large number divided by large number
     var a2 = BigInt("9" * 30)  # 30 nines
@@ -166,6 +167,7 @@ fn test_large_number_division() raises:
         String(expected2),
         "Large / large division gave incorrect result",
     )
+    print("passed: {} / {} = {}".format(a2, b2, result2))
 
     # Test case 3: Very large number divisible by power of 10
     var a3 = BigInt("1" + "0" * 100)  # 10^100
@@ -177,6 +179,7 @@ fn test_large_number_division() raises:
         String(expected3),
         "Power of 10 division gave incorrect result",
     )
+    print("passed: {} / {} = {}".format(a3, b3, result3))
 
     # Test case 4: Large number with large divisor resulting in small quotient
     var a4 = BigInt("9" * 50)  # 50 nines
@@ -190,6 +193,7 @@ fn test_large_number_division() raises:
             " result"
         ),
     )
+    print("passed: {} / {} = {}".format(a4, b4, result4))
 
     print("✓ Large number division tests passed!")
 
@@ -260,7 +264,7 @@ fn test_division_rounding() raises:
     # Test case 6: -1/3 = -0.333... -> 0
     var a6 = BigInt(-1)
     var b6 = BigInt(3)
-    var expected6 = BigInt(0)
+    var expected6 = BigInt("0")
     var result6 = a6.truncate_divide(b6)
     testing.assert_equal(
         String(result6),
