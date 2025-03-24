@@ -15,7 +15,7 @@ fn test_basic_truncate_division() raises:
     # Test case 1: Division with no remainder
     var a1 = BigUInt("10")
     var b1 = BigUInt("2")
-    var result1 = a1.truncate_divide(b1)
+    var result1 = a1 // b1
     testing.assert_equal(
         String(result1), "5", "10 / 2 should equal 5, got " + String(result1)
     )
@@ -23,7 +23,7 @@ fn test_basic_truncate_division() raises:
     # Test case 2: Division with remainder (truncate toward zero)
     var a2 = BigUInt("10")
     var b2 = BigUInt("3")
-    var result2 = a2.truncate_divide(b2)
+    var result2 = a2 // b2
     testing.assert_equal(
         String(result2), "3", "10 / 3 should equal 3, got " + String(result2)
     )
@@ -31,7 +31,7 @@ fn test_basic_truncate_division() raises:
     # Test case 3: Division results in zero (smaller / larger)
     var a3 = BigUInt("3")
     var b3 = BigUInt("10")
-    var result3 = a3.truncate_divide(b3)
+    var result3 = a3 // b3
     testing.assert_equal(
         String(result3), "0", "3 / 10 should equal 0, got " + String(result3)
     )
@@ -39,7 +39,7 @@ fn test_basic_truncate_division() raises:
     # Test case 4: Division by 1
     var a4 = BigUInt("42")
     var b4 = BigUInt("1")
-    var result4 = a4.truncate_divide(b4)
+    var result4 = a4 // b4
     testing.assert_equal(
         String(result4), "42", "42 / 1 should equal 42, got " + String(result4)
     )
@@ -47,7 +47,7 @@ fn test_basic_truncate_division() raises:
     # Test case 5: Large number division
     var a5 = BigUInt("1000000000000")
     var b5 = BigUInt("1000000")
-    var result5 = a5.truncate_divide(b5)
+    var result5 = a5 // b5
     testing.assert_equal(
         String(result5),
         "1000000",
@@ -64,7 +64,7 @@ fn test_zero_handling() raises:
     # Test case 1: Zero dividend
     var a1 = BigUInt("0")
     var b1 = BigUInt("5")
-    var result1 = a1.truncate_divide(b1)
+    var result1 = a1 // b1
     testing.assert_equal(
         String(result1), "0", "0 / 5 should equal 0, got " + String(result1)
     )
@@ -74,7 +74,7 @@ fn test_zero_handling() raises:
     var b2 = BigUInt("0")
     var exception_caught = False
     try:
-        var _result2 = a2.truncate_divide(b2)
+        var _result2 = a2 // b2
     except:
         exception_caught = True
     testing.assert_true(
@@ -94,7 +94,7 @@ fn test_large_number_division() raises:
     var expected1 = BigUInt(
         "14285714285714285714285714285714285714285714285714"
     )  # 10^50 / 7 = 14285714285714285714285714...
-    var result1 = a1.truncate_divide(b1)
+    var result1 = a1 // b1
     testing.assert_equal(
         String(result1),
         String(expected1),
@@ -106,7 +106,7 @@ fn test_large_number_division() raises:
     var a2 = BigUInt("9" * 30)  # 30 nines
     var b2 = BigUInt("9" * 15)  # 15 nines
     var expected2 = BigUInt("1" + "0" * 14 + "1")  # 10^15 + 1
-    var result2 = a2.truncate_divide(b2)
+    var result2 = a2 // b2
     testing.assert_equal(
         String(result2),
         String(expected2),
@@ -118,7 +118,7 @@ fn test_large_number_division() raises:
     var a3 = BigUInt("1" + "0" * 100)  # 10^100
     var b3 = BigUInt("1" + "0" * 40)  # 10^40
     var expected3 = BigUInt("1" + "0" * 60)  # 10^60
-    var result3 = a3.truncate_divide(b3)
+    var result3 = a3 // b3
     testing.assert_equal(
         String(result3),
         String(expected3),
@@ -129,7 +129,7 @@ fn test_large_number_division() raises:
     # Test case 4: Large number with large divisor resulting in small quotient
     var a4 = BigUInt("9" * 50)  # 50 nines
     var b4 = BigUInt("3" * 49 + "4")  # slightly less than a third of a4
-    var result4 = a4.truncate_divide(b4)
+    var result4 = a4 // b4
     testing.assert_equal(
         String(result4),
         "2",
@@ -151,7 +151,7 @@ fn test_division_rounding() raises:
     var a1 = BigUInt("7")
     var b1 = BigUInt("2")
     var expected1 = BigUInt("3")
-    var result1 = a1.truncate_divide(b1)
+    var result1 = a1 // b1
     testing.assert_equal(
         String(result1),
         String(expected1),
@@ -162,7 +162,7 @@ fn test_division_rounding() raises:
     var a2 = BigUInt("1")
     var b2 = BigUInt("3")
     var expected2 = BigUInt("0")
-    var result2 = a2.truncate_divide(b2)
+    var result2 = a2 // b2
     testing.assert_equal(
         String(result2),
         String(expected2),
@@ -173,7 +173,7 @@ fn test_division_rounding() raises:
     var a3 = BigUInt("5")
     var b3 = BigUInt("4")
     var expected3 = BigUInt("1")
-    var result3 = a3.truncate_divide(b3)
+    var result3 = a3 // b3
     testing.assert_equal(
         String(result3),
         String(expected3),
@@ -184,7 +184,7 @@ fn test_division_rounding() raises:
     var a4 = BigUInt("99")
     var b4 = BigUInt("100")
     var expected4 = BigUInt("0")
-    var result4 = a4.truncate_divide(b4)
+    var result4 = a4 // b4
     testing.assert_equal(
         String(result4),
         String(expected4),
@@ -201,8 +201,8 @@ fn test_division_identity() raises:
     # Test property: (a / b) * b + (a % b) = a
     var a1 = BigUInt("17")
     var b1 = BigUInt("5")
-    var quotient1 = a1.truncate_divide(b1)  # 3
-    var remainder1 = a1.truncate_modulo(b1)  # 2
+    var quotient1 = a1 // b1  # 3
+    var remainder1 = a1 % b1  # 2
     var reconstructed1 = quotient1 * b1 + remainder1  # 3*5 + 2 = 17
     testing.assert_equal(
         String(reconstructed1),
@@ -213,8 +213,8 @@ fn test_division_identity() raises:
     # Test case with larger numbers
     var a2 = BigUInt("12345678901234567890")
     var b2 = BigUInt("987654321")
-    var quotient2 = a2.truncate_divide(b2)
-    var remainder2 = a2.truncate_modulo(b2)
+    var quotient2 = a2 // b2
+    var remainder2 = a2 % b2
     var reconstructed2 = quotient2 * b2 + remainder2
     testing.assert_equal(
         String(reconstructed2),
@@ -233,7 +233,7 @@ fn test_edge_cases() raises:
     # Dividing by a number almost as large as the dividend
     var a1 = BigUInt("1000")
     var b1 = BigUInt("999")
-    var result1 = a1.truncate_divide(b1)
+    var result1 = a1 // b1
     testing.assert_equal(
         String(result1),
         "1",
@@ -243,7 +243,7 @@ fn test_edge_cases() raises:
     # Test case 2: Consecutive numbers
     var a2 = BigUInt("101")
     var b2 = BigUInt("100")
-    var result2 = a2.truncate_divide(b2)
+    var result2 = a2 // b2
     testing.assert_equal(
         String(result2),
         "1",
@@ -253,7 +253,7 @@ fn test_edge_cases() raises:
     # Test case 3: Equal large numbers
     var a3 = BigUInt("9" * 100)
     var b3 = BigUInt("9" * 100)
-    var result3 = a3.truncate_divide(b3)
+    var result3 = a3 // b3
     testing.assert_equal(
         String(result3),
         "1",
@@ -263,7 +263,7 @@ fn test_edge_cases() raises:
     # Test case 4: Powers of 10
     var a4 = BigUInt("1" + "0" * 20)  # 10^20
     var b4 = BigUInt("1" + "0" * 10)  # 10^10
-    var result4 = a4.truncate_divide(b4)
+    var result4 = a4 // b4
     testing.assert_equal(
         String(result4),
         "1" + "0" * 10,  # 10^10
@@ -273,7 +273,7 @@ fn test_edge_cases() raises:
     # Test case 5: Division resulting in large quotient
     var a5 = BigUInt("2" + "0" * 200)  # 2 × 10^200
     var b5 = BigUInt("2")
-    var result5 = a5.truncate_divide(b5)
+    var result5 = a5 // b5
     testing.assert_equal(
         String(result5),
         "1" + "0" * 200,  # 10^200

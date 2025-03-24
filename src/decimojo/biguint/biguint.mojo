@@ -219,6 +219,30 @@ struct BigUInt(Absable, IntableRaising, Writable):
         return result^
 
     @staticmethod
+    fn from_uint256(value: UInt256) -> Self:
+        """Initializes a BigUInt from a UInt256 value.
+
+        Args:
+            value: The UInt256 value to be converted to BigUInt.
+
+        Returns:
+            The BigUInt representation of the UInt256 value.
+        """
+        if value == 0:
+            return Self()
+
+        var result = Self(empty=True)
+        var remainder: UInt256 = value
+        var quotient: UInt256
+        while remainder != 0:
+            quotient = remainder // 1_000_000_000
+            remainder = remainder % 1_000_000_000
+            result.words.append(UInt32(remainder))
+            remainder = quotient
+
+        return result^
+
+    @staticmethod
     fn from_string(value: String) raises -> BigUInt:
         """Initializes a BigUInt from a string representation.
         The string is normalized with `deciomojo.str.parse_numeric_string()`.
