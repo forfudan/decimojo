@@ -81,7 +81,7 @@ fn run_benchmark_truncate_divide(
 
     # Execute the operations once to verify correctness
     try:
-        var mojo_result = mojo_dividend.truncate_divide(mojo_divisor)
+        var mojo_result = mojo_dividend // mojo_divisor
         var py_result = py_dividend // py_divisor
 
         # Display results for verification
@@ -91,7 +91,7 @@ fn run_benchmark_truncate_divide(
         # Benchmark Mojo implementation
         var t0 = perf_counter_ns()
         for _ in range(iterations):
-            _ = mojo_dividend.truncate_divide(mojo_divisor)
+            _ = mojo_dividend // mojo_divisor
         var mojo_time = (perf_counter_ns() - t0) / iterations
         if mojo_time == 0:
             mojo_time = 1  # Prevent division by zero
@@ -375,6 +375,112 @@ fn main() raises:
         "Division of repeated digits",
         "990132857498314692374162398217" * 10,  # 30 * 10 = 300 digits
         "85172390413429847239" * 10,  # 20 * 10 = 200 digits
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 23: Division of large numbers
+    run_benchmark_truncate_divide(
+        "Division of large numbers (270 digits vs 135 digits)",
+        "123456789" * 30,
+        "987654321" * 15,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 24: Division of very large numbers
+    run_benchmark_truncate_divide(
+        "Division of very large numbers (2250 digits vs 900 digits)",
+        "123456789" * 250,
+        "987654321" * 100,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 25: Division of very, very large numbers
+    # x1 is more than 400 words long (>= 10^3600)
+    # x2 is more than 200 words long (>= 10^1800)
+    run_benchmark_truncate_divide(
+        "Division of very, very large numbers (3600 digits vs 1800 digits)",
+        "123456789" * 400,
+        "987654321" * 200,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 26: Division of large numbers
+    run_benchmark_truncate_divide(
+        "Division of very large numbers (256 digits vs 128 digits)",
+        "1234567890193287491287508917213097405916874098123705160923812345678901932874912875089172130974059168740981237051609238749875089170984701759832708497029875019837409871085709813749870897510749875089170984701759832708497029875019837409871085709813749870897510",
+        "68740981237051609238123456789019328749128750891721309740591687409812370516092387498750879548759387959978279541709847017598327084",
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 27: Division of numbers with around 200 and 100 digits
+    run_benchmark_truncate_divide(
+        "Division of large numbers (200 digits vs 100 digits)",
+        (
+            "314159265358979323846264338327950288419716939937510"
+            "582097494459230781640628620899862803482534211706798214808651"
+            "328230664709384460955058223172535940812848111745028410270193"
+            "852110555964462294895493038196"
+        ),
+        (
+            "271828182845904523536028747135266249775724709369995"
+            "95749669676277240766303535475945713821785251664274"
+        ),
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 28: Division of numbers with around 200 and 100 digits
+    run_benchmark_truncate_divide(
+        "Division of large numbers (200 digits vs 100 digits)",
+        (
+            "314159265358979323846264338327950288419716939937510"
+            "582097494459230781640628620899862803482534211706798214808651"
+            "328230664709384460955058223172535940812848111745028410270193"
+            "852110555964462294895493038196"
+        ),
+        (
+            "141421356237309504880168872420969807856967187537694"
+            "80731766797379907324784621070388503875343276400719"
+        ),
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 29: Division of numbers with around 150 and 50 digits
+    run_benchmark_truncate_divide(
+        "Division of large numbers (150 digits vs 50 digits)",
+        (
+            "314159265358979323846264338327950288419716939937510"
+            "582097494459230781640628620899862803482534211706798214808651"
+            "3282306647093844609550582231725359408128"
+        ),
+        "141421356237309504880168872420969807856967187537694",
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 30: Division of numbers with around 150 and 50 digits
+    run_benchmark_truncate_divide(
+        "Division of large numbers (150 digits vs 50 digits)",
+        (
+            "316227766016824890583648059893174009579947593530458"
+            "382628078540989121552735792899961040720792717368862335475063"
+            "5167610057579407944886251958020310186466"
+        ),
+        "141421356237309504880168872420969807856967187537694",
         iterations,
         log_file,
         speedup_factors,

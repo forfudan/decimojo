@@ -1,19 +1,19 @@
 # DeciMojo
 
-A comprehensive decimal mathematics library for [Mojo](https://www.modular.com/mojo).
+A comprehensive decimal and integer mathematics library for [Mojo](https://www.modular.com/mojo).
 
 **[中文·漢字»](./docs/readme_zht.md)**　|　**[Repository on GitHub»](https://github.com/forfudan/decimojo)**
 
 ## Overview
 
-DeciMojo provides a comprehensive decimal mathematics library for Mojo, delivering exact calculations for financial modeling, scientific computing, and applications where floating-point approximation errors are unacceptable. Beyond basic arithmetic, the library includes advanced mathematical functions with guaranteed precision.
+DeciMojo provides a comprehensive decimal and integer mathematics library for Mojo, delivering exact calculations for financial modeling, scientific computing, and applications where floating-point approximation errors are unacceptable. Beyond basic arithmetic, the library includes advanced mathematical functions with guaranteed precision.
 
 The core types are:
 
-- A 128-bit fixed-point decimal implementation (`Decimal`) supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed_precision]. It features a complete set of mathematical functions including logarithms, exponentiation, roots, and trigonometric operations.
-- A fully implemented arbitrary-precision integer type (`BigInt`) supporting unlimited digits. It features base-10^9 internal representation and basic arithmetic operations.
+- A 128-bit fixed-point decimal implementation (`Decimal`) supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed]. It features a complete set of mathematical functions including logarithms, exponentiation, roots, and trigonometric operations.
+- An arbitrary-precision integer type (`BigInt`)[^integer] supporting unlimited digits. It features base-10^9 internal representation and basic arithmetic operations.
 
-The library is expanding to include `BigDecimal` types that support arbitrary precision, allowing for calculations with unlimited digits and decimal places. These extensions are currently under active development.
+The library is expanding to include `BigDecimal` types that support arbitrary precision[^arbitrary], allowing for calculations with unlimited digits and decimal places. These extensions are currently under active development.
 
 ## Installation
 
@@ -125,6 +125,7 @@ fn main() raises:
     print(-a)                                      # Negation: -12345678901234567890
     print(abs(BigInt("-12345678901234567890")))    # Absolute value: 12345678901234567890
     print(a.is_negative())                         # Check if negative: False
+```
 
 ## Objective
 
@@ -179,7 +180,7 @@ Regular benchmarks against Python's `decimal` module are available in the `bench
 
 ### Future Extensions 🚀 (PLANNED)
 
-- **BigDecimal**: 🔄 **IN PROGRESS** - Arbitrary-precision decimal type with configurable precision[^arbitrary_precision].
+- **BigDecimal**: 🔄 **IN PROGRESS** - Arbitrary-precision decimal type with configurable precision[^arbitrary].
 - **BigComplex**: 📝 **PLANNED** - Arbitrary-precision complex number type built on BigDecimal.
 
 ## Tests and benches
@@ -208,6 +209,6 @@ If you find DeciMojo useful for your research, consider listing it in your citat
 
 This repository and its contributions are licensed under the Apache License v2.0.
 
-[^fixed_precision]: The `Decimal` type can represent values with up to 29 significant digits and a maximum of 28 digits after the decimal point. When a value exceeds the maximum representable value (`2^96 - 1`), DeciMojo either raises an error or rounds the value to fit within these constraints. For example, the significant digits of `8.8888888888888888888888888888` (29 eights total with 28 after the decimal point) exceeds the maximum representable value (`2^96 - 1`) and is automatically rounded to `8.888888888888888888888888889` (28 eights total with 27 after the decimal point). DeciMojo's `Decimal` type is similar to `System.Decimal` (C#/.NET), `rust_decimal` in Rust, `DECIMAL/NUMERIC` in SQL Server, etc.
-[^integer]: Integers are a special case of decimal numbers (with zero fractional part). Our BigInt implementation serves both as a standalone arbitrary-precision integer type and as the foundation for our upcoming BigDecimal implementation.
-[^arbitrary_precision]: Similar to `decimal` and `mpmath` in Python, `java.math.BigDecimal` in Java, etc.
+[^fixed]: The `Decimal` type can represent values with up to 29 significant digits and a maximum of 28 digits after the decimal point. When a value exceeds the maximum representable value (`2^96 - 1`), DeciMojo either raises an error or rounds the value to fit within these constraints. For example, the significant digits of `8.8888888888888888888888888888` (29 eights total with 28 after the decimal point) exceeds the maximum representable value (`2^96 - 1`) and is automatically rounded to `8.888888888888888888888888889` (28 eights total with 27 after the decimal point). DeciMojo's `Decimal` type is similar to `System.Decimal` (C#/.NET), `rust_decimal` in Rust, `DECIMAL/NUMERIC` in SQL Server, etc.
+[^integer]: The BigInt implementation uses a base-10^9 representation for efficient storage and calculations, supporting operations on integers with unlimited precision. It serves both as a standalone arbitrary-precision integer type and as the foundation for our upcoming BigDecimal implementation.
+[^arbitrary]: Built on top of our completed BigInt implementation, BigDecimal will support arbitrary precision for both the integer and fractional parts, similar to `decimal` and `mpmath` in Python, `java.math.BigDecimal` in Java, etc.

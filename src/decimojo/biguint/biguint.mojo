@@ -195,6 +195,30 @@ struct BigUInt(Absable, IntableRaising, Writable):
         return result^
 
     @staticmethod
+    fn from_uint64(value: UInt64) raises -> Self:
+        """Initializes a BigUInt from an UInt64.
+
+        Args:
+            value: The UInt64 value to be converted to BigUInt.
+
+        Returns:
+            The BigUInt representation of the UInt64 value.
+        """
+        if value == 0:
+            return Self()
+
+        var result = Self(empty=True)
+        var remainder: UInt64 = value
+        var quotient: UInt64
+        while remainder != 0:
+            quotient = remainder // 1_000_000_000
+            remainder = remainder % 1_000_000_000
+            result.words.append(UInt32(remainder))
+            remainder = quotient
+
+        return result^
+
+    @staticmethod
     fn from_uint128(value: UInt128) -> Self:
         """Initializes a BigUInt from a UInt128 value.
 
@@ -401,6 +425,34 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
         return Int(value)
 
+    fn to_uint64(self) raises -> UInt64:
+        """Returns the number as UInt64.
+
+        Returns:
+            The number as UInt64.
+
+        Raises:
+            Error: If the number is too large or too small to fit in Int.
+        """
+
+        if len(self.words) > 3:
+            raise Error(
+                "Error in `BigUInt.to_int()`: The number exceeds the size"
+                " of UInt64"
+            )
+
+        var value: UInt128 = 0
+        for i in range(len(self.words)):
+            value += UInt128(self.words[i]) * UInt128(Self.BASE_OF_WORD) ** i
+
+        if value > UInt128(UInt64.MAX):
+            raise Error(
+                "Error in `BigUInt.to_uint64()`: The number exceeds the size"
+                " of UInt64"
+            )
+
+        return UInt64(value)
+
     fn to_str(self) -> String:
         """Returns string representation of the BigUInt."""
 
@@ -479,11 +531,11 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
     @always_inline
     fn __floordiv__(self, other: Self) raises -> Self:
-        return decimojo.biguint.arithmetics.truncate_divide(self, other)
+        return decimojo.biguint.arithmetics.floor_divide(self, other)
 
     @always_inline
     fn __mod__(self, other: Self) raises -> Self:
-        return decimojo.biguint.arithmetics.truncate_modulo(self, other)
+        return decimojo.biguint.arithmetics.modulo(self, other)
 
     # ===------------------------------------------------------------------=== #
     # Basic binary augmented arithmetic assignments dunders
@@ -506,11 +558,11 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
     @always_inline
     fn __ifloordiv__(mut self, other: Self) raises:
-        self = decimojo.biguint.arithmetics.truncate_divide(self, other)
+        self = decimojo.biguint.arithmetics.floor_divide(self, other)
 
     @always_inline
     fn __imod__(mut self, other: Self) raises:
-        self = decimojo.biguint.arithmetics.truncate_modulo(self, other)
+        self = decimojo.biguint.arithmetics.modulo(self, other)
 
     # ===------------------------------------------------------------------=== #
     # Mathematical methods that do not implement a trait (not a dunder)
