@@ -81,7 +81,7 @@ fn run_benchmark_truncate_divide(
 
     # Execute the operations once to verify correctness
     try:
-        var mojo_result = mojo_dividend.truncate_divide(mojo_divisor)
+        var mojo_result = mojo_dividend // mojo_divisor
         var py_result = py_dividend // py_divisor
 
         # Display results for verification
@@ -91,7 +91,7 @@ fn run_benchmark_truncate_divide(
         # Benchmark Mojo implementation
         var t0 = perf_counter_ns()
         for _ in range(iterations):
-            _ = mojo_dividend.truncate_divide(mojo_divisor)
+            _ = mojo_dividend // mojo_divisor
         var mojo_time = (perf_counter_ns() - t0) / iterations
         if mojo_time == 0:
             mojo_time = 1  # Prevent division by zero
