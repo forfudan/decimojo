@@ -101,8 +101,9 @@ struct BigUInt(Absable, IntableRaising, Writable):
         if not empty:
             self.words.append(UInt32(0))
 
-    fn __init__(out self, *words: UInt32) raises:
-        """Initializes a BigUInt from raw words.
+    fn __init__(out self, owned *words: UInt32):
+        """Initializes a BigUInt from raw words without validating the words.
+        See `from_words()` for safer initialization.
 
         Args:
             words: The UInt32 words representing the coefficient.
@@ -111,26 +112,16 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
         Notes:
 
-        This method checks whether the words are smaller than `999_999_999`.
+        This method does not check whether the words are smaller than
+        `999_999_999`.
 
         Example:
         ```console
         BigUInt(123456789, 987654321) # 987654321_123456789
         ```
-
         End of examples.
         """
-        self.words = List[UInt32](capacity=len(words))
-
-        # Check if the words are valid
-        for word in words:
-            if word > Self.MAX_OF_WORD:
-                raise Error(
-                    "Error in `BigUInt.__init__()`: Word value exceeds maximum"
-                    " value of 999_999_999"
-                )
-            else:
-                self.words.append(word)
+        self.words = List[UInt32](elements=words^)
 
     fn __init__(out self, value: Int) raises:
         """Initializes a BigUInt from an Int.
@@ -147,15 +138,15 @@ struct BigUInt(Absable, IntableRaising, Writable):
     # ===------------------------------------------------------------------=== #
     # Constructing methods that are not dunders
     #
-    # from_raw_words(*words: UInt32) -> Self
+    # from_words(*words: UInt32) -> Self
     # from_int(value: Int) -> Self
     # from_uint128(value: UInt128) -> Self
     # from_string(value: String) -> Self
     # ===------------------------------------------------------------------=== #
 
     @staticmethod
-    fn from_raw_words(*words: UInt32) -> Self:
-        """Initializes a BigUInt from raw words without validating the words.
+    fn from_words(*words: UInt32) raises -> Self:
+        """Initializes a BigUInt from raw words.
 
         Args:
             words: The UInt32 words representing the coefficient.
@@ -164,13 +155,27 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
         Notes:
 
-        This method does not validate whether the words are smaller than
-        `999_999_999`.
+        This method validates whether the words are smaller than `999_999_999`.
+
+        Example:
+        ```console
+        BigUInt.from_words(123456789, 987654321) # 987654321_123456789
+        ```
+        End of examples.
         """
 
         result = Self(empty=True, capacity=len(words))
+
+        # Check if the words are valid
         for word in words:
-            result.words.append(word)
+            if word > Self.MAX_OF_WORD:
+                raise Error(
+                    "Error in `BigUInt.__init__()`: Word value exceeds maximum"
+                    " value of 999_999_999"
+                )
+            else:
+                result.words.append(word)
+
         return result^
 
     @staticmethod
@@ -287,7 +292,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
         # Check if the number is zero
         if len(coef) == 1 and coef[0] == UInt8(0):
-            return Self.from_raw_words(UInt32(0))
+            return Self()
 
         # Check whether the number is an integer
         # If the fractional part is not zero, raise an error
@@ -511,6 +516,15 @@ struct BigUInt(Absable, IntableRaising, Writable):
         """
         return decimojo.biguint.arithmetics.negative(self)
 
+    @always_inline
+    fn __rshift__(self, shift_amount: Int) raises -> Self:
+        """Returns the result of floored divison by 2 to the power of `shift_amount`.
+        """
+        var result = self
+        for _ in range(shift_amount):
+            decimojo.biguint.arithmetics.floor_divide_inplace_by_2(result)
+        return result^
+
     # ===------------------------------------------------------------------=== #
     # Basic binary arithmetic operation dunders
     # These methods are called to implement the binary arithmetic operations
@@ -589,6 +603,11 @@ struct BigUInt(Absable, IntableRaising, Writable):
         """Returns True if this BigUInt represents one."""
         return len(self.words) == 1 and self.words[0] == 1
 
+    @always_inline
+    fn is_two(self) -> Bool:
+        """Returns True if this BigUInt represents two."""
+        return len(self.words) == 1 and self.words[0] == 2
+
     fn is_abs_power_of_10(x: BigUInt) -> Bool:
         """Check if abs(x) is a power of 10."""
         for i in range(len(x.words) - 1):
@@ -627,3 +646,8 @@ struct BigUInt(Absable, IntableRaising, Writable):
                 String(value.words[i]).rjust(width=9, fillchar="0"),
             )
         print("--------------------------------")
+
+    fn remove_trailing_zeros(mut number: BigUInt):
+        """Removes trailing zeros from the BigUInt."""
+        while len(number.words) > 1 and number.words[-1] == 0:
+            number.words.resize(len(number.words) - 1)

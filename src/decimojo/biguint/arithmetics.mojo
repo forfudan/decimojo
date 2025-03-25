@@ -131,10 +131,7 @@ fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         result.words.append(UInt32(difference))
         ith += 1
 
-    # Remove trailing zeros
-    while len(result.words) > 1 and result.words[len(result.words) - 1] == 0:
-        result.words.resize(len(result.words) - 1)
-
+    result.remove_trailing_zeros()
     return result^
 
 
@@ -179,7 +176,7 @@ fn multiply(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """
     # CASE: One of the operands is zero
     if x1.is_zero() or x2.is_zero():
-        return BigUInt.from_raw_words(UInt32(0))
+        return BigUInt(UInt32(0))
 
     # CASE: One of the operands is one or negative one
     if x1.is_one():
@@ -229,10 +226,7 @@ fn multiply(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         if carry > 0:
             result.words[i + len(x2.words)] += UInt32(carry)
 
-    # Remove trailing zeros
-    while len(result.words) > 1 and result.words[len(result.words) - 1] == 0:
-        result.words.resize(len(result.words) - 1)
-
+    result.remove_trailing_zeros()
     return result^
 
 
@@ -252,30 +246,48 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     Notes:
         It is equal to truncated division for positive numbers.
     """
-    # CASE: Division by zero
-    if x2.is_zero():
-        raise Error("Error in `truncate_divide`: Division by zero")
+
+    # CASE: x2 is single word
+    if len(x2.words) == 1:
+        # SUB-CASE: Division by zero
+        if x2.words[0] == 0:
+            raise Error("Error in `truncate_divide`: Division by zero")
+
+        # SUB-CASE: Division by one
+        if x2.words[0] == 1:
+            return x1
+
+        # SUB-CASE: Division by two
+        if x2.words[0] == 2:
+            var result = x1
+            floor_divide_inplace_by_2(result)
+            return result^
+
+        # SUB-CASE: Single words division
+        if len(x1.words) == 1:
+            var result = BigUInt(UInt32(x1.words[0] // x2.words[0]))
+            return result^
+
+        # SUB-CASE: Divisor is single word and is power of 2
+        if (x2.words[0] & (x2.words[0] - 1)) == 0:
+            var result = x1
+            var remainder = x2.words[0]
+            while remainder > 1:
+                floor_divide_inplace_by_2(result)
+                remainder >>= 1
+            return result^
 
     # CASE: Dividend is zero
     if x1.is_zero():
         return BigUInt()  # Return zero
 
-    # CASE: Division by one
-    if x2.is_one():
-        return x1
-
+    var comparison_result: Int8 = x1.compare(x2)
     # CASE: dividend < divisor
-    if x1.compare(x2) < 0:
+    if comparison_result < 0:
         return BigUInt()  # Return zero
-
     # CASE: dividend == divisor
-    if x1.compare(x2) == 0:
-        return BigUInt.from_raw_words(UInt32(1))
-
-    # CASE: Single words division
-    if len(x1.words) == 1 and len(x2.words) == 1:
-        var result = BigUInt.from_raw_words(UInt32(x1.words[0] // x2.words[0]))
-        return result^
+    if comparison_result == 0:
+        return BigUInt(UInt32(1))
 
     # CASE: Duo words division by means of UInt64
     if len(x1.words) <= 2 and len(x2.words) <= 2:
@@ -309,12 +321,10 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
             carry = rem
 
         # Remove leading zeros
-        while (
-            len(result.words) > 1 and result.words[len(result.words) - 1] == 0
-        ):
+        while len(result.words) > 1 and result.words[-1] == 0:
             result.words.resize(len(result.words) - 1)
 
-        return result
+        return result^
 
     # CASE: division of very, very large numbers
     # Use Newton-Raphson division for large numbers?
@@ -334,14 +344,10 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
         # Apply normalization
         if normalization_factor > 1:
-            normalized_x1 = multiply(
-                x1, BigUInt.from_raw_words(normalization_factor)
-            )
-            normalized_x2 = multiply(
-                x2, BigUInt.from_raw_words(normalization_factor)
-            )
+            normalized_x1 = multiply(x1, BigUInt(normalization_factor))
+            normalized_x2 = multiply(x2, BigUInt(normalization_factor))
 
-    return general_divide(normalized_x1, normalized_x2)
+    return floor_divide_general(normalized_x1, normalized_x2)
 
 
 fn truncate_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
@@ -397,11 +403,11 @@ fn modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
 # ===----------------------------------------------------------------------=== #
 # Division Algorithms
-# general_divide
+# floor_divide_general, floor_divide_inplace_by_2
 # ===----------------------------------------------------------------------=== #
 
 
-fn general_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+fn floor_divide_general(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """General division algorithm for BigInt numbers.
 
     Args:
@@ -416,7 +422,7 @@ fn general_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """
 
     if x2.is_zero():
-        raise Error("Error in `general_divide`: Division by zero")
+        raise Error("Error in `floor_divide_general`: Division by zero")
 
     # Initialize result and remainder
     var result = BigUInt(empty=True, capacity=len(x1.words))
@@ -438,7 +444,7 @@ fn general_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         var q = estimate_quotient(remainder, x2, j, m)
 
         # Calculate trial product
-        var trial_product = x2 * BigUInt.from_raw_words(UInt32(q))
+        var trial_product = x2 * BigUInt(UInt32(q))
         var shifted_product = shift_words_left(trial_product, j)
 
         # OPTIMIZATION: Binary search for adjustment
@@ -450,7 +456,7 @@ fn general_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
                 var mid = (low + high) / 2
 
                 # Recalculate with new q
-                trial_product = x2 * BigUInt.from_raw_words(UInt32(mid))
+                trial_product = x2 * BigUInt(UInt32(mid))
                 shifted_product = shift_words_left(trial_product, j)
 
                 if shifted_product.compare(remainder) <= 0:
@@ -460,18 +466,37 @@ fn general_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
                     high = mid - 1
 
             # Final recalculation with best q
-            trial_product = x2 * BigUInt.from_raw_words(UInt32(q))
+            trial_product = x2 * BigUInt(UInt32(q))
             shifted_product = shift_words_left(trial_product, j)
 
         result.words[j] = UInt32(q)
         remainder = subtract(remainder, shifted_product)
         j -= 1
 
-    # Remove trailing zeros
-    while len(result.words) > 1 and result.words[len(result.words) - 1] == 0:
-        result.words.resize(len(result.words) - 1)
-
+    result.remove_trailing_zeros()
     return result^
+
+
+fn floor_divide_inplace_by_2(mut x: BigUInt):
+    """Divides a BigUInt by 2 in-place.
+
+    Args:
+        x: The BigUInt value to divide by 2.
+    """
+    if x.is_zero():
+        return
+
+    var carry: UInt32 = 0
+
+    # Process from most significant to least significant word
+    for ith in range(len(x.words) - 1, -1, -1):
+        x.words[ith] += carry
+        carry = UInt32(1_000_000_000) if (x.words[ith] & 1) else 0
+        x.words[ith] >>= 1
+
+    # Remove leading zeros
+    while len(x.words) > 1 and x.words[len(x.words) - 1] == 0:
+        x.words.resize(len(x.words) - 1)
 
 
 # ===----------------------------------------------------------------------=== #
@@ -544,14 +569,14 @@ fn power_of_10(n: Int) raises -> BigUInt:
         raise Error("Error in `power_of_10`: Negative exponent not supported")
 
     if n == 0:
-        return BigUInt.from_raw_words(1)
+        return BigUInt(1)
 
     # Handle small powers directly
     if n < 9:
         var value: UInt32 = 1
         for _ in range(n):
             value *= 10
-        return BigUInt.from_raw_words(value)
+        return BigUInt(value)
 
     # For larger powers, split into groups of 9 digits
     var words = n // 9
