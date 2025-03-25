@@ -578,6 +578,49 @@ struct BigUInt(Absable, IntableRaising, Writable):
     fn __imod__(mut self, other: Self) raises:
         self = decimojo.biguint.arithmetics.modulo(self, other)
 
+    @always_inline
+    fn __pow__(self, exponent: Self) raises -> Self:
+        return self.power(exponent)
+
+    @always_inline
+    fn __pow__(self, exponent: Int) raises -> Self:
+        return self.power(exponent)
+
+    # ===------------------------------------------------------------------=== #
+    # Basic binary comparison operation dunders
+    # __gt__, __ge__, __lt__, __le__, __eq__, __ne__
+    # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn __gt__(self, other: Self) -> Bool:
+        """Returns True if self > other."""
+        return decimojo.biguint.comparison.greater(self, other)
+
+    @always_inline
+    fn __ge__(self, other: Self) -> Bool:
+        """Returns True if self >= other."""
+        return decimojo.biguint.comparison.greater_equal(self, other)
+
+    @always_inline
+    fn __lt__(self, other: Self) -> Bool:
+        """Returns True if self < other."""
+        return decimojo.biguint.comparison.less(self, other)
+
+    @always_inline
+    fn __le__(self, other: Self) -> Bool:
+        """Returns True if self <= other."""
+        return decimojo.biguint.comparison.less_equal(self, other)
+
+    @always_inline
+    fn __eq__(self, other: Self) -> Bool:
+        """Returns True if self == other."""
+        return decimojo.biguint.comparison.equal(self, other)
+
+    @always_inline
+    fn __ne__(self, other: Self) -> Bool:
+        """Returns True if self != other."""
+        return decimojo.biguint.comparison.not_equal(self, other)
+
     # ===------------------------------------------------------------------=== #
     # Mathematical methods that do not implement a trait (not a dunder)
     # ===------------------------------------------------------------------=== #
@@ -588,6 +631,47 @@ struct BigUInt(Absable, IntableRaising, Writable):
         See `compare()` for more information.
         """
         return decimojo.biguint.comparison.compare(self, other)
+
+    fn power(self, exponent: Int) raises -> Self:
+        """Returns the result of raising this number to the power of `exponent`.
+
+        Args:
+            exponent: The exponent to raise the number to.
+
+        Returns:
+            The result of raising this number to the power of `exponent`.
+
+        Raises:
+            Error: If the exponent is negative.
+            Error: If the exponent is too large, e.g., larger than 1_000_000_000.
+        """
+        if exponent < 0:
+            raise Error("Error in `BigUInt.power()`: The exponent is negative")
+
+        if exponent == 0:
+            return Self(1)
+
+        if exponent > 1_000_000_000:
+            raise Error("Error in `BigUInt.power()`: The exponent is too large")
+
+        var result = Self(1)
+        var base = self
+        var exp = exponent
+        while exp > 0:
+            if exp % 2 == 1:
+                result = result * base
+            base = base * base
+            exp //= 2
+
+        return result
+
+    fn power(self, exponent: Self) raises -> Self:
+        """Returns the result of raising this number to the power of `exponent`.
+        """
+        var exponent_as_int = exponent.to_int()
+        if exponent_as_int > 1_000_000_000:
+            raise Error("Error in `BigUInt.power()`: The exponent is too large")
+        return self.power(exponent_as_int)
 
     # ===------------------------------------------------------------------=== #
     # Other methods
