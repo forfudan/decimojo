@@ -34,7 +34,7 @@ import decimojo.str
 
 @value
 struct BigUInt(Absable, IntableRaising, Writable):
-    """Represents an unsigned integer with arbitrary length.
+    """Represents a base-10 arbitrary-precision unsigned integer.
 
     Notes:
 
@@ -272,12 +272,15 @@ struct BigUInt(Absable, IntableRaising, Writable):
         return result^
 
     @staticmethod
-    fn from_string(value: String) raises -> BigUInt:
+    fn from_string(value: String, ignore_sign: Bool = False) raises -> BigUInt:
         """Initializes a BigUInt from a string representation.
         The string is normalized with `deciomojo.str.parse_numeric_string()`.
 
         Args:
             value: The string representation of the BigUInt.
+            ignore_sign: A Bool value indicating whether to ignore the sign.
+                If True, the sign is ignored.
+                If False, the sign is considered.
 
         Returns:
             The BigUInt representation of the string.
@@ -287,7 +290,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
         var sign: Bool
         coef, scale, sign = decimojo.str.parse_numeric_string(value)
 
-        if sign:
+        if (not ignore_sign) and sign:
             raise Error("Error in `from_string()`: The value is negative")
 
         # Check if the number is zero
@@ -692,8 +695,8 @@ struct BigUInt(Absable, IntableRaising, Writable):
         """Returns True if this BigUInt represents two."""
         return len(self.words) == 1 and self.words[0] == 2
 
-    fn is_abs_power_of_10(x: BigUInt) -> Bool:
-        """Check if abs(x) is a power of 10."""
+    fn is_power_of_10(x: BigUInt) -> Bool:
+        """Check if x is a power of 10."""
         for i in range(len(x.words) - 1):
             if x.words[i] != 0:
                 return False
@@ -730,6 +733,10 @@ struct BigUInt(Absable, IntableRaising, Writable):
                 String(value.words[i]).rjust(width=9, fillchar="0"),
             )
         print("--------------------------------")
+
+    fn is_unitialized(self) -> Bool:
+        """Returns True if the BigUInt is uninitialized."""
+        return len(self.words) == 0
 
     fn remove_trailing_zeros(mut number: BigUInt):
         """Removes trailing zeros from the BigUInt."""

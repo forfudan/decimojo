@@ -296,7 +296,7 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
     # CASE: Divisor is 10^n
     # First remove the last words (10^9) and then shift the rest
-    if BigUInt.is_abs_power_of_10(x2):
+    if BigUInt.is_power_of_10(x2):
         var result: BigUInt
         if len(x2.words) == 1:
             result = x1
