@@ -11,7 +11,7 @@ DeciMojo provides a comprehensive decimal and integer mathematics library for Mo
 The core types are:
 
 - A 128-bit fixed-point decimal implementation (`Decimal`) supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed]. It features a complete set of mathematical functions including logarithms, exponentiation, roots, and trigonometric operations.
-- An arbitrary-precision integer type (`BigInt`)[^integer] supporting unlimited digits. It features base-10^9 internal representation and basic arithmetic operations.
+- A base-10 arbitrary-precision integer type (`BigInt`)[^integer] supporting unlimited digits. It features base-10^9 internal representation and basic arithmetic operations.
 
 The library is expanding to include `BigDecimal` types that support arbitrary precision[^arbitrary], allowing for calculations with unlimited digits and decimal places. These extensions are currently under active development.
 
@@ -137,9 +137,13 @@ This project draws inspiration from several established decimal implementations 
 
 ## Nonmenclature
 
+## Nomenclature
+
 DeciMojo combines "Deci" and "Mojo" - reflecting its purpose and implementation language. "Deci" (from Latin "decimus" meaning "tenth") highlights our focus on the decimal numeral system that humans naturally use for counting and calculations.
 
-The name emphasizes our mission: bringing precise, reliable decimal calculations to the Mojo ecosystem, addressing the fundamental need for exact arithmetic that floating-point representations cannot provide.
+Although the name emphasizes decimals with fractional parts, DeciMojo embraces the full spectrum of decimal mathematics. Our `BigInt` type, while handling only integers, is designed specifically for the decimal numeral system with its base-10^9 internal representation. This approach offers optimal performance while maintaining human-readable decimal semantics, contrasting with binary-focused libraries. Furthermore, `BigInt` serves as the foundation for our `BigDecimal` implementation, enabling arbitrary-precision calculations across both integer and fractional domains.
+
+The name ultimately emphasizes our mission: bringing precise, reliable decimal calculations to the Mojo ecosystem, addressing the fundamental need for exact arithmetic that floating-point representations cannot provide.
 
 ## Status
 
