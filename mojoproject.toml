@@ -1,7 +1,8 @@
 [project]
 authors = ["ZHU Yuhao 朱宇浩 <dr.yuhao.zhu@outlook.com>"]
-channels = ["https://conda.modular.com/max-nightly", "https://conda.modular.com/max", "https://repo.prefix.dev/modular-community", "conda-forge"]
-description = "A fixed-point decimal arithmetic library written in Mojo 🔥"
+channels = ["https://conda.modular.com/max", "https://repo.prefix.dev/modular-community", "conda-forge"]
+# channels = ["https://conda.modular.com/max-nightly", "https://conda.modular.com/max", "https://repo.prefix.dev/modular-community", "conda-forge"]
+description = "A comprehensive decimal and integer mathematics library for Mojo"
 license = "Apache-2.0"
 name = "decimojo"
 platforms = ["osx-arm64", "linux-64"]
@@ -9,7 +10,7 @@ readme = "README.md"
 version = "0.1.0"
 
 [dependencies]
-max = ">=25.2,<25.3"
+max = ">=25.2"
 
 [tasks]
 # format the code
