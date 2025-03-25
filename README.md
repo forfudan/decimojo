@@ -11,7 +11,7 @@ DeciMojo provides a comprehensive decimal and integer mathematics library for Mo
 The core types are:
 
 - A 128-bit fixed-point decimal implementation (`Decimal`) supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed]. It features a complete set of mathematical functions including logarithms, exponentiation, roots, and trigonometric operations.
-- A fully implemented arbitrary-precision integer type (`BigInt`)[^integer] supporting unlimited digits. It features base-10^9 internal representation and basic arithmetic operations.
+- An arbitrary-precision integer type (`BigInt`)[^integer] supporting unlimited digits. It features base-10^9 internal representation and basic arithmetic operations.
 
 The library is expanding to include `BigDecimal` types that support arbitrary precision[^arbitrary], allowing for calculations with unlimited digits and decimal places. These extensions are currently under active development.
 
