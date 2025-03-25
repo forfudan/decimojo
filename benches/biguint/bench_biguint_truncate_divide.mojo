@@ -380,6 +380,30 @@ fn main() raises:
         speedup_factors,
     )
 
+    # Case 23: Division of large numbers
+    # x1 is more than twice the length of x2
+    # x2 is 20 words long (>= 10^180)
+    run_benchmark_truncate_divide(
+        "Division of repeated digits",
+        "123456789" * 50,
+        "987654321" * 20,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 24: Division of very large numbers
+    # x1 is more than 200 words long (>= 10^1800)
+    # x2 is more than 50 words long (>= 10^450)
+    run_benchmark_truncate_divide(
+        "Division of repeated digits",
+        "123456789" * 250,
+        "987654321" * 100,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
     # Calculate average speedup factor (ignoring any cases that might have failed)
     if len(speedup_factors) > 0:
         var sum_speedup: Float64 = 0.0

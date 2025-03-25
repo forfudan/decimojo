@@ -25,6 +25,11 @@ from decimojo.biguint.biguint import BigUInt
 import decimojo.biguint.comparison
 from decimojo.rounding_mode import RoundingMode
 
+# ===----------------------------------------------------------------------=== #
+# Arithmetic Operations
+# add, subtract, negative, absolute, multiply, floor_divide, modulo
+# ===----------------------------------------------------------------------=== #
+
 
 fn add(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """Returns the sum of two unsigned integers.
@@ -231,7 +236,7 @@ fn multiply(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     return result^
 
 
-fn truncate_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """Returns the quotient of two BigUInt numbers, truncating toward zero.
 
     Args:
@@ -245,7 +250,7 @@ fn truncate_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         ValueError: If the divisor is zero.
 
     Notes:
-        It is equal to floored division for positive numbers.
+        It is equal to truncated division for positive numbers.
     """
     # CASE: Division by zero
     if x2.is_zero():
@@ -269,13 +274,14 @@ fn truncate_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
     # CASE: Single words division
     if len(x1.words) == 1 and len(x2.words) == 1:
+        print("DEBUG: Using single-word division")
         var result = BigUInt.from_raw_words(UInt32(x1.words[0] // x2.words[0]))
         return result^
 
-    # CASE: Powers of 10
+    # CASE: Divisor is 10^n
+    # First remove the last words (10^9) and then shift the rest
     if BigUInt.is_abs_power_of_10(x2):
-        # Divisor is 10^n
-        # Remove the last words (10^9) and shift the rest
+        print("DEBUG: Using power of 10 division")
         var result: BigUInt
         if len(x2.words) == 1:
             result = x1
@@ -307,161 +313,56 @@ fn truncate_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
         return result
 
-    # CASE: division by a single-word number
-    if len(x2.words) == 1:
-        var divisor_value = x2.words[0]
-        var result = BigUInt(empty=True)
-        var temp_remainder: UInt64 = 0
+    # # Select algorithm based on operand sizes
+    # # CASE: division of very large numbers
+    # if len(x1.words) > 200 and len(x2.words) > 50:
+    #     print("DEBUG: Using Newton-Raphson division")
+    #     return newton_raphson_divide(x1, x2)
 
-        # Process from most significant word to least significant
-        for i in range(len(x1.words) - 1, -1, -1):
-            # Combine remainder with current digit
-            var current = temp_remainder * 1_000_000_000 + UInt64(x1.words[i])
+    # # CASE: division of large numbers
+    # # Dividend is at least twice as long as divisor and
+    # # divisor is at least 5 words long (>=10^45)
+    # elif len(x1.words) > 2 * len(x2.words) and len(x2.words) > 4:
+    #     print("DEBUG: Using recursive division")
+    #     return divide_recursive(x1, x2)
 
-            # Calculate quotient and new remainder
-            var quotient_digit = current // UInt64(divisor_value)
-            temp_remainder = current % UInt64(divisor_value)
+    # CASE: division of small numbers
+    # Normalize divisor to improve quotient estimation
+    var normalized_x1 = x1
+    var normalized_x2 = x2
+    var normalization_factor: UInt32 = 1
 
-            # Only add significant digits to the result
-            # This avoids leading zeros
-            if len(result.words) > 0 or quotient_digit > 0:
-                result.words.append(UInt32(quotient_digit))
+    # Calculate normalization factor to make leading digit of divisor large
+    var msw = x2.words[len(x2.words) - 1]
+    if msw < 500_000_000:
+        while msw < 100_000_000:  # Ensure leading digit is significant
+            msw *= 10
+            normalization_factor *= 10
 
-        # If no digits were added, result is zero
-        if len(result.words) == 0:
-            result.words.append(0)
-
-        # To match the expected base-10^9 representation,
-        # we need to reverse the order of the words in the result
-        var reversed_result = BigUInt(empty=True, capacity=len(result.words))
-        for i in range(len(result.words) - 1, -1, -1):
-            reversed_result.words.append(result.words[i])
-
-        return reversed_result
-
-    # CASE: multi-word divisors
-    # Initialize result and working copy of dividend
-    var result = BigUInt(empty=True, capacity=len(x1.words))
-    var remainder = x1
-    var normalized_divisor = x2
-
-    # Calculate the number of significant words in each operand
-    var n = len(remainder.words)
-    while n > 0 and remainder.words[n - 1] == 0:
-        n -= 1
-
-    var m = len(normalized_divisor.words)
-    while m > 0 and normalized_divisor.words[m - 1] == 0:
-        m -= 1
-
-    # If divisor has more significant digits than dividend, result is zero
-    if m > n:
-        return BigUInt()
-
-    # Shift divisor left to align with dividend
-    var d = n - m
-
-    # Initialize result with zeros
-    for _ in range(d + 1):
-        result.words.append(0)
-
-    # Working variables for the division algorithm
-    var j = d
-
-    # Main division loop
-    while j >= 0:
-        # Calculate quotient digit estimate
-        var dividend_part: UInt64 = 0
-
-        # Get the relevant part of the dividend for this step
-        if j + m < n:
-            dividend_part = UInt64(remainder.words[j + m])
-            if j + m - 1 < n:
-                dividend_part = dividend_part * 1_000_000_000 + UInt64(
-                    remainder.words[j + m - 1]
-                )
-        elif j + m - 1 < n:
-            dividend_part = UInt64(remainder.words[j + m - 1])
-
-        # Calculate quotient digit (cap at MAX_DIGIT)
-        var divisor_high = UInt64(normalized_divisor.words[m - 1])
-        if divisor_high == 0:
-            divisor_high = 1  # Avoid division by zero
-        var q = min(dividend_part // divisor_high, UInt64(999_999_999))
-
-        # Create trial product: q * divisor
-        var trial_product = normalized_divisor * BigUInt.from_raw_words(
-            UInt32(q)
-        )
-
-        # Shift trial product left j positions
-        var shifted_product = BigUInt(empty=True)
-        for _ in range(j):
-            shifted_product.words.append(0)
-        for word in trial_product.words:
-            shifted_product.words.append(word[])
-
-        # Use binary search for quotient adjustment
-        if shifted_product.compare(remainder) > 0:
-            # Initial estimate was too high, use binary search to find correct q
-            var low: UInt64 = 0
-            var high: UInt64 = q - 1
-
-            while low <= high:
-                var mid: UInt64 = (low + high) / 2
-
-                # Recalculate trial product with new q
-                trial_product = normalized_divisor * BigUInt.from_raw_words(
-                    UInt32(mid)
-                )
-
-                # Recalculate shifted product
-                shifted_product = BigUInt(empty=True)
-                for _ in range(j):
-                    shifted_product.words.append(0)
-                for word in trial_product.words:
-                    shifted_product.words.append(word[])
-
-                if shifted_product.compare(remainder) <= 0:
-                    # This quotient works, try a larger one
-                    q = mid  # Keep track of best quotient found so far
-                    low = mid + 1
-                else:
-                    # Too large, try smaller
-                    high = mid - 1
-
-            # Recalculate final product with best q found
-            trial_product = normalized_divisor * BigUInt.from_raw_words(
-                UInt32(q)
+        # Apply normalization
+        if normalization_factor > 1:
+            normalized_x1 = multiply(
+                x1, BigUInt.from_raw_words(normalization_factor)
+            )
+            normalized_x2 = multiply(
+                x2, BigUInt.from_raw_words(normalization_factor)
             )
 
-            # Recalculate final shifted product
-            shifted_product = BigUInt(empty=True)
-            for _ in range(j):
-                shifted_product.words.append(0)
-            for word in trial_product.words:
-                shifted_product.words.append(word[])
-
-        # Store quotient digit
-        result.words[j] = UInt32(q)
-
-        # Subtract shifted product from remainder
-        remainder = subtract(remainder, shifted_product)
-
-        # Move to next position
-        j -= 1
-
-    # Remove leading zeros
-    while len(result.words) > 1 and result.words[len(result.words) - 1] == 0:
-        result.words.resize(len(result.words) - 1)
-
-    return result
+    return standard_division(normalized_x1, normalized_x2)
 
 
-fn truncate_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+fn truncate_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Returns the quotient of two BigUInt numbers, truncating toward zero.
+    It is equal to floored division for unsigned numbers.
+    See `floor_divide` for more details.
+    """
+    return floor_divide(x1, x2)
+
+
+fn modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """Returns the remainder of two BigUInt numbers, truncating toward zero.
     The remainder has the same sign as the dividend and satisfies:
-    x1 = truncate_divide(x1, x2) * x2 + truncate_modulo(x1, x2).
+    x1 = floor_divide(x1, x2) * x2 + modulo(x1, x2).
 
     Args:
         x1: The dividend.
@@ -493,7 +394,7 @@ fn truncate_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         return x1
 
     # Calculate quotient with truncation
-    var quotient = truncate_divide(x1, x2)
+    var quotient = floor_divide(x1, x2)
 
     # Calculate remainder: dividend - (divisor * quotient)
     var remainder = subtract(x1, multiply(x2, quotient))
@@ -501,105 +402,22 @@ fn truncate_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     return remainder
 
 
-fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
-    """Returns the quotient of two BigUInt numbers, truncating toward -infinity.
-    """
-    # CASE: Division by zero
-    if x2.is_zero():
-        raise Error("Error in `truncate_divide`: Division by zero")
+# ===----------------------------------------------------------------------=== #
+# Division Algorithms
+# divide_recursive, newton_raphson_divide, standard_division
+# ===----------------------------------------------------------------------=== #
 
-    # CASE: Dividend is zero
-    if x1.is_zero():
-        return BigUInt()  # Return zero
 
-    # CASE: Division by one
-    if x2.is_one():
-        return x1
-
-    # CASE: dividend < divisor
-    if x1.compare(x2) < 0:
-        return BigUInt()  # Return zero
-
-    # CASE: dividend == divisor
-    if x1.compare(x2) == 0:
-        return BigUInt.from_raw_words(UInt32(1))
-
-    # CASE: Single words division
-    if len(x1.words) == 1 and len(x2.words) == 1:
-        var result = BigUInt.from_raw_words(UInt32(x1.words[0] // x2.words[0]))
-        return result^
-
-    # CASE: Powers of 10
-    if BigUInt.is_abs_power_of_10(x2):
-        # Divisor is 10^n
-        # Remove the last words (10^9) and shift the rest
-        var result: BigUInt
-        if len(x2.words) == 1:
-            result = x1
-        else:
-            var word_shift = len(x2.words) - 1
-            # If we need to drop more words than exists, result is zero
-            if word_shift >= len(x1.words):
-                return BigUInt()
-            # Create result with the remaining words
-            result = BigUInt(empty=True)
-            for i in range(word_shift, len(x1.words)):
-                result.words.append(x1.words[i])
-
-        # Get the last word of the divisor
-        var x2_word = x2.words[len(x2.words) - 1]
-        var carry = UInt32(0)
-        var power_of_carry = UInt32(1_000_000_000) // x2_word
-        for i in range(len(result.words) - 1, -1, -1):
-            var quot = result.words[i] // x2_word
-            var rem = result.words[i] % x2_word
-            result.words[i] = quot + carry * power_of_carry
-            carry = rem
-
-        # Remove leading zeros
-        while (
-            len(result.words) > 1 and result.words[len(result.words) - 1] == 0
-        ):
-            result.words.resize(len(result.words) - 1)
-
-        return result
-
-    # OPTIMIZATION 1: Select algorithm based on operand sizes
-    if len(x1.words) > 200 and len(x2.words) > 50:
-        return newton_raphson_divide(x1, x2)
-    elif len(x1.words) > 2 * len(x2.words) and len(x2.words) > 4:
-        return divide_recursive(x1, x2)
-
-    # Continue with optimized standard division
-
-    # OPTIMIZATION 2: Normalize divisor to improve quotient estimation
-    var normalized_x1 = x1
-    var normalized_x2 = x2
-    var normalization_factor: UInt32 = 1
-
-    # Calculate normalization factor to make leading digit of divisor large
-    var msw = x2.words[len(x2.words) - 1]
-    if msw < 500_000_000:
-        while msw < 100_000_000:  # Ensure leading digit is significant
-            msw *= 10
-            normalization_factor *= 10
-
-        # Apply normalization
-        if normalization_factor > 1:
-            normalized_x1 = multiply(
-                x1, BigUInt.from_raw_words(normalization_factor)
-            )
-            normalized_x2 = multiply(
-                x2, BigUInt.from_raw_words(normalization_factor)
-            )
+fn standard_division(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Standard division algorithm for moderate-sized numbers."""
 
     # Initialize result and remainder
-    var result = BigUInt(empty=True, capacity=len(normalized_x1.words))
-    var remainder = normalized_x1
+    var result = BigUInt(empty=True, capacity=len(x1.words))
+    var remainder = x1
 
     # Calculate significant digits
     var n = len(remainder.words)
-    var m = len(normalized_x2.words)
+    var m = len(x2.words)
 
     # Shift and initialize
     var d = n - m
@@ -609,14 +427,14 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     # Main division loop
     var j = d
     while j >= 0:
-        # OPTIMIZATION 3: Better quotient estimation
-        var q = estimate_quotient(remainder, normalized_x2, j, m)
+        # OPTIMIZATION: Better quotient estimation
+        var q = estimate_quotient(remainder, x2, j, m)
 
         # Calculate trial product
-        var trial_product = normalized_x2 * BigUInt.from_raw_words(UInt32(q))
-        var shifted_product = shift_word_left(trial_product, j)
+        var trial_product = x2 * BigUInt.from_raw_words(UInt32(q))
+        var shifted_product = shift_words_left(trial_product, j)
 
-        # OPTIMIZATION 4: Binary search for adjustment
+        # OPTIMIZATION: Binary search for adjustment
         if shifted_product.compare(remainder) > 0:
             var low: UInt64 = 0
             var high: UInt64 = q - 1
@@ -625,10 +443,8 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
                 var mid = (low + high) / 2
 
                 # Recalculate with new q
-                trial_product = normalized_x2 * BigUInt.from_raw_words(
-                    UInt32(mid)
-                )
-                shifted_product = shift_word_left(trial_product, j)
+                trial_product = x2 * BigUInt.from_raw_words(UInt32(mid))
+                shifted_product = shift_words_left(trial_product, j)
 
                 if shifted_product.compare(remainder) <= 0:
                     q = mid  # This works
@@ -637,18 +453,84 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
                     high = mid - 1
 
             # Final recalculation with best q
-            trial_product = normalized_x2 * BigUInt.from_raw_words(UInt32(q))
-            shifted_product = shift_word_left(trial_product, j)
+            trial_product = x2 * BigUInt.from_raw_words(UInt32(q))
+            shifted_product = shift_words_left(trial_product, j)
 
         result.words[j] = UInt32(q)
         remainder = subtract(remainder, shifted_product)
         j -= 1
 
-    # Clean up result
+    # Remove trailing zeros
     while len(result.words) > 1 and result.words[len(result.words) - 1] == 0:
         result.words.resize(len(result.words) - 1)
 
     return result
+
+
+fn divide_recursive(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Recursive division for large numbers."""
+    # Base case
+    if len(x1.words) <= 8 or len(x2.words) <= 4:
+        return standard_division(x1, x2)
+
+    # Split at midpoint
+    var m = len(x2.words) // 2
+
+    # Split numbers: x1 = a*B^m + b, x2 = c*B^m + d
+    var a = extract_high_words(x1, m)
+    var b = extract_low_words(x1, m)
+    var c = extract_high_words(x2, m)
+
+    # Recursive step: q1 = a / c
+    var q1 = divide_recursive(a, c)
+
+    # Calculate remainder: r1 = a - q1*c
+    var r1 = subtract(a, multiply(q1, c))
+
+    # Combine with lower part
+    var combined = add(shift_words_left(r1, m), b)
+
+    # Recursive step: q2 = combined / x2
+    var q2 = divide_recursive(combined, x2)
+
+    # Combine results: q = q1*B^m + q2
+    return add(shift_words_left(q1, m), q2)
+
+
+fn newton_raphson_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Division using Newton-Raphson method for very large numbers."""
+    # Determine scaling factor
+    var precision = len(x1.words) + 10
+    var scale = power_of_10(precision)
+
+    # Initial approximation of 1/x2
+    var reciprocal = floor_divide(scale, x2)
+
+    # Newton-Raphson iterations to refine reciprocal
+    for _ in range(3):  # Usually 3 iterations is sufficient
+        # r = r * (2 - d * r)
+        var temp = multiply(x2, reciprocal)
+        var two_scale = add(scale, scale)
+        var correction = subtract(two_scale, temp)
+        reciprocal = floor_divide(multiply(reciprocal, correction), scale)
+
+    # Final quotient: x1 * (1/x2)
+    var quotient = floor_divide(multiply(x1, reciprocal), scale)
+
+    # Verify result and adjust if needed
+    var check = multiply(quotient, x2)
+    if check.compare(x1) > 0:
+        quotient = subtract(quotient, BigUInt.from_raw_words(1))
+
+    return quotient
+
+
+# ===----------------------------------------------------------------------=== #
+# Division Helper Functions
+# estimate_quotient, binary_search_quotient
+# extract_high_words, extract_low_words
+# shift_words_left, power_of_10
+# ===----------------------------------------------------------------------=== #
 
 
 fn estimate_quotient(
@@ -690,30 +572,6 @@ fn estimate_quotient(
     return min(qhat, UInt64(999_999_999))
 
 
-fn estimate_quotient_simple(
-    dividend: BigUInt, divisor: BigUInt, j: Int, m: Int
-) -> UInt64:
-    """Simple but effective quotient digit estimation."""
-    # Get one or two highest digits from dividend portion
-    var dividend_high: UInt64 = 0
-    if j + m < len(dividend.words):
-        dividend_high = UInt64(dividend.words[j + m])
-        if j + m - 1 < len(dividend.words):
-            dividend_high = dividend_high * 1_000_000_000 + UInt64(
-                dividend.words[j + m - 1]
-            )
-    elif j + m - 1 < len(dividend.words):
-        dividend_high = UInt64(dividend.words[j + m - 1])
-
-    # Get highest digit from divisor
-    var divisor_high = UInt64(divisor.words[m - 1])
-    if divisor_high == 0:
-        divisor_high = 1  # Prevent division by zero
-
-    # Calculate and cap the estimate
-    return min(dividend_high // divisor_high, UInt64(999_999_999))
-
-
 fn binary_search_quotient(
     remainder: BigUInt, divisor: BigUInt, j: Int, initial_q: UInt64
 ) raises -> UInt64:
@@ -725,7 +583,7 @@ fn binary_search_quotient(
     while low <= high:
         var mid: UInt64 = (low + high) // 2
         var product = divisor * BigUInt.from_raw_words(UInt32(mid))
-        var shifted = shift_word_left(product, j)
+        var shifted = shift_words_left(product, j)
 
         if shifted.compare(remainder) <= 0:
             best_q = mid  # This works
@@ -734,108 +592,6 @@ fn binary_search_quotient(
             high = mid - 1
 
     return best_q
-
-
-fn divide_recursive(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
-    """Recursive division for large numbers."""
-    # Base case
-    if len(x1.words) <= 8 or len(x2.words) <= 4:
-        return standard_division(x1, x2)
-
-    # Split at midpoint
-    var m = len(x2.words) // 2
-
-    # Split numbers: x1 = a*B^m + b, x2 = c*B^m + d
-    var a = extract_high_words(x1, m)
-    var b = extract_low_words(x1, m)
-    var c = extract_high_words(x2, m)
-
-    # Recursive step: q1 = a / c
-    var q1 = divide_recursive(a, c)
-
-    # Calculate remainder: r1 = a - q1*c
-    var r1 = subtract(a, multiply(q1, c))
-
-    # Combine with lower part
-    var combined = add(shift_word_left(r1, m), b)
-
-    # Recursive step: q2 = combined / x2
-    var q2 = divide_recursive(combined, x2)
-
-    # Combine results: q = q1*B^m + q2
-    return add(shift_word_left(q1, m), q2)
-
-
-fn newton_raphson_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
-    """Division using Newton-Raphson method for very large numbers."""
-    # Determine scaling factor
-    var precision = len(x1.words) + 10
-    var scale = pow10(precision)
-
-    # Initial approximation of 1/x2
-    var reciprocal = floor_divide(scale, x2)
-
-    # Newton-Raphson iterations to refine reciprocal
-    for _ in range(3):  # Usually 3 iterations is sufficient
-        # r = r * (2 - d * r)
-        var temp = multiply(x2, reciprocal)
-        var two_scale = add(scale, scale)
-        var correction = subtract(two_scale, temp)
-        reciprocal = floor_divide(multiply(reciprocal, correction), scale)
-
-    # Final quotient: x1 * (1/x2)
-    var quotient = floor_divide(multiply(x1, reciprocal), scale)
-
-    # Verify result and adjust if needed
-    var check = multiply(quotient, x2)
-    if check.compare(x1) > 0:
-        quotient = subtract(quotient, BigUInt.from_raw_words(1))
-
-    return quotient
-
-
-fn standard_division(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
-    """Standard division algorithm for moderate-sized numbers."""
-    # Initialize result and working copy
-    var result = BigUInt(empty=True, capacity=len(x1.words))
-    var remainder = x1
-
-    # Calculate significant digits
-    var n = len(remainder.words)
-    var m = len(x2.words)
-
-    # Handle trivial case
-    if m > n:
-        return BigUInt()
-
-    # Align and compute quotient
-    var d = n - m
-    for _ in range(d + 1):
-        result.words.append(0)
-
-    var j = d
-    while j >= 0:
-        # Use binary search for quotient estimation
-        var qEstimate = estimate_quotient_simple(remainder, x2, j, m)
-        var product = x2 * BigUInt.from_raw_words(UInt32(qEstimate))
-        var shifted = shift_word_left(product, j)
-
-        # Adjust if needed
-        if shifted.compare(remainder) > 0:
-            qEstimate = binary_search_quotient(remainder, x2, j, qEstimate)
-            shifted = shift_word_left(
-                x2 * BigUInt.from_raw_words(UInt32(qEstimate)), j
-            )
-
-        result.words[j] = UInt32(qEstimate)
-        remainder = subtract(remainder, shifted)
-        j -= 1
-
-    # Remove leading zeros
-    while len(result.words) > 1 and result.words[len(result.words) - 1] == 0:
-        result.words.resize(len(result.words) - 1)
-
-    return result
 
 
 fn extract_high_words(num: BigUInt, split_point: Int) -> BigUInt:
@@ -869,7 +625,7 @@ fn extract_low_words(num: BigUInt, split_point: Int) -> BigUInt:
     return result
 
 
-fn shift_word_left(num: BigUInt, positions: Int) -> BigUInt:
+fn shift_words_left(num: BigUInt, positions: Int) -> BigUInt:
     """Shifts a BigUInt left by adding leading zeros.
     Equivalent to multiplying by 10^(9*positions)."""
     if num.is_zero():
@@ -888,10 +644,10 @@ fn shift_word_left(num: BigUInt, positions: Int) -> BigUInt:
     return result
 
 
-fn pow10(n: Int) raises -> BigUInt:
+fn power_of_10(n: Int) raises -> BigUInt:
     """Calculates 10^n efficiently."""
     if n < 0:
-        raise Error("Error in pow10: Negative exponent not supported")
+        raise Error("Error in `power_of_10`: Negative exponent not supported")
 
     if n == 0:
         return BigUInt.from_raw_words(1)

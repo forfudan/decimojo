@@ -535,7 +535,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
     @always_inline
     fn __mod__(self, other: Self) raises -> Self:
-        return decimojo.biguint.arithmetics.truncate_modulo(self, other)
+        return decimojo.biguint.arithmetics.modulo(self, other)
 
     # ===------------------------------------------------------------------=== #
     # Basic binary augmented arithmetic assignments dunders
@@ -558,11 +558,11 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
     @always_inline
     fn __ifloordiv__(mut self, other: Self) raises:
-        self = decimojo.biguint.arithmetics.truncate_divide(self, other)
+        self = decimojo.biguint.arithmetics.floor_divide(self, other)
 
     @always_inline
     fn __imod__(mut self, other: Self) raises:
-        self = decimojo.biguint.arithmetics.truncate_modulo(self, other)
+        self = decimojo.biguint.arithmetics.modulo(self, other)
 
     # ===------------------------------------------------------------------=== #
     # Mathematical methods that do not implement a trait (not a dunder)
