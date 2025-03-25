@@ -54,3 +54,81 @@ fn compare(x1: BigUInt, x2: BigUInt) -> Int8:
 
     # All words are equal
     return Int8(0)
+
+
+fn greater(x1: BigUInt, x2: BigUInt) -> Bool:
+    """Checks if the first number is greater than the second.
+
+    Args:
+        x1: First unsigned integer.
+        x2: Second unsigned integer.
+
+    Returns:
+        True if x1 > x2, False otherwise.
+    """
+    return compare(x1, x2) > 0
+
+
+fn greater_equal(x1: BigUInt, x2: BigUInt) -> Bool:
+    """Checks if the first number is greater than or equal to the second.
+
+    Args:
+        x1: First unsigned integer.
+        x2: Second unsigned integer.
+
+    Returns:
+        True if x1 >= x2, False otherwise.
+    """
+    return compare(x1, x2) >= 0
+
+
+fn less(x1: BigUInt, x2: BigUInt) -> Bool:
+    """Checks if the first number is less than the second.
+
+    Args:
+        x1: First unsigned integer.
+        x2: Second unsigned integer.
+
+    Returns:
+        True if x1 < x2, False otherwise.
+    """
+    return compare(x1, x2) < 0
+
+
+fn less_equal(x1: BigUInt, x2: BigUInt) -> Bool:
+    """Checks if the first number is less than or equal to the second.
+
+    Args:
+        x1: First unsigned integer.
+        x2: Second unsigned integer.
+
+    Returns:
+        True if x1 <= x2, False otherwise.
+    """
+    return compare(x1, x2) <= 0
+
+
+fn equal(x1: BigUInt, x2: BigUInt) -> Bool:
+    """Checks if two numbers are equal.
+
+    Args:
+        x1: First unsigned integer.
+        x2: Second unsigned integer.
+
+    Returns:
+        True if x1 == x2, False otherwise.
+    """
+    return compare(x1, x2) == 0
+
+
+fn not_equal(x1: BigUInt, x2: BigUInt) -> Bool:
+    """Checks if two numbers are not equal.
+
+    Args:
+        x1: First unsigned integer.
+        x2: Second unsigned integer.
+
+    Returns:
+        True if x1 != x2, False otherwise.
+    """
+    return compare(x1, x2) != 0

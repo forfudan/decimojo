@@ -402,6 +402,151 @@ fn modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
 
 # ===----------------------------------------------------------------------=== #
+# Multiplication Algorithms
+# ===----------------------------------------------------------------------=== #
+
+
+fn multiply_toom_cook_3(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Implements Toom-Cook 3-way multiplication algorithm.
+
+    Args:
+        x1: First operand.
+        x2: Second operand.
+
+    Returns:
+        Product of x1 and x2.
+
+    Notes:
+
+    This algorithm splits each number into 3 parts and performs 5 multiplications
+    instead of 9, achieving O(n^log₃5) ≈ O(n^1.465) complexity.
+    """
+    # Special cases
+    if x1.is_zero() or x2.is_zero():
+        return BigUInt()
+    if x1.is_one():
+        return x2
+    if x2.is_one():
+        return x1
+
+    # Basic multiplication is faster for small numbers
+    if len(x1.words) < 10 or len(x2.words) < 10:
+        return multiply(x1, x2)
+
+    # Determine size for splitting
+    var max_len = max(len(x1.words), len(x2.words))
+    var k = (max_len + 2) // 3  # Split into thirds
+
+    # Split the numbers into three parts each: a = a₂·β² + a₁·β + a₀
+    var a0 = BigUInt(empty=True)
+    var a1 = BigUInt(empty=True)
+    var a2 = BigUInt(empty=True)
+    var b0 = BigUInt(empty=True)
+    var b1 = BigUInt(empty=True)
+    var b2 = BigUInt(empty=True)
+
+    # Extract parts from x1
+    for i in range(min(k, len(x1.words))):
+        a0.words.append(x1.words[i])
+    for i in range(k, min(2 * k, len(x1.words))):
+        a1.words.append(x1.words[i])
+    for i in range(2 * k, len(x1.words)):
+        a2.words.append(x1.words[i])
+
+    # Extract parts from x2
+    for i in range(min(k, len(x2.words))):
+        b0.words.append(x2.words[i])
+    for i in range(k, min(2 * k, len(x2.words))):
+        b1.words.append(x2.words[i])
+    for i in range(2 * k, len(x2.words)):
+        b2.words.append(x2.words[i])
+
+    # Remove trailing zeros
+    a0.remove_trailing_zeros()
+    a1.remove_trailing_zeros()
+    a2.remove_trailing_zeros()
+    b0.remove_trailing_zeros()
+    b1.remove_trailing_zeros()
+    b2.remove_trailing_zeros()
+
+    # Evaluate at points 0, 1, -1, 2, ∞
+    # p₀ = a₀
+    var p0_a = a0
+    # p₁ = a₀ + a₁ + a₂
+    var p1_a = add(add(a0, a1), a2)
+    # p₂ = a₀ - a₁ + a₂
+    var p2_a = add(subtract(a0, a1), a2)
+    # p₃ = a₀ + 2a₁ + 4a₂
+    var a1_times2 = add(a1, a1)
+    var a2_times4 = add(add(a2, a2), add(a2, a2))
+    var p3_a = add(add(a0, a1_times2), a2_times4)
+    # p₄ = a₂
+    var p4_a = a2
+
+    # Same for b
+    var p0_b = b0
+    var p1_b = add(add(b0, b1), b2)
+    var p2_b = add(subtract(b0, b1), b2)
+    var b1_times2 = add(b1, b1)
+    var b2_times4 = add(add(b2, b2), add(b2, b2))
+    var p3_b = add(add(b0, b1_times2), b2_times4)
+    var p4_b = b2
+
+    # Perform pointwise multiplication
+    var r0 = multiply(p0_a, p0_b)  # at 0
+    var r1 = multiply(p1_a, p1_b)  # at 1
+    var r2 = multiply(p2_a, p2_b)  # at -1
+    var r3 = multiply(p3_a, p3_b)  # at 2
+    var r4 = multiply(p4_a, p4_b)  # at ∞
+
+    # Interpolate to get coefficients of the result
+    # c₀ = r₀
+    var c0 = r0
+
+    # c₄ = r₄
+    var c4 = r4
+
+    # TODO: The subtraction can be underflowed. Use signed integers for the subtraction
+    # c₃ = (r₃ - r₁)/3 - (r₄ - r₂)/2 + r₄·5/6
+    var t1 = subtract(r3, r1)
+    for _ in range(2):  # Division by 3 (approximation: divide by 6 and double)
+        floor_divide_inplace_by_2(t1)
+    var t2 = subtract(r4, r2)
+    floor_divide_inplace_by_2(t2)
+    var t3 = add(add(r4, r4), r4)  # 3*r4
+    floor_divide_inplace_by_2(t3)  # 3*r4/2
+    var c3 = add(subtract(t1, t2), t3)
+
+    # c₂ = (r₂ - r₀)/2 - r₄
+    var c2 = subtract(subtract(r2, r0), add(r4, r4))
+    floor_divide_inplace_by_2(c2)
+
+    # c₁ = r₁ - r₀ - c₃ - c₄ - c₂
+    var c1 = subtract(subtract(r1, r0), add(add(c2, c3), c4))
+
+    # Combine the coefficients to get the result
+    var result = c0
+
+    # c₁ * β
+    var c1_shifted = shift_words_left(c1, k)
+    result = add(result, c1_shifted)
+
+    # c₂ * β²
+    var c2_shifted = shift_words_left(c2, 2 * k)
+    result = add(result, c2_shifted)
+
+    # c₃ * β³
+    var c3_shifted = shift_words_left(c3, 3 * k)
+    result = add(result, c3_shifted)
+
+    # c₄ * β⁴
+    var c4_shifted = shift_words_left(c4, 4 * k)
+    result = add(result, c4_shifted)
+
+    return result
+
+
+# ===----------------------------------------------------------------------=== #
 # Division Algorithms
 # floor_divide_general, floor_divide_inplace_by_2
 # ===----------------------------------------------------------------------=== #
