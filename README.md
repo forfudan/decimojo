@@ -125,6 +125,7 @@ fn main() raises:
     print(-a)                                      # Negation: -12345678901234567890
     print(abs(BigInt("-12345678901234567890")))    # Absolute value: 12345678901234567890
     print(a.is_negative())                         # Check if negative: False
+```
 
 ## Objective
 
