@@ -324,16 +324,22 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
                 remainder >>= 1
             return result^
 
-        # SUB-CASE: Multi words // single word
+        # SUB-CASE: Divisor is single word (<= 10 digits)
         else:
             var result = x1
             floor_divide_inplace_by_single_word(result, x2)
             return result^
 
-    # CASE: Divisor is double-word
+    # CASE: Divisor is double-word (<= 20 digits)
     if len(x2.words) == 2:
         var result = x1
         floor_divide_inplace_by_double_words(result, x2)
+        return result^
+
+    # CASE: Dividend is quadruple-word (<= 40 digits)
+    if len(x2.words) == 4:
+        var result = x1
+        floor_divide_inplace_by_quad_words(result, x2)
         return result^
 
     # CASE: Dividend is zero
@@ -347,11 +353,6 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     # CASE: dividend == divisor
     if comparison_result == 0:
         return BigUInt(UInt32(1))
-
-    # CASE: Duo words division by means of UInt64
-    if len(x1.words) <= 2 and len(x2.words) <= 2:
-        var result = BigUInt.from_uint64(x1.to_uint64() // x2.to_uint64())
-        return result^
 
     # CASE: Divisor is 10^n
     # First remove the last words (10^9) and then shift the rest
@@ -1019,15 +1020,104 @@ fn floor_divide_inplace_by_double_words(mut x1: BigUInt, x2: BigUInt) raises:
         )
 
     # CASE: all other situations
-    var x2_value = UInt128(x2.words[0]) + UInt128(x2.words[1]) * UInt128(
-        1_000_000_000
+    var x2_value = UInt128(x2.words[1]) * UInt128(1_000_000_000) + UInt128(
+        x2.words[0]
     )
+
     var carry = UInt128(0)
-    for i in range(len(x1.words) - 1, -1, -1):
-        var dividend = carry * UInt128(1_000_000_000) + UInt128(x1.words[i])
-        x1.words[i] = UInt32(dividend // x2_value)
+    if len(x1.words) % 2 == 1:
+        carry = UInt128(x1.words[-1])
+        x1.words.resize(len(x1.words) - 1)
+
+    for i in range(len(x1.words) - 1, -1, -2):
+        var dividend = carry * UInt128(1_000_000_000_000_000_000) + UInt128(
+            x1.words[i]
+        ) * UInt128(1_000_000_000) + UInt128(x1.words[i - 1])
+        var quotient = dividend // x2_value
+        x1.words[i] = UInt32(quotient // UInt128(1_000_000_000))
+        x1.words[i - 1] = UInt32(quotient % UInt128(1_000_000_000))
         carry = dividend % x2_value
+
     x1.remove_trailing_zeros()
+    return
+
+
+fn floor_divide_inplace_by_quad_words(mut x1: BigUInt, x2: BigUInt) raises:
+    """Divides a BigUInt by quad-word divisor in-place.
+
+    Args:
+        x1: The BigUInt value to divide by the divisor.
+        x2: The double-word divisor.
+
+    Notes:
+
+    The improvement in this algorithm is marginal.
+    """
+    if x2.is_zero():
+        raise Error(
+            "Error in `floor_divide_inplace_by_double_words`: Division by zero"
+        )
+
+    # CASE: all other situations
+    var x2_value = UInt256(x2.words[3]) * UInt256(
+        1_000_000_000_000_000_000_000_000_000
+    ) + UInt256(x2.words[2]) * UInt256(1_000_000_000_000_000_000) + UInt256(
+        x2.words[1]
+    ) * UInt256(
+        1_000_000_000
+    ) + UInt256(
+        x2.words[0]
+    )
+
+    var carry = UInt256(0)
+    if len(x1.words) % 4 == 1:
+        carry = UInt256(x1.words[-1])
+        x1.words.resize(len(x1.words) - 1)
+    if len(x1.words) % 4 == 2:
+        carry = UInt256(x1.words[-1]) * UInt256(1_000_000_000) + UInt256(
+            x1.words[-2]
+        )
+        x1.words.resize(len(x1.words) - 2)
+    if len(x1.words) % 4 == 3:
+        carry = (
+            UInt256(x1.words[-1]) * UInt256(1_000_000_000_000_000_000)
+            + UInt256(x1.words[-2]) * UInt256(1_000_000_000)
+            + UInt256(x1.words[-3])
+        )
+        x1.words.resize(len(x1.words) - 3)
+
+    for i in range(len(x1.words) - 1, -1, -4):
+        var dividend = carry * UInt256(
+            1_000_000_000_000_000_000_000_000_000_000_000_000
+        ) + UInt256(x1.words[i]) * UInt256(
+            1_000_000_000_000_000_000_000_000_000
+        ) + UInt256(
+            x1.words[i - 1]
+        ) * UInt256(
+            1_000_000_000_000_000_000
+        ) + UInt256(
+            x1.words[i - 2]
+        ) * UInt256(
+            1_000_000_000
+        ) + UInt256(
+            x1.words[i - 3]
+        )
+        var quotient = dividend // x2_value
+        carry = dividend % x2_value
+
+        var quot = quotient // (UInt256(1_000_000_000_000_000_000_000_000_000))
+        x1.words[i] = UInt32(quot)
+        var rem = quotient % (UInt256(1_000_000_000_000_000_000_000_000_000))
+        quot = rem // UInt256(1_000_000_000_000_000_000)
+        x1.words[i - 1] = UInt32(quot)
+        rem = rem % UInt256(1_000_000_000_000_000_000)
+        quot = rem // UInt256(1_000_000_000)
+        x1.words[i - 2] = UInt32(quot)
+        rem = rem % UInt256(1_000_000_000)
+        x1.words[i - 3] = UInt32(rem)
+
+    x1.remove_trailing_zeros()
+    return
 
 
 fn floor_divide_inplace_by_2(mut x: BigUInt):
