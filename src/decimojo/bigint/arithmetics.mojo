@@ -142,69 +142,13 @@ fn multiply(x1: BigInt, x2: BigInt) raises -> BigInt:
     """
     # CASE: One of the operands is zero
     if x1.is_zero() or x2.is_zero():
-        return BigInt(UInt32(0), sign=x1.sign != x2.sign)
+        return BigInt()  # Return zero regardless of sign
 
-    # CASE: One of the operands is one or negative one
-    if x1.is_one_or_minus_one():
-        var result = x2
-        result.sign = x1.sign != x2.sign
-        return result^
+    # Multiply the magnitudes using BigUInt's multiplication
+    var result_magnitude = x1.magnitude * x2.magnitude
 
-    if x2.is_one_or_minus_one():
-        var result = x1
-        result.sign = x1.sign != x2.sign
-        return result^
-
-    # The maximum number of words in the result is the sum of the words in the operands
-    var max_result_len = x1.number_of_words() + x2.number_of_words()
-    var result = BigInt(List[UInt32](capacity=max_result_len), sign=False)
-    result.sign = x1.sign != x2.sign
-
-    # Initialize result words with zeros
-    for _ in range(max_result_len):
-        result.magnitude.words.append(0)
-
-    # Perform the multiplication word by word (from least significant to most significant)
-    # x1 = x1[0] + x1[1] * 10^9
-    # x2 = x2[0] + x2[1] * 10^9
-    # x1 * x2 = x1[0] * x2[0] + (x1[0] * x2[1] + x1[1] * x2[0]) * 10^9 + x1[1] * x2[1] * 10^18
-    var carry: UInt64 = 0
-    for i in range(len(x1.magnitude.words)):
-        # Skip if the word is zero
-        if x1.magnitude.words[i] == 0:
-            continue
-
-        carry = UInt64(0)
-
-        for j in range(len(x2.magnitude.words)):
-            # Skip if the word is zero
-            if x2.magnitude.words[j] == 0:
-                continue
-
-            # Calculate the product of the current words
-            # plus the carry from the previous multiplication
-            # plus the value already at this position in the result
-            var product = UInt64(x1.magnitude.words[i]) * UInt64(
-                x2.magnitude.words[j]
-            ) + carry + UInt64(result.magnitude.words[i + j])
-
-            # The lower 9 digits (base 10^9) go into the current word
-            # The upper digits become the carry for the next position
-            result.magnitude.words[i + j] = UInt32(product % 1_000_000_000)
-            carry = product // 1_000_000_000
-
-        # If there is a carry left, add it to the next position
-        if carry > 0:
-            result.magnitude.words[i + len(x2.magnitude.words)] += UInt32(carry)
-
-    # Remove trailing zeros
-    while (
-        len(result.magnitude.words) > 1
-        and result.magnitude.words[len(result.magnitude.words) - 1] == 0
-    ):
-        result.magnitude.words.resize(len(result.magnitude.words) - 1)
-
-    return result^
+    # Create and return final result with correct sign
+    return BigInt(result_magnitude^, sign=x1.sign != x2.sign)
 
 
 fn floor_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
