@@ -76,6 +76,8 @@ struct BigUInt(Absable, IntableRaising, Writable):
         """Initializes a BigUInt with value 0."""
         self.words = List[UInt32](UInt32(0))
 
+    # FIXME: This is a temporary solution
+    # A unitialized BigUInt is not a good idea
     fn __init__(out self, empty: Bool):
         """Initializes an empty BigUInt.
 
@@ -100,6 +102,23 @@ struct BigUInt(Absable, IntableRaising, Writable):
         self.words = List[UInt32](capacity=capacity)
         if not empty:
             self.words.append(UInt32(0))
+
+    fn __init__(out self, owned words: List[UInt32]):
+        """Initializes a BigUInt from a list of UInt32 words.
+
+        Args:
+            words: A list of UInt32 words representing the coefficient.
+                Each UInt32 word represents digits ranging from 0 to 10^9 - 1.
+                The words are stored in little-endian order.
+
+        Notes:
+
+        This method does not check whether the words are smaller than
+        `999_999_999`.
+        """
+        if len(words) == 0:
+            words.append(UInt32(0))
+        self.words = words^
 
     fn __init__(out self, owned *words: UInt32):
         """Initializes a BigUInt from raw words without validating the words.
@@ -164,7 +183,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
         End of examples.
         """
 
-        result = Self(empty=True, capacity=len(words))
+        var list_of_words = List[UInt32](capacity=len(words))
 
         # Check if the words are valid
         for word in words:
@@ -174,9 +193,9 @@ struct BigUInt(Absable, IntableRaising, Writable):
                     " value of 999_999_999"
                 )
             else:
-                result.words.append(word)
+                list_of_words.append(word)
 
-        return result^
+        return Self(list_of_words^)
 
     @staticmethod
     fn from_int(value: Int) raises -> Self:
@@ -187,17 +206,17 @@ struct BigUInt(Absable, IntableRaising, Writable):
         if value < 0:
             raise Error("Error in `from_int()`: The value is negative")
 
-        var result = Self(empty=True)
+        var list_of_words = List[UInt32]()
         var remainder: Int = value
         var quotient: Int
 
         while remainder != 0:
             quotient = remainder // 1_000_000_000
             remainder = remainder % 1_000_000_000
-            result.words.append(UInt32(remainder))
+            list_of_words.append(UInt32(remainder))
             remainder = quotient
 
-        return result^
+        return Self(list_of_words^)
 
     @staticmethod
     fn from_uint64(value: UInt64) raises -> Self:
@@ -212,16 +231,16 @@ struct BigUInt(Absable, IntableRaising, Writable):
         if value == 0:
             return Self()
 
-        var result = Self(empty=True)
+        var list_of_words = List[UInt32]()
         var remainder: UInt64 = value
         var quotient: UInt64
         while remainder != 0:
             quotient = remainder // 1_000_000_000
             remainder = remainder % 1_000_000_000
-            result.words.append(UInt32(remainder))
+            list_of_words.append(UInt32(remainder))
             remainder = quotient
 
-        return result^
+        return Self(list_of_words^)
 
     @staticmethod
     fn from_uint128(value: UInt128) -> Self:
@@ -236,16 +255,16 @@ struct BigUInt(Absable, IntableRaising, Writable):
         if value == 0:
             return Self()
 
-        var result = Self(empty=True)
+        var list_of_words = List[UInt32]()
         var remainder: UInt128 = value
         var quotient: UInt128
         while remainder != 0:
             quotient = remainder // 1_000_000_000
             remainder = remainder % 1_000_000_000
-            result.words.append(UInt32(remainder))
+            list_of_words.append(UInt32(remainder))
             remainder = quotient
 
-        return result^
+        return Self(list_of_words^)
 
     @staticmethod
     fn from_uint256(value: UInt256) -> Self:
@@ -260,16 +279,16 @@ struct BigUInt(Absable, IntableRaising, Writable):
         if value == 0:
             return Self()
 
-        var result = Self(empty=True)
+        var list_of_words = List[UInt32]()
         var remainder: UInt256 = value
         var quotient: UInt256
         while remainder != 0:
             quotient = remainder // 1_000_000_000
             remainder = remainder % 1_000_000_000
-            result.words.append(UInt32(remainder))
+            list_of_words.append(UInt32(remainder))
             remainder = quotient
 
-        return result^
+        return Self(list_of_words^)
 
     @staticmethod
     fn from_string(value: String, ignore_sign: Bool = False) raises -> BigUInt:
@@ -552,7 +571,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
     @always_inline
     fn __mod__(self, other: Self) raises -> Self:
-        return decimojo.biguint.arithmetics.modulo(self, other)
+        return decimojo.biguint.arithmetics.floor_modulo(self, other)
 
     # ===------------------------------------------------------------------=== #
     # Basic binary augmented arithmetic assignments dunders
@@ -579,7 +598,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
     @always_inline
     fn __imod__(mut self, other: Self) raises:
-        self = decimojo.biguint.arithmetics.modulo(self, other)
+        self = decimojo.biguint.arithmetics.floor_modulo(self, other)
 
     @always_inline
     fn __pow__(self, exponent: Self) raises -> Self:
@@ -636,13 +655,6 @@ struct BigUInt(Absable, IntableRaising, Writable):
         return decimojo.biguint.comparison.compare(self, other)
 
     @always_inline
-    fn ceil_divide(self, other: Self) raises -> Self:
-        """Returns the result of ceil dividing this number by `other`.
-        See `ceil_divide()` for more information.
-        """
-        return decimojo.biguint.arithmetics.ceil_divide(self, other)
-
-    @always_inline
     fn floor_divide(self, other: Self) raises -> Self:
         """Returns the result of floor dividing this number by `other`.
         It is equal to `self // other`.
@@ -657,6 +669,27 @@ struct BigUInt(Absable, IntableRaising, Writable):
         See `truncate_divide()` for more information.
         """
         return decimojo.biguint.arithmetics.truncate_divide(self, other)
+
+    @always_inline
+    fn ceil_divide(self, other: Self) raises -> Self:
+        """Returns the result of ceil dividing this number by `other`.
+        See `ceil_divide()` for more information.
+        """
+        return decimojo.biguint.arithmetics.ceil_divide(self, other)
+
+    @always_inline
+    fn floor_modulo(self, other: Self) raises -> Self:
+        """Returns the result of floor modulo this number by `other`.
+        See `floor_modulo()` for more information.
+        """
+        return decimojo.biguint.arithmetics.floor_modulo(self, other)
+
+    @always_inline
+    fn truncate_modulo(self, other: Self) raises -> Self:
+        """Returns the result of truncate modulo this number by `other`.
+        See `truncate_modulo()` for more information.
+        """
+        return decimojo.biguint.arithmetics.truncate_modulo(self, other)
 
     @always_inline
     fn ceil_modulo(self, other: Self) raises -> Self:

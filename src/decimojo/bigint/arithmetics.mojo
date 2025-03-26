@@ -275,8 +275,38 @@ fn multiply(x1: BigInt, x2: BigInt) raises -> BigInt:
     return result^
 
 
+fn floor_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
+    """Returns the quotient of two numbers, rounding toward negative infinity.
+    The modulo has the same sign as the divisor and satisfies:
+    x1 = floor_divide(x1, x2) * x2 + floor_divide(x1, x2).
+
+    Args:
+        x1: The dividend.
+        x2: The divisor.
+
+    Returns:
+        The quotient of x1 // x2, rounded toward negative infinity.
+    """
+
+    if x2.is_zero():
+        raise Error("Error in `floor_divide`: Division by zero")
+
+    if x1.is_zero():
+        return BigInt()
+
+    if x1.sign == x2.sign:
+        # Use floor (truncate) division between magnitudes
+        return BigInt(x1.magnitude.floor_divide(x2.magnitude), sign=False)
+
+    else:
+        # Use ceil division of the magnitudes
+        return BigInt(x1.magnitude.ceil_divide(x2.magnitude), sign=True)
+
+
 fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
     """Returns the quotient of two BigInt numbers, truncating toward zero.
+    The modulo has the same sign as the divisor and satisfies:
+    x1 = truncate_divide(x1, x2) * x2 + truncate_modulo(x1, x2).
 
     Args:
         x1: The dividend.
@@ -517,8 +547,33 @@ fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
     return result
 
 
+fn floor_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
+    """Returns the remainder of two numbers, truncating toward negative infinity.
+    The remainder has the same sign as the divisor and satisfies:
+    x1 = floor_divide(x1, x2) * x2 + floor_modulo(x1, x2).
+
+    Args:
+        x1: The dividend.
+        x2: The divisor.
+
+    Returns:
+        The remainder of x1 being divided by x2, with the same sign as x2.
+    """
+
+    if x2.is_zero():
+        raise Error("Error in `floor_modulo`: Division by zero")
+
+    if x1.sign == x2.sign:
+        # Use floor (truncate) division between magnitudes
+        return BigInt(x1.magnitude.floor_modulo(x2.magnitude), sign=x2.sign)
+
+    else:
+        # Use ceil division of the magnitudes
+        return BigInt(x1.magnitude.ceil_modulo(x2.magnitude), sign=x2.sign)
+
+
 fn truncate_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
-    """Returns the remainder of two BigInt numbers, truncating toward zero.
+    """Returns the remainder of two numbers, truncating toward zero.
     The remainder has the same sign as the dividend and satisfies:
     x1 = truncate_divide(x1, x2) * x2 + truncate_modulo(x1, x2).
 

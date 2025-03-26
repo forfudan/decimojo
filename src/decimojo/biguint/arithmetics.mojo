@@ -583,10 +583,10 @@ fn ceil_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     return quotient^
 
 
-fn modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+fn floor_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """Returns the remainder of two BigUInt numbers, truncating toward zero.
     The remainder has the same sign as the dividend and satisfies:
-    x1 = floor_divide(x1, x2) * x2 + modulo(x1, x2).
+    x1 = floor_divide(x1, x2) * x2 + floor_modulo(x1, x2).
 
     Args:
         x1: The dividend.
@@ -624,6 +624,14 @@ fn modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     var remainder = subtract(x1, multiply(x2, quotient))
 
     return remainder^
+
+
+fn truncate_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Returns the remainder of two BigUInt numbers, truncating toward zero.
+    It is equal to floored modulo for unsigned numbers.
+    See `floor_modulo` for more details.
+    """
+    return floor_modulo(x1, x2)
 
 
 fn ceil_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
@@ -696,37 +704,44 @@ fn multiply_toom_cook_3(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     if x2.is_one():
         return x1
 
-    # Basic multiplication is faster for small numbers
-    if len(x1.words) < 10 or len(x2.words) < 10:
-        return multiply(x1, x2)
+    # # Basic multiplication is faster for small numbers
+    # if len(x1.words) < 10 or len(x2.words) < 10:
+    #     return multiply(x1, x2)
 
     # Determine size for splitting
     var max_len = max(len(x1.words), len(x2.words))
     var k = (max_len + 2) // 3  # Split into thirds
 
     # Split the numbers into three parts each: a = a₂·β² + a₁·β + a₀
-    var a0 = BigUInt(empty=True)
-    var a1 = BigUInt(empty=True)
-    var a2 = BigUInt(empty=True)
-    var b0 = BigUInt(empty=True)
-    var b1 = BigUInt(empty=True)
-    var b2 = BigUInt(empty=True)
+    var a0_words = List[UInt32]()
+    var a1_words = List[UInt32]()
+    var a2_words = List[UInt32]()
+    var b0_words = List[UInt32]()
+    var b1_words = List[UInt32]()
+    var b2_words = List[UInt32]()
 
     # Extract parts from x1
     for i in range(min(k, len(x1.words))):
-        a0.words.append(x1.words[i])
+        a0_words.append(x1.words[i])
     for i in range(k, min(2 * k, len(x1.words))):
-        a1.words.append(x1.words[i])
+        a1_words.append(x1.words[i])
     for i in range(2 * k, len(x1.words)):
-        a2.words.append(x1.words[i])
+        a2_words.append(x1.words[i])
 
     # Extract parts from x2
     for i in range(min(k, len(x2.words))):
-        b0.words.append(x2.words[i])
+        b0_words.append(x2.words[i])
     for i in range(k, min(2 * k, len(x2.words))):
-        b1.words.append(x2.words[i])
+        b1_words.append(x2.words[i])
     for i in range(2 * k, len(x2.words)):
-        b2.words.append(x2.words[i])
+        b2_words.append(x2.words[i])
+
+    a0 = BigUInt(a0_words)
+    a1 = BigUInt(a1_words)
+    a2 = BigUInt(a2_words)
+    b0 = BigUInt(b0_words)
+    b1 = BigUInt(b1_words)
+    b2 = BigUInt(b2_words)
 
     # Remove trailing zeros
     a0.remove_trailing_zeros()
@@ -736,17 +751,22 @@ fn multiply_toom_cook_3(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     b1.remove_trailing_zeros()
     b2.remove_trailing_zeros()
 
+    print("DEBUG: a0 =", a0)
+    print("DEBUG: a1 =", a1)
+    print("DEBUG: a2 =", a2)
+    print("DEBUG: b0 =", b0)
+    print("DEBUG: b1 =", b1)
+    print("DEBUG: b2 =", b2)
+
     # Evaluate at points 0, 1, -1, 2, ∞
     # p₀ = a₀
     var p0_a = a0
     # p₁ = a₀ + a₁ + a₂
-    var p1_a = add(add(a0, a1), a2)
+    var p1_a = a0 + a1 + a2
     # p₂ = a₀ - a₁ + a₂
-    var p2_a = add(subtract(a0, a1), a2)
+    var p2_a = a0 + a2 - a1
     # p₃ = a₀ + 2a₁ + 4a₂
-    var a1_times2 = add(a1, a1)
-    var a2_times4 = add(add(a2, a2), add(a2, a2))
-    var p3_a = add(add(a0, a1_times2), a2_times4)
+    var p3_a = a0 + a1 * BigUInt(UInt32(2)) + a2 * BigUInt(UInt32(4))
     # p₄ = a₂
     var p4_a = a2
 
@@ -775,40 +795,35 @@ fn multiply_toom_cook_3(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
     # TODO: The subtraction can be underflowed. Use signed integers for the subtraction
     # c₃ = (r₃ - r₁)/3 - (r₄ - r₂)/2 + r₄·5/6
-    var t1 = subtract(r3, r1)
-    for _ in range(2):  # Division by 3 (approximation: divide by 6 and double)
-        floor_divide_inplace_by_2(t1)
-    var t2 = subtract(r4, r2)
-    floor_divide_inplace_by_2(t2)
-    var t3 = add(add(r4, r4), r4)  # 3*r4
-    floor_divide_inplace_by_2(t3)  # 3*r4/2
-    var c3 = add(subtract(t1, t2), t3)
+    var t1 = (r3 - r1) // BigUInt(UInt32(3))
+    var t2 = (r4 - r2) // BigUInt(UInt32(2))
+    var t3 = r4 * BigUInt(UInt32(5)) // BigUInt(UInt32(6))
+    var c3 = t1 + t3 - t2
 
     # c₂ = (r₂ - r₀)/2 - r₄
-    var c2 = subtract(subtract(r2, r0), add(r4, r4))
-    floor_divide_inplace_by_2(c2)
+    var c2 = (r2 - r0) // BigUInt(UInt32(2)) - r4
 
     # c₁ = r₁ - r₀ - c₃ - c₄ - c₂
-    var c1 = subtract(subtract(r1, r0), add(add(c2, c3), c4))
+    var c1 = r1 - r0 - c3 - c4 - c2
 
     # Combine the coefficients to get the result
     var result = c0
 
     # c₁ * β
     var c1_shifted = shift_words_left(c1, k)
-    result = add(result, c1_shifted)
+    result = result + c1_shifted
 
     # c₂ * β²
     var c2_shifted = shift_words_left(c2, 2 * k)
-    result = add(result, c2_shifted)
+    result = result + c2_shifted
 
     # c₃ * β³
     var c3_shifted = shift_words_left(c3, 3 * k)
-    result = add(result, c3_shifted)
+    result = result + c3_shifted
 
     # c₄ * β⁴
     var c4_shifted = shift_words_left(c4, 4 * k)
-    result = add(result, c4_shifted)
+    result = result + c4_shifted
 
     return result
 

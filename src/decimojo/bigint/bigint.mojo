@@ -98,6 +98,17 @@ struct BigInt(Absable, IntableRaising, Writable):
         self.magnitude = BigUInt(empty=empty, capacity=capacity)
         self.sign = sign
 
+    fn __init__(out self, magnitude: BigUInt, sign: Bool):
+        """Initializes a BigInt from a BigUInt and a sign.
+
+        Args:
+            magnitude: The magnitude of the BigInt.
+            sign: The sign of the BigInt.
+        """
+
+        self.magnitude = magnitude
+        self.sign = sign
+
     fn __init__(out self, owned *words: UInt32, sign: Bool) raises:
         """Initializes a BigInt from raw components.
         See `from_words()` for safer initialization.
@@ -388,6 +399,14 @@ struct BigInt(Absable, IntableRaising, Writable):
     fn __mul__(self, other: Self) raises -> Self:
         return decimojo.bigint.arithmetics.multiply(self, other)
 
+    @always_inline
+    fn __floordiv__(self, other: Self) raises -> Self:
+        return decimojo.bigint.arithmetics.floor_divide(self, other)
+
+    @always_inline
+    fn __mod__(self, other: Self) raises -> Self:
+        return decimojo.bigint.arithmetics.floor_modulo(self, other)
+
     # ===------------------------------------------------------------------=== #
     # Basic binary augmented arithmetic assignments dunders
     # These methods are called to implement the binary augmented arithmetic
@@ -407,6 +426,14 @@ struct BigInt(Absable, IntableRaising, Writable):
     fn __imul__(mut self, other: Self) raises:
         self = decimojo.bigint.arithmetics.multiply(self, other)
 
+    @always_inline
+    fn __ifloordiv__(mut self, other: Self) raises:
+        self = decimojo.bigint.arithmetics.floor_divide(self, other)
+
+    @always_inline
+    fn __imod__(mut self, other: Self) raises:
+        self = decimojo.bigint.arithmetics.floor_modulo(self, other)
+
     # ===------------------------------------------------------------------=== #
     # Mathematical methods that do not implement a trait (not a dunder)
     # ===------------------------------------------------------------------=== #
@@ -419,11 +446,25 @@ struct BigInt(Absable, IntableRaising, Writable):
         return decimojo.bigint.comparison.compare_absolute(self, other)
 
     @always_inline
+    fn floor_divide(self, other: Self) raises -> Self:
+        """Performs a floor division of two BigInts.
+        See `floor_divide()` for more information.
+        """
+        return decimojo.bigint.arithmetics.floor_divide(self, other)
+
+    @always_inline
     fn truncate_divide(self, other: Self) raises -> Self:
         """Performs a truncated division of two BigInts.
         See `truncate_divide()` for more information.
         """
         return decimojo.bigint.arithmetics.truncate_divide(self, other)
+
+    @always_inline
+    fn floor_modulo(self, other: Self) raises -> Self:
+        """Performs a floor modulo of two BigInts.
+        See `floor_modulo()` for more information.
+        """
+        return decimojo.bigint.arithmetics.floor_modulo(self, other)
 
     @always_inline
     fn truncate_modulo(self, other: Self) raises -> Self:
