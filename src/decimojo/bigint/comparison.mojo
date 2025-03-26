@@ -37,18 +37,18 @@ fn compare_absolute(x1: BigInt, x2: BigInt) -> Int8:
         (3) -1 if |x1| < |x2|.
     """
     # Compare the number of words
-    if len(x1.words) > len(x2.words):
+    if len(x1.magnitude.words) > len(x2.magnitude.words):
         return Int8(1)
-    if len(x1.words) < len(x2.words):
+    if len(x1.magnitude.words) < len(x2.magnitude.words):
         return Int8(-1)
 
     # If the number of words are equal,
     # compare the words from the most significant to the least significant.
-    var ith = len(x1.words) - 1
+    var ith = len(x1.magnitude.words) - 1
     while ith >= 0:
-        if x1.words[ith] > x2.words[ith]:
+        if x1.magnitude.words[ith] > x2.magnitude.words[ith]:
             return Int8(1)
-        if x1.words[ith] < x2.words[ith]:
+        if x1.magnitude.words[ith] < x2.magnitude.words[ith]:
             return Int8(-1)
         ith -= 1
 

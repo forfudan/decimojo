@@ -27,6 +27,7 @@ from memory import UnsafePointer
 import testing
 import time
 
+from decimojo.biguint.biguint import BigUInt
 import decimojo.bigint.arithmetics
 import decimojo.bigint.comparison
 import decimojo.str
@@ -34,26 +35,18 @@ import decimojo.str
 
 @value
 struct BigInt(Absable, IntableRaising, Writable):
-    """Represents an integer with arbitrary precision.
+    """Represents a base-10 arbitrary-precision signed integer.
 
     Notes:
 
     Internal Representation:
 
-    Use base-10^9 representation for the coefficient of the integer.
-    Each integer uses a dynamic structure in memory, where:
-    - An pointer to an array of UInt32 words for the coefficient on the heap,
-        which can be of arbitrary length stored in little-endian order.
-        Each UInt32 word represents digits ranging from 0 to 10^9 - 1.
+    - A base-10 unsigned integer (BigUInt) for magnitude.
     - A Bool value for the sign.
-
-    The value of the BigInt is calculated as follows:
-
-    x = x[0] * 10^0 + x[1] * 10^9 + x[2] * 10^18 + ... x[n] * 10^(9n)
     """
 
-    var words: List[UInt32]
-    """A list of UInt32 words representing the coefficient."""
+    var magnitude: BigUInt
+    """The magnitude of the BigInt."""
     var sign: Bool
     """Sign information."""
 
@@ -77,23 +70,22 @@ struct BigInt(Absable, IntableRaising, Writable):
 
     fn __init__(out self):
         """Initializes a BigInt with value 0."""
-        self.words = List[UInt32](UInt32(0))
+        self.magnitude = BigUInt()
         self.sign = False
 
-    fn __init__(out self, empty: Bool):
+    fn __init__(out self, empty: Bool, sign: Bool):
         """Initializes an empty BigInt.
 
         Args:
             empty: A Bool value indicating whether the BigInt is empty.
                 If True, the BigInt is empty.
                 If False, the BigInt is intialized with value 0.
+            sign: The sign of the BigInt.
         """
-        self.words = List[UInt32]()
-        self.sign = False
-        if not empty:
-            self.words.append(UInt32(0))
+        self.magnitude = BigUInt(empty=empty)
+        self.sign = sign
 
-    fn __init__(out self, empty: Bool, capacity: Int):
+    fn __init__(out self, empty: Bool, capacity: Int, sign: Bool):
         """Initializes an empty BigInt with a given capacity.
 
         Args:
@@ -101,14 +93,25 @@ struct BigInt(Absable, IntableRaising, Writable):
                 If True, the BigInt is empty.
                 If False, the BigInt is intialized with value 0.
             capacity: The capacity of the BigInt.
+            sign: The sign of the BigInt.
         """
-        self.words = List[UInt32](capacity=capacity)
-        self.sign = False
-        if not empty:
-            self.words.append(UInt32(0))
+        self.magnitude = BigUInt(empty=empty, capacity=capacity)
+        self.sign = sign
 
-    fn __init__(out self, *words: UInt32, sign: Bool) raises:
+    fn __init__(out self, magnitude: BigUInt, sign: Bool):
+        """Initializes a BigInt from a BigUInt and a sign.
+
+        Args:
+            magnitude: The magnitude of the BigInt.
+            sign: The sign of the BigInt.
+        """
+
+        self.magnitude = magnitude
+        self.sign = sign
+
+    fn __init__(out self, owned *words: UInt32, sign: Bool) raises:
         """Initializes a BigInt from raw components.
+        See `from_words()` for safer initialization.
 
         Args:
             words: The UInt32 words representing the coefficient.
@@ -118,7 +121,8 @@ struct BigInt(Absable, IntableRaising, Writable):
 
         Notes:
 
-        This method checks whether the words are smaller than `999_999_999`.
+        This method does not check whether the words are smaller than
+        `999_999_999`.
 
         Example:
         ```console
@@ -128,18 +132,10 @@ struct BigInt(Absable, IntableRaising, Writable):
 
         End of examples.
         """
-        self.words = List[UInt32](capacity=len(words))
         self.sign = sign
-
-        # Check if the words are valid
+        self.magnitude = BigUInt(empty=True, capacity=len(words))
         for word in words:
-            if word > Self.MAX_OF_WORD:
-                raise Error(
-                    "Error in `BigInt.__init__()`: Word value exceeds maximum"
-                    " value of 999_999_999"
-                )
-            else:
-                self.words.append(word)
+            self.magnitude.words.append(word[])
 
     fn __init__(out self, value: Int) raises:
         """Initializes a BigInt from an Int.
@@ -159,15 +155,15 @@ struct BigInt(Absable, IntableRaising, Writable):
     # ===------------------------------------------------------------------=== #
     # Constructing methods that are not dunders
     #
-    # from_raw_words(*words: UInt32, sign: Bool) -> Self
+    # from_words(*words: UInt32, sign: Bool) -> Self
     # from_int(value: Int) -> Self
     # from_uint128(value: UInt128, sign: Bool = False) -> Self
     # from_string(value: String) -> Self
     # ===------------------------------------------------------------------=== #
 
     @staticmethod
-    fn from_raw_words(*words: UInt32, sign: Bool) -> Self:
-        """Initializes a BigInt from raw words without validating the words.
+    fn from_words(*words: UInt32, sign: Bool) raises -> Self:
+        """Initializes a BigInt from raw words.
 
         Args:
             words: The UInt32 words representing the coefficient.
@@ -177,14 +173,21 @@ struct BigInt(Absable, IntableRaising, Writable):
 
         Notes:
 
-        This method does not validate whether the words are smaller than
-        `999_999_999`.
+        This method validates whether the words are smaller than `999_999_999`.
         """
 
-        result = Self(empty=True, capacity=len(words))
-        result.sign = sign
+        result = Self(empty=True, capacity=len(words), sign=sign)
+
+        # Check if the words are valid
         for word in words:
-            result.words.append(word)
+            if word > Self.MAX_OF_WORD:
+                raise Error(
+                    "Error in `BigInt.__init__()`: Word value exceeds maximum"
+                    " value of 999_999_999"
+                )
+            else:
+                result.magnitude.words.append(word)
+
         return result^
 
     @staticmethod
@@ -193,13 +196,13 @@ struct BigInt(Absable, IntableRaising, Writable):
         if value == 0:
             return Self()
 
-        var result = Self(empty=True)
+        var result = Self(empty=True, sign=False)
         var remainder: Int
         var quotient: Int
         if value < 0:
             # Handle the case of Int.MIN due to asymmetry of Int.MIN and Int.MAX
             if value == Int.MIN:
-                return Self.from_raw_words(
+                return Self(
                     UInt32(854775807), UInt32(223372036), UInt32(9), sign=True
                 )
             result.sign = True
@@ -211,7 +214,7 @@ struct BigInt(Absable, IntableRaising, Writable):
         while remainder != 0:
             quotient = remainder // 1_000_000_000
             remainder = remainder % 1_000_000_000
-            result.words.append(UInt32(remainder))
+            result.magnitude.words.append(UInt32(remainder))
             remainder = quotient
 
         return result
@@ -230,18 +233,11 @@ struct BigInt(Absable, IntableRaising, Writable):
         if value == 0:
             return Self()
 
-        var result = Self(empty=True)
-        result.sign = False
+        var result = Self(empty=True, sign=False)
+        result.magnitude = BigUInt.from_uint128(value)
+        result.sign = sign
 
-        var remainder: UInt128 = value
-        var quotient: UInt128
-        while remainder != 0:
-            quotient = remainder // 1_000_000_000
-            remainder = remainder % 1_000_000_000
-            result.words.append(UInt32(remainder))
-            remainder = quotient
-
-        return result
+        return result^
 
     @staticmethod
     fn from_string(value: String) raises -> BigInt:
@@ -261,83 +257,13 @@ struct BigInt(Absable, IntableRaising, Writable):
 
         # Check if the number is zero
         if len(coef) == 1 and coef[0] == UInt8(0):
-            return Self.from_raw_words(UInt32(0), sign=sign)
+            return Self(UInt32(0), sign=False)
 
-        # Check whether the number is an integer
-        # If the fractional part is not zero, raise an error
-        # If the fractional part is zero, remove the fractional part
-        if scale > 0:
-            if scale >= len(coef):
-                raise Error(
-                    "Error in `from_string`: The number is not an integer."
-                )
-            for i in range(1, scale + 1):
-                if coef[-i] != 0:
-                    raise Error(
-                        "Error in `from_string`: The number is not an integer."
-                    )
-            coef.resize(-scale)
-            scale = 0
-
-        var number_of_digits = len(coef) - scale
-        var number_of_words = number_of_digits // 9
-        if number_of_digits % 9 != 0:
-            number_of_words += 1
-
-        var result = Self(empty=True, capacity=number_of_words)
+        var result = Self(empty=True, sign=False)
+        result.magnitude = BigUInt.from_string(value, ignore_sign=True)
         result.sign = sign
 
-        if scale == 0:
-            # This is a true integer
-            var number_of_digits = len(coef)
-            var number_of_words = number_of_digits // 9
-            if number_of_digits % 9 != 0:
-                number_of_words += 1
-
-            var end: Int = number_of_digits
-            var start: Int
-            while end >= 9:
-                start = end - 9
-                var word: UInt32 = 0
-                for digit in coef[start:end]:
-                    word = word * 10 + UInt32(digit[])
-                result.words.append(word)
-                end = start
-            if end > 0:
-                var word: UInt32 = 0
-                for digit in coef[0:end]:
-                    word = word * 10 + UInt32(digit[])
-                result.words.append(word)
-
-            return result
-
-        else:  # scale < 0
-            # This is a true integer with postive exponent
-            var number_of_trailing_zero_words = -scale // 9
-            var remaining_trailing_zero_digits = -scale % 9
-
-            for _ in range(number_of_trailing_zero_words):
-                result.words.append(UInt32(0))
-
-            for _ in range(remaining_trailing_zero_digits):
-                coef.append(UInt8(0))
-
-            var end: Int = number_of_digits + scale + remaining_trailing_zero_digits
-            var start: Int
-            while end >= 9:
-                start = end - 9
-                var word: UInt32 = 0
-                for digit in coef[start:end]:
-                    word = word * 10 + UInt32(digit[])
-                result.words.append(word)
-                end = start
-            if end > 0:
-                var word: UInt32 = 0
-                for digit in coef[0:end]:
-                    word = word * 10 + UInt32(digit[])
-                result.words.append(word)
-
-            return result
+        return result^
 
     # ===------------------------------------------------------------------=== #
     # Output dunders, type-transfer dunders
@@ -382,14 +308,16 @@ struct BigInt(Absable, IntableRaising, Writable):
         # 2^63-1 = 9_223_372_036_854_775_807
         # is larger than 10^18 -1 but smaller than 10^27 - 1
 
-        if len(self.words) > 3:
+        if len(self.magnitude.words) > 3:
             raise Error(
                 "Error in `BigInt.to_int()`: The number exceeds the size of Int"
             )
 
         var value: Int128 = 0
-        for i in range(len(self.words)):
-            value += Int128(self.words[i]) * Int128(Self.BASE_OF_WORD) ** i
+        for i in range(len(self.magnitude.words)):
+            value += (
+                Int128(self.magnitude.words[i]) * Int128(1_000_000_000) ** i
+            )
 
         value = -value if self.sign else value
 
@@ -403,21 +331,14 @@ struct BigInt(Absable, IntableRaising, Writable):
     fn to_str(self) -> String:
         """Returns string representation of the BigInt."""
 
-        if len(self.words) == 0:
+        if self.magnitude.is_unitialized():
             return String("Unitilialized BigInt")
 
         if self.is_zero():
             return String("0")
 
         var result = String("-") if self.sign else String("")
-
-        for i in range(len(self.words) - 1, -1, -1):
-            if i == len(self.words) - 1:
-                result = result + String(self.words[i])
-            else:
-                result = result + String(self.words[i]).rjust(
-                    width=9, fillchar="0"
-                )
+        result += self.magnitude.to_str()
 
         return result^
 
@@ -478,6 +399,14 @@ struct BigInt(Absable, IntableRaising, Writable):
     fn __mul__(self, other: Self) raises -> Self:
         return decimojo.bigint.arithmetics.multiply(self, other)
 
+    @always_inline
+    fn __floordiv__(self, other: Self) raises -> Self:
+        return decimojo.bigint.arithmetics.floor_divide(self, other)
+
+    @always_inline
+    fn __mod__(self, other: Self) raises -> Self:
+        return decimojo.bigint.arithmetics.floor_modulo(self, other)
+
     # ===------------------------------------------------------------------=== #
     # Basic binary augmented arithmetic assignments dunders
     # These methods are called to implement the binary augmented arithmetic
@@ -497,6 +426,14 @@ struct BigInt(Absable, IntableRaising, Writable):
     fn __imul__(mut self, other: Self) raises:
         self = decimojo.bigint.arithmetics.multiply(self, other)
 
+    @always_inline
+    fn __ifloordiv__(mut self, other: Self) raises:
+        self = decimojo.bigint.arithmetics.floor_divide(self, other)
+
+    @always_inline
+    fn __imod__(mut self, other: Self) raises:
+        self = decimojo.bigint.arithmetics.floor_modulo(self, other)
+
     # ===------------------------------------------------------------------=== #
     # Mathematical methods that do not implement a trait (not a dunder)
     # ===------------------------------------------------------------------=== #
@@ -509,11 +446,25 @@ struct BigInt(Absable, IntableRaising, Writable):
         return decimojo.bigint.comparison.compare_absolute(self, other)
 
     @always_inline
+    fn floor_divide(self, other: Self) raises -> Self:
+        """Performs a floor division of two BigInts.
+        See `floor_divide()` for more information.
+        """
+        return decimojo.bigint.arithmetics.floor_divide(self, other)
+
+    @always_inline
     fn truncate_divide(self, other: Self) raises -> Self:
         """Performs a truncated division of two BigInts.
         See `truncate_divide()` for more information.
         """
         return decimojo.bigint.arithmetics.truncate_divide(self, other)
+
+    @always_inline
+    fn floor_modulo(self, other: Self) raises -> Self:
+        """Performs a floor modulo of two BigInts.
+        See `floor_modulo()` for more information.
+        """
+        return decimojo.bigint.arithmetics.floor_modulo(self, other)
 
     @always_inline
     fn truncate_modulo(self, other: Self) raises -> Self:
@@ -529,12 +480,12 @@ struct BigInt(Absable, IntableRaising, Writable):
     @always_inline
     fn is_zero(self) -> Bool:
         """Returns True if this BigInt represents zero."""
-        return len(self.words) == 1 and self.words[0] == 0
+        return self.magnitude.is_zero()
 
     @always_inline
     fn is_one_or_minus_one(self) -> Bool:
         """Returns True if this BigInt represents one or negative one."""
-        return len(self.words) == 1 and self.words[0] == 1
+        return self.magnitude.is_one()
 
     @always_inline
     fn is_negative(self) -> Bool:
@@ -543,23 +494,7 @@ struct BigInt(Absable, IntableRaising, Writable):
 
     fn is_abs_power_of_10(x: BigInt) -> Bool:
         """Check if abs(x) is a power of 10."""
-        for i in range(len(x.words) - 1):
-            if x.words[i] != 0:
-                return False
-        var word = x.words[len(x.words) - 1]
-        if (
-            (word == 1)
-            or (word == 10)
-            or (word == 100)
-            or (word == 1000)
-            or (word == 10_000)
-            or (word == 100_000)
-            or (word == 1_000_000)
-            or (word == 10_000_000)
-            or (word == 100_000_000)
-        ):
-            return True
-        return False
+        return x.magnitude.is_power_of_10()
 
     # ===------------------------------------------------------------------=== #
     # Internal methods
@@ -572,11 +507,11 @@ struct BigInt(Absable, IntableRaising, Writable):
         print("number:        ", value)
         print("               ", value.to_str_with_separators())
         print("negative:      ", value.sign)
-        for i in range(len(value.words)):
+        for i in range(len(value.magnitude.words)):
             print(
                 "word",
                 i,
                 ":       ",
-                String(value.words[i]).rjust(width=9, fillchar="0"),
+                String(value.magnitude.words[i]).rjust(width=9, fillchar="0"),
             )
         print("--------------------------------")
