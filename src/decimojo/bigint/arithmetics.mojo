@@ -22,7 +22,7 @@ import time
 import testing
 
 from decimojo.bigint.bigint import BigInt
-import decimojo.bigint.comparison
+from decimojo.biguint.biguint import BigUInt
 from decimojo.rounding_mode import RoundingMode
 
 
@@ -36,55 +36,20 @@ fn add(x1: BigInt, x2: BigInt) raises -> BigInt:
     Returns:
         The sum of the two BigInts.
     """
-
     # If one of the numbers is zero, return the other number
     if x1.is_zero():
         return x2
     if x2.is_zero():
         return x1
 
-    # If signs are different, we use `subtract` instead
+    # If signs are different, delegate to `subtract`
     if x1.sign != x2.sign:
         return subtract(x1, -x2)
 
-    # At this point, both numbers have the same sign
-    # The result will have the same sign as the operands
-    # The result will have at most one more word than the longer operand
-    var result = BigInt(
-        List[UInt32](
-            capacity=max(x1.number_of_words(), x2.number_of_words()) + 1
-        ),
-        sign=x1.sign,
-    )
-    result.sign = x1.sign  # Result has the same sign as the operands
+    # Same sign: add magnitudes and preserve the sign
+    var magnitude: BigUInt = x1.magnitude + x2.magnitude
 
-    var carry: UInt32 = 0
-    var ith: Int = 0
-    var sum_of_words: UInt32 = 0
-
-    # Add corresponding words from both numbers
-    while ith < len(x1.magnitude.words) or ith < len(x2.magnitude.words):
-        sum_of_words = carry
-
-        # Add x1's word if available
-        if ith < len(x1.magnitude.words):
-            sum_of_words += x1.magnitude.words[ith]
-
-        # Add x2's word if available
-        if ith < len(x2.magnitude.words):
-            sum_of_words += x2.magnitude.words[ith]
-
-        # Compute new word and carry
-        carry = UInt32(sum_of_words // 1_000_000_000)
-        result.magnitude.words.append(UInt32(sum_of_words % 1_000_000_000))
-
-        ith += 1
-
-    # Handle final carry if it exists
-    if carry > 0:
-        result.magnitude.words.append(carry)
-
-    return result^
+    return BigInt(magnitude^, sign=x1.sign)
 
 
 fn subtract(x1: BigInt, x2: BigInt) raises -> BigInt:
@@ -104,69 +69,29 @@ fn subtract(x1: BigInt, x2: BigInt) raises -> BigInt:
     if x1.is_zero():
         return -x2
 
-    # If signs are different, we use `add` instead
+    # If signs are different, delegate to `add`
     if x1.sign != x2.sign:
-        return add(x1, -x2)
+        return x1 + (-x2)
 
-    # At this point, both numbers have the same sign
-    # We need to determine which number has the larger absolute value
-    var comparison_result = decimojo.bigint.comparison.compare_absolute(x1, x2)
+    # Same sign, compare magnitudes to determine result sign and operation
+    var comparison_result = x1.magnitude.compare(x2.magnitude)
 
     if comparison_result == 0:
-        # |x1| = |x2|
-        return BigInt()  # Return zero
+        return BigInt()  # Equal magnitudes result in zero
 
-    # The result will have no more words than the larger operand
-    var result = BigInt(
-        List[UInt32](capacity=max(x1.number_of_words(), x2.number_of_words())),
-        sign=False,
-    )
-    var borrow: Int32 = 0
-    var ith: Int = 0
-    var difference: Int32 = 0  # Int32 is sufficient for the difference
+    var magnitude: BigUInt
+    var sign: Bool
+    if comparison_result > 0:  # |x1| > |x2|
+        # Subtract smaller from larger
+        magnitude = x1.magnitude - x2.magnitude
+        sign = x1.sign
 
-    if comparison_result > 0:
-        # |x1| > |x2|
-        result.sign = x1.sign
-        while ith < len(x1.magnitude.words):
-            # Subtract the borrow
-            difference = Int32(x1.magnitude.words[ith]) - borrow
-            # Subtract smaller's word if available
-            if ith < len(x2.magnitude.words):
-                difference -= Int32(x2.magnitude.words[ith])
-            # Handle borrowing if needed
-            if difference < Int32(0):
-                difference += Int32(1_000_000_000)
-                borrow = Int32(1)
-            else:
-                borrow = Int32(0)
-            result.magnitude.words.append(UInt32(difference))
-            ith += 1
+    else:  # |x1| < |x2|
+        # Subtract larger from smaller and negate the result
+        magnitude = x2.magnitude - x1.magnitude
+        sign = not x1.sign
 
-    else:
-        # |x1| < |x2|
-        # Same as above, but we swap x1 and x2
-        result.sign = not x2.sign
-        while ith < len(x2.magnitude.words):
-            difference = Int32(x2.magnitude.words[ith]) - borrow
-            if ith < len(x1.magnitude.words):
-                difference -= Int32(x1.magnitude.words[ith])
-            if difference < Int32(0):
-                difference += Int32(1_000_000_000)
-                borrow = Int32(1)
-            else:
-                borrow = Int32(0)
-            result.magnitude.words.append(UInt32(difference))
-            ith += 1
-
-    # Remove trailing zeros
-    while (
-        len(result.magnitude.words) > 1
-        and result.magnitude.words[len(result.magnitude.words) - 1] == 0
-    ):
-        result.magnitude.words.resize(len(result.magnitude.words) - 1)
-
-    return result^
+    return BigInt(magnitude^, sign=sign)
 
 
 fn negative(x: BigInt) -> BigInt:
@@ -177,7 +102,14 @@ fn negative(x: BigInt) -> BigInt:
 
     Returns:
         A new BigInt containing the negative of x.
+
+    Notes:
+        `BigInt` does allow signed zeros, so the negative of zero is zero.
     """
+    # If x is zero, return zero
+    if x.is_zero():
+        return BigInt()
+
     var result = x
     result.sign = not result.sign
     return result^
