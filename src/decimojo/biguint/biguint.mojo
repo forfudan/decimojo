@@ -601,6 +601,14 @@ struct BigUInt(Absable, IntableRaising, Writable):
     fn __mod__(self, other: Self) raises -> Self:
         return decimojo.biguint.arithmetics.floor_modulo(self, other)
 
+    @always_inline
+    fn __pow__(self, exponent: Self) raises -> Self:
+        return self.power(exponent)
+
+    @always_inline
+    fn __pow__(self, exponent: Int) raises -> Self:
+        return self.power(exponent)
+
     # ===------------------------------------------------------------------=== #
     # Basic binary augmented arithmetic assignments dunders
     # These methods are called to implement the binary augmented arithmetic
@@ -627,14 +635,6 @@ struct BigUInt(Absable, IntableRaising, Writable):
     @always_inline
     fn __imod__(mut self, other: Self) raises:
         self = decimojo.biguint.arithmetics.floor_modulo(self, other)
-
-    @always_inline
-    fn __pow__(self, exponent: Self) raises -> Self:
-        return self.power(exponent)
-
-    @always_inline
-    fn __pow__(self, exponent: Int) raises -> Self:
-        return self.power(exponent)
 
     # ===------------------------------------------------------------------=== #
     # Basic binary comparison operation dunders
@@ -785,6 +785,11 @@ struct BigUInt(Absable, IntableRaising, Writable):
     fn is_two(self) -> Bool:
         """Returns True if this BigUInt represents two."""
         return len(self.words) == 1 and self.words[0] == 2
+
+    @always_inline
+    fn number_of_words(self) -> Int:
+        """Returns the number of words in the BigInt."""
+        return len(self.words)
 
     fn is_power_of_10(x: BigUInt) -> Bool:
         """Check if x is a power of 10."""

@@ -18,9 +18,8 @@
 Implements functions for comparison operations on BigInt objects.
 """
 
-import testing
-
 from decimojo.bigint.bigint import BigInt
+from decimojo.biguint.biguint import BigUInt
 
 
 fn compare_absolute(x1: BigInt, x2: BigInt) -> Int8:
@@ -36,21 +35,109 @@ fn compare_absolute(x1: BigInt, x2: BigInt) -> Int8:
         (2)  0 if |x1| = |x2|.
         (3) -1 if |x1| < |x2|.
     """
-    # Compare the number of words
-    if len(x1.magnitude.words) > len(x2.magnitude.words):
-        return Int8(1)
-    if len(x1.magnitude.words) < len(x2.magnitude.words):
-        return Int8(-1)
+    return x1.magnitude.compare(x2.magnitude)
 
-    # If the number of words are equal,
-    # compare the words from the most significant to the least significant.
-    var ith = len(x1.magnitude.words) - 1
-    while ith >= 0:
-        if x1.magnitude.words[ith] > x2.magnitude.words[ith]:
-            return Int8(1)
-        if x1.magnitude.words[ith] < x2.magnitude.words[ith]:
-            return Int8(-1)
-        ith -= 1
 
-    # All words are equal
-    return Int8(0)
+fn compare(x1: BigInt, x2: BigInt) -> Int8:
+    """Compares two BigInt objects and returns the result.
+
+    Args:
+        x1: First number.
+        x2: Second number.
+
+    Returns:
+        Terinary value indicating the comparison result:
+        (1)  1 if x1 > x2.
+        (2)  0 if x1 = x2.
+        (3) -1 if x1 < x2.
+    """
+    if x1.is_zero() and x2.is_zero():
+        return 0
+
+    # Different signs: negative < positive
+    if x1.sign != x2.sign:
+        return -1 if x1.sign else 1
+
+    # Same signs: compare magnitudes
+    var magnitude_comparison = compare_absolute(x1, x2)
+
+    # If both negative, reverse the comparison result
+    return magnitude_comparison if not x1.sign else -magnitude_comparison
+
+
+fn greater(x1: BigInt, x2: BigInt) -> Bool:
+    """Checks if the first number is greater than the second.
+
+    Args:
+        x1: First signed integer.
+        x2: Second signed integer.
+
+    Returns:
+        True if x1 > x2, False otherwise.
+    """
+    return compare(x1, x2) > 0
+
+
+fn greater_equal(x1: BigInt, x2: BigInt) -> Bool:
+    """Checks if the first number is greater than or equal to the second.
+
+    Args:
+        x1: First signed integer.
+        x2: Second signed integer.
+
+    Returns:
+        True if x1 >= x2, False otherwise.
+    """
+    return compare(x1, x2) >= 0
+
+
+fn less(x1: BigInt, x2: BigInt) -> Bool:
+    """Checks if the first number is less than the second.
+
+    Args:
+        x1: First signed integer.
+        x2: Second signed integer.
+
+    Returns:
+        True if x1 < x2, False otherwise.
+    """
+    return compare(x1, x2) < 0
+
+
+fn less_equal(x1: BigInt, x2: BigInt) -> Bool:
+    """Checks if the first number is less than or equal to the second.
+
+    Args:
+        x1: First signed integer.
+        x2: Second signed integer.
+
+    Returns:
+        True if x1 <= x2, False otherwise.
+    """
+    return compare(x1, x2) <= 0
+
+
+fn equal(x1: BigInt, x2: BigInt) -> Bool:
+    """Checks if two numbers are equal.
+
+    Args:
+        x1: First signed integer.
+        x2: Second signed integer.
+
+    Returns:
+        True if x1 == x2, False otherwise.
+    """
+    return compare(x1, x2) == 0
+
+
+fn not_equal(x1: BigInt, x2: BigInt) -> Bool:
+    """Checks if two numbers are not equal.
+
+    Args:
+        x1: First signed integer.
+        x2: Second signed integer.
+
+    Returns:
+        True if x1 != x2, False otherwise.
+    """
+    return compare(x1, x2) != 0

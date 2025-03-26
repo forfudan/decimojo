@@ -51,9 +51,10 @@ fn add(x1: BigInt, x2: BigInt) raises -> BigInt:
     # The result will have the same sign as the operands
     # The result will have at most one more word than the longer operand
     var result = BigInt(
-        empty=True,
-        capacity=max(len(x1.magnitude.words), len(x2.magnitude.words)) + 1,
-        sign=False,
+        List[UInt32](
+            capacity=max(x1.number_of_words(), x2.number_of_words()) + 1
+        ),
+        sign=x1.sign,
     )
     result.sign = x1.sign  # Result has the same sign as the operands
 
@@ -117,8 +118,7 @@ fn subtract(x1: BigInt, x2: BigInt) raises -> BigInt:
 
     # The result will have no more words than the larger operand
     var result = BigInt(
-        empty=True,
-        capacity=max(len(x1.magnitude.words), len(x2.magnitude.words)),
+        List[UInt32](capacity=max(x1.number_of_words(), x2.number_of_words())),
         sign=False,
     )
     var borrow: Int32 = 0
@@ -224,8 +224,8 @@ fn multiply(x1: BigInt, x2: BigInt) raises -> BigInt:
         return result^
 
     # The maximum number of words in the result is the sum of the words in the operands
-    var max_result_len = len(x1.magnitude.words) + len(x2.magnitude.words)
-    var result = BigInt(empty=True, capacity=max_result_len, sign=False)
+    var max_result_len = x1.number_of_words() + x2.number_of_words()
+    var result = BigInt(List[UInt32](capacity=max_result_len), sign=False)
     result.sign = x1.sign != x2.sign
 
     # Initialize result words with zeros
@@ -343,19 +343,19 @@ fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
         return result
 
     # CASE: Powers of 10
-    if BigInt.is_abs_power_of_10(x2):
+    if x2.magnitude.is_power_of_10():
         # Divisor is 10^n
         # Remove the last words (10^9) and shift the rest
         var result: BigInt
-        if len(x2.magnitude.words) == 1:
+        if x2.number_of_words() == 1:
             result = x1
         else:
-            var word_shift = len(x2.magnitude.words) - 1
+            var word_shift = x2.number_of_words() - 1
             # If we need to drop more words than exists, result is zero
             if word_shift >= len(x1.magnitude.words):
                 return BigInt()
             # Create result with the remaining words
-            result = BigInt(empty=True, sign=False)
+            result = BigInt(List[UInt32](), sign=False)
             for i in range(word_shift, len(x1.magnitude.words)):
                 result.magnitude.words.append(x1.magnitude.words[i])
 
@@ -390,7 +390,7 @@ fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
     # CASE: division by a single-word number
     if len(x2.magnitude.words) == 1:
         var divisor_value = x2.magnitude.words[0]
-        var result = BigInt(empty=True, sign=False)
+        var result = BigInt(List[UInt32](), sign=False)
         var temp_remainder: UInt64 = 0
 
         # Process from most significant word to least significant
@@ -416,7 +416,7 @@ fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
         # To match the expected base-10^9 representation,
         # we need to reverse the order of the words in the result
         var reversed_result = BigInt(
-            empty=True, capacity=len(result.magnitude.words), sign=False
+            List[UInt32](capacity=len(result.magnitude.words)), sign=False
         )
         for i in range(len(result.magnitude.words) - 1, -1, -1):
             reversed_result.magnitude.words.append(result.magnitude.words[i])
@@ -428,7 +428,7 @@ fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
     # CASE: multi-word divisors
     # Initialize result and working copy of dividend
     var result = BigInt(
-        empty=True, capacity=len(x1.magnitude.words), sign=False
+        List[UInt32](capacity=len(x1.magnitude.words)), sign=False
     )
     var remainder = absolute(x1)
     var normalized_divisor = absolute(x2)
@@ -481,7 +481,7 @@ fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
         var trial_product = normalized_divisor * BigInt(UInt32(q), sign=False)
 
         # Shift trial product left j positions
-        var shifted_product = BigInt(empty=True, sign=False)
+        var shifted_product = BigInt(List[UInt32](), sign=False)
         for _ in range(j):
             shifted_product.magnitude.words.append(0)
         for word in trial_product.magnitude.words:
@@ -502,7 +502,7 @@ fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
                 )
 
                 # Recalculate shifted product
-                shifted_product = BigInt(empty=True, sign=False)
+                shifted_product = BigInt(List[UInt32](), sign=False)
                 for _ in range(j):
                     shifted_product.magnitude.words.append(0)
                 for word in trial_product.magnitude.words:
@@ -520,7 +520,7 @@ fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
             trial_product = normalized_divisor * BigInt(UInt32(q), sign=False)
 
             # Recalculate final shifted product
-            shifted_product = BigInt(empty=True, sign=False)
+            shifted_product = BigInt(List[UInt32](), sign=False)
             for _ in range(j):
                 shifted_product.magnitude.words.append(0)
             for word in trial_product.magnitude.words:
