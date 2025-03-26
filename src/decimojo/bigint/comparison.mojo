@@ -22,8 +22,8 @@ from decimojo.bigint.bigint import BigInt
 from decimojo.biguint.biguint import BigUInt
 
 
-fn compare_absolute(x1: BigInt, x2: BigInt) -> Int8:
-    """Compares the absolute values of two numbers and returns the result.
+fn compare_magnitudes(x1: BigInt, x2: BigInt) -> Int8:
+    """Compares the magnitudes of two numbers and returns the result.
 
     Args:
         x1: First number.
@@ -59,7 +59,7 @@ fn compare(x1: BigInt, x2: BigInt) -> Int8:
         return -1 if x1.sign else 1
 
     # Same signs: compare magnitudes
-    var magnitude_comparison = compare_absolute(x1, x2)
+    var magnitude_comparison = compare_magnitudes(x1, x2)
 
     # If both negative, reverse the comparison result
     return magnitude_comparison if not x1.sign else -magnitude_comparison

@@ -676,13 +676,6 @@ struct BigUInt(Absable, IntableRaising, Writable):
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn compare(self, other: Self) -> Int8:
-        """Compares the magnitudes of two BigUInts.
-        See `compare()` for more information.
-        """
-        return decimojo.biguint.comparison.compare(self, other)
-
-    @always_inline
     fn floor_divide(self, other: Self) raises -> Self:
         """Returns the result of floor dividing this number by `other`.
         It is equal to `self // other`.
@@ -762,10 +755,17 @@ struct BigUInt(Absable, IntableRaising, Writable):
     fn power(self, exponent: Self) raises -> Self:
         """Returns the result of raising this number to the power of `exponent`.
         """
-        var exponent_as_int = exponent.to_int()
-        if exponent_as_int > 1_000_000_000:
+        if exponent > BigUInt(UInt32(0), UInt32(1)):
             raise Error("Error in `BigUInt.power()`: The exponent is too large")
+        var exponent_as_int = exponent.to_int()
         return self.power(exponent_as_int)
+
+    @always_inline
+    fn compare(self, other: Self) -> Int8:
+        """Compares the magnitudes of two BigUInts.
+        See `compare()` for more information.
+        """
+        return decimojo.biguint.comparison.compare(self, other)
 
     # ===------------------------------------------------------------------=== #
     # Other methods
@@ -811,18 +811,18 @@ struct BigUInt(Absable, IntableRaising, Writable):
             return True
         return False
 
-    fn internal_representation(value: BigUInt):
+    fn internal_representation(self):
         """Prints the internal representation details of a BigUInt."""
         print("\nInternal Representation Details of BigUInt")
         print("-----------------------------------------")
-        print("number:        ", value)
-        print("               ", value.to_str_with_separators())
-        for i in range(len(value.words)):
+        print("number:        ", self)
+        print("               ", self.to_str_with_separators())
+        for i in range(len(self.words)):
             print(
                 "word",
                 i,
                 ":       ",
-                String(value.words[i]).rjust(width=9, fillchar="0"),
+                String(self.words[i]).rjust(width=9, fillchar="0"),
             )
         print("--------------------------------")
 
