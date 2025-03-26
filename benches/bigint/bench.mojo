@@ -9,26 +9,26 @@ fn main() raises:
 =========================================
 This is the BigInt Benchmarks
 =========================================
-1. add:         Add
-2. truncdiv:    Truncate Divide
-3. floordiv:    Floor Divide
-4. all:         Run all benchmarks
-5. quit:        Exit
+1:       Add
+2:       Truncate Divide
+3:       Floor Divide
+4:       Run all benchmarks
+5:       Exit
 =========================================
 """
     )
-    var command = input("Type the bench you want to run:")
-    if command == "add":
+    var command = input("Type the number of the bench you want to run: ")
+    if command == "1":
         bench_add()
-    elif command == "truncdiv":
+    elif command == "2":
         bench_truncate_divide()
-    elif command == "floordiv":
+    elif command == "3":
         bench_floor_divide()
-    elif command == "all":
+    elif command == "4":
         bench_add()
         bench_truncate_divide()
         bench_floor_divide()
-    elif command == "quit":
+    elif command == "5":
         return
     else:
         print("Invalid input")

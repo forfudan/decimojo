@@ -330,6 +330,12 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
             floor_divide_inplace_by_single_word(result, x2)
             return result^
 
+    # CASE: Divisor is double-word
+    if len(x2.words) == 2:
+        var result = x1
+        floor_divide_inplace_by_double_words(result, x2)
+        return result^
+
     # CASE: Dividend is zero
     if x1.is_zero():
         return BigUInt()  # Return zero
@@ -742,12 +748,12 @@ fn multiply_toom_cook_3(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     for i in range(2 * k, len(x2.words)):
         b2_words.append(x2.words[i])
 
-    a0 = BigUInt(a0_words)
-    a1 = BigUInt(a1_words)
-    a2 = BigUInt(a2_words)
-    b0 = BigUInt(b0_words)
-    b1 = BigUInt(b1_words)
-    b2 = BigUInt(b2_words)
+    a0 = BigUInt.from_list(a0_words^)
+    a1 = BigUInt.from_list(a1_words^)
+    a2 = BigUInt.from_list(a2_words^)
+    b0 = BigUInt.from_list(b0_words^)
+    b1 = BigUInt.from_list(b1_words^)
+    b2 = BigUInt.from_list(b2_words^)
 
     # Remove trailing zeros
     a0.remove_trailing_zeros()
@@ -848,7 +854,7 @@ fn floor_divide_general(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         x2: The divisor.
 
     Returns:
-        The quotient of x1 / x2.
+        The quotient of x1 // x2.
 
     Raises:
         ValueError: If the divisor is zero.
@@ -910,6 +916,74 @@ fn floor_divide_general(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     return result^
 
 
+fn floor_divide_partition(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Partition division algorithm for BigInt numbers.
+
+    Args:
+        x1: The dividend.
+        x2: The divisor.
+
+    Returns:
+        The quotient of x1 // x2.
+
+    Raises:
+        ValueError: If the divisor is zero.
+
+    Notes:
+
+    If words of x1 is more than 2 times the words of x2, then partition x1 into
+    several parts and divide x2 sequentially using general division.
+
+    words of x1: m
+    words of x2: n
+    number of partitions: m // n
+    words of first partition: n + m % n
+    the remainder is appended to the next partition.
+    """
+
+    if x2.is_zero():
+        raise Error("Error in `floor_divide_partition`: Division by zero")
+
+    # Initialize result and remainder
+    var number_of_partitions = len(x1.words) // len(x2.words)
+    var number_of_words_remainder = len(x1.words) % len(x2.words)
+    var number_of_words_dividend: Int
+    var result = x1
+    result.words.resize(len(x1.words) - number_of_words_remainder)
+    var remainder = BigUInt(List[UInt32](capacity=len(x2.words)))
+    for i in range(len(x1.words) - number_of_words_remainder, len(x1.words)):
+        remainder.words.append(x1.words[i])
+
+    for ith in range(number_of_partitions):
+        number_of_words_dividend = len(x2.words) + number_of_words_remainder
+        var dividend_list_of_words = List[UInt32](
+            capacity=number_of_words_dividend
+        )
+        for i in range(len(x2.words)):
+            dividend_list_of_words.append(
+                x1.words[(number_of_partitions - ith - 1) * len(x2.words) + i]
+            )
+        for i in range(number_of_words_remainder):
+            dividend_list_of_words.append(remainder.words[i])
+
+        var dividend = BigUInt(dividend_list_of_words)
+        var quotient = floor_divide_general(dividend, x2)
+        for i in range(len(x2.words)):
+            if i < len(quotient.words):
+                result.words[
+                    (number_of_partitions - ith - 1) * len(x2.words) + i
+                ] = quotient.words[i]
+            else:
+                result.words[
+                    (number_of_partitions - ith - 1) * len(x2.words) + i
+                ] = UInt32(0)
+        remainder = subtract(dividend, multiply(quotient, x2))
+        number_of_words_remainder = len(remainder.words)
+
+    result.remove_trailing_zeros()
+    return result^
+
+
 fn floor_divide_inplace_by_single_word(mut x1: BigUInt, x2: BigUInt) raises:
     """Divides a BigUInt by a single word divisor in-place.
 
@@ -924,13 +998,35 @@ fn floor_divide_inplace_by_single_word(mut x1: BigUInt, x2: BigUInt) raises:
 
     # CASE: all other situations
     var x2_value = UInt64(x2.words[0])
-    var carry = UInt32(0)
+    var carry = UInt64(0)
     for i in range(len(x1.words) - 1, -1, -1):
-        var dividend = UInt64(carry) * UInt64(1_000_000_000) + UInt64(
-            x1.words[i]
-        )
+        var dividend = carry * UInt64(1_000_000_000) + UInt64(x1.words[i])
         x1.words[i] = UInt32(dividend // x2_value)
-        carry = UInt32(dividend % x2_value)
+        carry = dividend % x2_value
+    x1.remove_trailing_zeros()
+
+
+fn floor_divide_inplace_by_double_words(mut x1: BigUInt, x2: BigUInt) raises:
+    """Divides a BigUInt by double-word divisor in-place.
+
+    Args:
+        x1: The BigUInt value to divide by the divisor.
+        x2: The double-word divisor.
+    """
+    if x2.is_zero():
+        raise Error(
+            "Error in `floor_divide_inplace_by_double_words`: Division by zero"
+        )
+
+    # CASE: all other situations
+    var x2_value = UInt128(x2.words[0]) + UInt128(x2.words[1]) * UInt128(
+        1_000_000_000
+    )
+    var carry = UInt128(0)
+    for i in range(len(x1.words) - 1, -1, -1):
+        var dividend = carry * UInt128(1_000_000_000) + UInt128(x1.words[i])
+        x1.words[i] = UInt32(dividend // x2_value)
+        carry = dividend % x2_value
     x1.remove_trailing_zeros()
 
 

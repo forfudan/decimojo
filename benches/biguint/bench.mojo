@@ -9,26 +9,26 @@ fn main() raises:
 =========================================
 This is the BigUInt Benchmarks
 =========================================
-1. add:         Add
-2. multiply:    Multiply
-2. truncdiv:    Truncate Divide
-4. all:         Run all benchmarks
-5. quit:        Exit
+1:      Add
+2:      Multiply
+3:      Truncate Divide
+4:      Run all benchmarks
+5:      Exit
 =========================================
 """
     )
-    var command = input("Type the bench you want to run:")
-    if command == "add":
+    var command = input("Type the number of bench you want to run: ")
+    if command == "1":
         bench_add()
-    elif command == "multiply":
+    elif command == "2":
         bench_multiply()
-    elif command == "truncdiv":
+    elif command == "3":
         bench_truncate_divide()
-    elif command == "all":
+    elif command == "4":
         bench_add()
         bench_multiply()
         bench_truncate_divide()
-    elif command == "quit":
+    elif command == "5":
         return
     else:
         print("Invalid input")

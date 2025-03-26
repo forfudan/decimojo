@@ -105,6 +105,8 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
     fn __init__(out self, owned words: List[UInt32]):
         """Initializes a BigUInt from a list of UInt32 words.
+        It does not check whether the list is empty or the words are invalid.
+        See `from_list()` for safer initialization.
 
         Args:
             words: A list of UInt32 words representing the coefficient.
@@ -113,11 +115,10 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
         Notes:
 
-        This method does not check whether the words are smaller than
-        `999_999_999`.
+        This method does not check whether
+        (1) the list is empty.
+        (2) the words are smaller than `999_999_999`.
         """
-        if len(words) == 0:
-            words.append(UInt32(0))
         self.words = words^
 
     fn __init__(out self, owned *words: UInt32):
@@ -164,8 +165,35 @@ struct BigUInt(Absable, IntableRaising, Writable):
     # ===------------------------------------------------------------------=== #
 
     @staticmethod
+    fn from_list(owned words: List[UInt32]) raises -> Self:
+        """Initializes a BigUInt from a list of UInt32 words safely.
+        If the list is empty, the BigUInt is initialized with value 0.
+
+        Args:
+            words: A list of UInt32 words representing the coefficient.
+                Each UInt32 word represents digits ranging from 0 to 10^9 - 1.
+                The words are stored in little-endian order.
+
+        Returns:
+            The BigUInt representation of the list of UInt32 words.
+        """
+        # Return 0 if the list is empty
+        if len(words) == 0:
+            return Self()
+
+        # Check if the words are valid
+        for word in words:
+            if word[] > Self.MAX_OF_WORD:
+                raise Error(
+                    "Error in `BigUInt.from_list()`: Word value exceeds maximum"
+                    " value of 999_999_999"
+                )
+
+        return Self(words^)
+
+    @staticmethod
     fn from_words(*words: UInt32) raises -> Self:
-        """Initializes a BigUInt from raw words.
+        """Initializes a BigUInt from raw words safely.
 
         Args:
             words: The UInt32 words representing the coefficient.
@@ -777,10 +805,6 @@ struct BigUInt(Absable, IntableRaising, Writable):
         ):
             return True
         return False
-
-    # ===------------------------------------------------------------------=== #
-    # Internal methods
-    # ===------------------------------------------------------------------=== #
 
     fn internal_representation(value: BigUInt):
         """Prints the internal representation details of a BigUInt."""
