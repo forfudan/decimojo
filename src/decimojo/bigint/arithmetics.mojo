@@ -217,7 +217,7 @@ fn floor_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
         x2: The divisor.
 
     Returns:
-        The quotient of x1 // x2, rounded toward negative infinity.
+        The quotient of x1 / x2, rounded toward negative infinity.
     """
 
     if x2.is_zero():
@@ -225,6 +225,10 @@ fn floor_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
 
     if x1.is_zero():
         return BigInt()
+
+    # For floor division, the sign rules are:
+    # (1) Same signs: result is positive, use `floor_divide` on magnitudes
+    # (1) Different signs: result is negative, use `ceil_divide` on magnitudes
 
     if x1.sign == x2.sign:
         # Use floor (truncate) division between magnitudes
@@ -250,233 +254,14 @@ fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
     Raises:
         ValueError: If the divisor is zero.
     """
-    # CASE: Division by zero
     if x2.is_zero():
         raise Error("Error in `truncate_divide`: Division by zero")
 
-    # CASE: Dividend is zero
     if x1.is_zero():
         return BigInt()  # Return zero
 
-    # CASE: Division by one or negative one
-    if x2.is_one_or_minus_one():
-        var result = x1  # Copy dividend
-        # If divisor is -1, negate the result
-        if x2.sign:
-            result.sign = not result.sign
-        return result
-
-    # CASE: Single words division
-    if len(x1.magnitude.words) == 1 and len(x2.magnitude.words) == 1:
-        var result = BigInt(
-            UInt32(x1.magnitude.words[0] // x2.magnitude.words[0]),
-            sign=x1.sign != x2.sign,
-        )
-        return result
-
-    # CASE: Powers of 10
-    if x2.magnitude.is_power_of_10():
-        # Divisor is 10^n
-        # Remove the last words (10^9) and shift the rest
-        var result: BigInt
-        if x2.number_of_words() == 1:
-            result = x1
-        else:
-            var word_shift = x2.number_of_words() - 1
-            # If we need to drop more words than exists, result is zero
-            if word_shift >= len(x1.magnitude.words):
-                return BigInt()
-            # Create result with the remaining words
-            result = BigInt(List[UInt32](), sign=False)
-            for i in range(word_shift, len(x1.magnitude.words)):
-                result.magnitude.words.append(x1.magnitude.words[i])
-
-        # Get the last word of the divisor
-        var x2_word = x2.magnitude.words[len(x2.magnitude.words) - 1]
-        var carry = UInt32(0)
-        var power_of_carry = UInt32(1_000_000_000) // x2_word
-        for i in range(len(result.magnitude.words) - 1, -1, -1):
-            var quot = result.magnitude.words[i] // x2_word
-            var rem = result.magnitude.words[i] % x2_word
-            result.magnitude.words[i] = quot + carry * power_of_carry
-            carry = rem
-
-        # Remove leading zeros
-        while (
-            len(result.magnitude.words) > 1
-            and result.magnitude.words[len(result.magnitude.words) - 1] == 0
-        ):
-            result.magnitude.words.resize(len(result.magnitude.words) - 1)
-
-        result.sign = x1.sign != x2.sign
-        return result
-
-    # CASE: |dividend| < |divisor|
-    if x1.compare_absolute(x2) < 0:
-        return BigInt()  # Return zero
-
-    # CASE: |dividend| == |divisor|
-    if x1.compare_absolute(x2) == 0:
-        return BigInt(UInt32(1), sign=x1.sign != x2.sign)
-
-    # CASE: division by a single-word number
-    if len(x2.magnitude.words) == 1:
-        var divisor_value = x2.magnitude.words[0]
-        var result = BigInt(List[UInt32](), sign=False)
-        var temp_remainder: UInt64 = 0
-
-        # Process from most significant word to least significant
-        for i in range(len(x1.magnitude.words) - 1, -1, -1):
-            # Combine remainder with current digit
-            var current = temp_remainder * 1_000_000_000 + UInt64(
-                x1.magnitude.words[i]
-            )
-
-            # Calculate quotient and new remainder
-            var quotient_digit = current // UInt64(divisor_value)
-            temp_remainder = current % UInt64(divisor_value)
-
-            # Only add significant digits to the result
-            # This avoids leading zeros
-            if len(result.magnitude.words) > 0 or quotient_digit > 0:
-                result.magnitude.words.append(UInt32(quotient_digit))
-
-        # If no digits were added, result is zero
-        if len(result.magnitude.words) == 0:
-            result.magnitude.words.append(0)
-
-        # To match the expected base-10^9 representation,
-        # we need to reverse the order of the words in the result
-        var reversed_result = BigInt(
-            List[UInt32](capacity=len(result.magnitude.words)), sign=False
-        )
-        for i in range(len(result.magnitude.words) - 1, -1, -1):
-            reversed_result.magnitude.words.append(result.magnitude.words[i])
-
-        # Set the sign
-        reversed_result.sign = x1.sign != x2.sign
-        return reversed_result
-
-    # CASE: multi-word divisors
-    # Initialize result and working copy of dividend
-    var result = BigInt(
-        List[UInt32](capacity=len(x1.magnitude.words)), sign=False
-    )
-    var remainder = absolute(x1)
-    var normalized_divisor = absolute(x2)
-
-    # Calculate the number of significant words in each operand
-    var n = len(remainder.magnitude.words)
-    while n > 0 and remainder.magnitude.words[n - 1] == 0:
-        n -= 1
-
-    var m = len(normalized_divisor.magnitude.words)
-    while m > 0 and normalized_divisor.magnitude.words[m - 1] == 0:
-        m -= 1
-
-    # If divisor has more significant digits than dividend, result is zero
-    if m > n:
-        return BigInt()
-
-    # Shift divisor left to align with dividend
-    var d = n - m
-
-    # Initialize result with zeros
-    for _ in range(d + 1):
-        result.magnitude.words.append(0)
-
-    # Working variables for the division algorithm
-    var j = d
-
-    # Main division loop
-    while j >= 0:
-        # Calculate quotient digit estimate
-        var dividend_part: UInt64 = 0
-
-        # Get the relevant part of the dividend for this step
-        if j + m < n:
-            dividend_part = UInt64(remainder.magnitude.words[j + m])
-            if j + m - 1 < n:
-                dividend_part = dividend_part * 1_000_000_000 + UInt64(
-                    remainder.magnitude.words[j + m - 1]
-                )
-        elif j + m - 1 < n:
-            dividend_part = UInt64(remainder.magnitude.words[j + m - 1])
-
-        # Calculate quotient digit (cap at MAX_DIGIT)
-        var divisor_high = UInt64(normalized_divisor.magnitude.words[m - 1])
-        if divisor_high == 0:
-            divisor_high = 1  # Avoid division by zero
-        var q = min(dividend_part // divisor_high, UInt64(999_999_999))
-
-        # Create trial product: q * divisor
-        var trial_product = normalized_divisor * BigInt(UInt32(q), sign=False)
-
-        # Shift trial product left j positions
-        var shifted_product = BigInt(List[UInt32](), sign=False)
-        for _ in range(j):
-            shifted_product.magnitude.words.append(0)
-        for word in trial_product.magnitude.words:
-            shifted_product.magnitude.words.append(word[])
-
-        # Use binary search for quotient adjustment
-        if shifted_product.compare_absolute(remainder) > 0:
-            # Initial estimate was too high, use binary search to find correct q
-            var low: UInt64 = 0
-            var high: UInt64 = q - 1
-
-            while low <= high:
-                var mid: UInt64 = (low + high) / 2
-
-                # Recalculate trial product with new q
-                trial_product = normalized_divisor * BigInt(
-                    UInt32(mid), sign=False
-                )
-
-                # Recalculate shifted product
-                shifted_product = BigInt(List[UInt32](), sign=False)
-                for _ in range(j):
-                    shifted_product.magnitude.words.append(0)
-                for word in trial_product.magnitude.words:
-                    shifted_product.magnitude.words.append(word[])
-
-                if shifted_product.compare_absolute(remainder) <= 0:
-                    # This quotient works, try a larger one
-                    q = mid  # Keep track of best quotient found so far
-                    low = mid + 1
-                else:
-                    # Too large, try smaller
-                    high = mid - 1
-
-            # Recalculate final product with best q found
-            trial_product = normalized_divisor * BigInt(UInt32(q), sign=False)
-
-            # Recalculate final shifted product
-            shifted_product = BigInt(List[UInt32](), sign=False)
-            for _ in range(j):
-                shifted_product.magnitude.words.append(0)
-            for word in trial_product.magnitude.words:
-                shifted_product.magnitude.words.append(word[])
-
-        # Store quotient digit
-        result.magnitude.words[j] = UInt32(q)
-
-        # Subtract shifted product from remainder
-        remainder = subtract(remainder, shifted_product)
-
-        # Move to next position
-        j -= 1
-
-    # Remove leading zeros
-    while (
-        len(result.magnitude.words) > 1
-        and result.magnitude.words[len(result.magnitude.words) - 1] == 0
-    ):
-        result.magnitude.words.resize(len(result.magnitude.words) - 1)
-
-    # Set the sign
-    result.sign = x1.sign != x2.sign
-    return result
+    var magnitude = x1.magnitude.floor_divide(x2.magnitude)
+    return BigInt(magnitude^, sign=x1.sign != x2.sign)
 
 
 fn floor_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
@@ -494,6 +279,9 @@ fn floor_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
 
     if x2.is_zero():
         raise Error("Error in `floor_modulo`: Division by zero")
+
+    if x1.is_zero():
+        return BigInt()  # Return zero
 
     if x1.sign == x2.sign:
         # Use floor (truncate) division between magnitudes
@@ -519,26 +307,11 @@ fn truncate_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
     Raises:
         ValueError: If the divisor is zero.
     """
-    # CASE: Division by zero
     if x2.is_zero():
         raise Error("Error in `truncate_modulo`: Division by zero")
 
-    # CASE: Dividend is zero
     if x1.is_zero():
         return BigInt()  # Return zero
 
-    # CASE: Divisor is one or negative one - no remainder
-    if x2.is_one_or_minus_one():
-        return BigInt()  # Always divisible with no remainder
-
-    # CASE: |dividend| < |divisor| - the remainder is the dividend itself
-    if decimojo.bigint.comparison.compare_absolute(x1, x2) < 0:
-        return x1
-
-    # Calculate quotient with truncation
-    var quotient = truncate_divide(x1, x2)
-
-    # Calculate remainder: dividend - (divisor * quotient)
-    var remainder = subtract(x1, multiply(x2, quotient))
-
-    return remainder
+    var magnitude = x1.magnitude.floor_modulo(x2.magnitude)
+    return BigInt(magnitude^, sign=x1.sign)
