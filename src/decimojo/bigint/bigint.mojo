@@ -442,6 +442,14 @@ struct BigInt(Absable, IntableRaising, Writable):
     fn __mod__(self, other: Self) raises -> Self:
         return decimojo.bigint.arithmetics.floor_modulo(self, other)
 
+    @always_inline
+    fn __pow__(self, exponent: Self) raises -> Self:
+        return self.power(exponent)
+
+    @always_inline
+    fn __pow__(self, exponent: Int) raises -> Self:
+        return self.power(exponent)
+
     # ===------------------------------------------------------------------=== #
     # Basic binary augmented arithmetic assignments dunders
     # These methods are called to implement the binary augmented arithmetic
@@ -509,20 +517,6 @@ struct BigInt(Absable, IntableRaising, Writable):
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn compare_absolute(self, other: Self) -> Int8:
-        """Compares the absolute values of two BigInts.
-        See `compare_absolute()` for more information.
-        """
-        return decimojo.bigint.comparison.compare_absolute(self, other)
-
-    @always_inline
-    fn compare(self, other: Self) -> Int8:
-        """Compares two BigInts.
-        See `compare()` for more information.
-        """
-        return decimojo.bigint.comparison.compare(self, other)
-
-    @always_inline
     fn floor_divide(self, other: Self) raises -> Self:
         """Performs a floor division of two BigInts.
         See `floor_divide()` for more information.
@@ -549,6 +543,39 @@ struct BigInt(Absable, IntableRaising, Writable):
         See `truncate_modulo()` for more information.
         """
         return decimojo.bigint.arithmetics.truncate_modulo(self, other)
+
+    fn power(self, exponent: Int) raises -> Self:
+        """Raises the BigInt to the power of an integer exponent.
+        See `power()` for more information.
+        """
+        var magnitude = self.magnitude.power(exponent)
+        var sign = False
+        if self.sign:
+            sign = exponent % 2 == 1
+        return Self(magnitude^, sign)
+
+    fn power(self, exponent: Self) raises -> Self:
+        """Raises the BigInt to the power of another BigInt.
+        See `power()` for more information.
+        """
+        if exponent > Self(BigUInt(UInt32(0), UInt32(1)), sign=False):
+            raise Error("Error in `BigUInt.power()`: The exponent is too large")
+        var exponent_as_int = exponent.to_int()
+        return self.power(exponent_as_int)
+
+    @always_inline
+    fn compare_magnitudes(self, other: Self) -> Int8:
+        """Compares the magnitudes of two BigInts.
+        See `compare_magnitudes()` for more information.
+        """
+        return decimojo.bigint.comparison.compare_magnitudes(self, other)
+
+    @always_inline
+    fn compare(self, other: Self) -> Int8:
+        """Compares two BigInts.
+        See `compare()` for more information.
+        """
+        return decimojo.bigint.comparison.compare(self, other)
 
     # ===------------------------------------------------------------------=== #
     # Other methods
@@ -578,18 +605,18 @@ struct BigInt(Absable, IntableRaising, Writable):
     # Internal methods
     # ===------------------------------------------------------------------=== #
 
-    fn internal_representation(value: BigInt):
+    fn internal_representation(self):
         """Prints the internal representation details of a BigInt."""
         print("\nInternal Representation Details of BigInt")
         print("-----------------------------------------")
-        print("number:        ", value)
-        print("               ", value.to_str_with_separators())
-        print("negative:      ", value.sign)
-        for i in range(len(value.magnitude.words)):
+        print("number:        ", self)
+        print("               ", self.to_str_with_separators())
+        print("negative:      ", self.sign)
+        for i in range(len(self.magnitude.words)):
             print(
                 "word",
                 i,
                 ":       ",
-                String(value.magnitude.words[i]).rjust(width=9, fillchar="0"),
+                String(self.magnitude.words[i]).rjust(width=9, fillchar="0"),
             )
         print("--------------------------------")
