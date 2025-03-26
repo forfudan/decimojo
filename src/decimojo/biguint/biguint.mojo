@@ -563,7 +563,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
     @always_inline
     fn __iadd__(mut self, other: Self) raises:
-        self = decimojo.biguint.arithmetics.add(self, other)
+        decimojo.biguint.arithmetics.add_inplace(self, other)
 
     @always_inline
     fn __isub__(mut self, other: Self) raises:
@@ -634,6 +634,29 @@ struct BigUInt(Absable, IntableRaising, Writable):
         See `compare()` for more information.
         """
         return decimojo.biguint.comparison.compare(self, other)
+
+    @always_inline
+    fn ceil_divide(self, other: Self) raises -> Self:
+        """Returns the result of ceil dividing this number by `other`.
+        See `ceil_divide()` for more information.
+        """
+        return decimojo.biguint.arithmetics.ceil_divide(self, other)
+
+    @always_inline
+    fn floor_divide(self, other: Self) raises -> Self:
+        """Returns the result of floor dividing this number by `other`.
+        It is equal to `self // other`.
+        See `floor_divide()` for more information.
+        """
+        return decimojo.biguint.arithmetics.floor_divide(self, other)
+
+    @always_inline
+    fn truncate_divide(self, other: Self) raises -> Self:
+        """Returns the result of truncate dividing this number by `other`.
+        It is equal to `self // other`.
+        See `truncate_divide()` for more information.
+        """
+        return decimojo.biguint.arithmetics.truncate_divide(self, other)
 
     fn power(self, exponent: Int) raises -> Self:
         """Returns the result of raising this number to the power of `exponent`.

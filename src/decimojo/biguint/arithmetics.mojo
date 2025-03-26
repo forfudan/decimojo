@@ -82,6 +82,53 @@ fn add(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     return result^
 
 
+fn add_inplace(mut x1: BigUInt, x2: BigUInt) raises:
+    """Increments a BigUInt number by another BigUInt number in place.
+
+    Args:
+        x1: The first unsigned integer operand.
+        x2: The second unsigned integer operand.
+    """
+
+    # If one of the numbers is zero, return the other number
+    if x1.is_zero():
+        x1.words = x2.words.copy()
+        return
+    if x2.is_zero():
+        return
+
+    var carry: UInt32 = 0
+    var ith: Int = 0
+    var sum_of_words: UInt32 = 0
+    var x1_len = len(x1.words)
+
+    while ith < x1_len or ith < len(x2.words):
+        sum_of_words = carry
+
+        # Add x1's word if available
+        if ith < len(x1.words):
+            sum_of_words += x1.words[ith]
+
+        # Add x2's word if available
+        if ith < len(x2.words):
+            sum_of_words += x2.words[ith]
+
+        # Compute new word and carry
+        carry = UInt32(sum_of_words // 1_000_000_000)
+        if ith < len(x1.words):
+            x1.words[ith] = UInt32(sum_of_words % 1_000_000_000)
+        else:
+            x1.words.append(UInt32(sum_of_words % 1_000_000_000))
+
+        ith += 1
+
+    # Handle final carry if it exists
+    if carry > 0:
+        x1.words.append(carry)
+
+    return
+
+
 fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """Returns the difference of two unsigned integers.
 
@@ -509,6 +556,31 @@ fn truncate_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     See `floor_divide` for more details.
     """
     return floor_divide(x1, x2)
+
+
+fn ceil_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Returns the quotient of two BigUInt numbers, rounding up.
+
+    Args:
+        x1: The dividend.
+        x2: The divisor.
+
+    Returns:
+        The quotient of x1 / x2, rounded up.
+
+    Raises:
+        ValueError: If the divisor is zero.
+    """
+
+    # CASE: Division by zero
+    if x2.is_zero():
+        raise Error("Error in `ceil_divide`: Division by zero")
+
+    # Apply floor division and check if there is a remainder
+    var quotient = floor_divide(x1, x2)
+    if quotient * x2 < x1:
+        quotient += BigUInt(UInt32(1))
+    return quotient^
 
 
 fn modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
