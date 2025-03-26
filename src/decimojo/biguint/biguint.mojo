@@ -658,6 +658,13 @@ struct BigUInt(Absable, IntableRaising, Writable):
         """
         return decimojo.biguint.arithmetics.truncate_divide(self, other)
 
+    @always_inline
+    fn ceil_modulo(self, other: Self) raises -> Self:
+        """Returns the result of ceil modulo this number by `other`.
+        See `ceil_modulo()` for more information.
+        """
+        return decimojo.biguint.arithmetics.ceil_modulo(self, other)
+
     fn power(self, exponent: Int) raises -> Self:
         """Returns the result of raising this number to the power of `exponent`.
 

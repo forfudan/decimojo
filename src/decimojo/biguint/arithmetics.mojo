@@ -593,7 +593,7 @@ fn modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         x2: The divisor.
 
     Returns:
-        The remainder of x1 being divided by x2, with the same sign as x1.
+        The remainder of x1 being divided by x2.
 
     Raises:
         ValueError: If the divisor is zero.
@@ -624,6 +624,48 @@ fn modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     var remainder = subtract(x1, multiply(x2, quotient))
 
     return remainder^
+
+
+fn ceil_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Returns the remainder of two BigUInt numbers, rounding up.
+    The remainder has the same sign as the dividend and satisfies:
+    x1 = ceil_divide(x1, x2) * x2 + ceil_modulo(x1, x2).
+
+    Args:
+        x1: The dividend.
+        x2: The divisor.
+
+    Returns:
+        The remainder of x1 being ceil-divided by x2.
+
+    Raises:
+        ValueError: If the divisor is zero.
+    """
+    # CASE: Division by zero
+    if x2.is_zero():
+        raise Error("Error in `truncate_modulo`: Division by zero")
+
+    # CASE: Dividend is zero
+    if x1.is_zero():
+        return BigUInt()  # Return zero
+
+    # CASE: Divisor is one - no remainder
+    if x2.is_one():
+        return BigUInt()  # Always divisible with no remainder
+
+    # CASE: |dividend| < |divisor| - the remainder is the dividend itself
+    if x1.compare(x2) < 0:
+        return x1
+
+    # Calculate quotient with truncation
+    var quotient = floor_divide(x1, x2)
+    # Calculate remainder: dividend - (divisor * quotient)
+    var remainder = subtract(x1, multiply(x2, quotient))
+
+    if remainder.is_zero():
+        return BigUInt()  # No remainder
+    else:
+        return subtract(x2, remainder)
 
 
 # ===----------------------------------------------------------------------=== #
