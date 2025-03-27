@@ -609,8 +609,8 @@ fn divmod(x1: BigUInt, x2: BigUInt) raises -> Tuple[BigUInt, BigUInt]:
 
     # CASE: Duo words division by means of UInt64
     if len(x1.words) <= 2 and len(x2.words) <= 2:
-        var result = BigUInt.from_uint64(x1.to_uint64() // x2.to_uint64())
-        var remainder = BigUInt.from_uint64(x1.to_uint64() % x2.to_uint64())
+        var result = BigUInt.from_scalar(x1.to_uint64() // x2.to_uint64())
+        var remainder = BigUInt.from_scalar(x1.to_uint64() % x2.to_uint64())
         return Tuple(result^, remainder^)
 
     # CASE: Divisor is 10^n

@@ -263,7 +263,7 @@ struct BigInt(Absable, IntableRaising, Writable):
         return Self(BigUInt(words^), sign)
 
     @staticmethod
-    fn from_uint128(value: UInt128, sign: Bool = False) -> Self:
+    fn from_uint128(value: UInt128, sign: Bool = False) raises -> Self:
         """Initializes a BigInt from a UInt128 value.
 
         Args:
@@ -276,7 +276,7 @@ struct BigInt(Absable, IntableRaising, Writable):
         if value == 0:
             return Self()
 
-        var magnitude = BigUInt.from_uint128(value)
+        var magnitude = BigUInt.from_scalar(value)
         return Self(magnitude^, sign)
 
     @staticmethod
