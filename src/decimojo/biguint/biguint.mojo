@@ -149,18 +149,25 @@ struct BigUInt(Absable, IntableRaising, Writable):
         """
         self = Self.from_int(value)
 
-    fn __init__(out self, value: String) raises:
+    fn __init__[dtype: DType](out self, value: Scalar[dtype]) raises:
+        """Initializes a BigUInt from a Mojo Scalar.
+        See `from_scalar()` for more information.
+        """
+        self = Self.from_scalar(value)
+
+    fn __init__(out self, value: String, ignore_sign: Bool = False) raises:
         """Initializes a BigUInt from a string representation.
         See `from_string()` for more information.
         """
-        self = Self.from_string(value)
+        self = Self.from_string(value, ignore_sign=ignore_sign)
 
     # ===------------------------------------------------------------------=== #
     # Constructing methods that are not dunders
     #
+    # from_list(owned words: List[UInt32]) -> Self
     # from_words(*words: UInt32) -> Self
     # from_int(value: Int) -> Self
-    # from_uint128(value: UInt128) -> Self
+    # from_scalar[dtype: DType](value: Scalar[dtype]) -> Self
     # from_string(value: String) -> Self
     # ===------------------------------------------------------------------=== #
 
@@ -247,76 +254,52 @@ struct BigUInt(Absable, IntableRaising, Writable):
         return Self(list_of_words^)
 
     @staticmethod
-    fn from_uint64(value: UInt64) raises -> Self:
-        """Initializes a BigUInt from an UInt64.
+    fn from_scalar[dtype: DType, //](value: Scalar[dtype]) raises -> Self:
+        """Initializes a BigUInt from a Mojo Scalar.
 
         Args:
-            value: The UInt64 value to be converted to BigUInt.
+            value: The Scalar value to be converted to BigUInt.
 
         Returns:
-            The BigUInt representation of the UInt64 value.
+            The BigUInt representation of the Scalar value.
+
+        Notes:
+            If the value is a floating-point number, it is converted to a string
+            with full precision before converting to BigUInt.
+            If the fractional part is not zero, an error is raised.
         """
+        if value < 0:
+            raise Error("Error in `from_scalar()`: The value is negative")
+
         if value == 0:
             return Self()
 
-        var list_of_words = List[UInt32]()
-        var remainder: UInt64 = value
-        var quotient: UInt64
-        while remainder != 0:
-            quotient = remainder // 1_000_000_000
-            remainder = remainder % 1_000_000_000
-            list_of_words.append(UInt32(remainder))
-            remainder = quotient
+        @parameter
+        if dtype.is_integral():
+            var list_of_words = List[UInt32]()
+            var remainder: Scalar[dtype] = value
+            var quotient: Scalar[dtype]
+            while remainder != 0:
+                quotient = remainder // 1_000_000_000
+                remainder = remainder % 1_000_000_000
+                list_of_words.append(UInt32(remainder))
+                remainder = quotient
 
-        return Self(list_of_words^)
+            return Self(list_of_words^)
 
-    @staticmethod
-    fn from_uint128(value: UInt128) -> Self:
-        """Initializes a BigUInt from a UInt128 value.
+        else:
+            if value != value:  # Check for NaN
+                raise Error(
+                    "Error in `from_scalar()`: Cannot convert NaN to BigUInt"
+                )
 
-        Args:
-            value: The UInt128 value to be converted to BigUInt.
+            # Convert to string with full precision
+            try:
+                return Self.from_string(String(value))
+            except e:
+                raise Error("Error in `from_scalar()`: ", e)
 
-        Returns:
-            The BigUInt representation of the UInt128 value.
-        """
-        if value == 0:
-            return Self()
-
-        var list_of_words = List[UInt32]()
-        var remainder: UInt128 = value
-        var quotient: UInt128
-        while remainder != 0:
-            quotient = remainder // 1_000_000_000
-            remainder = remainder % 1_000_000_000
-            list_of_words.append(UInt32(remainder))
-            remainder = quotient
-
-        return Self(list_of_words^)
-
-    @staticmethod
-    fn from_uint256(value: UInt256) -> Self:
-        """Initializes a BigUInt from a UInt256 value.
-
-        Args:
-            value: The UInt256 value to be converted to BigUInt.
-
-        Returns:
-            The BigUInt representation of the UInt256 value.
-        """
-        if value == 0:
-            return Self()
-
-        var list_of_words = List[UInt32]()
-        var remainder: UInt256 = value
-        var quotient: UInt256
-        while remainder != 0:
-            quotient = remainder // 1_000_000_000
-            remainder = remainder % 1_000_000_000
-            list_of_words.append(UInt32(remainder))
-            remainder = quotient
-
-        return Self(list_of_words^)
+        return Self()
 
     @staticmethod
     fn from_string(value: String, ignore_sign: Bool = False) raises -> BigUInt:
@@ -357,7 +340,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
                     raise Error(
                         "Error in `from_string`: The number is not an integer."
                     )
-            coef.resize(-scale)
+            coef.resize(len(coef) - scale)
             scale = 0
 
         var number_of_digits = len(coef) - scale
