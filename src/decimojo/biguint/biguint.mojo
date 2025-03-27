@@ -76,33 +76,6 @@ struct BigUInt(Absable, IntableRaising, Writable):
         """Initializes a BigUInt with value 0."""
         self.words = List[UInt32](UInt32(0))
 
-    # FIXME: This is a temporary solution
-    # A unitialized BigUInt is not a good idea
-    fn __init__(out self, empty: Bool):
-        """Initializes an empty BigUInt.
-
-        Args:
-            empty: A Bool value indicating whether the BigUInt is empty.
-                If True, the BigUInt is empty.
-                If False, the BigUInt is intialized with value 0.
-        """
-        self.words = List[UInt32]()
-        if not empty:
-            self.words.append(UInt32(0))
-
-    fn __init__(out self, empty: Bool, capacity: Int):
-        """Initializes an empty BigUInt with a given capacity.
-
-        Args:
-            empty: A Bool value indicating whether the BigUInt is empty.
-                If True, the BigUInt is empty.
-                If False, the BigUInt is intialized with value 0.
-            capacity: The capacity of the BigUInt.
-        """
-        self.words = List[UInt32](capacity=capacity)
-        if not empty:
-            self.words.append(UInt32(0))
-
     fn __init__(out self, owned words: List[UInt32]):
         """Initializes a BigUInt from a list of UInt32 words.
         It does not check whether the list is empty or the words are invalid.
@@ -348,7 +321,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
         if number_of_digits % 9 != 0:
             number_of_words += 1
 
-        var result = Self(empty=True, capacity=number_of_words)
+        var result_words = List[UInt32](capacity=number_of_words)
 
         if scale == 0:
             # This is a true integer
@@ -364,15 +337,15 @@ struct BigUInt(Absable, IntableRaising, Writable):
                 var word: UInt32 = 0
                 for digit in coef[start:end]:
                     word = word * 10 + UInt32(digit[])
-                result.words.append(word)
+                result_words.append(word)
                 end = start
             if end > 0:
                 var word: UInt32 = 0
                 for digit in coef[0:end]:
                     word = word * 10 + UInt32(digit[])
-                result.words.append(word)
+                result_words.append(word)
 
-            return result
+            return Self(result_words^)
 
         else:  # scale < 0
             # This is a true integer with postive exponent
@@ -380,7 +353,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
             var remaining_trailing_zero_digits = -scale % 9
 
             for _ in range(number_of_trailing_zero_words):
-                result.words.append(UInt32(0))
+                result_words.append(UInt32(0))
 
             for _ in range(remaining_trailing_zero_digits):
                 coef.append(UInt8(0))
@@ -392,15 +365,15 @@ struct BigUInt(Absable, IntableRaising, Writable):
                 var word: UInt32 = 0
                 for digit in coef[start:end]:
                     word = word * 10 + UInt32(digit[])
-                result.words.append(word)
+                result_words.append(word)
                 end = start
             if end > 0:
                 var word: UInt32 = 0
                 for digit in coef[0:end]:
                     word = word * 10 + UInt32(digit[])
-                result.words.append(word)
+                result_words.append(word)
 
-            return result
+            return Self(result_words^)
 
     # ===------------------------------------------------------------------=== #
     # Output dunders, type-transfer dunders
