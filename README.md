@@ -151,7 +151,7 @@ This project draws inspiration from several established decimal implementations 
 
 DeciMojo combines "Deci" and "Mojo" - reflecting its purpose and implementation language. "Deci" (from Latin "decimus" meaning "tenth") highlights our focus on the decimal numeral system that humans naturally use for counting and calculations.
 
-Although the name emphasizes decimals with fractional parts, DeciMojo embraces the full spectrum of decimal mathematics. Our `BigInt` type, while handling only integers, is designed specifically for the decimal numeral system with its base-10^9 internal representation. This approach offers optimal performance while maintaining human-readable decimal semantics, contrasting with binary-focused libraries. Furthermore, `BigInt` serves as the foundation for our `BigDecimal` implementation, enabling arbitrary-precision calculations across both integer and fractional domains.
+Although the name emphasizes decimals with fractional parts, DeciMojo embraces the full spectrum of decimal mathematics. Our `BigInt` type, while handling only integers, is designed specifically for the decimal numeral system with its base-10 internal representation. This approach offers optimal performance while maintaining human-readable decimal semantics, contrasting with binary-focused libraries. Furthermore, `BigInt` serves as the foundation for our `BigDecimal` implementation, enabling arbitrary-precision calculations across both integer and fractional domains.
 
 The name ultimately emphasizes our mission: bringing precise, reliable decimal calculations to the Mojo ecosystem, addressing the fundamental need for exact arithmetic that floating-point representations cannot provide.
 
