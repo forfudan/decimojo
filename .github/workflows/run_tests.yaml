@@ -52,8 +52,10 @@ jobs:
       - name: Build package
         run: |
           magic run mojo package src/decimojo
+          magic run mojo package src/tomlmojo
           cp decimojo.mojopkg tests/
           cp decimojo.mojopkg benches/
+          mv tomlmojo.mojopkg tests/
 
       - name: Run tests
         run: |
