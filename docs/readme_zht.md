@@ -1,217 +1,141 @@
 # DeciMojo
 
-由 [Mojo 程序設計語言 🔥](https://www.modular.com/mojo) 實現的定點數運算庫。
+由 [Mojo 程序設計語言 🔥](https://www.modular.com/mojo) 實現的定點數和整數運算庫。
+
+**[GitHub 倉庫»](https://github.com/forfudan/decimojo)**
 
 ## 概述
 
-DeciMojo 爲 Mojo 提供了一個定點數類型 (Decimal) 實現，專爲處理金融計算、工程計算、以及其他需要避免浮點數捨入誤差的場景而設計。
+DeciMojo 爲 Mojo 提供了全面的定點數和整數運算庫，專爲處理金融計算、工程計算、以及其他需要避免浮點數捨入誤差的場景而設計。
+
+核心類型包括:
+
+- 一種 128 位定點數實現 (`Decimal`) 支持最多 29 位有效數字，小數點後最多 28 位數字[^fixed]。它具有完整的數學函數集，包括對數、指數、開方和三角函數運算。
+- 一種基於 10 進制的任意精度有符號整數類型 (`BigInt`) 和任意精度無符號整數類型 (`BigUInt`)[^integer]，支持無限位數。它具有全面的算術運算、比較功能，並能高效支持超大整數計算。
+
+該庫正在擴展，計劃包含支持任意精度的 `BigDecimal` 類型[^arbitrary]，允許進行無限位數和小數位的計算。這些擴展目前正在積極開發中。
 
 ## 安裝
 
-您可以直接通過在 Modular CLI 中輸入 `magic add decimojo` 將 DeciMojo 添加到您的項目環境中。此命令會獲取最新版本的 DeciMojo，並使您在 Mojo 項目中導入之。
+DeciMojo 可在 [modular-community](https://repo.prefix.dev/modular-community) 包倉庫中獲取。您可以使用以下任一方法進行安裝：
 
-要使用 DeciMojo，請從 `decimojo.prelude` 模塊導入必要的組件。該模塊提供對最常用類和函數的便捷訪問，包括 `dm`（`decimojo` 模塊本身的別名）、`Decimal` 和 `RoundingMode`。
+從 `magic` CLI，只需運行 ```magic add decimojo```。這會獲取最新版本並使其立即可用於導入。
+
+對於帶有 `mojoproject.toml` 文件的項目，添加依賴 ```decimojo = ">=0.2.0"```。然後運行 `magic install` 來下載並安裝包。
+
+如需最新的開發版本，請克隆 [GitHub 倉庫](https://github.com/forfudan/decimojo) 並在本地構建包。
+
+| `decimojo` | `mojo` |
+| ---------- | ------ |
+| v0.1.0     | >=25.1 |
+| v0.2.0     | >=25.2 |
+
+## 快速入門
+
+以下是展示 `Decimal` 類型每個主要功能的全面快速入門指南。
 
 ```mojo
-from decimojo.prelude import dm, Decimal, RoundingMode
+from decimojo import Decimal, RoundingMode
 
 fn main() raises:
-    # 計算標準轎車車輪面積 (平方釐米)
-    var r = Decimal("33.958")      # 釐米半徑
-    var pi = Decimal("3.1415926")  # 圓周率
-    var area = pi * r * r          # 圓面積
-    print(area)                    # 3622.7141989037464
-```
-
-此項目的 Github 倉庫位於 [https://github.com/forfudan/decimojo](https://github.com/forfudan/decimojo)。
-
-## 示例
-
-`Decimal` 類型可以表示最多 29 位有效數字，小數點後最多 28 位數字的值。當數值超過最大可表示值（`2^96 - 1`）時，DeciMojo 會拋出錯誤或將數值捨入以符合這些約束。例如，`8.8888888888888888888888888888`（總共 29 個 8，小數點後 28 位）的有效數字超過了最大可表示值（`2^96 - 1`），會自動捨入爲 `8.888888888888888888888888889`（總共 28 個 8，小數點後 27 位）。
-
-以下是 8 個關鍵示例，突出展示了 `Decimal` 類型當前狀態下的最重要特性：
-
-### 1. 財務計算中的定點數
-
-```mojo
-from decimojo import dm, Decimal
-
-# 經典的浮點數問題
-print(0.1 + 0.2)  # 0.30000000000000004（不完全是 0.3）
-
-# Decimal 通過精確表示解決了這個問題
-var d1 = Decimal("0.1")
-var d2 = Decimal("0.2")
-var sum = d1 + d2
-print(sum)  # 精確的 0.3
-
-# 財務計算示例 - 計算税款
-var price = Decimal("19.99")
-var tax_rate = Decimal("0.0725")
-var tax = price * tax_rate  # 精確的 1.449275
-var total = price + tax     # 精確的 21.439275
-```
-
-### 2. 四則運算與銀行家捨入
-
-```mojo
-# 不同精度的加法
-var a = Decimal("123.45")
-var b = Decimal("67.8")
-print(a + b)  # 191.25（保留最高精度）
-
-# 減法與負結果
-var c = Decimal("50")
-var d = Decimal("75.25")
-print(c - d)  # -25.25
-
-# 乘法與銀行家捨入（捨入到偶數）
-var e = Decimal("12.345")
-var f = Decimal("5.67")
-print(round(e * f, 2))  # 69.96（捨入到最接近的偶數）
-
-# 除法與銀行家捨入
-var g = Decimal("10")
-var h = Decimal("3")
-print(round(g / h, 2))  # 3.33（按銀行家方式捨入）
-```
-
-### 3. 比例與精度管理
-
-```mojo
-# 比例 (scale) 是指小數位數
-var d1 = Decimal("123.45")
-print(d1.scale())  # 2
-
-# 通過顯式捨入控制精度
-var d2 = Decimal("123.456")
-print(d2.round_to_scale(1))  # 123.5（銀行家捨入）
-
-# 保留高精度（最多28位小數）
-var precise = Decimal("0.1234567890123456789012345678")
-print(precise)  # 0.1234567890123456789012345678
-```
-
-### 4. 正負號與絶對值
-
-```mojo
-# 取反運算符
-var pos = Decimal("123.45")
-var neg = -pos
-print(neg)  # -123.45
-
-# 絶對值
-var abs_val = abs(Decimal("-987.65"))
-print(abs_val)  # 987.65
-
-# 正負號檢查
-print(Decimal("-123.45").is_negative())  # True
-print(Decimal("0").is_negative())        # False
-
-# 乘法中的符號保留
-print(Decimal("-5") * Decimal("3"))      # -15 
-print(Decimal("-5") * Decimal("-3"))     # 15
-```
-
-### 5. 高級數學運算
-
-```mojo
-# 高精度平方根實現
-var root2 = Decimal("2").sqrt()
-print(root2)  # 1.4142135623730950488016887242
-
-# 非完全平方數的平方根
-var root_15_9999 = Decimal("15.9999").sqrt()
-print(root_15_9999)  # 3.9999874999804686889646053305
-
-# 整數冪運算，使用快速二進制冪
-var cubed = Decimal("3") ** 3
-print(cubed)  # 27
-
-# 負冪（倒數）
-var recip = Decimal("2") ** (-1)
-print(recip)  # 0.5
-```
-
-### 6. 穩健的邊緣情況處理
-
-```mojo
-# 除零錯誤被正確捕獲
-try:
-    var result = Decimal("10") / Decimal("0")
-except:
-    print("正確檢測到除以零")
-
-# 零的負冪
-try:
-    var invalid = Decimal("0") ** (-1)
-except:
-    print("正確檢測到零的負冪")
+    # === 構造 ===
+    var a = Decimal("123.45")                        # 從字符串
+    var b = Decimal(123)                             # 從整數
+    var c = Decimal(123, 2)                          # 帶比例的整數 (1.23)
+    var d = Decimal.from_float(3.14159)              # 從浮點數
     
-# 溢出檢測與預防
-var max_val = Decimal.MAX()
-try:
-    var overflow = max_val * Decimal("2")
-except:
-    print("正確檢測到溢出")
+    # === 基本算術 ===
+    print(a + b)                                     # 加法: 246.45
+    print(a - b)                                     # 減法: 0.45
+    print(a * b)                                     # 乘法: 15184.35
+    print(a / b)                                     # 除法: 1.0036585365853658536585365854
+    
+    # === 捨入與精度 ===
+    print(a.round(1))                                # 捨入到1位小數: 123.5
+    print(a.quantize(Decimal("0.01")))               # 格式化到2位小數: 123.45
+    print(a.round(0, RoundingMode.ROUND_DOWN))       # 向下捨入到整數: 123
+    
+    # === 比較 ===
+    print(a > b)                                     # 大於: True
+    print(a == Decimal("123.45"))                    # 等於: True
+    print(a.is_zero())                               # 檢查是否爲零: False
+    print(Decimal("0").is_zero())                    # 檢查是否爲零: True
+    
+    # === 類型轉換 ===
+    print(Float64(a))                                # 轉爲浮點數: 123.45
+    print(a.to_int())                                # 轉爲整數: 123
+    print(a.to_str())                                # 轉爲字符串: "123.45"
+    print(a.coefficient())                           # 獲取係數: 12345
+    print(a.scale())                                 # 獲取比例: 2
+    
+    # === 數學函數 ===
+    print(Decimal("2").sqrt())                       # 平方根: 1.4142135623730950488016887242
+    print(Decimal("100").root(3))                    # 立方根: 4.641588833612778892410076351
+    print(Decimal("2.71828").ln())                   # 自然對數: 0.9999993273472820031578910056
+    print(Decimal("10").log10())                     # 10爲底的對數: 1
+    print(Decimal("16").log(Decimal("2")))           # 以2爲底的對數: 3.9999999999999999999999999999
+    print(Decimal("10").exp())                       # e^10: 22026.465794806716516957900645
+    print(Decimal("2").power(10))                    # 冪: 1024
+    
+    # === 符號處理 ===
+    print(-a)                                        # 取反: -123.45
+    print(abs(Decimal("-123.45")))                   # 絕對值: 123.45
+    print(Decimal("123.45").is_negative())           # 檢查是否爲負: False
+    
+    # === 特殊值 ===
+    print(Decimal.PI())                              # π常數: 3.1415926535897932384626433833
+    print(Decimal.E())                               # e常數: 2.7182818284590452353602874714
+    print(Decimal.ONE())                             # 值1: 1
+    print(Decimal.ZERO())                            # 值0: 0
+    print(Decimal.MAX())                             # 最大值: 79228162514264337593543950335
+    
+    # === 便捷方法 ===
+    print(Decimal("123.400").is_integer())           # 檢查是否爲整數: False
+    print(a.number_of_significant_digits())          # 計算有效數字: 5
+    print(Decimal("12.34").to_str_scientific())      # 科學計數法: 1.234E+1
 ```
 
-### 7. 比較大小
+以下是展示 `BigInt` 類型每個主要功能的全面快速入門指南。
 
 ```mojo
-# 具有不同小數位數的相等值
-var a = Decimal("123.4500")
-var b = Decimal("123.45")
-print(a == b)  # True（數值相等）
+from decimojo import BigInt
 
-# 比較運算符
-var c = Decimal("100")
-var d = Decimal("200")
-print(c < d)   # True
-print(c <= d)  # True
-print(c > d)   # False
-print(c >= d)  # False
-print(c != d)  # True
+fn main() raises:
+    # === 構造 ===
+    var a = BigInt("12345678901234567890")         # 從字符串構造
+    var b = BigInt(12345)                          # 從整數構造
+    
+    # === 基本算術 ===
+    print(a + b)                                   # 加法: 12345678901234580235
+    print(a - b)                                   # 減法: 12345678901234555545
+    print(a * b)                                   # 乘法: 152415787814108380241050
+    
+    # === 除法運算 ===
+    print(a // b)                                  # 向下整除: 999650944609516
+    print(a.truncate_divide(b))                    # 截斷除法: 999650944609516
+    print(a % b)                                   # 取模: 9615
+    
+    # === 冪運算 ===
+    print(BigInt(2).power(10))                     # 冪: 1024
+    print(BigInt(2) ** 10)                         # 冪 (使用 ** 運算符): 1024
+    
+    # === 比較 ===
+    print(a > b)                                   # 大於: True
+    print(a == BigInt("12345678901234567890"))     # 等於: True
+    print(a.is_zero())                             # 檢查是否爲零: False
+    
+    # === 類型轉換 ===
+    print(a.to_str())                              # 轉爲字符串: "12345678901234567890"
+    
+    # === 符號處理 ===
+    print(-a)                                      # 取反: -12345678901234567890
+    print(abs(BigInt("-12345678901234567890")))    # 絕對值: 12345678901234567890
+    print(a.is_negative())                         # 檢查是否爲負: False
+
+    # === 超大數值計算 ===
+    # 3600 位數 // 1800 位數
+    print(BigInt("123456789" * 400) // BigInt("987654321" * 200))
 ```
-
-### 8. 真實世界財經案例
-
-```mojo
-# 等額還貸下的月供計算
-var principal = Decimal("200000")  # $200,000 貸款
-var annual_rate = Decimal("0.05")  # 5% 利率
-var monthly_rate = annual_rate / Decimal("12")
-var num_payments = Decimal("360")  # 30年
-
-# 月供公式: P * r(1+r)^n/((1+r)^n-1)
-var numerator = monthly_rate * (Decimal("1") + monthly_rate) ** 360
-var denominator = (Decimal("1") + monthly_rate) ** 360 - Decimal("1")
-var payment = principal * (numerator / denominator)
-print("月供: $" + String(round(payment, 2)))  # $1,073.64
-```
-
-## 優勢
-
-DeciMojo 提供了卓越的計算精度，同時不犧牲性能。在複雜計算中，它保持準確度，而浮點數或其他小數實現可能會引入微妙的誤差。
-
-考慮 `15.9999` 的平方根。比較 DeciMojo 的實現與 Python 的 decimal 模塊（兩者都捨入到 16 位小數）：
-
-- DeciMojo 計算結果：`3.9999874999804687`
-- Python 的 decimal 返回：`3.9999874999804685`
-
-數學上正確的值（50+ 位數）是：
-`3.9999874999804686889646053303778122644631365491812...`
-
-當捨入到 16 位小數時，正確結果是 `3.9999874999804687`，證實 DeciMojo 在這種情況下産生了更精確的結果。
-
-```log
-函數：                     sqrt()
-Decimal 值：               15.9999
-DeciMojo 結果：            3.9999874999804686889646053305
-Python decimal 結果：      3.9999874999804685
-```
-
-這種精度優勢在金融、科學和工程計算中變得越來越重要，因爲小的捨入誤差可能累積成顯著的差異。
 
 ## 目標
 
@@ -223,40 +147,57 @@ Python decimal 結果：      3.9999874999804685
 
 ## 命名
 
-DeciMojo 結合了 "Decimal" 和 "Mojo" 兩詞，反映了其目的（小數算術）和其實現所用的程序設計語言。該名稱强調了本項目旨在將精確小數計算引入 Mojo 生態系統。
-
-爲簡潔起見，您可以將其稱爲"deci"（源自拉丁詞根"decimus"，意爲"十分之一"）。
-
-它的中文名爲「得此魔咒」。
-
 > 得此魔咒者，即脱凡相，識天數，斬三尸，二十七日飛升。
 > —— 《太上靈通感應二十七章經》
 
+DeciMojo 結合了 "Deci" 和 "Mojo" 兩詞，反映了其目的和實現語言。"Deci"（源自拉丁詞根"decimus"，意爲"十分之一"）強調了我們對人類自然用於計數和計算的十進制數字系統的關注。
+
+雖然名稱強調了帶小數部分的十進制數，但 DeciMojo 涵蓋了十進制數學的全部範圍。我們的 `BigInt` 類型雖然只處理整數，但專爲十進制數字系統設計，採用以 10 爲基數的内部表示。這種方法在保持人類可讀的十進制語義的同時提供最佳性能，與專注於二進制的庫形成對比。此外，`BigInt` 作爲我們 `BigDecimal` 實現的基礎，使得在整數和小數領域都能進行任意精度的計算。
+
+這個名稱最終強調了我們的使命：爲 Mojo 生態系統帶來精確、可靠的十進制計算，滿足浮點表示無法提供的精確算術的基本需求。
+
 ## 狀態
 
-羅馬不是一日建成的。DeciMojo 目前正在積極開發中，處於**"讓它工作"**和**"讓它正確"**階段之間，更偏重於後者。歡迎錯誤報告和功能請求！如果您遇到問題，請[在此提交](https://github.com/forfudan/decimojo/issues)。
+羅馬不是一日建成的。DeciMojo 目前正在積極開發中。對於 128 位的 `Decimal` 類型，它已成功通過 **"讓它工作"** 階段，並已深入 **"讓它正確"** 階段，同時已實施多項優化。歡迎錯誤報告和功能請求！如果您遇到問題，請[在此提交](https://github.com/forfudan/decimojo/issues)。
 
-### 讓它工作 ✅（基本完成）
+### 讓它工作 ✅（已完成）
 
-- 核心小數實現已存在並運作
-- 已實現基本算術運算（+, -, *, /）
-- 各類型間的轉換能正常工作
-- 字符串表示和解析功能正常
-- 支持從不同來源（字符串、數字）構造
+- 核心小數實現採用穩健的 128 位表示（96 位係數 + 32 位標誌）
+- 全面的算術運算（+, -, *, /, %, **）並正確處理溢出
+- 各類型間的轉換（字符串、整數、浮點數等）
+- 特殊值（NaN、無限）的適當表示
+- 具有正確十進制語義的完整比較運算符集
 
-### 讓它正確 🔄（進行中）
+### 讓它正確 🔄（大部分完成）
 
-- 正在處理邊緣情況（除以零、零的負冪）
+- 重組的代碼庫具有模塊化結構（小數、算術、比較、指數等）
+- 處理所有運算的邊緣情況（除以零、零的負冪等）
 - 精度和比例管理表現出複雜性
-- 財務計算展示了正確的捨入
-- 實現了高精度支持（最多28位小數）
-- 示例展示了對各種場景的穩健處理
+- 財務計算展示了正確的捨入（ROUND_HALF_EVEN）
+- 高精度高級數學函數（開方、根源、對數、指數等）
+- 正確實現特徵（可取絶對值、可比較、可轉爲浮點、可捨入等）
+- **BigInt 和 BigUInt** 實現提供完整的算術運算、正確的除法語義（向下整除和截斷除法），以及支持任意精度計算
 
-### 讓它快速 ⏳（進行中 & 未來工作）
+### 讓它快速 ⚡（顯著進展）
 
-- 核心算術運算（+, -, *, /）已針對性能進行了優化，並提供了與 Python 内置 decimal 模塊進行比較的全面基準測試報告（[PR#16](https://github.com/forfudan/decimojo/pull/16)、[PR#20](https://github.com/forfudan/decimojo/pull/20)、[PR#21](https://github.com/forfudan/decimojo/pull/21)）。
-- 定期對比 Python 的 `decimal` 模塊進行基準測試（見 `bench/` 文件夾）
-- 其他函數的性能優化正緩步進行，但不是當前優先事項
+DeciMojo 相較於 Python 的 `decimal` 模塊提供了卓越的性能，同時保持計算精確度。這一性能差異源於基本設計選擇：
+
+- **DeciMojo**：使用固定的 128 位表示（96 位係數 + 32 位標誌），最多支持 28 位小數，針對現代硬件和 Mojo 的性能能力進行了優化。
+- **Python decimal**：實現任意精度，可表示具有無限有效位數的數字，但需要動態内存分配和更複雜的算法。
+
+此架構差異解釋了我們的基準測試結果：
+
+- 核心算術運算（+, -, *, /）比 Python 的 decimal 模塊快 100-3500 倍。
+- 特殊情況處理（0 的冪、1 的冪等）顯示出高達 3500 倍的性能提升。
+- 高級數學函數（sqrt、ln、exp）展示了 5-600 倍的更好性能。
+- 只有特定的邊緣情況（例如計算 10^(1/100)）偶爾在 Python 中表現更好，這是由於其任意精度算法。
+
+`bench/` 文件夾中提供了與 Python 的 `decimal` 模塊的定期基準測試，記錄了性能優勢以及需要不同方法的少數特定操作。
+
+### 未來擴展 🚀（計劃中）
+
+- **BigDecimal**：🔄 **進行中** - 具有可配置精度的任意精度小數類型[^arbitrary]。
+- **BigComplex**：📝 **計劃中** - 基於 BigDecimal 構建的任意精度複數類型。
 
 ## 測試與基準
 
@@ -275,7 +216,7 @@ DeciMojo 結合了 "Decimal" 和 "Mojo" 兩詞，反映了其目的（小數算�
     year         = {2025},
     title        = {DeciMojo: A fixed-point decimal arithmetic library in Mojo},
     url          = {https://github.com/forfudan/decimojo},
-    version      = {0.1.0},
+    version      = {0.2.0},
     note         = {Computer Software}
 }
 ```
@@ -283,3 +224,9 @@ DeciMojo 結合了 "Decimal" 和 "Mojo" 兩詞，反映了其目的（小數算�
 ## 許可證
 
 本倉庫及其所有貢獻内容均採用 Apache 許可證 2.0 版本授權。
+
+[^fixed]: Decimal 類型可以表示最多 29 位有效數字，小數點後最多 28 位數字的值。當數值超過最大可表示值（2^96 - 1）時，DeciMojo 會拋出錯誤或將數值捨入以符合這些約束。例如，8.8888888888888888888888888888（總共 29 個 8，小數點後 28 位）的有效數字超過了最大可表示值（2^96 - 1），會自動捨入爲 8.888888888888888888888888889（總共 28 個 8，小數點後 27 位）。DeciMojo 的 Decimal 類型類似於 System.Decimal（C#/.NET）、Rust 中的 rust_decimal、SQL Server 中的 DECIMAL/NUMERIC 等。
+
+[^integer]: BigInt 實現使用基於 10 的表示進行高效存儲和計算，支持對具有無限精度的整數進行操作。它提供了向下整除（向負無窮舍入）和截斷除法（向零舍入）語義，無論操作數符號如何，都能確保除法操作處理具有正確的數學行爲。
+
+[^arbitrary]: 基於已完成的 BigInt 實現構建，BigDecimal 將支持整數和小數部分的任意精度，類似於 Python 中的 decimal 和 mpmath、Java 中的 java.math.BigDecimal 等。

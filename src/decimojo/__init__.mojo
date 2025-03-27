@@ -29,7 +29,7 @@ from decimojo import Decimal, BigInt, RoundingMode
 
 # Core types
 from .decimal.decimal import Decimal
-from .bigint.bigint import BigInt
+from .bigint.bigint import BigInt, BInt
 from .biguint.biguint import BigUInt
 from .rounding_mode import RoundingMode
 
