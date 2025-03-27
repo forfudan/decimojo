@@ -15,6 +15,8 @@ The core types are:
 
 The library is expanding to include `BigDecimal` types that support arbitrary precision[^arbitrary], allowing for calculations with unlimited digits and decimal places. These extensions are currently under active development.
 
+This repository includes [TOMLMojo](https://github.com/forfudan/decimojo/tree/main/src/tomlmojo), a lightweight TOML parser in pure Mojo. It parses configuration files and test data, supporting basic types, arrays, and nested tables. While created for DeciMojo's testing framework, it offers general-purpose structured data parsing with a clean, simple API.
+
 ## Installation
 
 DeciMojo is available in the [modular-community](https://repo.prefix.dev/modular-community) package repository. You can install it using any of these methods:

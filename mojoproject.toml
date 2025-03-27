@@ -24,6 +24,7 @@ p = "clear && magic run package"
 
 # clean the package files in tests folder
 clean = "rm tests/decimojo.mojopkg && rm benches/decimojo.mojopkg && rm tests/tomlmojo.mojopkg"
+c = "clear && magic run clean"
 
 # tests (use the mojo testing tool)
 test = "magic run package && magic run mojo test tests --filter"
