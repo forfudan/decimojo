@@ -32,6 +32,9 @@ import decimojo.bigint.arithmetics
 import decimojo.bigint.comparison
 import decimojo.str
 
+# Type aliases
+alias BInt = BigInt
+
 
 @value
 struct BigInt(Absable, IntableRaising, Writable):

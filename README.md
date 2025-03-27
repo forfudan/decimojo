@@ -2,7 +2,7 @@
 
 A comprehensive decimal and integer mathematics library for [Mojo](https://www.modular.com/mojo).
 
-**[中文·漢字»](./docs/readme_zht.md)**　|　**[Repository on GitHub»](https://github.com/forfudan/decimojo)**
+**[中文·漢字»](https://zhuyuhao.com/decimojo/docs/readme_zht.html)**　|　**[Repository on GitHub»](https://github.com/forfudan/decimojo)**
 
 ## Overview
 
@@ -95,17 +95,18 @@ fn main() raises:
     print(Decimal("12.34").to_str_scientific())      # Scientific notation: 1.234E+1
 ```
 
-[Click here for 8 key examples](./docs/examples.md) highlighting the most important features of the `Decimal` type.
+[Click here for 8 key examples](https://zhuyuhao.com/decimojo/docs/examples) highlighting the most important features of the `Decimal` type.
 
-### BigInt Quick Start
+Here is a comprehensive quick-start guide showcasing each major function of the `BigInt` type.
 
 ```mojo
-from decimojo import BigInt
+from decimojo import BigInt, BInt
+# BInt is an alias for BigInt
 
 fn main() raises:
     # === Construction ===
     var a = BigInt("12345678901234567890")         # From string
-    var b = BigInt(12345)                          # From integer
+    var b = BInt(12345)                            # From integer
     
     # === Basic Arithmetic ===
     print(a + b)                                   # Addition: 12345678901234580235
@@ -118,12 +119,12 @@ fn main() raises:
     print(a % b)                                   # Modulo: 9615
     
     # === Power Operation ===
-    print(BigInt(2).power(10))                     # Power: 1024
-    print(BigInt(2) ** 10)                         # Power (using ** operator): 1024
+    print(BInt(2).power(10))                     # Power: 1024
+    print(BInt(2) ** 10)                         # Power (using ** operator): 1024
     
     # === Comparison ===
     print(a > b)                                   # Greater than: True
-    print(a == BigInt("12345678901234567890"))     # Equality: True
+    print(a == BInt("12345678901234567890"))     # Equality: True
     print(a.is_zero())                             # Check for zero: False
     
     # === Type Conversions ===
@@ -131,12 +132,12 @@ fn main() raises:
     
     # === Sign Handling ===
     print(-a)                                      # Negation: -12345678901234567890
-    print(abs(BigInt("-12345678901234567890")))    # Absolute value: 12345678901234567890
+    print(abs(BInt("-12345678901234567890")))    # Absolute value: 12345678901234567890
     print(a.is_negative())                         # Check if negative: False
 
     # === Extremely large numbers ===
     # 3600 digits // 1800 digits
-    print(BigInt("123456789" * 400) // BigInt("987654321" * 200))
+    print(BInt("123456789" * 400) // BInt("987654321" * 200))
 ```
 
 ## Objective
@@ -213,7 +214,7 @@ If you find DeciMojo useful for your research, consider listing it in your citat
 @software{Zhu.2025,
     author       = {Zhu, Yuhao},
     year         = {2025},
-    title        = {DeciMojo: A comprehensive decimal mathematics library for Mojo},
+    title        = {A comprehensive decimal and integer mathematics library for Mojo},
     url          = {https://github.com/forfudan/decimojo},
     version      = {0.2.0},
     note         = {Computer Software}
