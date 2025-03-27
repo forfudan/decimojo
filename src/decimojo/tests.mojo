@@ -40,7 +40,7 @@ struct TestCase:
         self.a = a
         self.b = b
         self.expected = expected
-        self.description = description
+        self.description = description + "\nx1 = " + self.a + "\nx2 = " + self.b
 
     fn __copyinit__(out self, other: Self):
         self.a = other.a

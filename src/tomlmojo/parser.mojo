@@ -376,7 +376,17 @@ struct TOMLParser:
                 self.advance()
                 continue
 
-            if token.type == TokenType.ARRAY_OF_TABLES_START:
+            elif token.type == TokenType.TABLE_START:
+                var table_name: String
+                var table_values: Dict[String, TOMLValue]
+                table_name, table_values = self.parse_table()
+                if table_name:
+                    var table_value = TOMLValue()
+                    table_value.type = TOMLValueType.TABLE
+                    table_value.table_values = table_values
+                    document.root[table_name] = table_value
+
+            elif token.type == TokenType.ARRAY_OF_TABLES_START:
                 # Get table name
                 self.advance()
                 if self.current_token().type != TokenType.KEY:
@@ -431,7 +441,7 @@ struct TOMLParser:
                     array_value.array_values.append(table_value)
                     document.root[table_name] = array_value
 
-            if token.type == TokenType.KEY:
+            elif token.type == TokenType.KEY:
                 var key: String
                 var value: TOMLValue
                 key, value = self.parse_key_value()

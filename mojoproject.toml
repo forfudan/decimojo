@@ -19,7 +19,7 @@ format = "magic run mojo format ./"
 # compile the package
 package_decimojo = "magic run mojo package src/decimojo && cp decimojo.mojopkg tests/ && cp decimojo.mojopkg benches/ && rm decimojo.mojopkg"
 package_tomlmojo = "magic run mojo package src/tomlmojo && mv tomlmojo.mojopkg tests/"
-package = "magic run format && package_decimojo && package_decimojo"
+package = "magic run format && magic run package_decimojo && magic run package_tomlmojo"
 p = "clear && magic run package"
 
 # clean the package files in tests folder

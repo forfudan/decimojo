@@ -18,4 +18,4 @@
 A simple TOML parser for Mojo.
 """
 
-from .parser import parse_file
+from .parser import parse_file, TOMLValueType

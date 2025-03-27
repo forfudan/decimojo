@@ -6,58 +6,41 @@ BigUInt is an unsigned integer type, so it doesn't support negative values.
 from decimojo.biguint.biguint import BigUInt
 from decimojo.tests import TestCase
 import testing
+from tomlmojo import parse_file
+
+alias file_path = "tests/biguint/test_data/biguint_arithmetics.toml"
+
+
+fn load_test_cases(
+    file_path: String, table_name: String
+) raises -> List[TestCase]:
+    """Load test cases from a TOML file for a specific table."""
+    var toml = parse_file(file_path)
+    var test_cases = List[TestCase]()
+
+    # Get array of test cases
+    var cases_array = toml.get_array_of_tables(table_name)
+
+    for i in range(len(cases_array)):
+        var case_table = cases_array[i]
+        test_cases.append(
+            TestCase(
+                case_table["a"].as_string(),
+                case_table["b"].as_string(),
+                case_table["expected"].as_string(),
+                case_table["description"].as_string(),
+            )
+        )
+
+    return test_cases
 
 
 fn test_add() raises:
     print("------------------------------------------------------")
     print("Testing BigUInt addition...")
 
-    # Define all test cases in a list
-    var test_cases = List[TestCase]()
-    test_cases.append(
-        TestCase("123", "456", "579", "Simple addition of positive numbers")
-    )
-    test_cases.append(TestCase("123", "0", "123", "Addition with zero"))
-    test_cases.append(
-        TestCase(
-            "99999999999999999999",
-            "1",
-            "100000000000000000000",
-            "Addition with large numbers",
-        )
-    )
-    test_cases.append(
-        TestCase(
-            "9999999999",
-            "1",
-            "10000000000",
-            "Addition causing multiple carries",
-        )
-    )
-    test_cases.append(
-        TestCase(
-            "12345",
-            "9876543210",
-            "9876555555",
-            "Addition with numbers of different sizes",
-        )
-    )
-    test_cases.append(
-        TestCase(
-            "12345678901234567890123456789",
-            "98765432109876543210987654321",
-            "111111111011111111101111111110",
-            "Addition with very large numbers",
-        )
-    )
-    test_cases.append(
-        TestCase(
-            "9" * 100,  # A 100-digit number of all 9's
-            "1",
-            "1" + "0" * 100,
-            "Addition with extensive carry propagation",
-        )
-    )
+    # Load test cases from TOML file
+    var test_cases = load_test_cases(file_path, "addition_tests")
 
     # Run all test cases in a loop
     for i in range(len(test_cases)):
@@ -76,25 +59,8 @@ fn test_subtract() raises:
     print("------------------------------------------------------")
     print("Testing BigUInt subtraction...")
 
-    # Define all test cases in a list
-    var test_cases = List[TestCase]()
-    test_cases.append(TestCase("456", "123", "333", "Simple subtraction"))
-    test_cases.append(TestCase("123", "0", "123", "Subtraction with zero"))
-    test_cases.append(
-        TestCase("123", "123", "0", "Subtraction resulting in zero")
-    )
-    test_cases.append(TestCase("10000", "1", "9999", "Subtraction with borrow"))
-    test_cases.append(
-        TestCase("10000", "9999", "1", "Subtraction with multiple borrows")
-    )
-    test_cases.append(
-        TestCase(
-            "12345678901234567890",
-            "12345678901234567890",
-            "0",
-            "Self subtraction should yield zero",
-        )
-    )
+    # Load test cases from TOML file
+    var test_cases = load_test_cases(file_path, "subtraction_tests")
 
     # Run all test cases in a loop
     for i in range(len(test_cases)):
@@ -108,14 +74,15 @@ fn test_subtract() raises:
 
     # Special case: Test underflow handling
     print("Testing underflow behavior (smaller - larger)...")
-    var a_underflow = BigUInt("123")
-    var b_underflow = BigUInt("456")
-    var exception_caught = False
+    var toml = parse_file(file_path)
+    var underflow_data = toml.get("subtraction_underflow")
+    var a_underflow = BigUInt(underflow_data.table_values["a"].as_string())
+    var b_underflow = BigUInt(underflow_data.table_values["b"].as_string())
+
     try:
         var result = a_underflow - b_underflow
         print("Implementation allows underflow, result is: " + String(result))
     except:
-        exception_caught = True
         print("Implementation correctly throws error on underflow")
 
     print("BigUInt subtraction tests passed!")
@@ -125,25 +92,10 @@ fn test_multiply() raises:
     print("------------------------------------------------------")
     print("Testing BigUInt multiplication...")
 
-    # Define all test cases in a list
-    var test_cases = List[TestCase]()
-    test_cases.append(TestCase("123", "456", "56088", "Simple multiplication"))
-    test_cases.append(TestCase("123456789", "0", "0", "Multiplication by zero"))
-    test_cases.append(
-        TestCase("123456789", "1", "123456789", "Multiplication by one")
-    )
-    test_cases.append(
-        TestCase(
-            "12345", "67890", "838102050", "Multiplication of large numbers"
-        )
-    )
-    test_cases.append(
-        TestCase(
-            "9" * 10,  # 10 nines
-            "9" * 10,  # 10 nines
-            "9999999998" + "0" * 9 + "1",
-            "Multiplication of very large numbers",
-        )
+    # Load test cases from TOML file
+    var test_cases = load_test_cases(
+        file_path,
+        "multiplication_tests",
     )
 
     # Run all test cases in a loop
@@ -163,45 +115,10 @@ fn test_extreme_cases() raises:
     print("------------------------------------------------------")
     print("Testing extreme cases...")
 
-    # Define all extreme test cases in a list
-    var extreme_cases = List[TestCase]()
-    extreme_cases.append(
-        TestCase(
-            "1" + "0" * 1000,  # 10^1000
-            "5" + "0" * 999,  # 5×10^999
-            "1" + "5" + "0" * 999,
-            "Addition of very large numbers",
-        )
-    )
-    extreme_cases.append(
-        TestCase(
-            "9" * 100,  # A 100-digit number of all 9's
-            "1",
-            "1" + "0" * 100,
-            "Addition with extensive carry propagation",
-        )
-    )
-
-    # Subtraction case
-    var subtraction_cases = List[TestCase]()
-    subtraction_cases.append(
-        TestCase(
-            "1" + "0" * 200,  # 10^200
-            "1",
-            "9" + "9" * 199,
-            "Very large subtraction within range",
-        )
-    )
-
-    # Multiplication case
-    var multiplication_cases = List[TestCase]()
-    multiplication_cases.append(
-        TestCase(
-            "1" + "0" * 10,  # 10^10
-            "1" + "0" * 10,  # 10^10
-            "1" + "0" * 20,
-            "Very large multiplication",
-        )
+    # Load extreme addition test cases from TOML file
+    var extreme_cases = load_test_cases(
+        file_path,
+        "extreme_addition_tests",
     )
 
     # Run addition test cases
@@ -214,6 +131,12 @@ fn test_extreme_cases() raises:
             String(result), test_case.expected, test_case.description
         )
 
+    # Load extreme subtraction test cases from TOML file
+    var subtraction_cases = load_test_cases(
+        file_path,
+        "extreme_subtraction_tests",
+    )
+
     # Run subtraction test cases
     for i in range(len(subtraction_cases)):
         var test_case = subtraction_cases[i]
@@ -223,6 +146,12 @@ fn test_extreme_cases() raises:
         testing.assert_equal(
             String(result), test_case.expected, test_case.description
         )
+
+    # Load extreme multiplication test cases from TOML file
+    var multiplication_cases = load_test_cases(
+        file_path,
+        "extreme_multiplication_tests",
+    )
 
     # Run multiplication test cases
     for i in range(len(multiplication_cases)):

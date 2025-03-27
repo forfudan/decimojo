@@ -1,0 +1,160 @@
+# ===----------------------------------------------------------------------=== #
+# Test data for BigUInt arithmetic operations
+# - Test cases for BigUInt addition
+# - Test cases for BigUInt subtraction
+# - Test cases for BigUInt multiplication
+# - Special test for subtraction underflow
+# - Extreme test cases
+# ===----------------------------------------------------------------------=== #
+
+# ===----------------------------------------------------------------------=== #
+# Test cases for BigUInt addition
+# ===----------------------------------------------------------------------=== #
+[[addition_tests]]
+a = "123"
+b = "456"
+expected = "579"
+description = "Simple addition of positive numbers"
+
+[[addition_tests]]
+a = "123"
+b = "0"
+expected = "123"
+description = "Addition with zero"
+
+[[addition_tests]]
+a = "99999999999999999999"
+b = "1"
+expected = "100000000000000000000"
+description = "Addition with large numbers"
+
+[[addition_tests]]
+a = "9999999999"
+b = "1"
+expected = "10000000000"
+description = "Addition causing multiple carries"
+
+[[addition_tests]]
+a = "12345"
+b = "9876543210"
+expected = "9876555555"
+description = "Addition with numbers of different sizes"
+
+[[addition_tests]]
+a = "12345678901234567890123456789"
+b = "98765432109876543210987654321"
+expected = "111111111011111111101111111110"
+description = "Addition with very large numbers"
+
+[[addition_tests]]
+a = "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+b = "1"
+expected = "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+description = "Addition with extensive carry propagation"
+
+# ===----------------------------------------------------------------------=== #
+# Test cases for BigUInt subtraction
+# ===----------------------------------------------------------------------=== #
+[[subtraction_tests]]
+a = "456"
+b = "123"
+expected = "333"
+description = "Simple subtraction"
+
+[[subtraction_tests]]
+a = "123"
+b = "0"
+expected = "123"
+description = "Subtraction with zero"
+
+[[subtraction_tests]]
+a = "123"
+b = "123"
+expected = "0"
+description = "Subtraction resulting in zero"
+
+[[subtraction_tests]]
+a = "10000"
+b = "1"
+expected = "9999"
+description = "Subtraction with borrow"
+
+[[subtraction_tests]]
+a = "10000"
+b = "9999"
+expected = "1"
+description = "Subtraction with multiple borrows"
+
+[[subtraction_tests]]
+a = "12345678901234567890"
+b = "12345678901234567890"
+expected = "0"
+description = "Self subtraction should yield zero"
+
+# ===----------------------------------------------------------------------=== #
+# Special test for subtraction underflow
+# ===----------------------------------------------------------------------=== #
+[subtraction_underflow]
+a = "123"
+b = "456"
+description = "Underflow handling (smaller - larger)"
+
+# ===----------------------------------------------------------------------=== #
+# Test cases for BigUInt multiplication
+# ===----------------------------------------------------------------------=== #
+[[multiplication_tests]]
+a = "123"
+b = "456"
+expected = "56088"
+description = "Simple multiplication"
+
+[[multiplication_tests]]
+a = "123456789"
+b = "0"
+expected = "0"
+description = "Multiplication by zero"
+
+[[multiplication_tests]]
+a = "123456789"
+b = "1"
+expected = "123456789"
+description = "Multiplication by one"
+
+[[multiplication_tests]]
+a = "12345"
+b = "67890"
+expected = "838102050"
+description = "Multiplication of large numbers"
+
+[[multiplication_tests]]
+a = "9999999999"
+b = "9999999999"
+expected = "99999999980000000001"
+description = "Multiplication of very large numbers"
+
+# ===----------------------------------------------------------------------=== #
+# Extreme test cases
+# ===----------------------------------------------------------------------=== #
+[[extreme_addition_tests]]
+a = "1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+b = "5000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+expected = "1005000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+description = "Addition of very large numbers"
+
+[[extreme_addition_tests]]
+a = "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+b = "1"
+expected = "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+description = "Addition with extensive carry propagation"
+
+[[extreme_subtraction_tests]]
+a = "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+b = "1"
+expected = "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+description = "Very large subtraction within range"
+
+[[extreme_multiplication_tests]]
+a = "10000000000"
+b = "10000000000"
+expected = "100000000000000000000"
+description = "Very large multiplication"
