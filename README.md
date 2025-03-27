@@ -11,7 +11,7 @@ DeciMojo provides a comprehensive decimal and integer mathematics library for Mo
 The core types are:
 
 - A 128-bit fixed-point decimal implementation (`Decimal`) supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed]. It features a complete set of mathematical functions including logarithms, exponentiation, roots, and trigonometric operations.
-- A base-10 arbitrary-precision integer type (`BigInt`)[^integer] supporting unlimited digits. It features base-10^9 internal representation and basic arithmetic operations.
+- A base-10 arbitrary-precision signed integer type (`BigInt`) and a base-10 arbitrary-precision unsigned integer type (`BigUInt`)[^integer] supporting unlimited digits. It features comprehensive arithmetic operations, comparison functions, and supports extremely large integer calculations efficiently.
 
 The library is expanding to include `BigDecimal` types that support arbitrary precision[^arbitrary], allowing for calculations with unlimited digits and decimal places. These extensions are currently under active development.
 
@@ -21,7 +21,7 @@ DeciMojo is available in the [modular-community](https://repo.prefix.dev/modular
 
 From the `magic` CLI, simply run ```magic add decimojo```. This fetches the latest version and makes it immediately available for import.
 
-For projects with a `mojoproject.toml`file, add the dependency ```decimojo = ">=0.1.0"```. Then run `magic install` to download and install the package.
+For projects with a `mojoproject.toml`file, add the dependency ```decimojo = ">=0.2.0"```. Then run `magic install` to download and install the package.
 
 For the latest development version, clone the [GitHub repository](https://github.com/forfudan/decimojo) and build the package locally.
 
@@ -100,7 +100,7 @@ fn main() raises:
 ### BigInt Quick Start
 
 ```mojo
-from decimojo.bigint import BigInt
+from decimojo import BigInt
 
 fn main() raises:
     # === Construction ===
@@ -111,7 +111,15 @@ fn main() raises:
     print(a + b)                                   # Addition: 12345678901234580235
     print(a - b)                                   # Subtraction: 12345678901234555545
     print(a * b)                                   # Multiplication: 152415787814108380241050
-    print(a.truncate_divide(b))                    # Division: 999650944609516
+    
+    # === Division Operations ===
+    print(a // b)                                  # Floor division: 999650944609516
+    print(a.truncate_divide(b))                    # Truncate division: 999650944609516
+    print(a % b)                                   # Modulo: 9615
+    
+    # === Power Operation ===
+    print(BigInt(2).power(10))                     # Power: 1024
+    print(BigInt(2) ** 10)                         # Power (using ** operator): 1024
     
     # === Comparison ===
     print(a > b)                                   # Greater than: True
@@ -125,6 +133,10 @@ fn main() raises:
     print(-a)                                      # Negation: -12345678901234567890
     print(abs(BigInt("-12345678901234567890")))    # Absolute value: 12345678901234567890
     print(a.is_negative())                         # Check if negative: False
+
+    # === Extremely large numbers ===
+    # 3600 digits // 1800 digits
+    print(BigInt("123456789" * 400) // BigInt("987654321" * 200))
 ```
 
 ## Objective
@@ -163,6 +175,7 @@ Rome wasn't built in a day. DeciMojo is currently under active development. For 
 - Financial calculations with banker's rounding (ROUND_HALF_EVEN).
 - High-precision advanced mathematical functions (sqrt, root, ln, exp, log10, power).
 - Proper implementation of traits (Absable, Comparable, Floatable, Roundable, etc).
+- **BigInt and BigUInt** implementations with complete arithmetic operations, proper division semantics (floor and truncate), and support for arbitrary-precision calculations.
 
 ### Make it Fast ⚡ (SIGNIFICANT PROGRESS)
 
@@ -202,7 +215,7 @@ If you find DeciMojo useful for your research, consider listing it in your citat
     year         = {2025},
     title        = {DeciMojo: A comprehensive decimal mathematics library for Mojo},
     url          = {https://github.com/forfudan/decimojo},
-    version      = {0.1.0},
+    version      = {0.2.0},
     note         = {Computer Software}
 }
 ```
@@ -212,5 +225,5 @@ If you find DeciMojo useful for your research, consider listing it in your citat
 This repository and its contributions are licensed under the Apache License v2.0.
 
 [^fixed]: The `Decimal` type can represent values with up to 29 significant digits and a maximum of 28 digits after the decimal point. When a value exceeds the maximum representable value (`2^96 - 1`), DeciMojo either raises an error or rounds the value to fit within these constraints. For example, the significant digits of `8.8888888888888888888888888888` (29 eights total with 28 after the decimal point) exceeds the maximum representable value (`2^96 - 1`) and is automatically rounded to `8.888888888888888888888888889` (28 eights total with 27 after the decimal point). DeciMojo's `Decimal` type is similar to `System.Decimal` (C#/.NET), `rust_decimal` in Rust, `DECIMAL/NUMERIC` in SQL Server, etc.
-[^integer]: The BigInt implementation uses a base-10^9 representation for efficient storage and calculations, supporting operations on integers with unlimited precision. It serves both as a standalone arbitrary-precision integer type and as the foundation for our upcoming BigDecimal implementation.
+[^integer]: The BigInt implementation uses a base-10 representation for efficient storage and calculations, supporting operations on integers with unlimited precision. It provides both floor division (round toward negative infinity) and truncate division (round toward zero) semantics, enabling precise handling of division operations with correct mathematical behavior regardless of operand signs.
 [^arbitrary]: Built on top of our completed BigInt implementation, BigDecimal will support arbitrary precision for both the integer and fractional parts, similar to `decimal` and `mpmath` in Python, `java.math.BigDecimal` in Java, etc.
