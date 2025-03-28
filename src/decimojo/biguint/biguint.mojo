@@ -125,7 +125,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
         """
         self = Self.from_int(value)
 
-    fn __init__[dtype: DType](out self, value: Scalar[dtype]) raises:
+    fn __init__(out self, value: Scalar) raises:
         """Initializes a BigUInt from a Mojo Scalar.
         See `from_scalar()` for more information.
         """
@@ -260,7 +260,6 @@ struct BigUInt(Absable, IntableRaising, Writable):
                 remainder = remainder % 1_000_000_000
                 list_of_words.append(UInt32(remainder))
                 remainder = quotient
-
             return Self(list_of_words^)
 
         else:
@@ -268,7 +267,6 @@ struct BigUInt(Absable, IntableRaising, Writable):
                 raise Error(
                     "Error in `from_scalar()`: Cannot convert NaN to BigUInt"
                 )
-
             # Convert to string with full precision
             try:
                 return Self.from_string(String(value))
@@ -328,7 +326,6 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
         if scale == 0:
             # This is a true integer
-            var number_of_digits = len(coef)
             var end: Int = number_of_digits
             var start: Int
             while end >= 9:

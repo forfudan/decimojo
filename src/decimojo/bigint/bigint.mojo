@@ -215,14 +215,15 @@ struct BigInt(Absable, IntableRaising, Writable):
         var sign: Bool
         var remainder: Int
         var quotient: Int
+        var is_min: Bool = False
         if value < 0:
+            sign = True
             # Handle the case of Int.MIN due to asymmetry of Int.MIN and Int.MAX
             if value == Int.MIN:
-                return Self(
-                    UInt32(854775807), UInt32(223372036), UInt32(9), sign=True
-                )
-            sign = True
-            remainder = -value
+                is_min = True
+                remainder = Int.MAX
+            else:
+                remainder = -value
         else:
             sign = False
             remainder = value
@@ -232,6 +233,9 @@ struct BigInt(Absable, IntableRaising, Writable):
             remainder = remainder % 1_000_000_000
             words.append(UInt32(remainder))
             remainder = quotient
+
+        if is_min:
+            words[0] += 1
 
         return Self(BigUInt(words^), sign)
 

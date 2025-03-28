@@ -37,12 +37,12 @@ struct BigDecimal:
 
     Internal Representation:
 
-    - A base-10 unsigned integer (BigUInt) for magnitude.
+    - A base-10 unsigned integer (BigUInt) for coefficient.
     - A Int value for the scale
     - A Bool value for the sign.
 
     Final value:
-    (-1)**sign * magnitude * 10^(-scale)
+    (-1)**sign * coefficient * 10^(-scale)
     """
 
     # ===------------------------------------------------------------------=== #
@@ -65,8 +65,8 @@ struct BigDecimal:
     # ===------------------------------------------------------------------=== #
 
     # Internal representation fields
-    var magnitude: BigUInt
-    """The magnitude of the BigDecimal."""
+    var coefficient: BigUInt
+    """The coefficient of the BigDecimal."""
     var scale: Int
     """The scale of the BigDecimal."""
     var sign: Bool
@@ -76,16 +76,152 @@ struct BigDecimal:
     # Constructors and life time dunder methods
     # ===------------------------------------------------------------------=== #
 
-    fn __init__(out self, magnitude: BigUInt, scale: Int, sign: Bool) raises:
+    fn __init__(out self, coefficient: BigUInt, scale: Int, sign: Bool) raises:
         """Constructs a BigDecimal from its components."""
-        self.magnitude = magnitude
+        self.coefficient = coefficient
         self.scale = scale
         self.sign = sign
 
+    fn __init__(out self, value: String) raises:
+        """Constructs a BigDecimal from a string representation."""
+        # The string is normalized with `deciomojo.str.parse_numeric_string()`.
+        self = Self.from_string(value)
+
+    fn __init__(out self, value: Int) raises:
+        """Constructs a BigDecimal from an integer."""
+        self = Self.from_int(value)
+
+    fn __init__(out self, value: Scalar) raises:
+        """Constructs a BigDecimal from a Mojo Scalar."""
+        self = Self.from_scalar(value)
+
     # ===------------------------------------------------------------------=== #
     # Constructing methods that are not dunders
+    # from_int(value: Int) -> Self
+    # from_scalar(value: Scalar) -> Self
     # from_string(value: String) -> Self
     # ===------------------------------------------------------------------=== #
+
+    @staticmethod
+    fn from_int(value: Int) raises -> Self:
+        """Creates a BigDecimal from an integer."""
+        if value == 0:
+            return Self(coefficient=BigUInt(UInt32(0)), scale=0, sign=False)
+
+        var words = List[UInt32](capacity=2)
+        var sign: Bool
+        var remainder: Int
+        var quotient: Int
+        var is_min: Bool = False
+        if value < 0:
+            sign = True
+            # Handle the case of Int.MIN due to asymmetry of Int.MIN and Int.MAX
+            if value == Int.MIN:
+                is_min = True
+                remainder = Int.MAX
+            else:
+                remainder = -value
+        else:
+            sign = False
+            remainder = value
+
+        while remainder != 0:
+            quotient = remainder // 1_000_000_000
+            remainder = remainder % 1_000_000_000
+            words.append(UInt32(remainder))
+            remainder = quotient
+
+        if is_min:
+            words[0] += 1
+
+        return Self(coefficient=BigUInt(words^), scale=0, sign=sign)
+
+    @staticmethod
+    fn from_scalar[dtype: DType, //](value: Scalar[dtype]) raises -> Self:
+        """Initializes a BigDecimal from a Mojo Scalar.
+
+        Args:
+            value: The Scalar value to be converted to BigDecimal.
+
+        Returns:
+            The BigDecimal representation of the Scalar value.
+
+        Notes:
+            If the value is a floating-point number, it is converted to a string
+            with full precision before converting to BigDecimal.
+        """
+        var sign = True if value < 0 else False
+
+        @parameter
+        if dtype.is_integral():
+            var list_of_words = List[UInt32]()
+            var remainder: Scalar[dtype] = value
+            var quotient: Scalar[dtype]
+            var is_min = False
+
+            if sign:
+                var min_value: Scalar[dtype]
+                var max_value: Scalar[dtype]
+
+                # TODO: Currently Int256 is not supported due to the limitation
+                # of Mojo's standard library. The following part can be removed
+                # if `mojo/stdlib/src/utils/numerics.mojo` is updated.
+                @parameter
+                if dtype == DType.int128:
+                    min_value = Scalar[dtype](
+                        -170141183460469231731687303715884105728
+                    )
+                    max_value = Scalar[dtype](
+                        170141183460469231731687303715884105727
+                    )
+                elif dtype == DType.int64:
+                    min_value = Scalar[dtype].MIN
+                    max_value = Scalar[dtype].MAX
+                elif dtype == DType.int32:
+                    min_value = Scalar[dtype].MIN
+                    max_value = Scalar[dtype].MAX
+                elif dtype == DType.int16:
+                    min_value = Scalar[dtype].MIN
+                    max_value = Scalar[dtype].MAX
+                elif dtype == DType.int8:
+                    min_value = Scalar[dtype].MIN
+                    max_value = Scalar[dtype].MAX
+                else:
+                    raise Error(
+                        "Error in `from_scalar()`: Unsupported integral type"
+                    )
+
+                if value == min_value:
+                    remainder = max_value
+                    is_min = True
+                else:
+                    remainder = -value
+
+            while remainder != 0:
+                quotient = remainder // 1_000_000_000
+                remainder = remainder % 1_000_000_000
+                list_of_words.append(UInt32(remainder))
+                remainder = quotient
+
+            if is_min:
+                list_of_words[0] += 1
+
+            return Self(coefficient=BigUInt(list_of_words^), scale=0, sign=sign)
+
+        else:  # floating-point
+            if value != value:  # Check for NaN
+                raise Error(
+                    "Error in `from_scalar()`: Cannot convert NaN to BigUInt"
+                )
+            # Convert to string with full precision
+            try:
+                return Self.from_string(String(value))
+            except e:
+                raise Error("Error in `from_scalar()`: ", e)
+
+        return Self(
+            coefficient=BigUInt(UInt32(0)), scale=0, sign=sign
+        )  # Default case
 
     @staticmethod
     fn from_string(value: String) raises -> Self:
@@ -103,12 +239,38 @@ struct BigDecimal:
         var sign: Bool
         coef, scale, sign = decimojo.str.parse_numeric_string(value)
 
-        magnitude = BigUInt.from_string(value, ignore_sign=True)
+        var number_of_digits = len(coef)
+        var number_of_words = number_of_digits // 9
+        if number_of_digits % 9 != 0:
+            number_of_words += 1
 
-        return Self(magnitude^, scale, sign)
+        coefficient_words = List[UInt32](capacity=number_of_words)
+
+        var end: Int = number_of_digits
+        var start: Int
+        while end >= 9:
+            start = end - 9
+            var word: UInt32 = 0
+            for digit in coef[start:end]:
+                word = word * 10 + UInt32(digit[])
+            coefficient_words.append(word)
+            end = start
+        if end > 0:
+            var word: UInt32 = 0
+            for digit in coef[0:end]:
+                word = word * 10 + UInt32(digit[])
+            coefficient_words.append(word)
+
+        coefficient = BigUInt(coefficient_words^)
+
+        return Self(coefficient^, scale, sign)
 
     # ===------------------------------------------------------------------=== #
     # Output dunders, type-transfer dunders
+    # __str__()
+    # __repr__()
+    # __int__()
+    # __float__()
     # ===------------------------------------------------------------------=== #
 
     fn __str__(self) -> String:
@@ -121,6 +283,14 @@ struct BigDecimal:
         """Returns a string representation of the BigDecimal."""
         return 'BigDecimal("' + self.__str__() + '")'
 
+    fn __int__(self) raises -> Int:
+        """Converts the BigDecimal to an integer."""
+        return Int(String(self))
+
+    fn __float__(self) raises -> Float64:
+        """Converts the BigDecimal to a floating-point number."""
+        return Float64(String(self))
+
     # ===------------------------------------------------------------------=== #
     # Type-transfer or output methods that are not dunders
     # ===------------------------------------------------------------------=== #
@@ -128,33 +298,37 @@ struct BigDecimal:
     fn to_string(self) -> String:
         """Returns string representation of the number."""
 
-        if self.magnitude.is_unitialized():
+        if self.coefficient.is_unitialized():
             return String("Unitilialized maginitude of BigDecimal")
 
         var result = String("-") if self.sign else String("")
 
-        var magnitude_string = self.magnitude.to_string()
+        var coefficient_string = self.coefficient.to_string()
 
         if self.scale == 0:
-            result += magnitude_string
+            result += coefficient_string
 
         elif self.scale > 0:
-            if self.scale < len(magnitude_string):
+            if self.scale < len(coefficient_string):
                 # Example: 123_456 with scale 3 -> 123.456
-                result += magnitude_string[: len(magnitude_string) - self.scale]
+                result += coefficient_string[
+                    : len(coefficient_string) - self.scale
+                ]
                 result += "."
-                result += magnitude_string[len(magnitude_string) - self.scale :]
+                result += coefficient_string[
+                    len(coefficient_string) - self.scale :
+                ]
             else:
                 # Example: 123_456 with scale 6 -> 0.123_456
                 # Example: 123_456 with scale 7 -> 0.012_345_6
                 result += "0."
-                result += "0" * (self.scale - len(magnitude_string))
-                result += magnitude_string
+                result += "0" * (self.scale - len(coefficient_string))
+                result += coefficient_string
 
         else:
             # scale < 0
             # Example: 12_345 with scale -3 -> 12_345_000
-            result += magnitude_string
+            result += coefficient_string
             result += "0" * (-self.scale)
 
         return result^
@@ -176,4 +350,4 @@ struct BigDecimal:
     @always_inline
     fn is_zero(self) -> Bool:
         """Returns True if this number represents zero."""
-        return self.magnitude.is_zero()
+        return self.coefficient.is_zero()
