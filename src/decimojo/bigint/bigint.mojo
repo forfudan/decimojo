@@ -76,31 +76,6 @@ struct BigInt(Absable, IntableRaising, Writable):
         self.magnitude = BigUInt()
         self.sign = False
 
-    # fn __init__(out self, empty: Bool, sign: Bool):
-    #     """Initializes an empty BigInt.
-
-    #     Args:
-    #         empty: A Bool value indicating whether the BigInt is empty.
-    #             If True, the BigInt is empty.
-    #             If False, the BigInt is intialized with value 0.
-    #         sign: The sign of the BigInt.
-    #     """
-    #     self.magnitude = BigUInt(empty=empty)
-    #     self.sign = sign
-
-    # fn __init__(out self, empty: Bool, capacity: Int, sign: Bool):
-    #     """Initializes an empty BigInt with a given capacity.
-
-    #     Args:
-    #         empty: A Bool value indicating whether the BigInt is empty.
-    #             If True, the BigInt is empty.
-    #             If False, the BigInt is intialized with value 0.
-    #         capacity: The capacity of the BigInt.
-    #         sign: The sign of the BigInt.
-    #     """
-    #     self.magnitude = BigUInt(empty=empty, capacity=capacity)
-    #     self.sign = sign
-
     fn __init__(out self, magnitude: BigUInt, sign: Bool):
         """Initializes a BigInt from a BigUInt and a sign.
 
@@ -278,7 +253,7 @@ struct BigInt(Absable, IntableRaising, Writable):
         return Self(magnitude^, sign)
 
     @staticmethod
-    fn from_string(value: String) raises -> BigInt:
+    fn from_string(value: String) raises -> Self:
         """Initializes a BigInt from a string representation.
         The string is normalized with `deciomojo.str.parse_numeric_string()`.
 
@@ -313,9 +288,9 @@ struct BigInt(Absable, IntableRaising, Writable):
 
     fn __str__(self) -> String:
         """Returns string representation of the BigInt.
-        See `to_str()` for more information.
+        See `to_string()` for more information.
         """
-        return self.to_str()
+        return self.to_string()
 
     fn __repr__(self) -> String:
         """Returns a string representation of the BigInt."""
@@ -364,7 +339,7 @@ struct BigInt(Absable, IntableRaising, Writable):
 
         return Int(value)
 
-    fn to_str(self) -> String:
+    fn to_string(self) -> String:
         """Returns string representation of the BigInt."""
 
         if self.magnitude.is_unitialized():
@@ -374,11 +349,11 @@ struct BigInt(Absable, IntableRaising, Writable):
             return String("0")
 
         var result = String("-") if self.sign else String("")
-        result += self.magnitude.to_str()
+        result += self.magnitude.to_string()
 
         return result^
 
-    fn to_str_with_separators(self, separator: String = "_") -> String:
+    fn to_string_with_separators(self, separator: String = "_") -> String:
         """Returns string representation of the BigInt with separators.
 
         Args:
@@ -388,7 +363,7 @@ struct BigInt(Absable, IntableRaising, Writable):
             The string representation of the BigInt with separators.
         """
 
-        var result = self.to_str()
+        var result = self.to_string()
         var end = len(result)
         var start = end - 3
         while start > 0:
@@ -611,7 +586,7 @@ struct BigInt(Absable, IntableRaising, Writable):
         print("\nInternal Representation Details of BigInt")
         print("-----------------------------------------")
         print("number:        ", self)
-        print("               ", self.to_str_with_separators())
+        print("               ", self.to_string_with_separators())
         print("negative:      ", self.sign)
         for i in range(len(self.magnitude.words)):
             print(
