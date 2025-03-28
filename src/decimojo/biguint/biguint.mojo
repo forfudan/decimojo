@@ -325,24 +325,39 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
         if scale == 0:
             # This is a true integer
-            var number_of_digits = len(coef)
-            var number_of_words = number_of_digits // 9
-            if number_of_digits % 9 != 0:
-                number_of_words += 1
+            number_of_words = number_of_digits // 9  # number of 9-digit words
+            var remaining_number_of_digits = number_of_digits % 9
 
-            var end: Int = number_of_digits
-            var start: Int
-            while end >= 9:
-                start = end - 9
+            # Less than 20 words, just use simple loop
+            if number_of_digits < 180:
+                var end: Int = number_of_digits
+                var start: Int
+                while end >= 9:
+                    start = end - 9
+                    var word: UInt32 = 0
+                    for digit in coef[start:end]:
+                        word = word * 10 + UInt32(digit[])
+                    result_words.append(word)
+                    end = start
+                if end > 0:
+                    var word: UInt32 = 0
+                    for digit in coef[0:end]:
+                        word = word * 10 + UInt32(digit[])
+                    result_words.append(word)
+            else:
+                # number of words >= 20
+                # Use SIMD to speed up the conversion
+                for i in range(number_of_words - 1, -1, -1):
+                    var word: UInt32 = 0
+                    for j in range(9):
+                        word = word * 10 + UInt32(
+                            coef[i * 9 + j + remaining_number_of_digits]
+                        )
+                    result_words.append(word)
+
                 var word: UInt32 = 0
-                for digit in coef[start:end]:
-                    word = word * 10 + UInt32(digit[])
-                result_words.append(word)
-                end = start
-            if end > 0:
-                var word: UInt32 = 0
-                for digit in coef[0:end]:
-                    word = word * 10 + UInt32(digit[])
+                for j in range(remaining_number_of_digits):
+                    word = word * 10 + UInt32(coef[j])
                 result_words.append(word)
 
             return Self(result_words^)
@@ -742,11 +757,6 @@ struct BigUInt(Absable, IntableRaising, Writable):
         """Returns True if this BigUInt represents two."""
         return len(self.words) == 1 and self.words[0] == 2
 
-    @always_inline
-    fn number_of_words(self) -> Int:
-        """Returns the number of words in the BigInt."""
-        return len(self.words)
-
     fn is_power_of_10(x: BigUInt) -> Bool:
         """Check if x is a power of 10."""
         for i in range(len(x.words) - 1):
@@ -767,6 +777,11 @@ struct BigUInt(Absable, IntableRaising, Writable):
             return True
         return False
 
+    @always_inline
+    fn number_of_words(self) -> Int:
+        """Returns the number of words in the BigInt."""
+        return len(self.words)
+
     fn internal_representation(self):
         """Prints the internal representation details of a BigUInt."""
         print("\nInternal Representation Details of BigUInt")
@@ -781,6 +796,23 @@ struct BigUInt(Absable, IntableRaising, Writable):
                 String(self.words[i]).rjust(width=9, fillchar="0"),
             )
         print("--------------------------------")
+
+    fn ith_digit(self, i: Int) raises -> UInt8:
+        """Returns the ith digit of the BigUInt."""
+        if i < 0:
+            raise Error("Error in `ith_digit()`: The index is negative")
+        if i >= len(self.words) * 9:
+            return 0
+        var word_index = i // 9
+        var digit_index = i % 9
+        if word_index >= len(self.words):
+            return 0
+        var word = self.words[word_index]
+        var digit: UInt32 = 0
+        for _ in range(digit_index):
+            word = word // 10
+        digit = word % 10
+        return UInt8(digit)
 
     fn is_unitialized(self) -> Bool:
         """Returns True if the BigUInt is uninitialized."""
