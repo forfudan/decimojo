@@ -325,39 +325,20 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
         if scale == 0:
             # This is a true integer
-            number_of_words = number_of_digits // 9  # number of 9-digit words
-            var remaining_number_of_digits = number_of_digits % 9
-
-            # Less than 20 words, just use simple loop
-            if number_of_digits < 180:
-                var end: Int = number_of_digits
-                var start: Int
-                while end >= 9:
-                    start = end - 9
-                    var word: UInt32 = 0
-                    for digit in coef[start:end]:
-                        word = word * 10 + UInt32(digit[])
-                    result_words.append(word)
-                    end = start
-                if end > 0:
-                    var word: UInt32 = 0
-                    for digit in coef[0:end]:
-                        word = word * 10 + UInt32(digit[])
-                    result_words.append(word)
-            else:
-                # number of words >= 20
-                # Use SIMD to speed up the conversion
-                for i in range(number_of_words - 1, -1, -1):
-                    var word: UInt32 = 0
-                    for j in range(9):
-                        word = word * 10 + UInt32(
-                            coef[i * 9 + j + remaining_number_of_digits]
-                        )
-                    result_words.append(word)
-
+            var number_of_digits = len(coef)
+            var end: Int = number_of_digits
+            var start: Int
+            while end >= 9:
+                start = end - 9
                 var word: UInt32 = 0
-                for j in range(remaining_number_of_digits):
-                    word = word * 10 + UInt32(coef[j])
+                for digit in coef[start:end]:
+                    word = word * 10 + UInt32(digit[])
+                result_words.append(word)
+                end = start
+            if end > 0:
+                var word: UInt32 = 0
+                for digit in coef[0:end]:
+                    word = word * 10 + UInt32(digit[])
                 result_words.append(word)
 
             return Self(result_words^)
