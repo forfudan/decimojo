@@ -31,6 +31,9 @@ import decimojo.biguint.arithmetics
 import decimojo.biguint.comparison
 import decimojo.str
 
+# Type aliases
+alias BUInt = BigUInt
+
 
 @value
 struct BigUInt(Absable, IntableRaising, Writable):
@@ -122,7 +125,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
         """
         self = Self.from_int(value)
 
-    fn __init__[dtype: DType](out self, value: Scalar[dtype]) raises:
+    fn __init__(out self, value: Scalar) raises:
         """Initializes a BigUInt from a Mojo Scalar.
         See `from_scalar()` for more information.
         """
@@ -257,7 +260,6 @@ struct BigUInt(Absable, IntableRaising, Writable):
                 remainder = remainder % 1_000_000_000
                 list_of_words.append(UInt32(remainder))
                 remainder = quotient
-
             return Self(list_of_words^)
 
         else:
@@ -265,7 +267,6 @@ struct BigUInt(Absable, IntableRaising, Writable):
                 raise Error(
                     "Error in `from_scalar()`: Cannot convert NaN to BigUInt"
                 )
-
             # Convert to string with full precision
             try:
                 return Self.from_string(String(value))
@@ -325,7 +326,6 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
         if scale == 0:
             # This is a true integer
-            var number_of_digits = len(coef)
             var end: Int = number_of_digits
             var start: Int
             while end >= 9:
@@ -383,9 +383,9 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
     fn __str__(self) -> String:
         """Returns string representation of the BigUInt.
-        See `to_str()` for more information.
+        See `to_string()` for more information.
         """
-        return self.to_str()
+        return self.to_string()
 
     fn __repr__(self) -> String:
         """Returns a string representation of the BigUInt."""
@@ -460,7 +460,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
         return UInt64(value)
 
-    fn to_str(self) -> String:
+    fn to_string(self) -> String:
         """Returns string representation of the BigUInt."""
 
         if len(self.words) == 0:
@@ -479,7 +479,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
         return result^
 
-    fn to_str_with_separators(self, separator: String = "_") -> String:
+    fn to_string_with_separators(self, separator: String = "_") -> String:
         """Returns string representation of the BigUInt with separators.
 
         Args:
@@ -489,7 +489,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
             The string representation of the BigUInt with separators.
         """
 
-        var result = self.to_str()
+        var result = self.to_string()
         var end = len(result)
         var start = end - 3
         while start > 0:
@@ -768,7 +768,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
         print("\nInternal Representation Details of BigUInt")
         print("-----------------------------------------")
         print("number:        ", self)
-        print("               ", self.to_str_with_separators())
+        print("               ", self.to_string_with_separators())
         for i in range(len(self.words)):
             print(
                 "word",

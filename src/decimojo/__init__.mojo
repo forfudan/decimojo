@@ -27,7 +27,8 @@ from decimojo import Decimal, BigInt, RoundingMode
 # Core types
 from .decimal.decimal import Decimal
 from .bigint.bigint import BigInt, BInt
-from .biguint.biguint import BigUInt
+from .biguint.biguint import BigUInt, BUInt
+from .bigdecimal.bigdecimal import BigDecimal
 from .rounding_mode import RoundingMode
 
 # Core functions

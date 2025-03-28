@@ -1,0 +1,353 @@
+# ===----------------------------------------------------------------------=== #
+# Copyright 2025 Yuhao Zhu
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ===----------------------------------------------------------------------=== #
+
+"""Implements basic object methods for the BigDecimal type.
+
+This module contains the basic object methods for the BigDecimal type.
+These methods include constructors, life time methods, output dunders,
+type-transfer dunders, basic arithmetic operation dunders, comparison
+operation dunders, and other dunders that implement traits, as well as
+mathematical methods that do not implement a trait.
+"""
+
+from memory import UnsafePointer
+import testing
+
+from decimojo.rounding_mode import RoundingMode
+
+
+@value
+struct BigDecimal:
+    """Represents a arbitrary-precision decimal.
+
+    Notes:
+
+    Internal Representation:
+
+    - A base-10 unsigned integer (BigUInt) for coefficient.
+    - A Int value for the scale
+    - A Bool value for the sign.
+
+    Final value:
+    (-1)**sign * coefficient * 10^(-scale)
+    """
+
+    # ===------------------------------------------------------------------=== #
+    # Organization of fields and methods:
+    # - Internal representation fields
+    # - Constants (aliases)
+    # - Special values (methods)
+    # - Constructors and life time methods
+    # - Constructing methods that are not dunders
+    # - Output dunders, type-transfer dunders, and other type-transfer methods
+    # - Basic unary arithmetic operation dunders
+    # - Basic binary arithmetic operation dunders
+    # - Basic binary arithmetic operation dunders with reflected operands
+    # - Basic binary augmented arithmetic operation dunders
+    # - Basic comparison operation dunders
+    # - Other dunders that implements traits
+    # - Mathematical methods that do not implement a trait (not a dunder)
+    # - Other methods
+    # - Internal methods
+    # ===------------------------------------------------------------------=== #
+
+    # Internal representation fields
+    var coefficient: BigUInt
+    """The coefficient of the BigDecimal."""
+    var scale: Int
+    """The scale of the BigDecimal."""
+    var sign: Bool
+    """Sign information."""
+
+    # ===------------------------------------------------------------------=== #
+    # Constructors and life time dunder methods
+    # ===------------------------------------------------------------------=== #
+
+    fn __init__(out self, coefficient: BigUInt, scale: Int, sign: Bool) raises:
+        """Constructs a BigDecimal from its components."""
+        self.coefficient = coefficient
+        self.scale = scale
+        self.sign = sign
+
+    fn __init__(out self, value: String) raises:
+        """Constructs a BigDecimal from a string representation."""
+        # The string is normalized with `deciomojo.str.parse_numeric_string()`.
+        self = Self.from_string(value)
+
+    fn __init__(out self, value: Int) raises:
+        """Constructs a BigDecimal from an integer."""
+        self = Self.from_int(value)
+
+    fn __init__(out self, value: Scalar) raises:
+        """Constructs a BigDecimal from a Mojo Scalar."""
+        self = Self.from_scalar(value)
+
+    # ===------------------------------------------------------------------=== #
+    # Constructing methods that are not dunders
+    # from_int(value: Int) -> Self
+    # from_scalar(value: Scalar) -> Self
+    # from_string(value: String) -> Self
+    # ===------------------------------------------------------------------=== #
+
+    @staticmethod
+    fn from_int(value: Int) raises -> Self:
+        """Creates a BigDecimal from an integer."""
+        if value == 0:
+            return Self(coefficient=BigUInt(UInt32(0)), scale=0, sign=False)
+
+        var words = List[UInt32](capacity=2)
+        var sign: Bool
+        var remainder: Int
+        var quotient: Int
+        var is_min: Bool = False
+        if value < 0:
+            sign = True
+            # Handle the case of Int.MIN due to asymmetry of Int.MIN and Int.MAX
+            if value == Int.MIN:
+                is_min = True
+                remainder = Int.MAX
+            else:
+                remainder = -value
+        else:
+            sign = False
+            remainder = value
+
+        while remainder != 0:
+            quotient = remainder // 1_000_000_000
+            remainder = remainder % 1_000_000_000
+            words.append(UInt32(remainder))
+            remainder = quotient
+
+        if is_min:
+            words[0] += 1
+
+        return Self(coefficient=BigUInt(words^), scale=0, sign=sign)
+
+    @staticmethod
+    fn from_scalar[dtype: DType, //](value: Scalar[dtype]) raises -> Self:
+        """Initializes a BigDecimal from a Mojo Scalar.
+
+        Args:
+            value: The Scalar value to be converted to BigDecimal.
+
+        Returns:
+            The BigDecimal representation of the Scalar value.
+
+        Notes:
+            If the value is a floating-point number, it is converted to a string
+            with full precision before converting to BigDecimal.
+        """
+        var sign = True if value < 0 else False
+
+        @parameter
+        if dtype.is_integral():
+            var list_of_words = List[UInt32]()
+            var remainder: Scalar[dtype] = value
+            var quotient: Scalar[dtype]
+            var is_min = False
+
+            if sign:
+                var min_value: Scalar[dtype]
+                var max_value: Scalar[dtype]
+
+                # TODO: Currently Int256 is not supported due to the limitation
+                # of Mojo's standard library. The following part can be removed
+                # if `mojo/stdlib/src/utils/numerics.mojo` is updated.
+                @parameter
+                if dtype == DType.int128:
+                    min_value = Scalar[dtype](
+                        -170141183460469231731687303715884105728
+                    )
+                    max_value = Scalar[dtype](
+                        170141183460469231731687303715884105727
+                    )
+                elif dtype == DType.int64:
+                    min_value = Scalar[dtype].MIN
+                    max_value = Scalar[dtype].MAX
+                elif dtype == DType.int32:
+                    min_value = Scalar[dtype].MIN
+                    max_value = Scalar[dtype].MAX
+                elif dtype == DType.int16:
+                    min_value = Scalar[dtype].MIN
+                    max_value = Scalar[dtype].MAX
+                elif dtype == DType.int8:
+                    min_value = Scalar[dtype].MIN
+                    max_value = Scalar[dtype].MAX
+                else:
+                    raise Error(
+                        "Error in `from_scalar()`: Unsupported integral type"
+                    )
+
+                if value == min_value:
+                    remainder = max_value
+                    is_min = True
+                else:
+                    remainder = -value
+
+            while remainder != 0:
+                quotient = remainder // 1_000_000_000
+                remainder = remainder % 1_000_000_000
+                list_of_words.append(UInt32(remainder))
+                remainder = quotient
+
+            if is_min:
+                list_of_words[0] += 1
+
+            return Self(coefficient=BigUInt(list_of_words^), scale=0, sign=sign)
+
+        else:  # floating-point
+            if value != value:  # Check for NaN
+                raise Error(
+                    "Error in `from_scalar()`: Cannot convert NaN to BigUInt"
+                )
+            # Convert to string with full precision
+            try:
+                return Self.from_string(String(value))
+            except e:
+                raise Error("Error in `from_scalar()`: ", e)
+
+        return Self(
+            coefficient=BigUInt(UInt32(0)), scale=0, sign=sign
+        )  # Default case
+
+    @staticmethod
+    fn from_string(value: String) raises -> Self:
+        """Initializes a BigDecimal from a string representation.
+        The string is normalized with `deciomojo.str.parse_numeric_string()`.
+
+        Args:
+            value: The string representation of the BigDecimal.
+
+        Returns:
+            The BigDecimal representation of the string.
+        """
+        var coef: List[UInt8]
+        var scale: Int
+        var sign: Bool
+        coef, scale, sign = decimojo.str.parse_numeric_string(value)
+
+        var number_of_digits = len(coef)
+        var number_of_words = number_of_digits // 9
+        if number_of_digits % 9 != 0:
+            number_of_words += 1
+
+        coefficient_words = List[UInt32](capacity=number_of_words)
+
+        var end: Int = number_of_digits
+        var start: Int
+        while end >= 9:
+            start = end - 9
+            var word: UInt32 = 0
+            for digit in coef[start:end]:
+                word = word * 10 + UInt32(digit[])
+            coefficient_words.append(word)
+            end = start
+        if end > 0:
+            var word: UInt32 = 0
+            for digit in coef[0:end]:
+                word = word * 10 + UInt32(digit[])
+            coefficient_words.append(word)
+
+        coefficient = BigUInt(coefficient_words^)
+
+        return Self(coefficient^, scale, sign)
+
+    # ===------------------------------------------------------------------=== #
+    # Output dunders, type-transfer dunders
+    # __str__()
+    # __repr__()
+    # __int__()
+    # __float__()
+    # ===------------------------------------------------------------------=== #
+
+    fn __str__(self) -> String:
+        """Returns string representation of the BigDecimal.
+        See `to_string()` for more information.
+        """
+        return self.to_string()
+
+    fn __repr__(self) -> String:
+        """Returns a string representation of the BigDecimal."""
+        return 'BigDecimal("' + self.__str__() + '")'
+
+    fn __int__(self) raises -> Int:
+        """Converts the BigDecimal to an integer."""
+        return Int(String(self))
+
+    fn __float__(self) raises -> Float64:
+        """Converts the BigDecimal to a floating-point number."""
+        return Float64(String(self))
+
+    # ===------------------------------------------------------------------=== #
+    # Type-transfer or output methods that are not dunders
+    # ===------------------------------------------------------------------=== #
+
+    fn to_string(self) -> String:
+        """Returns string representation of the number."""
+
+        if self.coefficient.is_unitialized():
+            return String("Unitilialized maginitude of BigDecimal")
+
+        var result = String("-") if self.sign else String("")
+
+        var coefficient_string = self.coefficient.to_string()
+
+        if self.scale == 0:
+            result += coefficient_string
+
+        elif self.scale > 0:
+            if self.scale < len(coefficient_string):
+                # Example: 123_456 with scale 3 -> 123.456
+                result += coefficient_string[
+                    : len(coefficient_string) - self.scale
+                ]
+                result += "."
+                result += coefficient_string[
+                    len(coefficient_string) - self.scale :
+                ]
+            else:
+                # Example: 123_456 with scale 6 -> 0.123_456
+                # Example: 123_456 with scale 7 -> 0.012_345_6
+                result += "0."
+                result += "0" * (self.scale - len(coefficient_string))
+                result += coefficient_string
+
+        else:
+            # scale < 0
+            # Example: 12_345 with scale -3 -> 12_345_000
+            result += coefficient_string
+            result += "0" * (-self.scale)
+
+        return result^
+
+    # ===------------------------------------------------------------------=== #
+    # Type-transfer or output methods that are not dunders
+    # ===------------------------------------------------------------------=== #
+
+    fn write_to[W: Writer](self, mut writer: W):
+        """Writes the BigDecimal to a writer.
+        This implement the `write` method of the `Writer` trait.
+        """
+        writer.write(String(self))
+
+    # ===------------------------------------------------------------------=== #
+    # Other methods
+    # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn is_zero(self) -> Bool:
+        """Returns True if this number represents zero."""
+        return self.coefficient.is_zero()
