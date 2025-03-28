@@ -76,33 +76,6 @@ struct BigUInt(Absable, IntableRaising, Writable):
         """Initializes a BigUInt with value 0."""
         self.words = List[UInt32](UInt32(0))
 
-    # FIXME: This is a temporary solution
-    # A unitialized BigUInt is not a good idea
-    fn __init__(out self, empty: Bool):
-        """Initializes an empty BigUInt.
-
-        Args:
-            empty: A Bool value indicating whether the BigUInt is empty.
-                If True, the BigUInt is empty.
-                If False, the BigUInt is intialized with value 0.
-        """
-        self.words = List[UInt32]()
-        if not empty:
-            self.words.append(UInt32(0))
-
-    fn __init__(out self, empty: Bool, capacity: Int):
-        """Initializes an empty BigUInt with a given capacity.
-
-        Args:
-            empty: A Bool value indicating whether the BigUInt is empty.
-                If True, the BigUInt is empty.
-                If False, the BigUInt is intialized with value 0.
-            capacity: The capacity of the BigUInt.
-        """
-        self.words = List[UInt32](capacity=capacity)
-        if not empty:
-            self.words.append(UInt32(0))
-
     fn __init__(out self, owned words: List[UInt32]):
         """Initializes a BigUInt from a list of UInt32 words.
         It does not check whether the list is empty or the words are invalid.
@@ -149,18 +122,25 @@ struct BigUInt(Absable, IntableRaising, Writable):
         """
         self = Self.from_int(value)
 
-    fn __init__(out self, value: String) raises:
+    fn __init__[dtype: DType](out self, value: Scalar[dtype]) raises:
+        """Initializes a BigUInt from a Mojo Scalar.
+        See `from_scalar()` for more information.
+        """
+        self = Self.from_scalar(value)
+
+    fn __init__(out self, value: String, ignore_sign: Bool = False) raises:
         """Initializes a BigUInt from a string representation.
         See `from_string()` for more information.
         """
-        self = Self.from_string(value)
+        self = Self.from_string(value, ignore_sign=ignore_sign)
 
     # ===------------------------------------------------------------------=== #
     # Constructing methods that are not dunders
     #
+    # from_list(owned words: List[UInt32]) -> Self
     # from_words(*words: UInt32) -> Self
     # from_int(value: Int) -> Self
-    # from_uint128(value: UInt128) -> Self
+    # from_scalar[dtype: DType](value: Scalar[dtype]) -> Self
     # from_string(value: String) -> Self
     # ===------------------------------------------------------------------=== #
 
@@ -247,76 +227,52 @@ struct BigUInt(Absable, IntableRaising, Writable):
         return Self(list_of_words^)
 
     @staticmethod
-    fn from_uint64(value: UInt64) raises -> Self:
-        """Initializes a BigUInt from an UInt64.
+    fn from_scalar[dtype: DType, //](value: Scalar[dtype]) raises -> Self:
+        """Initializes a BigUInt from a Mojo Scalar.
 
         Args:
-            value: The UInt64 value to be converted to BigUInt.
+            value: The Scalar value to be converted to BigUInt.
 
         Returns:
-            The BigUInt representation of the UInt64 value.
+            The BigUInt representation of the Scalar value.
+
+        Notes:
+            If the value is a floating-point number, it is converted to a string
+            with full precision before converting to BigUInt.
+            If the fractional part is not zero, an error is raised.
         """
+        if value < 0:
+            raise Error("Error in `from_scalar()`: The value is negative")
+
         if value == 0:
             return Self()
 
-        var list_of_words = List[UInt32]()
-        var remainder: UInt64 = value
-        var quotient: UInt64
-        while remainder != 0:
-            quotient = remainder // 1_000_000_000
-            remainder = remainder % 1_000_000_000
-            list_of_words.append(UInt32(remainder))
-            remainder = quotient
+        @parameter
+        if dtype.is_integral():
+            var list_of_words = List[UInt32]()
+            var remainder: Scalar[dtype] = value
+            var quotient: Scalar[dtype]
+            while remainder != 0:
+                quotient = remainder // 1_000_000_000
+                remainder = remainder % 1_000_000_000
+                list_of_words.append(UInt32(remainder))
+                remainder = quotient
 
-        return Self(list_of_words^)
+            return Self(list_of_words^)
 
-    @staticmethod
-    fn from_uint128(value: UInt128) -> Self:
-        """Initializes a BigUInt from a UInt128 value.
+        else:
+            if value != value:  # Check for NaN
+                raise Error(
+                    "Error in `from_scalar()`: Cannot convert NaN to BigUInt"
+                )
 
-        Args:
-            value: The UInt128 value to be converted to BigUInt.
+            # Convert to string with full precision
+            try:
+                return Self.from_string(String(value))
+            except e:
+                raise Error("Error in `from_scalar()`: ", e)
 
-        Returns:
-            The BigUInt representation of the UInt128 value.
-        """
-        if value == 0:
-            return Self()
-
-        var list_of_words = List[UInt32]()
-        var remainder: UInt128 = value
-        var quotient: UInt128
-        while remainder != 0:
-            quotient = remainder // 1_000_000_000
-            remainder = remainder % 1_000_000_000
-            list_of_words.append(UInt32(remainder))
-            remainder = quotient
-
-        return Self(list_of_words^)
-
-    @staticmethod
-    fn from_uint256(value: UInt256) -> Self:
-        """Initializes a BigUInt from a UInt256 value.
-
-        Args:
-            value: The UInt256 value to be converted to BigUInt.
-
-        Returns:
-            The BigUInt representation of the UInt256 value.
-        """
-        if value == 0:
-            return Self()
-
-        var list_of_words = List[UInt32]()
-        var remainder: UInt256 = value
-        var quotient: UInt256
-        while remainder != 0:
-            quotient = remainder // 1_000_000_000
-            remainder = remainder % 1_000_000_000
-            list_of_words.append(UInt32(remainder))
-            remainder = quotient
-
-        return Self(list_of_words^)
+        return Self()
 
     @staticmethod
     fn from_string(value: String, ignore_sign: Bool = False) raises -> BigUInt:
@@ -357,7 +313,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
                     raise Error(
                         "Error in `from_string`: The number is not an integer."
                     )
-            coef.resize(-scale)
+            coef.resize(len(coef) - scale)
             scale = 0
 
         var number_of_digits = len(coef) - scale
@@ -365,15 +321,11 @@ struct BigUInt(Absable, IntableRaising, Writable):
         if number_of_digits % 9 != 0:
             number_of_words += 1
 
-        var result = Self(empty=True, capacity=number_of_words)
+        var result_words = List[UInt32](capacity=number_of_words)
 
         if scale == 0:
             # This is a true integer
             var number_of_digits = len(coef)
-            var number_of_words = number_of_digits // 9
-            if number_of_digits % 9 != 0:
-                number_of_words += 1
-
             var end: Int = number_of_digits
             var start: Int
             while end >= 9:
@@ -381,15 +333,15 @@ struct BigUInt(Absable, IntableRaising, Writable):
                 var word: UInt32 = 0
                 for digit in coef[start:end]:
                     word = word * 10 + UInt32(digit[])
-                result.words.append(word)
+                result_words.append(word)
                 end = start
             if end > 0:
                 var word: UInt32 = 0
                 for digit in coef[0:end]:
                     word = word * 10 + UInt32(digit[])
-                result.words.append(word)
+                result_words.append(word)
 
-            return result
+            return Self(result_words^)
 
         else:  # scale < 0
             # This is a true integer with postive exponent
@@ -397,7 +349,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
             var remaining_trailing_zero_digits = -scale % 9
 
             for _ in range(number_of_trailing_zero_words):
-                result.words.append(UInt32(0))
+                result_words.append(UInt32(0))
 
             for _ in range(remaining_trailing_zero_digits):
                 coef.append(UInt8(0))
@@ -409,15 +361,15 @@ struct BigUInt(Absable, IntableRaising, Writable):
                 var word: UInt32 = 0
                 for digit in coef[start:end]:
                     word = word * 10 + UInt32(digit[])
-                result.words.append(word)
+                result_words.append(word)
                 end = start
             if end > 0:
                 var word: UInt32 = 0
                 for digit in coef[0:end]:
                     word = word * 10 + UInt32(digit[])
-                result.words.append(word)
+                result_words.append(word)
 
-            return result
+            return Self(result_words^)
 
     # ===------------------------------------------------------------------=== #
     # Output dunders, type-transfer dunders
@@ -786,11 +738,6 @@ struct BigUInt(Absable, IntableRaising, Writable):
         """Returns True if this BigUInt represents two."""
         return len(self.words) == 1 and self.words[0] == 2
 
-    @always_inline
-    fn number_of_words(self) -> Int:
-        """Returns the number of words in the BigInt."""
-        return len(self.words)
-
     fn is_power_of_10(x: BigUInt) -> Bool:
         """Check if x is a power of 10."""
         for i in range(len(x.words) - 1):
@@ -811,6 +758,11 @@ struct BigUInt(Absable, IntableRaising, Writable):
             return True
         return False
 
+    @always_inline
+    fn number_of_words(self) -> Int:
+        """Returns the number of words in the BigInt."""
+        return len(self.words)
+
     fn internal_representation(self):
         """Prints the internal representation details of a BigUInt."""
         print("\nInternal Representation Details of BigUInt")
@@ -825,6 +777,23 @@ struct BigUInt(Absable, IntableRaising, Writable):
                 String(self.words[i]).rjust(width=9, fillchar="0"),
             )
         print("--------------------------------")
+
+    fn ith_digit(self, i: Int) raises -> UInt8:
+        """Returns the ith digit of the BigUInt."""
+        if i < 0:
+            raise Error("Error in `ith_digit()`: The index is negative")
+        if i >= len(self.words) * 9:
+            return 0
+        var word_index = i // 9
+        var digit_index = i % 9
+        if word_index >= len(self.words):
+            return 0
+        var word = self.words[word_index]
+        var digit: UInt32 = 0
+        for _ in range(digit_index):
+            word = word // 10
+        digit = word % 10
+        return UInt8(digit)
 
     fn is_unitialized(self) -> Bool:
         """Returns True if the BigUInt is uninitialized."""

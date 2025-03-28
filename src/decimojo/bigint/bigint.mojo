@@ -154,10 +154,8 @@ struct BigInt(Absable, IntableRaising, Writable):
 
         End of examples.
         """
+        self.magnitude = BigUInt(List[UInt32](elements=words^))
         self.sign = sign
-        self.magnitude = BigUInt(empty=True, capacity=len(words))
-        for word in words:
-            self.magnitude.words.append(word[])
 
     fn __init__(out self, value: Int) raises:
         """Initializes a BigInt from an Int.
@@ -263,7 +261,7 @@ struct BigInt(Absable, IntableRaising, Writable):
         return Self(BigUInt(words^), sign)
 
     @staticmethod
-    fn from_uint128(value: UInt128, sign: Bool = False) -> Self:
+    fn from_uint128(value: UInt128, sign: Bool = False) raises -> Self:
         """Initializes a BigInt from a UInt128 value.
 
         Args:
@@ -276,7 +274,7 @@ struct BigInt(Absable, IntableRaising, Writable):
         if value == 0:
             return Self()
 
-        var magnitude = BigUInt.from_uint128(value)
+        var magnitude = BigUInt.from_scalar(value)
         return Self(magnitude^, sign)
 
     @staticmethod

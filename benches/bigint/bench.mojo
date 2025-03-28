@@ -19,7 +19,7 @@ q:           Exit
 =========================================
 """
     )
-    var command = input("Type the number of the bench you want to run: ")
+    var command = input("Type name of bench you want to run: ")
     if command == "add":
         bench_add()
     elif command == "mul":

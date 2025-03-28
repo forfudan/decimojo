@@ -49,9 +49,7 @@ fn add(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         return x1
 
     # The result will have at most one more word than the longer operand
-    var result = BigUInt(
-        empty=True, capacity=max(len(x1.words), len(x2.words)) + 1
-    )
+    var words = List[UInt32](capacity=max(len(x1.words), len(x2.words)) + 1)
 
     var carry: UInt32 = 0
     var ith: Int = 0
@@ -71,15 +69,15 @@ fn add(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
         # Compute new word and carry
         carry = UInt32(sum_of_words // 1_000_000_000)
-        result.words.append(UInt32(sum_of_words % 1_000_000_000))
+        words.append(UInt32(sum_of_words % 1_000_000_000))
 
         ith += 1
 
     # Handle final carry if it exists
     if carry > 0:
-        result.words.append(carry)
+        words.append(carry)
 
-    return result^
+    return BigUInt(words=words^)
 
 
 fn add_inplace(mut x1: BigUInt, x2: BigUInt) raises:
@@ -158,7 +156,7 @@ fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
     # Now it is safe to subtract the smaller number from the larger one
     # The result will have no more words than the larger operand
-    var result = BigUInt(empty=True, capacity=max(len(x1.words), len(x2.words)))
+    var words = List[UInt32](capacity=max(len(x1.words), len(x2.words)))
     var borrow: Int32 = 0
     var ith: Int = 0
     var difference: Int32 = 0  # Int32 is sufficient for the difference
@@ -175,9 +173,10 @@ fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
             borrow = Int32(1)
         else:
             borrow = Int32(0)
-        result.words.append(UInt32(difference))
+        words.append(UInt32(difference))
         ith += 1
 
+    var result = BigUInt(words=words^)
     result.remove_trailing_zeros()
     return result^
 
@@ -228,17 +227,16 @@ fn multiply(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     # CASE: One of the operands is one or negative one
     if x1.is_one():
         return x2
-
     if x2.is_one():
         return x1
 
     # The maximum number of words in the result is the sum of the words in the operands
     var max_result_len = len(x1.words) + len(x2.words)
-    var result = BigUInt(empty=True, capacity=max_result_len)
+    var words = List[UInt32](capacity=max_result_len)
 
     # Initialize result words with zeros
     for _ in range(max_result_len):
-        result.words.append(0)
+        words.append(0)
 
     # Perform the multiplication word by word (from least significant to most significant)
     # x1 = x1[0] + x1[1] * 10^9
@@ -262,17 +260,18 @@ fn multiply(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
             # plus the value already at this position in the result
             var product = UInt64(x1.words[i]) * UInt64(
                 x2.words[j]
-            ) + carry + UInt64(result.words[i + j])
+            ) + carry + UInt64(words[i + j])
 
             # The lower 9 digits (base 10^9) go into the current word
             # The upper digits become the carry for the next position
-            result.words[i + j] = UInt32(product % 1_000_000_000)
+            words[i + j] = UInt32(product % 1_000_000_000)
             carry = product // 1_000_000_000
 
         # If there is a carry left, add it to the next position
         if carry > 0:
-            result.words[i + len(x2.words)] += UInt32(carry)
+            words[i + len(x2.words)] += UInt32(carry)
 
+    var result = BigUInt(words=words^)
     result.remove_trailing_zeros()
     return result^
 
@@ -366,9 +365,10 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
             if word_shift >= len(x1.words):
                 return BigUInt()
             # Create result with the remaining words
-            result = BigUInt(empty=True)
+            words = List[UInt32]()
             for i in range(word_shift, len(x1.words)):
-                result.words.append(x1.words[i])
+                words.append(x1.words[i])
+            result = BigUInt(words=words^)
 
         # Get the last word of the divisor
         var x2_word = x2.words[len(x2.words) - 1]
@@ -609,15 +609,15 @@ fn divmod(x1: BigUInt, x2: BigUInt) raises -> Tuple[BigUInt, BigUInt]:
 
     # CASE: Duo words division by means of UInt64
     if len(x1.words) <= 2 and len(x2.words) <= 2:
-        var result = BigUInt.from_uint64(x1.to_uint64() // x2.to_uint64())
-        var remainder = BigUInt.from_uint64(x1.to_uint64() % x2.to_uint64())
+        var result = BigUInt.from_scalar(x1.to_uint64() // x2.to_uint64())
+        var remainder = BigUInt.from_scalar(x1.to_uint64() % x2.to_uint64())
         return Tuple(result^, remainder^)
 
     # CASE: Divisor is 10^n
     # First remove the last words (10^9) and then shift the rest
     if BigUInt.is_power_of_10(x2):
-        var result: BigUInt
-        var remainder = BigUInt(empty=True)
+        var result = BigUInt(List[UInt32]())
+        var remainder = BigUInt(List[UInt32]())
 
         if len(x2.words) == 1:
             result = x1
@@ -627,7 +627,6 @@ fn divmod(x1: BigUInt, x2: BigUInt) raises -> Tuple[BigUInt, BigUInt]:
             if word_shift >= len(x1.words):
                 return Tuple(BigUInt(), x1)
             # Create result with the remaining words
-            result = BigUInt(empty=True)
             for i in range(word_shift, len(x1.words)):
                 result.words.append(x1.words[i])
             for i in range(min(word_shift, len(x1.words))):
@@ -659,7 +658,6 @@ fn divmod(x1: BigUInt, x2: BigUInt) raises -> Tuple[BigUInt, BigUInt]:
             else:
                 remainder.words.append(carry)
 
-        # Remove leading zeros
         result.remove_trailing_zeros()
         remainder.remove_trailing_zeros()
 
@@ -865,7 +863,7 @@ fn floor_divide_general(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         raise Error("Error in `floor_divide_general`: Division by zero")
 
     # Initialize result and remainder
-    var result = BigUInt(empty=True, capacity=len(x1.words))
+    var result = BigUInt(List[UInt32](capacity=len(x1.words)))
     var remainder = x1
 
     # Calculate significant digits
@@ -1160,7 +1158,7 @@ fn divmod_general(x1: BigUInt, x2: BigUInt) raises -> Tuple[BigUInt, BigUInt]:
         raise Error("Error in `divmod_general`: Division by zero")
 
     # Initialize result and remainder
-    var result = BigUInt(empty=True, capacity=len(x1.words))
+    var result = BigUInt(List[UInt32](capacity=len(x1.words)))
     var remainder = x1
 
     # Calculate significant digits
@@ -1263,7 +1261,7 @@ fn shift_words_left(num: BigUInt, positions: Int) -> BigUInt:
     if num.is_zero():
         return BigUInt()
 
-    var result = BigUInt(empty=True, capacity=len(num.words) + positions)
+    var result = BigUInt(List[UInt32](capacity=len(num.words) + positions))
 
     # Add zeros for the shift
     for _ in range(positions):
@@ -1295,7 +1293,7 @@ fn power_of_10(n: Int) raises -> BigUInt:
     var words = n // 9
     var remainder = n % 9
 
-    var result = BigUInt(empty=True)
+    var result = BigUInt(List[UInt32]())
 
     # Add trailing zeros for full power-of-billion words
     for _ in range(words):

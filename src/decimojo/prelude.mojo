@@ -1,7 +1,4 @@
 # ===----------------------------------------------------------------------=== #
-# DeciMojo: A fixed-point decimal arithmetic library in Mojo
-# https://github.com/forfudan/decimojo
-#
 # Copyright 2025 Yuhao Zhu
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
