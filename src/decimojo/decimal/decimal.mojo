@@ -37,6 +37,8 @@ import decimojo.decimal.rounding
 from decimojo.rounding_mode import RoundingMode
 import decimojo.utility
 
+alias Dec = Decimal
+
 
 @register_passable("trivial")
 struct Decimal(

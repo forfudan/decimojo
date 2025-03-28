@@ -671,6 +671,14 @@ struct BigUInt(Absable, IntableRaising, Writable):
         """
         return decimojo.biguint.arithmetics.ceil_modulo(self, other)
 
+    fn multiply_by_power_of_10(self, exponent: Int) raises -> Self:
+        """Returns the result of multiplying this number by 10^exponent.
+        See `multiply_by_power_of_10()` for more information.
+        """
+        return decimojo.biguint.arithmetics.multiply_by_power_of_10(
+            self, exponent
+        )
+
     fn power(self, exponent: Int) raises -> Self:
         """Returns the result of raising this number to the power of `exponent`.
 
@@ -799,6 +807,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
         """Returns True if the BigUInt is uninitialized."""
         return len(self.words) == 0
 
+    # FIXME: This method is incorrect
     fn remove_trailing_zeros(mut number: BigUInt):
         """Removes trailing zeros from the BigUInt."""
         while len(number.words) > 1 and number.words[-1] == 0:

@@ -839,6 +839,55 @@ fn multiply_toom_cook_3(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     return result
 
 
+fn multiply_by_power_of_10(x: BigUInt, n: Int) raises -> BigUInt:
+    """Multiplies a BigUInt by 10^n.
+
+    Args:
+        x: The BigUInt value to multiply.
+        n: The power of 10 to multiply by.
+
+    Returns:
+        A new BigUInt containing the result of the multiplication.
+    """
+    if n == 0:
+        return x
+
+    var number_of_zero_words = n // 9
+    var number_of_remaining_digits = n % 9
+
+    var result: BigUInt = x
+    if number_of_remaining_digits == 0:
+        pass
+    elif number_of_remaining_digits == 1:
+        result = multiply(result, BigUInt(UInt32(10)))
+    elif number_of_remaining_digits == 2:
+        result = multiply(result, BigUInt(UInt32(100)))
+    elif number_of_remaining_digits == 3:
+        result = multiply(result, BigUInt(UInt32(1000)))
+    elif number_of_remaining_digits == 4:
+        result = multiply(result, BigUInt(UInt32(10000)))
+    elif number_of_remaining_digits == 5:
+        result = multiply(result, BigUInt(UInt32(100000)))
+    elif number_of_remaining_digits == 6:
+        result = multiply(result, BigUInt(UInt32(1000000)))
+    elif number_of_remaining_digits == 7:
+        result = multiply(result, BigUInt(UInt32(10000000)))
+    else:  # number_of_remaining_digits == 8
+        result = multiply(result, BigUInt(UInt32(100000000)))
+
+    if number_of_zero_words > 0:
+        var words = List[UInt32](
+            capacity=number_of_zero_words + len(result.words)
+        )
+        for _ in range(number_of_zero_words):
+            words.append(UInt32(0))
+        for i in range(len(result.words)):
+            words.append(result.words[i])
+        result.words = words^
+
+    return result^
+
+
 # ===----------------------------------------------------------------------=== #
 # Division Algorithms
 # floor_divide_general, floor_divide_inplace_by_2
