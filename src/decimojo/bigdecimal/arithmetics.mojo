@@ -38,22 +38,27 @@ fn add(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
 
     Notes:
 
-    1. This function always return the exact result of the addition.
-    2. The result's scale is the maximum of the two operands' scales.
-    3. The result's sign is determined by the signs of the operands.
+    Rules for addition:
+    - This function always return the exact result of the addition.
+    - The result's scale is the maximum of the two operands' scales.
+    - The result's sign is determined by the signs of the operands.
     """
-    # Handle zero operands as special cases for efficiency
-    if x1.coefficient.is_zero():
-        return x2
-    if x2.coefficient.is_zero():
-        return x1
-
-    # Ensure operands have the same scale (needed to align decimal points)
     var max_scale = max(x1.scale, x2.scale)
-
-    # Scale adjustment factors
     var scale_factor1 = (max_scale - x1.scale) if x1.scale < max_scale else 0
     var scale_factor2 = (max_scale - x2.scale) if x2.scale < max_scale else 0
+
+    # Handle zero operands as special cases for efficiency
+    if x1.coefficient.is_zero():
+        if x2.coefficient.is_zero():
+            return BigDecimal(
+                coefficient=BigUInt.ZERO,
+                scale=max_scale,
+                sign=False,
+            )
+        else:
+            return x2.extend_precision(scale_factor2)
+    if x2.coefficient.is_zero():
+        return x1.extend_precision(scale_factor1)
 
     # Scale coefficients to match
     var coef1 = x1.coefficient.multiply_by_power_of_10(scale_factor1)
@@ -64,20 +69,20 @@ fn add(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
         # Same sign: Add coefficients, keep sign
         var result_coef = coef1 + coef2
         return BigDecimal(
-            coefficient=result_coef, scale=max_scale, sign=x1.sign
+            coefficient=result_coef^, scale=max_scale, sign=x1.sign
         )
     # Different signs: Subtract smaller coefficient from larger
     if coef1 > coef2:
         # |x1| > |x2|, result sign is x1's sign
         var result_coef = coef1 - coef2
         return BigDecimal(
-            coefficient=result_coef, scale=max_scale, sign=x1.sign
+            coefficient=result_coef^, scale=max_scale, sign=x1.sign
         )
     elif coef2 > coef1:
         # |x2| > |x1|, result sign is x2's sign
         var result_coef = coef2 - coef1
         return BigDecimal(
-            coefficient=result_coef, scale=max_scale, sign=x2.sign
+            coefficient=result_coef^, scale=max_scale, sign=x2.sign
         )
     else:
         # |x1| == |x2|, signs differ, result is 0
@@ -98,25 +103,29 @@ fn subtract(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
 
     Notes:
 
-    1. This function always return the exact result of the subtraction.
-    2. The result's scale is the maximum of the two operands' scales.
-    3. The result's sign is determined by the signs of the operands.
+    - This function always return the exact result of the subtraction.
+    - The result's scale is the maximum of the two operands' scales.
+    - The result's sign is determined by the signs of the operands.
     """
-    # Handle zero operands as special cases for efficiency
-    if x2.coefficient.is_zero():
-        return x1
-    if x1.coefficient.is_zero():
-        # Subtraction from zero negates the sign
-        return BigDecimal(
-            coefficient=x2.coefficient, scale=x2.scale, sign=not x2.sign
-        )
 
-    # Ensure operands have the same scale (needed to align decimal points)
     var max_scale = max(x1.scale, x2.scale)
-
-    # Scale adjustment factors
     var scale_factor1 = (max_scale - x1.scale) if x1.scale < max_scale else 0
     var scale_factor2 = (max_scale - x2.scale) if x2.scale < max_scale else 0
+
+    # Handle zero operands as special cases for efficiency
+    if x2.coefficient.is_zero():
+        if x1.coefficient.is_zero():
+            return BigDecimal(
+                coefficient=BigUInt.ZERO,
+                scale=max_scale,
+                sign=False,
+            )
+        else:
+            return x1.extend_precision(scale_factor1)
+    if x1.coefficient.is_zero():
+        var result = x2.extend_precision(scale_factor2)
+        result.sign = not result.sign
+        return result^
 
     # Scale coefficients to match
     var coef1 = x1.coefficient.multiply_by_power_of_10(scale_factor1)
@@ -127,7 +136,7 @@ fn subtract(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
         # Different signs: x1 - (-x2) = x1 + x2, or (-x1) - x2 = -(x1 + x2)
         var result_coef = coef1 + coef2
         return BigDecimal(
-            coefficient=result_coef, scale=max_scale, sign=x1.sign
+            coefficient=result_coef^, scale=max_scale, sign=x1.sign
         )
 
     # Same signs: Must perform actual subtraction
@@ -135,16 +144,45 @@ fn subtract(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
         # |x1| > |x2|, result sign is x1's sign
         var result_coef = coef1 - coef2
         return BigDecimal(
-            coefficient=result_coef, scale=max_scale, sign=x1.sign
+            coefficient=result_coef^, scale=max_scale, sign=x1.sign
         )
     elif coef2 > coef1:
         # |x1| < |x2|, result sign is opposite of x1's sign
         var result_coef = coef2 - coef1
         return BigDecimal(
-            coefficient=result_coef, scale=max_scale, sign=not x1.sign
+            coefficient=result_coef^, scale=max_scale, sign=not x1.sign
         )
     else:
         # |x1| == |x2|, result is 0
+        return BigDecimal(coefficient=BigUInt.ZERO, scale=max_scale, sign=False)
+
+
+fn multiply(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
+    """Returns the product of two numbers.
+
+    Args:
+        x1: The first operand (multiplicand).
+        x2: The second operand (multiplier).
+
+    Returns:
+        The product of x1 and x2.
+
+    Notes:
+
+    - This function always returns the exact result of the multiplication.
+    - The result's scale is the sum of the two operands' scales (except for zero).
+    - The result's sign follows the standard sign rules for multiplication.
+    """
+    # Handle zero operands as special cases for efficiency
+    if x1.coefficient.is_zero() or x2.coefficient.is_zero():
         return BigDecimal(
-            coefficient=BigUInt(UInt32(0)), scale=max_scale, sign=False
+            coefficient=BigUInt.ZERO,
+            scale=x1.scale + x2.scale,
+            sign=x1.sign != x2.sign,
         )
+
+    return BigDecimal(
+        coefficient=x1.coefficient * x2.coefficient,
+        scale=x1.scale + x2.scale,
+        sign=x1.sign != x2.sign,
+    )
