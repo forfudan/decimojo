@@ -298,8 +298,17 @@ struct BigDecimal:
     # Type-transfer or output methods that are not dunders
     # ===------------------------------------------------------------------=== #
 
-    fn to_string(self) -> String:
-        """Returns string representation of the number."""
+    fn to_string(self, line_width: Int = 0) -> String:
+        """Returns string representation of the number.
+
+        Args:
+            line_width: The maximum line width for the string representation.
+                If 0, the string is returned as a single line.
+                If greater than 0, the string is split into multiple lines.
+
+        Returns:
+            A string representation of the number.
+        """
 
         if self.coefficient.is_unitialized():
             return String("Unitilialized maginitude of BigDecimal")
@@ -333,6 +342,17 @@ struct BigDecimal:
             # Example: 12_345 with scale -3 -> 12_345_000
             result += coefficient_string
             result += "0" * (-self.scale)
+
+        if line_width > 0:
+            var start = 0
+            var end = line_width
+            var lines = List[String](capacity=len(result) // line_width + 1)
+            while end < len(result):
+                lines.append(result[start:end])
+                start = end
+                end += line_width
+            lines.append(result[start:])
+            result = String("\n").join(lines^)
 
         return result^
 
@@ -387,33 +407,118 @@ struct BigDecimal:
     fn __sub__(self, other: Self) raises -> Self:
         return decimojo.bigdecimal.arithmetics.subtract(self, other)
 
+    @always_inline
+    fn __mul__(self, other: Self) raises -> Self:
+        return decimojo.bigdecimal.arithmetics.multiply(self, other)
+
     # ===------------------------------------------------------------------=== #
     # Other methods
     # ===------------------------------------------------------------------=== #
+
+    fn extend_precision(self, precision_diff: Int) raises -> BigDecimal:
+        """Returns a number with additional decimal places (trailing zeros).
+        This multiplies the coefficient by 10^precision_diff and increases
+        the scale accordingly, preserving the numeric value.
+
+        Args:
+            precision_diff: The number of decimal places to add.
+
+        Returns:
+            A new BigDecimal with increased precision.
+
+        Examples:
+        ```
+        print(BigDecimal("123.456).scale_up(5))  # Output: 123.45600000
+        print(BigDecimal("123456").scale_up(3))  # Output: 123456.000
+        print(BigDecimal("123456").scale_up(-1))  # Error!
+        ```
+        End of examples.
+        """
+        if precision_diff < 0:
+            raise Error(
+                "Error in `extend_precision()`: "
+                "Cannot extend precision with negative value"
+            )
+
+        if precision_diff == 0:
+            return self
+
+        var number_of_words_to_add = precision_diff // 9
+        var number_of_remaining_digits_to_add = precision_diff % 9
+
+        var coefficient = self.coefficient
+
+        if number_of_remaining_digits_to_add == 0:
+            pass
+        elif number_of_remaining_digits_to_add == 1:
+            coefficient = coefficient * BigUInt(UInt32(10))
+        elif number_of_remaining_digits_to_add == 2:
+            coefficient = coefficient * BigUInt(UInt32(100))
+        elif number_of_remaining_digits_to_add == 3:
+            coefficient = coefficient * BigUInt(UInt32(1_000))
+        elif number_of_remaining_digits_to_add == 4:
+            coefficient = coefficient * BigUInt(UInt32(10_000))
+        elif number_of_remaining_digits_to_add == 5:
+            coefficient = coefficient * BigUInt(UInt32(100_000))
+        elif number_of_remaining_digits_to_add == 6:
+            coefficient = coefficient * BigUInt(UInt32(1_000_000))
+        elif number_of_remaining_digits_to_add == 7:
+            coefficient = coefficient * BigUInt(UInt32(10_000_000))
+        else:  # number_of_remaining_digits_to_add == 8
+            coefficient = coefficient * BigUInt(UInt32(100_000_000))
+
+        var words: List[UInt32] = List[UInt32]()
+        for _ in range(number_of_words_to_add):
+            words.append(UInt32(0))
+        words.extend(coefficient.words)
+
+        return BigDecimal(
+            BigUInt(words^),
+            self.scale + precision_diff,
+            self.sign,
+        )
+
+    @always_inline
+    fn internal_representation(self) raises:
+        """Prints the internal representation of the BigDecimal."""
+        var line_width = 30
+        var string_of_number = self.to_string(line_width=line_width).split("\n")
+        var string_of_coefficient = self.coefficient.to_string(
+            line_width=line_width
+        ).split("\n")
+        print("\nInternal Representation Details of BigDecimal")
+        print("----------------------------------------------")
+        print("number:         ", end="")
+        for i in range(0, len(string_of_number)):
+            if i > 0:
+                print(" " * 16, end="")
+            print(string_of_number[i])
+        print("coefficient:    ", end="")
+        for i in range(0, len(string_of_coefficient)):
+            if i > 0:
+                print(" " * 16, end="")
+            print(String(string_of_coefficient[i]))
+        print("negative:      ", self.sign)
+        print("scale:         ", self.scale)
+        for i in range(len(self.coefficient.words)):
+            var ndigits = 1
+            if i < 10:
+                pass
+            elif i < 100:
+                ndigits = 2
+            else:
+                ndigits = 3
+            print(
+                "word {}:{}{}".format(
+                    i, " " * (10 - ndigits), String(self.coefficient.words[i])
+                ).rjust(9, fillchar="0")
+            )
+        print("----------------------------------------------")
 
     @always_inline
     fn is_zero(self) -> Bool:
         """Returns True if this number represents zero."""
         return self.coefficient.is_zero()
-
-    fn number_of_trailing_zeros(self) -> Int:
-        """Returns the number of trailing zeros in the coefficient."""
-        if self.coefficient.is_zero():
-            return 0
-
-        # Count trailing zero words
-        var number_of_zero_words = 0
-        while self.coefficient.words[number_of_zero_words] == UInt32(0):
-            number_of_zero_words += 1
-
-        # Count trailing zeros in the last non-zero word
-        var number_of_trailing_zeros = 0
-        var last_non_zero_word = self.coefficient.words[number_of_zero_words]
-        while (last_non_zero_word % UInt32(10)) == 0:
-            last_non_zero_word = last_non_zero_word // UInt32(10)
-            number_of_trailing_zeros += 1
-
-        return number_of_zero_words * 9 + number_of_trailing_zeros
 
     fn normalize(self) raises -> BigDecimal:
         """Removes trailing zeros from coefficient while adjusting scale.
@@ -425,9 +530,7 @@ struct BigDecimal:
         if self.coefficient.is_zero():
             return BigDecimal(BigUInt(UInt32(0)), 0, False)
 
-        var number_of_digits_to_remove = min(
-            self.number_of_trailing_zeros(), self.scale
-        )
+        var number_of_digits_to_remove = self.number_of_trailing_zeros()
 
         var number_of_words_to_remove = number_of_digits_to_remove // 9
         var number_of_remaining_digits_to_remove = number_of_digits_to_remove % 9
@@ -460,3 +563,22 @@ struct BigDecimal:
             self.scale - number_of_digits_to_remove,
             self.sign,
         )
+
+    fn number_of_trailing_zeros(self) -> Int:
+        """Returns the number of trailing zeros in the coefficient."""
+        if self.coefficient.is_zero():
+            return 0
+
+        # Count trailing zero words
+        var number_of_zero_words = 0
+        while self.coefficient.words[number_of_zero_words] == UInt32(0):
+            number_of_zero_words += 1
+
+        # Count trailing zeros in the last non-zero word
+        var number_of_trailing_zeros = 0
+        var last_non_zero_word = self.coefficient.words[number_of_zero_words]
+        while (last_non_zero_word % UInt32(10)) == 0:
+            last_non_zero_word = last_non_zero_word // UInt32(10)
+            number_of_trailing_zeros += 1
+
+        return number_of_zero_words * 9 + number_of_trailing_zeros

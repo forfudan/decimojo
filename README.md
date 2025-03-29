@@ -12,10 +12,16 @@ The core types are:
 
 - A 128-bit fixed-point decimal implementation (`Decimal`) supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed]. It features a complete set of mathematical functions including logarithms, exponentiation, roots, and trigonometric operations.
 - A base-10 arbitrary-precision signed integer type (`BigInt`) and a base-10 arbitrary-precision unsigned integer type (`BigUInt`) supporting unlimited digits[^integer]. It features comprehensive arithmetic operations, comparison functions, and supports extremely large integer calculations efficiently.
-
-The library is expanding to include `BigDecimal` types that support arbitrary precision[^arbitrary], allowing for calculations with unlimited digits and decimal places. These extensions are currently under active development.
+- An arbitrary-precision decimal implementation `BigDecimal` allowing for calculations with unlimited digits and decimal places[^arbitrary]. It is currently under active development.
 
 This repository includes [TOMLMojo](https://github.com/forfudan/decimojo/tree/main/src/tomlmojo), a lightweight TOML parser in pure Mojo. It parses configuration files and test data, supporting basic types, arrays, and nested tables. While created for DeciMojo's testing framework, it offers general-purpose structured data parsing with a clean, simple API.
+
+| type         | information                          | internal representation  |
+| ------------ | ------------------------------------ | ------------------------ |
+| `BigUInt`    | arbitrary-precision unsigned integer | `List[UInt32]`           |
+| `BigInt`     | arbitrary-precision integer          | `BigUInt`, `Bool`        |
+| `Decimal`    | 128-bit fixed-precision decimal      | 4 `UInt32` words         |
+| `BigDecimal` | arbitrary-precision decimal          | `BigUInt`, `Int`, `Bool` |
 
 ## Installation
 
