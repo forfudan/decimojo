@@ -383,6 +383,10 @@ struct BigDecimal:
     fn __add__(self, other: Self) raises -> Self:
         return decimojo.bigdecimal.arithmetics.add(self, other)
 
+    @always_inline
+    fn __sub__(self, other: Self) raises -> Self:
+        return decimojo.bigdecimal.arithmetics.subtract(self, other)
+
     # ===------------------------------------------------------------------=== #
     # Other methods
     # ===------------------------------------------------------------------=== #
