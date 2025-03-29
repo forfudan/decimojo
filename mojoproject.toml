@@ -31,7 +31,7 @@ test = "magic run package && magic run mojo test tests --filter"
 t = "clear && magic run package && magic run mojo test tests --filter"
 
 # benches
-bench_dec = "magic run package && cd benches/decimal && magic run mojo -I ../ bench.mojo && cd ../.. && magic run clean"
-bench_bint = "magic run package && cd benches/bigint && magic run mojo -I ../ bench.mojo && cd ../.. && magic run clean"
-bench_buint = "magic run package && cd benches/biguint && magic run mojo -I ../ bench.mojo && cd ../.. && magic run clean"
-bench_bdec = "magic run package && cd benches/bigdecimal && magic run mojo -I ../ bench.mojo && cd ../.. && magic run clean"
+bench_dec = "clear && magic run package && cd benches/decimal && magic run mojo -I ../ bench.mojo && cd ../.. && magic run clean"
+bench_bint = "clear && magic run package && cd benches/bigint && magic run mojo -I ../ bench.mojo && cd ../.. && magic run clean"
+bench_buint = "clear && magic run package && cd benches/biguint && magic run mojo -I ../ bench.mojo && cd ../.. && magic run clean"
+bench_bdec = "clear && magic run package && cd benches/bigdecimal && magic run mojo -I ../ bench.mojo && cd ../.. && magic run clean"
