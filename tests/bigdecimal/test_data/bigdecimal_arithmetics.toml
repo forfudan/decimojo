@@ -1,0 +1,310 @@
+# === BASIC ADDITION TESTS ===
+[[addition_tests]]
+a = "42"
+b = "58"
+expected = "100"
+description = "Simple integer addition"
+
+[[addition_tests]]
+a = "3.14"
+b = "2.71"
+expected = "5.85"
+description = "Simple decimal addition"
+
+[[addition_tests]]
+a = "0"
+b = "0"
+expected = "0"
+description = "Zero plus zero"
+
+[[addition_tests]]
+a = "1"
+b = "0"
+expected = "1"
+description = "Addition with zero"
+
+[[addition_tests]]
+a = "123.456"
+b = "0"
+expected = "123.456"
+description = "Decimal plus zero"
+
+# === DIFFERENT SCALE TESTS ===
+[[addition_tests]]
+a = "1.2345"
+b = "5.67"
+expected = "6.9045"
+description = "Addition with different scales"
+
+[[addition_tests]]
+a = "1.23456789012345678901234567"
+b = "5.6"
+expected = "6.83456789012345678901234567"
+description = "Addition with very different scales"
+
+[[addition_tests]]
+a = "9.999"
+b = "0.001"
+expected = "10.000"
+description = "Addition with carry"
+
+[[addition_tests]]
+a = "999999.999999"
+b = "0.000001"
+expected = "1000000.000000"
+description = "Addition causing scale reduction"
+
+[[addition_tests]]
+a = "1.000000000000000000000000001"
+b = "2.000000000000000000000000002"
+expected = "3.000000000000000000000000003"
+description = "Addition with high precision"
+
+# === SIGN COMBINATION TESTS ===
+[[addition_tests]]
+a = "-1"
+b = "-2"
+expected = "-3"
+description = "Negative plus negative"
+
+[[addition_tests]]
+a = "-3.14"
+b = "10"
+expected = "6.86"
+description = "Negative plus positive (negative smaller)"
+
+[[addition_tests]]
+a = "-10"
+b = "3.14"
+expected = "-6.86"
+description = "Negative plus positive (negative larger)"
+
+[[addition_tests]]
+a = "-5.75"
+b = "-10.25"
+expected = "-16.00"
+description = "Negative plus negative"
+
+[[addition_tests]]
+a = "123.456"
+b = "-123.456"
+expected = "0.000"
+description = "Addition resulting in zero (pos + neg)"
+
+[[addition_tests]]
+a = "0.0000001"
+b = "-0.00000005"
+expected = "0.00000005"
+description = "Addition near zero (small difference)"
+
+# === LARGE NUMBER TESTS ===
+[[addition_tests]]
+a = "9999999999999999999999999999"
+b = "1"
+expected = "10000000000000000000000000000"
+description = "Large integer addition"
+
+[[addition_tests]]
+a = "-9999999999999999999999999999"
+b = "9999999999999999999999999998"
+expected = "-1"
+description = "Large negative plus positive"
+
+[[addition_tests]]
+a = "99999999999999999999.99999999"
+b = "0.00000001"
+expected = "100000000000000000000.00000000"
+description = "Very large decimal addition with carry"
+
+[[addition_tests]]
+a = "10000000000000000000000000000"
+b = "0.00000000000000000000000001"
+expected = "10000000000000000000000000000.00000000000000000000000001"
+description = "Very large plus very small"
+
+# === SMALL NUMBER TESTS ===
+[[addition_tests]]
+a = "0.0000000000000000000000001"
+b = "0.0000000000000000000000002"
+expected = "0.0000000000000000000000003"
+description = "Very small positive values"
+
+[[addition_tests]]
+a = "-0.0000000000000000000000001"
+b = "-0.0000000000000000000000002"
+expected = "-0.0000000000000000000000003"
+description = "Very small negative values"
+
+[[addition_tests]]
+a = "0.0000000000000001"
+b = "0.00000000000000000000000001"
+expected = "0.00000000000000010000000001"
+description = "Small values with different scales"
+
+# === SCIENTIFIC NOTATION TESTS ===
+[[addition_tests]]
+a = "1.23e5"
+b = "4.56e4"
+expected = "168600"
+description = "Addition with scientific notation"
+
+[[addition_tests]]
+a = "1.23e-10"
+b = "4.56e-11"
+expected = "0.0000000001686"
+description = "Addition with negative exponents"
+
+[[addition_tests]]
+a = "1.23e-10"
+b = "4.56e10"
+expected = "45600000000.000000000123"
+description = "Addition with extreme exponent difference"
+
+# === SPECIAL CASES ===
+[[addition_tests]]
+a = "3.14159265358979323846"
+b = "2.71828182845904523536"
+expected = "5.85987448204883847382"
+description = "Addition of mathematical constants (PI + E)"
+
+[[addition_tests]]
+a = "0.33333333333333333333333333"
+b = "0.66666666666666666666666667"
+expected = "1.00000000000000000000000000"
+description = "Addition of repeating patterns"
+
+[[addition_tests]]
+a = "0.499999999999999999"
+b = "0.500000000000000001"
+expected = "1.000000000000000000"
+description = "Addition resulting in exact integer"
+
+[[addition_tests]]
+a = "9.99999999999999999999999999"
+b = "0.00000000000000000000000001"
+expected = "10.00000000000000000000000000"
+description = "Addition at precision limit with carry"
+
+# === FINANCIAL SCENARIOS ===
+[[addition_tests]]
+a = "10542.75"
+b = "3621.50"
+expected = "14164.25"
+description = "Financial numbers (dollars and cents)"
+
+[[addition_tests]]
+a = "0.09"
+b = "0.01"
+expected = "0.10"
+description = "Financial numbers (cents)"
+
+[[addition_tests]]
+a = "99.99"
+b = "0.01"
+expected = "100.00"
+description = "Financial addition with carry"
+
+# === PRECISION BOUNDARY TESTS ===
+[[addition_tests]]
+a = "999999999999999999.9999999"
+b = "0.0000001"
+expected = "1000000000000000000.0000000"
+description = "Addition with rounding at precision boundary"
+
+[[addition_tests]]
+a = "1.1000000000000000000000000"
+b = "2.2000000000000000000000000"
+expected = "3.3000000000000000000000000"
+description = "Addition with trailing zeros"
+
+[[addition_tests]]
+a = "0.125"
+b = "0.0625"
+expected = "0.1875"
+description = "Addition of binary-friendly values (1/8 + 1/16)"
+
+[[addition_tests]]
+a = "0.1"
+b = "0.2"
+expected = "0.3"
+description = "Simple tenths addition"
+
+# === ADDITIONAL EDGE CASES ===
+[[addition_tests]]
+a = "0.000000000000000000000000009"
+b = "0.000000000000000000000000001"
+expected = "0.000000000000000000000000010"
+description = "Addition near zero with precision limit"
+
+[[addition_tests]]
+a = "0.0"
+b = "0.0"
+expected = "0.0"
+description = "Zero plus zero with decimal point"
+
+[[addition_tests]]
+a = "0.142857142857142857142857"
+b = "0.076923076923076923076923"
+expected = "0.219780219780219780219780"
+description = "Addition of recurring decimals (1/7 + 1/13)"
+
+[[addition_tests]]
+a = "-0"
+b = "0"
+expected = "0"
+description = "Addition of negative zero and zero"
+
+[[addition_tests]]
+a = "1E6"
+b = "2000000"
+expected = "3000000"
+description = "Addition with E notation"
+
+[[addition_tests]]
+a = "1.79769313486231570E+308"
+b = "10"
+expected = "179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010"
+description = "Addition near max double precision"
+
+[[addition_tests]]
+a = "-9.9999999999999999999999"
+b = "9.9999999999999999999999"
+expected = "0.0000000000000000000000"
+description = "Exact cancellation of large numbers"
+
+[[addition_tests]]
+a = "123456789012345678.987654321012345678"
+b = "987654321098765432.123456789098765432"
+expected = "1111111110111111111.111111110111111110"
+description = "Addition with digit carryover throughout"
+
+# === SPECIFIC APPLICATION DOMAINS ===
+[[addition_tests]]
+a = "37.7749"
+b = "0.0001"
+expected = "37.7750"
+description = "GPS coordinates (latitude + delta)"
+
+[[addition_tests]]
+a = "98.6"
+b = "1.2"
+expected = "99.8"
+description = "Body temperature in Fahrenheit"
+
+[[addition_tests]]
+a = "273.15"
+b = "32.0"
+expected = "305.15"
+description = "Temperature conversion constants (K offset + F offset)"
+
+[[addition_tests]]
+a = "987654321987654321.987654321"
+b = "0.000000000000000000000000001"
+expected = "987654321987654321.987654321000000000000000001"
+description = "Addition with extreme scale difference"
+
+[[addition_tests]]
+a = "0.0425"
+b = "0.0015"
+expected = "0.0440"
+description = "Interest rate calculation"

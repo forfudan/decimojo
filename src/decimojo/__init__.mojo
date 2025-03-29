@@ -25,10 +25,10 @@ from decimojo import Decimal, BigInt, RoundingMode
 """
 
 # Core types
-from .decimal.decimal import Decimal
+from .decimal.decimal import Decimal, Dec
 from .bigint.bigint import BigInt, BInt
 from .biguint.biguint import BigUInt, BUInt
-from .bigdecimal.bigdecimal import BigDecimal
+from .bigdecimal.bigdecimal import BigDecimal, BDec
 from .rounding_mode import RoundingMode
 
 # Core functions

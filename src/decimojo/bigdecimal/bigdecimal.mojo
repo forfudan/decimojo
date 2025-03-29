@@ -28,6 +28,8 @@ import testing
 
 from decimojo.rounding_mode import RoundingMode
 
+alias BDec = BigDecimal
+
 
 @value
 struct BigDecimal:
@@ -76,7 +78,7 @@ struct BigDecimal:
     # Constructors and life time dunder methods
     # ===------------------------------------------------------------------=== #
 
-    fn __init__(out self, coefficient: BigUInt, scale: Int, sign: Bool) raises:
+    fn __init__(out self, coefficient: BigUInt, scale: Int, sign: Bool):
         """Constructs a BigDecimal from its components."""
         self.coefficient = coefficient
         self.scale = scale
@@ -147,8 +149,9 @@ struct BigDecimal:
             The BigDecimal representation of the Scalar value.
 
         Notes:
-            If the value is a floating-point number, it is converted to a string
-            with full precision before converting to BigDecimal.
+
+        If the value is a floating-point number, it is converted to a string
+        with full precision before converting to BigDecimal.
         """
         var sign = True if value < 0 else False
 
@@ -344,6 +347,43 @@ struct BigDecimal:
         writer.write(String(self))
 
     # ===------------------------------------------------------------------=== #
+    # Basic unary operation dunders
+    # neg
+    # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn __abs__(self) -> Self:
+        """Returns the absolute value of this number.
+        See `absolute()` for more information.
+        """
+        return Self(
+            coefficient=self.coefficient,
+            scale=self.scale,
+            sign=False,
+        )
+
+    @always_inline
+    fn __neg__(self) -> Self:
+        """Returns the negation of this number.
+        See `negative()` for more information.
+        """
+        return Self(
+            coefficient=self.coefficient,
+            scale=self.scale,
+            sign=not self.sign,
+        )
+
+    # ===------------------------------------------------------------------=== #
+    # Basic binary arithmetic operation dunders
+    # These methods are called to implement the binary arithmetic operations
+    # (+, -, *, @, /, //, %, divmod(), pow(), **, <<, >>, &, ^, |)
+    # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn __add__(self, other: Self) raises -> Self:
+        return decimojo.bigdecimal.arithmetics.add(self, other)
+
+    # ===------------------------------------------------------------------=== #
     # Other methods
     # ===------------------------------------------------------------------=== #
 
@@ -351,3 +391,68 @@ struct BigDecimal:
     fn is_zero(self) -> Bool:
         """Returns True if this number represents zero."""
         return self.coefficient.is_zero()
+
+    fn number_of_trailing_zeros(self) -> Int:
+        """Returns the number of trailing zeros in the coefficient."""
+        if self.coefficient.is_zero():
+            return 0
+
+        # Count trailing zero words
+        var number_of_zero_words = 0
+        while self.coefficient.words[number_of_zero_words] == UInt32(0):
+            number_of_zero_words += 1
+
+        # Count trailing zeros in the last non-zero word
+        var number_of_trailing_zeros = 0
+        var last_non_zero_word = self.coefficient.words[number_of_zero_words]
+        while (last_non_zero_word % UInt32(10)) == 0:
+            last_non_zero_word = last_non_zero_word // UInt32(10)
+            number_of_trailing_zeros += 1
+
+        return number_of_zero_words * 9 + number_of_trailing_zeros
+
+    fn normalize(self) raises -> BigDecimal:
+        """Removes trailing zeros from coefficient while adjusting scale.
+
+        Notes:
+
+        Only call it when necessary. Do not normalize after every operation.
+        """
+        if self.coefficient.is_zero():
+            return BigDecimal(BigUInt(UInt32(0)), 0, False)
+
+        var number_of_digits_to_remove = min(
+            self.number_of_trailing_zeros(), self.scale
+        )
+
+        var number_of_words_to_remove = number_of_digits_to_remove // 9
+        var number_of_remaining_digits_to_remove = number_of_digits_to_remove % 9
+
+        var words: List[UInt32] = List[UInt32]()
+        words = self.coefficient.words[number_of_words_to_remove:]
+        var coefficient = BigUInt(words^)
+
+        if number_of_remaining_digits_to_remove == 0:
+            pass
+        elif number_of_remaining_digits_to_remove == 1:
+            coefficient = coefficient // BigUInt(UInt32(10))
+        elif number_of_remaining_digits_to_remove == 2:
+            coefficient = coefficient // BigUInt(UInt32(100))
+        elif number_of_remaining_digits_to_remove == 3:
+            coefficient = coefficient // BigUInt(UInt32(1_000))
+        elif number_of_remaining_digits_to_remove == 4:
+            coefficient = coefficient // BigUInt(UInt32(10_000))
+        elif number_of_remaining_digits_to_remove == 5:
+            coefficient = coefficient // BigUInt(UInt32(100_000))
+        elif number_of_remaining_digits_to_remove == 6:
+            coefficient = coefficient // BigUInt(UInt32(1_000_000))
+        elif number_of_remaining_digits_to_remove == 7:
+            coefficient = coefficient // BigUInt(UInt32(10_000_000))
+        else:  # number_of_remaining_digits_to_remove == 8
+            coefficient = coefficient // BigUInt(UInt32(100_000_000))
+
+        return BigDecimal(
+            coefficient,
+            self.scale - number_of_digits_to_remove,
+            self.sign,
+        )
