@@ -61,8 +61,20 @@ struct BigUInt(Absable, IntableRaising, Writable):
     # Constants
     # ===------------------------------------------------------------------=== #
 
-    alias MAX_OF_WORD = UInt32(999_999_999)
-    alias BASE_OF_WORD = UInt32(1_000_000_000)
+    alias ZERO = Self.zero()
+    alias ONE = Self.one()
+
+    @always_inline
+    @staticmethod
+    fn zero() -> Self:
+        """Returns a BigUInt with value 0."""
+        return Self(words=List[UInt32](UInt32(0)))
+
+    @always_inline
+    @staticmethod
+    fn one() -> Self:
+        """Returns a BigUInt with value 1."""
+        return Self(words=List[UInt32](UInt32(1)))
 
     # ===------------------------------------------------------------------=== #
     # Constructors and life time dunder methods
@@ -166,7 +178,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
         # Check if the words are valid
         for word in words:
-            if word[] > Self.MAX_OF_WORD:
+            if word[] > UInt32(999_999_999):
                 raise Error(
                     "Error in `BigUInt.from_list()`: Word value exceeds maximum"
                     " value of 999_999_999"
@@ -198,7 +210,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
         # Check if the words are valid
         for word in words:
-            if word > Self.MAX_OF_WORD:
+            if word > UInt32(999_999_999):
                 raise Error(
                     "Error in `BigUInt.__init__()`: Word value exceeds maximum"
                     " value of 999_999_999"
@@ -422,7 +434,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
         var value: Int128 = 0
         for i in range(len(self.words)):
-            value += Int128(self.words[i]) * Int128(Self.BASE_OF_WORD) ** i
+            value += Int128(self.words[i]) * Int128(1_000_000_000) ** i
 
         if value > Int128(Int.MAX):
             raise Error(
@@ -450,7 +462,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
         var value: UInt128 = 0
         for i in range(len(self.words)):
-            value += UInt128(self.words[i]) * UInt128(Self.BASE_OF_WORD) ** i
+            value += UInt128(self.words[i]) * UInt128(1_000_000_000) ** i
 
         if value > UInt128(UInt64.MAX):
             raise Error(
@@ -460,8 +472,16 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
         return UInt64(value)
 
-    fn to_string(self) -> String:
-        """Returns string representation of the BigUInt."""
+    fn to_string(self, line_width: Int = 0) -> String:
+        """Returns string representation of the BigUInt.
+
+        Args:
+            line_width: The width of each line. Default is 0, which means no
+                line width.
+
+        Returns:
+            The string representation of the BigUInt.
+        """
 
         if len(self.words) == 0:
             return String("Unitilialized BigUInt")
@@ -476,6 +496,17 @@ struct BigUInt(Absable, IntableRaising, Writable):
                 result += String(self.words[i])
             else:
                 result += String(self.words[i]).rjust(width=9, fillchar="0")
+
+        if line_width > 0:
+            var start = 0
+            var end = line_width
+            var lines = List[String](capacity=len(result) // line_width + 1)
+            while end < len(result):
+                lines.append(result[start:end])
+                start = end
+                end += line_width
+            lines.append(result[start:])
+            result = String("\n").join(lines^)
 
         return result^
 
@@ -492,10 +523,14 @@ struct BigUInt(Absable, IntableRaising, Writable):
         var result = self.to_string()
         var end = len(result)
         var start = end - 3
+        var blocks = List[String](capacity=len(result) // 3 + 1)
         while start > 0:
-            result = result[:start] + separator + result[start:]
+            blocks.append(result[start:end])
             end = start
             start = end - 3
+        blocks.append(result[0:end])
+        blocks.reverse()
+        result = separator.join(blocks)
 
         return result^
 
@@ -771,20 +806,30 @@ struct BigUInt(Absable, IntableRaising, Writable):
         """Returns the number of words in the BigInt."""
         return len(self.words)
 
-    fn internal_representation(self):
+    fn internal_representation(self) raises:
         """Prints the internal representation details of a BigUInt."""
+        var string_of_number = self.to_string(line_width=30).split("\n")
         print("\nInternal Representation Details of BigUInt")
-        print("-----------------------------------------")
-        print("number:        ", self)
-        print("               ", self.to_string_with_separators())
+        print("----------------------------------------------")
+        print("number:         ", end="")
+        for i in range(0, len(string_of_number)):
+            if i > 0:
+                print(" " * 16, end="")
+            print(string_of_number[i])
         for i in range(len(self.words)):
+            var ndigits = 1
+            if i < 10:
+                pass
+            elif i < 100:
+                ndigits = 2
+            else:
+                ndigits = 3
             print(
-                "word",
-                i,
-                ":       ",
-                String(self.words[i]).rjust(width=9, fillchar="0"),
+                "word {}:{}{}".format(
+                    i, " " * (10 - ndigits), String(self.words[i])
+                ).rjust(9, fillchar="0")
             )
-        print("--------------------------------")
+        print("----------------------------------------------")
 
     fn ith_digit(self, i: Int) raises -> UInt8:
         """Returns the ith digit of the BigUInt."""

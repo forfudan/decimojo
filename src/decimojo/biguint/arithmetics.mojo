@@ -841,7 +841,7 @@ fn multiply_toom_cook_3(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
 
 fn multiply_by_power_of_10(x: BigUInt, n: Int) raises -> BigUInt:
-    """Multiplies a BigUInt by 10^n.
+    """Multiplies a BigUInt by 10^n (n>=0).
 
     Args:
         x: The BigUInt value to multiply.

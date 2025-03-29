@@ -628,3 +628,293 @@ a = "0.0440"
 b = "0.0015"
 expected = "0.0425"
 description = "Interest rate calculation"
+
+# ===----------------------------------------------------------------------=== #
+# Test cases for BigDecimal multiplication
+# ===----------------------------------------------------------------------=== #
+# === BASIC MULTIPLICATION TESTS ===
+[[multiplication_tests]]
+a = "2"
+b = "3"
+expected = "6"
+description = "Simple integer multiplication"
+
+[[multiplication_tests]]
+a = "1.5"
+b = "2"
+expected = "3.0"
+description = "Simple decimal by integer"
+
+[[multiplication_tests]]
+a = "0.5"
+b = "0.5"
+expected = "0.25"
+description = "Decimal by decimal multiplication"
+
+[[multiplication_tests]]
+a = "0"
+b = "123.456"
+expected = "0.000"
+description = "Multiplication by zero"
+
+[[multiplication_tests]]
+a = "1"
+b = "123.456"
+expected = "123.456"
+description = "Multiplication by one"
+
+[[multiplication_tests]]
+a = "-1"
+b = "123.456"
+expected = "-123.456"
+description = "Multiplication by negative one"
+
+# === DIFFERENT SCALE TESTS ===
+[[multiplication_tests]]
+a = "1.23"
+b = "4.56"
+expected = "5.6088"
+description = "Multiplication with scales addition"
+
+[[multiplication_tests]]
+a = "1.2345"
+b = "6.789"
+expected = "8.3810205"
+description = "Multiplication with different scales"
+
+[[multiplication_tests]]
+a = "1.23456789"
+b = "9.87654321"
+expected = "12.1932631112635269"
+description = "Multiplication with high precision"
+
+[[multiplication_tests]]
+a = "9.999"
+b = "9.999"
+expected = "99.980001"
+description = "Multiplication near power of 10"
+
+[[multiplication_tests]]
+a = "0.1"
+b = "0.1"
+expected = "0.01"
+description = "Multiplication of tenths"
+
+# === SIGN COMBINATION TESTS ===
+[[multiplication_tests]]
+a = "-2"
+b = "-3"
+expected = "6"
+description = "Negative times negative"
+
+[[multiplication_tests]]
+a = "-3.14"
+b = "2"
+expected = "-6.28"
+description = "Negative times positive"
+
+[[multiplication_tests]]
+a = "10"
+b = "-0.5"
+expected = "-5.0"
+description = "Positive times negative"
+
+[[multiplication_tests]]
+a = "-5.75"
+b = "-10.25"
+expected = "58.9375"
+description = "Negative times negative decimal"
+
+[[multiplication_tests]]
+a = "0"
+b = "-123.456"
+expected = "-0.000"
+description = "Zero times negative"
+
+# === LARGE NUMBER TESTS ===
+[[multiplication_tests]]
+a = "9999999999"
+b = "9999999999"
+expected = "99999999980000000001"
+description = "Large integer multiplication"
+
+[[multiplication_tests]]
+a = "-9999999999"
+b = "9999999999"
+expected = "-99999999980000000001"
+description = "Large integer with negative"
+
+[[multiplication_tests]]
+a = "12345678901234567890"
+b = "0.00000000001"
+expected = "123456789.01234567890"
+description = "Large integer times small decimal"
+
+[[multiplication_tests]]
+a = "0.0000000001"
+b = "0.0000000001"
+expected = "0.00000000000000000001"
+description = "Small decimal multiplication"
+
+# === SCIENTIFIC NOTATION TESTS ===
+[[multiplication_tests]]
+a = "1.23e5"
+b = "4.56e2"
+expected = "56088000"
+description = "Multiplication with scientific notation"
+
+[[multiplication_tests]]
+a = "1.23e-5"
+b = "4.56e-2"
+expected = "0.00000056088"
+description = "Multiplication with negative exponents"
+
+[[multiplication_tests]]
+a = "1.23e5"
+b = "4.56e-2"
+expected = "5608.8"
+description = "Multiplication with mixed exponents"
+
+# === SPECIAL CASES ===
+[[multiplication_tests]]
+a = "3.14159265358979323846"
+b = "2.71828182845904523536"
+expected = "8.5397342226735670654554622909226073039456"
+description = "Multiplication of mathematical constants (PI * E)"
+
+[[multiplication_tests]]
+a = "0.33333333333333333333333333"
+b = "3"
+expected = "0.99999999999999999999999999"
+description = "Multiplication resulting in almost one"
+
+[[multiplication_tests]]
+a = "0.5"
+b = "2"
+expected = "1.0"
+description = "Multiplication resulting in exact integer"
+
+[[multiplication_tests]]
+a = "0.1"
+b = "10"
+expected = "1.0"
+description = "Decimal shifted by multiplication"
+
+# === FINANCIAL SCENARIOS ===
+[[multiplication_tests]]
+a = "10.99"
+b = "3"
+expected = "32.97"
+description = "Financial multiplication (price * quantity)"
+
+[[multiplication_tests]]
+a = "100"
+b = "0.075"
+expected = "7.500"
+description = "Financial multiplication (principal * interest)"
+
+[[multiplication_tests]]
+a = "9.99"
+b = "1.08"
+expected = "10.7892"
+description = "Financial multiplication (price * tax)"
+
+# === PRECISION BOUNDARY TESTS ===
+[[multiplication_tests]]
+a = "9.9999999999999999999999999"
+b = "9.9999999999999999999999999"
+expected = "99.99999999999999999999999800000000000000000000000001"
+description = "Multiplication at precision boundary"
+
+[[multiplication_tests]]
+a = "1.0000000000000000000000001"
+b = "1.0000000000000000000000001"
+expected = "1.00000000000000000000000020000000000000000000000001"
+description = "Multiplication slightly above one"
+
+[[multiplication_tests]]
+a = "0.125"
+b = "8"
+expected = "1.000"
+description = "Binary-friendly multiplication (1/8 * 8)"
+
+# === ADDITIONAL EDGE CASES ===
+[[multiplication_tests]]
+a = "0.000000000000000000000000001"
+b = "1000000000000000000000000000"
+expected = "1.000000000000000000000000000"
+description = "Multiplication of very small and very large"
+
+[[multiplication_tests]]
+a = "0.9"
+b = "0.9"
+expected = "0.81"
+description = "Multiplication less than one"
+
+[[multiplication_tests]]
+a = "1.11111111111111111111111111"
+b = "9"
+expected = "9.99999999999999999999999999"
+description = "Multiplication of repeating decimal"
+
+[[multiplication_tests]]
+a = "2.5"
+b = "0.4"
+expected = "1.00"
+description = "Multiplication resulting in exact one"
+
+[[multiplication_tests]]
+a = "0.000000000000000000000000009"
+b = "0.000000000000000000000000009"
+expected = "0.000000000000000000000000000000000000000000000000000081"
+description = "Multiplication of very small numbers"
+
+# === APPLICATION SCENARIOS ===
+[[multiplication_tests]]
+a = "299792458"
+b = "0.000000001"
+expected = "0.299792458"
+description = "Physical unit conversion (m/s to km/μs)"
+
+[[multiplication_tests]]
+a = "6.022e23"
+b = "0.001"
+expected = "6.022e20"
+description = "Scientific calculation (Avogadro's number * milli-mole)"
+
+[[multiplication_tests]]
+a = "29.92"
+b = "33.8639"
+expected = "1013.207888"
+description = "Weather calculation (inches of mercury to hPa)"
+
+[[multiplication_tests]]
+a = "42.195"
+b = "0.621371"
+expected = "26.218749345"
+description = "Distance conversion (km to miles)"
+
+[[multiplication_tests]]
+a = "180"
+b = "0.017453292519943295"
+expected = "3.141592653589793100"
+description = "Angle conversion (degrees to radians)"
+
+# === ROUNDING AND PRECISION TESTS ===
+[[multiplication_tests]]
+a = "3.333333333333333333333333333"
+b = "3"
+expected = "9.999999999999999999999999999"
+description = "Multiplication preserving precision"
+
+[[multiplication_tests]]
+a = "1.000000000000000000000000001"
+b = "0.999999999999999999999999999"
+expected = "0.999999999999999999999999999999999999999999999999999999"
+description = "Multiplication with potential precision loss"
+
+[[multiplication_tests]]
+a = "3.1415926535897932384626433832795"
+b = "1.0"
+expected = "3.14159265358979323846264338327950"
+description = "Multiplication preserving significant digits up to precision"

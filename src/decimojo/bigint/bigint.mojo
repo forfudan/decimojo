@@ -54,13 +54,6 @@ struct BigInt(Absable, IntableRaising, Writable):
     """Sign information."""
 
     # ===------------------------------------------------------------------=== #
-    # Constants
-    # ===------------------------------------------------------------------=== #
-
-    alias MAX_OF_WORD = UInt32(999_999_999)
-    alias BASE_OF_WORD = UInt32(1_000_000_000)
-
-    # ===------------------------------------------------------------------=== #
     # Constructors and life time dunder methods
     #
     # __init__(out self)
@@ -195,7 +188,7 @@ struct BigInt(Absable, IntableRaising, Writable):
 
         # Check if the words are valid
         for word in words:
-            if word > Self.MAX_OF_WORD:
+            if word > UInt32(999_999_999):
                 raise Error(
                     "Error in `BigInt.__init__()`: Word value exceeds maximum"
                     " value of 999_999_999"
@@ -343,8 +336,16 @@ struct BigInt(Absable, IntableRaising, Writable):
 
         return Int(value)
 
-    fn to_string(self) -> String:
-        """Returns string representation of the BigInt."""
+    fn to_string(self, line_width: Int = 0) -> String:
+        """Returns string representation of the BigInt.
+
+        Args:
+            line_width: The maximum line width for the string representation.
+                Default is 0, which means no line width limit.
+
+        Returns:
+            The string representation of the BigInt.
+        """
 
         if self.magnitude.is_unitialized():
             return String("Unitilialized BigInt")
@@ -354,6 +355,17 @@ struct BigInt(Absable, IntableRaising, Writable):
 
         var result = String("-") if self.sign else String("")
         result += self.magnitude.to_string()
+
+        if line_width > 0:
+            var start = 0
+            var end = line_width
+            var lines = List[String](capacity=len(result) // line_width + 1)
+            while end < len(result):
+                lines.append(result[start:end])
+                start = end
+                end += line_width
+            lines.append(result[start:])
+            result = String("\n").join(lines^)
 
         return result^
 
@@ -370,10 +382,14 @@ struct BigInt(Absable, IntableRaising, Writable):
         var result = self.to_string()
         var end = len(result)
         var start = end - 3
+        var blocks = List[String](capacity=len(result) // 3 + 1)
         while start > 0:
-            result = result[:start] + separator + result[start:]
+            blocks.append(result[start:end])
             end = start
             start = end - 3
+        blocks.append(result[0:end])
+        blocks.reverse()
+        result = separator.join(blocks)
 
         return result^
 
@@ -585,18 +601,27 @@ struct BigInt(Absable, IntableRaising, Writable):
     # Internal methods
     # ===------------------------------------------------------------------=== #
 
-    fn internal_representation(self):
+    fn internal_representation(self) raises:
         """Prints the internal representation details of a BigInt."""
+        var string_of_number = self.to_string(line_width=30).split("\n")
         print("\nInternal Representation Details of BigInt")
-        print("-----------------------------------------")
-        print("number:        ", self)
-        print("               ", self.to_string_with_separators())
-        print("negative:      ", self.sign)
+        print("----------------------------------------------")
+        print("number:         ", end="")
+        for i in range(0, len(string_of_number)):
+            if i > 0:
+                print(" " * 16, end="")
+            print(string_of_number[i])
         for i in range(len(self.magnitude.words)):
+            var ndigits = 1
+            if i < 10:
+                pass
+            elif i < 100:
+                ndigits = 2
+            else:
+                ndigits = 3
             print(
-                "word",
-                i,
-                ":       ",
-                String(self.magnitude.words[i]).rjust(width=9, fillchar="0"),
+                "word {}:{}{}".format(
+                    i, " " * (10 - ndigits), String(self.magnitude.words[i])
+                ).rjust(9, fillchar="0")
             )
-        print("--------------------------------")
+        print("----------------------------------------------")

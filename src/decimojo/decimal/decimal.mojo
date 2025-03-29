@@ -1499,6 +1499,102 @@ struct Decimal(
         #     | UInt128(self.low)
         # )
 
+    fn extend_precision(self, owned precision_diff: Int) raises -> Decimal:
+        """Returns a number with additional decimal places (trailing zeros).
+        This multiplies the coefficient by 10^precision_diff and increases
+        the scale accordingly, preserving the numeric value.
+
+        Args:
+            precision_diff: The number of decimal places to add.
+
+        Returns:
+            A new Decimal with increased precision.
+
+        Raises:
+            Error: If the level is less than 0.
+
+        Examples:
+        ```mojo
+        from decimojo import Decimal
+        var d1 = Decimal("5")            # 5
+        var d2 = d1.extend_precision(2)  # Result: 5.00 (same value, different representation)
+        print(d1)                        # 5
+        print(d2)                        # 5.00
+        print(d2.scale())                # 2
+
+        var d3 = Decimal("123.456")      # 123.456
+        var d4 = d3.extend_precision(3)  # Result: 123.456000
+        print(d3)                        # 123.456
+        print(d4)                        # 123.456000
+        print(d4.scale())                # 6
+        ```
+        End of examples.
+        """
+        if precision_diff < 0:
+            raise Error(
+                "Error in `scale_up()`: precision_diff must be greater than 0"
+            )
+
+        if precision_diff == 0:
+            return self
+
+        var result = self
+
+        # Update the scale in the flags
+        var new_scale = self.scale() + precision_diff
+
+        # TODO: Check if multiplication by 10^level would cause overflow
+        # If yes, then raise an error
+        if new_scale > Decimal.MAX_SCALE + 1:
+            # Cannot scale beyond max precision, limit the scaling
+            precision_diff = Decimal.MAX_SCALE + 1 - self.scale()
+            new_scale = Decimal.MAX_SCALE + 1
+
+        # With UInt128, we can represent the coefficient as a single value
+        var coefficient = UInt128(self.high) << 64 | UInt128(
+            self.mid
+        ) << 32 | UInt128(self.low)
+
+        # TODO: Check if multiplication by 10^level would cause overflow
+        # If yes, then raise an error
+        var max_coefficient = ~UInt128(0) / UInt128(10) ** precision_diff
+        if coefficient > max_coefficient:
+            # Handle overflow case - limit to maximum value or raise error
+            coefficient = ~UInt128(0)
+        else:
+            # No overflow - safe to multiply
+            coefficient *= UInt128(10**precision_diff)
+
+        # Extract the 32-bit components from the UInt128
+        result.low = UInt32(coefficient & 0xFFFFFFFF)
+        result.mid = UInt32((coefficient >> 32) & 0xFFFFFFFF)
+        result.high = UInt32((coefficient >> 64) & 0xFFFFFFFF)
+
+        # Set the new scale
+        result.flags = (self.flags & ~Decimal.SCALE_MASK) | (
+            UInt32(new_scale << Decimal.SCALE_SHIFT) & Decimal.SCALE_MASK
+        )
+
+        return result
+
+    fn internal_representation(self):
+        """Prints the internal representation details of a Decimal."""
+        print("\nInternal Representation Details:")
+        print("--------------------------------")
+        print("Decimal:       ", self)
+        print("coefficient:   ", self.coefficient())
+        print("scale:         ", self.scale())
+        print("is negative:   ", self.is_negative())
+        print("is zero:       ", self.is_zero())
+        print("low:           ", self.low)
+        print("mid:           ", self.mid)
+        print("high:          ", self.high)
+        print("low byte:      ", hex(self.low))
+        print("mid byte:      ", hex(self.mid))
+        print("high byte:     ", hex(self.high))
+        print("flags byte:    ", hex(self.flags))
+        print("--------------------------------")
+
     @always_inline
     fn is_integer(self) -> Bool:
         """Determines whether this Decimal value represents an integer.
@@ -1603,25 +1699,3 @@ struct Decimal(
             return 0  # Zero has zero significant digit
         else:
             return decimojo.utility.number_of_digits(coef)
-
-    # ===------------------------------------------------------------------=== #
-    # Internal methods
-    # ===------------------------------------------------------------------=== #
-
-    fn internal_representation(value: Decimal):
-        """Prints the internal representation details of a Decimal."""
-        print("\nInternal Representation Details:")
-        print("--------------------------------")
-        print("Decimal:       ", value)
-        print("coefficient:   ", value.coefficient())
-        print("scale:         ", value.scale())
-        print("is negative:   ", value.is_negative())
-        print("is zero:       ", value.is_zero())
-        print("low:           ", value.low)
-        print("mid:           ", value.mid)
-        print("high:          ", value.high)
-        print("low byte:      ", hex(value.low))
-        print("mid byte:      ", hex(value.mid))
-        print("high byte:     ", hex(value.high))
-        print("flags byte:    ", hex(value.flags))
-        print("--------------------------------")
