@@ -692,6 +692,7 @@ fn divmod(x1: BigUInt, x2: BigUInt) raises -> Tuple[BigUInt, BigUInt]:
 # ===----------------------------------------------------------------------=== #
 
 
+# TODO: The subtraction can be underflowed. Use signed integers for the subtraction
 fn multiply_toom_cook_3(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """Implements Toom-Cook 3-way multiplication algorithm.
 
