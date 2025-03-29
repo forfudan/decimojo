@@ -308,3 +308,323 @@ a = "0.0425"
 b = "0.0015"
 expected = "0.0440"
 description = "Interest rate calculation"
+
+# ===----------------------------------------------------------------------=== #
+# Test cases for BigDecimal subtraction
+# ===----------------------------------------------------------------------=== #
+# === BASIC SUBTRACTION TESTS ===
+[[subtraction_tests]]
+a = "100"
+b = "42"
+expected = "58"
+description = "Simple integer subtraction"
+
+[[subtraction_tests]]
+a = "5.85"
+b = "2.71"
+expected = "3.14"
+description = "Simple decimal subtraction"
+
+[[subtraction_tests]]
+a = "0"
+b = "0"
+expected = "0"
+description = "Zero minus zero"
+
+[[subtraction_tests]]
+a = "1"
+b = "0"
+expected = "1"
+description = "Subtraction with zero"
+
+[[subtraction_tests]]
+a = "123.456"
+b = "0"
+expected = "123.456"
+description = "Decimal minus zero"
+
+# === DIFFERENT SCALE TESTS ===
+[[subtraction_tests]]
+a = "10.2345"
+b = "5.67"
+expected = "4.5645"
+description = "Subtraction with different scales"
+
+[[subtraction_tests]]
+a = "5.23456789012345678901234567"
+b = "1.6"
+expected = "3.63456789012345678901234567"
+description = "Subtraction with very different scales"
+
+[[subtraction_tests]]
+a = "10.000"
+b = "0.001"
+expected = "9.999"
+description = "Subtraction with borrowing"
+
+[[subtraction_tests]]
+a = "1000000.000000"
+b = "0.000001"
+expected = "999999.999999"
+description = "Subtraction causing scale reduction"
+
+[[subtraction_tests]]
+a = "3.000000000000000000000000003"
+b = "2.000000000000000000000000002"
+expected = "1.000000000000000000000000001"
+description = "Subtraction with high precision"
+
+# === SIGN COMBINATION TESTS ===
+[[subtraction_tests]]
+a = "-1"
+b = "-2"
+expected = "1"
+description = "Negative minus negative"
+
+[[subtraction_tests]]
+a = "10"
+b = "-3.14"
+expected = "13.14"
+description = "Positive minus negative (becomes addition)"
+
+[[subtraction_tests]]
+a = "-10"
+b = "3.14"
+expected = "-13.14"
+description = "Negative minus positive"
+
+[[subtraction_tests]]
+a = "50"
+b = "60.5"
+expected = "-10.5"
+description = "Subtraction resulting in negative"
+
+[[subtraction_tests]]
+a = "123.456"
+b = "123.456"
+expected = "0.000"
+description = "Subtraction resulting in zero"
+
+[[subtraction_tests]]
+a = "0.0000001"
+b = "0.00000005"
+expected = "0.00000005"
+description = "Subtraction near zero (small difference)"
+
+# === LARGE NUMBER TESTS ===
+[[subtraction_tests]]
+a = "10000000000000000000000000000"
+b = "1"
+expected = "9999999999999999999999999999"
+description = "Large integer subtraction"
+
+[[subtraction_tests]]
+a = "-9999999999999999999999999999"
+b = "1"
+expected = "-10000000000000000000000000000"
+description = "Large negative minus positive"
+
+[[subtraction_tests]]
+a = "100000000000000000000.00000000"
+b = "0.00000001"
+expected = "99999999999999999999.99999999"
+description = "Very large decimal subtraction with borrowing"
+
+[[subtraction_tests]]
+a = "10000000000000000000000000"
+b = "0.00000000000000000000000001"
+expected = "9999999999999999999999999.99999999999999999999999999"
+description = "Very large minus very small"
+
+# === SMALL NUMBER TESTS ===
+[[subtraction_tests]]
+a = "0.0000000000000000000000003"
+b = "0.0000000000000000000000002"
+expected = "0.0000000000000000000000001"
+description = "Very small positive values"
+
+[[subtraction_tests]]
+a = "-0.0000000000000000000000003"
+b = "-0.0000000000000000000000002"
+expected = "-0.0000000000000000000000001"
+description = "Very small negative values (negative minus negative)"
+
+[[subtraction_tests]]
+a = "-0.0000000000000000000000002"
+b = "-0.0000000000000000000000003"
+expected = "0.0000000000000000000000001"
+description = "Very small negative values (smaller negative minus larger negative)"
+
+[[subtraction_tests]]
+a = "0.00000000003"
+b = "0.000000000000000000001"
+expected = "0.000000000029999999999"
+description = "Small values with different scales"
+
+# === SCIENTIFIC NOTATION TESTS ===
+[[subtraction_tests]]
+a = "1.23e5"
+b = "4.56e4"
+expected = "77400"
+description = "Subtraction with scientific notation"
+
+[[subtraction_tests]]
+a = "1.23e-10"
+b = "4.56e-11"
+expected = "0.0000000000774"
+description = "Subtraction with negative exponents"
+
+[[subtraction_tests]]
+a = "4.56e10"
+b = "1.23e-10"
+expected = "45599999999.999999999877"
+description = "Subtraction with extreme exponent difference"
+
+# === SPECIAL CASES ===
+[[subtraction_tests]]
+a = "3.14159265358979323846"
+b = "2.71828182845904523536"
+expected = "0.42331082513074800310"
+description = "Subtraction of mathematical constants (PI - E)"
+
+[[subtraction_tests]]
+a = "1.00000000000000000000000000"
+b = "0.33333333333333333333333333"
+expected = "0.66666666666666666666666667"
+description = "Subtraction with repeating pattern"
+
+[[subtraction_tests]]
+a = "1.000000000000000000"
+b = "0.500000000000000001"
+expected = "0.499999999999999999"
+description = "Subtraction resulting in almost half"
+
+[[subtraction_tests]]
+a = "10.00000000000000000000000000"
+b = "9.99999999999999999999999999"
+expected = "0.00000000000000000000000001"
+description = "Subtraction with many borrows"
+
+# === FINANCIAL SCENARIOS ===
+[[subtraction_tests]]
+a = "10542.75"
+b = "3621.50"
+expected = "6921.25"
+description = "Financial numbers (dollars and cents)"
+
+[[subtraction_tests]]
+a = "0.10"
+b = "0.01"
+expected = "0.09"
+description = "Financial numbers (cents)"
+
+[[subtraction_tests]]
+a = "100.00"
+b = "0.01"
+expected = "99.99"
+description = "Financial subtraction with borrowing"
+
+# === PRECISION BOUNDARY TESTS ===
+[[subtraction_tests]]
+a = "1000000000000000000.0000000"
+b = "0.0000001"
+expected = "999999999999999999.9999999"
+description = "Subtraction with rounding at precision boundary"
+
+[[subtraction_tests]]
+a = "3.3000000000000000000000000"
+b = "2.2000000000000000000000000"
+expected = "1.1000000000000000000000000"
+description = "Subtraction with trailing zeros"
+
+[[subtraction_tests]]
+a = "0.125"
+b = "0.0625"
+expected = "0.0625"
+description = "Subtraction of binary-friendly values (1/8 - 1/16)"
+
+[[subtraction_tests]]
+a = "0.3"
+b = "0.2"
+expected = "0.1"
+description = "Simple tenths subtraction"
+
+# === ADDITIONAL EDGE CASES ===
+[[subtraction_tests]]
+a = "0.000000000000000000000000010"
+b = "0.000000000000000000000000001"
+expected = "0.000000000000000000000000009"
+description = "Subtraction near zero with precision limit"
+
+[[subtraction_tests]]
+a = "0.0"
+b = "0.0"
+expected = "0.0"
+description = "Zero minus zero with decimal point"
+
+[[subtraction_tests]]
+a = "0.142857142857142857142857"
+b = "0.076923076923076923076923"
+expected = "0.065934065934065934065934"
+description = "Subtraction of recurring decimals (1/7 - 1/13)"
+
+[[subtraction_tests]]
+a = "0"
+b = "-0"
+expected = "0"
+description = "Zero minus negative zero"
+
+[[subtraction_tests]]
+a = "3E6"
+b = "2000000"
+expected = "1000000"
+description = "Subtraction with E notation"
+
+[[subtraction_tests]]
+a = "1.79769313486231570E+308"
+b = "10"
+expected = "179769313486231569999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999990"
+description = "Subtraction near max double precision"
+
+[[subtraction_tests]]
+a = "9.9999999999999999999999"
+b = "9.9999999999999999999999"
+expected = "0.0000000000000000000000"
+description = "Exact cancellation of large numbers"
+
+[[subtraction_tests]]
+a = "1111111110111111111.111111110111111110"
+b = "987654321098765432.123456789098765432"
+expected = "123456789012345678.987654321012345678"
+description = "Complex subtraction with different digit patterns"
+
+# === SPECIFIC APPLICATION DOMAINS ===
+[[subtraction_tests]]
+a = "37.7749"
+b = "37.7748"
+expected = "0.0001"
+description = "GPS coordinates (latitude difference)"
+
+[[subtraction_tests]]
+a = "98.6"
+b = "37.0"
+expected = "61.6"
+description = "Temperature conversion (F - C)"
+
+[[subtraction_tests]]
+a = "1000.50"
+b = "243.22"
+expected = "757.28"
+description = "Bank balance calculation"
+
+[[subtraction_tests]]
+a = "987654321987654321.987654321"
+b = "0.000000000000000000000000001"
+expected = "987654321987654321.987654320999999999999999999"
+description = "Subtraction with extreme scale difference"
+
+[[subtraction_tests]]
+a = "0.0440"
+b = "0.0015"
+expected = "0.0425"
+description = "Interest rate calculation"
