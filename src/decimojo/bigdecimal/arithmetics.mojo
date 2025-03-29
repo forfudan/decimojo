@@ -269,10 +269,7 @@ fn true_divide(
     if remainder.is_zero():
         # result_scale == scale_factor + (x1.scale - x2.scale)
         var number_of_trailing_zeros = result_coefficient.number_of_trailing_zeros()
-        print("DEBUG: result_coefficient = ", result_coefficient)
-        print("DEBUG: remainder = ", remainder)
-        print("DEBUG: number_of_trailing_zeros = ", number_of_trailing_zeros)
-        print("DEBUG: scale_factor = ", scale_factor)
+
         # If number_of_trailing_zeros <= scale_factor:
         #   Just remove the trailing zeros, the scale is larger than expected
         #   scale (x1.scale - x2.scale) because the division is exact but with
