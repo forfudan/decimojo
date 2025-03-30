@@ -589,6 +589,10 @@ struct BigUInt(Absable, IntableRaising, Writable):
         return decimojo.biguint.arithmetics.floor_modulo(self, other)
 
     @always_inline
+    fn __divmod__(self, other: Self) raises -> Tuple[Self, Self]:
+        return decimojo.biguint.arithmetics.divmod(self, other)
+
+    @always_inline
     fn __pow__(self, exponent: Self) raises -> Self:
         return self.power(exponent)
 
@@ -706,13 +710,27 @@ struct BigUInt(Absable, IntableRaising, Writable):
         """
         return decimojo.biguint.arithmetics.ceil_modulo(self, other)
 
-    fn multiply_by_power_of_10(self, exponent: Int) raises -> Self:
-        """Returns the result of multiplying this number by 10^exponent.
-        See `multiply_by_power_of_10()` for more information.
+    @always_inline
+    fn divmod(self, other: Self) raises -> Tuple[Self, Self]:
+        """Returns the result of divmod this number by `other`.
+        See `divmod()` for more information.
         """
-        return decimojo.biguint.arithmetics.multiply_by_power_of_10(
-            self, exponent
-        )
+        return decimojo.biguint.arithmetics.divmod(self, other)
+
+    @always_inline
+    fn scale_up_by_power_of_10(self, n: Int) raises -> Self:
+        """Returns the result of multiplying this number by 10^n (n>=0).
+        See `scale_up_by_power_of_10()` for more information.
+        """
+        return decimojo.biguint.arithmetics.scale_up_by_power_of_10(self, n)
+
+    @always_inline
+    fn scale_down_by_power_of_10(self, n: Int) raises -> Self:
+        """Returns the result of floored dividing this number by 10^n (n>=0).
+        It is equal to removing the last n digits of the number.
+        See `scale_down_by_power_of_10()` for more information.
+        """
+        return decimojo.biguint.arithmetics.scale_down_by_power_of_10(self, n)
 
     fn power(self, exponent: Int) raises -> Self:
         """Returns the result of raising this number to the power of `exponent`.
@@ -766,46 +784,6 @@ struct BigUInt(Absable, IntableRaising, Writable):
     # Other methods
     # ===------------------------------------------------------------------=== #
 
-    @always_inline
-    fn is_zero(self) -> Bool:
-        """Returns True if this BigUInt represents zero."""
-        return len(self.words) == 1 and self.words[0] == 0
-
-    @always_inline
-    fn is_one(self) -> Bool:
-        """Returns True if this BigUInt represents one."""
-        return len(self.words) == 1 and self.words[0] == 1
-
-    @always_inline
-    fn is_two(self) -> Bool:
-        """Returns True if this BigUInt represents two."""
-        return len(self.words) == 1 and self.words[0] == 2
-
-    fn is_power_of_10(x: BigUInt) -> Bool:
-        """Check if x is a power of 10."""
-        for i in range(len(x.words) - 1):
-            if x.words[i] != 0:
-                return False
-        var word = x.words[len(x.words) - 1]
-        if (
-            (word == 1)
-            or (word == 10)
-            or (word == 100)
-            or (word == 1000)
-            or (word == 10_000)
-            or (word == 100_000)
-            or (word == 1_000_000)
-            or (word == 10_000_000)
-            or (word == 100_000_000)
-        ):
-            return True
-        return False
-
-    @always_inline
-    fn number_of_words(self) -> Int:
-        """Returns the number of words in the BigInt."""
-        return len(self.words)
-
     fn internal_representation(self) raises:
         """Prints the internal representation details of a BigUInt."""
         var string_of_number = self.to_string(line_width=30).split("\n")
@@ -831,6 +809,48 @@ struct BigUInt(Absable, IntableRaising, Writable):
             )
         print("----------------------------------------------")
 
+    @always_inline
+    fn is_zero(self) -> Bool:
+        """Returns True if this BigUInt represents zero."""
+        return len(self.words) == 1 and self.words[0] == 0
+
+    @always_inline
+    fn is_one(self) -> Bool:
+        """Returns True if this BigUInt represents one."""
+        return len(self.words) == 1 and self.words[0] == 1
+
+    @always_inline
+    fn is_two(self) -> Bool:
+        """Returns True if this BigUInt represents two."""
+        return len(self.words) == 1 and self.words[0] == 2
+
+    @always_inline
+    fn is_power_of_10(x: BigUInt) -> Bool:
+        """Check if x is a power of 10."""
+        for i in range(len(x.words) - 1):
+            if x.words[i] != 0:
+                return False
+        var word = x.words[len(x.words) - 1]
+        if (
+            (word == 1)
+            or (word == 10)
+            or (word == 100)
+            or (word == 1000)
+            or (word == 10_000)
+            or (word == 100_000)
+            or (word == 1_000_000)
+            or (word == 10_000_000)
+            or (word == 100_000_000)
+        ):
+            return True
+        return False
+
+    @always_inline
+    fn is_unitialized(self) -> Bool:
+        """Returns True if the BigUInt is uninitialized."""
+        return len(self.words) == 0
+
+    @always_inline
     fn ith_digit(self, i: Int) raises -> UInt8:
         """Returns the ith digit of the BigUInt."""
         if i < 0:
@@ -848,12 +868,28 @@ struct BigUInt(Absable, IntableRaising, Writable):
         digit = word % 10
         return UInt8(digit)
 
-    fn is_unitialized(self) -> Bool:
-        """Returns True if the BigUInt is uninitialized."""
-        return len(self.words) == 0
+    @always_inline
+    fn number_of_words(self) -> Int:
+        """Returns the number of words in the BigInt."""
+        return len(self.words)
 
-    # FIXME: This method is incorrect
-    fn remove_trailing_zeros(mut number: BigUInt):
-        """Removes trailing zeros from the BigUInt."""
-        while len(number.words) > 1 and number.words[-1] == 0:
-            number.words.resize(len(number.words) - 1)
+    @always_inline
+    fn number_of_trailing_zeros(self) -> Int:
+        """Returns the number of trailing zeros in the BigUInt."""
+        var result: Int = 0
+        for i in range(len(self.words)):
+            if self.words[i] == 0:
+                result += 9
+            else:
+                var word = self.words[i]
+                while word % 10 == 0:
+                    result += 1
+                    word = word // 10
+                break
+        return result
+
+    @always_inline
+    fn remove_leading_empty_words(mut self):
+        """Removes leading words of 0 from BigUInt's internal representation."""
+        while len(self.words) > 1 and self.words[-1] == 0:
+            self.words.resize(len(self.words) - 1)

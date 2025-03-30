@@ -411,6 +411,10 @@ struct BigDecimal:
     fn __mul__(self, other: Self) raises -> Self:
         return decimojo.bigdecimal.arithmetics.multiply(self, other)
 
+    @always_inline
+    fn __truediv__(self, other: Self) raises -> Self:
+        return decimojo.bigdecimal.arithmetics.true_divide(self, other)
+
     # ===------------------------------------------------------------------=== #
     # Other methods
     # ===------------------------------------------------------------------=== #
