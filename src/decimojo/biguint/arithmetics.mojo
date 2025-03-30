@@ -251,10 +251,6 @@ fn multiply(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         carry = UInt64(0)
 
         for j in range(len(x2.words)):
-            # Skip if the word is zero
-            if x2.words[j] == 0:
-                continue
-
             # Calculate the product of the current words
             # plus the carry from the previous multiplication
             # plus the value already at this position in the result
