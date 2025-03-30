@@ -298,10 +298,15 @@ struct BigDecimal:
     # Type-transfer or output methods that are not dunders
     # ===------------------------------------------------------------------=== #
 
-    fn to_string(self, line_width: Int = 0) -> String:
+    fn to_string(
+        self, threshold_scientific: Int = 28, line_width: Int = 0
+    ) -> String:
         """Returns string representation of the number.
 
         Args:
+            threshold_scientific: The threshold for scientific notation.
+                If the digits to display is greater than this value,
+                the number is represented in scientific notation.
             line_width: The maximum line width for the string representation.
                 If 0, the string is returned as a single line.
                 If greater than 0, the string is split into multiple lines.
