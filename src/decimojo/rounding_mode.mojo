@@ -17,6 +17,8 @@
 """Implements the RoundingMode for different rounding modes.
 """
 
+alias RM = RoundingMode
+
 
 struct RoundingMode:
     """

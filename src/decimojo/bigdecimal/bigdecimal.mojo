@@ -28,6 +28,7 @@ import testing
 
 from decimojo.rounding_mode import RoundingMode
 
+alias BigDec = BigDecimal
 alias BDec = BigDecimal
 
 
