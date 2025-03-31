@@ -145,7 +145,7 @@ description = "Small values with different scales"
 [[addition_tests]]
 a = "1.23e5"
 b = "4.56e4"
-expected = "168600"
+expected = "1.686E+5"
 description = "Addition with scientific notation"
 
 [[addition_tests]]
@@ -465,7 +465,7 @@ description = "Small values with different scales"
 [[subtraction_tests]]
 a = "1.23e5"
 b = "4.56e4"
-expected = "77400"
+expected = "7.74E+4"
 description = "Subtraction with scientific notation"
 
 [[subtraction_tests]]
@@ -760,7 +760,7 @@ description = "Small decimal multiplication"
 [[multiplication_tests]]
 a = "1.23e5"
 b = "4.56e2"
-expected = "56088000"
+expected = "5.6088E+7"
 description = "Multiplication with scientific notation"
 
 [[multiplication_tests]]

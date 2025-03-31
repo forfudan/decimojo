@@ -921,6 +921,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
         self,
         ndigits: Int,
         rounding_mode: RoundingMode = RoundingMode.ROUND_DOWN,
+        remove_extra_digit_due_to_rounding: Bool = False,
     ) raises -> Self:
         """Removes trailing digits from the BigUInt.
 
@@ -929,9 +930,18 @@ struct BigUInt(Absable, IntableRaising, Writable):
             rounding_mode: The rounding mode to use.
                 Default is RoundingMode.ROUND_DOWN, which is the same as
                 `scale_down_by_power_of_10()`.
+            remove_extra_digit_due_to_rounding: If True, remove an trailing
+                digit if the rounding mode result in an extra digit.
+                Default is False.
 
         Returns:
             The BigUInt with the trailing digits removed.
+
+        Notes:
+
+        Rounding can result in an extra digit. Exmaple: remove last 1 digit of
+        999 with rounding up results in 100. If
+        `remove_extra_digit_due_to_rounding` is True, the result will be 10.
         """
         if ndigits < 0:
             raise Error(
@@ -948,43 +958,40 @@ struct BigUInt(Absable, IntableRaising, Writable):
                 " remove is larger than the number of digits in the BigUInt"
             )
 
-        # ROUND_DOWN is the same as scale_down_by_power_of_10.
-        # Directly truncate the last n digits.
+        # scale_down_by_power_of_10 is the same as removing the last n digits
+        var result = self.scale_down_by_power_of_10(ndigits)
+        var round_up: Bool = False
+
         if rounding_mode == RoundingMode.ROUND_DOWN:
-            return self.scale_down_by_power_of_10(ndigits)
-
-        if rounding_mode == RoundingMode.ROUND_UP:
-            var number_of_trailing_zeros = self.number_of_trailing_zeros()
-            if number_of_trailing_zeros >= ndigits:
-                return self.scale_down_by_power_of_10(ndigits)
-            else:
-                return self.scale_down_by_power_of_10(ndigits) + BigUInt.ONE
-
-        if rounding_mode == RoundingMode.ROUND_HALF_UP:
+            pass
+        elif rounding_mode == RoundingMode.ROUND_UP:
+            if self.number_of_trailing_zeros() < ndigits:
+                round_up = True
+        elif rounding_mode == RoundingMode.ROUND_HALF_UP:
             if self.ith_digit(ndigits - 1) >= 5:
-                return self.scale_down_by_power_of_10(ndigits) + BigUInt.ONE
-            else:
-                return self.scale_down_by_power_of_10(ndigits)
-
-        if rounding_mode == RoundingMode.ROUND_HALF_EVEN:
-            var round_up: Bool = False
+                round_up = True
+        elif rounding_mode == RoundingMode.ROUND_HALF_EVEN:
             var cut_off_digit = self.ith_digit(ndigits - 1)
             if cut_off_digit > 5:
                 round_up = True
             elif cut_off_digit < 5:
-                round_up = False
+                pass
             else:  # cut_off_digit == 5
                 if self.number_of_trailing_zeros() < ndigits - 1:
                     round_up = True
                 else:
                     round_up = self.ith_digit(ndigits) % 2 == 1
-
-            if round_up:
-                return self.scale_down_by_power_of_10(ndigits) + BigUInt.ONE
-            else:
-                return self.scale_down_by_power_of_10(ndigits)
-
         else:
             raise Error(
                 "Error in `remove_trailing_digits()`: Unknown rounding mode"
             )
+
+        if round_up:
+            result = result + BigUInt.ONE
+            # Check whether rounding results in extra digit
+            if result.is_power_of_10():
+                if remove_extra_digit_due_to_rounding:
+                    result = result.scale_down_by_power_of_10(
+                        1,
+                    )
+        return result^

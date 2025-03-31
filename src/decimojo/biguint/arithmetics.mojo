@@ -1014,7 +1014,8 @@ fn scale_down_by_power_of_10(x: BigUInt, n: Int) raises -> BigUInt:
     var carry = UInt32(0)
     var divisor: UInt32
     if digit_shift == 0:
-        divisor = UInt32(1)
+        # No need to shift, just return the result
+        return result^
     elif digit_shift == 1:
         divisor = UInt32(10)
     elif digit_shift == 2:

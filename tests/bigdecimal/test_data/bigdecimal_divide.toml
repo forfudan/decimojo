@@ -307,7 +307,7 @@ description = "Division of very small numbers"
 [[division_tests]]
 a = "1"
 b = "0.000000000000000000000000001"
-expected = "1000000000000000000000000000"
+expected = "1E+27"
 description = "One divided by very small number"
 
 [[division_tests]]

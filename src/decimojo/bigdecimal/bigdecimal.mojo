@@ -298,13 +298,21 @@ struct BigDecimal:
     # Type-transfer or output methods that are not dunders
     # ===------------------------------------------------------------------=== #
 
-    fn to_string(self, precision: Int = 28, line_width: Int = 0) -> String:
+    fn to_string(
+        self,
+        precision: Int = 28,
+        scientific_notation: Bool = False,
+        line_width: Int = 0,
+    ) -> String:
         """Returns string representation of the number.
 
         Args:
             precision: The threshold for scientific notation.
                 If the digits to display is greater than this value,
                 the number is represented in scientific notation.
+            scientific_notation: If True, the number is always represented in
+                scientific notation. If False, the format is determined by the
+                `precision` argument.
             line_width: The maximum line width for the string representation.
                 If 0, the string is returned as a single line.
                 If greater than 0, the string is split into multiple lines.
@@ -314,10 +322,11 @@ struct BigDecimal:
 
         Notes:
 
-        Two cases when scientific notation is used:
-        1. abs(exponent) > `precision`.
-        2. There are no less than `precision` - 1 leading zeros after decimal.
-        3. Explicitly set to True.
+        In follwing cases, scientific notation is used:
+        1. `scientific_notation` is True.
+        2. exponent >= `precision`.
+        3. There 6 or more leading zeros after decimal and before significand.
+        4. The scale is negative.
         """
 
         if self.coefficient.is_unitialized():
@@ -328,14 +337,22 @@ struct BigDecimal:
 
         # Check whether scientific notation is needed
         var exponent = self.coefficient.number_of_digits() - 1 - self.scale
-        # var leading_zeros = -exponent - 1
-        # criterion: leading_zeros >= precision - 1
-        if (exponent > precision) or (-exponent >= precision):
-            # Scientific notation
+        var exponent_ge_precision = exponent >= precision
+        var leading_zeros_too_many = exponent <= Int(-6)
+        var negative_scale = self.scale < 0
+
+        if (
+            scientific_notation
+            or exponent_ge_precision
+            or leading_zeros_too_many
+            or negative_scale
+        ):
+            # Use scientific notation
             var exponent_string = String(exponent)
             result += coefficient_string[0]
-            result += "."
-            result += coefficient_string[1:]
+            if len(coefficient_string) > 1:
+                result += "."
+                result += coefficient_string[1:]
             result += "E"
             if exponent > 0:
                 result += "+"
@@ -441,6 +458,19 @@ struct BigDecimal:
     @always_inline
     fn __truediv__(self, other: Self) raises -> Self:
         return decimojo.bigdecimal.arithmetics.true_divide(self, other)
+
+    # ===------------------------------------------------------------------=== #
+    # Mathematical methods that do not implement a trait (not a dunder)
+    # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn true_divide(self, other: Self, precision: Int) raises -> Self:
+        """Returns the result of true division of two BigDecimal numbers.
+        See `arithmetics.true_divide()` for more information.
+        """
+        return decimojo.bigdecimal.arithmetics.true_divide(
+            self, other, precision
+        )
 
     # ===------------------------------------------------------------------=== #
     # Other methods

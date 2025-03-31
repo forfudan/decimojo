@@ -213,7 +213,7 @@ fn true_divide(
         point is calcuated to precision + BUFFER_DIGITS, and the result is
         rounded to precision according to the specified rules.
     """
-    alias BUFFER_DIGITS = 5  # Buffer digits for rounding
+    alias BUFFER_DIGITS = 9  # Buffer digits for rounding
 
     # Check for division by zero
     if x2.coefficient.is_zero():
@@ -223,7 +223,7 @@ fn true_divide(
     if x1.coefficient.is_zero():
         return BigDecimal(
             coefficient=BigUInt.ZERO,
-            scale=max(0, x1.scale - x2.scale),
+            scale=x1.scale - x2.scale,
             sign=x1.sign != x2.sign,
         )
 
@@ -254,7 +254,9 @@ fn true_divide(
                 # Otherwise, need to truncate to max precision
                 var digits_to_remove = num_sig_digits - precision
                 var quotient = quotient.remove_trailing_digits_with_rounding(
-                    digits_to_remove, RoundingMode.ROUND_HALF_EVEN
+                    digits_to_remove,
+                    RoundingMode.ROUND_HALF_EVEN,
+                    remove_extra_digit_due_to_rounding=True,
                 )
                 result_scale -= digits_to_remove
                 return BigDecimal(
@@ -265,22 +267,20 @@ fn true_divide(
 
     # Calculate how many additional digits we need in the dividend
     # We want: (x1_digits + additional) - x2_digits ≈ precision
+    # Scale factor needs to account for the scales of the operands?
     var additional_digits = precision + BUFFER_DIGITS - (x1_digits - x2_digits)
     additional_digits = max(0, additional_digits)
 
-    # Scale factor needs to account for the scales of the operands
-    var scale_factor = additional_digits + x2.scale - x1.scale
-
     # Scale up the dividend to ensure sufficient precision
-    var scaled_dividend = x1.coefficient
-    if scale_factor > 0:
-        scaled_dividend = scaled_dividend.scale_up_by_power_of_10(scale_factor)
+    var scaled_x1 = x1.coefficient
+    if additional_digits > 0:
+        scaled_x1 = scaled_x1.scale_up_by_power_of_10(additional_digits)
 
     # Perform division
     var quotient: BigUInt
     var remainder: BigUInt
-    quotient, remainder = scaled_dividend.divmod(x2.coefficient)
-    var result_scale = scale_factor + x1.scale - x2.scale
+    quotient, remainder = scaled_x1.divmod(x2.coefficient)
+    var result_scale = additional_digits + x1.scale - x2.scale
 
     # Check if division is exact
     var is_exact = remainder.is_zero()
@@ -318,7 +318,9 @@ fn true_divide(
     if result_digits > precision:
         var digits_to_remove = result_digits - precision
         quotient = quotient.remove_trailing_digits_with_rounding(
-            digits_to_remove, RoundingMode.ROUND_HALF_EVEN
+            digits_to_remove,
+            RoundingMode.ROUND_HALF_EVEN,
+            remove_extra_digit_due_to_rounding=True,
         )
         # Adjust the scale accordingly
         result_scale -= digits_to_remove
