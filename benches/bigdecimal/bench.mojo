@@ -2,6 +2,7 @@ from bench_bigdecimal_add import main as bench_add
 from bench_bigdecimal_subtract import main as bench_sub
 from bench_bigdecimal_multiply import main as bench_multiply
 from bench_bigdecimal_divide import main as bench_divide
+from bench_bigdecimal_sqrt import main as bench_sqrt
 from bench_bigdecimal_scale_up_by_power_of_10 import main as bench_scale_up
 
 
@@ -15,6 +16,7 @@ add:         Add
 sub:         Subtract
 mul:         Multiply
 div:         Divide (true divide)
+sqrt:        Square root
 all:         Run all benchmarks
 q:           Exit
 =========================================
@@ -31,11 +33,14 @@ scaleup:     Scale up by power of 10
         bench_multiply()
     elif command == "div":
         bench_divide()
+    elif command == "sqrt":
+        bench_sqrt()
     elif command == "all":
         bench_add()
         bench_sub()
         bench_multiply()
         bench_divide()
+        bench_sqrt()
     elif command == "q":
         return
     elif command == "scaleup":
