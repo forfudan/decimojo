@@ -298,13 +298,11 @@ struct BigDecimal:
     # Type-transfer or output methods that are not dunders
     # ===------------------------------------------------------------------=== #
 
-    fn to_string(
-        self, threshold_scientific: Int = 28, line_width: Int = 0
-    ) -> String:
+    fn to_string(self, precision: Int = 28, line_width: Int = 0) -> String:
         """Returns string representation of the number.
 
         Args:
-            threshold_scientific: The threshold for scientific notation.
+            precision: The threshold for scientific notation.
                 If the digits to display is greater than this value,
                 the number is represented in scientific notation.
             line_width: The maximum line width for the string representation.
@@ -313,41 +311,65 @@ struct BigDecimal:
 
         Returns:
             A string representation of the number.
+
+        Notes:
+
+        Two cases when scientific notation is used:
+        1. abs(exponent) > `precision`.
+        2. There are no less than `precision` - 1 leading zeros after decimal.
+        3. Explicitly set to True.
         """
 
         if self.coefficient.is_unitialized():
             return String("Unitilialized maginitude of BigDecimal")
 
         var result = String("-") if self.sign else String("")
-
         var coefficient_string = self.coefficient.to_string()
 
-        if self.scale == 0:
-            result += coefficient_string
-
-        elif self.scale > 0:
-            if self.scale < len(coefficient_string):
-                # Example: 123_456 with scale 3 -> 123.456
-                result += coefficient_string[
-                    : len(coefficient_string) - self.scale
-                ]
-                result += "."
-                result += coefficient_string[
-                    len(coefficient_string) - self.scale :
-                ]
-            else:
-                # Example: 123_456 with scale 6 -> 0.123_456
-                # Example: 123_456 with scale 7 -> 0.012_345_6
-                result += "0."
-                result += "0" * (self.scale - len(coefficient_string))
-                result += coefficient_string
+        # Check whether scientific notation is needed
+        var exponent = self.coefficient.number_of_digits() - 1 - self.scale
+        # var leading_zeros = -exponent - 1
+        # criterion: leading_zeros >= precision - 1
+        if (exponent > precision) or (-exponent >= precision):
+            # Scientific notation
+            var exponent_string = String(exponent)
+            result += coefficient_string[0]
+            result += "."
+            result += coefficient_string[1:]
+            result += "E"
+            if exponent > 0:
+                result += "+"
+            result += exponent_string
 
         else:
-            # scale < 0
-            # Example: 12_345 with scale -3 -> 12_345_000
-            result += coefficient_string
-            result += "0" * (-self.scale)
+            # Normal notation
+            if self.scale == 0:
+                result += coefficient_string
 
+            elif self.scale > 0:
+                if self.scale < len(coefficient_string):
+                    # Example: 123_456 with scale 3 -> 123.456
+                    result += coefficient_string[
+                        : len(coefficient_string) - self.scale
+                    ]
+                    result += "."
+                    result += coefficient_string[
+                        len(coefficient_string) - self.scale :
+                    ]
+                else:
+                    # Example: 123_456 with scale 6 -> 0.123_456
+                    # Example: 123_456 with scale 7 -> 0.012_345_6
+                    result += "0."
+                    result += "0" * (self.scale - len(coefficient_string))
+                    result += coefficient_string
+
+            else:
+                # scale < 0
+                # Example: 12_345 with scale -3 -> 12_345_000
+                result += coefficient_string
+                result += "0" * (-self.scale)
+
+        # Split the result in multiple lines if line_width > 0
         if line_width > 0:
             var start = 0
             var end = line_width
@@ -423,6 +445,17 @@ struct BigDecimal:
     # ===------------------------------------------------------------------=== #
     # Other methods
     # ===------------------------------------------------------------------=== #
+
+    fn exponent(self) -> Int:
+        """Returns the exponent of the number in scientific notation.
+
+        Notes:
+
+        123.45 (coefficient = 12345, scale = 2) is represented as 1.2345E+2.
+        0.00123 (coefficient = 123, scale = 5) is represented as 1.23E-3.
+        123000 (coefficient = 123, scale = -3) is represented as 1.23E+5.
+        """
+        return self.coefficient.number_of_digits() - 1 - self.scale
 
     fn extend_precision(self, precision_diff: Int) raises -> BigDecimal:
         """Returns a number with additional decimal places (trailing zeros).

@@ -190,28 +190,28 @@ fn multiply(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
 
 # TODO: Optimize when divided by power of 10
 fn true_divide(
-    x1: BigDecimal, x2: BigDecimal, max_precision: Int = 28
+    x1: BigDecimal, x2: BigDecimal, precision: Int = 28
 ) raises -> BigDecimal:
     """Returns the quotient of two numbers.
 
     Args:
         x1: The first operand (dividend).
         x2: The second operand (divisor).
-        max_precision: The maximum number of significant digits in the result.
+        precision: The number of significant digits in the result.
 
     Returns:
-        The quotient of x1 and x2, with precision up to max_precision
-        ignificant digits.
+        The quotient of x1 and x2, with precision up to `precision`
+        significant digits.
 
     Notes:
 
     - If the coefficients can be divided exactly, the number of digits after
         the decimal point is the difference of the scales of the two operands.
     - If the coefficients cannot be divided exactly, the number of digits after
-        the decimal point is max_precision.
+        the decimal point is precision.
     - If the division is not exact, the number of digits after the decimal
-        point is calcuated to max_precision + BUFFER_DIGITS, and the result is
-        rounded to max_precision according to the specified rules.
+        point is calcuated to precision + BUFFER_DIGITS, and the result is
+        rounded to precision according to the specified rules.
     """
     alias BUFFER_DIGITS = 5  # Buffer digits for rounding
 
@@ -228,7 +228,7 @@ fn true_divide(
         )
 
     # First estimate the number of significant digits needed in the dividend
-    # to produce a result with max_precision significant digits
+    # to produce a result with precision significant digits
     var x1_digits = x1.coefficient.number_of_digits()
     var x2_digits = x2.coefficient.number_of_digits()
 
@@ -243,16 +243,16 @@ fn true_divide(
         if remainder.is_zero():
             # For exact division, calculate significant digits in result
             var num_sig_digits = quotient.number_of_digits()
-            # If the significant digits are within max_precision, return as is
-            if num_sig_digits <= max_precision:
+            # If the significant digits are within precision, return as is
+            if num_sig_digits <= precision:
                 return BigDecimal(
                     coefficient=quotient^,
                     scale=result_scale,
                     sign=x1.sign != x2.sign,
                 )
-            else:  # num_sig_digits > max_precision
+            else:  # num_sig_digits > precision
                 # Otherwise, need to truncate to max precision
-                var digits_to_remove = num_sig_digits - max_precision
+                var digits_to_remove = num_sig_digits - precision
                 var quotient = quotient.remove_trailing_digits_with_rounding(
                     digits_to_remove, RoundingMode.ROUND_HALF_EVEN
                 )
@@ -264,10 +264,8 @@ fn true_divide(
                 )
 
     # Calculate how many additional digits we need in the dividend
-    # We want: (x1_digits + additional) - x2_digits ≈ max_precision
-    var additional_digits = max_precision + BUFFER_DIGITS - (
-        x1_digits - x2_digits
-    )
+    # We want: (x1_digits + additional) - x2_digits ≈ precision
+    var additional_digits = precision + BUFFER_DIGITS - (x1_digits - x2_digits)
     additional_digits = max(0, additional_digits)
 
     # Scale factor needs to account for the scales of the operands
@@ -293,7 +291,7 @@ fn true_divide(
     # If the division is exact
     # we may need to remove the extra trailing zeros.
     # TODO: Think about the behavior, whether division should always return the
-    # maximum precision even if the result scale is less than max_precision.
+    # `precision` even if the result scale is less than precision.
     # Example: 10 / 4 = 2.50000000000000000000000000000
     # If exact division, remove trailing zeros
     if is_exact:
@@ -305,8 +303,8 @@ fn true_divide(
             result_digits = quotient.number_of_digits()
 
     # Otherwise, the division is not exact or have too many digits
-    # round to max_precision
-    # If we have too many significant digits, reduce to max_precision
+    # round to precision
+    # If we have too many significant digits, reduce to precision
     # Extract the digits to be rounded
     # Example: 2 digits to remove
     # divisor = 100
@@ -317,8 +315,8 @@ fn true_divide(
     # If rounding_digits == half_divisor, round up if the last digit of
     # result_coefficient is odd
     # If rounding_digits < half_divisor, round down
-    if result_digits > max_precision:
-        var digits_to_remove = result_digits - max_precision
+    if result_digits > precision:
+        var digits_to_remove = result_digits - precision
         quotient = quotient.remove_trailing_digits_with_rounding(
             digits_to_remove, RoundingMode.ROUND_HALF_EVEN
         )
