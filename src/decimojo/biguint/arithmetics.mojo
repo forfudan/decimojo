@@ -397,6 +397,7 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     return floor_divide_general(normalized_x1, normalized_x2)
 
 
+@always_inline
 fn truncate_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """Returns the quotient of two BigUInt numbers, truncating toward zero.
     It is equal to floored division for unsigned numbers.
@@ -473,6 +474,7 @@ fn floor_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     return remainder^
 
 
+@always_inline
 fn truncate_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """Returns the remainder of two BigUInt numbers, truncating toward zero.
     It is equal to floored modulo for unsigned numbers.
@@ -719,37 +721,48 @@ fn scale_up_by_power_of_10(x: BigUInt, n: Int) raises -> BigUInt:
     var number_of_zero_words = n // 9
     var number_of_remaining_digits = n % 9
 
-    var result: BigUInt = x
+    var words = List[UInt32](capacity=number_of_zero_words + len(x.words) + 1)
+    # Add zero words
+    for _ in range(number_of_zero_words):
+        words.append(UInt32(0))
+    # Add the original words times 10^number_of_remaining_digits
     if number_of_remaining_digits == 0:
-        pass
-    elif number_of_remaining_digits == 1:
-        result = multiply(result, BigUInt(UInt32(10)))
-    elif number_of_remaining_digits == 2:
-        result = multiply(result, BigUInt(UInt32(100)))
-    elif number_of_remaining_digits == 3:
-        result = multiply(result, BigUInt(UInt32(1000)))
-    elif number_of_remaining_digits == 4:
-        result = multiply(result, BigUInt(UInt32(10000)))
-    elif number_of_remaining_digits == 5:
-        result = multiply(result, BigUInt(UInt32(100000)))
-    elif number_of_remaining_digits == 6:
-        result = multiply(result, BigUInt(UInt32(1000000)))
-    elif number_of_remaining_digits == 7:
-        result = multiply(result, BigUInt(UInt32(10000000)))
-    else:  # number_of_remaining_digits == 8
-        result = multiply(result, BigUInt(UInt32(100000000)))
+        for i in range(len(x.words)):
+            words.append(x.words[i])
+    else:  # number_of_remaining_digits > 0
+        var carry = UInt64(0)
+        var multiplier: UInt64
 
-    if number_of_zero_words > 0:
-        var words = List[UInt32](
-            capacity=number_of_zero_words + len(result.words)
+        if number_of_remaining_digits == 1:
+            multiplier = UInt64(10)
+        elif number_of_remaining_digits == 2:
+            multiplier = UInt64(100)
+        elif number_of_remaining_digits == 3:
+            multiplier = UInt64(1000)
+        elif number_of_remaining_digits == 4:
+            multiplier = UInt64(10_000)
+        elif number_of_remaining_digits == 5:
+            multiplier = UInt64(100_000)
+        elif number_of_remaining_digits == 6:
+            multiplier = UInt64(1_000_000)
+        elif number_of_remaining_digits == 7:
+            multiplier = UInt64(10_000_000)
+        else:  # number_of_remaining_digits == 8
+            multiplier = UInt64(100_000_000)
+        debug_assert(
+            number_of_remaining_digits >= 9,
+            "number_of_remaining_digits must be less than 9",
         )
-        for _ in range(number_of_zero_words):
-            words.append(UInt32(0))
-        for i in range(len(result.words)):
-            words.append(result.words[i])
-        result.words = words^
 
-    return result^
+        for i in range(len(x.words)):
+            var product = UInt64(x.words[i]) * multiplier + carry
+            words.append(UInt32(product % UInt64(1_000_000_000)))
+            carry = product // UInt64(1_000_000_000)
+        # Add the last carry if it exists
+        if carry > 0:
+            words.append(UInt32(carry))
+
+    return BigUInt(words=words^)
 
 
 # ===----------------------------------------------------------------------=== #

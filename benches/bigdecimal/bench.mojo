@@ -2,6 +2,7 @@ from bench_bigdecimal_add import main as bench_add
 from bench_bigdecimal_subtract import main as bench_sub
 from bench_bigdecimal_multiply import main as bench_multiply
 from bench_bigdecimal_divide import main as bench_divide
+from bench_bigdecimal_scale_up_by_power_of_10 import main as bench_scale_up
 
 
 fn main() raises:
@@ -16,6 +17,8 @@ mul:         Multiply
 div:         Divide (true divide)
 all:         Run all benchmarks
 q:           Exit
+=========================================
+scaleup:     Scale up by power of 10
 =========================================
 """
     )
@@ -35,6 +38,8 @@ q:           Exit
         bench_divide()
     elif command == "q":
         return
+    elif command == "scaleup":
+        bench_scale_up()
     else:
         print("Invalid input")
         main()

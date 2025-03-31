@@ -28,6 +28,7 @@ import testing
 
 from decimojo.rounding_mode import RoundingMode
 
+alias BigDec = BigDecimal
 alias BDec = BigDecimal
 
 
@@ -460,8 +461,89 @@ struct BigDecimal:
         return decimojo.bigdecimal.arithmetics.true_divide(self, other)
 
     # ===------------------------------------------------------------------=== #
+    # Basic binary augmented arithmetic assignments dunders
+    # These methods are called to implement the binary augmented arithmetic
+    # assignments
+    # (+=, -=, *=, @=, /=, //=, %=, **=, <<=, >>=, &=, ^=, |=)
+    # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn __iadd__(mut self, other: Self) raises:
+        self = decimojo.bigdecimal.arithmetics.add(self, other)
+
+    @always_inline
+    fn __isub__(mut self, other: Self) raises:
+        self = decimojo.bigdecimal.arithmetics.subtract(self, other)
+
+    @always_inline
+    fn __imul__(mut self, other: Self) raises:
+        self = decimojo.bigdecimal.arithmetics.multiply(self, other)
+
+    @always_inline
+    fn __itruediv__(mut self, other: Self) raises:
+        self = decimojo.bigdecimal.arithmetics.true_divide(self, other)
+
+    # ===------------------------------------------------------------------=== #
+    # Basic binary comparison operation dunders
+    # __gt__, __ge__, __lt__, __le__, __eq__, __ne__
+    # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn __gt__(self, other: BigDecimal) raises -> Bool:
+        """Returns whether self is greater than other."""
+        return decimojo.bigdecimal.comparison.compare(self, other) > 0
+
+    @always_inline
+    fn __ge__(self, other: BigDecimal) raises -> Bool:
+        """Returns whether self is greater than or equal to other."""
+        return decimojo.bigdecimal.comparison.compare(self, other) >= 0
+
+    @always_inline
+    fn __lt__(self, other: BigDecimal) raises -> Bool:
+        """Returns whether self is less than other."""
+        return decimojo.bigdecimal.comparison.compare(self, other) < 0
+
+    @always_inline
+    fn __le__(self, other: BigDecimal) raises -> Bool:
+        """Returns whether self is less than or equal to other."""
+        return decimojo.bigdecimal.comparison.compare(self, other) <= 0
+
+    @always_inline
+    fn __eq__(self, other: BigDecimal) raises -> Bool:
+        """Returns whether self equals other."""
+        return decimojo.bigdecimal.comparison.compare(self, other) == 0
+
+    @always_inline
+    fn __ne__(self, other: BigDecimal) raises -> Bool:
+        """Returns whether self does not equal other."""
+        return decimojo.bigdecimal.comparison.compare(self, other) != 0
+
+    # ===------------------------------------------------------------------=== #
     # Mathematical methods that do not implement a trait (not a dunder)
     # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn compare(self, other: Self) raises -> Int8:
+        """Compares two BigDecimal numbers.
+        See `comparison.compare()` for more information.
+        """
+        return decimojo.bigdecimal.comparison.compare(self, other)
+
+    @always_inline
+    fn compare_absolute(self, other: Self) raises -> Int8:
+        """Compares two BigDecimal numbers by absolute value.
+        See `comparison.compare_absolute()` for more information.
+        """
+        return decimojo.bigdecimal.comparison.compare_absolute(self, other)
+
+    @always_inline
+    fn max(self, other: Self) raises -> Self:
+        """Returns the maximum of two BigDecimal numbers."""
+        return decimojo.bigdecimal.comparison.max(self, other)
+
+    fn min(self, other: Self) raises -> Self:
+        """Returns the minimum of two BigDecimal numbers."""
+        return decimojo.bigdecimal.comparison.min(self, other)
 
     @always_inline
     fn true_divide(self, other: Self, precision: Int) raises -> Self:
