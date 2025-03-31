@@ -4,9 +4,9 @@ Test BigDecimal comparison operations.
 
 import testing
 from python import PythonObject
-from tomlmojo import parse_file, TOMLValueType
+from tomlmojo import parse_file
 from decimojo import BigDecimal
-from decimojo.bigdecimal.comparison import compare_absolute
+from decimojo.bigdecimal.comparison import compare_absolute, compare
 from decimojo.tests import TestCase
 from collections import List
 
@@ -89,10 +89,246 @@ fn test_compare_absolute() raises:
     testing.assert_equal(failed, 0, "All compare_absolute tests should pass")
 
 
+fn test_greater_than() raises:
+    """Test the > operator for BigDecimal."""
+    print("------------------------------------------------------")
+    print("Testing BigDecimal > operator...")
+    var test_cases = load_test_cases(file_path, "greater_than_tests")
+    var passed = 0
+    var failed = 0
+
+    for i in range(len(test_cases)):
+        var test_case = test_cases[i]
+        var a = BigDecimal(test_case.a)
+        var b = BigDecimal(test_case.b)
+        var expected = test_case.expected == "true"
+        var result = a > b
+        try:
+            testing.assert_equal(result, expected, test_case.description)
+            passed += 1
+        except e:
+            print(
+                "✗ Case",
+                i + 1,
+                "failed:",
+                test_case.description,
+                "\n  Input:",
+                test_case.a,
+                ">",
+                test_case.b,
+                "\n  Expected:",
+                expected,
+                "\n  Got:",
+                result,
+            )
+            failed += 1
+
+    print("BigDecimal > tests:", passed, "passed,", failed, "failed")
+    testing.assert_equal(failed, 0, "All > tests should pass")
+
+
+fn test_less_than() raises:
+    """Test the < operator for BigDecimal."""
+    print("------------------------------------------------------")
+    print("Testing BigDecimal < operator...")
+    var test_cases = load_test_cases(file_path, "less_than_tests")
+    var passed = 0
+    var failed = 0
+
+    for i in range(len(test_cases)):
+        var test_case = test_cases[i]
+        var a = BigDecimal(test_case.a)
+        var b = BigDecimal(test_case.b)
+        var expected = test_case.expected == "true"
+        var result = a < b
+        try:
+            testing.assert_equal(result, expected, test_case.description)
+            passed += 1
+        except e:
+            print(
+                "✗ Case",
+                i + 1,
+                "failed:",
+                test_case.description,
+                "\n  Input:",
+                test_case.a,
+                "<",
+                test_case.b,
+                "\n  Expected:",
+                expected,
+                "\n  Got:",
+                result,
+            )
+            failed += 1
+
+    print("BigDecimal < tests:", passed, "passed,", failed, "failed")
+    testing.assert_equal(failed, 0, "All < tests should pass")
+
+
+fn test_greater_than_or_equal() raises:
+    """Test the >= operator for BigDecimal."""
+    print("------------------------------------------------------")
+    print("Testing BigDecimal >= operator...")
+    var test_cases = load_test_cases(file_path, "greater_than_or_equal_tests")
+    var passed = 0
+    var failed = 0
+
+    for i in range(len(test_cases)):
+        var test_case = test_cases[i]
+        var a = BigDecimal(test_case.a)
+        var b = BigDecimal(test_case.b)
+        var expected = test_case.expected == "true"
+        var result = a >= b
+        try:
+            testing.assert_equal(result, expected, test_case.description)
+            passed += 1
+        except e:
+            print(
+                "✗ Case",
+                i + 1,
+                "failed:",
+                test_case.description,
+                "\n  Input:",
+                test_case.a,
+                ">=",
+                test_case.b,
+                "\n  Expected:",
+                expected,
+                "\n  Got:",
+                result,
+            )
+            failed += 1
+
+    print("BigDecimal >= tests:", passed, "passed,", failed, "failed")
+    testing.assert_equal(failed, 0, "All >= tests should pass")
+
+
+fn test_less_than_or_equal() raises:
+    """Test the <= operator for BigDecimal."""
+    print("------------------------------------------------------")
+    print("Testing BigDecimal <= operator...")
+    var test_cases = load_test_cases(file_path, "less_than_or_equal_tests")
+    var passed = 0
+    var failed = 0
+
+    for i in range(len(test_cases)):
+        var test_case = test_cases[i]
+        var a = BigDecimal(test_case.a)
+        var b = BigDecimal(test_case.b)
+        var expected = test_case.expected == "true"
+        var result = a <= b
+        try:
+            testing.assert_equal(result, expected, test_case.description)
+            passed += 1
+        except e:
+            print(
+                "✗ Case",
+                i + 1,
+                "failed:",
+                test_case.description,
+                "\n  Input:",
+                test_case.a,
+                "<=",
+                test_case.b,
+                "\n  Expected:",
+                expected,
+                "\n  Got:",
+                result,
+            )
+            failed += 1
+
+    print("BigDecimal <= tests:", passed, "passed,", failed, "failed")
+    testing.assert_equal(failed, 0, "All <= tests should pass")
+
+
+fn test_equal() raises:
+    """Test the == operator for BigDecimal."""
+    print("------------------------------------------------------")
+    print("Testing BigDecimal == operator...")
+    var test_cases = load_test_cases(file_path, "equal_tests")
+    var passed = 0
+    var failed = 0
+
+    for i in range(len(test_cases)):
+        var test_case = test_cases[i]
+        var a = BigDecimal(test_case.a)
+        var b = BigDecimal(test_case.b)
+        var expected = test_case.expected == "true"
+        var result = a == b
+        try:
+            testing.assert_equal(result, expected, test_case.description)
+            passed += 1
+        except e:
+            print(
+                "✗ Case",
+                i + 1,
+                "failed:",
+                test_case.description,
+                "\n  Input:",
+                test_case.a,
+                "==",
+                test_case.b,
+                "\n  Expected:",
+                expected,
+                "\n  Got:",
+                result,
+            )
+            failed += 1
+
+    print("BigDecimal == tests:", passed, "passed,", failed, "failed")
+    testing.assert_equal(failed, 0, "All == tests should pass")
+
+
+fn test_not_equal() raises:
+    """Test the != operator for BigDecimal."""
+    print("------------------------------------------------------")
+    print("Testing BigDecimal != operator...")
+    var test_cases = load_test_cases(file_path, "not_equal_tests")
+    var passed = 0
+    var failed = 0
+
+    for i in range(len(test_cases)):
+        var test_case = test_cases[i]
+        var a = BigDecimal(test_case.a)
+        var b = BigDecimal(test_case.b)
+        var expected = test_case.expected == "true"
+        var result = a != b
+        try:
+            testing.assert_equal(result, expected, test_case.description)
+            passed += 1
+        except e:
+            print(
+                "✗ Case",
+                i + 1,
+                "failed:",
+                test_case.description,
+                "\n  Input:",
+                test_case.a,
+                "!=",
+                test_case.b,
+                "\n  Expected:",
+                expected,
+                "\n  Got:",
+                result,
+            )
+            failed += 1
+
+    print("BigDecimal != tests:", passed, "passed,", failed, "failed")
+    testing.assert_equal(failed, 0, "All != tests should pass")
+
+
 fn main() raises:
     print("Running BigDecimal comparison tests")
 
     # Run compare_absolute tests
     test_compare_absolute()
+
+    # Run comparison operator tests
+    test_greater_than()
+    test_less_than()
+    test_greater_than_or_equal()
+    test_less_than_or_equal()
+    test_equal()
+    test_not_equal()
 
     print("All BigDecimal comparison tests passed!")

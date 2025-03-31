@@ -69,3 +69,86 @@ fn compare_absolute(x1: BigDecimal, x2: BigDecimal) raises -> Int8:
         # x2 has larger scale (more decimal places)
         var scaled_x1 = x1.coefficient.scale_up_by_power_of_10(-scale_diff)
         return scaled_x1.compare(x2.coefficient)
+
+
+fn compare(x1: BigDecimal, x2: BigDecimal) raises -> Int8:
+    """Compares two BigDecimal numbers.
+
+    Args:
+        x1: First number.
+        x2: Second number.
+
+    Returns:
+        Terinary value indicating the comparison result:
+        (1)  1 if x1 > x2.
+        (2)  0 if x1 = x2.
+        (3) -1 if x1 < x2.
+    """
+    # Handle zero cases first
+    if x1.coefficient.is_zero() and x2.coefficient.is_zero():
+        return 0
+
+    # If one is zero, handle specially
+    if x1.coefficient.is_zero():
+        return 1 if x2.sign else -1  # 0 > negative, 0 < positive
+    if x2.coefficient.is_zero():
+        return -1 if x1.sign else 1  # negative < 0, positive > 0
+
+    # If signs differ, the positive one is greater
+    if not x1.sign and x2.sign:  # x1 is positive, x2 is negative
+        return 1
+    if x1.sign and not x2.sign:  # x1 is negative, x2 is positive
+        return -1
+
+    # Same sign - compare absolute values
+    var abs_comparison = compare_absolute(x1, x2)
+
+    # For negative numbers, reverse the comparison result
+    if x1.sign:  # Both are negative
+        return -abs_comparison  # Negate the result for negative numbers
+    else:  # Both are positive
+        return abs_comparison
+
+
+fn equals(x1: BigDecimal, x2: BigDecimal) raises -> Bool:
+    """Returns whether x1 equals x2."""
+    return compare(x1, x2) == 0
+
+
+fn not_equals(x1: BigDecimal, x2: BigDecimal) raises -> Bool:
+    """Returns whether x1 does not equal x2."""
+    return compare(x1, x2) != 0
+
+
+fn less_than(x1: BigDecimal, x2: BigDecimal) raises -> Bool:
+    """Returns whether x1 is less than x2."""
+    return compare(x1, x2) < 0
+
+
+fn less_than_or_equal(x1: BigDecimal, x2: BigDecimal) raises -> Bool:
+    """Returns whether x1 is less than or equal to x2."""
+    return compare(x1, x2) <= 0
+
+
+fn greater_than(x1: BigDecimal, x2: BigDecimal) raises -> Bool:
+    """Returns whether x1 is greater than x2."""
+    return compare(x1, x2) > 0
+
+
+fn greater_than_or_equal(x1: BigDecimal, x2: BigDecimal) raises -> Bool:
+    """Returns whether x1 is greater than or equal to x2."""
+    return compare(x1, x2) >= 0
+
+
+fn max(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
+    """Returns the maximum of x1 and x2."""
+    if compare(x1, x2) >= 0:
+        return x1
+    return x2
+
+
+fn min(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
+    """Returns the minimum of x1 and x2."""
+    if compare(x1, x2) <= 0:
+        return x1
+    return x2
