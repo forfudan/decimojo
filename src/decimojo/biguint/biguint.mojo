@@ -852,7 +852,19 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
     @always_inline
     fn ith_digit(self, i: Int) raises -> UInt8:
-        """Returns the ith digit of the BigUInt."""
+        """Returns the ith least significant digit of the BigUInt.
+
+        Args:
+            i: The index of the digit to return. The least significant digit
+                is at index 0.
+
+        Returns:
+            The ith least significant digit of the BigUInt.
+
+        Raises:
+            Error: If the index is negative or larger than the number of digits
+                in the BigUInt.
+        """
         if i < 0:
             raise Error("Error in `ith_digit()`: The index is negative")
         if i >= len(self.words) * 9:
@@ -867,6 +879,24 @@ struct BigUInt(Absable, IntableRaising, Writable):
             word = word // 10
         digit = word % 10
         return UInt8(digit)
+
+    @always_inline
+    fn number_of_digits(self) -> Int:
+        """Returns the number of digits in the BigUInt.
+
+        Notes:
+
+        Zero has 1 digit.
+        """
+        if self.is_zero():
+            return 1
+
+        var result: Int = (len(self.words) - 1) * 9
+        var last_word = self.words[len(self.words) - 1]
+        while last_word > 0:
+            result += 1
+            last_word = last_word // 10
+        return result
 
     @always_inline
     fn number_of_words(self) -> Int:
@@ -893,3 +923,83 @@ struct BigUInt(Absable, IntableRaising, Writable):
         """Removes leading words of 0 from BigUInt's internal representation."""
         while len(self.words) > 1 and self.words[-1] == 0:
             self.words.resize(len(self.words) - 1)
+
+    @always_inline
+    fn remove_trailing_digits_with_rounding(
+        self,
+        ndigits: Int,
+        rounding_mode: RoundingMode = RoundingMode.ROUND_DOWN,
+        remove_extra_digit_due_to_rounding: Bool = False,
+    ) raises -> Self:
+        """Removes trailing digits from the BigUInt.
+
+        Args:
+            ndigits: The number of digits to remove.
+            rounding_mode: The rounding mode to use.
+                Default is RoundingMode.ROUND_DOWN, which is the same as
+                `scale_down_by_power_of_10()`.
+            remove_extra_digit_due_to_rounding: If True, remove an trailing
+                digit if the rounding mode result in an extra digit.
+                Default is False.
+
+        Returns:
+            The BigUInt with the trailing digits removed.
+
+        Notes:
+
+        Rounding can result in an extra digit. Exmaple: remove last 1 digit of
+        999 with rounding up results in 100. If
+        `remove_extra_digit_due_to_rounding` is True, the result will be 10.
+        """
+        if ndigits < 0:
+            raise Error(
+                "Error in `remove_trailing_digits()`: The number of digits to"
+                " remove is negative"
+            )
+
+        if ndigits == 0:
+            return self
+
+        if ndigits > self.number_of_digits():
+            raise Error(
+                "Error in `remove_trailing_digits()`: The number of digits to"
+                " remove is larger than the number of digits in the BigUInt"
+            )
+
+        # scale_down_by_power_of_10 is the same as removing the last n digits
+        var result = self.scale_down_by_power_of_10(ndigits)
+        var round_up: Bool = False
+
+        if rounding_mode == RoundingMode.ROUND_DOWN:
+            pass
+        elif rounding_mode == RoundingMode.ROUND_UP:
+            if self.number_of_trailing_zeros() < ndigits:
+                round_up = True
+        elif rounding_mode == RoundingMode.ROUND_HALF_UP:
+            if self.ith_digit(ndigits - 1) >= 5:
+                round_up = True
+        elif rounding_mode == RoundingMode.ROUND_HALF_EVEN:
+            var cut_off_digit = self.ith_digit(ndigits - 1)
+            if cut_off_digit > 5:
+                round_up = True
+            elif cut_off_digit < 5:
+                pass
+            else:  # cut_off_digit == 5
+                if self.number_of_trailing_zeros() < ndigits - 1:
+                    round_up = True
+                else:
+                    round_up = self.ith_digit(ndigits) % 2 == 1
+        else:
+            raise Error(
+                "Error in `remove_trailing_digits()`: Unknown rounding mode"
+            )
+
+        if round_up:
+            result = result + BigUInt.ONE
+            # Check whether rounding results in extra digit
+            if result.is_power_of_10():
+                if remove_extra_digit_due_to_rounding:
+                    result = result.scale_down_by_power_of_10(
+                        1,
+                    )
+        return result^

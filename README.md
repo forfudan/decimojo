@@ -2,7 +2,7 @@
 
 A comprehensive decimal and integer mathematics library for [Mojo](https://www.modular.com/mojo).
 
-**[中文·漢字»](https://zhuyuhao.com/decimojo/docs/readme_zht.html)**　|　**[Repository on GitHub»](https://github.com/forfudan/decimojo)**
+**[中文·漢字»](https://zhuyuhao.com/decimojo/docs/readme_zht.html)**　|　**[Repository on GitHub»](https://github.com/forfudan/decimojo)**  | **[Changelog](https://zhuyuhao.com/decimojo/docs/changelog.html)**
 
 ## Overview
 

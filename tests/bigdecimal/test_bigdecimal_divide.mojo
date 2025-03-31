@@ -73,7 +73,8 @@ fn test_true_divide() raises:
             passed += 1
         except e:
             print(
-                "✗ Case",
+                "=" * 50,
+                "\n",
                 i + 1,
                 "failed:",
                 test_case.description,

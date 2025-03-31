@@ -1,6 +1,6 @@
-# DeciMojo released changelog
+# DeciMojo changelog
 
-This is a list of RELEASED changes for the DeciMojo Package.
+This is a list of RELEASED changes for the DeciMojo Package. For the unreleased changes, please refer to **[changelog_unreleased](https://zhuyuhao.com/decimojo/docs/changelog_unreleased.html)**.
 
 ## 01/04/2025 (v0.2.0)
 
