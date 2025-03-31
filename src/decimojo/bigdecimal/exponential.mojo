@@ -18,6 +18,7 @@
 
 from decimojo.bigdecimal.bigdecimal import BigDecimal
 from decimojo.rounding_mode import RoundingMode
+import decimojo.utility
 
 
 fn sqrt(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
@@ -33,7 +34,7 @@ fn sqrt(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
     Raises:
         Error: If x is negative.
     """
-    alias BUFFER_DIGITS = 0
+    alias BUFFER_DIGITS = 9
 
     # Handle special cases
     if x.sign:
@@ -45,22 +46,63 @@ fn sqrt(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
         return BigDecimal(BigUInt.ZERO, (x.scale + 1) // 2, False)
 
     # Initial guess
-    # For numbers close to 1, start with 1
-    # Otherwise, use a simple approximation based on the exponent
-    var exponent = x.exponent()
-    var guess: BigDecimal
+    # A decimal has coefficient and scale
+    # Example 1:
+    # 123456789012345678901234567890.12345 (sqrt ~= 351364182882014.4253111222382)
+    # coef = 12345678_901234567_890123456_789012345, scale = 5
+    # first three words = 12345678_901234567_890123456
+    # number of integral digits = 30
+    # Because it is even, no need to scale up by 10
+    # not scale up by 10 => 12345678901234567890123456
+    # sqrt(12345678901234567890123456) = 3513641828820
+    # number of integral digits of the sqrt = (30 + 1) // 2 = 15
+    # coef = 3513641828820, 13 digits, so scale = 13 - 15
+    #
+    # Example 2:
+    # 12345678901.234567890123456789012345 (sqrt ~= 111111.1106111111099361111058)
+    # coef = 12345678_901234567_890123456_789012345, scale = 24
+    # first three words = 12345678_901234567_890123456
+    # remaining number of words = 11
+    # Because it is odd, need to scale up by 10
+    # scale up by 10 => 123456789012345678901234560
+    # sqrt(123456789012345678901234560) = 11111111061111
+    # number of integral digits of the sqrt = (11 + 1) // 2 = 6
+    # coef = 11111111061111, 14 digits, so scale = 14 - 6 => (111111.11061111)
 
-    if exponent >= -1 and exponent <= 1:
-        # 0.1 <= x < 100
-        # Start with 1 for numbers around 1
-        guess = BigDecimal(BigUInt.ONE, 0, False)
-    else:
-        # For numbers far from 1, use a better initial guess
-        # Start with 10^(exponent/2)
-        var exp_half = exponent // 2
-        guess = BigDecimal(
-            BigUInt.ONE.scale_up_by_power_of_10(exp_half), 0, False
+    var guess: BigDecimal
+    var ndigits_coef = x.coefficient.number_of_digits()
+    var ndigits_int_part = x.coefficient.number_of_digits() - x.scale
+    var ndigits_int_part_sqrt = (ndigits_int_part + 1) // 2
+    var odd_ndigits_frac_part = x.scale % 2 == 1
+
+    var value: UInt128
+    if ndigits_coef <= 9:
+        value = UInt128(x.coefficient.words[0]) * UInt128(
+            1_000_000_000_000_000_000
         )
+    elif ndigits_coef <= 18:
+        value = (
+            UInt128(x.coefficient.words[-1])
+            * UInt128(1_000_000_000_000_000_000)
+        ) + (UInt128(x.coefficient.words[-2]) * UInt128(1_000_000_000))
+    else:  # ndigits_coef > 18
+        value = (
+            (
+                UInt128(x.coefficient.words[-1])
+                * UInt128(1_000_000_000_000_000_000)
+            )
+            + UInt128(x.coefficient.words[-2]) * UInt128(1_000_000_000)
+            + UInt128(x.coefficient.words[-3])
+        )
+    if odd_ndigits_frac_part:
+        value = value * UInt128(10)
+    var sqrt_value = decimojo.utility.sqrt(value)
+    var sqrt_value_biguint = BigUInt.from_scalar(sqrt_value)
+    guess = BigDecimal(
+        sqrt_value_biguint,
+        sqrt_value_biguint.number_of_digits() - ndigits_int_part_sqrt,
+        False,
+    )
 
     # For Newton's method, we need extra precision during calculations
     # to ensure the final result has the desired precision
@@ -78,7 +120,6 @@ fn sqrt(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
         guess = sum.true_divide(BigDecimal(BigUInt(2), 0, 0), working_precision)
         iteration_count += 1
 
-    print("Newton's method iterations:", iteration_count)
     # Round to the desired precision
     var ndigits_to_remove = guess.coefficient.number_of_digits() - precision
     if ndigits_to_remove > 0:
@@ -88,6 +129,31 @@ fn sqrt(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
             rounding_mode=RoundingMode.ROUND_HALF_UP,
             remove_extra_digit_due_to_rounding=True,
         )
-        return BigDecimal(coefficient, guess.scale - ndigits_to_remove, False)
-    else:
-        return guess^
+        guess.coefficient = coefficient^
+        guess.scale -= ndigits_to_remove
+
+    # Remove trailing zeros for exact results
+    # TODO: This can be done even earlier in the process
+    if guess.coefficient.ith_digit(0) == 0:
+        var guess_coefficient_without_trailing_zeros = guess.coefficient.remove_trailing_digits_with_rounding(
+            guess.coefficient.number_of_trailing_zeros()
+        )
+        var x_coefficient_without_trailing_zeros = x.coefficient.remove_trailing_digits_with_rounding(
+            x.coefficient.number_of_trailing_zeros()
+        )
+        if (
+            guess_coefficient_without_trailing_zeros
+            * guess_coefficient_without_trailing_zeros
+        ) == x_coefficient_without_trailing_zeros:
+            var expected_ndigits_of_result = (
+                x.coefficient.number_of_digits() + 1
+            ) // 2
+            guess.scale = (x.scale + 1) // 2
+            guess.coefficient = (
+                guess.coefficient.remove_trailing_digits_with_rounding(
+                    guess.coefficient.number_of_digits()
+                    - expected_ndigits_of_result
+                )
+            )
+
+    return guess^
