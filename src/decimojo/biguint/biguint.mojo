@@ -882,7 +882,15 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
     @always_inline
     fn number_of_digits(self) -> Int:
-        """Returns the number of digits in the BigUInt."""
+        """Returns the number of digits in the BigUInt.
+
+        Notes:
+
+        Zero has 1 digit.
+        """
+        if self.is_zero():
+            return 1
+
         var result: Int = (len(self.words) - 1) * 9
         var last_word = self.words[len(self.words) - 1]
         while last_word > 0:
