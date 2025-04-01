@@ -41,12 +41,34 @@ fn add(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     Returns:
         The sum of the two unsigned integers.
     """
-
-    # If one of the numbers is zero, return the other number
-    if x1.is_zero():
-        return x2
-    if x2.is_zero():
-        return x1
+    # Short circuit cases
+    if len(x1.words) == 1:
+        if x1.is_zero():
+            return x2
+        if x1.is_one():
+            # Optimized case for adding 1
+            var result = x2
+            add_inplace_by_1(result)
+            return result^
+        if len(x2.words) == 1:
+            var value = x1.words[0] + x2.words[0]
+            if value <= 999_999_999:
+                return BigUInt(List[UInt32](value))
+            else:
+                return BigUInt(
+                    List[UInt32](
+                        value % UInt32(1_000_000_000),
+                        value // UInt32(1_000_000_000),
+                    )
+                )
+    if len(x2.words) == 1:
+        if x2.is_zero():
+            return x1
+        if x2.is_one():
+            # Optimized case for adding 1
+            var result = x1
+            add_inplace_by_1(result)
+            return result^
 
     # The result will have at most one more word than the longer operand
     var words = List[UInt32](capacity=max(len(x1.words), len(x2.words)) + 1)
@@ -88,12 +110,27 @@ fn add_inplace(mut x1: BigUInt, x2: BigUInt) raises:
         x2: The second unsigned integer operand.
     """
 
-    # If one of the numbers is zero, return the other number
-    if x1.is_zero():
-        x1.words = x2.words.copy()
-        return
-    if x2.is_zero():
-        return
+    # Short circuit cases
+    if len(x1.words) == 1:
+        if x1.is_zero():
+            x1.words[0] = x2.words[0]
+            return
+        if len(x2.words) == 1:
+            var value = x1.words[0] + x2.words[0]
+            if value <= 999_999_999:
+                x1.words[0] = value
+                return
+            else:
+                x1.words[0] = value % UInt32(1_000_000_000)
+                x1.words.append(value // UInt32(1_000_000_000))
+                return
+    if len(x2.words) == 1:
+        if x2.is_zero():
+            return
+        if x2.is_one():
+            # Optimized case for adding 1
+            add_inplace_by_1(x1)
+            return
 
     var carry: UInt32 = 0
     var ith: Int = 0
@@ -124,6 +161,21 @@ fn add_inplace(mut x1: BigUInt, x2: BigUInt) raises:
     if carry > 0:
         x1.words.append(carry)
 
+    return
+
+
+fn add_inplace_by_1(mut x: BigUInt) raises:
+    """Increments a BigUInt number by 1."""
+    var i = 0
+    while i < len(x.words):
+        if x.words[i] < UInt32(999_999_999):
+            x.words[i] += UInt32(1)
+            return
+        else:  # If the word is 999_999_999, we need to carry over
+            x.words[i] = 0
+            i += 1
+    # If we reach here, we need to add a new word
+    x.words.append(UInt32(1))
     return
 
 
