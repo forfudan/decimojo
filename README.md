@@ -1,8 +1,18 @@
-# DeciMojo
+# DeciMojo <!-- omit in toc -->
 
 A comprehensive decimal and integer mathematics library for [Mojo](https://www.modular.com/mojo).
 
 **[中文·漢字»](https://zhuyuhao.com/decimojo/docs/readme_zht.html)**　|　**[Repository on GitHub»](https://github.com/forfudan/decimojo)**  | **[Changelog](https://zhuyuhao.com/decimojo/docs/changelog.html)**
+
+- [Overview](#overview)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [Objective](#objective)
+- [Nomenclature](#nomenclature)
+- [Status](#status)
+- [Tests and benches](#tests-and-benches)
+- [Citation](#citation)
+- [License](#license)
 
 ## Overview
 
@@ -168,7 +178,7 @@ The name ultimately emphasizes our mission: bringing precise, reliable decimal c
 
 Rome wasn't built in a day. DeciMojo is currently under active development. For the 128-bit `Decimal` type, it has successfully progressed through the **"make it work"** phase and is now well into the **"make it right"** phase with many optimizations already in place. Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/forfudan/decimojo/issues).
 
-### Make it Work ✅ (COMPLETED)
+### Make it Work ✅ (COMPLETED)  <!-- omit in toc -->
 
 - Core decimal implementation with a robust 128-bit representation (96-bit coefficient + 32-bit flags)
 - Comprehensive arithmetic operations (+, -, *, /, %, **) with proper overflow handling
@@ -176,7 +186,7 @@ Rome wasn't built in a day. DeciMojo is currently under active development. For 
 - Proper representation of special values (NaN, Infinity)
 - Full suite of comparison operators with correct decimal semantics
 
-### Make it Right 🔄 (MOSTLY COMPLETED)
+### Make it Right 🔄 (MOSTLY COMPLETED) <!-- omit in toc -->
 
 - Reorganized codebase with modular structure (decimal, arithmetics, comparison, exponential).
 - Edge case handling for all operations (division by zero, zero to negative power).
@@ -186,7 +196,7 @@ Rome wasn't built in a day. DeciMojo is currently under active development. For 
 - Proper implementation of traits (Absable, Comparable, Floatable, Roundable, etc).
 - **BigInt and BigUInt** implementations with complete arithmetic operations, proper division semantics (floor and truncate), and support for arbitrary-precision calculations.
 
-### Make it Fast ⚡ (SIGNIFICANT PROGRESS)
+### Make it Fast ⚡ (SIGNIFICANT PROGRESS) <!-- omit in toc -->
 
 DeciMojo delivers exceptional performance compared to Python's `decimal` module while maintaining precise calculations. This performance difference stems from fundamental design choices:
 
@@ -202,7 +212,7 @@ This architectural difference explains our benchmarking results:
 
 Regular benchmarks against Python's `decimal` module are available in the `bench/` folder, documenting both the performance advantages and the few specific operations where different approaches are needed.
 
-### Future Extensions 🚀 (PLANNED)
+### Future Extensions 🚀 (PLANNED) <!-- omit in toc -->
 
 - **BigDecimal**: 🔄 **IN PROGRESS** - Arbitrary-precision decimal type with configurable precision[^arbitrary].
 - **BigComplex**: 📝 **PLANNED** - Arbitrary-precision complex number type built on BigDecimal.

@@ -14,6 +14,10 @@
 # limitations under the License.
 # ===----------------------------------------------------------------------=== #
 
+# ===----------------------------------------------------------------------=== #
+# Power and root functions
+# ===----------------------------------------------------------------------=== #
+
 """Implements exponential functions for the BigDecimal type."""
 
 from decimojo.bigdecimal.bigdecimal import BigDecimal
@@ -136,10 +140,14 @@ fn sqrt(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
     # TODO: This can be done even earlier in the process
     if guess.coefficient.ith_digit(0) == 0:
         var guess_coefficient_without_trailing_zeros = guess.coefficient.remove_trailing_digits_with_rounding(
-            guess.coefficient.number_of_trailing_zeros()
+            guess.coefficient.number_of_trailing_zeros(),
+            rounding_mode=RoundingMode.ROUND_DOWN,
+            remove_extra_digit_due_to_rounding=False,
         )
         var x_coefficient_without_trailing_zeros = x.coefficient.remove_trailing_digits_with_rounding(
-            x.coefficient.number_of_trailing_zeros()
+            x.coefficient.number_of_trailing_zeros(),
+            rounding_mode=RoundingMode.ROUND_DOWN,
+            remove_extra_digit_due_to_rounding=False,
         )
         if (
             guess_coefficient_without_trailing_zeros
@@ -152,8 +160,142 @@ fn sqrt(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
             guess.coefficient = (
                 guess.coefficient.remove_trailing_digits_with_rounding(
                     guess.coefficient.number_of_digits()
-                    - expected_ndigits_of_result
+                    - expected_ndigits_of_result,
+                    rounding_mode=RoundingMode.ROUND_DOWN,
+                    remove_extra_digit_due_to_rounding=False,
                 )
             )
 
     return guess^
+
+
+# ===----------------------------------------------------------------------=== #
+# Exponential functions
+# ===----------------------------------------------------------------------=== #
+
+
+fn exp(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
+    """Calculate the natural exponential of x (e^x) to the specified precision.
+
+    Args:
+        x: The exponent value.
+        precision: Desired precision in significant digits.
+
+    Returns:
+        The natural exponential of x (e^x) to the specified precision.
+
+    Notes:
+        Uses optimized algorithm combining:
+        - Range reduction.
+        - Taylor series.
+        - Precision tracking.
+    """
+    # Extra working precision to ensure final result accuracy
+    alias BUFFER_DIGITS = 5
+    var working_precision = precision + BUFFER_DIGITS
+
+    # Handle special cases
+    if x.coefficient.is_zero():
+        return BigDecimal(
+            BigUInt.ONE, x.scale, x.sign
+        )  # e^0 = 1, return with same scale and sign
+
+    # For very large positive values, result will overflow BigDecimal capacity
+    # Calculate rough estimate to detect overflow early
+    if not x.sign and x.scale <= -40:  # x > 10^40
+        raise Error("Error in `exp`: Result too large to represent")
+
+    # For very large negative values, result will be effectively zero
+    if x.sign and x.scale <= -40:  # x < -10^40
+        return BigDecimal(
+            BigUInt.ONE, precision, False
+        )  # Return very small number
+
+    # Handle negative x using identity: exp(-x) = 1/exp(x)
+    if x.sign:
+        var pos_result = exp(-x, precision + 2)
+        return BigDecimal(BigUInt.ONE, 0, False).true_divide(
+            pos_result, precision
+        )
+
+    # Range reduction for faster convergence
+    # If x > 1, use exp(x) = exp(x/2)²
+    if x > BigDecimal(BigUInt.ONE, 0, False):
+        # Find k where 2^k > x
+        var k = 0
+        var threshold = BigDecimal(BigUInt.ONE, 0, False)
+        while threshold <= x:
+            threshold = threshold + threshold  # Multiply by 2
+            k += 1
+
+        # Calculate exp(x/2^k)
+        var reduced_x = x.true_divide(threshold, working_precision)
+        var reduced_exp = exp_taylor_series(reduced_x, working_precision)
+
+        # Square result k times: exp(x) = exp(x/2^k)^(2^k)
+        var result = reduced_exp
+        for i in range(k):
+            result = result * result
+            # Round intermediates to working precision to avoid explosion
+            if i % 3 == 2:  # Every few iterations
+                result.round_to_precision(
+                    precision=working_precision,
+                    rounding_mode=RoundingMode.ROUND_HALF_EVEN,
+                    remove_extra_digit_due_to_rounding=True,
+                )
+
+        result.round_to_precision(
+            precision=precision,
+            rounding_mode=RoundingMode.ROUND_HALF_EVEN,
+            remove_extra_digit_due_to_rounding=True,
+        )
+
+        return result^
+
+    # For small values, use Taylor series directly
+    var result = exp_taylor_series(x, precision)
+
+    result.round_to_precision(
+        precision=precision,
+        rounding_mode=RoundingMode.ROUND_HALF_EVEN,
+        remove_extra_digit_due_to_rounding=True,
+    )
+
+    return result^
+
+
+fn exp_taylor_series(x: BigDecimal, precision: Int) raises -> BigDecimal:
+    """Calculate exp(x) using Taylor series for |x| <= 1."""
+    # Theoretical number of terms needed based on precision
+    # For |x| ≤ 1, error after n terms is approximately |x|^(n+1)/(n+1)!
+    # We need |x|^(n+1)/(n+1)! < 10^(-precision)
+    # For x=1, we need approximately n ≈ precision * ln(10) ≈ precision * 2.3
+    var max_number_of_terms = Int(precision * 2.5) + 1
+
+    # Required precision for term smaller than minimum contribution
+    var min_term_precision = BigDecimal(BigUInt.ONE, precision + 1, False)
+
+    var result = BigDecimal(BigUInt.ONE, 0, False)
+    var term = BigDecimal(BigUInt.ONE, 0, False)
+    var factorial = BigUInt.ONE
+    var n = BigUInt.ONE
+
+    # Calculate Taylor series: 1 + x + x²/2! + x³/3! + ...
+    for _ in range(1, max_number_of_terms):
+        # Calculate next term: x^i/i!
+        term = term * x
+        factorial = factorial * n
+        n += BigUInt.ONE
+
+        var next_term = term.true_divide(
+            BigDecimal(factorial, 0, False), precision + 5
+        )
+
+        # Add term to result
+        result += next_term
+
+        # Check if we've reached desired precision
+        if next_term.compare_absolute(min_term_precision) < 0:
+            break
+
+    return result^

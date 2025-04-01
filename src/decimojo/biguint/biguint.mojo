@@ -609,6 +609,9 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
     @always_inline
     fn __iadd__(mut self, other: Self) raises:
+        """Adds `other` to `self` in place.
+        See `add_inplace()` for more information.
+        """
         decimojo.biguint.arithmetics.add_inplace(self, other)
 
     @always_inline
@@ -665,6 +668,14 @@ struct BigUInt(Absable, IntableRaising, Writable):
     # ===------------------------------------------------------------------=== #
     # Mathematical methods that do not implement a trait (not a dunder)
     # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn add_inplace_by_1(mut self) raises:
+        """Adds 1 to this number in place.
+        It is equal to `self += 1`.
+        See `add_inplace_by_1()` for more information.
+        """
+        decimojo.biguint.arithmetics.add_inplace_by_1(self)
 
     @always_inline
     fn floor_divide(self, other: Self) raises -> Self:
@@ -928,19 +939,20 @@ struct BigUInt(Absable, IntableRaising, Writable):
     fn remove_trailing_digits_with_rounding(
         self,
         ndigits: Int,
-        rounding_mode: RoundingMode = RoundingMode.ROUND_DOWN,
-        remove_extra_digit_due_to_rounding: Bool = False,
+        rounding_mode: RoundingMode,
+        remove_extra_digit_due_to_rounding: Bool,
     ) raises -> Self:
         """Removes trailing digits from the BigUInt.
 
         Args:
             ndigits: The number of digits to remove.
             rounding_mode: The rounding mode to use.
-                Default is RoundingMode.ROUND_DOWN, which is the same as
-                `scale_down_by_power_of_10()`.
+                RoundingMode.ROUND_DOWN: Round down.
+                RoundingMode.ROUND_UP: Round up.
+                RoundingMode.ROUND_HALF_UP: Round half up.
+                RoundingMode.ROUND_HALF_EVEN: Round half even.
             remove_extra_digit_due_to_rounding: If True, remove an trailing
                 digit if the rounding mode result in an extra digit.
-                Default is False.
 
         Returns:
             The BigUInt with the trailing digits removed.
@@ -956,10 +968,8 @@ struct BigUInt(Absable, IntableRaising, Writable):
                 "Error in `remove_trailing_digits()`: The number of digits to"
                 " remove is negative"
             )
-
         if ndigits == 0:
             return self
-
         if ndigits > self.number_of_digits():
             raise Error(
                 "Error in `remove_trailing_digits()`: The number of digits to"
@@ -995,7 +1005,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
             )
 
         if round_up:
-            result = result + BigUInt.ONE
+            result.add_inplace_by_1()
             # Check whether rounding results in extra digit
             if result.is_power_of_10():
                 if remove_extra_digit_due_to_rounding:

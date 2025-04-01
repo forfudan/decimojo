@@ -27,6 +27,7 @@ from memory import UnsafePointer
 import testing
 
 from decimojo.rounding_mode import RoundingMode
+from decimojo.bigdecimal.rounding import round_to_precision
 
 alias BigDec = BigDecimal
 alias BDec = BigDecimal
@@ -537,6 +538,11 @@ struct BigDecimal:
         return decimojo.bigdecimal.comparison.compare_absolute(self, other)
 
     @always_inline
+    fn exp(self, precision: Int = 28) raises -> Self:
+        """Returns the exponential of the BigDecimal number."""
+        return decimojo.bigdecimal.exponential.exp(self, precision)
+
+    @always_inline
     fn max(self, other: Self) raises -> Self:
         """Returns the maximum of two BigDecimal numbers."""
         return decimojo.bigdecimal.comparison.max(self, other)
@@ -558,6 +564,20 @@ struct BigDecimal:
         """
         return decimojo.bigdecimal.arithmetics.true_divide(
             self, other, precision
+        )
+
+    @always_inline
+    fn round_to_precision(
+        mut self,
+        precision: Int,
+        rounding_mode: RoundingMode,
+        remove_extra_digit_due_to_rounding: Bool,
+    ) raises:
+        """Rounds the number to the specified precision in-place.
+        See `rounding.round_to_precision()` for more information.
+        """
+        decimojo.bigdecimal.rounding.round_to_precision(
+            self, precision, rounding_mode, remove_extra_digit_due_to_rounding
         )
 
     # ===------------------------------------------------------------------=== #
