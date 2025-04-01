@@ -239,16 +239,16 @@ fn exp(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
             # Round intermediates to working precision to avoid explosion
             if i % 3 == 2:  # Every few iterations
                 result.round_to_precision(
-                    precision=precision,
+                    precision=working_precision,
                     rounding_mode=RoundingMode.ROUND_HALF_EVEN,
                     remove_extra_digit_due_to_rounding=True,
                 )
 
-            result.round_to_precision(
-                precision=precision,
-                rounding_mode=RoundingMode.ROUND_HALF_EVEN,
-                remove_extra_digit_due_to_rounding=True,
-            )
+        result.round_to_precision(
+            precision=precision,
+            rounding_mode=RoundingMode.ROUND_HALF_EVEN,
+            remove_extra_digit_due_to_rounding=True,
+        )
 
         return result^
 
