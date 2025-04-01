@@ -20,6 +20,7 @@
 # ===----------------------------------------------------------------------=== #
 
 from memory import UnsafePointer
+import sys
 import time
 
 from decimojo.decimal.decimal import Decimal
@@ -191,6 +192,32 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
                 truncated_value += 1
 
             return truncated_value
+
+
+fn sqrt(x: UInt128) -> UInt128:
+    """
+    Returns the square root of a UInt128 value.
+
+    Args:
+        x: The UInt128 value to calculate the square root for.
+
+    Returns:
+        The square root of the UInt128 value.
+    """
+
+    if x < 0:
+        return 0
+
+    var r: UInt128 = 0
+
+    for p in range(sys.bitwidthof[UInt128]() // 2 - 1, -1, -1):
+        var new_bit = UInt128(1) << p
+        var would_be = r | new_bit
+        var squared = would_be * would_be
+        if squared <= x:
+            r = would_be
+
+    return r
 
 
 # TODO: Evaluate whether this can replace truncate_to_max in some cases.

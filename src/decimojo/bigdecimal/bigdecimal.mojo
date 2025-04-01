@@ -541,9 +541,15 @@ struct BigDecimal:
         """Returns the maximum of two BigDecimal numbers."""
         return decimojo.bigdecimal.comparison.max(self, other)
 
+    @always_inline
     fn min(self, other: Self) raises -> Self:
         """Returns the minimum of two BigDecimal numbers."""
         return decimojo.bigdecimal.comparison.min(self, other)
+
+    @always_inline
+    fn sqrt(self, precision: Int = 28) raises -> Self:
+        """Returns the square root of the BigDecimal number."""
+        return decimojo.bigdecimal.exponential.sqrt(self, precision)
 
     @always_inline
     fn true_divide(self, other: Self, precision: Int) raises -> Self:
@@ -668,6 +674,11 @@ struct BigDecimal:
                 ).rjust(9, fillchar="0")
             )
         print("----------------------------------------------")
+
+    @always_inline
+    fn is_negative(self) -> Bool:
+        """Returns True if this number represents a negative value."""
+        return self.sign
 
     @always_inline
     fn is_zero(self) -> Bool:

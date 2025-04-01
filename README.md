@@ -16,12 +16,12 @@ The core types are:
 
 This repository includes [TOMLMojo](https://github.com/forfudan/decimojo/tree/main/src/tomlmojo), a lightweight TOML parser in pure Mojo. It parses configuration files and test data, supporting basic types, arrays, and nested tables. While created for DeciMojo's testing framework, it offers general-purpose structured data parsing with a clean, simple API.
 
-| type         | information                          | internal representation  |
-| ------------ | ------------------------------------ | ------------------------ |
-| `BigUInt`    | arbitrary-precision unsigned integer | `List[UInt32]`           |
-| `BigInt`     | arbitrary-precision integer          | `BigUInt`, `Bool`        |
-| `Decimal`    | 128-bit fixed-precision decimal      | 4 `UInt32` words         |
-| `BigDecimal` | arbitrary-precision decimal          | `BigUInt`, `Int`, `Bool` |
+| type         | alias   | information                          | internal representation             |
+| ------------ | ------- | ------------------------------------ | ----------------------------------- |
+| `BigUInt`    | `BUInt` | arbitrary-precision unsigned integer | `List[UInt32]`                      |
+| `BigInt`     | `BInt`  | arbitrary-precision integer          | `BigUInt`, `Bool`                   |
+| `Decimal`    | `Dec`   | 128-bit fixed-precision decimal      | `UInt32`,`UInt32`,`UInt32`,`UInt32` |
+| `BigDecimal` | `BDec`  | arbitrary-precision decimal          | `BigUInt`, `Int`, `Bool`            |
 
 ## Installation
 

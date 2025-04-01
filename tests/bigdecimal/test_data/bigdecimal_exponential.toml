@@ -1,0 +1,152 @@
+# === BASIC SQUARE ROOT TESTS ===
+[[sqrt_tests]]
+input = "0"
+expected = "0"
+description = "Square root of zero"
+
+[[sqrt_tests]]
+input = "1"
+expected = "1"
+description = "Square root of one"
+
+[[sqrt_tests]]
+input = "4"
+expected = "2"
+description = "Square root of perfect square (small)"
+
+[[sqrt_tests]]
+input = "9"
+expected = "3"
+description = "Square root of perfect square (single digit)"
+
+[[sqrt_tests]]
+input = "16"
+expected = "4"
+description = "Square root of perfect square (16)"
+
+[[sqrt_tests]]
+input = "25"
+expected = "5"
+description = "Square root of perfect square (25)"
+
+[[sqrt_tests]]
+input = "100"
+expected = "10"
+description = "Square root of perfect square (100)"
+
+# === NON-PERFECT SQUARES ===
+[[sqrt_tests]]
+input = "2"
+expected = "1.414213562373095048801688724"
+description = "Square root of 2 (irrational)"
+
+[[sqrt_tests]]
+input = "3"
+expected = "1.732050807568877293527446342"
+description = "Square root of 3 (irrational)"
+
+[[sqrt_tests]]
+input = "5"
+expected = "2.236067977499789696409173669"
+description = "Square root of 5 (irrational)"
+
+[[sqrt_tests]]
+input = "10"
+expected = "3.162277660168379331998893544"
+description = "Square root of 10 (irrational)"
+
+# === DECIMAL INPUTS ===
+[[sqrt_tests]]
+input = "0.25"
+expected = "0.5"
+description = "Square root of 0.25"
+
+[[sqrt_tests]]
+input = "0.01"
+expected = "0.1"
+description = "Square root of 0.01"
+
+[[sqrt_tests]]
+input = "0.0625"
+expected = "0.25"
+description = "Square root of 0.0625"
+
+[[sqrt_tests]]
+input = "2.25"
+expected = "1.5"
+description = "Square root of 2.25"
+
+[[sqrt_tests]]
+input = "12.25"
+expected = "3.5"
+description = "Square root of 12.25"
+
+# === LARGE NUMBERS ===
+[[sqrt_tests]]
+input = "1000000"
+expected = "1000"
+description = "Square root of large perfect square"
+
+[[sqrt_tests]]
+input = "9999999999"
+expected = "99999.99999499999999987500000"
+description = "Square root of large near-perfect square"
+
+[[sqrt_tests]]
+input = "1000000000000000000000000000"
+expected = "31622776601683.79331998893544"
+description = "Square root of very large imperfect square"
+
+# === SMALL NUMBERS ===
+[[sqrt_tests]]
+input = "0.0001"
+expected = "0.01"
+description = "Square root of small number"
+
+[[sqrt_tests]]
+input = "0.000000000001"
+expected = "0.000001"
+description = "Square root of very small number"
+
+[[sqrt_tests]]
+input = "0.0000000000000000000000000001"
+expected = "1E-14"
+description = "Square root of extremely small number"
+
+# === SCIENTIFIC NOTATION ===
+[[sqrt_tests]]
+input = "1e10"
+expected = "1E+5"
+description = "Square root with scientific notation (positive exponent)"
+
+[[sqrt_tests]]
+input = "1e-10"
+expected = "0.00001"
+description = "Square root with scientific notation (negative exponent)"
+
+# === PRECISION TESTS ===
+[[sqrt_tests]]
+input = "2"
+expected = "1.414213562373095048801688724"
+description = "High precision square root of 2"
+
+[[sqrt_tests]]
+input = "0.9999999999999999"
+expected = "0.9999999999999999500000000000"
+description = "Square root slightly less than 1"
+
+[[sqrt_tests]]
+input = "1.0000000000000001"
+expected = "1.000000000000000050000000000"
+description = "Square root slightly more than 1"
+
+# === APPLICATION SCENARIOS ===
+[[sqrt_tests]]
+input = "3.14159265358979323846"
+expected = "1.772453850905516027297421799"
+description = "Square root of π"
+
+[[sqrt_tests]]
+input = "2.71828182845904523536"
+expected = "1.648721270700128146848563608"
+description = "Square root of e"
