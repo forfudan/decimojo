@@ -557,10 +557,10 @@ fn main() raises:
         speedup_factors,
     )
 
-    # Case 43: exp(5000000)
+    # Case 43: exp(5000.1234567890)
     run_benchmark_exp(
-        "exp(5000000)",
-        "5000000",
+        "exp(5000.1234567890)",
+        "5000.1234567890",
         iterations,
         log_file,
         speedup_factors,
@@ -611,10 +611,10 @@ fn main() raises:
         speedup_factors,
     )
 
-    # Case 49: exp(12345678)
+    # Case 49: exp(1234.5678901234567890)
     run_benchmark_exp(
-        "exp(12345678)",
-        "12345678",
+        "exp(1234.5678901234567890)",
+        "1234.5678901234567890",
         iterations,
         log_file,
         speedup_factors,

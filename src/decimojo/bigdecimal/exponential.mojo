@@ -20,6 +20,8 @@
 
 """Implements exponential functions for the BigDecimal type."""
 
+import time
+
 from decimojo.bigdecimal.bigdecimal import BigDecimal
 from decimojo.rounding_mode import RoundingMode
 import decimojo.utility
@@ -200,14 +202,13 @@ fn exp(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
 
     # For very large positive values, result will overflow BigDecimal capacity
     # Calculate rough estimate to detect overflow early
-    if not x.sign and x.scale <= -40:  # x > 10^40
+    # TODO: Use BigInt as scale can avoid overflow in this case
+    if not x.sign and x.exponent() >= 20:  # x > 10^20
         raise Error("Error in `exp`: Result too large to represent")
 
     # For very large negative values, result will be effectively zero
-    if x.sign and x.scale <= -40:  # x < -10^40
-        return BigDecimal(
-            BigUInt.ONE, precision, False
-        )  # Return very small number
+    if x.sign and x.exponent() >= 20:  # x < -10^20
+        return BigDecimal(BigUInt.ZERO, precision, False)
 
     # Handle negative x using identity: exp(-x) = 1/exp(x)
     if x.sign:
@@ -217,36 +218,58 @@ fn exp(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
         )
 
     # Range reduction for faster convergence
-    # If x > 1, use exp(x) = exp(x/2)²
-    if x > BigDecimal(BigUInt.ONE, 0, False):
-        # Find k where 2^k > x
+    # If x >= 0.1, use exp(x) = exp(x/2)²
+    if x >= BigDecimal(BigUInt.ONE, 1, False):
+        # var t_before_range_reduction = time.perf_counter_ns()
         var k = 0
         var threshold = BigDecimal(BigUInt.ONE, 0, False)
-        while threshold <= x:
-            threshold = threshold + threshold  # Multiply by 2
+        while threshold.exponent() <= x.exponent() + 1:
+            threshold.coefficient = (
+                threshold.coefficient + threshold.coefficient
+            )  # Multiply by 2
             k += 1
 
         # Calculate exp(x/2^k)
         var reduced_x = x.true_divide_fast(threshold, working_precision)
-        var reduced_exp = exp_taylor_series(reduced_x, working_precision)
+
+        # var t_after_range_reduction = time.perf_counter_ns()
+
+        var result = exp_taylor_series(reduced_x, working_precision)
+
+        # var t_after_taylor_series = time.perf_counter_ns()
 
         # Square result k times: exp(x) = exp(x/2^k)^(2^k)
-        var result = reduced_exp
-        for i in range(k):
+        for _ in range(k):
             result = result * result
-            # Round intermediates to working precision to avoid explosion
-            if i % 2 == 1:  # Every few iterations
-                result.round_to_precision(
-                    precision=working_precision,
-                    rounding_mode=RoundingMode.ROUND_HALF_UP,
-                    remove_extra_digit_due_to_rounding=False,
-                )
+            result.round_to_precision(
+                precision=working_precision,
+                rounding_mode=RoundingMode.ROUND_HALF_UP,
+                remove_extra_digit_due_to_rounding=False,
+            )
 
         result.round_to_precision(
             precision=precision,
             rounding_mode=RoundingMode.ROUND_HALF_EVEN,
             remove_extra_digit_due_to_rounding=False,
         )
+
+        # var t_after_scale_up = time.perf_counter_ns()
+
+        # print(
+        #     "TIME: range reduction: {}ns".format(
+        #         t_after_range_reduction - t_before_range_reduction
+        #     )
+        # )
+        # print(
+        #     "TIME: taylor series: {}ns".format(
+        #         t_after_taylor_series - t_after_range_reduction
+        #     )
+        # )
+        # print(
+        #     "TIME: scale up: {}ns".format(
+        #         t_after_scale_up - t_after_taylor_series
+        #     )
+        # )
 
         return result^
 
@@ -284,7 +307,7 @@ fn exp_taylor_series(
     # There are intotal 2.3 * precision iterations
 
     # print("DEBUG: exp_taylor_series")
-    # print("DEBUG: x", x)
+    # print("DEBUG: x =", x)
 
     var max_number_of_terms = Int(minimum_precision * 2.5) + 1
     var result = BigDecimal(BigUInt.ONE, 0, False)
@@ -309,7 +332,7 @@ fn exp_taylor_series(
         # Add term to result
         result += term
 
-        print("DEUBG: round {}, term {}, result {}".format(n, term, result))
+        # print("DEUBG: round {}, term {}, result {}".format(n, term, result))
 
         # Check if we've reached desired precision
         if term.exponent() < -minimum_precision:
