@@ -20,6 +20,8 @@
 
 """Implements exponential functions for the BigDecimal type."""
 
+import time
+
 from decimojo.bigdecimal.bigdecimal import BigDecimal
 from decimojo.rounding_mode import RoundingMode
 import decimojo.utility
@@ -119,7 +121,7 @@ fn sqrt(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
 
     while guess != prev_guess and iteration_count < 100:
         prev_guess = guess
-        var quotient = x.true_divide(guess, working_precision)
+        var quotient = x.true_divide_fast(guess, working_precision)
         var sum = guess + quotient
         guess = sum.true_divide(BigDecimal(BigUInt(2), 0, 0), working_precision)
         iteration_count += 1
@@ -138,6 +140,7 @@ fn sqrt(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
 
     # Remove trailing zeros for exact results
     # TODO: This can be done even earlier in the process
+    # TODO: Implement a method that remove trailing zeros
     if guess.coefficient.ith_digit(0) == 0:
         var guess_coefficient_without_trailing_zeros = guess.coefficient.remove_trailing_digits_with_rounding(
             guess.coefficient.number_of_trailing_zeros(),
@@ -156,15 +159,12 @@ fn sqrt(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
             var expected_ndigits_of_result = (
                 x.coefficient.number_of_digits() + 1
             ) // 2
-            guess.scale = (x.scale + 1) // 2
-            guess.coefficient = (
-                guess.coefficient.remove_trailing_digits_with_rounding(
-                    guess.coefficient.number_of_digits()
-                    - expected_ndigits_of_result,
-                    rounding_mode=RoundingMode.ROUND_DOWN,
-                    remove_extra_digit_due_to_rounding=False,
-                )
+            guess.round_to_precision(
+                precision=expected_ndigits_of_result,
+                rounding_mode=RoundingMode.ROUND_DOWN,
+                remove_extra_digit_due_to_rounding=False,
             )
+            guess.scale = (x.scale + 1) // 2
 
     return guess^
 
@@ -202,14 +202,13 @@ fn exp(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
 
     # For very large positive values, result will overflow BigDecimal capacity
     # Calculate rough estimate to detect overflow early
-    if not x.sign and x.scale <= -40:  # x > 10^40
+    # TODO: Use BigInt as scale can avoid overflow in this case
+    if not x.sign and x.exponent() >= 20:  # x > 10^20
         raise Error("Error in `exp`: Result too large to represent")
 
     # For very large negative values, result will be effectively zero
-    if x.sign and x.scale <= -40:  # x < -10^40
-        return BigDecimal(
-            BigUInt.ONE, precision, False
-        )  # Return very small number
+    if x.sign and x.exponent() >= 20:  # x < -10^20
+        return BigDecimal(BigUInt.ZERO, precision, False)
 
     # Handle negative x using identity: exp(-x) = 1/exp(x)
     if x.sign:
@@ -219,41 +218,63 @@ fn exp(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
         )
 
     # Range reduction for faster convergence
-    # If x > 1, use exp(x) = exp(x/2)²
-    if x > BigDecimal(BigUInt.ONE, 0, False):
-        # Find k where 2^k > x
+    # If x >= 0.1, use exp(x) = exp(x/2)²
+    if x >= BigDecimal(BigUInt.ONE, 1, False):
+        # var t_before_range_reduction = time.perf_counter_ns()
         var k = 0
         var threshold = BigDecimal(BigUInt.ONE, 0, False)
-        while threshold <= x:
-            threshold = threshold + threshold  # Multiply by 2
+        while threshold.exponent() <= x.exponent() + 1:
+            threshold.coefficient = (
+                threshold.coefficient + threshold.coefficient
+            )  # Multiply by 2
             k += 1
 
         # Calculate exp(x/2^k)
-        var reduced_x = x.true_divide(threshold, working_precision)
-        var reduced_exp = exp_taylor_series(reduced_x, working_precision)
+        var reduced_x = x.true_divide_fast(threshold, working_precision)
+
+        # var t_after_range_reduction = time.perf_counter_ns()
+
+        var result = exp_taylor_series(reduced_x, working_precision)
+
+        # var t_after_taylor_series = time.perf_counter_ns()
 
         # Square result k times: exp(x) = exp(x/2^k)^(2^k)
-        var result = reduced_exp
-        for i in range(k):
+        for _ in range(k):
             result = result * result
-            # Round intermediates to working precision to avoid explosion
-            if i % 3 == 2:  # Every few iterations
-                result.round_to_precision(
-                    precision=working_precision,
-                    rounding_mode=RoundingMode.ROUND_HALF_EVEN,
-                    remove_extra_digit_due_to_rounding=True,
-                )
+            result.round_to_precision(
+                precision=working_precision,
+                rounding_mode=RoundingMode.ROUND_HALF_UP,
+                remove_extra_digit_due_to_rounding=False,
+            )
 
         result.round_to_precision(
             precision=precision,
             rounding_mode=RoundingMode.ROUND_HALF_EVEN,
-            remove_extra_digit_due_to_rounding=True,
+            remove_extra_digit_due_to_rounding=False,
         )
+
+        # var t_after_scale_up = time.perf_counter_ns()
+
+        # print(
+        #     "TIME: range reduction: {}ns".format(
+        #         t_after_range_reduction - t_before_range_reduction
+        #     )
+        # )
+        # print(
+        #     "TIME: taylor series: {}ns".format(
+        #         t_after_taylor_series - t_after_range_reduction
+        #     )
+        # )
+        # print(
+        #     "TIME: scale up: {}ns".format(
+        #         t_after_scale_up - t_after_taylor_series
+        #     )
+        # )
 
         return result^
 
     # For small values, use Taylor series directly
-    var result = exp_taylor_series(x, precision)
+    var result = exp_taylor_series(x, working_precision)
 
     result.round_to_precision(
         precision=precision,
@@ -264,38 +285,64 @@ fn exp(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
     return result^
 
 
-fn exp_taylor_series(x: BigDecimal, precision: Int) raises -> BigDecimal:
-    """Calculate exp(x) using Taylor series for |x| <= 1."""
+fn exp_taylor_series(
+    x: BigDecimal, minimum_precision: Int
+) raises -> BigDecimal:
+    """Calculate exp(x) using Taylor series for |x| <= 1.
+
+    Args:
+        x: The exponent value.
+        minimum_precision: Minimum precision in significant digits.
+
+    Returns:
+        The natural exponential of x (e^x) to the specified precision + 9.
+    """
     # Theoretical number of terms needed based on precision
     # For |x| ≤ 1, error after n terms is approximately |x|^(n+1)/(n+1)!
     # We need |x|^(n+1)/(n+1)! < 10^(-precision)
     # For x=1, we need approximately n ≈ precision * ln(10) ≈ precision * 2.3
-    var max_number_of_terms = Int(precision * 2.5) + 1
+    #
+    # ZHU: About complexity:
+    # In each loop, there are 2 mul (2 x 100ns) and 1 div (2000ns)
+    # There are intotal 2.3 * precision iterations
 
-    # Required precision for term smaller than minimum contribution
-    var min_term_precision = BigDecimal(BigUInt.ONE, precision + 1, False)
+    # print("DEBUG: exp_taylor_series")
+    # print("DEBUG: x =", x)
 
+    var max_number_of_terms = Int(minimum_precision * 2.5) + 1
     var result = BigDecimal(BigUInt.ONE, 0, False)
     var term = BigDecimal(BigUInt.ONE, 0, False)
-    var factorial = BigUInt.ONE
     var n = BigUInt.ONE
 
     # Calculate Taylor series: 1 + x + x²/2! + x³/3! + ...
     for _ in range(1, max_number_of_terms):
-        # Calculate next term: x^i/i!
-        term = term * x
-        factorial = factorial * n
+        # Calculate next term: x^i/i! = x^{i-1} * x/i
+        # We can use the previous term to calculate the next one
+        var add_on = x.true_divide_fast(
+            BigDecimal(n, 0, False), minimum_precision
+        )
+        term = term * add_on
+        term.round_to_precision(
+            precision=minimum_precision,
+            rounding_mode=RoundingMode.ROUND_HALF_UP,
+            remove_extra_digit_due_to_rounding=False,
+        )
         n += BigUInt.ONE
 
-        var next_term = term.true_divide(
-            BigDecimal(factorial, 0, False), precision + 5
-        )
-
         # Add term to result
-        result += next_term
+        result += term
+
+        # print("DEUBG: round {}, term {}, result {}".format(n, term, result))
 
         # Check if we've reached desired precision
-        if next_term.compare_absolute(min_term_precision) < 0:
+        if term.exponent() < -minimum_precision:
             break
+
+    result.round_to_precision(
+        precision=minimum_precision,
+        rounding_mode=RoundingMode.ROUND_HALF_UP,
+        remove_extra_digit_due_to_rounding=False,
+    )
+    # print("DEBUG: final result", result)
 
     return result^
