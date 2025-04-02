@@ -143,7 +143,7 @@ fn main() raises:
     except:
         log_print("Could not retrieve system information", log_file)
 
-    var iterations = 1
+    var iterations = 100
     var pydecimal = Python().import_module("decimal")
 
     # Set Python decimal precision to match Mojo's
