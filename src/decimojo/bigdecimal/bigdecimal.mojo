@@ -548,6 +548,17 @@ struct BigDecimal:
         return decimojo.bigdecimal.exponential.ln(self, precision)
 
     @always_inline
+    fn log(self, base: Self, precision: Int = 28) raises -> Self:
+        """Returns the logarithm of the BigDecimal number with the given base.
+        """
+        return decimojo.bigdecimal.exponential.log(self, base, precision)
+
+    @always_inline
+    fn log10(self, precision: Int = 28) raises -> Self:
+        """Returns the base-10 logarithm of the BigDecimal number."""
+        return decimojo.bigdecimal.exponential.log10(self, precision)
+
+    @always_inline
     fn max(self, other: Self) raises -> Self:
         """Returns the maximum of two BigDecimal numbers."""
         return decimojo.bigdecimal.comparison.max(self, other)

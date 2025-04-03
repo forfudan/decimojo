@@ -27,7 +27,7 @@ from decimojo.rounding_mode import RoundingMode
 import decimojo.utility
 
 
-fn sqrt(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
+fn sqrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculate the square root of a BigDecimal number.
 
     Args:
@@ -174,7 +174,7 @@ fn sqrt(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
 # ===----------------------------------------------------------------------=== #
 
 
-fn exp(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
+fn exp(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculate the natural exponential of x (e^x) to the specified precision.
 
     Args:
@@ -351,7 +351,9 @@ fn exp_taylor_series(
 # ===----------------------------------------------------------------------=== #
 # Logarithmic functions
 # ===----------------------------------------------------------------------=== #
-fn ln(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
+
+
+fn ln(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculate the natural logarithm of x to the specified precision.
 
     Args:
@@ -440,6 +442,116 @@ fn ln(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
         precision=precision,
         rounding_mode=RoundingMode.ROUND_HALF_EVEN,
         remove_extra_digit_due_to_rounding=True,
+    )
+
+    return result^
+
+
+fn log(x: BigDecimal, base: BigDecimal, precision: Int) raises -> BigDecimal:
+    """Calculates the logarithm of x with respect to an arbitrary base.
+
+    Args:
+        x: The value to compute the logarithm.
+        base: The base of the logarithm.
+        precision: Desired precision in decimal digits.
+
+    Returns:
+        The logarithm of x with respect to base.
+
+    Raises:
+        Error: If x is negative or zero.
+        Error: If base is negative, zero, or one.
+    """
+    alias BUFFER_DIGITS = 9  # word-length, easy to append and trim
+    var working_precision = precision + BUFFER_DIGITS
+
+    # Special cases
+    if x.sign:
+        raise Error(
+            "Error in log(): Cannot compute logarithm of a negative number"
+        )
+    if x.coefficient.is_zero():
+        raise Error("Error in log(): Cannot compute logarithm of zero")
+
+    # Base validation
+    if base.sign:
+        raise Error("Error in log(): Cannot use a negative base")
+    if base.coefficient.is_zero():
+        raise Error("Error in log(): Cannot use zero as a base")
+    if (
+        base.coefficient.number_of_digits() == base.scale + 1
+        and base.coefficient.words[-1] == 1
+    ):
+        raise Error("Error in log(): Cannot use base 1 for logarithm")
+
+    # Special cases
+    if (
+        x.coefficient.number_of_digits() == x.scale + 1
+        and x.coefficient.words[-1] == 1
+    ):
+        return BigDecimal(BigUInt.ZERO, 0, False)  # log_base(1) = 0
+
+    if x == base:
+        return BigDecimal(BigUInt.ONE, 0, False)  # log_base(base) = 1
+
+    # Optimization for base 10
+    if (
+        base.scale == 0
+        and base.coefficient.number_of_digits() == 2
+        and base.coefficient.words[-1] == 10
+    ):
+        return log10(x, precision)
+
+    # Use the identity: log_base(x) = ln(x) / ln(base)
+    var ln_x = ln(x, working_precision)
+    var ln_base = ln(base, working_precision)
+
+    var result = ln_x.true_divide(ln_base, precision)
+    return result^
+
+
+fn log10(x: BigDecimal, precision: Int) raises -> BigDecimal:
+    """Calculates the base-10 logarithm of a BigDecimal value.
+
+    Args:
+        x: The value to compute log10.
+        precision: Desired precision in decimal digits.
+
+    Returns:
+        The base-10 logarithm of x.
+
+    Raises:
+        Error: If x is negative or zero.
+    """
+    alias BUFFER_DIGITS = 9  # word-length, easy to append and trim
+    var working_precision = precision + BUFFER_DIGITS
+
+    # Special cases
+    if x.sign:
+        raise Error(
+            "Error in log10(): Cannot compute logarithm of a negative number"
+        )
+    if x.coefficient.is_zero():
+        raise Error("Error in log10(): Cannot compute logarithm of zero")
+
+    # Fast path: Powers of 10 are handled directly
+    if x.coefficient.is_power_of_10():
+        # If x = 10^n, return n
+        var power = x.coefficient.number_of_trailing_zeros() - x.scale
+        return BigDecimal.from_int(power)
+
+    # Special case for x = 1
+    if (
+        x.coefficient.number_of_digits() == x.scale + 1
+        and x.coefficient.words[-1] == 1
+    ):
+        return BigDecimal(BigUInt.ZERO, 0, False)  # log10(1) = 0
+
+    # Use the identity: log10(x) = ln(x) / ln(10)
+    var ln_result = ln(x, working_precision)
+    var result = ln_result.true_divide(
+        ln(BigDecimal(BigUInt(List[UInt32](10)), 0, False), working_precision),
+        precision,
     )
 
     return result^
@@ -535,6 +647,33 @@ fn compute_ln2(working_precision: Int) raises -> BigDecimal:
     # For x = 1/3:
     # ln(2) = 2*(1/3 + (1/3)³/3 + (1/3)⁵/5 + ...)
 
+    if working_precision <= 90:
+        # Use precomputed value for ln(2) for lower precision
+        var result = BigDecimal(
+            BigUInt(
+                List[UInt32](
+                    605863326,
+                    969694715,
+                    493393621,
+                    120680009,
+                    360255254,
+                    75500134,
+                    458176568,
+                    417232121,
+                    559945309,
+                    693147180,
+                )
+            ),
+            90,
+            False,
+        )
+        result.round_to_precision(
+            precision=working_precision,
+            rounding_mode=RoundingMode.ROUND_DOWN,
+            remove_extra_digit_due_to_rounding=False,
+        )
+        return result^
+
     var max_terms = Int(working_precision * 2.5) + 1
 
     var number_of_words = working_precision // 9 + 1
@@ -553,11 +692,9 @@ fn compute_ln2(working_precision: Int) raises -> BigDecimal:
         var new_k = k + BigDecimal(BigUInt(List[UInt32](2)), 0, False)
         term = (term * x * x * k).true_divide_inexact(new_k, working_precision)
         k = new_k^
-
-        # print("DEBUG: k =", k, "max_terms =", max_terms)
-
         if term.exponent() < -working_precision:
             break
+
     result.round_to_precision(
         precision=working_precision,
         rounding_mode=RoundingMode.ROUND_DOWN,
