@@ -27,6 +27,147 @@ from decimojo.rounding_mode import RoundingMode
 import decimojo.utility
 
 
+# ===----------------------------------------------------------------------=== #
+# Power and root functions
+# ===----------------------------------------------------------------------=== #
+
+
+fn power(
+    base: BigDecimal, exponent: BigDecimal, precision: Int = 28
+) raises -> BigDecimal:
+    """Raises a BigDecimal base to an arbitrary BigDecimal exponent power.
+
+    This function handles both integer and non-integer exponents using the
+    identity x^y = e^(y * ln(x)) for the general case, with optimizations
+    for integer exponents.
+
+    Args:
+        base: The base value to be raised to a power.
+        exponent: The exponent to raise the base to.
+        precision: Desired precision in significant digits.
+
+    Returns:
+        The result of base^exponent.
+
+    Raises:
+        Error: If base is negative and exponent is not an integer.
+        Error: If base is zero and exponent is negative or zero.
+    """
+    alias BUFFER_DIGITS = 9
+    var working_precision = precision + BUFFER_DIGITS
+
+    # Special cases
+    if base.coefficient.is_zero():
+        if exponent.coefficient.is_zero():
+            raise Error("Error in power: 0^0 is undefined")
+        elif exponent.sign:
+            raise Error(
+                "Error in power: Division by zero (negative exponent with zero"
+                " base)"
+            )
+        else:
+            return BigDecimal(BigUInt.ZERO, precision, False)
+
+    if exponent.coefficient.is_zero():
+        return BigDecimal(BigUInt.ONE, 0, False)  # x^0 = 1
+
+    if base == BigDecimal(BigUInt.ONE, 0, False):
+        return BigDecimal(BigUInt.ONE, 0, False)  # 1^y = 1
+
+    if exponent == BigDecimal(BigUInt.ONE, 0, False):
+        # return base  # x^1 = x
+        var result = base
+        result.round_to_precision(
+            precision,
+            rounding_mode=RoundingMode.ROUND_HALF_EVEN,
+            remove_extra_digit_due_to_rounding=True,
+        )
+        return result^
+
+    # Check for negative base with non-integer exponent
+    if base.sign and not exponent.is_integer():
+        raise Error(
+            "Error in power: Negative base with non-integer exponent would"
+            " produce a complex result"
+        )
+
+    # Optimization for integer exponents
+    if exponent.is_integer() and exponent.coefficient.number_of_digits() <= 9:
+        return integer_power(base, exponent, precision)
+
+    # General case using x^y = e^(y*ln(x))
+    # Need to be careful with negative base
+    var abs_base = abs(base)
+    var ln_result = ln(abs_base, working_precision)
+    var product = ln_result * exponent
+    var exp_result = exp(product, working_precision)
+
+    # Handle sign for negative base with odd integer exponents
+    if base.sign and exponent.is_integer() and exponent.is_odd():
+        exp_result.sign = True
+
+    exp_result.round_to_precision(precision, RoundingMode.ROUND_HALF_EVEN, True)
+    return exp_result^
+
+
+fn integer_power(
+    base: BigDecimal, exponent: BigDecimal, precision: Int
+) raises -> BigDecimal:
+    """Optimized implementation for integer exponents using binary exponentiation.
+
+    Args:
+        base: The base value.
+        exponent: The integer exponent.
+        precision: Desired precision.
+
+    Returns:
+        The result of base^exponent.
+    """
+    var working_precision = precision + 9  # Add buffer digits
+    var abs_exp = abs(exponent)
+    var exp_value: BigUInt
+    if abs_exp.scale > 0:
+        exp_value = abs_exp.coefficient.scale_down_by_power_of_10(abs_exp.scale)
+    elif abs_exp.scale == 0:
+        exp_value = abs_exp.coefficient
+    else:
+        exp_value = abs_exp.coefficient.scale_up_by_power_of_10(-abs_exp.scale)
+
+    var result = BigDecimal(BigUInt.ONE, 0, False)
+    var current_power = base
+
+    # Handle negative exponent: result will be 1/positive_power
+    var is_negative_exponent = exponent.sign
+
+    # Binary exponentiation algorithm: x^n = (x^2)^(n/2) if n is even
+    while exp_value > BigUInt.ZERO:
+        if exp_value.words[0] % 2 == 1:
+            # If current bit is set, multiply result by current power
+            result = result * current_power
+            # Round to avoid coefficient explosion
+            result.round_to_precision(
+                working_precision, RoundingMode.ROUND_DOWN, False
+            )
+
+        # Square the current power for next bit
+        current_power = current_power * current_power
+        # Round to avoid coefficient explosion
+        current_power.round_to_precision(
+            working_precision, RoundingMode.ROUND_DOWN, False
+        )
+
+        exp_value.floor_divide_inplace_by_2()
+
+    # For negative exponents, compute reciprocal
+    if is_negative_exponent:
+        result = BigDecimal(BigUInt.ONE, 0, False).true_divide(
+            result, working_precision
+        )
+
+    result.round_to_precision(precision, RoundingMode.ROUND_DOWN, False)
+    return result^
+
+
 fn sqrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculate the square root of a BigDecimal number.
 

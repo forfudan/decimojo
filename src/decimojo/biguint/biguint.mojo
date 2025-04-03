@@ -730,6 +730,13 @@ struct BigUInt(Absable, IntableRaising, Writable):
         return decimojo.biguint.arithmetics.divmod(self, other)
 
     @always_inline
+    fn floor_divide_inplace_by_2(mut self) raises:
+        """Divides this number by 2 in place.
+        See `floor_divide_inplace_by_2()` for more information.
+        """
+        decimojo.biguint.arithmetics.floor_divide_inplace_by_2(self)
+
+    @always_inline
     fn scale_up_by_power_of_10(self, n: Int) raises -> Self:
         """Returns the result of multiplying this number by 10^n (n>=0).
         See `scale_up_by_power_of_10()` for more information.
