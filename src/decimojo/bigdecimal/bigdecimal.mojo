@@ -459,7 +459,16 @@ struct BigDecimal:
 
     @always_inline
     fn __truediv__(self, other: Self) raises -> Self:
-        return decimojo.bigdecimal.arithmetics.true_divide(self, other)
+        return decimojo.bigdecimal.arithmetics.true_divide(
+            self, other, precision=28
+        )
+
+    @always_inline
+    fn __pow__(self, exponent: Self) raises -> Self:
+        """Returns the result of exponentiation."""
+        return decimojo.bigdecimal.exponential.power(
+            self, exponent, precision=28
+        )
 
     # ===------------------------------------------------------------------=== #
     # Basic binary augmented arithmetic assignments dunders
@@ -482,7 +491,9 @@ struct BigDecimal:
 
     @always_inline
     fn __itruediv__(mut self, other: Self) raises:
-        self = decimojo.bigdecimal.arithmetics.true_divide(self, other)
+        self = decimojo.bigdecimal.arithmetics.true_divide(
+            self, other, precision=28
+        )
 
     # ===------------------------------------------------------------------=== #
     # Basic binary comparison operation dunders
@@ -548,6 +559,17 @@ struct BigDecimal:
         return decimojo.bigdecimal.exponential.ln(self, precision)
 
     @always_inline
+    fn log(self, base: Self, precision: Int = 28) raises -> Self:
+        """Returns the logarithm of the BigDecimal number with the given base.
+        """
+        return decimojo.bigdecimal.exponential.log(self, base, precision)
+
+    @always_inline
+    fn log10(self, precision: Int = 28) raises -> Self:
+        """Returns the base-10 logarithm of the BigDecimal number."""
+        return decimojo.bigdecimal.exponential.log10(self, precision)
+
+    @always_inline
     fn max(self, other: Self) raises -> Self:
         """Returns the maximum of two BigDecimal numbers."""
         return decimojo.bigdecimal.comparison.max(self, other)
@@ -581,6 +603,13 @@ struct BigDecimal:
         return decimojo.bigdecimal.arithmetics.true_divide_inexact(
             self, other, number_of_significant_digits
         )
+
+    @always_inline
+    fn power(self, exponent: Self, precision: Int) raises -> Self:
+        """Returns the result of exponentiation with the given precision.
+        See `exponential.power()` for more information.
+        """
+        return decimojo.bigdecimal.exponential.power(self, exponent, precision)
 
     @always_inline
     fn round_to_precision(
@@ -712,9 +741,30 @@ struct BigDecimal:
         print("----------------------------------------------")
 
     @always_inline
+    fn is_integer(self) -> Bool:
+        """Returns True if this number represents an integer value."""
+        var number_of_trailing_zeros = self.number_of_trailing_zeros()
+        if number_of_trailing_zeros >= self.scale:
+            return True
+        else:
+            return False
+
+    @always_inline
     fn is_negative(self) -> Bool:
         """Returns True if this number represents a negative value."""
         return self.sign
+
+    @always_inline
+    fn is_odd(self) raises -> Bool:
+        """Returns True if this number represents an odd value."""
+        if self.scale < 0:
+            return False
+
+        var cutoff_digit = self.coefficient.ith_digit(self.scale)
+        if cutoff_digit % 2 == 0:
+            return False
+        else:
+            return True
 
     @always_inline
     fn is_zero(self) -> Bool:

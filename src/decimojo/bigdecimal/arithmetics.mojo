@@ -190,7 +190,7 @@ fn multiply(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
 
 # TODO: Optimize when divided by power of 10
 fn true_divide(
-    x1: BigDecimal, x2: BigDecimal, precision: Int = 28
+    x1: BigDecimal, x2: BigDecimal, precision: Int
 ) raises -> BigDecimal:
     """Returns the quotient of two numbers with specified precision.
 
