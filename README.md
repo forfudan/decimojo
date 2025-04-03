@@ -115,6 +115,24 @@ fn main() raises:
 
 [Click here for 8 key examples](https://zhuyuhao.com/decimojo/docs/examples) highlighting the most important features of the `Decimal` type.
 
+Here are some examples showcasing the arbitrary-precision feature of the `BigDecimal` type.
+
+```mojo
+from decimojo import BDec, RM
+
+
+fn main() raises:
+    var PRECISION = 100
+    var a = BDec("123456789.123456789")
+    var b = BDec("1234.56789")
+    print(a.sqrt(precision=PRECISION))
+    # 11111.11106611111096943055498174930232833813065468909453818857935956641682120364106016272519460988485
+    print(a.power(b, precision=PRECISION))
+    # 3.346361102419080234023813540078946868219632448203078657310495672766009862564151996325555496759911131748170844123475135377098326591508239654961E+9989
+    print(a.log(b, precision=PRECISION))
+    # 2.617330026656548299907884356415293977170848626010103229392408225981962436022623783231699264341492663671325580092077394824180414301026578169909
+```
+
 Here is a comprehensive quick-start guide showcasing each major function of the `BigInt` type.
 
 ```mojo
