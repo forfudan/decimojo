@@ -1,5 +1,5 @@
 """
-Test BigDecimal exponential operations including square root.
+Test BigDecimal exponential operations including square root and natural logarithm.
 """
 
 from python import Python
@@ -108,6 +108,89 @@ fn test_negative_sqrt() raises:
     print("✓ Square root of negative number correctly raises an error")
 
 
+fn test_ln() raises:
+    """Test BigDecimal natural logarithm with various test cases."""
+    print("------------------------------------------------------")
+    print("Testing BigDecimal natural logarithm (ln)...")
+
+    var pydecimal = Python.import_module("decimal")
+
+    # Load test cases from TOML file
+    var test_cases = load_test_cases(exponential_file_path, "ln_tests")
+    print("Loaded", len(test_cases), "test cases for natural logarithm")
+
+    # Track test results
+    var passed = 0
+    var failed = 0
+
+    # Run all test cases in a loop
+    for i in range(len(test_cases)):
+        var test_case = test_cases[i]
+        var input_value = BigDecimal(test_case.a)
+        var expected = BigDecimal(test_case.expected)
+
+        # Calculate natural logarithm
+        var result = input_value.ln()
+
+        try:
+            # Using String comparison for easier debugging
+            testing.assert_equal(
+                String(result), String(expected), test_case.description
+            )
+            passed += 1
+        except e:
+            print(
+                "=" * 50,
+                "\n",
+                i + 1,
+                "failed:",
+                test_case.description,
+                "\n  Input:",
+                test_case.a,
+                "\n  Expected:",
+                test_case.expected,
+                "\n  Got:",
+                String(result),
+                "\n  Python decimal result (for reference):",
+                String(pydecimal.Decimal(test_case.a).ln()),
+            )
+            failed += 1
+
+    print("BigDecimal ln tests:", passed, "passed,", failed, "failed")
+    testing.assert_equal(failed, 0, "All natural logarithm tests should pass")
+
+
+fn test_ln_invalid_inputs() raises:
+    """Test that natural logarithm with invalid inputs raises appropriate errors.
+    """
+    print("------------------------------------------------------")
+    print("Testing BigDecimal natural logarithm with invalid inputs...")
+
+    # Test 1: ln of zero should raise an error
+    var zero = BigDecimal("0")
+    var exception_caught = False
+    try:
+        _ = zero.ln()
+        exception_caught = False
+    except:
+        exception_caught = True
+    testing.assert_true(exception_caught, "ln(0) should raise an error")
+    print("✓ ln(0) correctly raises an error")
+
+    # Test 2: ln of negative number should raise an error
+    var negative = BigDecimal("-1")
+    exception_caught = False
+    try:
+        _ = negative.ln()
+        exception_caught = False
+    except:
+        exception_caught = True
+    testing.assert_true(
+        exception_caught, "ln of negative number should raise an error"
+    )
+    print("✓ ln of negative number correctly raises an error")
+
+
 fn main() raises:
     print("Running BigDecimal exponential tests")
 
@@ -116,5 +199,11 @@ fn main() raises:
 
     # Test sqrt of negative number
     test_negative_sqrt()
+
+    # Run ln tests
+    test_ln()
+
+    # Test ln with invalid inputs
+    test_ln_invalid_inputs()
 
     print("All BigDecimal exponential tests passed!")

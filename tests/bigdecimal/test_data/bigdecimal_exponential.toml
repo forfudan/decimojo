@@ -150,3 +150,140 @@ description = "Square root of π"
 input = "2.71828182845904523536"
 expected = "1.648721270700128146848563608"
 description = "Square root of e"
+
+# === BASIC NATURAL LOGARITHM TESTS ===
+[[ln_tests]]
+input = "1"
+expected = "0"
+description = "Natural logarithm of 1 (exactly 0)"
+
+[[ln_tests]]
+input = "2.718281828459045235360287471"
+expected = "0.9999999999999999999999999999"
+description = "Natural logarithm of e (approximately 1)"
+
+[[ln_tests]]
+input = "10"
+expected = "2.302585092994045684017991455"
+description = "Natural logarithm of 10"
+
+[[ln_tests]]
+input = "2"
+expected = "0.6931471805599453094172321215"
+description = "Natural logarithm of 2"
+
+[[ln_tests]]
+input = "0.5"
+expected = "-0.6931471805599453094172321215"
+description = "Natural logarithm of 0.5 (negative result)"
+
+# === POWERS OF e ===
+[[ln_tests]]
+input = "7.389056098930650227230427461"
+expected = "2.000000000000000000000000000"
+description = "Natural logarithm of e^2 (exactly 2)"
+
+[[ln_tests]]
+input = "20.08553692318766774092852965"
+expected = "3.000000000000000000000000000"
+description = "Natural logarithm of e^3 (exactly 3)"
+
+[[ln_tests]]
+input = "0.3678794411714423215955237702"
+expected = "-0.9999999999999999999999999999"
+description = "Natural logarithm of 1/e (exactly -1)"
+
+[[ln_tests]]
+input = "0.1353352832366126918939994949"
+expected = "-2.000000000000000000000000001"
+description = "Natural logarithm of 1/e^2 (exactly -2)"
+
+# === POWERS OF 10 ===
+[[ln_tests]]
+input = "100"
+expected = "4.605170185988091368035982909"
+description = "Natural logarithm of 10^2"
+
+[[ln_tests]]
+input = "0.01"
+expected = "-4.605170185988091368035982909"
+description = "Natural logarithm of 10^-2"
+
+[[ln_tests]]
+input = "1000"
+expected = "6.907755278982137052053974364"
+description = "Natural logarithm of 10^3"
+
+[[ln_tests]]
+input = "0.001"
+expected = "-6.907755278982137052053974364"
+description = "Natural logarithm of 10^-3"
+
+# === SMALL NUMBERS ===
+[[ln_tests]]
+input = "0.1"
+expected = "-2.302585092994045684017991455"
+description = "Natural logarithm of 0.1"
+
+[[ln_tests]]
+input = "0.00001"
+expected = "-11.51292546497022842008995727"
+description = "Natural logarithm of 1e-5"
+
+[[ln_tests]]
+input = "0.0000000001"
+expected = "-23.02585092994045684017991455"
+description = "Natural logarithm of 1e-10"
+
+# === LARGE NUMBERS ===
+[[ln_tests]]
+input = "1000000"
+expected = "13.81551055796427410410794873"
+description = "Natural logarithm of 1e6"
+
+[[ln_tests]]
+input = "1000000000000"
+expected = "27.63102111592854820821589746"
+description = "Natural logarithm of 1e12"
+
+[[ln_tests]]
+input = "1e50"
+expected = "115.1292546497022842008995727"
+description = "Natural logarithm of 1e50"
+
+# === VALUES NEAR 1 ===
+[[ln_tests]]
+input = "0.9"
+expected = "-0.1053605156578263012275009808"
+description = "Natural logarithm of 0.9 (near 1)"
+
+[[ln_tests]]
+input = "1.1"
+expected = "0.09531017980432486004395212328"
+description = "Natural logarithm of 1.1 (near 1)"
+
+[[ln_tests]]
+input = "0.999999"
+expected = "-0.000001000000500000333333583333533"
+description = "Natural logarithm very close to 0 (0.999999)"
+
+[[ln_tests]]
+input = "1.000001"
+expected = "9.999995000003333330833335333E-7"
+description = "Natural logarithm very close to 0 (1.000001)"
+
+# === MATHEMATICAL CONSTANTS ===
+[[ln_tests]]
+input = "3.141592653589793238462643383"
+expected = "1.144729885849400174143427351"
+description = "Natural logarithm of π"
+
+[[ln_tests]]
+input = "1.618033988749894848204586834"
+expected = "0.4812118250596034474977589132"
+description = "Natural logarithm of φ (golden ratio)"
+
+[[ln_tests]]
+input = "1.414213562373095048801688724"
+expected = "0.3465735902799726547086160606"
+description = "Natural logarithm of √2"

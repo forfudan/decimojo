@@ -543,6 +543,11 @@ struct BigDecimal:
         return decimojo.bigdecimal.exponential.exp(self, precision)
 
     @always_inline
+    fn ln(self, precision: Int = 28) raises -> Self:
+        """Returns the natural logarithm of the BigDecimal number."""
+        return decimojo.bigdecimal.exponential.ln(self, precision)
+
+    @always_inline
     fn max(self, other: Self) raises -> Self:
         """Returns the maximum of two BigDecimal numbers."""
         return decimojo.bigdecimal.comparison.max(self, other)
@@ -567,14 +572,14 @@ struct BigDecimal:
         )
 
     @always_inline
-    fn true_divide_fast(
-        self, other: Self, mininum_precision: Int
+    fn true_divide_inexact(
+        self, other: Self, number_of_significant_digits: Int
     ) raises -> Self:
-        """Returns the result of true division with minimum precision.
-        See `arithmetics.true_divide_fast()` for more information.
+        """Returns the result of true division with inexact precision.
+        See `arithmetics.true_divide_inexact()` for more information.
         """
-        return decimojo.bigdecimal.arithmetics.true_divide_fast(
-            self, other, mininum_precision
+        return decimojo.bigdecimal.arithmetics.true_divide_inexact(
+            self, other, number_of_significant_digits
         )
 
     @always_inline

@@ -331,32 +331,25 @@ fn true_divide(
     )
 
 
-fn true_divide_fast(
-    x1: BigDecimal,
-    x2: BigDecimal,
-    minimum_precision: Int = 28,
+fn true_divide_inexact(
+    x1: BigDecimal, x2: BigDecimal, number_of_significant_digits: Int
 ) raises -> BigDecimal:
-    """Returns the quotient of two numbers with precision.
+    """Returns the quotient of two numbers with number of significant digits.
     This function is a faster version of true_divide, but it does not
-    return the exact number of digits equal to `minimum_precision`.
-    It returns 9 digits more than `minimum_precision` in the result.
-    It is recommended to use this function when the exact number of
-    digits is not critical.
+    return the exact result of the division since no extra buffer digits are
+    added to the dividend during calculation.
+    It is recommended to use this function when you already know the dividend
+    has enough digits to produce a result with the desired precision. Then
+    use rounding to get the result with the desired precision.
 
     Args:
         x1: The first operand (dividend).
         x2: The second operand (divisor).
-        minimum_precision: The minumum number of significant digits in the result.
+        number_of_significant_digits: The number of significant digits in the
+            result.
 
     Returns:
         The quotient of x1 and x2.
-
-    Notes:
-
-    To improve the speed:
-    - The dividend and divisor are scaled up always by whole words.
-    - The result is truncated to above the minimum precision.
-    - Trailing zeros are not checked and removed for exact division.
     """
 
     # Check for division by zero
@@ -367,7 +360,7 @@ fn true_divide_fast(
     if x1.coefficient.is_zero():
         return BigDecimal(
             coefficient=BigUInt.ZERO,
-            scale=x1.scale - x2.scale,
+            scale=number_of_significant_digits,
             sign=x1.sign != x2.sign,
         )
 
@@ -376,12 +369,10 @@ fn true_divide_fast(
     var x1_digits = x1.coefficient.number_of_digits()
     var x2_digits = x2.coefficient.number_of_digits()
 
-    # Calculate how many buffer digits we need in the dividend
-    # We want: (x1_digits + buffer) - x2_digits > mininum_precision
-    # For quickly removing the buffer digits, it is selected to be multiple of 9.
-    var buffer_digits = minimum_precision - (x1_digits - x2_digits)
+    # Calculate how many digits we need in the dividend
+    # We want: x1_digits - x2_digits >= mininum_precision
+    var buffer_digits = number_of_significant_digits - (x1_digits - x2_digits)
     buffer_digits = max(0, buffer_digits)
-    buffer_digits = (buffer_digits // 9 + 1) * 9
 
     # Scale up the dividend to ensure sufficient precision
     var scaled_x1 = x1.coefficient
@@ -393,12 +384,11 @@ fn true_divide_fast(
     var result_scale = buffer_digits + x1.scale - x2.scale
 
     var result_digits = quotient.number_of_digits()
-    if result_digits > minimum_precision:
-        var digits_to_remove = result_digits - minimum_precision
-        digits_to_remove = digits_to_remove // 9 * 9
+    if result_digits > number_of_significant_digits:
+        var digits_to_remove = result_digits - number_of_significant_digits
         quotient = quotient.remove_trailing_digits_with_rounding(
             digits_to_remove,
-            RoundingMode.ROUND_HALF_UP,
+            RoundingMode.ROUND_DOWN,
             remove_extra_digit_due_to_rounding=False,
         )
         # Adjust the scale accordingly
