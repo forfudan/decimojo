@@ -37,10 +37,6 @@ fn power(
 ) raises -> BigDecimal:
     """Raises a BigDecimal base to an arbitrary BigDecimal exponent power.
 
-    This function handles both integer and non-integer exponents using the
-    identity x^y = e^(y * ln(x)) for the general case, with optimizations
-    for integer exponents.
-
     Args:
         base: The base value to be raised to a power.
         exponent: The exponent to raise the base to.
@@ -52,6 +48,12 @@ fn power(
     Raises:
         Error: If base is negative and exponent is not an integer.
         Error: If base is zero and exponent is negative or zero.
+
+    Notes:
+
+    This function handles both integer and non-integer exponents using the
+    identity x^y = e^(y * ln(x)) for the general case, with optimizations
+    for integer exponents.
     """
     alias BUFFER_DIGITS = 9
     var working_precision = precision + BUFFER_DIGITS
@@ -113,7 +115,7 @@ fn power(
 fn integer_power(
     base: BigDecimal, exponent: BigDecimal, precision: Int
 ) raises -> BigDecimal:
-    """Optimized implementation for integer exponents using binary exponentiation.
+    """Raises a base to integer exponents using binary exponentiation.
 
     Args:
         base: The base value.
@@ -149,7 +151,6 @@ fn integer_power(
                 working_precision, RoundingMode.ROUND_DOWN, False
             )
 
-        # Square the current power for next bit
         current_power = current_power * current_power
         # Round to avoid coefficient explosion
         current_power.round_to_precision(
