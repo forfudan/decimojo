@@ -48,9 +48,31 @@ fn round_to_precision(
 
     var ndigits_coefficient = number.coefficient.number_of_digits()
     var ndigits_to_remove = ndigits_coefficient - precision
-    number.coefficient = number.coefficient.remove_trailing_digits_with_rounding(
-        ndigits=ndigits_to_remove,
-        rounding_mode=rounding_mode,
-        remove_extra_digit_due_to_rounding=remove_extra_digit_due_to_rounding,
+
+    if ndigits_to_remove == 0:
+        return
+
+    if ndigits_to_remove < 0:
+        number = number.extend_precision(precision_diff=-ndigits_to_remove)
+        return
+
+    number.coefficient = (
+        number.coefficient.remove_trailing_digits_with_rounding(
+            ndigits=ndigits_to_remove,
+            rounding_mode=rounding_mode,
+            remove_extra_digit_due_to_rounding=False,
+        )
     )
     number.scale -= ndigits_to_remove
+
+    if remove_extra_digit_due_to_rounding and (
+        number.coefficient.number_of_digits() > precision
+    ):
+        number.coefficient = (
+            number.coefficient.remove_trailing_digits_with_rounding(
+                ndigits=1,
+                rounding_mode=RoundingMode.ROUND_DOWN,
+                remove_extra_digit_due_to_rounding=False,
+            )
+        )
+        number.scale -= 1

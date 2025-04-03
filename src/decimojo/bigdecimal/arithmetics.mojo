@@ -332,9 +332,7 @@ fn true_divide(
 
 
 fn true_divide_fast(
-    x1: BigDecimal,
-    x2: BigDecimal,
-    minimum_precision: Int = 28,
+    x1: BigDecimal, x2: BigDecimal, minimum_precision: Int = 28
 ) raises -> BigDecimal:
     """Returns the quotient of two numbers with precision.
     This function is a faster version of true_divide, but it does not
@@ -399,6 +397,76 @@ fn true_divide_fast(
         quotient = quotient.remove_trailing_digits_with_rounding(
             digits_to_remove,
             RoundingMode.ROUND_HALF_UP,
+            remove_extra_digit_due_to_rounding=False,
+        )
+        # Adjust the scale accordingly
+        result_scale -= digits_to_remove
+
+    return BigDecimal(
+        coefficient=quotient^,
+        scale=result_scale,
+        sign=x1.sign != x2.sign,
+    )
+
+
+fn true_divide_inexact(
+    x1: BigDecimal, x2: BigDecimal, number_of_significant_digits: Int
+) raises -> BigDecimal:
+    """Returns the quotient of two numbers with number of significant digits.
+    This function is a faster version of true_divide, but it does not
+    return the exact result of the division since no extra buffer digits are
+    added to the dividend during calculation.
+    It is recommended to use this function when you already know the dividend
+    has enough digits to produce a result with the desired precision. Then
+    use rounding to get the result with the desired precision.
+
+    Args:
+        x1: The first operand (dividend).
+        x2: The second operand (divisor).
+        number_of_significant_digits: The number of significant digits in the
+            result.
+
+    Returns:
+        The quotient of x1 and x2.
+    """
+
+    # Check for division by zero
+    if x2.coefficient.is_zero():
+        raise Error("Division by zero")
+
+    # Handle dividend of zero
+    if x1.coefficient.is_zero():
+        return BigDecimal(
+            coefficient=BigUInt.ZERO,
+            scale=number_of_significant_digits,
+            sign=x1.sign != x2.sign,
+        )
+
+    # First estimate the number of significant digits needed in the dividend
+    # to produce a result with precision significant digits
+    var x1_digits = x1.coefficient.number_of_digits()
+    var x2_digits = x2.coefficient.number_of_digits()
+
+    # Calculate how many digits we need in the dividend
+    # We want: x1_digits - x2_digits >= mininum_precision
+    var buffer_digits = number_of_significant_digits - (x1_digits - x2_digits)
+    buffer_digits = max(0, buffer_digits)
+
+    # Scale up the dividend to ensure sufficient precision
+    var scaled_x1 = x1.coefficient
+    if buffer_digits > 0:
+        scaled_x1 = scaled_x1.scale_up_by_power_of_10(buffer_digits)
+
+    # Perform division
+    var quotient: BigUInt = scaled_x1 // x2.coefficient
+    var result_scale = buffer_digits + x1.scale - x2.scale
+
+    var result_digits = quotient.number_of_digits()
+    if result_digits > number_of_significant_digits:
+        var digits_to_remove = result_digits - number_of_significant_digits
+        quotient = quotient.remove_trailing_digits_with_rounding(
+            digits_to_remove,
+            RoundingMode.ROUND_DOWN,
             remove_extra_digit_due_to_rounding=False,
         )
         # Adjust the scale accordingly

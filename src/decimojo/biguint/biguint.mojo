@@ -227,7 +227,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
             return Self()
 
         if value < 0:
-            raise Error("Error in `from_int()`: The value is negative")
+            raise Error("Error in `BigUInt.from_int()`: The value is negative")
 
         var list_of_words = List[UInt32]()
         var remainder: Int = value
@@ -277,13 +277,14 @@ struct BigUInt(Absable, IntableRaising, Writable):
         else:
             if value != value:  # Check for NaN
                 raise Error(
-                    "Error in `from_scalar()`: Cannot convert NaN to BigUInt"
+                    "Error in `BigUInt.from_scalar()`: Cannot convert NaN to"
+                    " BigUInt"
                 )
             # Convert to string with full precision
             try:
                 return Self.from_string(String(value))
             except e:
-                raise Error("Error in `from_scalar()`: ", e)
+                raise Error("Error in `BigUInt.from_scalar()`: ", e)
 
         return Self()
 
