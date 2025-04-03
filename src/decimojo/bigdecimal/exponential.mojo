@@ -164,7 +164,7 @@ fn integer_power(
             result, working_precision
         )
 
-    result.round_to_precision(precision, RoundingMode.ROUND_DOWN, False)
+    result.round_to_precision(precision, RoundingMode.ROUND_HALF_EVEN, False)
     return result^
 
 
