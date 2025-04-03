@@ -121,7 +121,7 @@ fn sqrt(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
 
     while guess != prev_guess and iteration_count < 100:
         prev_guess = guess
-        var quotient = x.true_divide_fast(guess, working_precision)
+        var quotient = x.true_divide_inexact(guess, working_precision)
         var sum = guess + quotient
         guess = sum.true_divide(BigDecimal(BigUInt(2), 0, 0), working_precision)
         iteration_count += 1
@@ -191,7 +191,7 @@ fn exp(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
         - Precision tracking.
     """
     # Extra working precision to ensure final result accuracy
-    alias BUFFER_DIGITS = 5
+    alias BUFFER_DIGITS = 9
     var working_precision = precision + BUFFER_DIGITS
 
     # Handle special cases
@@ -230,7 +230,7 @@ fn exp(x: BigDecimal, precision: Int = 28) raises -> BigDecimal:
             k += 1
 
         # Calculate exp(x/2^k)
-        var reduced_x = x.true_divide_fast(threshold, working_precision)
+        var reduced_x = x.true_divide_inexact(threshold, working_precision)
 
         # var t_after_range_reduction = time.perf_counter_ns()
 
@@ -318,7 +318,7 @@ fn exp_taylor_series(
     for _ in range(1, max_number_of_terms):
         # Calculate next term: x^i/i! = x^{i-1} * x/i
         # We can use the previous term to calculate the next one
-        var add_on = x.true_divide_fast(
+        var add_on = x.true_divide_inexact(
             BigDecimal(n, 0, False), minimum_precision
         )
         term = term * add_on

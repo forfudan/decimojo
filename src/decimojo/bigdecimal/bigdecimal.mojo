@@ -572,17 +572,6 @@ struct BigDecimal:
         )
 
     @always_inline
-    fn true_divide_fast(
-        self, other: Self, mininum_precision: Int
-    ) raises -> Self:
-        """Returns the result of true division with minimum precision.
-        See `arithmetics.true_divide_fast()` for more information.
-        """
-        return decimojo.bigdecimal.arithmetics.true_divide_fast(
-            self, other, mininum_precision
-        )
-
-    @always_inline
     fn true_divide_inexact(
         self, other: Self, number_of_significant_digits: Int
     ) raises -> Self:
