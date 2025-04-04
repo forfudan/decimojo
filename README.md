@@ -194,46 +194,9 @@ The name ultimately emphasizes our mission: bringing precise, reliable decimal c
 
 ## Status
 
-Rome wasn't built in a day. DeciMojo is currently under active development. For the 128-bit `Decimal` type, it has successfully progressed through the **"make it work"** phase and is now well into the **"make it right"** phase with many optimizations already in place. Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/forfudan/decimojo/issues).
-
-### Make it Work ✅ (COMPLETED)  <!-- omit in toc -->
-
-- Core decimal implementation with a robust 128-bit representation (96-bit coefficient + 32-bit flags)
-- Comprehensive arithmetic operations (+, -, *, /, %, **) with proper overflow handling
-- Type conversions to/from various formats (String, Int, Float64, etc.)
-- Proper representation of special values (NaN, Infinity)
-- Full suite of comparison operators with correct decimal semantics
-
-### Make it Right 🔄 (MOSTLY COMPLETED) <!-- omit in toc -->
-
-- Reorganized codebase with modular structure (decimal, arithmetics, comparison, exponential).
-- Edge case handling for all operations (division by zero, zero to negative power).
-- Scale and precision management with sophisticated rounding strategies.
-- Financial calculations with banker's rounding (ROUND_HALF_EVEN).
-- High-precision advanced mathematical functions (sqrt, root, ln, exp, log10, power).
-- Proper implementation of traits (Absable, Comparable, Floatable, Roundable, etc).
-- **BigInt and BigUInt** implementations with complete arithmetic operations, proper division semantics (floor and truncate), and support for arbitrary-precision calculations.
-
-### Make it Fast ⚡ (SIGNIFICANT PROGRESS) <!-- omit in toc -->
-
-DeciMojo delivers exceptional performance compared to Python's `decimal` module while maintaining precise calculations. This performance difference stems from fundamental design choices:
-
-- **DeciMojo**: Uses a fixed 128-bit representation (96-bit coefficient + 32-bit flags) with a maximum of 28 decimal places, optimized for modern hardware and Mojo's performance capabilities.
-- **Python decimal**: Implements arbitrary precision that can represent numbers with unlimited significant digits but requires dynamic memory allocation and more complex algorithms.
-
-This architectural difference explains our benchmarking results:
-
-- Core arithmetic operations (+, -, *, /) achieve 100x-3500x speedup over Python's decimal module.
-- Special case handling (powers of 0, 1, etc.) shows up to 3500x performance improvement.
-- Advanced mathematical functions (sqrt, ln, exp) demonstrate 5x-600x better performance.
-- Only specific edge cases (like computing 10^(1/100)) occasionally perform better in Python due to its arbitrary precision algorithms.
+Rome wasn't built in a day. DeciMojo is currently under active development. It has successfully progressed through the **"make it work"** phase and is now well into the **"make it right"** phase with many optimizations already in place. Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/forfudan/decimojo/issues).
 
 Regular benchmarks against Python's `decimal` module are available in the `bench/` folder, documenting both the performance advantages and the few specific operations where different approaches are needed.
-
-### Future Extensions 🚀 (PLANNED) <!-- omit in toc -->
-
-- **BigDecimal**: 🔄 **IN PROGRESS** - Arbitrary-precision decimal type with configurable precision[^arbitrary].
-- **BigComplex**: 📝 **PLANNED** - Arbitrary-precision complex number type built on BigDecimal.
 
 ## Tests and benches
 
