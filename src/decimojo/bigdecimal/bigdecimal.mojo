@@ -580,12 +580,12 @@ struct BigDecimal:
         return decimojo.bigdecimal.comparison.min(self, other)
 
     @always_inline
-    fn root(self, root: Self, precision: Int = 28) raises -> Self:
+    fn root(self, root: Self, precision: Int) raises -> Self:
         """Returns the root of the BigDecimal number."""
         return decimojo.bigdecimal.exponential.root(self, root, precision)
 
     @always_inline
-    fn sqrt(self, precision: Int = 28) raises -> Self:
+    fn sqrt(self, precision: Int) raises -> Self:
         """Returns the square root of the BigDecimal number."""
         return decimojo.bigdecimal.exponential.sqrt(self, precision)
 
@@ -776,9 +776,14 @@ struct BigDecimal:
         """Returns True if this number represents one."""
         if self.sign:
             return False
-        if self.coefficient.number_of_digits() - self.scale != 1:
+        if self.scale < 0:
             return False
-        if self.coefficient.ith_digit(-self.scale) != 1:
+        var number_of_digits = self.coefficient.number_of_digits()
+        if number_of_digits - self.scale != 1:
+            return False
+        if number_of_digits - self.number_of_trailing_zeros() != 1:
+            return False
+        if self.coefficient.ith_digit(self.scale) != 1:
             return False
         return True
 

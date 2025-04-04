@@ -199,8 +199,17 @@ fn root(x: BigDecimal, n: BigDecimal, precision: Int) raises -> BigDecimal:
         raise Error("Error in `root`: Cannot compute zeroth root")
 
     # Special case for integer roots - use more efficient implementation
-    if not n.sign and n.is_integer():
-        return integer_root(x, n, precision)
+    if not n.sign:
+        if n.is_integer():
+            return integer_root(x, n, precision)
+        var is_integer_reciprocal: Bool
+        var integer_reciprocal: BigDecimal
+        is_integer_reciprocal, integer_reciprocal = (
+            is_integer_reciprocal_and_return(n)
+        )
+        if is_integer_reciprocal:
+            # If m = 1/n is an integer, use integer_root
+            return integer_power(x, integer_reciprocal, precision)
 
     # Handle negative n as 1/(x^(1/|n|))
     if n.sign:
@@ -219,11 +228,15 @@ fn root(x: BigDecimal, n: BigDecimal, precision: Int) raises -> BigDecimal:
 
     # Check if x is negative - only odd integer roots of negative numbers are defined
     if x.sign:
-        if not n.is_integer() or not is_odd_reciprocal(n):
+        var n_is_integer = n.is_integer()
+        var n_is_odd_reciprocal = is_odd_reciprocal(n)
+        if not n_is_integer and not n_is_odd_reciprocal:
             raise Error(
                 "Error in `root`: Cannot compute non-odd-integer root of a"
                 " negative number"
             )
+        elif n_is_integer:
+            return integer_root(x, n, precision)
 
     # Compute root using the identity: x^(1/n) = exp(ln(|x|)/n)
     var abs_x = abs(x)
@@ -334,32 +347,55 @@ fn integer_root(
     return result^
 
 
-fn is_odd_reciprocal(n: BigDecimal) raises -> Bool:
-    """Check if 1/n represents an odd integer.
+fn is_integer_reciprocal_and_return(
+    n: BigDecimal,
+) raises -> Tuple[Bool, BigDecimal]:
+    """Check if 1/n (n != 1) represents an odd integer and return the result.
 
     Args:
         n: The value to check.
 
     Returns:
         True if 1/n is an odd integer, False otherwise.
+        The integer reciprocal of n.
+    """
+    var m = BigDecimal(BigUInt.ONE, 0, False).true_divide(
+        n, precision=n.coefficient.number_of_digits() + 9
+    )
+
+    return Tuple(m.is_integer(), m)
+
+
+fn is_odd_reciprocal(n: BigDecimal) raises -> Bool:
+    """Check if 1/n (n != 1) represents an odd integer.
+
+    Args:
+        n: The value to check.
+
+    Returns:
+        True if 1/n is an odd integer, False otherwise.
+
+    Notes:
+
+    Numbers with infinite decimal places cannot be represented as BigDecimal.
+    If integer m ends with 3, n=1/m cannot be exactly represented as input.
+    Same applies to 1 (execpt exact 1), 7, 9.
     """
     # If n is of form 1/m where m is an odd integer, then 1/n = m is odd
     # This is true when n = 1/m for odd integer m
 
-    # n must have only one significant digit that equals 1
-    if n.coefficient.number_of_digits() != 1 or n.coefficient.words[0] != 1:
-        return False
+    var m = BigDecimal(BigUInt.ONE, 0, False).true_divide(
+        n, precision=n.coefficient.number_of_digits() + 9
+    )
 
-    # Check if n = 1/(2k+1) for some integer k
-    # This means n = 1/m where m is odd
-    # For this to be true, n's scale must be positive and 10^scale must be odd
-    if n.scale <= 0:
+    if m.is_integer():
+        # Check if m is odd
+        if m.coefficient.ith_digit(-m.scale) % 2 == 1:
+            return True
+        else:
+            return False
+    else:
         return False
-
-    # For the scale to represent a valid odd denominator:
-    # n = 1/10^scale and 10^scale = 2^scale * 5^scale
-    # This is odd only when scale = 0, which means n = 1
-    return n.is_one()
 
 
 fn sqrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
