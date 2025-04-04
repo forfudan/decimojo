@@ -287,3 +287,172 @@ description = "Natural logarithm of φ (golden ratio)"
 input = "1.414213562373095048801688724"
 expected = "0.3465735902799726547086160606"
 description = "Natural logarithm of √2"
+
+# === ROOT TESTS ===
+# Testing different roots (both integer and fractional)
+
+[[root_tests]]
+a = "64"
+b = "2"
+expected = "8"
+description = "Square root of 64"
+
+[[root_tests]]
+a = "27"
+b = "3"
+expected = "3.000000000000000000000000000"
+description = "Cube root of 27"
+
+[[root_tests]]
+a = "-27"
+b = "3"
+expected = "-3.000000000000000000000000000"
+description = "Cube root of negative number"
+
+[[root_tests]]
+a = "16"
+b = "4"
+expected = "2.000000000000000000000000000"
+description = "4th root of 16"
+
+[[root_tests]]
+a = "32"
+b = "5"
+expected = "2.000000000000000000000000000"
+description = "5th root of 32"
+
+[[root_tests]]
+a = "64"
+b = "6"
+expected = "2.000000000000000000000000000"
+description = "6th root of 64"
+
+[[root_tests]]
+a = "128"
+b = "7"
+expected = "2.000000000000000000000000000"
+description = "7th root of 128"
+
+[[root_tests]]
+a = "256"
+b = "8"
+expected = "2.000000000000000000000000000"
+description = "8th root of 256"
+
+[[root_tests]]
+a = "1024"
+b = "10"
+expected = "2.000000000000000000000000000"
+description = "10th root of 1024"
+
+[[root_tests]]
+a = "1000000"
+b = "6"
+expected = "10.00000000000000000000000000"
+description = "6th root of one million"
+
+[[root_tests]]
+a = "0"
+b = "3"
+expected = "0"
+description = "Root of zero"
+
+[[root_tests]]
+a = "1"
+b = "99"
+expected = "1"
+description = "Any root of 1"
+
+# Fractional roots
+[[root_tests]]
+a = "16"
+b = "0.5"
+expected = "256.0000000000000000000000000"
+description = "Fractional root (0.5 is power of 2)"
+
+[[root_tests]]
+a = "27"
+b = "1.5"
+expected = "9.000000000000000000000000000"
+description = "Fractional root (x^(3/2))"
+
+[[root_tests]]
+a = "16"
+b = "2.5"
+expected = "3.031433133020796164694519603"
+description = "Fractional root (nth root where n=2.5)"
+
+[[root_tests]]
+a = "100"
+b = "2.5"
+expected = "6.309573444801932494343601366"
+description = "Fractional root of perfect power"
+
+# Negative roots (reciprocal of positive roots)
+[[root_tests]]
+a = "16"
+b = "-2"
+expected = "0.25"
+description = "Negative root (reciprocal of square root)"
+
+[[root_tests]]
+a = "27"
+b = "-3"
+expected = "0.3333333333333333333333333333"
+description = "Negative root (reciprocal of cube root)"
+
+# Special cases and edge cases
+[[root_tests]]
+a = "0.25"
+b = "2"
+expected = "0.5"
+description = "Root of number less than 1"
+
+[[root_tests]]
+a = "0.0625"
+b = "4"
+expected = "0.5000000000000000000000000000"
+description = "Higher root of number less than 1"
+
+[[root_tests]]
+a = "0.000001"
+b = "3"
+expected = "0.01000000000000000000000000000"
+description = "Root of very small number"
+
+[[root_tests]]
+a = "1000000000000000000000000"
+b = "6"
+expected = "10000.00000000000000000000000"
+description = "Root of very large number"
+
+[[root_tests]]
+a = "2"
+b = "1"
+expected = "2.000000000000000000000000000"
+description = "First root (identity)"
+
+[[root_tests]]
+a = "3.14159265358979323846264338328"
+b = "2"
+expected = "1.772453850905516027298167483"
+description = "Root of π"
+
+[[root_tests]]
+a = "2.71828182845904523536028747135"
+b = "3"
+expected = "1.395612425086089528628125320"
+description = "Root of e"
+
+# Extreme precision tests
+[[root_tests]]
+a = "12345.6789"
+b = "2"
+expected = "111.1111106055555544054166614"
+description = "High precision square root"
+
+[[root_tests]]
+a = "1.0001"
+b = "10000"
+expected = "1.000000009999500083325834158"
+description = "Very high root close to 1"
