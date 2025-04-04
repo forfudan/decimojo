@@ -74,7 +74,7 @@ fn run_benchmark_sqrt(
 
     # Execute the operations once to verify correctness
     try:
-        var mojo_result = mojo_value.sqrt()
+        var mojo_result = mojo_value.sqrt(precision=28)
         var py_result = py_value.sqrt()
 
         # Display results for verification
@@ -84,7 +84,7 @@ fn run_benchmark_sqrt(
         # Benchmark Mojo implementation
         var t0 = perf_counter_ns()
         for _ in range(iterations):
-            _ = mojo_value.sqrt()
+            _ = mojo_value.sqrt(precision=28)
         var mojo_time = (perf_counter_ns() - t0) / iterations
         if mojo_time == 0:
             mojo_time = 1  # Prevent division by zero

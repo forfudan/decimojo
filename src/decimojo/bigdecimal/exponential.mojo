@@ -29,6 +29,9 @@ import decimojo.utility
 
 # ===----------------------------------------------------------------------=== #
 # Power and root functions
+# power(base, exponent, precision)
+# integer_power(base, exponent, precision)
+# sqrt(x, precision)
 # ===----------------------------------------------------------------------=== #
 
 
@@ -167,6 +170,232 @@ fn integer_power(
 
     result.round_to_precision(precision, RoundingMode.ROUND_HALF_EVEN, False)
     return result^
+
+
+fn root(x: BigDecimal, n: BigDecimal, precision: Int) raises -> BigDecimal:
+    """Calculate the nth root of a BigDecimal number.
+
+    Args:
+        x: The number to calculate the root of.
+        n: The root value.
+        precision: The precision (number of significant digits) of the result.
+
+    Returns:
+        The nth root of x with the specified precision.
+
+    Raises:
+        Error: If x is negative and n is not an odd integer.
+        Error: If n is zero.
+
+    Notes:
+        Uses the identity x^(1/n) = exp(ln(|x|)/n) for calculation.
+        For integer roots, calls the specialized integer_root function.
+    """
+    alias BUFFER_DIGITS = 9
+    var working_precision = precision + BUFFER_DIGITS
+
+    # Check for n = 0
+    if n.coefficient.is_zero():
+        raise Error("Error in `root`: Cannot compute zeroth root")
+
+    # Special case for integer roots - use more efficient implementation
+    if not n.sign:
+        if n.is_integer():
+            return integer_root(x, n, precision)
+        var is_integer_reciprocal: Bool
+        var integer_reciprocal: BigDecimal
+        is_integer_reciprocal, integer_reciprocal = (
+            is_integer_reciprocal_and_return(n)
+        )
+        if is_integer_reciprocal:
+            # If m = 1/n is an integer, use integer_root
+            return integer_power(x, integer_reciprocal, precision)
+
+    # Handle negative n as 1/(x^(1/|n|))
+    if n.sign:
+        var positive_root = root(x, -n, working_precision)
+        var result = BigDecimal(BigUInt.ONE, 0, False).true_divide(
+            positive_root, precision
+        )
+        return result^
+
+    # Handle special cases for x
+    if x.coefficient.is_zero():
+        return BigDecimal(BigUInt.ZERO, 0, False)
+
+    if x.is_one():
+        return BigDecimal(BigUInt.ONE, 0, False)
+
+    # Check if x is negative - only odd integer roots of negative numbers are defined
+    if x.sign:
+        var n_is_integer = n.is_integer()
+        var n_is_odd_reciprocal = is_odd_reciprocal(n)
+        if not n_is_integer and not n_is_odd_reciprocal:
+            raise Error(
+                "Error in `root`: Cannot compute non-odd-integer root of a"
+                " negative number"
+            )
+        elif n_is_integer:
+            return integer_root(x, n, precision)
+
+    # Compute root using the identity: x^(1/n) = exp(ln(|x|)/n)
+    var abs_x = abs(x)
+    var ln_x = ln(abs_x, working_precision)
+    var ln_divided = ln_x.true_divide(n, working_precision)
+    var result = exp(ln_divided, working_precision)
+
+    # Handle sign for negative inputs (only possible with odd integer roots)
+    if x.sign:
+        result.sign = True
+
+    result.round_to_precision(
+        precision=precision,
+        rounding_mode=RoundingMode.ROUND_HALF_EVEN,
+        remove_extra_digit_due_to_rounding=True,
+    )
+
+    return result^
+
+
+fn integer_root(
+    x: BigDecimal, n: BigDecimal, precision: Int
+) raises -> BigDecimal:
+    """Calculate the nth integer root of a BigDecimal number.
+
+    Args:
+        x: The number to calculate the root of.
+        n: The root value (must be a positive integer).
+        precision: The precision (number of significant digits) of the result.
+
+    Returns:
+        The nth root of x with the specified precision.
+
+    Raises:
+        Error: If x is negative and n is even.
+        Error: If n is not a positive integer.
+        Error: If n is zero.
+
+    Notes:
+        Uses the identity x^(1/n) = exp(ln(|x|)/n) for calculation.
+        Optimizes for special cases including n=1 and n=2.
+    """
+    alias BUFFER_DIGITS = 9
+    var working_precision = precision + BUFFER_DIGITS
+
+    # Handle special case: n must be a positive integer
+    if n.sign:
+        raise Error("Error in `root`: Root value must be positive")
+
+    if not n.is_integer():
+        raise Error("Error in `root`: Root value must be an integer")
+
+    if n.coefficient.is_zero():
+        raise Error("Error in `root`: Cannot compute zeroth root")
+
+    # Special case: n = 1 (1st root is just the number itself)
+    if n.is_one():
+        var result = x
+        result.round_to_precision(
+            precision,
+            rounding_mode=RoundingMode.ROUND_HALF_EVEN,
+            remove_extra_digit_due_to_rounding=True,
+        )
+        return result^
+
+    # Special case: n = 2 (use dedicated sqrt function for better performance)
+    if n == BigDecimal(BigUInt(2), 0, False):
+        return sqrt(x, precision)
+
+    # Handle special cases for x
+    if x.coefficient.is_zero():
+        return BigDecimal(BigUInt.ZERO, 0, False)
+
+    # For x = 1, the result is always 1
+    if x.is_one():
+        return BigDecimal(BigUInt.ONE, 0, False)
+
+    var result_sign = False
+    # Check if x is negative
+    if x.sign:
+        # Convert n to integer to check odd/even
+        var n_uint: BigUInt
+        if n.scale > 0:
+            n_uint = n.coefficient.scale_down_by_power_of_10(n.scale)
+        else:  # n.scale <= 0
+            n_uint = n.coefficient
+
+        if n_uint.words[0] % 2 == 1:  # Odd root
+            result_sign = True
+        else:  # n_uint.words[0] % 2 == 0:  # Even root
+            raise Error(
+                "Error in `root`: Cannot compute even root of a negative number"
+            )
+
+    # Compute root using the identity: x^(1/n) = exp(ln(|x|)/n)
+    var abs_x = abs(x)
+    var ln_x = ln(abs_x, working_precision)
+    var ln_divided = ln_x.true_divide(n, working_precision)
+    var result = exp(ln_divided, working_precision)
+    result.sign = result_sign
+
+    result.round_to_precision(
+        precision=precision,
+        rounding_mode=RoundingMode.ROUND_HALF_EVEN,
+        remove_extra_digit_due_to_rounding=True,
+    )
+
+    return result^
+
+
+fn is_integer_reciprocal_and_return(
+    n: BigDecimal,
+) raises -> Tuple[Bool, BigDecimal]:
+    """Check if 1/n (n != 1) represents an odd integer and return the result.
+
+    Args:
+        n: The value to check.
+
+    Returns:
+        True if 1/n is an odd integer, False otherwise.
+        The integer reciprocal of n.
+    """
+    var m = BigDecimal(BigUInt.ONE, 0, False).true_divide(
+        n, precision=n.coefficient.number_of_digits() + 9
+    )
+
+    return Tuple(m.is_integer(), m)
+
+
+fn is_odd_reciprocal(n: BigDecimal) raises -> Bool:
+    """Check if 1/n (n != 1) represents an odd integer.
+
+    Args:
+        n: The value to check.
+
+    Returns:
+        True if 1/n is an odd integer, False otherwise.
+
+    Notes:
+
+    Numbers with infinite decimal places cannot be represented as BigDecimal.
+    If integer m ends with 3, n=1/m cannot be exactly represented as input.
+    Same applies to 1 (execpt exact 1), 7, 9.
+    """
+    # If n is of form 1/m where m is an odd integer, then 1/n = m is odd
+    # This is true when n = 1/m for odd integer m
+
+    var m = BigDecimal(BigUInt.ONE, 0, False).true_divide(
+        n, precision=n.coefficient.number_of_digits() + 9
+    )
+
+    if m.is_integer():
+        # Check if m is odd
+        if m.coefficient.ith_digit(-m.scale) % 2 == 1:
+            return True
+        else:
+            return False
+    else:
+        return False
 
 
 fn sqrt(x: BigDecimal, precision: Int) raises -> BigDecimal:

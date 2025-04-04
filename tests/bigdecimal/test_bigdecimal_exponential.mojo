@@ -58,7 +58,7 @@ fn test_sqrt() raises:
         var expected = BigDecimal(test_case.expected)
 
         # Calculate square root
-        var result = input_value.sqrt()
+        var result = input_value.sqrt(precision=28)
 
         try:
             # Using String comparison for easier debugging
@@ -97,7 +97,7 @@ fn test_negative_sqrt() raises:
 
     var exception_caught = False
     try:
-        _ = negative_number.sqrt()
+        _ = negative_number.sqrt(precision=28)
         exception_caught = False
     except:
         exception_caught = True

@@ -5,6 +5,7 @@ from bench_bigdecimal_divide import main as bench_divide
 from bench_bigdecimal_sqrt import main as bench_sqrt
 from bench_bigdecimal_exp import main as bench_exp
 from bench_bigdecimal_ln import main as bench_ln
+from bench_bigdecimal_root import main as bench_root
 from bench_bigdecimal_scale_up_by_power_of_10 import main as bench_scale_up
 
 
@@ -21,6 +22,7 @@ div:         Divide (true divide)
 sqrt:        Square root
 exp:         Exponential
 ln:          Natural logarithm
+root:        Root
 all:         Run all benchmarks
 q:           Exit
 =========================================
@@ -43,6 +45,8 @@ scaleup:     Scale up by power of 10
         bench_exp()
     elif command == "ln":
         bench_ln()
+    elif command == "root":
+        bench_root()
     elif command == "all":
         bench_add()
         bench_sub()
@@ -51,6 +55,7 @@ scaleup:     Scale up by power of 10
         bench_sqrt()
         bench_exp()
         bench_ln()
+        bench_root()
     elif command == "q":
         return
     elif command == "scaleup":
