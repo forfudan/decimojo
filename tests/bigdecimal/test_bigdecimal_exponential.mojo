@@ -12,7 +12,7 @@ from tomlmojo import parse_file
 alias exponential_file_path = "tests/bigdecimal/test_data/bigdecimal_exponential.toml"
 
 
-fn load_test_cases(
+fn load_test_cases_one_argument(
     file_path: String, table_name: String
 ) raises -> List[TestCase]:
     """Load test cases from a TOML file for a specific table."""
@@ -32,8 +32,30 @@ fn load_test_cases(
                 case_table["description"].as_string(),
             )
         )
+    return test_cases^
 
-    return test_cases
+
+fn load_test_cases_two_arguments(
+    file_path: String, table_name: String
+) raises -> List[TestCase]:
+    """Load test cases from a TOML file for a specific table."""
+    var toml = parse_file(file_path)
+    var test_cases = List[TestCase]()
+
+    # Get array of test cases
+    var cases_array = toml.get_array_of_tables(table_name)
+
+    for i in range(len(cases_array)):
+        var case_table = cases_array[i]
+        test_cases.append(
+            TestCase(
+                case_table["a"].as_string(),
+                case_table["b"].as_string(),
+                case_table["expected"].as_string(),
+                case_table["description"].as_string(),
+            )
+        )
+    return test_cases^
 
 
 fn test_sqrt() raises:
@@ -44,7 +66,9 @@ fn test_sqrt() raises:
     var pydecimal = Python.import_module("decimal")
 
     # Load test cases from TOML file
-    var test_cases = load_test_cases(exponential_file_path, "sqrt_tests")
+    var test_cases = load_test_cases_one_argument(
+        exponential_file_path, "sqrt_tests"
+    )
     print("Loaded", len(test_cases), "test cases for square root")
 
     # Track test results
@@ -116,7 +140,9 @@ fn test_ln() raises:
     var pydecimal = Python.import_module("decimal")
 
     # Load test cases from TOML file
-    var test_cases = load_test_cases(exponential_file_path, "ln_tests")
+    var test_cases = load_test_cases_one_argument(
+        exponential_file_path, "ln_tests"
+    )
     print("Loaded", len(test_cases), "test cases for natural logarithm")
 
     # Track test results
@@ -191,6 +217,230 @@ fn test_ln_invalid_inputs() raises:
     print("✓ ln of negative number correctly raises an error")
 
 
+fn test_root() raises:
+    """Test BigDecimal nth root with various test cases."""
+    print("------------------------------------------------------")
+    print("Testing BigDecimal root function...")
+
+    var pydecimal = Python.import_module("decimal")
+
+    # Load test cases from TOML file
+    var test_cases = load_test_cases_two_arguments(
+        exponential_file_path, "root_tests"
+    )
+    print("Loaded", len(test_cases), "test cases for root function")
+
+    # Track test results
+    var passed = 0
+    var failed = 0
+
+    # Run all test cases in a loop
+    for i in range(len(test_cases)):
+        var test_case = test_cases[i]
+        var base_value = BigDecimal(test_case.a)
+        var root_value = BigDecimal(test_case.b)
+        var expected = BigDecimal(test_case.expected)
+
+        # Calculate nth root
+        var result = base_value.root(root_value, precision=28)
+
+        try:
+            # Using String comparison for easier debugging
+            testing.assert_equal(
+                String(result), String(expected), test_case.description
+            )
+            passed += 1
+        except e:
+            print(
+                "=" * 50,
+                "\n",
+                i + 1,
+                "failed:",
+                test_case.description,
+                "\n  Base:",
+                test_case.a,
+                "\n  Root:",
+                test_case.b,
+                "\n  Expected:",
+                test_case.expected,
+                "\n  Got:",
+                String(result),
+                "\n  Python decimal result (for reference):",
+                String(
+                    pydecimal.Decimal(test_case.a)
+                    ** (pydecimal.Decimal(1) / pydecimal.Decimal(test_case.b))
+                ),
+            )
+            failed += 1
+
+    print("BigDecimal root tests:", passed, "passed,", failed, "failed")
+    testing.assert_equal(failed, 0, "All root function tests should pass")
+
+
+fn test_root_invalid_inputs() raises:
+    """Test that root function with invalid inputs raises appropriate errors."""
+    print("------------------------------------------------------")
+    print("Testing BigDecimal root with invalid inputs...")
+
+    # Test 1: 0th root should raise an error
+    var a1 = BigDecimal("16")
+    var n1 = BigDecimal("0")
+    var exception_caught = False
+    try:
+        _ = a1.root(n1, precision=28)
+        exception_caught = False
+    except:
+        exception_caught = True
+    testing.assert_true(exception_caught, "0th root should raise an error")
+    print("✓ 0th root correctly raises an error")
+
+    # Test 2: Even root of negative number should raise an error
+    var a2 = BigDecimal("-16")
+    var n2 = BigDecimal("2")
+    exception_caught = False
+    try:
+        _ = a2.root(n2, precision=28)
+        exception_caught = False
+    except:
+        exception_caught = True
+    testing.assert_true(
+        exception_caught, "Even root of negative number should raise an error"
+    )
+    print("✓ Even root of negative number correctly raises an error")
+
+    # Test 3: Fractional root with even denominator of negative number should raise an error
+    var a3 = BigDecimal("-16")
+    var n3 = BigDecimal("2.5")  # 5/2, denominator is even
+    exception_caught = False
+    try:
+        _ = a3.root(n3, precision=28)
+        exception_caught = False
+    except:
+        exception_caught = True
+    testing.assert_true(
+        exception_caught,
+        (
+            "Fractional root with even denominator of negative number should"
+            " raise an error"
+        ),
+    )
+    print(
+        "✓ Fractional root with even denominator of negative number correctly"
+        " raises an error"
+    )
+
+
+fn test_power() raises:
+    """Test BigDecimal power function with various test cases."""
+    print("------------------------------------------------------")
+    print("Testing BigDecimal power function...")
+
+    var pydecimal = Python.import_module("decimal")
+
+    # Load test cases from TOML file
+    var test_cases = load_test_cases_two_arguments(
+        exponential_file_path, "power_tests"
+    )
+    print("Loaded", len(test_cases), "test cases for power function")
+
+    # Track test results
+    var passed = 0
+    var failed = 0
+
+    # Run all test cases in a loop
+    for i in range(len(test_cases)):
+        var test_case = test_cases[i]
+        var base_value = BigDecimal(test_case.a)
+        var exponent = BigDecimal(test_case.b)
+        var expected = BigDecimal(test_case.expected)
+
+        # Calculate power
+        var result = base_value.power(exponent, precision=28)
+
+        try:
+            # Using String comparison for easier debugging
+            testing.assert_equal(
+                String(result), String(expected), test_case.description
+            )
+            passed += 1
+        except e:
+            print(
+                "=" * 50,
+                "\n",
+                i + 1,
+                "failed:",
+                test_case.description,
+                "\n  Base:",
+                test_case.a,
+                "\n  Exponent:",
+                test_case.b,
+                "\n  Expected:",
+                test_case.expected,
+                "\n  Got:",
+                String(result),
+                "\n  Python decimal result (for reference):",
+                String(
+                    pydecimal.Decimal(test_case.a)
+                    ** pydecimal.Decimal(test_case.b)
+                ),
+            )
+            failed += 1
+
+    print("BigDecimal power tests:", passed, "passed,", failed, "failed")
+    testing.assert_equal(failed, 0, "All power function tests should pass")
+
+
+fn test_power_invalid_inputs() raises:
+    """Test that power function with invalid inputs raises appropriate errors.
+    """
+    print("------------------------------------------------------")
+    print("Testing BigDecimal power with invalid inputs...")
+
+    # Test 1: 0^0 should raise an error (undefined)
+    var base1 = BigDecimal("0")
+    var exp1 = BigDecimal("0")
+    var exception_caught = False
+    try:
+        _ = base1.power(exp1, precision=28)
+        exception_caught = False
+    except:
+        exception_caught = True
+    testing.assert_true(exception_caught, "0^0 should raise an error")
+    print("✓ 0^0 correctly raises an error")
+
+    # Test 2: 0^-1 should raise an error (division by zero)
+    var base2 = BigDecimal("0")
+    var exp2 = BigDecimal("-1")
+    exception_caught = False
+    try:
+        _ = base2.power(exp2, precision=28)
+        exception_caught = False
+    except:
+        exception_caught = True
+    testing.assert_true(
+        exception_caught, "0 raised to a negative power should raise an error"
+    )
+    print("✓ 0 raised to a negative power correctly raises an error")
+
+    # Test 3: Negative number raised to a fractional power should raise an error
+    var base3 = BigDecimal("-2")
+    var exp3 = BigDecimal("0.5")
+    exception_caught = False
+    try:
+        _ = base3.power(exp3, precision=28)
+        exception_caught = False
+    except:
+        exception_caught = True
+    testing.assert_true(
+        exception_caught,
+        "Negative number raised to a fractional power should raise an error",
+    )
+    print(
+        "✓ Negative number raised to a fractional power correctly raises an"
+        " error"
+    )
+
+
 fn main() raises:
     print("Running BigDecimal exponential tests")
 
@@ -199,6 +449,18 @@ fn main() raises:
 
     # Test sqrt of negative number
     test_negative_sqrt()
+
+    # Run root tests
+    test_root()
+
+    # Test root with invalid inputs
+    test_root_invalid_inputs()
+
+    # Run power tests
+    test_power()
+
+    # Test power with invalid inputs
+    test_power_invalid_inputs()
 
     # Run ln tests
     test_ln()

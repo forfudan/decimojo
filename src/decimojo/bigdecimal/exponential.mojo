@@ -71,7 +71,7 @@ fn power(
                 " base)"
             )
         else:
-            return BigDecimal(BigUInt.ZERO, precision, False)
+            return BigDecimal(BigUInt.ZERO, 0, False)
 
     if exponent.coefficient.is_zero():
         return BigDecimal(BigUInt.ONE, 0, False)  # x^0 = 1
@@ -86,6 +86,7 @@ fn power(
             precision,
             rounding_mode=RoundingMode.ROUND_HALF_EVEN,
             remove_extra_digit_due_to_rounding=True,
+            fill_zeros_to_precision=False,
         )
         return result^
 
@@ -111,7 +112,12 @@ fn power(
     if base.sign and exponent.is_integer() and exponent.is_odd():
         exp_result.sign = True
 
-    exp_result.round_to_precision(precision, RoundingMode.ROUND_HALF_EVEN, True)
+    exp_result.round_to_precision(
+        precision,
+        rounding_mode=RoundingMode.ROUND_HALF_EVEN,
+        remove_extra_digit_due_to_rounding=True,
+        fill_zeros_to_precision=False,
+    )
     return exp_result^
 
 
@@ -151,13 +157,19 @@ fn integer_power(
             result = result * current_power
             # Round to avoid coefficient explosion
             result.round_to_precision(
-                working_precision, RoundingMode.ROUND_DOWN, False
+                working_precision,
+                rounding_mode=RoundingMode.ROUND_DOWN,
+                remove_extra_digit_due_to_rounding=False,
+                fill_zeros_to_precision=False,
             )
 
         current_power = current_power * current_power
         # Round to avoid coefficient explosion
         current_power.round_to_precision(
-            working_precision, RoundingMode.ROUND_DOWN, False
+            working_precision,
+            rounding_mode=RoundingMode.ROUND_DOWN,
+            remove_extra_digit_due_to_rounding=False,
+            fill_zeros_to_precision=False,
         )
 
         exp_value.floor_divide_inplace_by_2()
@@ -168,7 +180,12 @@ fn integer_power(
             result, working_precision
         )
 
-    result.round_to_precision(precision, RoundingMode.ROUND_HALF_EVEN, False)
+    result.round_to_precision(
+        precision,
+        rounding_mode=RoundingMode.ROUND_HALF_EVEN,
+        remove_extra_digit_due_to_rounding=False,
+        fill_zeros_to_precision=False,
+    )
     return result^
 
 
@@ -252,6 +269,7 @@ fn root(x: BigDecimal, n: BigDecimal, precision: Int) raises -> BigDecimal:
         precision=precision,
         rounding_mode=RoundingMode.ROUND_HALF_EVEN,
         remove_extra_digit_due_to_rounding=True,
+        fill_zeros_to_precision=True,
     )
 
     return result^
@@ -299,6 +317,7 @@ fn integer_root(
             precision,
             rounding_mode=RoundingMode.ROUND_HALF_EVEN,
             remove_extra_digit_due_to_rounding=True,
+            fill_zeros_to_precision=False,
         )
         return result^
 
@@ -342,6 +361,7 @@ fn integer_root(
         precision=precision,
         rounding_mode=RoundingMode.ROUND_HALF_EVEN,
         remove_extra_digit_due_to_rounding=True,
+        fill_zeros_to_precision=False,
     )
 
     return result^
@@ -534,6 +554,7 @@ fn sqrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
                 precision=expected_ndigits_of_result,
                 rounding_mode=RoundingMode.ROUND_DOWN,
                 remove_extra_digit_due_to_rounding=False,
+                fill_zeros_to_precision=False,
             )
             guess.scale = (x.scale + 1) // 2
 
@@ -616,12 +637,14 @@ fn exp(x: BigDecimal, precision: Int) raises -> BigDecimal:
                 precision=working_precision,
                 rounding_mode=RoundingMode.ROUND_HALF_UP,
                 remove_extra_digit_due_to_rounding=False,
+                fill_zeros_to_precision=False,
             )
 
         result.round_to_precision(
             precision=precision,
             rounding_mode=RoundingMode.ROUND_HALF_EVEN,
             remove_extra_digit_due_to_rounding=False,
+            fill_zeros_to_precision=False,
         )
 
         # var t_after_scale_up = time.perf_counter_ns()
@@ -651,6 +674,7 @@ fn exp(x: BigDecimal, precision: Int) raises -> BigDecimal:
         precision=precision,
         rounding_mode=RoundingMode.ROUND_HALF_EVEN,
         remove_extra_digit_due_to_rounding=True,
+        fill_zeros_to_precision=False,
     )
 
     return result^
@@ -697,6 +721,7 @@ fn exp_taylor_series(
             precision=minimum_precision,
             rounding_mode=RoundingMode.ROUND_HALF_UP,
             remove_extra_digit_due_to_rounding=False,
+            fill_zeros_to_precision=False,
         )
         n += BigUInt.ONE
 
@@ -713,6 +738,7 @@ fn exp_taylor_series(
         precision=minimum_precision,
         rounding_mode=RoundingMode.ROUND_HALF_UP,
         remove_extra_digit_due_to_rounding=False,
+        fill_zeros_to_precision=False,
     )
     # print("DEBUG: final result", result)
 
@@ -813,6 +839,7 @@ fn ln(x: BigDecimal, precision: Int) raises -> BigDecimal:
         precision=precision,
         rounding_mode=RoundingMode.ROUND_HALF_EVEN,
         remove_extra_digit_due_to_rounding=True,
+        fill_zeros_to_precision=False,
     )
 
     return result^
@@ -992,6 +1019,7 @@ fn ln_series_expansion(
         precision=working_precision,
         rounding_mode=RoundingMode.ROUND_DOWN,
         remove_extra_digit_due_to_rounding=False,
+        fill_zeros_to_precision=False,
     )
     return result^
 
@@ -1042,6 +1070,7 @@ fn compute_ln2(working_precision: Int) raises -> BigDecimal:
             precision=working_precision,
             rounding_mode=RoundingMode.ROUND_DOWN,
             remove_extra_digit_due_to_rounding=False,
+            fill_zeros_to_precision=False,
         )
         return result^
 
@@ -1070,6 +1099,7 @@ fn compute_ln2(working_precision: Int) raises -> BigDecimal:
         precision=working_precision,
         rounding_mode=RoundingMode.ROUND_DOWN,
         remove_extra_digit_due_to_rounding=False,
+        fill_zeros_to_precision=False,
     )
     return result^
 
