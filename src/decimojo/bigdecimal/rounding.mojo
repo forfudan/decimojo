@@ -30,6 +30,7 @@ fn round_to_precision(
     precision: Int,
     rounding_mode: RoundingMode,
     remove_extra_digit_due_to_rounding: Bool,
+    fill_zeros_to_precision: Bool,
 ) raises:
     """Rounds the number to the specified precision in-place.
 
@@ -44,6 +45,7 @@ fn round_to_precision(
             RoundingMode.ROUND_HALF_EVEN: Round half even.
         remove_extra_digit_due_to_rounding: If True, remove an trailing.
             digit if the rounding mode result in an extra digit.
+        fill_zeros_to_precision: If True, fill zeros to the precision.
     """
 
     var ndigits_coefficient = number.coefficient.number_of_digits()
@@ -53,8 +55,11 @@ fn round_to_precision(
         return
 
     if ndigits_to_remove < 0:
-        number = number.extend_precision(precision_diff=-ndigits_to_remove)
-        return
+        if fill_zeros_to_precision:
+            number = number.extend_precision(precision_diff=-ndigits_to_remove)
+            return
+        else:
+            return
 
     number.coefficient = (
         number.coefficient.remove_trailing_digits_with_rounding(

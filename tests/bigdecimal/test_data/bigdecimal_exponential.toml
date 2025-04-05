@@ -367,7 +367,7 @@ description = "Any root of 1"
 [[root_tests]]
 a = "16"
 b = "0.5"
-expected = "256.0000000000000000000000000"
+expected = "256"
 description = "Fractional root (0.5 is power of 2)"
 
 [[root_tests]]
@@ -429,7 +429,7 @@ description = "Root of very large number"
 [[root_tests]]
 a = "2"
 b = "1"
-expected = "2.000000000000000000000000000"
+expected = "2"
 description = "First root (identity)"
 
 [[root_tests]]
@@ -456,3 +456,126 @@ a = "1.0001"
 b = "10000"
 expected = "1.000000009999500083325834158"
 description = "Very high root close to 1"
+
+# === POWER TESTS ===
+# Testing power function with various base and exponent combinations
+
+[[power_tests]]
+a = "2"
+b = "3"
+expected = "8"
+description = "Integer base, integer exponent (2^3)"
+
+[[power_tests]]
+a = "10"
+b = "2"
+expected = "100"
+description = "Power of 10 (10^2)"
+
+[[power_tests]]
+a = "2.5"
+b = "2"
+expected = "6.25"
+description = "Decimal base, integer exponent (2.5^2)"
+
+[[power_tests]]
+a = "4"
+b = "0.5"
+expected = "2.000000000000000000000000000"
+description = "Integer base, fractional exponent (4^0.5 = sqrt(4))"
+
+[[power_tests]]
+a = "9"
+b = "0.5"
+expected = "3.000000000000000000000000000"
+description = "Integer base, fractional exponent (9^0.5 = sqrt(9))"
+
+[[power_tests]]
+a = "27"
+b = "0.3333333333333333333333333333"
+expected = "3.000000000000000000000000000"
+description = "Integer base, fractional exponent (27^(1/3) = cube root of 27)"
+
+[[power_tests]]
+a = "2"
+b = "10"
+expected = "1024"
+description = "Small base, large exponent (2^10)"
+
+[[power_tests]]
+a = "1.5"
+b = "3"
+expected = "3.375"
+description = "Decimal base, integer exponent (1.5^3)"
+
+[[power_tests]]
+a = "0"
+b = "5"
+expected = "0"
+description = "Zero base, positive exponent"
+
+[[power_tests]]
+a = "1"
+b = "1000"
+expected = "1"
+description = "Base of 1, any exponent"
+
+[[power_tests]]
+a = "-2"
+b = "3"
+expected = "-8"
+description = "Negative base, odd exponent"
+
+[[power_tests]]
+a = "-2"
+b = "2"
+expected = "4"
+description = "Negative base, even exponent"
+
+[[power_tests]]
+a = "0.1"
+b = "2"
+expected = "0.01"
+description = "Decimal less than 1, integer exponent"
+
+[[power_tests]]
+a = "2"
+b = "-2"
+expected = "0.25"
+description = "Positive base, negative exponent"
+
+[[power_tests]]
+a = "4"
+b = "-0.5"
+expected = "0.5000000000000000000000000000"
+description = "Integer base, negative fractional exponent"
+
+[[power_tests]]
+a = "10"
+b = "-1"
+expected = "0.1"
+description = "Base 10, negative exponent"
+
+[[power_tests]]
+a = "3.14159"
+b = "2"
+expected = "9.8695877281"
+description = "Pi approximation squared"
+
+[[power_tests]]
+a = "2.71828"
+b = "3"
+expected = "20.085496391455552"
+description = "E approximation cubed"
+
+[[power_tests]]
+a = "1.5"
+b = "2.5"
+expected = "2.755675960631075360471944584"
+description = "Decimal base, decimal exponent"
+
+[[power_tests]]
+a = "1.5"
+b = "0"
+expected = "1"
+description = "Any base, zero exponent"

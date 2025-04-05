@@ -622,12 +622,17 @@ struct BigDecimal:
         precision: Int,
         rounding_mode: RoundingMode,
         remove_extra_digit_due_to_rounding: Bool,
+        fill_zeros_to_precision: Bool,
     ) raises:
         """Rounds the number to the specified precision in-place.
         See `rounding.round_to_precision()` for more information.
         """
         decimojo.bigdecimal.rounding.round_to_precision(
-            self, precision, rounding_mode, remove_extra_digit_due_to_rounding
+            self,
+            precision,
+            rounding_mode,
+            remove_extra_digit_due_to_rounding,
+            fill_zeros_to_precision,
         )
 
     # ===------------------------------------------------------------------=== #
