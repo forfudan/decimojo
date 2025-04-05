@@ -1021,3 +1021,10 @@ struct BigUInt(Absable, IntableRaising, Writable):
                         1,
                     )
         return result^
+
+    @always_inline
+    fn shift_words_left(self, position: Int) -> Self:
+        """Shifts the words of the BigUInt to the left by `position` bits.
+        See `arithmetics.shift_words_left()` for more information.
+        """
+        return decimojo.biguint.arithmetics.shift_words_left(self, position)
