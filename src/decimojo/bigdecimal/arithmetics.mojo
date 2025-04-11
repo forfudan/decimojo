@@ -25,6 +25,15 @@ from decimojo.decimal.decimal import Decimal
 from decimojo.rounding_mode import RoundingMode
 import decimojo.utility
 
+# ===----------------------------------------------------------------------=== #
+# Arithmetic operations on BigDecimal objects
+# add(x1, x2)
+# subtract(x1, x2)
+# multiply(x1, x2)
+# true_divide(x1, x2, precision)
+# true_divide_inexact(x1, x2, number_of_significant_digits)
+# ===----------------------------------------------------------------------=== #
+
 
 fn add(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
     """Returns the sum of two numbers.
@@ -398,4 +407,74 @@ fn true_divide_inexact(
         coefficient=quotient^,
         scale=result_scale,
         sign=x1.sign != x2.sign,
+    )
+
+
+fn truncate_divide(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
+    """Returns the quotient of two numbers truncated to zeros.
+
+    Args:
+        x1: The first operand (dividend).
+        x2: The second operand (divisor).
+
+    Returns:
+        The quotient of x1 and x2, truncated to zeros.
+
+    Raises:
+        Error: If division by zero is attempted.
+
+    Notes:
+        This function performs integer division that truncates toward zero.
+        For example: 7//4 = 1, -7//4 = -1, 7//(-4) = -1, (-7)//(-4) = 1.
+    """
+    # Check for division by zero
+    if x2.coefficient.is_zero():
+        raise Error("Division by zero")
+
+    # Handle dividend of zero
+    if x1.coefficient.is_zero():
+        return BigDecimal(BigUInt.ZERO, 0, False)
+
+    # Calculate adjusted scales to align decimal points
+    var scale_diff = x1.scale - x2.scale
+
+    # If scale_diff is positive, we need to scale up the dividend
+    # If scale_diff is negative, we need to scale up the divisor
+    if scale_diff > 0:
+        var divisor = x2.coefficient.scale_up_by_power_of_10(scale_diff)
+        var quotient = x1.coefficient.truncate_divide(divisor)
+        return BigDecimal(quotient^, 0, x1.sign != x2.sign)
+
+    else:  # scale_diff < 0
+        var dividend = x1.coefficient.scale_up_by_power_of_10(-scale_diff)
+        var quotient = dividend.truncate_divide(x2.coefficient)
+        return BigDecimal(quotient^, 0, x1.sign != x2.sign)
+
+
+fn truncate_modulo(
+    x1: BigDecimal, x2: BigDecimal, precision: Int
+) raises -> BigDecimal:
+    """Returns the trucated modulo of two numbers.
+
+    Args:
+        x1: The first operand (dividend).
+        x2: The second operand (divisor).
+        precision: The number of significant digits in the result.
+
+    Returns:
+        The truncated modulo of x1 and x2.
+
+    Raises:
+        Error: If division by zero is attempted.
+    """
+    # Check for division by zero
+    if x2.coefficient.is_zero():
+        raise Error("Division by zero")
+
+    return subtract(
+        x1,
+        multiply(
+            truncate_divide(x1, x2),
+            x2,
+        ),
     )

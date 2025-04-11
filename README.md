@@ -47,6 +47,7 @@ For the latest development version, clone the [GitHub repository](https://github
 | ---------- | ------ |
 | v0.1.0     | >=25.1 |
 | v0.2.0     | >=25.2 |
+| v0.3.0     | >=25.2 |
 
 ## Quick start
 
