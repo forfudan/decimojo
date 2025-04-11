@@ -79,7 +79,7 @@ struct RoundingMode:
     fn __str__(self) -> String:
         if self == Self.ROUND_DOWN:
             return "ROUND_DOWN"
-        elif self == Self.ROUND_UP:
+        elif self == Self.ROUND_HALF_UP:
             return "ROUND_HALF_UP"
         elif self == Self.ROUND_HALF_EVEN:
             return "ROUND_HALF_EVEN"

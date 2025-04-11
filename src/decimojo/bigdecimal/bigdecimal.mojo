@@ -34,7 +34,7 @@ alias BDec = BigDecimal
 
 
 @value
-struct BigDecimal:
+struct BigDecimal(Absable, Comparable, IntableRaising, Roundable, Writable):
     """Represents a arbitrary-precision decimal.
 
     Notes:
@@ -464,6 +464,13 @@ struct BigDecimal:
         )
 
     @always_inline
+    fn __floordiv__(self, other: Self) raises -> Self:
+        """Returns the result of floor division.
+        See `arithmetics.truncate_divide()` for more information.
+        """
+        return decimojo.bigdecimal.arithmetics.truncate_divide(self, other)
+
+    @always_inline
     fn __pow__(self, exponent: Self) raises -> Self:
         """Returns the result of exponentiation."""
         return decimojo.bigdecimal.exponential.power(
@@ -501,34 +508,67 @@ struct BigDecimal:
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn __gt__(self, other: BigDecimal) raises -> Bool:
+    fn __gt__(self, other: BigDecimal) -> Bool:
         """Returns whether self is greater than other."""
         return decimojo.bigdecimal.comparison.compare(self, other) > 0
 
     @always_inline
-    fn __ge__(self, other: BigDecimal) raises -> Bool:
+    fn __ge__(self, other: BigDecimal) -> Bool:
         """Returns whether self is greater than or equal to other."""
         return decimojo.bigdecimal.comparison.compare(self, other) >= 0
 
     @always_inline
-    fn __lt__(self, other: BigDecimal) raises -> Bool:
+    fn __lt__(self, other: BigDecimal) -> Bool:
         """Returns whether self is less than other."""
         return decimojo.bigdecimal.comparison.compare(self, other) < 0
 
     @always_inline
-    fn __le__(self, other: BigDecimal) raises -> Bool:
+    fn __le__(self, other: BigDecimal) -> Bool:
         """Returns whether self is less than or equal to other."""
         return decimojo.bigdecimal.comparison.compare(self, other) <= 0
 
     @always_inline
-    fn __eq__(self, other: BigDecimal) raises -> Bool:
+    fn __eq__(self, other: BigDecimal) -> Bool:
         """Returns whether self equals other."""
         return decimojo.bigdecimal.comparison.compare(self, other) == 0
 
     @always_inline
-    fn __ne__(self, other: BigDecimal) raises -> Bool:
+    fn __ne__(self, other: BigDecimal) -> Bool:
         """Returns whether self does not equal other."""
         return decimojo.bigdecimal.comparison.compare(self, other) != 0
+
+    # ===------------------------------------------------------------------=== #
+    # Other dunders that implements traits
+    # round
+    # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn __round__(self, ndigits: Int) -> Self:
+        """Rounds the number to the specified number of decimal places.
+        If `ndigits` is not given, rounds to 0 decimal places.
+        If rounding causes errors, returns the value itself.
+        """
+        try:
+            return decimojo.bigdecimal.rounding.round(
+                self,
+                ndigits=ndigits,
+                rounding_mode=RoundingMode.ROUND_HALF_EVEN,
+            )
+        except e:
+            return self
+
+    @always_inline
+    fn __round__(self) -> Self:
+        """Rounds the number to the specified number of decimal places.
+        If `ndigits` is not given, rounds to 0 decimal places.
+        If rounding causes errors, returns the value itself.
+        """
+        try:
+            return decimojo.bigdecimal.rounding.round(
+                self, ndigits=0, rounding_mode=RoundingMode.ROUND_HALF_EVEN
+            )
+        except e:
+            return self
 
     # ===------------------------------------------------------------------=== #
     # Mathematical methods that do not implement a trait (not a dunder)
@@ -610,11 +650,25 @@ struct BigDecimal:
         )
 
     @always_inline
+    fn truncate_divide(self, other: Self) raises -> Self:
+        """Returns the result of truncating division of two BigDecimal numbers.
+        See `arithmetics.truncate_divide()` for more information.
+        """
+        return decimojo.bigdecimal.arithmetics.truncate_divide(self, other)
+
+    @always_inline
     fn power(self, exponent: Self, precision: Int) raises -> Self:
         """Returns the result of exponentiation with the given precision.
         See `exponential.power()` for more information.
         """
         return decimojo.bigdecimal.exponential.power(self, exponent, precision)
+
+    @always_inline
+    fn round(self, ndigits: Int, rounding_mode: RoundingMode) raises -> Self:
+        """Rounds the number to the specified precision.
+        See `bigdecimal.rounding.round()` for more information.
+        """
+        return decimojo.bigdecimal.rounding.round(self, ndigits, rounding_mode)
 
     @always_inline
     fn round_to_precision(

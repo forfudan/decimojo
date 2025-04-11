@@ -604,8 +604,8 @@ fn divmod(x1: BigUInt, x2: BigUInt) raises -> Tuple[BigUInt, BigUInt]:
 # ===----------------------------------------------------------------------=== #
 
 
-fn scale_up_by_power_of_10(x: BigUInt, n: Int) raises -> BigUInt:
-    """Multiplies a BigUInt by 10^n (n>=0).
+fn scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt:
+    """Multiplies a BigUInt by 10^n if n > 0, otherwise doing nothing.
 
     Args:
         x: The BigUInt value to multiply.
@@ -614,12 +614,7 @@ fn scale_up_by_power_of_10(x: BigUInt, n: Int) raises -> BigUInt:
     Returns:
         A new BigUInt containing the result of the multiplication.
     """
-    if n < 0:
-        raise Error(
-            "Error in `multiply_by_power_of_10`: n must be non-negative"
-        )
-
-    if n == 0:
+    if n <= 0:
         return x
 
     var number_of_zero_words = n // 9
@@ -653,10 +648,6 @@ fn scale_up_by_power_of_10(x: BigUInt, n: Int) raises -> BigUInt:
             multiplier = UInt64(10_000_000)
         else:  # number_of_remaining_digits == 8
             multiplier = UInt64(100_000_000)
-        debug_assert(
-            number_of_remaining_digits >= 9,
-            "number_of_remaining_digits must be less than 9",
-        )
 
         for i in range(len(x.words)):
             var product = UInt64(x.words[i]) * multiplier + carry

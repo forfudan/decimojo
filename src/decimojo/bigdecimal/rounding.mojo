@@ -25,6 +25,63 @@ from decimojo.bigdecimal.bigdecimal import BigDecimal
 # ===------------------------------------------------------------------------===#
 
 
+fn round(
+    number: BigDecimal,
+    ndigits: Int,
+    rounding_mode: RoundingMode,
+) raises -> BigDecimal:
+    """Rounds the number to the specified number of decimal places.
+
+    Args:
+        number: The number to round.
+        ndigits: Number of decimal places to round to.
+        rounding_mode: Rounding mode to use.
+            RoundingMode.ROUND_DOWN: Round down.
+            RoundingMode.ROUND_UP: Round up.
+            RoundingMode.ROUND_HALF_UP: Round half up.
+            RoundingMode.ROUND_HALF_EVEN: Round half even.
+
+    Notes:
+
+    If `ndigits` is negative, the last `ndigits` digits of the integer part of
+    the number will be dropped and the scale will be `ndigits`.
+    Example:
+        round(123.456, 2) -> 123.46
+        round(123.456, -1) -> 12E+1
+        round(123.456, -2) -> 1E+2
+        round(123.456, -3) -> 0E+3
+        round(678.890, -3) -> 1E+3
+    """
+    var ndigits_to_remove = number.scale - ndigits
+    if ndigits_to_remove == 0:
+        return number
+    if ndigits_to_remove < 0:
+        # Add trailing zeros to the number
+        return number.extend_precision(precision_diff=-ndigits_to_remove)
+    else:  # ndigits_to_remove > 0
+        # Remove trailing digits from the number
+        if ndigits_to_remove > number.coefficient.number_of_digits():
+            # If the number of digits to remove is greater than
+            # the number of digits in the coefficient, return 0.
+            return BigDecimal(
+                coefficient=BigUInt.ZERO,
+                scale=ndigits,
+                sign=number.sign,
+            )
+        var coefficient = (
+            number.coefficient.remove_trailing_digits_with_rounding(
+                ndigits=ndigits_to_remove,
+                rounding_mode=rounding_mode,
+                remove_extra_digit_due_to_rounding=False,
+            )
+        )
+        return BigDecimal(
+            coefficient=coefficient,
+            scale=ndigits,
+            sign=number.sign,
+        )
+
+
 fn round_to_precision(
     mut number: BigDecimal,
     precision: Int,

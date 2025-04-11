@@ -737,7 +737,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
         decimojo.biguint.arithmetics.floor_divide_inplace_by_2(self)
 
     @always_inline
-    fn scale_up_by_power_of_10(self, n: Int) raises -> Self:
+    fn scale_up_by_power_of_10(self, n: Int) -> Self:
         """Returns the result of multiplying this number by 10^n (n>=0).
         See `scale_up_by_power_of_10()` for more information.
         """

@@ -21,7 +21,7 @@ Implements functions for comparison operations on BigDecimal objects.
 from decimojo.bigdecimal.bigdecimal import BigDecimal
 
 
-fn compare_absolute(x1: BigDecimal, x2: BigDecimal) raises -> Int8:
+fn compare_absolute(x1: BigDecimal, x2: BigDecimal) -> Int8:
     """Compares the absolute values of two numbers.
 
     Args:
@@ -71,7 +71,7 @@ fn compare_absolute(x1: BigDecimal, x2: BigDecimal) raises -> Int8:
         return scaled_x1.compare(x2.coefficient)
 
 
-fn compare(x1: BigDecimal, x2: BigDecimal) raises -> Int8:
+fn compare(x1: BigDecimal, x2: BigDecimal) -> Int8:
     """Compares two BigDecimal numbers.
 
     Args:
@@ -110,44 +110,44 @@ fn compare(x1: BigDecimal, x2: BigDecimal) raises -> Int8:
         return abs_comparison
 
 
-fn equals(x1: BigDecimal, x2: BigDecimal) raises -> Bool:
+fn equals(x1: BigDecimal, x2: BigDecimal) -> Bool:
     """Returns whether x1 equals x2."""
     return compare(x1, x2) == 0
 
 
-fn not_equals(x1: BigDecimal, x2: BigDecimal) raises -> Bool:
+fn not_equals(x1: BigDecimal, x2: BigDecimal) -> Bool:
     """Returns whether x1 does not equal x2."""
     return compare(x1, x2) != 0
 
 
-fn less_than(x1: BigDecimal, x2: BigDecimal) raises -> Bool:
+fn less_than(x1: BigDecimal, x2: BigDecimal) -> Bool:
     """Returns whether x1 is less than x2."""
     return compare(x1, x2) < 0
 
 
-fn less_than_or_equal(x1: BigDecimal, x2: BigDecimal) raises -> Bool:
+fn less_than_or_equal(x1: BigDecimal, x2: BigDecimal) -> Bool:
     """Returns whether x1 is less than or equal to x2."""
     return compare(x1, x2) <= 0
 
 
-fn greater_than(x1: BigDecimal, x2: BigDecimal) raises -> Bool:
+fn greater_than(x1: BigDecimal, x2: BigDecimal) -> Bool:
     """Returns whether x1 is greater than x2."""
     return compare(x1, x2) > 0
 
 
-fn greater_than_or_equal(x1: BigDecimal, x2: BigDecimal) raises -> Bool:
+fn greater_than_or_equal(x1: BigDecimal, x2: BigDecimal) -> Bool:
     """Returns whether x1 is greater than or equal to x2."""
     return compare(x1, x2) >= 0
 
 
-fn max(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
+fn max(x1: BigDecimal, x2: BigDecimal) -> BigDecimal:
     """Returns the maximum of x1 and x2."""
     if compare(x1, x2) >= 0:
         return x1
     return x2
 
 
-fn min(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
+fn min(x1: BigDecimal, x2: BigDecimal) -> BigDecimal:
     """Returns the minimum of x1 and x2."""
     if compare(x1, x2) <= 0:
         return x1
