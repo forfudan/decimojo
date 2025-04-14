@@ -39,7 +39,7 @@ DeciMojo is available in the [modular-community](https://repo.prefix.dev/modular
 
 From the `magic` CLI, simply run ```magic add decimojo```. This fetches the latest version and makes it immediately available for import.
 
-For projects with a `mojoproject.toml`file, add the dependency ```decimojo = ">=0.2.0"```. Then run `magic install` to download and install the package.
+For projects with a `mojoproject.toml`file, add the dependency ```decimojo = ">=0.3.0"```. Then run `magic install` to download and install the package.
 
 For the latest development version, clone the [GitHub repository](https://github.com/forfudan/decimojo) and build the package locally.
 
@@ -216,7 +216,7 @@ If you find DeciMojo useful for your research, consider listing it in your citat
     year         = {2025},
     title        = {An arbitrary-precision decimal and integer mathematics library for Mojo},
     url          = {https://github.com/forfudan/decimojo},
-    version      = {0.2.0},
+    version      = {0.3.0},
     note         = {Computer Software}
 }
 ```
