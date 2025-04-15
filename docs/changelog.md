@@ -2,26 +2,32 @@
 
 This is a list of RELEASED changes for the DeciMojo Package. For the unreleased changes, please refer to **[changelog_unreleased](https://zhuyuhao.com/decimojo/docs/changelog_unreleased.html)**.
 
+## 15/04/2025 (v0.3.0)
+
+DeciMojo v0.3.0 introduces the arbitrary-precision `BigDecimal` type with comprehensive arithmetic operations, comparisons, and mathematical functions (`sqrt`, `root`, `log`, `exp`, `power`). A new `tomlmojo` package supports test refactoring. Improvements include refined `BigUInt` constructors, enhanced `scale_up_by_power_of_10()` functionality, and a critical multiplication bug fix.
+
+### ⭐️ New
+
+- Implement the `BigDecimal` type with unlimited precision arithmetic.
+  - Implement basic arithmetic operations for `BigDecimal`: addition, subtraction, multiplication, division, and modulo.
+  - Implement comparison operations for `BigDecimal`: less than, greater than, equal to, and not equal to.
+  - Implement string representation and parsing for `BigDecimal`.
+  - Implement mathematical operations for `BigDecimal`: `sqrt`, `nroot`, `log`, `exp`, and `power` functions.
+  - Iimplement rounding functions.
+- Implement a simple TOML parser as package `tomlmojo` to refactor tests (PR #63).
+
+### 🦋 Changed
+
+- Refine the constructors of `BigUInt` (PR #64).
+- Improve the method `BigUInt.scale_up_by_power_of_10()` (PR #72).
+
+### 🛠️ Fixed
+
+- Fix a bug in `BigUInt` multiplication where the calcualtion of carry is mistakenly skipped if a word of x2 is zero (PR #70).
+
 ## 01/04/2025 (v0.2.0)
 
 Version 0.2.0 marks a significant expansion of DeciMojo with the introduction of `BigInt` and `BigUInt` types, providing unlimited precision integer arithmetic to complement the existing fixed-precision `Decimal` type. Core arithmetic functions for the `Decimal` type have been completely rewritten using Mojo 25.2's `UInt128`, delivering substantial performance improvements. This release also extends mathematical capabilities with advanced operations including logarithms, exponentials, square roots, and n-th roots for the `Decimal` type. The codebase has been reorganized into a more modular structure, enhancing maintainability and extensibility. With comprehensive test coverage, improved documentation in multiple languages, and optimized memory management, v0.2.0 represents a major advancement in both functionality and performance for numerical computing in Mojo.
-
-DeciMojo division performance compared with Python's `decimal` module across versions:
-
-| Division Operation                | v0.1.0 vs Python | v0.2.0 vs Python | Improvement |
-| --------------------------------- | ---------------- | ---------------- | ----------- |
-| Integer division (no remainder)   | 0.15× (slower)   | 485.88× faster   | 3239×       |
-| Simple decimal division           | 0.13× (slower)   | 185.77× faster   | 1429×       |
-| Division with repeating decimal   | 0.04× (slower)   | 12.46× faster    | 311×        |
-| Division by one                   | 0.15× (slower)   | 738.60× faster   | 4924×       |
-| Division of zero                  | 1820.50× faster  | 1866.50× faster  | 1.03×       |
-| Division with negative numbers    | 0.11× (slower)   | 159.32× faster   | 1448×       |
-| Division by very small number     | 0.21× (slower)   | 452.75× faster   | 2156×       |
-| High precision division           | 0.005× (slower)  | 15.19× faster    | 3038×       |
-| Division resulting in power of 10 | 0.21× (slower)   | 619.00× faster   | 2948×       |
-| Division of very large numbers    | 0.06× (slower)   | 582.86× faster   | 9714×       |
-
-_Note: Benchmarks performed on Darwin 24.3.0, arm processor with Python 3.12.9. The dramatic performance improvements in v0.2.0 come from completely rewriting the division algorithm using Mojo 25.2's UInt128 implementation. While v0.1.0 was generally slower than Python for division operations (except for division of zero), v0.2.0 achieves speedups of 12-1866× depending on the specific scenario._
 
 ### ⭐️ New
 

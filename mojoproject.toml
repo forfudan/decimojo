@@ -7,11 +7,10 @@ license = "Apache-2.0"
 name = "decimojo"
 platforms = ["osx-arm64", "linux-64"]
 readme = "README.md"
-version = "0.2.0"
+version = "0.3.0"
 
 [dependencies]
 max = "==25.2"
-mpmath = ">=1.3.0,<2"
 
 [tasks]
 # format the code
