@@ -26,6 +26,34 @@ import decimojo.biguint.comparison
 from decimojo.rounding_mode import RoundingMode
 
 # ===----------------------------------------------------------------------=== #
+# List of functions in this module:
+# add(x1: BigUInt, x2: BigUInt) -> BigUInt
+# add_inplace(x1: BigUInt, x2: BigUInt)
+# add_inplace_by_1(x: BigUInt) -> None
+# subtract(x1: BigUInt, x2: BigUInt) -> BigUInt
+# negative(x: BigUInt) -> BigUInt
+# absolute(x: BigUInt) -> BigUInt
+# multiply(x1: BigUInt, x2: BigUInt) -> BigUInt
+# floor_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
+# truncate_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
+# ceil_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
+# floor_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
+# truncate_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
+# ceil_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
+# divmod(x1: BigUInt, x2: BigUInt) -> Tuple[BigUInt, BigUInt]
+# scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt
+# floor_divide_general(x1: BigUInt, x2: BigUInt) -> BigUInt
+# floor_divide_partition(x1: BigUInt, x2: BigUInt) -> BigUInt
+# floor_divide_inplace_by_single_word(x1: BigUInt, x2: BigUInt) -> None
+# floor_divide_inplace_by_double_words(x1: BigUInt, x2: BigUInt) -> None
+# floor_divide_inplace_by_2(x: BigUInt) -> None
+# scale_down_by_power_of_10(x: BigUInt, n: Int) -> BigUInt
+# estimate_quotient(x1: BigUInt, x2: BigUInt, j: Int, m: Int) -> UInt64
+# shift_words_left(x: BigUInt, j: Int) -> BigUInt
+# power_of_10(n: Int) -> BigUInt
+# ===----------------------------------------------------------------------=== #
+
+# ===----------------------------------------------------------------------=== #
 # Arithmetic Operations
 # add, subtract, negative, absolute, multiply, floor_divide, modulo
 # ===----------------------------------------------------------------------=== #
@@ -102,7 +130,7 @@ fn add(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     return BigUInt(words=words^)
 
 
-fn add_inplace(mut x1: BigUInt, x2: BigUInt) raises:
+fn add_inplace(mut x1: BigUInt, x2: BigUInt) raises -> None:
     """Increments a BigUInt number by another BigUInt number in place.
 
     Args:
@@ -164,7 +192,7 @@ fn add_inplace(mut x1: BigUInt, x2: BigUInt) raises:
     return
 
 
-fn add_inplace_by_1(mut x: BigUInt) raises:
+fn add_inplace_by_1(mut x: BigUInt) raises -> None:
     """Increments a BigUInt number by 1."""
     var i = 0
     while i < len(x.words):
@@ -804,7 +832,9 @@ fn floor_divide_partition(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     return result^
 
 
-fn floor_divide_inplace_by_single_word(mut x1: BigUInt, x2: BigUInt) raises:
+fn floor_divide_inplace_by_single_word(
+    mut x1: BigUInt, x2: BigUInt
+) raises -> None:
     """Divides a BigUInt by a single word divisor in-place.
 
     Args:
@@ -826,7 +856,9 @@ fn floor_divide_inplace_by_single_word(mut x1: BigUInt, x2: BigUInt) raises:
     x1.remove_leading_empty_words()
 
 
-fn floor_divide_inplace_by_double_words(mut x1: BigUInt, x2: BigUInt) raises:
+fn floor_divide_inplace_by_double_words(
+    mut x1: BigUInt, x2: BigUInt
+) raises -> None:
     """Divides a BigUInt by double-word divisor in-place.
 
     Args:
@@ -861,7 +893,7 @@ fn floor_divide_inplace_by_double_words(mut x1: BigUInt, x2: BigUInt) raises:
     return
 
 
-fn floor_divide_inplace_by_2(mut x: BigUInt):
+fn floor_divide_inplace_by_2(mut x: BigUInt) -> None:
     """Divides a BigUInt by 2 in-place.
 
     Args:

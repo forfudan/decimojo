@@ -620,14 +620,19 @@ struct BigDecimal(Absable, Comparable, IntableRaising, Roundable, Writable):
         return decimojo.bigdecimal.comparison.min(self, other)
 
     @always_inline
-    fn root(self, root: Self, precision: Int) raises -> Self:
+    fn root(self, root: Self, precision: Int = 28) raises -> Self:
         """Returns the root of the BigDecimal number."""
         return decimojo.bigdecimal.exponential.root(self, root, precision)
 
     @always_inline
-    fn sqrt(self, precision: Int) raises -> Self:
+    fn sqrt(self, precision: Int = 28) raises -> Self:
         """Returns the square root of the BigDecimal number."""
         return decimojo.bigdecimal.exponential.sqrt(self, precision)
+
+    @always_inline
+    fn cbrt(self, precision: Int = 28) raises -> Self:
+        """Returns the cube root of the BigDecimal number."""
+        return decimojo.bigdecimal.exponential.cbrt(self, precision)
 
     @always_inline
     fn true_divide(self, other: Self, precision: Int) raises -> Self:
