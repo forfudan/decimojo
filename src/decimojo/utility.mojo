@@ -54,9 +54,7 @@ fn bitcast[dtype: DType](dec: Decimal) -> Scalar[dtype]:
     ]()
 
     # Bitcast the Decimal to the desired Mojo scalar type
-    var result = UnsafePointer[Decimal].address_of(dec).bitcast[
-        Scalar[dtype]
-    ]().load()
+    var result = UnsafePointer(to=dec).bitcast[Scalar[dtype]]().load()
     # Mask out the bits in flags
     result &= Scalar[dtype](0xFFFFFFFF_FFFFFFFF_FFFFFFFF)
     return result

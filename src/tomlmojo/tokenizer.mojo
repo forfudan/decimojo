@@ -219,7 +219,6 @@ struct Tokenizer:
         start_line = self.position.line
         start_column = self.position.column
         quote_char = self.current_char
-        result = String("")
 
         # Skip opening quote
         self._advance()

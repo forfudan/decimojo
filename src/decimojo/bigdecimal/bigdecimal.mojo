@@ -803,9 +803,11 @@ struct BigDecimal(Absable, Comparable, IntableRaising, Roundable, Writable):
             else:
                 ndigits = 3
             print(
-                "word {}:{}{}".format(
+                String("word {}:{}{}")
+                .format(
                     i, " " * (10 - ndigits), String(self.coefficient.words[i])
-                ).rjust(9, fillchar="0")
+                )
+                .rjust(9, fillchar="0")
             )
         print("----------------------------------------------")
 
@@ -871,7 +873,6 @@ struct BigDecimal(Absable, Comparable, IntableRaising, Roundable, Writable):
         var number_of_words_to_remove = number_of_digits_to_remove // 9
         var number_of_remaining_digits_to_remove = number_of_digits_to_remove % 9
 
-        var words: List[UInt32] = List[UInt32]()
         words = self.coefficient.words[number_of_words_to_remove:]
         var coefficient = BigUInt(words^)
 

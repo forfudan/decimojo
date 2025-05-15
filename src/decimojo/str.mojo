@@ -69,8 +69,9 @@ fn parse_numeric_string(
 
     if value_bytes_len != value_string_slice.char_length():
         raise Error(
-            "There are invalid characters in the string of the number: {}"
-            .format(value)
+            String(
+                "There are invalid characters in the string of the number: {}"
+            ).format(value)
         )
 
     # Yuhao's notes:
@@ -81,7 +82,7 @@ fn parse_numeric_string(
     var decimal_point_read = False
     var exponent_notation_read = False
     var exponent_sign_read = False
-    var exponent_start = False
+    # var exponent_start = False
     var unexpected_end_char = False
 
     var mantissa_sign: Bool = False  # True if negative
@@ -147,7 +148,7 @@ fn parse_numeric_string(
             # Exponent part
             if exponent_notation_read:
                 exponent_sign_read = True
-                exponent_start = True
+                # exponent_start = True
                 raw_exponent = raw_exponent * 10
 
             # Mantissa part
@@ -167,7 +168,7 @@ fn parse_numeric_string(
 
             # Exponent part
             if exponent_notation_read:
-                exponent_start = True
+                # exponent_start = True
                 raw_exponent = raw_exponent * 10 + Int(code - 48)
 
             # Mantissa part
@@ -180,9 +181,9 @@ fn parse_numeric_string(
 
         else:
             raise Error(
-                "Invalid character in the string of the number: {}".format(
-                    chr(Int(code))
-                )
+                String(
+                    "Invalid character in the string of the number: {}"
+                ).format(chr(Int(code)))
             )
 
     if unexpected_end_char:

@@ -40,7 +40,9 @@ fn factorial(n: Int) raises -> Decimal:
         raise Error("Factorial is not defined for negative numbers")
 
     if n > 27:
-        raise Error("{}! is too large to be represented by Decimal".format(n))
+        raise Error(
+            String("{}! is too large to be represented by Decimal").format(n)
+        )
 
     # Directly return the factorial for n = 0 to 27
     if n == 0 or n == 1:

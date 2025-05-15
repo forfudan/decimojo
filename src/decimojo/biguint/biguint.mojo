@@ -327,7 +327,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
                     raise Error(
                         "Error in `from_string`: The number is not an integer."
                     )
-            coef.resize(len(coef) - scale)
+            coef.resize(len(coef) - scale, UInt8(0))
             scale = 0
 
         var number_of_digits = len(coef) - scale
@@ -822,9 +822,9 @@ struct BigUInt(Absable, IntableRaising, Writable):
             else:
                 ndigits = 3
             print(
-                "word {}:{}{}".format(
-                    i, " " * (10 - ndigits), String(self.words[i])
-                ).rjust(9, fillchar="0")
+                String("word {}:{}{}")
+                .format(i, " " * (10 - ndigits), String(self.words[i]))
+                .rjust(9, fillchar="0")
             )
         print("----------------------------------------------")
 
@@ -893,10 +893,9 @@ struct BigUInt(Absable, IntableRaising, Writable):
         if word_index >= len(self.words):
             return 0
         var word = self.words[word_index]
-        var digit: UInt32 = 0
         for _ in range(digit_index):
             word = word // 10
-        digit = word % 10
+        var digit = word % 10
         return UInt8(digit)
 
     @always_inline
@@ -941,7 +940,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
     fn remove_leading_empty_words(mut self):
         """Removes leading words of 0 from BigUInt's internal representation."""
         while len(self.words) > 1 and self.words[-1] == 0:
-            self.words.resize(len(self.words) - 1)
+            self.words.resize(len(self.words) - 1, UInt32(0))
 
     @always_inline
     fn remove_trailing_digits_with_rounding(

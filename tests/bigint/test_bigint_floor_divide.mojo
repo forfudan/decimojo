@@ -335,7 +335,7 @@ fn test_large_number_division() raises:
         String(py_result1),
         "Large positive number division gave incorrect result",
     )
-    print("passed: {} // {} = {}".format(a1, b1, result1))
+    print(String("passed: {} // {} = {}").format(a1, b1, result1))
 
     # Test case 2: Large negative number divided by small number
     var a2 = BigInt("-" + "1" + "0" * 50)  # -10^50
@@ -347,7 +347,7 @@ fn test_large_number_division() raises:
         String(py_result2),
         "Large negative number division gave incorrect result",
     )
-    print("passed: {} // {} = {}".format(a2, b2, result2))
+    print(String("passed: {} // {} = {}").format(a2, b2, result2))
 
     # Test case 3: Large positive number divided by small negative number
     var a3 = BigInt("1" + "0" * 50)  # 10^50
@@ -359,7 +359,7 @@ fn test_large_number_division() raises:
         String(py_result3),
         "Large positive // small negative gave incorrect result",
     )
-    print("passed: {} // {} = {}".format(a3, b3, result3))
+    print(String("passed: {} // {} = {}").format(a3, b3, result3))
 
     # Test case 4: Large negative number divided by small negative number
     var a4 = BigInt("-" + "1" + "0" * 50)  # -10^50
@@ -371,7 +371,7 @@ fn test_large_number_division() raises:
         String(py_result4),
         "Large negative // small negative gave incorrect result",
     )
-    print("passed: {} // {} = {}".format(a4, b4, result4))
+    print(String("passed: {} // {} = {}").format(a4, b4, result4))
 
     # Test case 5: Large number divided by large number (same sign)
     var a5 = BigInt("9" * 30)  # 30 nines
@@ -383,7 +383,7 @@ fn test_large_number_division() raises:
         String(py_result5),
         "Large // large (same sign) gave incorrect result",
     )
-    print("passed: {} // {} = {}".format(a5, b5, result5))
+    print(String("passed: {} // {} = {}").format(a5, b5, result5))
 
     # Test case 6: Large number divided by large number (opposite sign)
     var a6 = BigInt("9" * 30)  # 30 nines
@@ -395,7 +395,7 @@ fn test_large_number_division() raises:
         String(py_result6),
         "Large // large (opposite sign) gave incorrect result",
     )
-    print("passed: {} // {} = {}".format(a6, b6, result6))
+    print(String("passed: {} // {} = {}").format(a6, b6, result6))
 
     # Test case 7: Very large number divisible by power of 10 (positive)
     var a7 = BigInt("1" + "0" * 100)  # 10^100
@@ -407,7 +407,7 @@ fn test_large_number_division() raises:
         String(py_result7),
         "Power of 10 division gave incorrect result",
     )
-    print("passed: {} // {} = {}".format(a7, b7, result7))
+    print(String("passed: {} // {} = {}").format(a7, b7, result7))
 
     # Test case 8: Very large number divisible by power of 10 (negative dividend)
     var a8 = BigInt("-" + "1" + "0" * 100)  # -10^100
@@ -419,7 +419,7 @@ fn test_large_number_division() raises:
         String(py_result8),
         "Negative power of 10 division gave incorrect result",
     )
-    print("passed: {} // {} = {}".format(a8, b8, result8))
+    print(String("passed: {} // {} = {}").format(a8, b8, result8))
 
     # Test case 9: Very large complex numbers
     stra = "123456789" * 50
@@ -433,7 +433,7 @@ fn test_large_number_division() raises:
         String(py_result9),
         "Complex large number division incorrect",
     )
-    print("passed: {} // {} = {}".format(a9, b9, result9))
+    print(String("passed: {} // {} = {}").format(a9, b9, result9))
 
     # Test case 10: Very large negative complex numbers
     var a10 = BigInt("-" + stra)
@@ -445,7 +445,7 @@ fn test_large_number_division() raises:
         String(py_result10),
         "Complex large negative number division incorrect",
     )
-    print("passed: {} // {} = {}".format(a10, b10, result10))
+    print(String("passed: {} // {} = {}").format(a10, b10, result10))
 
     print("✓ Large number division tests passed!")
 

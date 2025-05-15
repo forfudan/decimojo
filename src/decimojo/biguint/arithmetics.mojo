@@ -103,7 +103,7 @@ fn add(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
     var carry: UInt32 = 0
     var ith: Int = 0
-    var sum_of_words: UInt32 = 0
+    var sum_of_words: UInt32
 
     # Add corresponding words from both numbers
     while ith < len(x1.words) or ith < len(x2.words):
@@ -162,7 +162,7 @@ fn add_inplace(mut x1: BigUInt, x2: BigUInt) raises -> None:
 
     var carry: UInt32 = 0
     var ith: Int = 0
-    var sum_of_words: UInt32 = 0
+    var sum_of_words: UInt32
     var x1_len = len(x1.words)
 
     while ith < x1_len or ith < len(x2.words):
@@ -239,7 +239,7 @@ fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     var words = List[UInt32](capacity=max(len(x1.words), len(x2.words)))
     var borrow: Int32 = 0
     var ith: Int = 0
-    var difference: Int32 = 0  # Int32 is sufficient for the difference
+    var difference: Int32  # Int32 is sufficient for the difference
 
     while ith < len(x1.words):
         # Subtract the borrow
@@ -322,7 +322,7 @@ fn multiply(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     # x1 = x1[0] + x1[1] * 10^9
     # x2 = x2[0] + x2[1] * 10^9
     # x1 * x2 = x1[0] * x2[0] + (x1[0] * x2[1] + x1[1] * x2[0]) * 10^9 + x1[1] * x2[1] * 10^18
-    var carry: UInt64 = 0
+    var carry: UInt64
     for i in range(len(x1.words)):
         # Skip if the word is zero
         if x1.words[i] == 0:
@@ -797,7 +797,7 @@ fn floor_divide_partition(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     var number_of_words_remainder = len(x1.words) % len(x2.words)
     var number_of_words_dividend: Int
     var result = x1
-    result.words.resize(len(x1.words) - number_of_words_remainder)
+    result.words.resize(len(x1.words) - number_of_words_remainder, UInt32(0))
     var remainder = BigUInt(List[UInt32](capacity=len(x2.words)))
     for i in range(len(x1.words) - number_of_words_remainder, len(x1.words)):
         remainder.words.append(x1.words[i])
@@ -878,7 +878,7 @@ fn floor_divide_inplace_by_double_words(
     var carry = UInt128(0)
     if len(x1.words) % 2 == 1:
         carry = UInt128(x1.words[-1])
-        x1.words.resize(len(x1.words) - 1)
+        x1.words.resize(len(x1.words) - 1, UInt32(0))
 
     for i in range(len(x1.words) - 1, -1, -2):
         var dividend = carry * UInt128(1_000_000_000_000_000_000) + UInt128(
@@ -912,7 +912,7 @@ fn floor_divide_inplace_by_2(mut x: BigUInt) -> None:
 
     # Remove leading zeros
     while len(x.words) > 1 and x.words[len(x.words) - 1] == 0:
-        x.words.resize(len(x.words) - 1)
+        x.words.resize(len(x.words) - 1, UInt32(0))
 
 
 fn scale_down_by_power_of_10(x: BigUInt, n: Int) raises -> BigUInt:

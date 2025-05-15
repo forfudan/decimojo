@@ -232,7 +232,7 @@ fn test_large_number_division() raises:
         "14285714285714285714285714285714285714285714285714",
         "10^50 / 7 gave incorrect result",
     )
-    print("passed: {} / {} = {}".format(a1, b1, result1))
+    print(String("passed: {} / {} = {}").format(a1, b1, result1))
 
     # Test case 2: Large negative number divided by small number
     var a2 = BigInt("-" + "1" + "0" * 50)  # -10^50
@@ -243,7 +243,7 @@ fn test_large_number_division() raises:
         "-14285714285714285714285714285714285714285714285714",
         "-10^50 / 7 gave incorrect result",
     )
-    print("passed: {} / {} = {}".format(a2, b2, result2))
+    print(String("passed: {} / {} = {}").format(a2, b2, result2))
 
     # Test case 3: Large positive number divided by small negative number
     var a3 = BigInt("1" + "0" * 50)  # 10^50
@@ -254,7 +254,7 @@ fn test_large_number_division() raises:
         "-14285714285714285714285714285714285714285714285714",
         "10^50 / -7 gave incorrect result",
     )
-    print("passed: {} / {} = {}".format(a3, b3, result3))
+    print(String("passed: {} / {} = {}").format(a3, b3, result3))
 
     # Test case 4: Large negative number divided by small negative number
     var a4 = BigInt("-" + "1" + "0" * 50)  # -10^50
@@ -265,7 +265,7 @@ fn test_large_number_division() raises:
         "14285714285714285714285714285714285714285714285714",
         "-10^50 / -7 gave incorrect result",
     )
-    print("passed: {} / {} = {}".format(a4, b4, result4))
+    print(String("passed: {} / {} = {}").format(a4, b4, result4))
 
     # Test case 5: Large number divided by large number (same sign)
     var a5 = BigInt("9" * 30)  # 30 nines
@@ -276,7 +276,7 @@ fn test_large_number_division() raises:
         "1000000000000001",
         "large / large (same sign) gave incorrect result",
     )
-    print("passed: {} / {} = {}".format(a5, b5, result5))
+    print(String("passed: {} / {} = {}").format(a5, b5, result5))
 
     # Test case 6: Large number divided by large number (opposite sign)
     var a6 = BigInt("9" * 30)  # 30 nines
@@ -287,7 +287,7 @@ fn test_large_number_division() raises:
         "-1000000000000001",
         "large / large (opposite sign) gave incorrect result",
     )
-    print("passed: {} / {} = {}".format(a6, b6, result6))
+    print(String("passed: {} / {} = {}").format(a6, b6, result6))
 
     print("✓ Large number division tests passed!")
 

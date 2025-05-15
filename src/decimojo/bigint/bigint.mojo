@@ -261,9 +261,8 @@ struct BigInt(Absable, IntableRaising, Writable):
             The BigInt representation of the string.
         """
         var coef: List[UInt8]
-        var scale: Int
         var sign: Bool
-        coef, scale, sign = decimojo.str.parse_numeric_string(value)
+        coef, _scale, sign = decimojo.str.parse_numeric_string(value)
 
         # Check if the number is zero
         if len(coef) == 1 and coef[0] == UInt8(0):
@@ -620,8 +619,10 @@ struct BigInt(Absable, IntableRaising, Writable):
             else:
                 ndigits = 3
             print(
-                "word {}:{}{}".format(
+                String("word {}:{}{}")
+                .format(
                     i, " " * (10 - ndigits), String(self.magnitude.words[i])
-                ).rjust(9, fillchar="0")
+                )
+                .rjust(9, fillchar="0")
             )
         print("----------------------------------------------")
