@@ -107,6 +107,20 @@ struct BigDecimal(Absable, Comparable, IntableRaising, Roundable, Writable):
     # ===------------------------------------------------------------------=== #
 
     @staticmethod
+    fn from_raw_components(
+        coefficient: BigUInt, scale: Int = 0, sign: Bool = False
+    ) -> Self:
+        """Creates a BigDecimal from its raw components."""
+        return Self(coefficient, scale, sign)
+
+    @staticmethod
+    fn from_raw_components(
+        coefficient: UInt32, scale: Int = 0, sign: Bool = False
+    ) -> Self:
+        """Creates a BigDecimal from its raw components."""
+        return Self(BigUInt(List[UInt32](coefficient)), scale, sign)
+
+    @staticmethod
     fn from_int(value: Int) raises -> Self:
         """Creates a BigDecimal from an integer."""
         if value == 0:
@@ -618,6 +632,12 @@ struct BigDecimal(Absable, Comparable, IntableRaising, Roundable, Writable):
     fn min(self, other: Self) raises -> Self:
         """Returns the minimum of two BigDecimal numbers."""
         return decimojo.bigdecimal.comparison.min(self, other)
+
+    @staticmethod
+    @always_inline
+    fn pi(precision: Int) raises -> Self:
+        """Returns the value of pi with the given precision."""
+        return decimojo.bigdecimal.constants.pi(precision)
 
     @always_inline
     fn root(self, root: Self, precision: Int = 28) raises -> Self:
