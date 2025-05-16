@@ -485,9 +485,7 @@ struct Decimal(
                 ).format(scale)
             )
 
-        var result = UnsafePointer[UInt128].address_of(value).bitcast[
-            Decimal
-        ]()[]
+        var result = UnsafePointer(to=value).bitcast[Decimal]()[]
         result.flags |= (scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
         result.flags |= sign << 31
 
@@ -530,9 +528,9 @@ struct Decimal(
 
         if value_bytes_len != value_string_slice.char_length():
             raise Error(
-                "There are invalid characters in decimal string: {}".format(
-                    value
-                )
+                String(
+                    "There are invalid characters in decimal string: {}"
+                ).format(value)
             )
 
         # Yuhao's notes:
@@ -543,7 +541,7 @@ struct Decimal(
         var decimal_point_read = False
         var exponent_notation_read = False
         var exponent_sign_read = False
-        var exponent_start = False
+        # var exponent_start = False
         var unexpected_end_char = False
 
         var mantissa_sign: Bool = False  # True if negative
@@ -612,7 +610,7 @@ struct Decimal(
                 # Exponent part
                 if exponent_notation_read:
                     exponent_sign_read = True
-                    exponent_start = True
+                    # exponent_start = True
                     raw_exponent = raw_exponent * 10
 
                 # Mantissa part
@@ -642,7 +640,7 @@ struct Decimal(
                         raw_exponent > Decimal.MAX_NUM_DIGITS * 2
                     ):
                         raise Error(
-                            "Exponent part is too large: {}".format(
+                            String("Exponent part is too large: {}").format(
                                 raw_exponent
                             )
                         )
@@ -654,7 +652,7 @@ struct Decimal(
                         continue
 
                     else:
-                        exponent_start = True
+                        # exponent_start = True
                         raw_exponent = raw_exponent * 10 + UInt32(code[] - 48)
 
                 # Mantissa part
@@ -674,7 +672,7 @@ struct Decimal(
 
             else:
                 raise Error(
-                    "Invalid character in decimal string: {}".format(
+                    String("Invalid character in decimal string: {}").format(
                         chr(Int(code[]))
                     )
                 )
@@ -785,7 +783,7 @@ struct Decimal(
             return Decimal.ZERO()
 
         # Get the positive value of the input
-        var abs_value: Float64 = value
+        var abs_value: Float64
         var is_negative: Bool = value < 0
         if is_negative:
             abs_value = -value
@@ -802,9 +800,7 @@ struct Decimal(
             )
 
         # Extract binary exponent using IEEE 754 bit manipulation
-        var bits: UInt64 = UnsafePointer[Float64].address_of(abs_value).bitcast[
-            UInt64
-        ]().load()
+        var bits: UInt64 = UnsafePointer(to=abs_value).bitcast[UInt64]().load()
         var biased_exponent: Int = Int((bits >> 52) & 0x7FF)
 
         # print("DEBUG: biased_exponent = ", biased_exponent)

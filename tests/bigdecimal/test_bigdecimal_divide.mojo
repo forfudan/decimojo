@@ -106,7 +106,7 @@ fn test_division_by_zero() raises:
     var a = BigDecimal("1")
     var b = BigDecimal("0")
 
-    var exception_caught = False
+    var exception_caught: Bool
     try:
         _ = a / b
         exception_caught = False

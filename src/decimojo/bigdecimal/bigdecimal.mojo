@@ -620,14 +620,19 @@ struct BigDecimal(Absable, Comparable, IntableRaising, Roundable, Writable):
         return decimojo.bigdecimal.comparison.min(self, other)
 
     @always_inline
-    fn root(self, root: Self, precision: Int) raises -> Self:
+    fn root(self, root: Self, precision: Int = 28) raises -> Self:
         """Returns the root of the BigDecimal number."""
         return decimojo.bigdecimal.exponential.root(self, root, precision)
 
     @always_inline
-    fn sqrt(self, precision: Int) raises -> Self:
+    fn sqrt(self, precision: Int = 28) raises -> Self:
         """Returns the square root of the BigDecimal number."""
         return decimojo.bigdecimal.exponential.sqrt(self, precision)
+
+    @always_inline
+    fn cbrt(self, precision: Int = 28) raises -> Self:
+        """Returns the cube root of the BigDecimal number."""
+        return decimojo.bigdecimal.exponential.cbrt(self, precision)
 
     @always_inline
     fn true_divide(self, other: Self, precision: Int) raises -> Self:
@@ -798,9 +803,11 @@ struct BigDecimal(Absable, Comparable, IntableRaising, Roundable, Writable):
             else:
                 ndigits = 3
             print(
-                "word {}:{}{}".format(
+                String("word {}:{}{}")
+                .format(
                     i, " " * (10 - ndigits), String(self.coefficient.words[i])
-                ).rjust(9, fillchar="0")
+                )
+                .rjust(9, fillchar="0")
             )
         print("----------------------------------------------")
 
@@ -866,7 +873,6 @@ struct BigDecimal(Absable, Comparable, IntableRaising, Roundable, Writable):
         var number_of_words_to_remove = number_of_digits_to_remove // 9
         var number_of_remaining_digits_to_remove = number_of_digits_to_remove % 9
 
-        var words: List[UInt32] = List[UInt32]()
         words = self.coefficient.words[number_of_words_to_remove:]
         var coefficient = BigUInt(words^)
 

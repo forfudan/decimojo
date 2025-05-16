@@ -149,8 +149,10 @@ fn test_edge_cases() raises:
     var result_small = ln(very_small)
     testing.assert_true(
         String(result_small).startswith("-62.16979751083923346848576927"),
-        "ln of a very small number should be -62.16979751083923346848576927...,"
-        " but got {}".format(result_small),
+        String(
+            "ln of a very small number should be"
+            " -62.16979751083923346848576927..., but got {}"
+        ).format(result_small),
     )
 
     # Test case 14: ln of a very large number
@@ -158,9 +160,9 @@ fn test_edge_cases() raises:
     var result_large = ln(very_large)
     testing.assert_true(
         String(result_large).startswith("64.4723"),
-        "ln of a very large number should be 64.4723..., but got {}".format(
-            result_large
-        ),
+        String(
+            "ln of a very large number should be 64.4723..., but got {}"
+        ).format(result_large),
     )
 
     print("✓ Edge cases tests passed!")
@@ -183,8 +185,10 @@ fn test_precision() raises:
     var result_ten = ln(ten)
     testing.assert_true(
         String(result_ten).startswith("2.30258509299404568401"),
-        "ln(10) with high precision should be 2.30258509299404568401..., but"
-        " got {}".format(result_ten),
+        String(
+            "ln(10) with high precision should be 2.30258509299404568401...,"
+            " but got {}"
+        ).format(result_ten),
     )
 
     print("✓ Precision tests passed!")

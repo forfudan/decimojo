@@ -119,7 +119,7 @@ fn test_negative_sqrt() raises:
 
     var negative_number = BigDecimal("-1")
 
-    var exception_caught = False
+    var exception_caught: Bool
     try:
         _ = negative_number.sqrt(precision=28)
         exception_caught = False
@@ -194,7 +194,7 @@ fn test_ln_invalid_inputs() raises:
 
     # Test 1: ln of zero should raise an error
     var zero = BigDecimal("0")
-    var exception_caught = False
+    var exception_caught: Bool
     try:
         _ = zero.ln()
         exception_caught = False
@@ -205,7 +205,6 @@ fn test_ln_invalid_inputs() raises:
 
     # Test 2: ln of negative number should raise an error
     var negative = BigDecimal("-1")
-    exception_caught = False
     try:
         _ = negative.ln()
         exception_caught = False
@@ -285,7 +284,7 @@ fn test_root_invalid_inputs() raises:
     # Test 1: 0th root should raise an error
     var a1 = BigDecimal("16")
     var n1 = BigDecimal("0")
-    var exception_caught = False
+    var exception_caught: Bool
     try:
         _ = a1.root(n1, precision=28)
         exception_caught = False
@@ -297,7 +296,6 @@ fn test_root_invalid_inputs() raises:
     # Test 2: Even root of negative number should raise an error
     var a2 = BigDecimal("-16")
     var n2 = BigDecimal("2")
-    exception_caught = False
     try:
         _ = a2.root(n2, precision=28)
         exception_caught = False
@@ -311,7 +309,6 @@ fn test_root_invalid_inputs() raises:
     # Test 3: Fractional root with even denominator of negative number should raise an error
     var a3 = BigDecimal("-16")
     var n3 = BigDecimal("2.5")  # 5/2, denominator is even
-    exception_caught = False
     try:
         _ = a3.root(n3, precision=28)
         exception_caught = False
@@ -399,7 +396,7 @@ fn test_power_invalid_inputs() raises:
     # Test 1: 0^0 should raise an error (undefined)
     var base1 = BigDecimal("0")
     var exp1 = BigDecimal("0")
-    var exception_caught = False
+    var exception_caught: Bool
     try:
         _ = base1.power(exp1, precision=28)
         exception_caught = False
@@ -411,7 +408,6 @@ fn test_power_invalid_inputs() raises:
     # Test 2: 0^-1 should raise an error (division by zero)
     var base2 = BigDecimal("0")
     var exp2 = BigDecimal("-1")
-    exception_caught = False
     try:
         _ = base2.power(exp2, precision=28)
         exception_caught = False
@@ -425,7 +421,6 @@ fn test_power_invalid_inputs() raises:
     # Test 3: Negative number raised to a fractional power should raise an error
     var base3 = BigDecimal("-2")
     var exp3 = BigDecimal("0.5")
-    exception_caught = False
     try:
         _ = base3.power(exp3, precision=28)
         exception_caught = False

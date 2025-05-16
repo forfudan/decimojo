@@ -404,7 +404,6 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     var x1_scale = x1.scale()
     var x2_scale = x2.scale()
     var combined_scale = x1_scale + x2_scale
-    """Combined scale of the two operands."""
     var is_negative = x1.is_negative() != x2.is_negative()
 
     # SPECIAL CASE: true one
@@ -510,8 +509,10 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
             var prod: UInt128 = UInt128(x1_coef) * UInt128(x2_coef)
             if prod > Decimal.MAX_AS_UINT128:
                 raise Error(
-                    "Error in `multiply()`: The product is {}, which exceeds"
-                    " the capacity of Decimal (2^96-1)".format(prod)
+                    String(
+                        "Error in `multiply()`: The product is {}, which"
+                        " exceeds the capacity of Decimal (2^96-1)"
+                    ).format(prod)
                 )
             else:
                 return Decimal.from_uint128(prod, 0, is_negative)
@@ -520,8 +521,10 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
         else:
             var prod: UInt256 = UInt256(x1_coef) * UInt256(x2_coef)
             raise Error(
-                "Error in `multiply()`: The product is {}, which exceeds the"
-                " capacity of Decimal (2^96-1)".format(prod)
+                String(
+                    "Error in `multiply()`: The product is {}, which exceeds"
+                    " the capacity of Decimal (2^96-1)"
+                ).format(prod)
             )
 
     # SPECIAL CASE: Both operands are integers but with scales
@@ -963,13 +966,9 @@ fn divide(x1: Decimal, x2: Decimal) raises -> Decimal:
         # 但我們只能算到 1.0000000000000000000000000000_5,
         # 在銀行家捨去法中,我們將捨去項爲5時,向上捨去, 保留28位後爲1.0000000000000000000000000000
         # 這樣的捨去法是不準確的,所以我們一律在到達餘數非零且捨去項爲5時,向上捨去
-        var is_exact_division: Bool = False
-        if rem == 0:
-            is_exact_division = True
-        else:
-            if digit == 5:
-                # Not exact division, round up the last digit
-                quot += 1
+        if (digit == 5) and (rem != 0):
+            # Not exact division, round up the last digit
+            quot += 1
 
         var scale_of_quot = step_counter + diff_scale + adjusted_scale
 
@@ -979,6 +978,12 @@ fn divide(x1: Decimal, x2: Decimal) raises -> Decimal:
             scale_of_quot = 0
         var ndigits_quot = decimojo.utility.number_of_digits(quot)
         var ndigits_quot_int_part = ndigits_quot - scale_of_quot
+
+        print(
+            String(
+                "quot: {}, rem: {}, step_counter: {}, scale_of_quot: {}"
+            ).format(quot, rem, step_counter, scale_of_quot)
+        )
 
         # TODO: 可以考慮先降 scale 再判斷是否超出最大值.
         # TODO: 爲降 scale 引入 round_to_remove_last_n_digits 函數
@@ -1062,9 +1067,6 @@ fn divide(x1: Decimal, x2: Decimal) raises -> Decimal:
             step_counter += 1
             # Check if division is exact
 
-        var is_exact_division: Bool = False
-        if rem256 == 0:
-            is_exact_division = True
         else:
             if digit == 5:
                 # Not exact division, round up the last digit

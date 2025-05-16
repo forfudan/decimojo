@@ -26,6 +26,34 @@ import decimojo.biguint.comparison
 from decimojo.rounding_mode import RoundingMode
 
 # ===----------------------------------------------------------------------=== #
+# List of functions in this module:
+# add(x1: BigUInt, x2: BigUInt) -> BigUInt
+# add_inplace(x1: BigUInt, x2: BigUInt)
+# add_inplace_by_1(x: BigUInt) -> None
+# subtract(x1: BigUInt, x2: BigUInt) -> BigUInt
+# negative(x: BigUInt) -> BigUInt
+# absolute(x: BigUInt) -> BigUInt
+# multiply(x1: BigUInt, x2: BigUInt) -> BigUInt
+# floor_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
+# truncate_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
+# ceil_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
+# floor_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
+# truncate_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
+# ceil_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
+# divmod(x1: BigUInt, x2: BigUInt) -> Tuple[BigUInt, BigUInt]
+# scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt
+# floor_divide_general(x1: BigUInt, x2: BigUInt) -> BigUInt
+# floor_divide_partition(x1: BigUInt, x2: BigUInt) -> BigUInt
+# floor_divide_inplace_by_single_word(x1: BigUInt, x2: BigUInt) -> None
+# floor_divide_inplace_by_double_words(x1: BigUInt, x2: BigUInt) -> None
+# floor_divide_inplace_by_2(x: BigUInt) -> None
+# scale_down_by_power_of_10(x: BigUInt, n: Int) -> BigUInt
+# estimate_quotient(x1: BigUInt, x2: BigUInt, j: Int, m: Int) -> UInt64
+# shift_words_left(x: BigUInt, j: Int) -> BigUInt
+# power_of_10(n: Int) -> BigUInt
+# ===----------------------------------------------------------------------=== #
+
+# ===----------------------------------------------------------------------=== #
 # Arithmetic Operations
 # add, subtract, negative, absolute, multiply, floor_divide, modulo
 # ===----------------------------------------------------------------------=== #
@@ -75,7 +103,7 @@ fn add(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
     var carry: UInt32 = 0
     var ith: Int = 0
-    var sum_of_words: UInt32 = 0
+    var sum_of_words: UInt32
 
     # Add corresponding words from both numbers
     while ith < len(x1.words) or ith < len(x2.words):
@@ -102,7 +130,7 @@ fn add(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     return BigUInt(words=words^)
 
 
-fn add_inplace(mut x1: BigUInt, x2: BigUInt) raises:
+fn add_inplace(mut x1: BigUInt, x2: BigUInt) raises -> None:
     """Increments a BigUInt number by another BigUInt number in place.
 
     Args:
@@ -134,7 +162,7 @@ fn add_inplace(mut x1: BigUInt, x2: BigUInt) raises:
 
     var carry: UInt32 = 0
     var ith: Int = 0
-    var sum_of_words: UInt32 = 0
+    var sum_of_words: UInt32
     var x1_len = len(x1.words)
 
     while ith < x1_len or ith < len(x2.words):
@@ -164,7 +192,7 @@ fn add_inplace(mut x1: BigUInt, x2: BigUInt) raises:
     return
 
 
-fn add_inplace_by_1(mut x: BigUInt) raises:
+fn add_inplace_by_1(mut x: BigUInt) raises -> None:
     """Increments a BigUInt number by 1."""
     var i = 0
     while i < len(x.words):
@@ -211,7 +239,7 @@ fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     var words = List[UInt32](capacity=max(len(x1.words), len(x2.words)))
     var borrow: Int32 = 0
     var ith: Int = 0
-    var difference: Int32 = 0  # Int32 is sufficient for the difference
+    var difference: Int32  # Int32 is sufficient for the difference
 
     while ith < len(x1.words):
         # Subtract the borrow
@@ -294,7 +322,7 @@ fn multiply(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     # x1 = x1[0] + x1[1] * 10^9
     # x2 = x2[0] + x2[1] * 10^9
     # x1 * x2 = x1[0] * x2[0] + (x1[0] * x2[1] + x1[1] * x2[0]) * 10^9 + x1[1] * x2[1] * 10^18
-    var carry: UInt64 = 0
+    var carry: UInt64
     for i in range(len(x1.words)):
         # Skip if the word is zero
         if x1.words[i] == 0:
@@ -769,7 +797,7 @@ fn floor_divide_partition(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     var number_of_words_remainder = len(x1.words) % len(x2.words)
     var number_of_words_dividend: Int
     var result = x1
-    result.words.resize(len(x1.words) - number_of_words_remainder)
+    result.words.resize(len(x1.words) - number_of_words_remainder, UInt32(0))
     var remainder = BigUInt(List[UInt32](capacity=len(x2.words)))
     for i in range(len(x1.words) - number_of_words_remainder, len(x1.words)):
         remainder.words.append(x1.words[i])
@@ -804,7 +832,9 @@ fn floor_divide_partition(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     return result^
 
 
-fn floor_divide_inplace_by_single_word(mut x1: BigUInt, x2: BigUInt) raises:
+fn floor_divide_inplace_by_single_word(
+    mut x1: BigUInt, x2: BigUInt
+) raises -> None:
     """Divides a BigUInt by a single word divisor in-place.
 
     Args:
@@ -826,7 +856,9 @@ fn floor_divide_inplace_by_single_word(mut x1: BigUInt, x2: BigUInt) raises:
     x1.remove_leading_empty_words()
 
 
-fn floor_divide_inplace_by_double_words(mut x1: BigUInt, x2: BigUInt) raises:
+fn floor_divide_inplace_by_double_words(
+    mut x1: BigUInt, x2: BigUInt
+) raises -> None:
     """Divides a BigUInt by double-word divisor in-place.
 
     Args:
@@ -846,7 +878,7 @@ fn floor_divide_inplace_by_double_words(mut x1: BigUInt, x2: BigUInt) raises:
     var carry = UInt128(0)
     if len(x1.words) % 2 == 1:
         carry = UInt128(x1.words[-1])
-        x1.words.resize(len(x1.words) - 1)
+        x1.words.resize(len(x1.words) - 1, UInt32(0))
 
     for i in range(len(x1.words) - 1, -1, -2):
         var dividend = carry * UInt128(1_000_000_000_000_000_000) + UInt128(
@@ -861,7 +893,7 @@ fn floor_divide_inplace_by_double_words(mut x1: BigUInt, x2: BigUInt) raises:
     return
 
 
-fn floor_divide_inplace_by_2(mut x: BigUInt):
+fn floor_divide_inplace_by_2(mut x: BigUInt) -> None:
     """Divides a BigUInt by 2 in-place.
 
     Args:
@@ -880,7 +912,7 @@ fn floor_divide_inplace_by_2(mut x: BigUInt):
 
     # Remove leading zeros
     while len(x.words) > 1 and x.words[len(x.words) - 1] == 0:
-        x.words.resize(len(x.words) - 1)
+        x.words.resize(len(x.words) - 1, UInt32(0))
 
 
 fn scale_down_by_power_of_10(x: BigUInt, n: Int) raises -> BigUInt:

@@ -26,6 +26,24 @@ from decimojo.bigdecimal.bigdecimal import BigDecimal
 from decimojo.rounding_mode import RoundingMode
 import decimojo.utility
 
+# ===----------------------------------------------------------------------=== #
+# List of functions in this module:
+# - power(base: BigDecimal, exponent: BigDecimal, precision: Int) -> BigDecimal
+# - integer_power(base: BigDecimal, exponent: BigDecimal, precision: Int) -> BigDecimal
+# - root(x: BigDecimal, n: BigDecimal, precision: Int) -> BigDecimal
+# - integer_root(x: BigDecimal, n: BigDecimal, precision: Int) -> BigDecimal
+# - is_integer_reciprocal_and_return(n: BigDecimal) -> Tuple[Bool, BigDecimal]
+# - is_odd_reciprocal(n: BigDecimal) -> Bool
+# - sqrt(x: BigDecimal, precision: Int) -> BigDecimal
+# - exp(x: BigDecimal, precision: Int) -> BigDecimal
+# - exp_taylor_series(x: BigDecimal, minimum_precision: Int) -> BigDecimal
+# - ln(x: BigDecimal, precision: Int) -> BigDecimal
+# - log(x: BigDecimal, precision: Int) -> BigDecimal
+# - log10(x: BigDecimal, precision: Int) -> BigDecimal
+# - ln_series_expansion(x: BigDecimal, precision: Int) -> BigDecimal
+# - compute_ln2(precision: Int) -> BigDecimal
+# - compute_ln1d25(precision: Int) -> BigDecimal
+# ===----------------------------------------------------------------------=== #
 
 # ===----------------------------------------------------------------------=== #
 # Power and root functions
@@ -559,6 +577,28 @@ fn sqrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
             guess.scale = (x.scale + 1) // 2
 
     return guess^
+
+
+fn cbrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
+    """Calculate the cube root of a BigDecimal number.
+
+    Args:
+        x: The number to calculate the cube root of.
+        precision: The desired precision (number of significant digits) of the result.
+
+    Returns:
+        The cube root of x with the specified precision.
+
+    Raises:
+        Error: If x is negative.
+    """
+
+    result = integer_root(
+        x,
+        BigDecimal(coefficient=BigUInt(List[UInt32](3)), scale=0, sign=False),
+        precision,
+    )
+    return result^
 
 
 # ===----------------------------------------------------------------------=== #
