@@ -2,6 +2,10 @@
 
 This is a list of RELEASED changes for the DeciMojo Package. For the unreleased changes, please refer to **[changelog_unreleased](https://zhuyuhao.com/decimojo/docs/changelog_unreleased.html)**.
 
+## 06/06/2025 (v0.3.1)
+
+DeciMojo v0.3.1 updates the codebase to Mojo 25.3 and replaces the `magic` package manager with `pixi`. This release enables you to use DeciMojo with the latest Mojo features and the new package manager.
+
 ## 15/04/2025 (v0.3.0)
 
 DeciMojo v0.3.0 introduces the arbitrary-precision `BigDecimal` type with comprehensive arithmetic operations, comparisons, and mathematical functions (`sqrt`, `root`, `log`, `exp`, `power`). A new `tomlmojo` package supports test refactoring. Improvements include refined `BigUInt` constructors, enhanced `scale_up_by_power_of_10()` functionality, and a critical multiplication bug fix.
