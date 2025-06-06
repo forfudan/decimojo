@@ -37,17 +37,18 @@ This repository includes [TOMLMojo](https://github.com/forfudan/decimojo/tree/ma
 
 DeciMojo is available in the [modular-community](https://repo.prefix.dev/modular-community) package repository. You can install it using any of these methods:
 
-From the `magic` CLI, simply run ```magic add decimojo```. This fetches the latest version and makes it immediately available for import.
+From the `pixi` CLI, simply run ```pixi add decimojo```. This fetches the latest version and makes it immediately available for import.
 
-For projects with a `mojoproject.toml`file, add the dependency ```decimojo = ">=0.3.0"```. Then run `magic install` to download and install the package.
+For projects with a `mojoproject.toml`file, add the dependency ```decimojo = ">=0.3.0"```. Then run `pixi install` to download and install the package.
 
 For the latest development version, clone the [GitHub repository](https://github.com/forfudan/decimojo) and build the package locally.
 
-| `decimojo` | `mojo` |
-| ---------- | ------ |
-| v0.1.0     | >=25.1 |
-| v0.2.0     | >=25.2 |
-| v0.3.0     | >=25.2 |
+| `decimojo` | `mojo`        |
+| ---------- | ------------- |
+| v0.1.0     | ==25.1        |
+| v0.2.0     | ==25.2        |
+| v0.3.0     | ==25.2        |
+| v0.3.1     | >=25.2, <25.4 |
 
 ## Quick start
 
@@ -203,8 +204,8 @@ Regular benchmarks against Python's `decimal` module are available in the `bench
 
 After cloning the repo onto your local disk, you can:
 
-- Use `magic run test` to run tests.
-- Use `magic run bench_decimal` to generate logs for benchmarking tests against `python.decimal` module. The log files are saved in `benches/decimal/logs/`.
+- Use `pixi run test` to run tests.
+- Use `pixi run bench_decimal` to generate logs for benchmarking tests against `python.decimal` module. The log files are saved in `benches/decimal/logs/`.
 
 ## Citation
 

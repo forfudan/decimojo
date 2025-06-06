@@ -29,15 +29,14 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install magic
+      - name: Install pixi
         run: |
-          curl -ssL https://magic.modular.com/ | MAGIC_VERSION=0.7.0 bash
+          curl -fsSL https://pixi.sh/install.sh | sh
       
       - name: Add path
         run: |
-          echo "MODULAR_HOME=$HOME/.modular" >> $GITHUB_ENV
-          echo "$HOME/.modular/bin"  >> $GITHUB_PATH
-          echo "$HOME/.modular/pkg/packages.modular.com_mojo/bin"  >> $GITHUB_PATH
+          echo "PIXI_HOME=$HOME/.pixi" >> $GITHUB_ENV
+          echo "$HOME/.pixi/bin"  >> $GITHUB_PATH
 
       - name: Activate virtualenv
         run: |
@@ -45,21 +44,21 @@ jobs:
           . $HOME/venv/bin/activate
           echo PATH=$PATH >> $GITHUB_ENV
 
-      - name: Magic install
+      - name: Pixi install
         run: |
-          magic install
+          pixi install
 
       - name: Build package
         run: |
-          magic run mojo package src/decimojo
-          magic run mojo package src/tomlmojo
+          pixi run mojo package src/decimojo
+          pixi run mojo package src/tomlmojo
           cp decimojo.mojopkg tests/
           cp decimojo.mojopkg benches/
           mv tomlmojo.mojopkg tests/
 
       - name: Run tests
         run: |
-          magic run mojo test tests
+          pixi run mojo test tests
 
       - name: Install pre-commit
         run: |
@@ -68,5 +67,5 @@ jobs:
       
       - name: Run pre-commit
         run: | 
-          magic install
+          pixi install
           pre-commit run --all-files

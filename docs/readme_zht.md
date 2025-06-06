@@ -18,9 +18,9 @@ DeciMojo 爲 Mojo 提供了全面的定點數和整數運算庫，專爲處理�
 
 DeciMojo 可在 [modular-community](https://repo.prefix.dev/modular-community) 包倉庫中獲取。您可以使用以下任一方法進行安裝：
 
-從 `magic` CLI，只需運行 ```magic add decimojo```。這會獲取最新版本並使其立即可用於導入。
+從 `pixi` CLI，只需運行 ```pixi add decimojo```。這會獲取最新版本並使其立即可用於導入。
 
-對於帶有 `mojoproject.toml` 文件的項目，添加依賴 ```decimojo = ">=0.3.0"```。然後運行 `magic install` 來下載並安裝包。
+對於帶有 `mojoproject.toml` 文件的項目，添加依賴 ```decimojo = ">=0.3.0"```。然後運行 `pixi install` 來下載並安裝包。
 
 如需最新的開發版本，請克隆 [GitHub 倉庫](https://github.com/forfudan/decimojo) 並在本地構建包。
 
@@ -203,8 +203,8 @@ DeciMojo 相較於 Python 的 `decimal` 模塊提供了卓越的性能，同時�
 
 在將倉庫克隆到本地磁盤後，您可以：
 
-- 使用 `magic run test`（或 `maigic run t`）運行測試。
-- 使用 `magic run bench`（或 `magic run b`）生成對比 `python.decimal` 模塊的基準測試日誌。日誌文件保存在 `benches/logs/` 中。
+- 使用 `pixi run test`（或 `pixi run t`）運行測試。
+- 使用 `pixi run bench`（或 `pixi run b`）生成對比 `python.decimal` 模塊的基準測試日誌。日誌文件保存在 `benches/logs/` 中。
 
 ## 引用
 
