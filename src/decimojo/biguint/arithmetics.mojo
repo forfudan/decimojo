@@ -334,9 +334,11 @@ fn multiply(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
             # Calculate the product of the current words
             # plus the carry from the previous multiplication
             # plus the value already at this position in the result
-            var product = UInt64(x1.words[i]) * UInt64(
-                x2.words[j]
-            ) + carry + UInt64(words[i + j])
+            var product = (
+                UInt64(x1.words[i]) * UInt64(x2.words[j])
+                + carry
+                + UInt64(words[i + j])
+            )
 
             # The lower 9 digits (base 10^9) go into the current word
             # The upper digits become the carry for the next position
@@ -881,9 +883,11 @@ fn floor_divide_inplace_by_double_words(
         x1.words.resize(len(x1.words) - 1, UInt32(0))
 
     for i in range(len(x1.words) - 1, -1, -2):
-        var dividend = carry * UInt128(1_000_000_000_000_000_000) + UInt128(
-            x1.words[i]
-        ) * UInt128(1_000_000_000) + UInt128(x1.words[i - 1])
+        var dividend = (
+            carry * UInt128(1_000_000_000_000_000_000)
+            + UInt128(x1.words[i]) * UInt128(1_000_000_000)
+            + UInt128(x1.words[i - 1])
+        )
         var quotient = dividend // x2_value
         x1.words[i] = UInt32(quotient // UInt128(1_000_000_000))
         x1.words[i - 1] = UInt32(quotient % UInt128(1_000_000_000))

@@ -19,7 +19,7 @@ Implement structs and functions for tests.
 """
 
 
-struct TestCase:
+struct TestCase(Copyable, Movable):
     """Structure to hold test case data.
 
     Attributes:

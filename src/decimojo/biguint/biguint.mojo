@@ -36,7 +36,7 @@ alias BUInt = BigUInt
 
 
 @value
-struct BigUInt(Absable, IntableRaising, Writable):
+struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     """Represents a base-10 arbitrary-precision unsigned integer.
 
     Notes:
@@ -178,7 +178,7 @@ struct BigUInt(Absable, IntableRaising, Writable):
 
         # Check if the words are valid
         for word in words:
-            if word[] > UInt32(999_999_999):
+            if word > UInt32(999_999_999):
                 raise Error(
                     "Error in `BigUInt.from_list()`: Word value exceeds maximum"
                     " value of 999_999_999"
@@ -345,13 +345,13 @@ struct BigUInt(Absable, IntableRaising, Writable):
                 start = end - 9
                 var word: UInt32 = 0
                 for digit in coef[start:end]:
-                    word = word * 10 + UInt32(digit[])
+                    word = word * 10 + UInt32(digit)
                 result_words.append(word)
                 end = start
             if end > 0:
                 var word: UInt32 = 0
                 for digit in coef[0:end]:
-                    word = word * 10 + UInt32(digit[])
+                    word = word * 10 + UInt32(digit)
                 result_words.append(word)
 
             return Self(result_words^)
@@ -367,19 +367,21 @@ struct BigUInt(Absable, IntableRaising, Writable):
             for _ in range(remaining_trailing_zero_digits):
                 coef.append(UInt8(0))
 
-            var end: Int = number_of_digits + scale + remaining_trailing_zero_digits
+            var end: Int = (
+                number_of_digits + scale + remaining_trailing_zero_digits
+            )
             var start: Int
             while end >= 9:
                 start = end - 9
                 var word: UInt32 = 0
                 for digit in coef[start:end]:
-                    word = word * 10 + UInt32(digit[])
+                    word = word * 10 + UInt32(digit)
                 result_words.append(word)
                 end = start
             if end > 0:
                 var word: UInt32 = 0
                 for digit in coef[0:end]:
-                    word = word * 10 + UInt32(digit[])
+                    word = word * 10 + UInt32(digit)
                 result_words.append(word)
 
             return Self(result_words^)

@@ -2,9 +2,13 @@
 
 This is a list of RELEASED changes for the DeciMojo Package. For the unreleased changes, please refer to **[changelog_unreleased](https://zhuyuhao.com/decimojo/docs/changelog_unreleased.html)**.
 
+## 25/06/2025 (v0.4.0)
+
+DeciMojo v0.4.0 updates the codebase to Mojo v25.4. This release enables you to use DeciMojo with the latest Mojo features.
+
 ## 06/06/2025 (v0.3.1)
 
-DeciMojo v0.3.1 updates the codebase to Mojo 25.3 and replaces the `magic` package manager with `pixi`. This release enables you to use DeciMojo with the latest Mojo features and the new package manager.
+DeciMojo v0.3.1 updates the codebase to Mojo v25.3 and replaces the `magic` package manager with `pixi`. This release enables you to use DeciMojo with the latest Mojo features and the new package manager.
 
 ## 15/04/2025 (v0.3.0)
 

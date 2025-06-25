@@ -37,7 +37,7 @@ alias BInt = BigInt
 
 
 @value
-struct BigInt(Absable, IntableRaising, Writable):
+struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
     """Represents a base-10 arbitrary-precision signed integer.
 
     Notes:

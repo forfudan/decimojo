@@ -491,7 +491,9 @@ fn test_edge_cases() raises:
 
 fn test_precision() raises:
     print("Testing precision of square root calculations...")
-    var expected_sqrt2 = "1.414213562373095048801688724"  # First 10 decimal places of sqrt(2)
+    var expected_sqrt2 = (
+        "1.414213562373095048801688724"  # First 10 decimal places of sqrt(2)
+    )
 
     # Test precision for irrational numbers
     var two = Decimal(2)
@@ -749,125 +751,162 @@ fn test_sqrt_performance() raises:
         raise e
 
     # Test case 2
-    var num2 = Decimal("0.01")
-    var result2 = sqrt(num2)
-    var squared2 = result2 * result2
-    var diff2 = squared2 - num2
-    diff2 = -diff2 if diff2.is_negative() else diff2
-    var rel_diff2 = diff2 / num2
-    var diff_float2 = Float64(String(rel_diff2))
-    testing.assert_true(
-        diff_float2 < 0.00001,
-        "Square root calculation for "
-        + String(num2)
-        + " should be accurate within 0.001%",
-    )
+    try:
+        var num2 = Decimal("0.01")
+        var result2 = sqrt(num2)
+        var squared2 = result2 * result2
+        var diff2 = squared2 - num2
+        diff2 = -diff2 if diff2.is_negative() else diff2
+        var rel_diff2 = diff2 / num2
+        var diff_float2 = Float64(String(rel_diff2))
+        testing.assert_true(
+            diff_float2 < 0.00001,
+            "Square root calculation for "
+            + String(num2)
+            + " should be accurate within 0.001%",
+        )
+    except e:
+        print("ERROR in test_sqrt_performance case 2: small number 0.01")
+        raise e
 
     # Test case 3
-    var num3 = Decimal(1)
-    var result3 = sqrt(num3)
-    var squared3 = result3 * result3
-    var diff3 = squared3 - num3
-    diff3 = -diff3 if diff3.is_negative() else diff3
-    var rel_diff3 = diff3 / num3
-    var diff_float3 = Float64(String(rel_diff3))
-    testing.assert_true(
-        diff_float3 < 0.00001,
-        "Square root calculation for "
-        + String(num3)
-        + " should be accurate within 0.001%",
-    )
+    try:
+        var num3 = Decimal(1)
+        var result3 = sqrt(num3)
+        var squared3 = result3 * result3
+        var diff3 = squared3 - num3
+        diff3 = -diff3 if diff3.is_negative() else diff3
+        var rel_diff3 = diff3 / num3
+        var diff_float3 = Float64(String(rel_diff3))
+        testing.assert_true(
+            diff_float3 < 0.00001,
+            "Square root calculation for "
+            + String(num3)
+            + " should be accurate within 0.001%",
+        )
+    except e:
+        print("ERROR in test_sqrt_performance case 3: small number 1")
+        raise e
 
     # Test case 4
-    var num4 = Decimal(10)
-    var result4 = sqrt(num4)
-    var squared4 = result4 * result4
-    var diff4 = squared4 - num4
-    diff4 = -diff4 if diff4.is_negative() else diff4
-    var rel_diff4 = diff4 / num4
-    var diff_float4 = Float64(String(rel_diff4))
-    testing.assert_true(
-        diff_float4 < 0.00001,
-        "Square root calculation for "
-        + String(num4)
-        + " should be accurate within 0.001%",
-    )
+    try:
+        var num4 = Decimal(10)
+        var result4 = sqrt(num4)
+        var squared4 = result4 * result4
+        var diff4 = squared4 - num4
+        diff4 = -diff4 if diff4.is_negative() else diff4
+        var rel_diff4 = diff4 / num4
+        testing.assert_true(
+            rel_diff4 < Decimal(0.00001),
+            "Square root calculation for "
+            + String(num4)
+            + " should be accurate within 0.001%",
+        )
+    except e:
+        print("ERROR in test_sqrt_performance case 4: small number 10")
+        raise e
 
     # Test case 5
-    var num5 = Decimal(10000)
-    var result5 = sqrt(num5)
-    var squared5 = result5 * result5
-    var diff5 = squared5 - num5
-    diff5 = -diff5 if diff5.is_negative() else diff5
-    var rel_diff5 = diff5 / num5
-    var diff_float5 = Float64(String(rel_diff5))
-    testing.assert_true(
-        diff_float5 < 0.00001,
-        "Square root calculation for "
-        + String(num5)
-        + " should be accurate within 0.001%",
-    )
+    try:
+        var num5 = Decimal(10000)
+        var result5 = sqrt(num5)
+        var squared5 = result5 * result5
+        var diff5 = squared5 - num5
+        diff5 = -diff5 if diff5.is_negative() else diff5
+        var rel_diff5 = diff5 / num5
+        var diff_float5 = Float64(String(rel_diff5))
+        testing.assert_true(
+            diff_float5 < 0.00001,
+            "Square root calculation for "
+            + String(num5)
+            + " should be accurate within 0.001%",
+        )
+    except e:
+        print("ERROR in test_sqrt_performance case 5: small number 10000")
+        raise e
 
     # Test case 6
-    var num6 = Decimal("10000000000")
-    var result6 = sqrt(num6)
-    var squared6 = result6 * result6
-    var diff6 = squared6 - num6
-    diff6 = -diff6 if diff6.is_negative() else diff6
-    var rel_diff6 = diff6 / num6
-    var diff_float6 = Float64(String(rel_diff6))
-    testing.assert_true(
-        diff_float6 < 0.00001,
-        "Square root calculation for "
-        + String(num6)
-        + " should be accurate within 0.001%",
-    )
+    try:
+        var num6 = Decimal("10000000000")
+        var result6 = sqrt(num6)
+        var squared6 = result6 * result6
+        var diff6 = squared6 - num6
+        diff6 = -diff6 if diff6.is_negative() else diff6
+        var rel_diff6 = diff6 / num6
+        var diff_float6 = Float64(String(rel_diff6))
+        testing.assert_true(
+            diff_float6 < 0.00001,
+            "Square root calculation for "
+            + String(num6)
+            + " should be accurate within 0.001%",
+        )
+    except e:
+        print("ERROR in test_sqrt_performance case 6: small number 10000000000")
+        raise e
 
     # Test case 7
-    var num7 = Decimal("0.999999999")
-    var result7 = String(sqrt(num7))
-    var expected_result7 = String("0.99999999949999999987")
-    testing.assert_true(
-        result7.startswith(expected_result7), "sqrt(0.999999999)"
-    )
+    try:
+        var num7 = Decimal("0.999999999")
+        var result7 = String(sqrt(num7))
+        var expected_result7 = String("0.99999999949999999987")
+        testing.assert_true(
+            result7.startswith(expected_result7), "sqrt(0.999999999)"
+        )
+    except e:
+        print("ERROR in test_sqrt_performance case 7: sqrt(0.9999999999)")
+        raise e
 
     # Test case 8
-    var num8 = Decimal("1.000000001")
-    var result8 = String(sqrt(num8))
-    var expected_result8 = String("1.000000000499999999875")
-    testing.assert_true(
-        result8.startswith(expected_result8), "sqrt(1.000000001)"
-    )
+    try:
+        var num8 = Decimal("1.000000001")
+        var result8 = String(sqrt(num8))
+        var expected_result8 = String("1.000000000499999999875")
+        testing.assert_true(
+            result8.startswith(expected_result8), "sqrt(1.000000001)"
+        )
+    except e:
+        print("ERROR in test_sqrt_performance case 8: sqrt(1.000000001)")
+        raise e
 
     # Test case 9
-    var num9 = Decimal("3.999999999")
-    var result9 = sqrt(num9)
-    var squared9 = result9 * result9
-    var diff9 = squared9 - num9
-    diff9 = -diff9 if diff9.is_negative() else diff9
-    var rel_diff9 = diff9 / num9
-    var diff_float9 = Float64(String(rel_diff9))
-    testing.assert_true(
-        diff_float9 < 0.00001,
-        "Square root calculation for "
-        + String(num9)
-        + " should be accurate within 0.001%",
-    )
+    try:
+        var num9 = Decimal("3.999999999")
+        var result9 = sqrt(num9)
+        var squared9 = result9 * result9
+        var diff9 = squared9 - num9
+        diff9 = -diff9 if diff9.is_negative() else diff9
+        var rel_diff9 = diff9 / num9
+        var diff_float9 = Float64(String(rel_diff9))
+        testing.assert_true(
+            diff_float9 < 0.00001,
+            "Square root calculation for "
+            + String(num9)
+            + " should be accurate within 0.001%",
+        )
+    except e:
+        print("ERROR in test_sqrt_performance case 9: small number 3.999999999")
+        raise e
 
     # Test case 10
-    var num10 = Decimal("4.000000001")
-    var result10 = sqrt(num10)
-    var squared10 = result10 * result10
-    # Using manual absolute difference calculation
-    var diff10 = squared10 - num10
-    diff10 = -diff10 if diff10.is_negative() else diff10
-    var rel_diff10 = diff10 / num10
-    testing.assert_true(
-        rel_diff10 < Decimal("0.00001"),
-        "Square root calculation for "
-        + String(num10)
-        + " should be accurate within 0.001%",
-    )
+    try:
+        var num10 = Decimal("4.000000001")
+        var result10 = sqrt(num10)
+        var squared10 = result10 * result10
+        # Using manual absolute difference calculation
+        var diff10 = squared10 - num10
+        diff10 = -diff10 if diff10.is_negative() else diff10
+        var rel_diff10 = diff10 / num10
+        testing.assert_true(
+            rel_diff10 < Decimal("0.00001"),
+            "Square root calculation for "
+            + String(num10)
+            + " should be accurate within 0.001%",
+        )
+    except e:
+        print(
+            "ERROR in test_sqrt_performance case 10: small number 4.000000001"
+        )
+        raise e
 
     print("Performance and convergence tests passed!")
 

@@ -238,8 +238,8 @@ struct TOMLDocument:
             var value = self.root[key]
             if value.type == TOMLValueType.ARRAY:
                 for table_value in value.array_values:
-                    if table_value[].type == TOMLValueType.TABLE:
-                        result.append(table_value[].table_values)
+                    if table_value.type == TOMLValueType.TABLE:
+                        result.append(table_value.table_values)
 
         return result
 

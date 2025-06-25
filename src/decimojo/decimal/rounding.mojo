@@ -159,10 +159,6 @@ fn round(
         else:
             return Decimal.ZERO()
 
-    # Add a fallback raise even if it seems unreachable
-    testing.assert_true(False, "Unreachable code path reached")
-    return number
-
 
 fn quantize(
     value: Decimal,

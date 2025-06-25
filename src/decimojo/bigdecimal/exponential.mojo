@@ -551,15 +551,19 @@ fn sqrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
     # TODO: This can be done even earlier in the process
     # TODO: Implement a method that remove trailing zeros
     if guess.coefficient.ith_digit(0) == 0:
-        var guess_coefficient_without_trailing_zeros = guess.coefficient.remove_trailing_digits_with_rounding(
-            guess.coefficient.number_of_trailing_zeros(),
-            rounding_mode=RoundingMode.ROUND_DOWN,
-            remove_extra_digit_due_to_rounding=False,
+        var guess_coefficient_without_trailing_zeros = (
+            guess.coefficient.remove_trailing_digits_with_rounding(
+                guess.coefficient.number_of_trailing_zeros(),
+                rounding_mode=RoundingMode.ROUND_DOWN,
+                remove_extra_digit_due_to_rounding=False,
+            )
         )
-        var x_coefficient_without_trailing_zeros = x.coefficient.remove_trailing_digits_with_rounding(
-            x.coefficient.number_of_trailing_zeros(),
-            rounding_mode=RoundingMode.ROUND_DOWN,
-            remove_extra_digit_due_to_rounding=False,
+        var x_coefficient_without_trailing_zeros = (
+            x.coefficient.remove_trailing_digits_with_rounding(
+                x.coefficient.number_of_trailing_zeros(),
+                rounding_mode=RoundingMode.ROUND_DOWN,
+                remove_extra_digit_due_to_rounding=False,
+            )
         )
         if (
             guess_coefficient_without_trailing_zeros
@@ -1036,7 +1040,7 @@ fn ln_series_expansion(
         k += BigUInt.ONE
 
         # Alternate sign: -1^(k+1) = -1 when k is even, 1 when k is odd
-        var sign = (k % BigUInt(2) == BigUInt.ZERO)
+        var sign = k % BigUInt(2) == BigUInt.ZERO
         var next_term = term.true_divide_inexact(
             BigDecimal(k, 0, False), working_precision
         )

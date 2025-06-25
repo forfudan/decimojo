@@ -204,23 +204,23 @@ fn root(x: Decimal, n: Int) raises -> Decimal:
     # For numbers with zero scale (true integers)
     if x_scale == 0:
         if n <= 8:  # 3<=n<=8
-            var float_root = pow(Float64(x_coef), 1 / Float64(n)) * Float64(
-                10
-            ) ** 8
+            var float_root = (
+                pow(Float64(x_coef), 1 / Float64(n)) * Float64(10) ** 8
+            )
             guess = Decimal.from_uint128(
                 UInt128(round(float_root)), scale=8, sign=False
             )
         elif n <= 16:
-            var float_root = pow(Float64(x_coef), 1 / Float64(n)) * Float64(
-                10
-            ) ** 16
+            var float_root = (
+                pow(Float64(x_coef), 1 / Float64(n)) * Float64(10) ** 16
+            )
             guess = Decimal.from_uint128(
                 UInt128(round(float_root)), scale=16, sign=False
             )
         else:
-            var float_root = pow(Float64(x_coef), 1 / Float64(n)) * Float64(
-                10
-            ) ** 26
+            var float_root = (
+                pow(Float64(x_coef), 1 / Float64(n)) * Float64(10) ** 26
+            )
             guess = Decimal.from_uint128(
                 UInt128(round(float_root)), scale=26, sign=False
             )
@@ -237,10 +237,9 @@ fn root(x: Decimal, n: Int) raises -> Decimal:
     else:
         var dividend = x_scale // n
         var remainder = x_scale % n
-        var float_root = (
-            Float64(x_coef) ** (Float64(1) / Float64(n))
-            / Float64(10) ** (Float64(remainder) / Float64(n) - 1)
-        )
+        var float_root = Float64(x_coef) ** (Float64(1) / Float64(n)) / Float64(
+            10
+        ) ** (Float64(remainder) / Float64(n) - 1)
         guess = Decimal.from_uint128(
             UInt128(float_root), scale=dividend + 1, sign=False
         )
@@ -278,7 +277,9 @@ fn root(x: Decimal, n: Int) raises -> Decimal:
         var num_digits_guess_coef = decimojo.utility.number_of_digits(
             guess_coef
         )
-        var num_digits_to_decrease = num_digits_guess_coef - num_digits_x_root_coef
+        var num_digits_to_decrease = (
+            num_digits_guess_coef - num_digits_x_root_coef
+        )
 
         # testing.assert_true(
         #     num_digits_to_decrease >= 0,
@@ -403,7 +404,9 @@ fn sqrt(x: Decimal) raises -> Decimal:
         var num_digits_guess_coef = decimojo.utility.number_of_digits(
             guess_coef
         )
-        var num_digits_to_decrease = num_digits_guess_coef - num_digits_x_sqrt_coef
+        var num_digits_to_decrease = (
+            num_digits_guess_coef - num_digits_x_sqrt_coef
+        )
 
         # testing.assert_true(
         #     num_digits_to_decrease >= 0,
