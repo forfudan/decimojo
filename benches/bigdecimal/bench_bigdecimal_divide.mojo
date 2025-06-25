@@ -28,7 +28,9 @@ fn open_log_file() raises -> PythonObject:
 
     # Generate a timestamp for the filename
     var timestamp = String(datetime.datetime.now().isoformat())
-    var log_filename = log_dir + "/benchmark_bigdecimal_divide_" + timestamp + ".log"
+    var log_filename = (
+        log_dir + "/benchmark_bigdecimal_divide_" + timestamp + ".log"
+    )
 
     print("Saving benchmark results to:", log_filename)
     return python.open(log_filename, "w")
