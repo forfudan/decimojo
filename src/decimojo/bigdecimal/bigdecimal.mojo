@@ -34,7 +34,9 @@ alias BDec = BigDecimal
 
 
 @value
-struct BigDecimal(Absable, Comparable, IntableRaising, Roundable, Writable):
+struct BigDecimal(
+    Absable, Comparable, IntableRaising, Roundable, Stringable, Writable
+):
     """Represents a arbitrary-precision decimal.
 
     Notes:
@@ -257,13 +259,13 @@ struct BigDecimal(Absable, Comparable, IntableRaising, Roundable, Writable):
             start = end - 9
             var word: UInt32 = 0
             for digit in coef[start:end]:
-                word = word * 10 + UInt32(digit[])
+                word = word * 10 + UInt32(digit)
             coefficient_words.append(word)
             end = start
         if end > 0:
             var word: UInt32 = 0
             for digit in coef[0:end]:
-                word = word * 10 + UInt32(digit[])
+                word = word * 10 + UInt32(digit)
             coefficient_words.append(word)
 
         coefficient = BigUInt(coefficient_words^)
@@ -871,7 +873,9 @@ struct BigDecimal(Absable, Comparable, IntableRaising, Roundable, Writable):
         var number_of_digits_to_remove = self.number_of_trailing_zeros()
 
         var number_of_words_to_remove = number_of_digits_to_remove // 9
-        var number_of_remaining_digits_to_remove = number_of_digits_to_remove % 9
+        var number_of_remaining_digits_to_remove = (
+            number_of_digits_to_remove % 9
+        )
 
         words = self.coefficient.words[number_of_words_to_remove:]
         var coefficient = BigUInt(words^)

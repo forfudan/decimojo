@@ -92,7 +92,7 @@ fn parse_numeric_string(
     var raw_exponent: Int = 0
 
     for code_ptr in value_bytes:
-        var code = code_ptr[]
+        ref code = code_ptr
         # If the char is " ", skip it
         if code == 32:
             pass

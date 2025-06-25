@@ -20,7 +20,7 @@
 alias RM = RoundingMode
 
 
-struct RoundingMode:
+struct RoundingMode(Stringable):
     """
     Represents different rounding modes for decimal operations.
 

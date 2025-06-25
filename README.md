@@ -30,8 +30,8 @@ This repository includes [TOMLMojo](https://github.com/forfudan/decimojo/tree/ma
 | ------------ | ------- | ------------------------------------ | ----------------------------------- |
 | `BigUInt`    | `BUInt` | arbitrary-precision unsigned integer | `List[UInt32]`                      |
 | `BigInt`     | `BInt`  | arbitrary-precision integer          | `BigUInt`, `Bool`                   |
-| `Decimal`    | `Dec`   | 128-bit fixed-precision decimal      | `UInt32`,`UInt32`,`UInt32`,`UInt32` |
 | `BigDecimal` | `BDec`  | arbitrary-precision decimal          | `BigUInt`, `Int`, `Bool`            |
+| `Decimal`    | `Dec`   | 128-bit fixed-precision decimal      | `UInt32`,`UInt32`,`UInt32`,`UInt32` |
 
 ## Installation
 
@@ -39,7 +39,7 @@ DeciMojo is available in the [modular-community](https://repo.prefix.dev/modular
 
 From the `pixi` CLI, simply run ```pixi add decimojo```. This fetches the latest version and makes it immediately available for import.
 
-For projects with a `mojoproject.toml`file, add the dependency ```decimojo = ">=0.3.1"```. Then run `pixi install` to download and install the package.
+For projects with a `mojoproject.toml`file, add the dependency ```decimojo = "==0.4.0"```. Then run `pixi install` to download and install the package.
 
 For the latest development version, clone the [GitHub repository](https://github.com/forfudan/decimojo) and build the package locally.
 
@@ -49,6 +49,7 @@ For the latest development version, clone the [GitHub repository](https://github
 | v0.2.0     | ==25.2        | magic           |
 | v0.3.0     | ==25.2        | magic           |
 | v0.3.1     | >=25.2, <25.4 | pixi            |
+| v0.4.0     | ==25.4        | pixi            |
 
 ## Quick start
 
@@ -217,7 +218,7 @@ If you find DeciMojo useful for your research, consider listing it in your citat
     year         = {2025},
     title        = {An arbitrary-precision decimal and integer mathematics library for Mojo},
     url          = {https://github.com/forfudan/decimojo},
-    version      = {0.3.1},
+    version      = {0.4.0},
     note         = {Computer Software}
 }
 ```

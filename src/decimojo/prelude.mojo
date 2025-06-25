@@ -16,7 +16,7 @@
 
 """
 Provides a list of things that can be imported at one time.
-The list contains the functions or types that are the most essential for a user. 
+The list contains the functions or types that are the most essential for a user.
 
 You can use the following code to import them:
 
@@ -26,8 +26,8 @@ from decimojo.prelude import *
 """
 
 import decimojo as dm
-from decimojo.decimal.decimal import Decimal
-from decimojo.bigdecimal.bigdecimal import BigDecimal
-from decimojo.biguint.biguint import BigUInt
-from decimojo.bigint.bigint import BigInt
-from decimojo.rounding_mode import RoundingMode
+from decimojo.decimal.decimal import Decimal, Dec
+from decimojo.bigdecimal.bigdecimal import BigDecimal, BDec
+from decimojo.biguint.biguint import BigUInt, BUInt
+from decimojo.bigint.bigint import BigInt, BInt
+from decimojo.rounding_mode import RoundingMode, RM

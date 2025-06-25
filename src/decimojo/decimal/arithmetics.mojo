@@ -221,8 +221,10 @@ fn add(x1: Decimal, x2: Decimal) raises -> Decimal:
             var ndigits_int_summation = ndigits_summation - x1_scale
             var final_scale = Decimal.MAX_NUM_DIGITS - ndigits_int_summation
 
-            var truncated_summation = decimojo.utility.round_to_keep_first_n_digits(
-                summation, Decimal.MAX_NUM_DIGITS
+            var truncated_summation = (
+                decimojo.utility.round_to_keep_first_n_digits(
+                    summation, Decimal.MAX_NUM_DIGITS
+                )
             )
             if truncated_summation > Decimal.MAX_AS_UINT128:
                 truncated_summation = (
@@ -610,15 +612,17 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     if combined_num_bits <= 128:
         var prod: UInt128 = x1_coef * x2_coef
         # Truncated first 29 digits
-        var truncated_prod_at_max_length = decimojo.utility.round_to_keep_first_n_digits(
-            prod, Decimal.MAX_NUM_DIGITS
+        var truncated_prod_at_max_length = (
+            decimojo.utility.round_to_keep_first_n_digits(
+                prod, Decimal.MAX_NUM_DIGITS
+            )
         )
 
         # Check outflow
         # The number of digits of the integral part
-        var num_digits_of_integral_part = decimojo.utility.number_of_digits(
-            prod
-        ) - combined_scale
+        var num_digits_of_integral_part = (
+            decimojo.utility.number_of_digits(prod) - combined_scale
+        )
         if (num_digits_of_integral_part >= Decimal.MAX_NUM_DIGITS) & (
             truncated_prod_at_max_length > Decimal.MAX_AS_UINT128
         ):
@@ -629,7 +633,9 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
         # If the first 29 digits does not exceed the limit,
         # the final coefficient can be of 29 digits.
         # The final scale can be 29 - num_digits_of_integral_part.
-        var num_digits_of_decimal_part = Decimal.MAX_NUM_DIGITS - num_digits_of_integral_part
+        var num_digits_of_decimal_part = (
+            Decimal.MAX_NUM_DIGITS - num_digits_of_integral_part
+        )
         # If the first 29 digits exceed the limit,
         # we need to adjust the num_digits_of_decimal_part by -1
         # so that the final coefficient will be of 28 digits.
@@ -663,15 +669,17 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     var prod: UInt256 = UInt256(x1_coef) * UInt256(x2_coef)
 
     # Truncated first 29 digits
-    var truncated_prod_at_max_length = decimojo.utility.round_to_keep_first_n_digits(
-        prod, Decimal.MAX_NUM_DIGITS
+    var truncated_prod_at_max_length = (
+        decimojo.utility.round_to_keep_first_n_digits(
+            prod, Decimal.MAX_NUM_DIGITS
+        )
     )
 
     # Check outflow
     # The number of digits of the integral part
-    var num_digits_of_integral_part = decimojo.utility.number_of_digits(
-        prod
-    ) - combined_scale
+    var num_digits_of_integral_part = (
+        decimojo.utility.number_of_digits(prod) - combined_scale
+    )
 
     # Check for overflow of the integral part after rounding
     if (num_digits_of_integral_part >= Decimal.MAX_NUM_DIGITS) & (
@@ -684,7 +692,9 @@ fn multiply(x1: Decimal, x2: Decimal) raises -> Decimal:
     # If the first 29 digits does not exceed the limit,
     # the final coefficient can be of 29 digits.
     # The final scale can be 29 - num_digits_of_integral_part.
-    var num_digits_of_decimal_part = Decimal.MAX_NUM_DIGITS - num_digits_of_integral_part
+    var num_digits_of_decimal_part = (
+        Decimal.MAX_NUM_DIGITS - num_digits_of_integral_part
+    )
     # If the first 29 digits exceed the limit,
     # we need to adjust the num_digits_of_decimal_part by -1
     # so that the final coefficient will be of 28 digits.
@@ -979,11 +989,11 @@ fn divide(x1: Decimal, x2: Decimal) raises -> Decimal:
         var ndigits_quot = decimojo.utility.number_of_digits(quot)
         var ndigits_quot_int_part = ndigits_quot - scale_of_quot
 
-        print(
-            String(
-                "quot: {}, rem: {}, step_counter: {}, scale_of_quot: {}"
-            ).format(quot, rem, step_counter, scale_of_quot)
-        )
+        # print(
+        #     String(
+        #         "quot: {}, rem: {}, step_counter: {}, scale_of_quot: {}"
+        #     ).format(quot, rem, step_counter, scale_of_quot)
+        # )
 
         # TODO: 可以考慮先降 scale 再判斷是否超出最大值.
         # TODO: 爲降 scale 引入 round_to_remove_last_n_digits 函數
@@ -1014,8 +1024,8 @@ fn divide(x1: Decimal, x2: Decimal) raises -> Decimal:
                 scale_of_truncated_quot -= 1
 
             if scale_of_truncated_quot > Decimal.MAX_SCALE:
-                var num_digits_truncated_quot = decimojo.utility.number_of_digits(
-                    truncated_quot
+                var num_digits_truncated_quot = (
+                    decimojo.utility.number_of_digits(truncated_quot)
                 )
                 truncated_quot = decimojo.utility.round_to_keep_first_n_digits(
                     truncated_quot,
@@ -1120,8 +1130,8 @@ fn divide(x1: Decimal, x2: Decimal) raises -> Decimal:
                 scale_of_truncated_quot -= 1
 
             if scale_of_truncated_quot > Decimal.MAX_SCALE:
-                var num_digits_truncated_quot = decimojo.utility.number_of_digits(
-                    truncated_quot
+                var num_digits_truncated_quot = (
+                    decimojo.utility.number_of_digits(truncated_quot)
                 )
                 truncated_quot = decimojo.utility.round_to_keep_first_n_digits(
                     truncated_quot,

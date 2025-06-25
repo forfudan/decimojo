@@ -43,7 +43,9 @@ struct Decimal(
     Comparable,
     Floatable,
     IntableRaising,
+    Representable,
     Roundable,
+    Stringable,
     Writable,
 ):
     """Represents a 128-bit fixed-point decimal number.
@@ -553,13 +555,13 @@ struct Decimal(
 
         for code in value_bytes:
             # If the char is " ", skip it
-            if code[] == 32:
+            if code == 32:
                 pass
             # If the char is "," or "_", skip it
-            elif code[] == 44 or code[] == 95:
+            elif code == 44 or code == 95:
                 unexpected_end_char = True
             # If the char is "-"
-            elif code[] == 45:
+            elif code == 45:
                 unexpected_end_char = True
                 if exponent_sign_read:
                     raise Error("Minus sign cannot appear twice in exponent.")
@@ -574,7 +576,7 @@ struct Decimal(
                     mantissa_sign = True
                     mantissa_sign_read = True
             # If the char is "+"
-            elif code[] == 43:
+            elif code == 43:
                 unexpected_end_char = True
                 if exponent_sign_read:
                     raise Error("Plus sign cannot appear twice in exponent.")
@@ -587,7 +589,7 @@ struct Decimal(
                 else:
                     mantissa_sign_read = True
             # If the char is "."
-            elif code[] == 46:
+            elif code == 46:
                 unexpected_end_char = False
                 if decimal_point_read:
                     raise Error("Decimal point can only appear once.")
@@ -595,7 +597,7 @@ struct Decimal(
                     decimal_point_read = True
                     mantissa_sign_read = True
             # If the char is "e" or "E"
-            elif code[] == 101 or code[] == 69:
+            elif code == 101 or code == 69:
                 unexpected_end_char = True
                 if exponent_notation_read:
                     raise Error("Exponential notation can only appear once.")
@@ -604,7 +606,7 @@ struct Decimal(
                 else:
                     exponent_notation_read = True
             # If the char is a digit 0
-            elif code[] == 48:
+            elif code == 48:
                 unexpected_end_char = False
 
                 # Exponent part
@@ -630,7 +632,7 @@ struct Decimal(
                         scale += 1
 
             # If the char is a digit 1 - 9
-            elif code[] >= 49 and code[] <= 57:
+            elif code >= 49 and code <= 57:
                 unexpected_end_char = False
 
                 # Exponent part
@@ -653,7 +655,7 @@ struct Decimal(
 
                     else:
                         # exponent_start = True
-                        raw_exponent = raw_exponent * 10 + UInt32(code[] - 48)
+                        raw_exponent = raw_exponent * 10 + UInt32(code - 48)
 
                 # Mantissa part
                 else:
@@ -665,7 +667,7 @@ struct Decimal(
                     mantissa_start = True
 
                     num_mantissa_digits += 1
-                    coef = coef * 10 + UInt128(code[] - 48)
+                    coef = coef * 10 + UInt128(code - 48)
 
                     if decimal_point_read:
                         scale += 1
@@ -673,7 +675,7 @@ struct Decimal(
             else:
                 raise Error(
                     String("Invalid character in decimal string: {}").format(
-                        chr(Int(code[]))
+                        chr(Int(code))
                     )
                 )
 
@@ -736,8 +738,8 @@ struct Decimal(
                 scale_of_truncated_coef -= 1
 
             if scale_of_truncated_coef > Decimal.MAX_SCALE:
-                var num_digits_truncated_coef = decimojo.utility.number_of_digits(
-                    truncated_coef
+                var num_digits_truncated_coef = (
+                    decimojo.utility.number_of_digits(truncated_coef)
                 )
                 truncated_coef = decimojo.utility.round_to_keep_first_n_digits(
                     truncated_coef,
@@ -1544,9 +1546,11 @@ struct Decimal(
             new_scale = Decimal.MAX_SCALE + 1
 
         # With UInt128, we can represent the coefficient as a single value
-        var coefficient = UInt128(self.high) << 64 | UInt128(
-            self.mid
-        ) << 32 | UInt128(self.low)
+        var coefficient = (
+            UInt128(self.high) << 64
+            | UInt128(self.mid) << 32
+            | UInt128(self.low)
+        )
 
         # TODO: Check if multiplication by 10^level would cause overflow
         # If yes, then raise an error

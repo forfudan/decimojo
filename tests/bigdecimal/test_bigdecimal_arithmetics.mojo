@@ -106,7 +106,7 @@ fn test_subtract() raises:
     # Check what root keys are available
     print("Available root keys:")
     for key in toml.root.keys():
-        print("  - " + key[])
+        print("  - " + key)
 
     # Try to access the specific section
     try:
