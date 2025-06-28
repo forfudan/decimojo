@@ -72,11 +72,16 @@ fn pi(precision: Int) raises -> BigDecimal:
         p = p * BigDecimal.from_raw_components(UInt32(2))
 
     # Calculate the final value of pi
-    var pi_value = (a + b).power(
-        BigDecimal.from_raw_components(UInt32(2)), precision=working_precision
-    ).true_divide(
-        BigDecimal.from_raw_components(UInt32(4)) * t,
-        precision=working_precision,
+    var pi_value = (
+        (a + b)
+        .power(
+            BigDecimal.from_raw_components(UInt32(2)),
+            precision=working_precision,
+        )
+        .true_divide(
+            BigDecimal.from_raw_components(UInt32(4)) * t,
+            precision=working_precision,
+        )
     )
 
     # Return the value with the requested precision
