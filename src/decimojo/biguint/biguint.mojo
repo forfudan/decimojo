@@ -80,11 +80,11 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     # Constructors and life time dunder methods
     #
     # __init__(out self)
-    # __init__(out self, empty: Bool)
-    # __init__(out self, empty: Bool, capacity: Int)
-    # __init__(out self, *words: UInt32) raises
+    # __init__(out self, owned words: List[UInt32])
+    # __init__(out self, owned *words: UInt32)
     # __init__(out self, value: Int) raises
-    # __init__(out self, value: String) raises
+    # __init__(out self, value: Scalar) raises
+    # __init__(out self, value: String, ignore_sign: Bool = False) raises
     # ===------------------------------------------------------------------=== #
 
     fn __init__(out self):
@@ -93,7 +93,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
 
     fn __init__(out self, owned words: List[UInt32]):
         """Initializes a BigUInt from a list of UInt32 words.
-        It does not check whether the list is empty or the words are invalid.
+        It does not verify whether the list is empty or the words are invalid.
         See `from_list()` for safer initialization.
 
         Args:
@@ -163,6 +163,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     fn from_list(owned words: List[UInt32]) raises -> Self:
         """Initializes a BigUInt from a list of UInt32 words safely.
         If the list is empty, the BigUInt is initialized with value 0.
+        The words are validated to ensure they are smaller than `999_999_999`.
 
         Args:
             words: A list of UInt32 words representing the coefficient.

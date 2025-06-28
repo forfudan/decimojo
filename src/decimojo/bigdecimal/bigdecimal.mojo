@@ -109,6 +109,20 @@ struct BigDecimal(
     # ===------------------------------------------------------------------=== #
 
     @staticmethod
+    fn from_raw_components(
+        coefficient: BigUInt, scale: Int = 0, sign: Bool = False
+    ) -> Self:
+        """Creates a BigDecimal from its raw components."""
+        return Self(coefficient, scale, sign)
+
+    @staticmethod
+    fn from_raw_components(
+        coefficient: UInt32, scale: Int = 0, sign: Bool = False
+    ) -> Self:
+        """Creates a BigDecimal from its raw components."""
+        return Self(BigUInt(List[UInt32](coefficient)), scale, sign)
+
+    @staticmethod
     fn from_int(value: Int) raises -> Self:
         """Creates a BigDecimal from an integer."""
         if value == 0:
