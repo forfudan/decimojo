@@ -199,7 +199,7 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
         return Self(BigUInt(list_of_words^), sign)
 
     @staticmethod
-    fn from_int(value: Int) raises -> Self:
+    fn from_int(value: Int) -> Self:
         """Creates a BigInt from an integer."""
         if value == 0:
             return Self()
@@ -422,20 +422,44 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
         return decimojo.bigint.arithmetics.add(self, other)
 
     @always_inline
+    fn __add__(self, other: Int) raises -> Self:
+        return decimojo.bigint.arithmetics.add(self, Self.from_int(other))
+
+    @always_inline
     fn __sub__(self, other: Self) raises -> Self:
         return decimojo.bigint.arithmetics.subtract(self, other)
+
+    @always_inline
+    fn __sub__(self, other: Int) raises -> Self:
+        return decimojo.bigint.arithmetics.subtract(self, Self.from_int(other))
 
     @always_inline
     fn __mul__(self, other: Self) raises -> Self:
         return decimojo.bigint.arithmetics.multiply(self, other)
 
     @always_inline
+    fn __mul__(self, other: Int) raises -> Self:
+        return decimojo.bigint.arithmetics.multiply(self, Self.from_int(other))
+
+    @always_inline
     fn __floordiv__(self, other: Self) raises -> Self:
         return decimojo.bigint.arithmetics.floor_divide(self, other)
 
     @always_inline
+    fn __floordiv__(self, other: Int) raises -> Self:
+        return decimojo.bigint.arithmetics.floor_divide(
+            self, Self.from_int(other)
+        )
+
+    @always_inline
     fn __mod__(self, other: Self) raises -> Self:
         return decimojo.bigint.arithmetics.floor_modulo(self, other)
+
+    @always_inline
+    fn __mod__(self, other: Int) raises -> Self:
+        return decimojo.bigint.arithmetics.floor_modulo(
+            self, Self.from_int(other)
+        )
 
     @always_inline
     fn __pow__(self, exponent: Self) raises -> Self:
@@ -444,6 +468,40 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
     @always_inline
     fn __pow__(self, exponent: Int) raises -> Self:
         return self.power(exponent)
+
+    # ===------------------------------------------------------------------=== #
+    # Basic binary right-side arithmetic operation dunders
+    # These methods are called to implement the binary arithmetic operations
+    # (+, -, *, @, /, //, %, divmod(), pow(), **, <<, >>, &, ^, |)
+    # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn __radd__(self, other: Int) raises -> Self:
+        return decimojo.bigint.arithmetics.add(self, Self.from_int(other))
+
+    @always_inline
+    fn __rsub__(self, other: Int) raises -> Self:
+        return decimojo.bigint.arithmetics.subtract(Self.from_int(other), self)
+
+    @always_inline
+    fn __rmul__(self, other: Int) raises -> Self:
+        return decimojo.bigint.arithmetics.multiply(self, Self.from_int(other))
+
+    @always_inline
+    fn __rfloordiv__(self, other: Int) raises -> Self:
+        return decimojo.bigint.arithmetics.floor_divide(
+            Self.from_int(other), self
+        )
+
+    @always_inline
+    fn __rmod__(self, other: Int) raises -> Self:
+        return decimojo.bigint.arithmetics.floor_modulo(
+            Self.from_int(other), self
+        )
+
+    @always_inline
+    fn __rpow__(self, base: Int) raises -> Self:
+        return Self(base).power(self)
 
     # ===------------------------------------------------------------------=== #
     # Basic binary augmented arithmetic assignments dunders
@@ -457,20 +515,44 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
         self = decimojo.bigint.arithmetics.add(self, other)
 
     @always_inline
+    fn __iadd__(mut self, other: Int) raises:
+        self = decimojo.bigint.arithmetics.add(self, Self.from_int(other))
+
+    @always_inline
     fn __isub__(mut self, other: Self) raises:
         self = decimojo.bigint.arithmetics.subtract(self, other)
+
+    @always_inline
+    fn __isub__(mut self, other: Int) raises:
+        self = decimojo.bigint.arithmetics.subtract(self, Self.from_int(other))
 
     @always_inline
     fn __imul__(mut self, other: Self) raises:
         self = decimojo.bigint.arithmetics.multiply(self, other)
 
     @always_inline
+    fn __imul__(mut self, other: Int) raises:
+        self = decimojo.bigint.arithmetics.multiply(self, Self.from_int(other))
+
+    @always_inline
     fn __ifloordiv__(mut self, other: Self) raises:
         self = decimojo.bigint.arithmetics.floor_divide(self, other)
 
     @always_inline
+    fn __ifloordiv__(mut self, other: Int) raises:
+        self = decimojo.bigint.arithmetics.floor_divide(
+            self, Self.from_int(other)
+        )
+
+    @always_inline
     fn __imod__(mut self, other: Self) raises:
         self = decimojo.bigint.arithmetics.floor_modulo(self, other)
+
+    @always_inline
+    fn __imod__(mut self, other: Int) raises:
+        self = decimojo.bigint.arithmetics.floor_modulo(
+            self, Self.from_int(other)
+        )
 
     # ===------------------------------------------------------------------=== #
     # Basic binary comparison operation dunders
@@ -483,9 +565,21 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
         return decimojo.bigint.comparison.greater(self, other)
 
     @always_inline
+    fn __gt__(self, other: Int) -> Bool:
+        """Returns True if self > other."""
+        return decimojo.bigint.comparison.greater(self, Self.from_int(other))
+
+    @always_inline
     fn __ge__(self, other: Self) -> Bool:
         """Returns True if self >= other."""
         return decimojo.bigint.comparison.greater_equal(self, other)
+
+    @always_inline
+    fn __ge__(self, other: Int) -> Bool:
+        """Returns True if self >= other."""
+        return decimojo.bigint.comparison.greater_equal(
+            self, Self.from_int(other)
+        )
 
     @always_inline
     fn __lt__(self, other: Self) -> Bool:
@@ -493,9 +587,19 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
         return decimojo.bigint.comparison.less(self, other)
 
     @always_inline
+    fn __lt__(self, other: Int) -> Bool:
+        """Returns True if self < other."""
+        return decimojo.bigint.comparison.less(self, Self.from_int(other))
+
+    @always_inline
     fn __le__(self, other: Self) -> Bool:
         """Returns True if self <= other."""
         return decimojo.bigint.comparison.less_equal(self, other)
+
+    @always_inline
+    fn __le__(self, other: Int) -> Bool:
+        """Returns True if self <= other."""
+        return decimojo.bigint.comparison.less_equal(self, Self.from_int(other))
 
     @always_inline
     fn __eq__(self, other: Self) -> Bool:
@@ -503,9 +607,19 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
         return decimojo.bigint.comparison.equal(self, other)
 
     @always_inline
+    fn __eq__(self, other: Int) -> Bool:
+        """Returns True if self == other."""
+        return decimojo.bigint.comparison.equal(self, Self.from_int(other))
+
+    @always_inline
     fn __ne__(self, other: Self) -> Bool:
         """Returns True if self != other."""
         return decimojo.bigint.comparison.not_equal(self, other)
+
+    @always_inline
+    fn __ne__(self, other: Int) -> Bool:
+        """Returns True if self != other."""
+        return decimojo.bigint.comparison.not_equal(self, Self.from_int(other))
 
     # ===------------------------------------------------------------------=== #
     # Mathematical methods that do not implement a trait (not a dunder)
