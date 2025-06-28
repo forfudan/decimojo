@@ -635,12 +635,6 @@ struct BigDecimal(
         """Returns the minimum of two BigDecimal numbers."""
         return decimojo.bigdecimal.comparison.min(self, other)
 
-    @staticmethod
-    @always_inline
-    fn pi(precision: Int) raises -> Self:
-        """Returns the value of pi with the given precision."""
-        return decimojo.bigdecimal.constants.pi(precision)
-
     @always_inline
     fn root(self, root: Self, precision: Int = 28) raises -> Self:
         """Returns the root of the BigDecimal number."""
