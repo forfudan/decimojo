@@ -105,9 +105,17 @@ struct BigDecimal(
         """Constructs a BigDecimal from an integer."""
         self = Self.from_int(value)
 
-    fn __init__(out self, value: Scalar) raises:
-        """Constructs a BigDecimal from a Mojo Scalar."""
-        self = Self.from_scalar(value)
+    @implicit
+    fn __init__(out self, value: Scalar):
+        """Constructs a BigDecimal from an integral scalar.
+
+        Constraints:
+            The dtype of the scalar must be integral.
+
+        Notes:
+            This includes all SIMD integral types, such as Int8, Int16, etc.
+        """
+        self = Self.from_integral_scalar(value)
 
     # ===------------------------------------------------------------------=== #
     # Constructing methods that are not dunders
@@ -165,8 +173,48 @@ struct BigDecimal(
         return Self(coefficient=BigUInt(words^), scale=0, sign=sign)
 
     @staticmethod
-    fn from_scalar[dtype: DType, //](value: Scalar[dtype]) raises -> Self:
-        """Initializes a BigDecimal from a Mojo Scalar.
+    fn from_integral_scalar[dtype: DType, //](value: Scalar[dtype]) -> Self:
+        """Initializes a BigDecimal from an integral scalar.
+
+        Constraints:
+            The dtype must be integral.
+
+        Args:
+            value: The Scalar value to be converted to BigDecimal.
+
+        Returns:
+            The BigDecimal representation of the Scalar value.
+        """
+
+        constrained[dtype.is_integral(), "dtype must be integral."]()
+
+        if value == 0:
+            return Self(coefficient=BigUInt.ZERO, scale=0, sign=False)
+
+        var sign = True if value < 0 else False
+
+        var list_of_words = List[UInt32]()
+        var remainder: Scalar[dtype] = value
+        var quotient: Scalar[dtype]
+
+        if sign:
+            while remainder != 0:
+                quotient = remainder // (-1_000_000_000)
+                remainder = remainder % (-1_000_000_000)
+                list_of_words.append(UInt32(-remainder))
+                remainder = -quotient
+        else:
+            while remainder != 0:
+                quotient = remainder // 1_000_000_000
+                remainder = remainder % 1_000_000_000
+                list_of_words.append(UInt32(remainder))
+                remainder = quotient
+
+        return Self(coefficient=BigUInt(list_of_words^), scale=0, sign=sign)
+
+    @staticmethod
+    fn from_float[dtype: DType, //](value: Scalar[dtype]) raises -> Self:
+        """Initializes a BigDecimal from a floating-point scalar.
 
         Args:
             value: The Scalar value to be converted to BigDecimal.
@@ -179,78 +227,24 @@ struct BigDecimal(
         If the value is a floating-point number, it is converted to a string
         with full precision before converting to BigDecimal.
         """
-        var sign = True if value < 0 else False
 
-        @parameter
-        if dtype.is_integral():
-            var list_of_words = List[UInt32]()
-            var remainder: Scalar[dtype] = value
-            var quotient: Scalar[dtype]
-            var is_min = False
+        constrained[
+            dtype.is_floating_point(), "dtype must be floating-point."
+        ]()
 
-            if sign:
-                var min_value: Scalar[dtype]
-                var max_value: Scalar[dtype]
+        if value == 0:
+            return Self(coefficient=BigUInt.ZERO, scale=0, sign=False)
 
-                # TODO: Currently Int256 is not supported due to the limitation
-                # of Mojo's standard library. The following part can be removed
-                # if `mojo/stdlib/src/utils/numerics.mojo` is updated.
-                @parameter
-                if dtype == DType.int128:
-                    min_value = Scalar[dtype](
-                        -170141183460469231731687303715884105728
-                    )
-                    max_value = Scalar[dtype](
-                        170141183460469231731687303715884105727
-                    )
-                elif dtype == DType.int64:
-                    min_value = Scalar[dtype].MIN
-                    max_value = Scalar[dtype].MAX
-                elif dtype == DType.int32:
-                    min_value = Scalar[dtype].MIN
-                    max_value = Scalar[dtype].MAX
-                elif dtype == DType.int16:
-                    min_value = Scalar[dtype].MIN
-                    max_value = Scalar[dtype].MAX
-                elif dtype == DType.int8:
-                    min_value = Scalar[dtype].MIN
-                    max_value = Scalar[dtype].MAX
-                else:
-                    raise Error(
-                        "Error in `from_scalar()`: Unsupported integral type"
-                    )
-
-                if value == min_value:
-                    remainder = max_value
-                    is_min = True
-                else:
-                    remainder = -value
-
-            while remainder != 0:
-                quotient = remainder // 1_000_000_000
-                remainder = remainder % 1_000_000_000
-                list_of_words.append(UInt32(remainder))
-                remainder = quotient
-
-            if is_min:
-                list_of_words[0] += 1
-
-            return Self(coefficient=BigUInt(list_of_words^), scale=0, sign=sign)
-
-        else:  # floating-point
-            if value != value:  # Check for NaN
-                raise Error(
-                    "Error in `from_scalar()`: Cannot convert NaN to BigUInt"
-                )
-            # Convert to string with full precision
-            try:
-                return Self.from_string(String(value))
-            except e:
-                raise Error("Error in `from_scalar()`: ", e)
-
-        return Self(
-            coefficient=BigUInt(UInt32(0)), scale=0, sign=sign
-        )  # Default case
+        if value != value:  # Check for NaN
+            raise Error("`from_scalar()`: Cannot convert NaN to BigUInt")
+        # Convert to string with full precision
+        try:
+            return Self.from_string(String(value))
+        except e:
+            raise Error(
+                "`from_scalar()`: Cannot get decimal from string\nTrace back: "
+                + String(e),
+            )
 
     @staticmethod
     fn from_string(value: String) raises -> Self:
