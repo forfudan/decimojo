@@ -115,6 +115,13 @@ struct BigDecimal(
         self = Self.from_int(value)
 
     @implicit
+    fn __init__(out self, value: UInt):
+        """Constructs a BigDecimal from an `UInt` object.
+        See `from_uint()` for more information.
+        """
+        self = Self.from_uint(value)
+
+    @implicit
     fn __init__(out self, value: Scalar):
         """Constructs a BigDecimal from an integral scalar.
         This includes all SIMD integral types, such as Int8, Int16, UInt32, etc.
@@ -178,6 +185,11 @@ struct BigDecimal(
             words[0] += 1
 
         return Self(coefficient=BigUInt(words^), scale=0, sign=sign)
+
+    @staticmethod
+    fn from_uint(value: Int) -> Self:
+        """Creates a BigDecimal from an unsigned integer."""
+        return Self(coefficient=BigUInt.from_uint(value), scale=0, sign=False)
 
     @staticmethod
     fn from_integral_scalar[dtype: DType, //](value: SIMD[dtype, 1]) -> Self:

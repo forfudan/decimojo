@@ -138,6 +138,13 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         self = Self.from_int(value)
 
     @implicit
+    fn __init__(out self, value: UInt):
+        """Initializes a BigUInt from an Int.
+        See `from_uint()` for more information.
+        """
+        self = Self.from_uint(value)
+
+    @implicit
     fn __init__(out self, value: Scalar):
         """Initializes a BigUInt from an unsigned integral scalar.
         See `from_unsigned_integral_scalar()` for more information.
@@ -230,6 +237,24 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
 
         if value < 0:
             raise Error("Error in `BigUInt.from_int()`: The value is negative")
+
+        var list_of_words = List[UInt32]()
+        var remainder: Int = value
+        var quotient: Int
+
+        while remainder != 0:
+            quotient = remainder // 1_000_000_000
+            remainder = remainder % 1_000_000_000
+            list_of_words.append(UInt32(remainder))
+            remainder = quotient
+
+        return Self(list_of_words^)
+
+    @staticmethod
+    fn from_uint(value: UInt) -> Self:
+        """Creates a BigUInt from an `UInt` object."""
+        if value == 0:
+            return Self()
 
         var list_of_words = List[UInt32]()
         var remainder: Int = value
@@ -669,6 +694,40 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     @always_inline
     fn __pow__(self, exponent: Int) raises -> Self:
         return self.power(exponent)
+
+    # ===------------------------------------------------------------------=== #
+    # Basic binary right-side arithmetic operation dunders
+    # These methods are called to implement the binary arithmetic operations
+    # (+, -, *, @, /, //, %, divmod(), pow(), **, <<, >>, &, ^, |)
+    # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn __radd__(self, other: Self) raises -> Self:
+        return decimojo.biguint.arithmetics.add(self, other)
+
+    @always_inline
+    fn __rsub__(self, other: Self) raises -> Self:
+        return decimojo.biguint.arithmetics.subtract(other, self)
+
+    @always_inline
+    fn __rmul__(self, other: Self) raises -> Self:
+        return decimojo.biguint.arithmetics.multiply(self, other)
+
+    @always_inline
+    fn __rfloordiv__(self, other: Self) raises -> Self:
+        return decimojo.biguint.arithmetics.floor_divide(other, self)
+
+    @always_inline
+    fn __rmod__(self, other: Self) raises -> Self:
+        return decimojo.biguint.arithmetics.floor_modulo(other, self)
+
+    @always_inline
+    fn __rdivmod__(self, other: Self) raises -> Tuple[Self, Self]:
+        return decimojo.biguint.arithmetics.divmod(other, self)
+
+    @always_inline
+    fn __rpow__(self, base: Self) raises -> Self:
+        return base.power(self)
 
     # ===------------------------------------------------------------------=== #
     # Basic binary augmented arithmetic assignments dunders
