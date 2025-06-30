@@ -137,6 +137,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         """
         self = Self.from_int(value)
 
+    @implicit
     fn __init__(out self, value: Scalar):
         """Initializes a BigUInt from an unsigned integral scalar.
         See `from_unsigned_integral_scalar()` for more information.
