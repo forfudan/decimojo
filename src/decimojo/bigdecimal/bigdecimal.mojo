@@ -88,12 +88,20 @@ struct BigDecimal(
         self.scale = scale
         self.sign = sign
 
+    @implicit
+    fn __init__(out self, value: BigInt):
+        """Constructs a BigDecimal from a big interger."""
+        self.coefficient = value.magnitude
+        self.scale = 0
+        self.sign = value.sign
+
     fn __init__(out self, value: String) raises:
         """Constructs a BigDecimal from a string representation."""
         # The string is normalized with `deciomojo.str.parse_numeric_string()`.
         self = Self.from_string(value)
 
-    fn __init__(out self, value: Int) raises:
+    @implicit
+    fn __init__(out self, value: Int):
         """Constructs a BigDecimal from an integer."""
         self = Self.from_int(value)
 
@@ -123,10 +131,10 @@ struct BigDecimal(
         return Self(BigUInt(List[UInt32](coefficient)), scale, sign)
 
     @staticmethod
-    fn from_int(value: Int) raises -> Self:
+    fn from_int(value: Int) -> Self:
         """Creates a BigDecimal from an integer."""
         if value == 0:
-            return Self(coefficient=BigUInt(UInt32(0)), scale=0, sign=False)
+            return Self(coefficient=BigUInt.ZERO, scale=0, sign=False)
 
         var words = List[UInt32](capacity=2)
         var sign: Bool
@@ -494,6 +502,38 @@ struct BigDecimal(
         )
 
     # ===------------------------------------------------------------------=== #
+    # Basic binary right-side arithmetic operation dunders
+    # These methods are called to implement the binary arithmetic operations
+    # (+, -, *, @, /, //, %, divmod(), pow(), **, <<, >>, &, ^, |)
+    # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn __radd__(self, other: Self) raises -> Self:
+        return decimojo.bigdecimal.arithmetics.add(self, other)
+
+    @always_inline
+    fn __rsub__(self, other: Self) raises -> Self:
+        return decimojo.bigdecimal.arithmetics.subtract(other, self)
+
+    @always_inline
+    fn __rmul__(self, other: Self) raises -> Self:
+        return decimojo.bigdecimal.arithmetics.multiply(self, other)
+
+    @always_inline
+    fn __rfloordiv__(self, other: Self) raises -> Self:
+        return decimojo.bigdecimal.arithmetics.truncate_divide(other, self)
+
+    @always_inline
+    fn __rmod__(self, other: Self) raises -> Self:
+        return decimojo.bigdecimal.arithmetics.truncate_modulo(
+            other, self, precision=28
+        )
+
+    @always_inline
+    fn __rpow__(self, base: Self) raises -> Self:
+        return decimojo.bigdecimal.exponential.power(base, self, precision=28)
+
+    # ===------------------------------------------------------------------=== #
     # Basic binary augmented arithmetic assignments dunders
     # These methods are called to implement the binary augmented arithmetic
     # assignments
@@ -585,6 +625,10 @@ struct BigDecimal(
             )
         except e:
             return self
+
+    # ===------------------------------------------------------------------=== #
+    # Other dunders
+    # ===------------------------------------------------------------------=== #
 
     # ===------------------------------------------------------------------=== #
     # Mathematical methods that do not implement a trait (not a dunder)

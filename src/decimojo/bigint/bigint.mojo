@@ -27,9 +27,10 @@ from memory import UnsafePointer
 import testing
 import time
 
-from decimojo.biguint.biguint import BigUInt
 import decimojo.bigint.arithmetics
 import decimojo.bigint.comparison
+from decimojo.bigdecimal.bigdecimal import BigDecimal
+from decimojo.biguint.biguint import BigUInt
 import decimojo.str
 
 # Type aliases
@@ -125,7 +126,8 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
         self.magnitude = BigUInt(List[UInt32](elements=words^))
         self.sign = sign
 
-    fn __init__(out self, value: Int) raises:
+    @implicit
+    fn __init__(out self, value: Int):
         """Initializes a BigInt from an Int.
         See `from_int()` for more information.
         """
@@ -476,32 +478,28 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn __radd__(self, other: Int) raises -> Self:
-        return decimojo.bigint.arithmetics.add(self, Self.from_int(other))
+    fn __radd__(self, other: Self) raises -> Self:
+        return decimojo.bigint.arithmetics.add(self, other)
 
     @always_inline
-    fn __rsub__(self, other: Int) raises -> Self:
-        return decimojo.bigint.arithmetics.subtract(Self.from_int(other), self)
+    fn __rsub__(self, other: Self) raises -> Self:
+        return decimojo.bigint.arithmetics.subtract(other, self)
 
     @always_inline
-    fn __rmul__(self, other: Int) raises -> Self:
-        return decimojo.bigint.arithmetics.multiply(self, Self.from_int(other))
+    fn __rmul__(self, other: Self) raises -> Self:
+        return decimojo.bigint.arithmetics.multiply(self, other)
 
     @always_inline
-    fn __rfloordiv__(self, other: Int) raises -> Self:
-        return decimojo.bigint.arithmetics.floor_divide(
-            Self.from_int(other), self
-        )
+    fn __rfloordiv__(self, other: Self) raises -> Self:
+        return decimojo.bigint.arithmetics.floor_divide(other, self)
 
     @always_inline
-    fn __rmod__(self, other: Int) raises -> Self:
-        return decimojo.bigint.arithmetics.floor_modulo(
-            Self.from_int(other), self
-        )
+    fn __rmod__(self, other: Self) raises -> Self:
+        return decimojo.bigint.arithmetics.floor_modulo(other, self)
 
     @always_inline
-    fn __rpow__(self, base: Int) raises -> Self:
-        return Self(base).power(self)
+    fn __rpow__(self, base: Self) raises -> Self:
+        return base.power(self)
 
     # ===------------------------------------------------------------------=== #
     # Basic binary augmented arithmetic assignments dunders
@@ -620,6 +618,14 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
     fn __ne__(self, other: Int) -> Bool:
         """Returns True if self != other."""
         return decimojo.bigint.comparison.not_equal(self, Self.from_int(other))
+
+    # ===------------------------------------------------------------------=== #
+    # Other dunders
+    # ===------------------------------------------------------------------=== #
+
+    fn __merge_with__[other_type: __type_of(BigDecimal)](self) -> BigDecimal:
+        "Merges this BigInt with a BigDecimal into a BigDecimal."
+        return BigDecimal(self)
 
     # ===------------------------------------------------------------------=== #
     # Mathematical methods that do not implement a trait (not a dunder)
