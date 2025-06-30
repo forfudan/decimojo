@@ -20,7 +20,7 @@ DeciMojo 可在 [modular-community](https://repo.prefix.dev/modular-community) �
 
 從 `pixi` CLI，只需運行 ```pixi add decimojo```。這會獲取最新版本並使其立即可用於導入。
 
-對於帶有 `mojoproject.toml` 文件的項目，添加依賴 ```decimojo = "==0.4.0"```。然後運行 `pixi install` 來下載並安裝包。
+對於帶有 `mojoproject.toml` 文件的項目，添加依賴 ```decimojo = "==0.4.1"```。然後運行 `pixi install` 來下載並安裝包。
 
 如需最新的開發版本，請克隆 [GitHub 倉庫](https://github.com/forfudan/decimojo) 並在本地構建包。
 
@@ -30,7 +30,7 @@ DeciMojo 可在 [modular-community](https://repo.prefix.dev/modular-community) �
 | v0.2.0     | >=25.2        | magic  |
 | v0.3.0     | >=25.2        | magic  |
 | v0.3.1     | >=25.2, <25.4 | pixi   |
-| v0.4.0     | ==25.4        | pixi   |
+| v0.4.x     | ==25.4        | pixi   |
 
 ## 快速入門
 
@@ -218,7 +218,7 @@ DeciMojo 相較於 Python 的 `decimal` 模塊提供了卓越的性能，同時�
     year         = {2025},
     title        = {DeciMojo: A fixed-point decimal arithmetic library in Mojo},
     url          = {https://github.com/forfudan/decimojo},
-    version      = {0.4.0},
+    version      = {0.4.1},
     note         = {Computer Software}
 }
 ```
