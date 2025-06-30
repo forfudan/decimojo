@@ -68,7 +68,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     @staticmethod
     fn zero() -> Self:
         """Returns a BigUInt with value 0."""
-        return Self(words=List[UInt32](UInt32(0)))
+        return Self()
 
     @always_inline
     @staticmethod
@@ -137,11 +137,11 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         """
         self = Self.from_int(value)
 
-    fn __init__(out self, value: Scalar) raises:
-        """Initializes a BigUInt from a Mojo Scalar.
-        See `from_scalar()` for more information.
+    fn __init__(out self, value: Scalar):
+        """Initializes a BigUInt from an unsigned integral scalar.
+        See `from_unsigned_integral_scalar()` for more information.
         """
-        self = Self.from_scalar(value)
+        self = Self.from_unsigned_integral_scalar(value)
 
     fn __init__(out self, value: String, ignore_sign: Bool = False) raises:
         """Initializes a BigUInt from a string representation.
@@ -243,51 +243,116 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         return Self(list_of_words^)
 
     @staticmethod
-    fn from_scalar[dtype: DType, //](value: Scalar[dtype]) raises -> Self:
-        """Initializes a BigUInt from a Mojo Scalar.
+    fn from_unsigned_integral_scalar[
+        dtype: DType, //
+    ](value: SIMD[dtype, 1]) -> Self:
+        """Initializes a BigUInt from an unsigned integral scalar.
+        This includes all SIMD unsigned integral types, such as UInt8, UInt16,
+        UInt32, UInt64, etc.
+
+        Constraints:
+            The dtype must be integral and unsigned.
 
         Args:
             value: The Scalar value to be converted to BigUInt.
 
         Returns:
             The BigUInt representation of the Scalar value.
-
-        Notes:
-            If the value is a floating-point number, it is converted to a string
-            with full precision before converting to BigUInt.
-            If the fractional part is not zero, an error is raised.
         """
-        if value < 0:
-            raise Error("Error in `from_scalar()`: The value is negative")
+
+        constrained[
+            dtype.is_integral() and dtype.is_unsigned(),
+            "dtype must be unsigned integral.",
+        ]()
+
+        @parameter
+        if (
+            (dtype == DType.uint8)
+            or (dtype == DType.uint16)
+            or (dtype == DType.uint32)
+        ):
+            return Self(words=List[UInt32](UInt32(value)))
 
         if value == 0:
             return Self()
 
+        var list_of_words = List[UInt32]()
+        var remainder: Scalar[dtype] = value
+        var quotient: Scalar[dtype]
+
+        while remainder != 0:
+            quotient = remainder // 1_000_000_000
+            remainder = remainder % 1_000_000_000
+            list_of_words.append(UInt32(remainder))
+            remainder = quotient
+
+        return Self(words=list_of_words^)
+
+    @staticmethod
+    fn from_absolute_integral_scalar[
+        dtype: DType, //
+    ](value: SIMD[dtype, 1]) -> Self:
+        """Initializes a BigUInt from an integral scalar and ignores the sign.
+        This includes all SIMD integral types, such as UInt8, UInt16, Int32,
+        Int64, Int128, etc.
+
+        Constraints:
+            The dtype must be integral and unsigned.
+
+        Args:
+            value: The Scalar value to be converted to BigUInt.
+
+        Returns:
+            The BigUInt representation of the Scalar value.
+        """
+
+        constrained[dtype.is_integral(), "dtype must be integral."]()
+
         @parameter
-        if dtype.is_integral():
+        if (
+            (dtype == DType.uint8)
+            or (dtype == DType.uint16)
+            or (dtype == DType.uint32)
+        ):
+            # For types that are smaller than word size
+            # We can directly convert them to UInt32
+            return Self(words=List[UInt32](UInt32(value)))
+
+        elif (dtype == DType.int8) or (dtype == DType.int16):
+            # For signed types that are smaller than 1_000_000_000,
+            # we need to handle it differently
+            if value < 0:
+                # Because -Int16.MIN == Int16.MAX + 1,
+                # we need to handle the case by converting it to Int32
+                # before taking the absolute value.
+                return Self(List[UInt32](UInt32(-Int32(value))))
+            else:
+                return Self(List[UInt32](UInt32(value)))
+
+        else:
+            if value == 0:
+                return BigUInt.ZERO
+
+            var sign = True if value < 0 else False
+
             var list_of_words = List[UInt32]()
             var remainder: Scalar[dtype] = value
             var quotient: Scalar[dtype]
-            while remainder != 0:
-                quotient = remainder // 1_000_000_000
-                remainder = remainder % 1_000_000_000
-                list_of_words.append(UInt32(remainder))
-                remainder = quotient
+
+            if sign:
+                while remainder != 0:
+                    quotient = remainder // (-1_000_000_000)
+                    remainder = remainder % (-1_000_000_000)
+                    list_of_words.append(UInt32(-remainder))
+                    remainder = -quotient
+            else:
+                while remainder != 0:
+                    quotient = remainder // 1_000_000_000
+                    remainder = remainder % 1_000_000_000
+                    list_of_words.append(UInt32(remainder))
+                    remainder = quotient
+
             return Self(list_of_words^)
-
-        else:
-            if value != value:  # Check for NaN
-                raise Error(
-                    "Error in `BigUInt.from_scalar()`: Cannot convert NaN to"
-                    " BigUInt"
-                )
-            # Convert to string with full precision
-            try:
-                return Self.from_string(String(value))
-            except e:
-                raise Error("Error in `BigUInt.from_scalar()`: ", e)
-
-        return Self()
 
     @staticmethod
     fn from_string(value: String, ignore_sign: Bool = False) raises -> BigUInt:
@@ -668,6 +733,18 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     fn __ne__(self, other: Self) -> Bool:
         """Returns True if self != other."""
         return decimojo.biguint.comparison.not_equal(self, other)
+
+    # ===------------------------------------------------------------------=== #
+    # Other dunders
+    # ===------------------------------------------------------------------=== #
+
+    fn __merge_with__[other_type: __type_of(BigInt)](self) -> BigInt:
+        "Merges this BigUInt with a BigInt into a BigInt."
+        return BigInt(self)
+
+    fn __merge_with__[other_type: __type_of(BigDecimal)](self) -> BigDecimal:
+        "Merges this BigUInt with a BigDecimal into a BigDecimal."
+        return BigDecimal(self)
 
     # ===------------------------------------------------------------------=== #
     # Mathematical methods that do not implement a trait (not a dunder)

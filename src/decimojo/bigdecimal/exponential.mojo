@@ -512,7 +512,7 @@ fn sqrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
     if odd_ndigits_frac_part:
         value = value * UInt128(10)
     var sqrt_value = decimojo.utility.sqrt(value)
-    var sqrt_value_biguint = BigUInt.from_scalar(sqrt_value)
+    var sqrt_value_biguint = BigUInt.from_unsigned_integral_scalar(sqrt_value)
     guess = BigDecimal(
         sqrt_value_biguint,
         sqrt_value_biguint.number_of_digits() - ndigits_int_part_sqrt,

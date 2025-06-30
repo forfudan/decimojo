@@ -82,6 +82,13 @@ struct BigDecimal(
     # Constructors and life time dunder methods
     # ===------------------------------------------------------------------=== #
 
+    @implicit
+    fn __init__(out self, coefficient: BigUInt):
+        """Constructs a BigDecimal from a BigUInt object."""
+        self.coefficient = coefficient
+        self.scale = 0
+        self.sign = False
+
     fn __init__(out self, coefficient: BigUInt, scale: Int, sign: Bool):
         """Constructs a BigDecimal from its components."""
         self.coefficient = coefficient
@@ -102,18 +109,18 @@ struct BigDecimal(
 
     @implicit
     fn __init__(out self, value: Int):
-        """Constructs a BigDecimal from an integer."""
+        """Constructs a BigDecimal from an `Int` object.
+        See `from_int()` for more information.
+        """
         self = Self.from_int(value)
 
     @implicit
     fn __init__(out self, value: Scalar):
         """Constructs a BigDecimal from an integral scalar.
+        This includes all SIMD integral types, such as Int8, Int16, UInt32, etc.
 
         Constraints:
             The dtype of the scalar must be integral.
-
-        Notes:
-            This includes all SIMD integral types, such as Int8, Int16, etc.
         """
         self = Self.from_integral_scalar(value)
 
@@ -173,11 +180,9 @@ struct BigDecimal(
         return Self(coefficient=BigUInt(words^), scale=0, sign=sign)
 
     @staticmethod
-    fn from_integral_scalar[dtype: DType, //](value: Scalar[dtype]) -> Self:
+    fn from_integral_scalar[dtype: DType, //](value: SIMD[dtype, 1]) -> Self:
         """Initializes a BigDecimal from an integral scalar.
-
-        Constraints:
-            The dtype must be integral.
+        This includes all SIMD integral types, such as Int8, Int16, UInt32, etc.
 
         Args:
             value: The Scalar value to be converted to BigDecimal.
@@ -191,26 +196,11 @@ struct BigDecimal(
         if value == 0:
             return Self(coefficient=BigUInt.ZERO, scale=0, sign=False)
 
-        var sign = True if value < 0 else False
-
-        var list_of_words = List[UInt32]()
-        var remainder: Scalar[dtype] = value
-        var quotient: Scalar[dtype]
-
-        if sign:
-            while remainder != 0:
-                quotient = remainder // (-1_000_000_000)
-                remainder = remainder % (-1_000_000_000)
-                list_of_words.append(UInt32(-remainder))
-                remainder = -quotient
-        else:
-            while remainder != 0:
-                quotient = remainder // 1_000_000_000
-                remainder = remainder % 1_000_000_000
-                list_of_words.append(UInt32(remainder))
-                remainder = quotient
-
-        return Self(coefficient=BigUInt(list_of_words^), scale=0, sign=sign)
+        return Self(
+            coefficient=BigUInt.from_absolute_integral_scalar(value),
+            scale=0,
+            sign=True if value < 0 else False,
+        )
 
     @staticmethod
     fn from_float[dtype: DType, //](value: Scalar[dtype]) raises -> Self:

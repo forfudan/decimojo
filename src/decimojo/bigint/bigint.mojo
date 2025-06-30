@@ -70,6 +70,12 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
         self.magnitude = BigUInt()
         self.sign = False
 
+    @implicit
+    fn __init__(out self, magnitude: BigUInt):
+        """Constructs a BigInt from a BigUInt object."""
+        self.magnitude = magnitude
+        self.sign = False
+
     fn __init__(out self, magnitude: BigUInt, sign: Bool):
         """Initializes a BigInt from a BigUInt and a sign.
 
@@ -82,7 +88,7 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
         self.sign = sign
 
     fn __init__(out self, words: List[UInt32], sign: Bool):
-        """Initializes a BigInt from a List of UInt32 and a sign.
+        """***UNSAFE!*** Initializes a BigInt from a List of UInt32 and a sign.
         It does not check whether the list is empty or the words are invalid.
         See `from_list()` for safer initialization.
 
@@ -101,7 +107,8 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
         self.sign = sign
 
     fn __init__(out self, owned *words: UInt32, sign: Bool) raises:
-        """Initializes a BigInt from raw components.
+        """***UNSAFE!*** Initializes a BigInt from raw components.
+        It does not check whether the words are invalid.
         See `from_words()` for safer initialization.
 
         Args:
@@ -126,13 +133,6 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
         self.magnitude = BigUInt(List[UInt32](elements=words^))
         self.sign = sign
 
-    @implicit
-    fn __init__(out self, value: Int):
-        """Initializes a BigInt from an Int.
-        See `from_int()` for more information.
-        """
-        self = Self.from_int(value)
-
     fn __init__(out self, value: String) raises:
         """Initializes a BigInt from a string representation.
         See `from_string()` for more information.
@@ -141,6 +141,23 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
             self = Self.from_string(value)
         except e:
             raise Error("Error in `BigInt.__init__()` with String: ", e)
+
+    @implicit
+    fn __init__(out self, value: Int):
+        """Initializes a BigInt from an `Int` object.
+        See `from_int()` for more information.
+        """
+        self = Self.from_int(value)
+
+    @implicit
+    fn __init__(out self, value: Scalar):
+        """Constructs a BigInt from an integral scalar.
+        This includes all SIMD integral types, such as Int8, Int16, UInt32, etc.
+
+        Constraints:
+            The dtype of the scalar must be integral.
+        """
+        self = Self.from_integral_scalar(value)
 
     # ===------------------------------------------------------------------=== #
     # Constructing methods that are not dunders
@@ -235,21 +252,29 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
         return Self(BigUInt(words^), sign)
 
     @staticmethod
-    fn from_uint128(value: UInt128, sign: Bool = False) raises -> Self:
-        """Initializes a BigInt from a UInt128 value.
+    fn from_integral_scalar[dtype: DType, //](value: SIMD[dtype, 1]) -> Self:
+        """Initializes a BigInt from an integral scalar.
+        This includes all SIMD integral types, such as Int8, Int16, UInt32, etc.
+
+        Constraints:
+            The dtype must be integral.
 
         Args:
-            value: The UInt128 value to be converted to BigInt.
-            sign: The sign of the BigInt. Default is False.
+            value: The Scalar value to be converted to BigInt.
 
         Returns:
-            The BigInt representation of the UInt128 value.
+            The BigInt representation of the Scalar value.
         """
+
+        constrained[dtype.is_integral(), "dtype must be integral."]()
+
         if value == 0:
             return Self()
 
-        var magnitude = BigUInt.from_scalar(value)
-        return Self(magnitude^, sign)
+        return Self(
+            magnitude=BigUInt.from_absolute_integral_scalar(value),
+            sign=True if value < 0 else False,
+        )
 
     @staticmethod
     fn from_string(value: String) raises -> Self:

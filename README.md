@@ -53,6 +53,67 @@ For the latest development version, clone the [GitHub repository](https://github
 
 ## Quick start
 
+Here are some examples showcasing the arbitrary-precision feature of the `BigDecimal` type.
+
+```mojo
+from decimojo import BDec, RM
+
+
+fn main() raises:
+    var PRECISION = 100
+    var a = BDec("123456789.123456789")
+    var b = BDec("1234.56789")
+    print(a.sqrt(precision=PRECISION))
+    # 11111.11106611111096943055498174930232833813065468909453818857935956641682120364106016272519460988485
+    print(a.power(b, precision=PRECISION))
+    # 3.346361102419080234023813540078946868219632448203078657310495672766009862564151996325555496759911131748170844123475135377098326591508239654961E+9989
+    print(a.log(b, precision=PRECISION))
+    # 2.617330026656548299907884356415293977170848626010103229392408225981962436022623783231699264341492663671325580092077394824180414301026578169909
+```
+
+Here is a comprehensive quick-start guide showcasing each major function of the `BigInt` type.
+
+```mojo
+from decimojo import BigInt, BInt
+# BInt is an alias for BigInt
+
+fn main() raises:
+    # === Construction ===
+    var a = BigInt("12345678901234567890")         # From string
+    var b = BInt(12345)                            # From integer
+    
+    # === Basic Arithmetic ===
+    print(a + b)                                   # Addition: 12345678901234580235
+    print(a - b)                                   # Subtraction: 12345678901234555545
+    print(a * b)                                   # Multiplication: 152415787814108380241050
+    
+    # === Division Operations ===
+    print(a // b)                                  # Floor division: 999650944609516
+    print(a.truncate_divide(b))                    # Truncate division: 999650944609516
+    print(a % b)                                   # Modulo: 9615
+    
+    # === Power Operation ===
+    print(BInt(2).power(10))                     # Power: 1024
+    print(BInt(2) ** 10)                         # Power (using ** operator): 1024
+    
+    # === Comparison ===
+    print(a > b)                                   # Greater than: True
+    print(a == BInt("12345678901234567890"))     # Equality: True
+    print(a.is_zero())                             # Check for zero: False
+    
+    # === Type Conversions ===
+    print(a.to_str())                              # To string: "12345678901234567890"
+    
+    # === Sign Handling ===
+    print(-a)                                      # Negation: -12345678901234567890
+    print(abs(BInt("-12345678901234567890")))    # Absolute value: 12345678901234567890
+    print(a.is_negative())                         # Check if negative: False
+
+    # === Extremely large numbers ===
+    # 3600 digits // 1800 digits
+    print(BInt("123456789" * 400) // BInt("987654321" * 200))
+```
+
 Here is a comprehensive quick-start guide showcasing each major function of the `Decimal` type.
 
 ```mojo
@@ -117,67 +178,6 @@ fn main() raises:
 ```
 
 [Click here for 8 key examples](https://zhuyuhao.com/decimojo/docs/examples) highlighting the most important features of the `Decimal` type.
-
-Here are some examples showcasing the arbitrary-precision feature of the `BigDecimal` type.
-
-```mojo
-from decimojo import BDec, RM
-
-
-fn main() raises:
-    var PRECISION = 100
-    var a = BDec("123456789.123456789")
-    var b = BDec("1234.56789")
-    print(a.sqrt(precision=PRECISION))
-    # 11111.11106611111096943055498174930232833813065468909453818857935956641682120364106016272519460988485
-    print(a.power(b, precision=PRECISION))
-    # 3.346361102419080234023813540078946868219632448203078657310495672766009862564151996325555496759911131748170844123475135377098326591508239654961E+9989
-    print(a.log(b, precision=PRECISION))
-    # 2.617330026656548299907884356415293977170848626010103229392408225981962436022623783231699264341492663671325580092077394824180414301026578169909
-```
-
-Here is a comprehensive quick-start guide showcasing each major function of the `BigInt` type.
-
-```mojo
-from decimojo import BigInt, BInt
-# BInt is an alias for BigInt
-
-fn main() raises:
-    # === Construction ===
-    var a = BigInt("12345678901234567890")         # From string
-    var b = BInt(12345)                            # From integer
-    
-    # === Basic Arithmetic ===
-    print(a + b)                                   # Addition: 12345678901234580235
-    print(a - b)                                   # Subtraction: 12345678901234555545
-    print(a * b)                                   # Multiplication: 152415787814108380241050
-    
-    # === Division Operations ===
-    print(a // b)                                  # Floor division: 999650944609516
-    print(a.truncate_divide(b))                    # Truncate division: 999650944609516
-    print(a % b)                                   # Modulo: 9615
-    
-    # === Power Operation ===
-    print(BInt(2).power(10))                     # Power: 1024
-    print(BInt(2) ** 10)                         # Power (using ** operator): 1024
-    
-    # === Comparison ===
-    print(a > b)                                   # Greater than: True
-    print(a == BInt("12345678901234567890"))     # Equality: True
-    print(a.is_zero())                             # Check for zero: False
-    
-    # === Type Conversions ===
-    print(a.to_str())                              # To string: "12345678901234567890"
-    
-    # === Sign Handling ===
-    print(-a)                                      # Negation: -12345678901234567890
-    print(abs(BInt("-12345678901234567890")))    # Absolute value: 12345678901234567890
-    print(a.is_negative())                         # Check if negative: False
-
-    # === Extremely large numbers ===
-    # 3600 digits // 1800 digits
-    print(BInt("123456789" * 400) // BInt("987654321" * 200))
-```
 
 ## Objective
 
