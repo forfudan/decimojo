@@ -82,24 +82,47 @@ struct BigDecimal(
     # Constructors and life time dunder methods
     # ===------------------------------------------------------------------=== #
 
+    @implicit
+    fn __init__(out self, coefficient: BigUInt):
+        """Constructs a BigDecimal from a BigUInt object."""
+        self.coefficient = coefficient
+        self.scale = 0
+        self.sign = False
+
     fn __init__(out self, coefficient: BigUInt, scale: Int, sign: Bool):
         """Constructs a BigDecimal from its components."""
         self.coefficient = coefficient
         self.scale = scale
         self.sign = sign
 
+    @implicit
+    fn __init__(out self, value: BigInt):
+        """Constructs a BigDecimal from a big interger."""
+        self.coefficient = value.magnitude
+        self.scale = 0
+        self.sign = value.sign
+
     fn __init__(out self, value: String) raises:
         """Constructs a BigDecimal from a string representation."""
         # The string is normalized with `deciomojo.str.parse_numeric_string()`.
         self = Self.from_string(value)
 
-    fn __init__(out self, value: Int) raises:
-        """Constructs a BigDecimal from an integer."""
+    @implicit
+    fn __init__(out self, value: Int):
+        """Constructs a BigDecimal from an `Int` object.
+        See `from_int()` for more information.
+        """
         self = Self.from_int(value)
 
-    fn __init__(out self, value: Scalar) raises:
-        """Constructs a BigDecimal from a Mojo Scalar."""
-        self = Self.from_scalar(value)
+    @implicit
+    fn __init__(out self, value: Scalar):
+        """Constructs a BigDecimal from an integral scalar.
+        This includes all SIMD integral types, such as Int8, Int16, UInt32, etc.
+
+        Constraints:
+            The dtype of the scalar must be integral.
+        """
+        self = Self.from_integral_scalar(value)
 
     # ===------------------------------------------------------------------=== #
     # Constructing methods that are not dunders
@@ -123,10 +146,10 @@ struct BigDecimal(
         return Self(BigUInt(List[UInt32](coefficient)), scale, sign)
 
     @staticmethod
-    fn from_int(value: Int) raises -> Self:
+    fn from_int(value: Int) -> Self:
         """Creates a BigDecimal from an integer."""
         if value == 0:
-            return Self(coefficient=BigUInt(UInt32(0)), scale=0, sign=False)
+            return Self(coefficient=BigUInt.ZERO, scale=0, sign=False)
 
         var words = List[UInt32](capacity=2)
         var sign: Bool
@@ -157,8 +180,31 @@ struct BigDecimal(
         return Self(coefficient=BigUInt(words^), scale=0, sign=sign)
 
     @staticmethod
-    fn from_scalar[dtype: DType, //](value: Scalar[dtype]) raises -> Self:
-        """Initializes a BigDecimal from a Mojo Scalar.
+    fn from_integral_scalar[dtype: DType, //](value: SIMD[dtype, 1]) -> Self:
+        """Initializes a BigDecimal from an integral scalar.
+        This includes all SIMD integral types, such as Int8, Int16, UInt32, etc.
+
+        Args:
+            value: The Scalar value to be converted to BigDecimal.
+
+        Returns:
+            The BigDecimal representation of the Scalar value.
+        """
+
+        constrained[dtype.is_integral(), "dtype must be integral."]()
+
+        if value == 0:
+            return Self(coefficient=BigUInt.ZERO, scale=0, sign=False)
+
+        return Self(
+            coefficient=BigUInt.from_absolute_integral_scalar(value),
+            scale=0,
+            sign=True if value < 0 else False,
+        )
+
+    @staticmethod
+    fn from_float[dtype: DType, //](value: Scalar[dtype]) raises -> Self:
+        """Initializes a BigDecimal from a floating-point scalar.
 
         Args:
             value: The Scalar value to be converted to BigDecimal.
@@ -171,78 +217,24 @@ struct BigDecimal(
         If the value is a floating-point number, it is converted to a string
         with full precision before converting to BigDecimal.
         """
-        var sign = True if value < 0 else False
 
-        @parameter
-        if dtype.is_integral():
-            var list_of_words = List[UInt32]()
-            var remainder: Scalar[dtype] = value
-            var quotient: Scalar[dtype]
-            var is_min = False
+        constrained[
+            dtype.is_floating_point(), "dtype must be floating-point."
+        ]()
 
-            if sign:
-                var min_value: Scalar[dtype]
-                var max_value: Scalar[dtype]
+        if value == 0:
+            return Self(coefficient=BigUInt.ZERO, scale=0, sign=False)
 
-                # TODO: Currently Int256 is not supported due to the limitation
-                # of Mojo's standard library. The following part can be removed
-                # if `mojo/stdlib/src/utils/numerics.mojo` is updated.
-                @parameter
-                if dtype == DType.int128:
-                    min_value = Scalar[dtype](
-                        -170141183460469231731687303715884105728
-                    )
-                    max_value = Scalar[dtype](
-                        170141183460469231731687303715884105727
-                    )
-                elif dtype == DType.int64:
-                    min_value = Scalar[dtype].MIN
-                    max_value = Scalar[dtype].MAX
-                elif dtype == DType.int32:
-                    min_value = Scalar[dtype].MIN
-                    max_value = Scalar[dtype].MAX
-                elif dtype == DType.int16:
-                    min_value = Scalar[dtype].MIN
-                    max_value = Scalar[dtype].MAX
-                elif dtype == DType.int8:
-                    min_value = Scalar[dtype].MIN
-                    max_value = Scalar[dtype].MAX
-                else:
-                    raise Error(
-                        "Error in `from_scalar()`: Unsupported integral type"
-                    )
-
-                if value == min_value:
-                    remainder = max_value
-                    is_min = True
-                else:
-                    remainder = -value
-
-            while remainder != 0:
-                quotient = remainder // 1_000_000_000
-                remainder = remainder % 1_000_000_000
-                list_of_words.append(UInt32(remainder))
-                remainder = quotient
-
-            if is_min:
-                list_of_words[0] += 1
-
-            return Self(coefficient=BigUInt(list_of_words^), scale=0, sign=sign)
-
-        else:  # floating-point
-            if value != value:  # Check for NaN
-                raise Error(
-                    "Error in `from_scalar()`: Cannot convert NaN to BigUInt"
-                )
-            # Convert to string with full precision
-            try:
-                return Self.from_string(String(value))
-            except e:
-                raise Error("Error in `from_scalar()`: ", e)
-
-        return Self(
-            coefficient=BigUInt(UInt32(0)), scale=0, sign=sign
-        )  # Default case
+        if value != value:  # Check for NaN
+            raise Error("`from_scalar()`: Cannot convert NaN to BigUInt")
+        # Convert to string with full precision
+        try:
+            return Self.from_string(String(value))
+        except e:
+            raise Error(
+                "`from_scalar()`: Cannot get decimal from string\nTrace back: "
+                + String(e),
+            )
 
     @staticmethod
     fn from_string(value: String) raises -> Self:
@@ -494,6 +486,38 @@ struct BigDecimal(
         )
 
     # ===------------------------------------------------------------------=== #
+    # Basic binary right-side arithmetic operation dunders
+    # These methods are called to implement the binary arithmetic operations
+    # (+, -, *, @, /, //, %, divmod(), pow(), **, <<, >>, &, ^, |)
+    # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn __radd__(self, other: Self) raises -> Self:
+        return decimojo.bigdecimal.arithmetics.add(self, other)
+
+    @always_inline
+    fn __rsub__(self, other: Self) raises -> Self:
+        return decimojo.bigdecimal.arithmetics.subtract(other, self)
+
+    @always_inline
+    fn __rmul__(self, other: Self) raises -> Self:
+        return decimojo.bigdecimal.arithmetics.multiply(self, other)
+
+    @always_inline
+    fn __rfloordiv__(self, other: Self) raises -> Self:
+        return decimojo.bigdecimal.arithmetics.truncate_divide(other, self)
+
+    @always_inline
+    fn __rmod__(self, other: Self) raises -> Self:
+        return decimojo.bigdecimal.arithmetics.truncate_modulo(
+            other, self, precision=28
+        )
+
+    @always_inline
+    fn __rpow__(self, base: Self) raises -> Self:
+        return decimojo.bigdecimal.exponential.power(base, self, precision=28)
+
+    # ===------------------------------------------------------------------=== #
     # Basic binary augmented arithmetic assignments dunders
     # These methods are called to implement the binary augmented arithmetic
     # assignments
@@ -585,6 +609,10 @@ struct BigDecimal(
             )
         except e:
             return self
+
+    # ===------------------------------------------------------------------=== #
+    # Other dunders
+    # ===------------------------------------------------------------------=== #
 
     # ===------------------------------------------------------------------=== #
     # Mathematical methods that do not implement a trait (not a dunder)
