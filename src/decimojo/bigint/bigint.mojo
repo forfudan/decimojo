@@ -535,47 +535,31 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
 
     @always_inline
     fn __iadd__(mut self, other: Self) raises:
-        self = decimojo.bigint.arithmetics.add(self, other)
+        decimojo.bigint.arithmetics.add_inplace(self, other)
 
     @always_inline
     fn __iadd__(mut self, other: Int) raises:
-        self = decimojo.bigint.arithmetics.add(self, Self.from_int(other))
+        # Optimize the case `i += 1`
+        if other == 1:
+            self.magnitude.add_inplace_by_1()
+        else:
+            decimojo.bigint.arithmetics.add_inplace(self, other)
 
     @always_inline
     fn __isub__(mut self, other: Self) raises:
         self = decimojo.bigint.arithmetics.subtract(self, other)
 
     @always_inline
-    fn __isub__(mut self, other: Int) raises:
-        self = decimojo.bigint.arithmetics.subtract(self, Self.from_int(other))
-
-    @always_inline
     fn __imul__(mut self, other: Self) raises:
         self = decimojo.bigint.arithmetics.multiply(self, other)
-
-    @always_inline
-    fn __imul__(mut self, other: Int) raises:
-        self = decimojo.bigint.arithmetics.multiply(self, Self.from_int(other))
 
     @always_inline
     fn __ifloordiv__(mut self, other: Self) raises:
         self = decimojo.bigint.arithmetics.floor_divide(self, other)
 
     @always_inline
-    fn __ifloordiv__(mut self, other: Int) raises:
-        self = decimojo.bigint.arithmetics.floor_divide(
-            self, Self.from_int(other)
-        )
-
-    @always_inline
     fn __imod__(mut self, other: Self) raises:
         self = decimojo.bigint.arithmetics.floor_modulo(self, other)
-
-    @always_inline
-    fn __imod__(mut self, other: Int) raises:
-        self = decimojo.bigint.arithmetics.floor_modulo(
-            self, Self.from_int(other)
-        )
 
     # ===------------------------------------------------------------------=== #
     # Basic binary comparison operation dunders
