@@ -52,6 +52,22 @@ fn add(x1: BigInt, x2: BigInt) raises -> BigInt:
     return BigInt(magnitude^, sign=x1.sign)
 
 
+fn add_inplace(mut x1: BigInt, x2: BigInt) raises -> None:
+    """Increments a BigInt number by another BigInt number in place.
+
+    Args:
+        x1: The first BigInt operand.
+        x2: The second BigInt operand.
+    """
+
+    # If signs are different, delegate to `subtract`
+    if x1.sign != x2.sign:
+        x1 = subtract(x1, -x2)
+
+    # Same sign: add magnitudes in place
+    x1.magnitude += x2.magnitude
+
+
 fn subtract(x1: BigInt, x2: BigInt) raises -> BigInt:
     """Returns the difference of two numbers.
 

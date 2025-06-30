@@ -1,6 +1,85 @@
 # DeciMojo changelog
 
-This is a list of RELEASED changes for the DeciMojo Package. For the unreleased changes, please refer to **[changelog_unreleased](https://zhuyuhao.com/decimojo/docs/changelog_unreleased.html)**.
+This is a list of RELEASED changes for the DeciMojo Package.
+
+## 01/07/2025 (v0.4.1)
+
+Version 0.4.1 of DeciMojo introduces implicit type conversion between built-in integral types and arbitrary-precision types.
+
+### ⭐️ New
+
+Now DeciMojo supports implicit type conversion between built-in integeral types (`Int`, `UInt`, `Int8`, `UInt8`, `Int16`, `UInt16`, `Int32`, `UInt32`, `Int64`, `UInt64`, `Int128`,`UInt128`, `Int256`, and `UInt256`) and the arbitrary-precision integer types (`BigUInt`, `BigInt`, and `BigDecimal`). This allows you to use these built-in types directly in arithmetic operations with `BigInt` and `BigUInt` without explicit conversion. The merged type will always be the most compatible one (PR #89, PR #90).
+
+For example, you can now do the following:
+
+```mojo
+from decimojo.prelude import *
+
+fn main() raises:
+    var a = BInt(Int256(-1234567890))
+    var b = BigUInt(31415926)
+    var c = BDec("3.14159265358979323")
+
+    print("a =", a)
+    print("b =", b)
+    print("c =", c)
+
+    print(a * b)  # Merged to BInt
+    print(a + c)  # Merged to BDec
+    print(b + c)  # Merged to BDec
+    print(a * Int(-128))  # Merged to BInt
+    print(b * UInt(8))  # Merged to BUInt
+    print(c * Int256(987654321123456789))  # Merged to BDec
+
+    var lst = [a, b, c, UInt8(255), Int64(22222), UInt256(1234567890)]
+    # The list is of the type `List[BigDecimal]`
+    for i in lst:
+        print(i, end=", ")
+```
+
+Running the code will give your the following results:
+
+```console
+a = -1234567890
+b = 31415926
+c = 3.14159265358979323
+-38785093474216140
+-1234567886.85840734641020677
+31415929.14159265358979323
+158024689920
+251327408
+3102807559527666386.46423202534973847
+-1234567890, 31415926, 3.14159265358979323, 255, 22222, 1234567890,
+```
+
+### 🦋 Changed
+
+Optimize the case when you increase the value of a `BigInt` object in-place by 1, *i.e.*, `i += 1`. This allows you to iterate faster (PR #89). For example, we can compute the time taken to iterate from `0` to `1_000_000` using `BigInt` and compare it with the built-in `Int` type:
+
+```mojo
+from decimojo.prelude import *
+
+fn main() raises:
+    i = BigInt(0)
+    end = BigInt(1_000_000)
+    while i < end:
+        print(i)
+        i += 1
+```
+
+| scenario        | Time taken |
+| --------------- | ---------- |
+| v0.4.0 `BigInt` | 1.102s     |
+| v0.4.1 `BigInt` | 0.912s     |
+| Built-in `Int`  | 0.893s     |
+
+### 🛠️ Fixed
+
+Fix a bug in `BigDecimal` where it cannot create a correct value from a integral scalar, e.g., `BDec(UInt16(0))` returns an unitialized `BigDecimal` object (PR #89).
+
+### 📚 Documentation and testing
+
+Update the `tests` module and refactor the test files for `BigUInt` (PR #88).
 
 ## 25/06/2025 (v0.4.0)
 

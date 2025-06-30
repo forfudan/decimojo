@@ -20,9 +20,9 @@ DeciMojo provides an arbitrary-precision decimal and integer mathematics library
 
 The core types are:
 
-- A 128-bit fixed-point decimal implementation (`Decimal`) supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed]. It features a complete set of mathematical functions including logarithms, exponentiation, roots, etc.
-- An arbitrary-precision decimal implementation `BigDecimal` allowing for calculations with unlimited digits and decimal places[^arbitrary].
 - A base-10 arbitrary-precision signed integer type (`BigInt`) and a base-10 arbitrary-precision unsigned integer type (`BigUInt`) supporting unlimited digits[^integer]. It features comprehensive arithmetic operations, comparison functions, and supports extremely large integer calculations efficiently.
+- An arbitrary-precision decimal implementation `BigDecimal` allowing for calculations with unlimited digits and decimal places[^arbitrary].
+- A 128-bit fixed-point decimal implementation (`Decimal`) supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed]. It features a complete set of mathematical functions including logarithms, exponentiation, roots, etc.
 
 This repository includes [TOMLMojo](https://github.com/forfudan/decimojo/tree/main/src/tomlmojo), a lightweight TOML parser in pure Mojo. It parses configuration files and test data, supporting basic types, arrays, and nested tables. While created for DeciMojo's testing framework, it offers general-purpose structured data parsing with a clean, simple API.
 
@@ -39,7 +39,7 @@ DeciMojo is available in the [modular-community](https://repo.prefix.dev/modular
 
 From the `pixi` CLI, simply run ```pixi add decimojo```. This fetches the latest version and makes it immediately available for import.
 
-For projects with a `mojoproject.toml`file, add the dependency ```decimojo = "==0.4.0"```. Then run `pixi install` to download and install the package.
+For projects with a `mojoproject.toml`file, add the dependency ```decimojo = "==0.4.1"```. Then run `pixi install` to download and install the package.
 
 For the latest development version, clone the [GitHub repository](https://github.com/forfudan/decimojo) and build the package locally.
 
@@ -49,11 +49,11 @@ For the latest development version, clone the [GitHub repository](https://github
 | v0.2.0     | ==25.2        | magic           |
 | v0.3.0     | ==25.2        | magic           |
 | v0.3.1     | >=25.2, <25.4 | pixi            |
-| v0.4.0     | ==25.4        | pixi            |
+| v0.4.x     | ==25.4        | pixi            |
 
 ## Quick start
 
-Here are some examples showcasing the arbitrary-precision feature of the `BigDecimal` type.
+Here are some examples showcasing the arbitrary-precision feature of the `BigDecimal` type. Note that Mojo does not support global variables at the moment, so we need to pass the `precision` parameter explicitly to each function call. In future, we will add a global precision setting with the default value of, *e.g.*, `28`, to avoid passing it around.
 
 ```mojo
 from decimojo import BDec, RM
@@ -218,7 +218,7 @@ If you find DeciMojo useful for your research, consider listing it in your citat
     year         = {2025},
     title        = {An arbitrary-precision decimal and integer mathematics library for Mojo},
     url          = {https://github.com/forfudan/decimojo},
-    version      = {0.4.0},
+    version      = {0.4.1},
     note         = {Computer Software}
 }
 ```

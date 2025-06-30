@@ -150,6 +150,13 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
         self = Self.from_int(value)
 
     @implicit
+    fn __init__(out self, value: UInt):
+        """Initializes a BigInt from an `UInt` object.
+        See `from_uint()` for more information.
+        """
+        self = Self.from_uint(value)
+
+    @implicit
     fn __init__(out self, value: Scalar):
         """Constructs a BigInt from an integral scalar.
         This includes all SIMD integral types, such as Int8, Int16, UInt32, etc.
@@ -164,7 +171,6 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
     #
     # from_words(*words: UInt32, sign: Bool) -> Self
     # from_int(value: Int) -> Self
-    # from_uint128(value: UInt128, sign: Bool = False) -> Self
     # from_string(value: String) -> Self
     # ===------------------------------------------------------------------=== #
 
@@ -250,6 +256,11 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
             words[0] += 1
 
         return Self(BigUInt(words^), sign)
+
+    @staticmethod
+    fn from_uint(value: UInt) -> Self:
+        """Creates a BigInt from an unsignd integer."""
+        return Self(magnitude=BigUInt.from_uint(value), sign=False)
 
     @staticmethod
     fn from_integral_scalar[dtype: DType, //](value: SIMD[dtype, 1]) -> Self:
@@ -449,51 +460,23 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
         return decimojo.bigint.arithmetics.add(self, other)
 
     @always_inline
-    fn __add__(self, other: Int) raises -> Self:
-        return decimojo.bigint.arithmetics.add(self, Self.from_int(other))
-
-    @always_inline
     fn __sub__(self, other: Self) raises -> Self:
         return decimojo.bigint.arithmetics.subtract(self, other)
-
-    @always_inline
-    fn __sub__(self, other: Int) raises -> Self:
-        return decimojo.bigint.arithmetics.subtract(self, Self.from_int(other))
 
     @always_inline
     fn __mul__(self, other: Self) raises -> Self:
         return decimojo.bigint.arithmetics.multiply(self, other)
 
     @always_inline
-    fn __mul__(self, other: Int) raises -> Self:
-        return decimojo.bigint.arithmetics.multiply(self, Self.from_int(other))
-
-    @always_inline
     fn __floordiv__(self, other: Self) raises -> Self:
         return decimojo.bigint.arithmetics.floor_divide(self, other)
-
-    @always_inline
-    fn __floordiv__(self, other: Int) raises -> Self:
-        return decimojo.bigint.arithmetics.floor_divide(
-            self, Self.from_int(other)
-        )
 
     @always_inline
     fn __mod__(self, other: Self) raises -> Self:
         return decimojo.bigint.arithmetics.floor_modulo(self, other)
 
     @always_inline
-    fn __mod__(self, other: Int) raises -> Self:
-        return decimojo.bigint.arithmetics.floor_modulo(
-            self, Self.from_int(other)
-        )
-
-    @always_inline
     fn __pow__(self, exponent: Self) raises -> Self:
-        return self.power(exponent)
-
-    @always_inline
-    fn __pow__(self, exponent: Int) raises -> Self:
         return self.power(exponent)
 
     # ===------------------------------------------------------------------=== #
@@ -535,47 +518,31 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
 
     @always_inline
     fn __iadd__(mut self, other: Self) raises:
-        self = decimojo.bigint.arithmetics.add(self, other)
+        decimojo.bigint.arithmetics.add_inplace(self, other)
 
     @always_inline
     fn __iadd__(mut self, other: Int) raises:
-        self = decimojo.bigint.arithmetics.add(self, Self.from_int(other))
+        # Optimize the case `i += 1`
+        if other == 1:
+            self.magnitude.add_inplace_by_1()
+        else:
+            decimojo.bigint.arithmetics.add_inplace(self, other)
 
     @always_inline
     fn __isub__(mut self, other: Self) raises:
         self = decimojo.bigint.arithmetics.subtract(self, other)
 
     @always_inline
-    fn __isub__(mut self, other: Int) raises:
-        self = decimojo.bigint.arithmetics.subtract(self, Self.from_int(other))
-
-    @always_inline
     fn __imul__(mut self, other: Self) raises:
         self = decimojo.bigint.arithmetics.multiply(self, other)
-
-    @always_inline
-    fn __imul__(mut self, other: Int) raises:
-        self = decimojo.bigint.arithmetics.multiply(self, Self.from_int(other))
 
     @always_inline
     fn __ifloordiv__(mut self, other: Self) raises:
         self = decimojo.bigint.arithmetics.floor_divide(self, other)
 
     @always_inline
-    fn __ifloordiv__(mut self, other: Int) raises:
-        self = decimojo.bigint.arithmetics.floor_divide(
-            self, Self.from_int(other)
-        )
-
-    @always_inline
     fn __imod__(mut self, other: Self) raises:
         self = decimojo.bigint.arithmetics.floor_modulo(self, other)
-
-    @always_inline
-    fn __imod__(mut self, other: Int) raises:
-        self = decimojo.bigint.arithmetics.floor_modulo(
-            self, Self.from_int(other)
-        )
 
     # ===------------------------------------------------------------------=== #
     # Basic binary comparison operation dunders
