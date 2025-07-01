@@ -523,7 +523,7 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
     @always_inline
     fn __iadd__(mut self, other: Int) raises:
         # Optimize the case `i += 1`
-        if other == 1:
+        if (self >= 0) and (other == 1):
             self.magnitude.add_inplace_by_1()
         else:
             decimojo.bigint.arithmetics.add_inplace(self, other)
@@ -712,7 +712,7 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
     # Internal methods
     # ===------------------------------------------------------------------=== #
 
-    fn internal_representation(self) raises:
+    fn print_internal_representation(self) raises:
         """Prints the internal representation details of a BigInt."""
         var string_of_number = self.to_string(line_width=30).split("\n")
         print("\nInternal Representation Details of BigInt")

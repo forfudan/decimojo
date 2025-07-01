@@ -27,8 +27,8 @@ clean = "rm tests/decimojo.mojopkg && rm benches/decimojo.mojopkg && rm tests/to
 c = "clear && pixi run clean"
 
 # tests (use the mojo testing tool)
-test = "pixi run package && pixi run mojo test tests --filter"
-t = "clear && pixi run package && pixi run mojo test tests --filter"
+test = "pixi run package && pixi run mojo test tests -D ASSERT=all --filter"
+t = "clear && pixi run package && pixi run mojo test tests -D ASSERT=all --filter"
 
 # benches
 bench_decimal = "clear && pixi run package && cd benches/decimal && pixi run mojo -I ../ bench.mojo && cd ../.. && pixi run clean"

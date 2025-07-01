@@ -63,6 +63,8 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
 
     alias ZERO = Self.zero()
     alias ONE = Self.one()
+    alias MAX_UINT64 = Self(709551615, 446744073, 18)
+    alias MAX_UINT128 = Self(768211455, 374607431, 938463463, 282366920, 340)
 
     @always_inline
     @staticmethod
@@ -139,10 +141,17 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
 
     @implicit
     fn __init__(out self, value: UInt):
-        """Initializes a BigUInt from an Int.
+        """Initializes a BigUInt from an UInt.
         See `from_uint()` for more information.
         """
         self = Self.from_uint(value)
+
+    @implicit
+    fn __init__(out self, value: UInt32):
+        """Initializes a BigUInt from an UInt32.
+        See `from_uint32()` for more information.
+        """
+        self = Self.from_uint32(value)
 
     @implicit
     fn __init__(out self, value: Scalar):
@@ -163,7 +172,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     # from_list(owned words: List[UInt32]) -> Self
     # from_words(*words: UInt32) -> Self
     # from_int(value: Int) -> Self
-    # from_scalar[dtype: DType](value: Scalar[dtype]) -> Self
+    # from_unsigned_integral_scalar[dtype: DType](value: Scalar[dtype]) -> Self
     # from_string(value: String) -> Self
     # ===------------------------------------------------------------------=== #
 
@@ -269,6 +278,26 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         return Self(list_of_words^)
 
     @staticmethod
+    fn from_uint32(value: UInt32) -> Self:
+        """Creates a BigUInt from an `UInt32` object.
+
+        Notes:
+            UInt32 is special, so we have a separate method for it.
+        """
+        # One word is enough
+        if value <= 999_999_999:
+            return Self(words=List[UInt32](value))
+
+        # Two words are needed
+        else:
+            return Self(
+                words=List[UInt32](
+                    value % UInt32(1_000_000_000),
+                    value // UInt32(1_000_000_000),
+                )
+            )
+
+    @staticmethod
     fn from_unsigned_integral_scalar[
         dtype: DType, //
     ](value: SIMD[dtype, 1]) -> Self:
@@ -292,11 +321,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         ]()
 
         @parameter
-        if (
-            (dtype == DType.uint8)
-            or (dtype == DType.uint16)
-            or (dtype == DType.uint32)
-        ):
+        if (dtype == DType.uint8) or (dtype == DType.uint16):
             return Self(words=List[UInt32](UInt32(value)))
 
         if value == 0:
@@ -548,24 +573,137 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         Raises:
             Error: If the number is too large or too small to fit in Int.
         """
-
-        if len(self.words) > 3:
+        if self.is_uint64_overflow():
             raise Error(
-                "Error in `BigUInt.to_int()`: The number exceeds the size"
-                " of UInt64"
+                "`BigUInt.to_int()`: The number exceeds the size"
+                " of UInt64 (18446744073709551615)"
             )
 
-        var value: UInt128 = 0
-        for i in range(len(self.words)):
-            value += UInt128(self.words[i]) * UInt128(1_000_000_000) ** i
+        if len(self.words) == 1:
+            return self.words.data.load[width=1]().cast[DType.uint64]()
+        elif len(self.words) == 2:
+            return (
+                self.words.data.load[width=2]().cast[DType.uint64]()
+                * SIMD[DType.uint64, 2](1, 1_000_000_000)
+            ).reduce_add()
+        else:
+            return (
+                self.words.data.load[width=4]().cast[DType.uint64]()
+                * SIMD[DType.uint64, 4](
+                    1,
+                    1_000_000_000,
+                    1_000_000_000_000_000_000,
+                    0,
+                )
+            ).reduce_add()
 
-        if value > UInt128(UInt64.MAX):
-            raise Error(
-                "Error in `BigUInt.to_uint64()`: The number exceeds the size"
-                " of UInt64"
-            )
+    fn to_uint64_with_first_2_words(self) -> UInt64:
+        """Convert the first two words of the BigUInt to UInt64.
 
-        return UInt64(value)
+        Notes:
+            This method quickly convert BigUInt with 2 words into UInt64.
+        """
+        if len(self.words) == 1:
+            return self.words.data.load[width=1]().cast[DType.uint64]()
+        else:  # len(self.words) == 2
+            return (
+                self.words.data.load[width=2]().cast[DType.uint64]()
+                * SIMD[DType.uint64, 2](1, 1_000_000_000)
+            ).reduce_add()
+
+    fn to_uint128(self) -> UInt128:
+        """Returns the number as UInt128.
+        **UNSAFE** You need to ensure that the number of words is less than 5.
+
+        Returns:
+            The number as UInt128.
+        """
+
+        # FIXME: Due to an unknown bug in Mojo,
+        # The returned value changed in the caller when we use raises
+        # So I have to comment out the raises part
+        # In the future, we need to fix this bug and add raises back
+        #
+        # if self.is_uint128_overflow():
+        #     raise Error(
+        #         "`BigUInt.to_int()`: The number exceeds the size"
+        #         " of UInt128 (340282366920938463463374607431768211455)"
+        #     )
+
+        var result: UInt128 = 0
+
+        if len(self.words) == 1:
+            result = self.words.data.load[width=1]().cast[DType.uint128]()
+        elif len(self.words) == 2:
+            result = (
+                self.words.data.load[width=2]().cast[DType.uint128]()
+                * SIMD[DType.uint128, 2](1, 1_000_000_000)
+            ).reduce_add()
+        elif len(self.words) == 3:
+            result = (
+                self.words.data.load[width=4]().cast[DType.uint128]()
+                * SIMD[DType.uint128, 4](
+                    1, 1_000_000_000, 1_000_000_000_000_000_000, 0
+                )
+            ).reduce_add()
+        elif len(self.words) == 4:
+            result = (
+                self.words.data.load[width=4]().cast[DType.uint128]()
+                * SIMD[DType.uint128, 4](
+                    1,
+                    1_000_000_000,
+                    1_000_000_000_000_000_000,
+                    1_000_000_000_000_000_000_000_000_000,
+                )
+            ).reduce_add()
+        else:
+            result = (
+                self.words.data.load[width=8]().cast[DType.uint128]()
+                * SIMD[DType.uint128, 8](
+                    1,
+                    1_000_000_000,
+                    1_000_000_000_000_000_000,
+                    1_000_000_000_000_000_000_000_000_000,
+                    1_000_000_000_000_000_000_000_000_000_000_000_000,
+                    0,
+                    0,
+                    0,
+                )
+            ).reduce_add()
+
+        return result
+
+    fn to_uint128_with_first_4_words(self) -> UInt128:
+        """Convert the first four words of the BigUInt to UInt128.
+
+        Notes:
+            This method quickly convert BigUInt with 4 words into UInt128.
+        """
+
+        if len(self.words) == 1:
+            return self.words.data.load[width=1]().cast[DType.uint128]()
+        elif len(self.words) == 2:
+            return (
+                self.words.data.load[width=2]().cast[DType.uint128]()
+                * SIMD[DType.uint128, 2](1, 1_000_000_000)
+            ).reduce_add()
+        elif len(self.words) == 3:
+            return (
+                self.words.data.load[width=4]().cast[DType.uint128]()
+                * SIMD[DType.uint128, 4](
+                    1, 1_000_000_000, 1_000_000_000_000_000_000, 0
+                )
+            ).reduce_add()
+        else:  # len(self.words) == 4
+            return (
+                self.words.data.load[width=4]().cast[DType.uint128]()
+                * SIMD[DType.uint128, 4](
+                    1,
+                    1_000_000_000,
+                    1_000_000_000_000_000_000,
+                    1_000_000_000_000_000_000_000_000_000,
+                )
+            ).reduce_add()
 
     fn to_string(self, line_width: Int = 0) -> String:
         """Returns string representation of the BigUInt.
@@ -628,6 +766,10 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         result = separator.join(blocks)
 
         return result^
+
+    # ===------------------------------------------------------------------=== #
+    # Type-conversion methods that are unsafe
+    # ===------------------------------------------------------------------=== #
 
     # ===------------------------------------------------------------------=== #
     # Basic unary operation dunders
@@ -811,6 +953,14 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     # ===------------------------------------------------------------------=== #
 
     @always_inline
+    fn add_inplace(mut self, other: Self) raises:
+        """Adds `other` to this number in place.
+        It is equal to `self += other`.
+        See `add_inplace()` for more information.
+        """
+        decimojo.biguint.arithmetics.add_inplace(self, other)
+
+    @always_inline
     fn add_inplace_by_1(mut self) raises:
         """Adds 1 to this number in place.
         It is equal to `self += 1`.
@@ -943,7 +1093,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     # Other methods
     # ===------------------------------------------------------------------=== #
 
-    fn internal_representation(self) raises:
+    fn print_internal_representation(self) raises:
         """Prints the internal representation details of a BigUInt."""
         var string_of_number = self.to_string(line_width=30).split("\n")
         print("\nInternal Representation Details of BigUInt")
@@ -1008,6 +1158,54 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     fn is_unitialized(self) -> Bool:
         """Returns True if the BigUInt is uninitialized."""
         return len(self.words) == 0
+
+    @always_inline
+    fn is_uint64_overflow(self) -> Bool:
+        """Returns True if the BigUInt larger than UInt64.MAX."""
+        # UInt64.MAX:     18_446_744_073_709_551_615
+        # word 0:         709551615
+        # word 1:         446744073
+        # word 2:         18
+        if len(self.words) > 3:
+            return True
+        elif len(self.words) == 3:
+            if self.words[2] > UInt32(18):
+                return True
+            elif self.words[2] == 18:
+                if self.words[1] > UInt32(446744073):
+                    return True
+                elif self.words[1] == UInt32(446744073):
+                    if self.words[0] > UInt32(709551615):
+                        return True
+        return False
+
+    @always_inline
+    fn is_uint128_overflow(self) -> Bool:
+        """Returns True if the BigUInt larger than UInt128.MAX."""
+        # UInt128.MAX:    340_282_366_920_938_463_463_374_607_431_768_211_455
+        # word 0:         768211455
+        # word 1:         374607431
+        # word 2:         938463463
+        # word 3:         282366920
+        # word 4:         340
+        if len(self.words) > 5:
+            return True
+        elif len(self.words) == 4:
+            if self.words[4] > UInt32(340):
+                return True
+            elif self.words[4] == UInt32(340):
+                if self.words[3] > UInt32(282366920):
+                    return True
+                elif self.words[3] == UInt32(282366920):
+                    if self.words[2] > UInt32(938463463):
+                        return True
+                    elif self.words[2] == UInt32(938463463):
+                        if self.words[1] > UInt32(374607431):
+                            return True
+                        elif self.words[1] == UInt32(374607431):
+                            if self.words[0] > UInt32(768211455):
+                                return True
+        return False
 
     @always_inline
     fn ith_digit(self, i: Int) raises -> UInt8:

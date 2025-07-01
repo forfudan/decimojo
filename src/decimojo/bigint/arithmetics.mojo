@@ -63,9 +63,11 @@ fn add_inplace(mut x1: BigInt, x2: BigInt) raises -> None:
     # If signs are different, delegate to `subtract`
     if x1.sign != x2.sign:
         x1 = subtract(x1, -x2)
+        return
 
     # Same sign: add magnitudes in place
-    x1.magnitude += x2.magnitude
+    else:
+        x1.magnitude += x2.magnitude
 
 
 fn subtract(x1: BigInt, x2: BigInt) raises -> BigInt:
