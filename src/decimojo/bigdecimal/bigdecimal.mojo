@@ -829,7 +829,7 @@ struct BigDecimal(
         )
 
     @always_inline
-    fn internal_representation(self) raises:
+    fn print_internal_representation(self) raises:
         """Prints the internal representation of the BigDecimal."""
         var line_width = 30
         var string_of_number = self.to_string(line_width=line_width).split("\n")

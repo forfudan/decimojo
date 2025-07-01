@@ -1574,7 +1574,7 @@ struct Decimal(
 
         return result
 
-    fn internal_representation(self):
+    fn print_internal_representation(self):
         """Prints the internal representation details of a Decimal."""
         print("\nInternal Representation Details:")
         print("--------------------------------")

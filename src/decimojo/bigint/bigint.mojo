@@ -712,7 +712,7 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
     # Internal methods
     # ===------------------------------------------------------------------=== #
 
-    fn internal_representation(self) raises:
+    fn print_internal_representation(self) raises:
         """Prints the internal representation details of a BigInt."""
         var string_of_number = self.to_string(line_width=30).split("\n")
         print("\nInternal Representation Details of BigInt")
