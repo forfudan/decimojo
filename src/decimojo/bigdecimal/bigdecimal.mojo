@@ -122,13 +122,26 @@ struct BigDecimal(
         self = Self.from_uint(value)
 
     @implicit
-    fn __init__(out self, value: Scalar):
+    fn __init__[dtype: DType, //](out self, value: SIMD[dtype, 1]):
         """Constructs a BigDecimal from an integral scalar.
         This includes all SIMD integral types, such as Int8, Int16, UInt32, etc.
 
         Constraints:
             The dtype of the scalar must be integral.
         """
+        constrained[
+            dtype.is_integral(),
+            (
+                "\n***********************************************************\n"
+                "BigDecimal does not allow floating-point numbers as input to"
+                " avoid unintentional loss of precision. If you want to create"
+                " a BigDecimal from a floating-point number, please explicitly"
+                " use the `BigDecimal.from_float()` (or `BDec.from_float()`)"
+                " method instead."
+                "\n***********************************************************"
+            ),
+        ]()
+
         self = Self.from_integral_scalar(value)
 
     # ===------------------------------------------------------------------=== #
