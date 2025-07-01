@@ -69,37 +69,25 @@ fn add(x1: BigUInt, x2: BigUInt) -> BigUInt:
     Returns:
         The sum of the two unsigned integers.
     """
-    # Short circuit cases
-    if len(x1.words) == 1:
-        if x1.is_zero():
-            return x2
-        elif x1.is_one():
-            # Optimized case for adding 1
-            var result = x2
-            add_inplace_by_1(result)
-            return result^
-        elif len(x2.words) == 1:
-            var value = x1.words[0] + x2.words[0]
-            if value <= 999_999_999:
-                return BigUInt(List[UInt32](value))
-            else:
-                return BigUInt(
-                    List[UInt32](
-                        value % UInt32(1_000_000_000),
-                        value // UInt32(1_000_000_000),
-                    )
-                )
-        else:
-            pass
 
-    if len(x2.words) == 1:
-        if x2.words[0] == 0:
-            return x1
-        elif x2.words[0] == 1:
-            # Optimized case for adding 1
-            var result = x1
-            add_inplace_by_1(result)
-            return result^
+    # Short circuit cases
+    # Zero cases
+    if x1.is_zero():
+        return x2
+
+    if x2.is_zero():
+        return x1
+
+    # If both numbers are single-word, we can handle them with UInt32
+    if len(x1.words) == 1 and len(x2.words) == 1:
+        return BigUInt.from_uint32(x1.words[0] + x2.words[0])
+
+    # If both numbers are double-word, we can handle them with UInt64
+    if len(x1.words) <= 2 and len(x2.words) <= 2:
+        return BigUInt.from_unsigned_integral_scalar(
+            x1.to_uint64_with_first_2_words()
+            + x2.to_uint64_with_first_2_words()
+        )
 
     # Normal cases
     # The result will have at most one more word than the longer operand

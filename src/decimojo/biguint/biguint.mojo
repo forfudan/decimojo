@@ -141,10 +141,17 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
 
     @implicit
     fn __init__(out self, value: UInt):
-        """Initializes a BigUInt from an Int.
+        """Initializes a BigUInt from an UInt.
         See `from_uint()` for more information.
         """
         self = Self.from_uint(value)
+
+    @implicit
+    fn __init__(out self, value: UInt32):
+        """Initializes a BigUInt from an UInt32.
+        See `from_uint32()` for more information.
+        """
+        self = Self.from_uint32(value)
 
     @implicit
     fn __init__(out self, value: Scalar):
@@ -271,6 +278,26 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         return Self(list_of_words^)
 
     @staticmethod
+    fn from_uint32(value: UInt32) -> Self:
+        """Creates a BigUInt from an `UInt32` object.
+
+        Notes:
+            UInt32 is special, so we have a separate method for it.
+        """
+        # One word is enough
+        if value <= 999_999_999:
+            return Self(words=List[UInt32](value))
+
+        # Two words are needed
+        else:
+            return Self(
+                words=List[UInt32](
+                    value % UInt32(1_000_000_000),
+                    value // UInt32(1_000_000_000),
+                )
+            )
+
+    @staticmethod
     fn from_unsigned_integral_scalar[
         dtype: DType, //
     ](value: SIMD[dtype, 1]) -> Self:
@@ -294,11 +321,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         ]()
 
         @parameter
-        if (
-            (dtype == DType.uint8)
-            or (dtype == DType.uint16)
-            or (dtype == DType.uint32)
-        ):
+        if (dtype == DType.uint8) or (dtype == DType.uint16):
             return Self(words=List[UInt32](UInt32(value)))
 
         if value == 0:
