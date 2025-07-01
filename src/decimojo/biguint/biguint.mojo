@@ -163,7 +163,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     # from_list(owned words: List[UInt32]) -> Self
     # from_words(*words: UInt32) -> Self
     # from_int(value: Int) -> Self
-    # from_scalar[dtype: DType](value: Scalar[dtype]) -> Self
+    # from_unsigned_integral_scalar[dtype: DType](value: Scalar[dtype]) -> Self
     # from_string(value: String) -> Self
     # ===------------------------------------------------------------------=== #
 

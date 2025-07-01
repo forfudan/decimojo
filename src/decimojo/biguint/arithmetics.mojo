@@ -92,13 +92,14 @@ fn add(x1: BigUInt, x2: BigUInt) -> BigUInt:
         else:
             pass
 
-    if x2.is_zero():
-        return x1
-    if x2.is_one():
-        # Optimized case for adding 1
-        var result = x1
-        add_inplace_by_1(result)
-        return result^
+    if len(x2.words) == 1:
+        if x2.words[0] == 0:
+            return x1
+        elif x2.words[0] == 1:
+            # Optimized case for adding 1
+            var result = x1
+            add_inplace_by_1(result)
+            return result^
 
     # Normal cases
     # The result will have at most one more word than the longer operand
@@ -158,12 +159,13 @@ fn add_inplace(mut x1: BigUInt, x2: BigUInt) -> None:
         else:
             pass
 
-    elif x2.is_zero():
-        return
-    elif x2.is_one():
-        # Optimized case for adding 1
-        add_inplace_by_1(x1)
-        return
+    if len(x2.words) == 1:
+        if x2.words[0] == 0:
+            return  # No change needed
+        elif x2.words[0] == 1:
+            # Optimized case for adding 1
+            add_inplace_by_1(x1)
+            return
 
     # Normal cases
     if len(x1.words) < len(x2.words):

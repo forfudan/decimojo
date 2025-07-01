@@ -29,6 +29,19 @@ fn test_biguint_arithmetics() raises:
     print("BigUInt addition tests passed!")
 
     print("------------------------------------------------------")
+    print("Testing BigUInt inplace addition...")
+    test_cases = load_test_cases(toml, "addition_tests")
+    for test_case in test_cases:
+        var result = BigUInt(test_case.a)
+        result += BigUInt(test_case.b)
+        testing.assert_equal(
+            lhs=String(result),
+            rhs=test_case.expected,
+            msg=test_case.description,
+        )
+    print("BigUInt addition tests passed!")
+
+    print("------------------------------------------------------")
     print("Testing BigUInt subtraction...")
     test_cases = load_test_cases(toml, "subtraction_tests")
     for test_case in test_cases:
@@ -38,19 +51,6 @@ fn test_biguint_arithmetics() raises:
             rhs=test_case.expected,
             msg=test_case.description,
         )
-
-    # Special case: Test underflow handling
-    print("Testing underflow behavior (smaller - larger)...")
-    test_cases = load_test_cases(toml, "subtraction_underflow")
-    for test_case in test_cases:
-        try:
-            var result = BigUInt(test_case.a) - BigUInt(test_case.b)
-            print(
-                "Implementation allows underflow, result is: " + String(result)
-            )
-        except:
-            print("Implementation correctly throws error on underflow")
-    print("BigUInt subtraction tests passed!")
 
     print("------------------------------------------------------")
     print("Testing BigUInt multiplication...")
@@ -65,6 +65,19 @@ fn test_biguint_arithmetics() raises:
             msg=test_case.description,
         )
     print("BigUInt multiplication tests passed!")
+
+    # Special case: Test underflow handling
+    print("Testing underflow behavior (smaller - larger)...")
+    test_cases = load_test_cases(toml, "subtraction_underflow")
+    for test_case in test_cases:
+        try:
+            var result = BigUInt(test_case.a) - BigUInt(test_case.b)
+            print(
+                "Implementation allows underflow, result is: " + String(result)
+            )
+        except:
+            print("Implementation correctly throws error on underflow")
+    print("BigUInt subtraction tests passed!")
 
 
 fn main() raises:
