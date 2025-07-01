@@ -811,6 +811,14 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     # ===------------------------------------------------------------------=== #
 
     @always_inline
+    fn add_inplace(mut self, other: Self) raises:
+        """Adds `other` to this number in place.
+        It is equal to `self += other`.
+        See `add_inplace()` for more information.
+        """
+        decimojo.biguint.arithmetics.add_inplace(self, other)
+
+    @always_inline
     fn add_inplace_by_1(mut self) raises:
         """Adds 1 to this number in place.
         It is equal to `self += 1`.

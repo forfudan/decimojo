@@ -133,7 +133,7 @@ fn run_benchmark(
         mojo_time = 1  # Prevent division by zero
 
     # Benchmark Python implementation (if possible)
-    var python_time: Float64 = 0
+    var python_time: Float64
     if not is_negative_odd_root and not (
         py_result is Python.evaluate("None")
     ):  # Correct way to check for None
