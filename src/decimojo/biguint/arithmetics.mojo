@@ -69,7 +69,9 @@ fn add(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     Returns:
         The sum of the two unsigned integers.
     """
+    # ===------------------------------------------------------------------=== #
     # Short circuit cases
+    # ===------------------------------------------------------------------=== #
     if len(x1.words) == 1:
         if x1.is_zero():
             return x2
@@ -98,6 +100,9 @@ fn add(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
             add_inplace_by_1(result)
             return result^
 
+    # ===------------------------------------------------------------------=== #
+    # Normal cases
+    # ===------------------------------------------------------------------=== #
     # The result will have at most one more word than the longer operand
     var words = List[UInt32](capacity=max(len(x1.words), len(x2.words)) + 1)
 
@@ -118,8 +123,8 @@ fn add(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
             sum_of_words += x2.words[ith]
 
         # Compute new word and carry
-        carry = UInt32(sum_of_words // 1_000_000_000)
-        words.append(UInt32(sum_of_words % 1_000_000_000))
+        carry = sum_of_words // UInt32(1_000_000_000)
+        words.append(sum_of_words % UInt32(1_000_000_000))
 
         ith += 1
 
