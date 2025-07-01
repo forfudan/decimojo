@@ -523,7 +523,7 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
     @always_inline
     fn __iadd__(mut self, other: Int) raises:
         # Optimize the case `i += 1`
-        if other == 1:
+        if (self >= 0) and (other == 1):
             self.magnitude.add_inplace_by_1()
         else:
             decimojo.bigint.arithmetics.add_inplace(self, other)

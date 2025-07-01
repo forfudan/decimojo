@@ -59,7 +59,7 @@ from decimojo.rounding_mode import RoundingMode
 # ===----------------------------------------------------------------------=== #
 
 
-fn add(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+fn add(x1: BigUInt, x2: BigUInt) -> BigUInt:
     """Returns the sum of two unsigned integers.
 
     Args:
@@ -69,18 +69,16 @@ fn add(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     Returns:
         The sum of the two unsigned integers.
     """
-    # ===------------------------------------------------------------------=== #
     # Short circuit cases
-    # ===------------------------------------------------------------------=== #
     if len(x1.words) == 1:
         if x1.is_zero():
             return x2
-        if x1.is_one():
+        elif x1.is_one():
             # Optimized case for adding 1
             var result = x2
             add_inplace_by_1(result)
             return result^
-        if len(x2.words) == 1:
+        elif len(x2.words) == 1:
             var value = x1.words[0] + x2.words[0]
             if value <= 999_999_999:
                 return BigUInt(List[UInt32](value))
@@ -91,18 +89,18 @@ fn add(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
                         value // UInt32(1_000_000_000),
                     )
                 )
-    if len(x2.words) == 1:
-        if x2.is_zero():
-            return x1
-        if x2.is_one():
-            # Optimized case for adding 1
-            var result = x1
-            add_inplace_by_1(result)
-            return result^
+        else:
+            pass
 
-    # ===------------------------------------------------------------------=== #
+    if x2.is_zero():
+        return x1
+    if x2.is_one():
+        # Optimized case for adding 1
+        var result = x1
+        add_inplace_by_1(result)
+        return result^
+
     # Normal cases
-    # ===------------------------------------------------------------------=== #
     # The result will have at most one more word than the longer operand
     var words = List[UInt32](capacity=max(len(x1.words), len(x2.words)) + 1)
 
@@ -135,7 +133,7 @@ fn add(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     return BigUInt(words=words^)
 
 
-fn add_inplace(mut x1: BigUInt, x2: BigUInt) raises -> None:
+fn add_inplace(mut x1: BigUInt, x2: BigUInt) -> None:
     """Increments a BigUInt number by another BigUInt number in place.
 
     Args:
@@ -157,38 +155,29 @@ fn add_inplace(mut x1: BigUInt, x2: BigUInt) raises -> None:
                 x1.words[0] = value % UInt32(1_000_000_000)
                 x1.words.append(value // UInt32(1_000_000_000))
                 return
-    if len(x2.words) == 1:
-        if x2.is_zero():
-            return
-        if x2.is_one():
-            # Optimized case for adding 1
-            add_inplace_by_1(x1)
-            return
+        else:
+            pass
+
+    elif x2.is_zero():
+        return
+    elif x2.is_one():
+        # Optimized case for adding 1
+        add_inplace_by_1(x1)
+        return
+
+    # Normal cases
+    if len(x1.words) < len(x2.words):
+        x1.words.resize(new_size=len(x2.words), value=UInt32(0))
 
     var carry: UInt32 = 0
-    var ith: Int = 0
-    var sum_of_words: UInt32
-    var x1_len = len(x1.words)
 
-    while ith < x1_len or ith < len(x2.words):
-        sum_of_words = carry
-
-        # Add x1's word if available
-        if ith < len(x1.words):
-            sum_of_words += x1.words[ith]
-
-        # Add x2's word if available
-        if ith < len(x2.words):
-            sum_of_words += x2.words[ith]
-
-        # Compute new word and carry
-        carry = UInt32(sum_of_words // 1_000_000_000)
-        if ith < len(x1.words):
-            x1.words[ith] = UInt32(sum_of_words % 1_000_000_000)
+    for i in range(len(x1.words)):
+        if i < len(x2.words):
+            x1.words[i] += carry + x2.words[i]
         else:
-            x1.words.append(UInt32(sum_of_words % 1_000_000_000))
-
-        ith += 1
+            x1.words[i] += carry
+        carry = x1.words[i] // UInt32(1_000_000_000)
+        x1.words[i] %= UInt32(1_000_000_000)
 
     # Handle final carry if it exists
     if carry > 0:
@@ -197,7 +186,7 @@ fn add_inplace(mut x1: BigUInt, x2: BigUInt) raises -> None:
     return
 
 
-fn add_inplace_by_1(mut x: BigUInt) raises -> None:
+fn add_inplace_by_1(mut x: BigUInt) -> None:
     """Increments a BigUInt number by 1."""
     var i = 0
     while i < len(x.words):
