@@ -30,4 +30,11 @@ from decimojo.decimal.decimal import Decimal, Dec
 from decimojo.bigdecimal.bigdecimal import BigDecimal, BDec
 from decimojo.biguint.biguint import BigUInt, BUInt
 from decimojo.bigint.bigint import BigInt, BInt
-from decimojo.rounding_mode import RoundingMode, RM
+from decimojo.rounding_mode import (
+    RoundingMode,
+    RM,
+    ROUND_DOWN,
+    ROUND_HALF_UP,
+    ROUND_HALF_EVEN,
+    ROUND_UP,
+)
