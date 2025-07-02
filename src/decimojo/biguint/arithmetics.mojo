@@ -198,6 +198,9 @@ fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         x1: The first unsigned integer (minuend).
         x2: The second unsigned integer (subtrahend).
 
+    Raises:
+        Error: If x2 is greater than x1, resulting in an underflow.
+
     Returns:
         The result of subtracting x2 from x1.
     """
@@ -206,7 +209,7 @@ fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         return x1
     if x1.is_zero():
         # x2 is not zero, so the result is negative, raise an error
-        raise Error("Error in `subtract`: Underflow due to x1 < x2")
+        raise Error("biguint.arithmetics.subtract(): Underflow due to x1 < x2")
 
     # We need to determine which number has the larger magnitude
     var comparison_result = x1.compare(x2)
@@ -216,7 +219,7 @@ fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         return BigUInt()  # Return zero
 
     if comparison_result < 0:
-        raise Error("Error in `subtract`: Underflow due to x1 < x2")
+        raise Error("biguint.arithmetics.subtract(): Underflow due to x1 < x2")
 
     # Now it is safe to subtract the smaller number from the larger one
     # The result will have no more words than the larger operand
@@ -251,13 +254,16 @@ fn negative(x: BigUInt) raises -> BigUInt:
     Args:
         x: The BigUInt value to compute the negative of.
 
+    Raises:
+        Error: If x is not zero, as negative of non-zero unsigned integer is undefined.
+
     Returns:
         A new BigUInt containing the negative of x.
     """
     if not x.is_zero():
         raise Error(
-            "Error in `negative`: Negative of non-zero unsigned integer is"
-            " undefined"
+            "biguint.arithmetics.negative(): Negative of non-zero unsigned"
+            " integer is undefined"
         )
     return BigUInt()  # Return zero
 
@@ -274,7 +280,7 @@ fn absolute(x: BigUInt) -> BigUInt:
     return x
 
 
-fn multiply(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+fn multiply(x1: BigUInt, x2: BigUInt) -> BigUInt:
     """Returns the product of two BigUInt numbers.
 
     Args:
@@ -359,7 +365,7 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     if len(x2.words) == 1:
         # SUB-CASE: Division by zero
         if x2.words[0] == 0:
-            raise Error("Error in `truncate_divide`: Division by zero")
+            raise Error("biguint.arithmetics.floor_divide(): Division by zero")
 
         # SUB-CASE: Division by one
         if x2.words[0] == 1:
@@ -488,7 +494,7 @@ fn ceil_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
     # CASE: Division by zero
     if x2.is_zero():
-        raise Error("Error in `ceil_divide`: Division by zero")
+        raise Error("biguint.arithmetics.ceil_divide(): Division by zero")
 
     # Apply floor division and check if there is a remainder
     var quotient = floor_divide(x1, x2)
@@ -850,10 +856,14 @@ fn floor_divide_inplace_by_double_words(
     Args:
         x1: The BigUInt value to divide by the divisor.
         x2: The double-word divisor.
+
+    Raises:
+        Error: If the divisor is zero.
     """
     if x2.is_zero():
         raise Error(
-            "Error in `floor_divide_inplace_by_double_words`: Division by zero"
+            "biguint.arithmetics.floor_divide_inplace_by_double_words():"
+            " Division by zero"
         )
 
     # CASE: all other situations
@@ -911,12 +921,16 @@ fn scale_down_by_power_of_10(x: BigUInt, n: Int) raises -> BigUInt:
         x: The BigUInt value to multiply.
         n: The power of 10 to multiply by.
 
+    Raises:
+        Error: If n is negative.
+
     Returns:
         A new BigUInt containing the result of the multiplication.
     """
     if n < 0:
         raise Error(
-            "Error in `scale_down_by_power_of_10`: n must be non-negative"
+            "biguint.arithmetics.scale_down_by_power_of_10(): "
+            "n must be non-negative"
         )
     if n == 0:
         return x
@@ -1038,7 +1052,9 @@ fn shift_words_left(num: BigUInt, positions: Int) -> BigUInt:
 fn power_of_10(n: Int) raises -> BigUInt:
     """Calculates 10^n efficiently."""
     if n < 0:
-        raise Error("Error in `power_of_10`: Negative exponent not supported")
+        raise Error(
+            "biguint.arithmetics.power_of_10(): Negative exponent not supported"
+        )
 
     if n == 0:
         return BigUInt(1)

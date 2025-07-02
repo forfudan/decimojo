@@ -136,8 +136,18 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     fn __init__(out self, value: Int) raises:
         """Initializes a BigUInt from an Int.
         See `from_int()` for more information.
+
+        Raises:
+            Error: Calling `BigUInt.from_int()`.
         """
-        self = Self.from_int(value)
+        try:
+            self = Self.from_int(value)
+        except e:
+            raise Error(
+                "`BigUInt.__init__()`: Error calling"
+                " `BigUInt.from_int()`.\nTrace back:"
+                + String(e)
+            )
 
     @implicit
     fn __init__(out self, value: UInt):
@@ -245,7 +255,12 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
             return Self()
 
         if value < 0:
-            raise Error("Error in `BigUInt.from_int()`: The value is negative")
+            raise Error(
+                "`BigUInt.from_int()`: The input value ",
+                value,
+                " is negative and is not compatible with BigUInt.",
+                sep="",
+            )
 
         var list_of_words = List[UInt32]()
         var remainder: Int = value
@@ -806,7 +821,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn __add__(self, other: Self) raises -> Self:
+    fn __add__(self, other: Self) -> Self:
         return decimojo.biguint.arithmetics.add(self, other)
 
     @always_inline
@@ -814,7 +829,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         return decimojo.biguint.arithmetics.subtract(self, other)
 
     @always_inline
-    fn __mul__(self, other: Self) raises -> Self:
+    fn __mul__(self, other: Self) -> Self:
         return decimojo.biguint.arithmetics.multiply(self, other)
 
     @always_inline

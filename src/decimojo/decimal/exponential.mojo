@@ -448,10 +448,19 @@ fn exp(x: Decimal) raises -> Decimal:
     Returns:
         A Decimal approximation of e^x.
 
+    Raises:
+        Error: If x is greater than 66.54.
+
     Notes:
         Because ln(2^96-1) ~= 66.54212933375474970405428366,
         the x value should be no greater than 66 to avoid overflow.
     """
+
+    if x > Decimal.from_int(value=6654, scale=UInt32(2)):
+        raise Error(
+            "decimal.exponential.exp(): x is too large. It must be no greater"
+            " than 66.54 to avoid overflow. Consider using `BigDecimal` type."
+        )
 
     # Handle special cases
     if x.is_zero():

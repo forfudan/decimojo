@@ -162,7 +162,7 @@ fn subtract(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
         return BigDecimal(coefficient=BigUInt.ZERO, scale=max_scale, sign=False)
 
 
-fn multiply(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
+fn multiply(x1: BigDecimal, x2: BigDecimal) -> BigDecimal:
     """Returns the product of two numbers.
 
     Args:
