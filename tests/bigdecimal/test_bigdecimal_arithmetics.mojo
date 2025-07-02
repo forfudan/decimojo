@@ -4,6 +4,7 @@ Test BigDecimal arithmetic operations including:
 1. addition
 2. subtraction
 3. multiplication
+4. division
 """
 
 from python import Python
@@ -24,6 +25,7 @@ fn test_bigdecimal_arithmetics() raises:
 
     print("------------------------------------------------------")
     print("Testing BigDecimal addition...")
+    print("------------------------------------------------------")
 
     test_cases = load_test_cases(toml, "addition_tests")
     for test_case in test_cases:
@@ -48,10 +50,9 @@ fn test_bigdecimal_arithmetics() raises:
                 ),
             )
 
-    print("BigUInt addition tests passed!")
-
     print("------------------------------------------------------")
     print("Testing BigDecimal subtraction...")
+    print("------------------------------------------------------")
 
     test_cases = load_test_cases(toml, "subtraction_tests")
     for test_case in test_cases:
@@ -76,10 +77,9 @@ fn test_bigdecimal_arithmetics() raises:
                 ),
             )
 
-    print("BigUInt subtraction tests passed!")
-
     print("------------------------------------------------------")
     print("Testing BigDecimal multiplication...")
+    print("------------------------------------------------------")
 
     test_cases = load_test_cases(toml, "multiplication_tests")
     for test_case in test_cases:
@@ -104,7 +104,32 @@ fn test_bigdecimal_arithmetics() raises:
                 ),
             )
 
-    print("BigUInt multiplication tests passed!")
+    print("------------------------------------------------------")
+    print("Testing BigDecimal division...")
+    print("------------------------------------------------------")
+
+    test_cases = load_test_cases(toml, "division_tests")
+    for test_case in test_cases:
+        var result = BDec(test_case.a) / BDec(test_case.b)
+        try:
+            testing.assert_equal(
+                lhs=String(result),
+                rhs=test_case.expected,
+                msg=test_case.description,
+            )
+        except e:
+            print(
+                test_case.description,
+                "\n  Expected:",
+                test_case.expected,
+                "\n  Got:",
+                String(result),
+                "\n  Python decimal result (for reference):",
+                String(
+                    pydecimal.Decimal(test_case.a)
+                    / pydecimal.Decimal(test_case.b)
+                ),
+            )
 
 
 fn main() raises:
