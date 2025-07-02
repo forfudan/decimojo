@@ -135,9 +135,10 @@ struct BigDecimal(
                 "\n***********************************************************\n"
                 "BigDecimal does not allow floating-point numbers as input to"
                 " avoid unintentional loss of precision. If you want to create"
-                " a BigDecimal from a floating-point number, please explicitly"
-                " use the `BigDecimal.from_float()` (or `BDec.from_float()`)"
-                " method instead."
+                " a BigDecimal from a floating-point number, please consider"
+                " wrapping it with quotation marks or using the"
+                " `BigDecimal.from_float()` (or `BDec.from_float()`) method"
+                " instead."
                 "\n***********************************************************"
             ),
         ]()
@@ -487,7 +488,7 @@ struct BigDecimal(
         return decimojo.bigdecimal.arithmetics.subtract(self, other)
 
     @always_inline
-    fn __mul__(self, other: Self) raises -> Self:
+    fn __mul__(self, other: Self) -> Self:
         return decimojo.bigdecimal.arithmetics.multiply(self, other)
 
     @always_inline
@@ -789,6 +790,9 @@ struct BigDecimal(
         Returns:
             A new BigDecimal with increased precision.
 
+        Raises:
+            Error: If `precision_diff` is negative.
+
         Examples:
         ```
         print(BigDecimal("123.456).scale_up(5))  # Output: 123.45600000
@@ -799,7 +803,7 @@ struct BigDecimal(
         """
         if precision_diff < 0:
             raise Error(
-                "Error in `extend_precision()`: "
+                "`extend_precision()`: "
                 "Cannot extend precision with negative value"
             )
 
