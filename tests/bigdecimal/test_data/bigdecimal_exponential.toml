@@ -1,290 +1,345 @@
 # === BASIC SQUARE ROOT TESTS ===
 [[sqrt_tests]]
-input = "0"
+a = "0"
+b = ""
 expected = "0"
 description = "Square root of zero"
 
 [[sqrt_tests]]
-input = "1"
+a = "1"
+b = ""
 expected = "1"
 description = "Square root of one"
 
 [[sqrt_tests]]
-input = "4"
+a = "4"
+b = ""
 expected = "2"
 description = "Square root of perfect square (small)"
 
 [[sqrt_tests]]
-input = "9"
+a = "9"
+b = ""
 expected = "3"
 description = "Square root of perfect square (single digit)"
 
 [[sqrt_tests]]
-input = "16"
+a = "16"
+b = ""
 expected = "4"
 description = "Square root of perfect square (16)"
 
 [[sqrt_tests]]
-input = "25"
+a = "25"
+b = ""
 expected = "5"
 description = "Square root of perfect square (25)"
 
 [[sqrt_tests]]
-input = "100"
+a = "100"
+b = ""
 expected = "10"
 description = "Square root of perfect square (100)"
 
 # === NON-PERFECT SQUARES ===
 [[sqrt_tests]]
-input = "2"
+a = "2"
+b = ""
 expected = "1.414213562373095048801688724"
 description = "Square root of 2 (irrational)"
 
 [[sqrt_tests]]
-input = "3"
+a = "3"
+b = ""
 expected = "1.732050807568877293527446342"
 description = "Square root of 3 (irrational)"
 
 [[sqrt_tests]]
-input = "5"
+a = "5"
+b = ""
 expected = "2.236067977499789696409173669"
 description = "Square root of 5 (irrational)"
 
 [[sqrt_tests]]
-input = "10"
+a = "10"
+b = ""
 expected = "3.162277660168379331998893544"
 description = "Square root of 10 (irrational)"
 
 # === DECIMAL INPUTS ===
 [[sqrt_tests]]
-input = "0.25"
+a = "0.25"
+b = ""
 expected = "0.5"
 description = "Square root of 0.25"
 
 [[sqrt_tests]]
-input = "0.01"
+a = "0.01"
+b = ""
 expected = "0.1"
 description = "Square root of 0.01"
 
 [[sqrt_tests]]
-input = "0.0625"
+a = "0.0625"
+b = ""
 expected = "0.25"
 description = "Square root of 0.0625"
 
 [[sqrt_tests]]
-input = "2.25"
+a = "2.25"
+b = ""
 expected = "1.5"
 description = "Square root of 2.25"
 
 [[sqrt_tests]]
-input = "12.25"
+a = "12.25"
+b = ""
 expected = "3.5"
 description = "Square root of 12.25"
 
 # === LARGE NUMBERS ===
 [[sqrt_tests]]
-input = "1000000"
+a = "1000000"
+b = ""
 expected = "1000"
 description = "Square root of large perfect square"
 
 [[sqrt_tests]]
-input = "9999999999"
+a = "9999999999"
+b = ""
 expected = "99999.99999499999999987500000"
 description = "Square root of large near-perfect square"
 
 [[sqrt_tests]]
-input = "1000000000000000000000000000"
+a = "1000000000000000000000000000"
+b = ""
 expected = "31622776601683.79331998893544"
 description = "Square root of very large imperfect square"
 
 # === SMALL NUMBERS ===
 [[sqrt_tests]]
-input = "0.0001"
+a = "0.0001"
+b = ""
 expected = "0.01"
 description = "Square root of small number"
 
 [[sqrt_tests]]
-input = "0.000000000001"
+a = "0.000000000001"
+b = ""
 expected = "0.000001"
 description = "Square root of very small number"
 
 [[sqrt_tests]]
-input = "0.0000000000000000000000000001"
+a = "0.0000000000000000000000000001"
+b = ""
 expected = "1E-14"
 description = "Square root of extremely small number"
 
 # === SCIENTIFIC NOTATION ===
 [[sqrt_tests]]
-input = "1e10"
+a = "1e10"
+b = ""
 expected = "1E+5"
 description = "Square root with scientific notation (positive exponent)"
 
 [[sqrt_tests]]
-input = "1e-10"
+a = "1e-10"
+b = ""
 expected = "0.00001"
 description = "Square root with scientific notation (negative exponent)"
 
 # === PRECISION TESTS ===
 [[sqrt_tests]]
-input = "2"
+a = "2"
+b = ""
 expected = "1.414213562373095048801688724"
 description = "High precision square root of 2"
 
 [[sqrt_tests]]
-input = "0.9999999999999999"
+a = "0.9999999999999999"
+b = ""
 expected = "0.9999999999999999500000000000"
 description = "Square root slightly less than 1"
 
 [[sqrt_tests]]
-input = "1.0000000000000001"
+a = "1.0000000000000001"
+b = ""
 expected = "1.000000000000000050000000000"
 description = "Square root slightly more than 1"
 
 # === APPLICATION SCENARIOS ===
 [[sqrt_tests]]
-input = "3.14159265358979323846"
+a = "3.14159265358979323846"
+b = ""
 expected = "1.772453850905516027297421799"
 description = "Square root of π"
 
 [[sqrt_tests]]
-input = "2.71828182845904523536"
+a = "2.71828182845904523536"
+b = ""
 expected = "1.648721270700128146848563608"
 description = "Square root of e"
 
 # === BASIC NATURAL LOGARITHM TESTS ===
 [[ln_tests]]
-input = "1"
+a = "1"
+b = ""
 expected = "0"
 description = "Natural logarithm of 1 (exactly 0)"
 
 [[ln_tests]]
-input = "2.718281828459045235360287471"
+a = "2.718281828459045235360287471"
+b = ""
 expected = "0.9999999999999999999999999999"
 description = "Natural logarithm of e (approximately 1)"
 
 [[ln_tests]]
-input = "10"
+a = "10"
+b = ""
 expected = "2.302585092994045684017991455"
 description = "Natural logarithm of 10"
 
 [[ln_tests]]
-input = "2"
+a = "2"
+b = ""
 expected = "0.6931471805599453094172321215"
 description = "Natural logarithm of 2"
 
 [[ln_tests]]
-input = "0.5"
+a = "0.5"
+b = ""
 expected = "-0.6931471805599453094172321215"
 description = "Natural logarithm of 0.5 (negative result)"
 
 # === POWERS OF e ===
 [[ln_tests]]
-input = "7.389056098930650227230427461"
+a = "7.389056098930650227230427461"
+b = ""
 expected = "2.000000000000000000000000000"
 description = "Natural logarithm of e^2 (exactly 2)"
 
 [[ln_tests]]
-input = "20.08553692318766774092852965"
+a = "20.08553692318766774092852965"
+b = ""
 expected = "3.000000000000000000000000000"
 description = "Natural logarithm of e^3 (exactly 3)"
 
 [[ln_tests]]
-input = "0.3678794411714423215955237702"
+a = "0.3678794411714423215955237702"
+b = ""
 expected = "-0.9999999999999999999999999999"
 description = "Natural logarithm of 1/e (exactly -1)"
 
 [[ln_tests]]
-input = "0.1353352832366126918939994949"
+a = "0.1353352832366126918939994949"
+b = ""
 expected = "-2.000000000000000000000000001"
 description = "Natural logarithm of 1/e^2 (exactly -2)"
 
 # === POWERS OF 10 ===
 [[ln_tests]]
-input = "100"
+a = "100"
+b = ""
 expected = "4.605170185988091368035982909"
 description = "Natural logarithm of 10^2"
 
 [[ln_tests]]
-input = "0.01"
+a = "0.01"
+b = ""
 expected = "-4.605170185988091368035982909"
 description = "Natural logarithm of 10^-2"
 
 [[ln_tests]]
-input = "1000"
+a = "1000"
+b = ""
 expected = "6.907755278982137052053974364"
 description = "Natural logarithm of 10^3"
 
 [[ln_tests]]
-input = "0.001"
+a = "0.001"
+b = ""
 expected = "-6.907755278982137052053974364"
 description = "Natural logarithm of 10^-3"
 
 # === SMALL NUMBERS ===
 [[ln_tests]]
-input = "0.1"
+a = "0.1"
+b = ""
 expected = "-2.302585092994045684017991455"
 description = "Natural logarithm of 0.1"
 
 [[ln_tests]]
-input = "0.00001"
+a = "0.00001"
+b = ""
 expected = "-11.51292546497022842008995727"
 description = "Natural logarithm of 1e-5"
 
 [[ln_tests]]
-input = "0.0000000001"
+a = "0.0000000001"
+b = ""
 expected = "-23.02585092994045684017991455"
 description = "Natural logarithm of 1e-10"
 
 # === LARGE NUMBERS ===
 [[ln_tests]]
-input = "1000000"
+a = "1000000"
+b = ""
 expected = "13.81551055796427410410794873"
 description = "Natural logarithm of 1e6"
 
 [[ln_tests]]
-input = "1000000000000"
+a = "1000000000000"
+b = ""
 expected = "27.63102111592854820821589746"
 description = "Natural logarithm of 1e12"
 
 [[ln_tests]]
-input = "1e50"
+a = "1e50"
+b = ""
 expected = "115.1292546497022842008995727"
 description = "Natural logarithm of 1e50"
 
 # === VALUES NEAR 1 ===
 [[ln_tests]]
-input = "0.9"
+a = "0.9"
+b = ""
 expected = "-0.1053605156578263012275009808"
 description = "Natural logarithm of 0.9 (near 1)"
 
 [[ln_tests]]
-input = "1.1"
+a = "1.1"
+b = ""
 expected = "0.09531017980432486004395212328"
 description = "Natural logarithm of 1.1 (near 1)"
 
 [[ln_tests]]
-input = "0.999999"
+a = "0.999999"
+b = ""
 expected = "-0.000001000000500000333333583333533"
 description = "Natural logarithm very close to 0 (0.999999)"
 
 [[ln_tests]]
-input = "1.000001"
+a = "1.000001"
+b = ""
 expected = "9.999995000003333330833335333E-7"
 description = "Natural logarithm very close to 0 (1.000001)"
 
 # === MATHEMATICAL CONSTANTS ===
 [[ln_tests]]
-input = "3.141592653589793238462643383"
+a = "3.141592653589793238462643383"
+b = ""
 expected = "1.144729885849400174143427351"
 description = "Natural logarithm of π"
 
 [[ln_tests]]
-input = "1.618033988749894848204586834"
+a = "1.618033988749894848204586834"
+b = ""
 expected = "0.4812118250596034474977589132"
 description = "Natural logarithm of φ (golden ratio)"
 
 [[ln_tests]]
-input = "1.414213562373095048801688724"
+a = "1.414213562373095048801688724"
+b = ""
 expected = "0.3465735902799726547086160606"
 description = "Natural logarithm of √2"
 

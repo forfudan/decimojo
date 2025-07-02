@@ -42,15 +42,14 @@ fn round(
             RoundingMode.ROUND_HALF_EVEN: Round half even.
 
     Notes:
-
-    If `ndigits` is negative, the last `ndigits` digits of the integer part of
-    the number will be dropped and the scale will be `ndigits`.
-    Example:
-        round(123.456, 2) -> 123.46
-        round(123.456, -1) -> 12E+1
-        round(123.456, -2) -> 1E+2
-        round(123.456, -3) -> 0E+3
-        round(678.890, -3) -> 1E+3
+        If `ndigits` is negative, the last `ndigits` digits of the integer part of
+        the number will be dropped and the scale will be `ndigits`.
+        Examples:
+            round(123.456, 2) -> 123.46
+            round(123.456, -1) -> 12E+1
+            round(123.456, -2) -> 1E+2
+            round(123.456, -3) -> 0E+3
+            round(678.890, -3) -> 1E+3
     """
     var ndigits_to_remove = number.scale - ndigits
     if ndigits_to_remove == 0:

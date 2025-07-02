@@ -18,6 +18,10 @@
 """
 
 alias RM = RoundingMode
+alias ROUND_DOWN = RoundingMode.ROUND_DOWN
+alias ROUND_HALF_UP = RoundingMode.ROUND_HALF_UP
+alias ROUND_HALF_EVEN = RoundingMode.ROUND_HALF_EVEN
+alias ROUND_UP = RoundingMode.ROUND_UP
 
 
 struct RoundingMode(Stringable):

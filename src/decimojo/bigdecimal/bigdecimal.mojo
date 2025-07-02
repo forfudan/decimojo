@@ -739,9 +739,30 @@ struct BigDecimal(
         return decimojo.bigdecimal.exponential.power(self, exponent, precision)
 
     @always_inline
-    fn round(self, ndigits: Int, rounding_mode: RoundingMode) raises -> Self:
-        """Rounds the number to the specified precision.
-        See `bigdecimal.rounding.round()` for more information.
+    fn round(
+        self,
+        ndigits: Int,
+        rounding_mode: RoundingMode = RoundingMode.ROUND_HALF_EVEN,
+    ) raises -> Self:
+        """Rounds the number to the specified number of decimal places.
+
+        Args:
+            ndigits: Number of decimal places to round to.
+            rounding_mode: Rounding mode to use. Default is `ROUND_HALF_EVEN`.
+                RoundingMode.ROUND_DOWN: Round down.
+                RoundingMode.ROUND_UP: Round up.
+                RoundingMode.ROUND_HALF_UP: Round half up.
+                RoundingMode.ROUND_HALF_EVEN: Round half even.
+
+        Notes:
+            If `ndigits` is negative, the last `ndigits` digits of the integer part of
+            the number will be dropped and the scale will be `ndigits`.
+            Examples:
+                round(123.456, 2) -> 123.46
+                round(123.456, -1) -> 12E+1
+                round(123.456, -2) -> 1E+2
+                round(123.456, -3) -> 0E+3
+                round(678.890, -3) -> 1E+3
         """
         return decimojo.bigdecimal.rounding.round(self, ndigits, rounding_mode)
 
