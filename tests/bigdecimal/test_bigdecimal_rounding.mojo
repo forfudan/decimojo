@@ -6,8 +6,7 @@ from python import Python
 import testing
 
 from decimojo.prelude import *
-from decimojo.tests import TestCase, load_test_cases
-import tomlmojo
+from decimojo.tests import TestCase, parse_file, load_test_cases
 
 alias file_path = "tests/bigdecimal/test_data/bigdecimal_rounding.toml"
 
@@ -15,7 +14,7 @@ alias file_path = "tests/bigdecimal/test_data/bigdecimal_rounding.toml"
 fn test_bigdecimal_rounding() raises:
     # Load test cases from TOML file
     var pydecimal = Python.import_module("decimal")
-    var toml = tomlmojo.parse_file(file_path)
+    var toml = parse_file(file_path)
     var test_cases: List[TestCase]
 
     print("------------------------------------------------------")

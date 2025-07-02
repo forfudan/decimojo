@@ -3,17 +3,17 @@ Test BigDecimal comparison operations.
 """
 
 import testing
-import tomlmojo
+
 from decimojo import BDec
 from decimojo.bigdecimal.comparison import compare_absolute, compare
-from decimojo.tests import TestCase, load_test_cases
+from decimojo.tests import TestCase, parse_file, load_test_cases
 
 alias file_path = "tests/bigdecimal/test_data/bigdecimal_compare.toml"
 
 
 fn test_bigdecimal_compare() raises:
     # Load test cases from TOML file
-    var toml = tomlmojo.parse_file(file_path)
+    var toml = parse_file(file_path)
     var test_cases: List[TestCase]
 
     print("------------------------------------------------------")

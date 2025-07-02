@@ -79,31 +79,17 @@ struct TestCase(Copyable, Movable, Stringable, Writable):
         writer.write("  description: " + self.description + "\n")
 
 
-fn load_test_cases(
-    file_path: String, table_name: String, has_expected_value: Bool = True
-) raises -> List[TestCase]:
-    """Load test cases from a TOML file for a specific table."""
-    var toml = tomlmojo.parse_file(file_path)
-    var test_cases = List[TestCase]()
-
-    # Get array of test cases
-    var cases_array = toml.get_array_of_tables(table_name)
-
-    for i in range(len(cases_array)):
-        var case_table = cases_array[i]
-        var expected_value = case_table[
-            "expected"
-        ].as_string() if has_expected_value else String("")
-        test_cases.append(
-            TestCase(
-                case_table["a"].as_string(),
-                case_table["b"].as_string(),
-                expected_value,
-                case_table["description"].as_string(),
-            )
+fn parse_file(file_path: String) raises -> tomlmojo.parser.TOMLDocument:
+    """Parse a TOML file and return the TOMLDocument."""
+    try:
+        return tomlmojo.parse_file(file_path)
+    except e:
+        raise Error(
+            "tests.parse_file(): Failed to parse TOML file:",
+            file_path,
+            "\nTraceback:",
+            e,
         )
-
-    return test_cases
 
 
 fn load_test_cases(

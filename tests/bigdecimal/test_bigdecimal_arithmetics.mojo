@@ -11,8 +11,7 @@ from python import Python
 import testing
 
 from decimojo import BDec, RM
-from decimojo.tests import TestCase, load_test_cases
-import tomlmojo
+from decimojo.tests import TestCase, parse_file, load_test_cases
 
 alias file_path = "tests/bigdecimal/test_data/bigdecimal_arithmetics.toml"
 
@@ -20,7 +19,7 @@ alias file_path = "tests/bigdecimal/test_data/bigdecimal_arithmetics.toml"
 fn test_bigdecimal_arithmetics() raises:
     # Load test cases from TOML file
     var pydecimal = Python.import_module("decimal")
-    var toml = tomlmojo.parse_file(file_path)
+    var toml = parse_file(file_path)
     var test_cases: List[TestCase]
 
     print("------------------------------------------------------")

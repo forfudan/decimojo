@@ -7,9 +7,8 @@ Tests also compare results with Python's built-in int type for verification.
 import testing
 import decimojo.biguint.arithmetics
 from decimojo.biguint.biguint import BigUInt
-from decimojo.tests import TestCase, load_test_cases
+from decimojo.tests import TestCase, parse_file, load_test_cases
 from python import Python, PythonObject
-from tomlmojo import parse_file
 
 alias file_path = "tests/biguint/test_data/biguint_truncate_divide.toml"
 
@@ -37,7 +36,7 @@ fn test_biguint_truncate_divide() raises:
     # Get Python's built-in int module
     var py = Python.import_module("builtins")
     # Load test cases from TOML file
-    var toml = tomlmojo.parse_file(file_path)
+    var toml = parse_file(file_path)
     var test_cases: List[TestCase]
 
     run_test(toml, "basic_division_tests", "basic truncate division")
