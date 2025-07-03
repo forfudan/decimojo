@@ -78,6 +78,12 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         """Returns a BigUInt with value 1."""
         return Self(words=List[UInt32](UInt32(1)))
 
+    @staticmethod
+    @always_inline
+    fn power_of_10(exponent: Int) raises -> Self:
+        """Calculates 10^exponent efficiently."""
+        return decimojo.biguint.arithmetics.power_of_10(exponent)
+
     # ===------------------------------------------------------------------=== #
     # Constructors and life time dunder methods
     #

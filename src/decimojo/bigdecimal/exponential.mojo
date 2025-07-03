@@ -734,7 +734,8 @@ fn exp_taylor_series(
         minimum_precision: Minimum precision in significant digits.
 
     Returns:
-        The natural exponential of x (e^x) to the specified precision + 9.
+        The natural exponential of x (e^x) to the specified precision with some
+        extra digits to ensure accuracy.
     """
     # Theoretical number of terms needed based on precision
     # For |x| ≤ 1, error after n terms is approximately |x|^(n+1)/(n+1)!

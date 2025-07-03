@@ -53,23 +53,81 @@ For the latest development version, clone the [GitHub repository](https://github
 
 ## Quick start
 
+You can start using DeciMojo by importing the `decimojo` module. An easy way to do this is to import everything from the `prelude` module, which provides the most commonly used types.
+
+```mojo
+from decimojo import *
+```
+
+This will import the following types or aliases into your namespace:
+
+- `dm`: An alias for the `decimojo` module.
+- `BigInt` (alias `BInt`): An arbitrary-precision signed integer type.
+- `BigDecimal` (alias `BDec`): An arbitrary-precision decimal type.
+- `Decimal` (alias `Dec`): A 128-bit fixed-precision decimal type.
+- `RoundingMode` (alias `RM`): An enumeration for rounding modes.
+- `ROUND_DOWN`, `ROUND_HALF_UP`, `ROUND_HALF_EVEN`, `ROUND_UP`: Constants for common rounding modes.
+
+---
+
 Here are some examples showcasing the arbitrary-precision feature of the `BigDecimal` type. Note that Mojo does not support global variables at the moment, so we need to pass the `precision` parameter explicitly to each function call. In future, we will add a global precision setting with the default value of, *e.g.*, `28`, to avoid passing it around.
 
 ```mojo
-from decimojo import BDec, RM
+from decimojo.prelude import *
 
 
 fn main() raises:
-    var PRECISION = 100
     var a = BDec("123456789.123456789")
     var b = BDec("1234.56789")
-    print(a.sqrt(precision=PRECISION))
-    # 11111.11106611111096943055498174930232833813065468909453818857935956641682120364106016272519460988485
-    print(a.power(b, precision=PRECISION))
-    # 3.346361102419080234023813540078946868219632448203078657310495672766009862564151996325555496759911131748170844123475135377098326591508239654961E+9989
-    print(a.log(b, precision=PRECISION))
-    # 2.617330026656548299907884356415293977170848626010103229392408225981962436022623783231699264341492663671325580092077394824180414301026578169909
+
+    # === Basic Arithmetic === #
+    print(a + b)  # 123458023.691346789
+    print(a - b)  # 123455554.555566789
+    print(a * b)  # 152415787654.32099750190521
+    print(a.true_divide(b, precision=80))  # 100000.0001
+
+    # === Mathematical Functions === #
+    print(a.sqrt(precision=80))
+    # 11111.111066111110969430554981749302328338130654689094538188579359566416821203641
+    print(a.cbrt(precision=80))
+    # 497.93385938415242742001134219007635925452951248903093962731782327785111102410518
+    print(a.root(b, precision=80))
+    # 1.0152058862996527138602610522640944903320735973237537866713119992581006582644107
+    print(a.power(b, precision=80))
+    # 3.3463611024190802340238135400789468682196324482030786573104956727660098625641520E+9989
+    print(a.exp(precision=80))
+    # 1.8612755889649587035842377856492201091251654136588338983610243887893287518637652E+53616602
+    print(a.log(b, precision=80))
+    # 2.6173300266565482999078843564152939771708486260101032293924082259819624360226238
+    print(a.ln(precision=80))
+    # 18.631401767168018032693933348296537542797015174553735308351756611901741276655161
+
+    # === Internal representation of the number === #
+    (
+        BDec(
+            "3.141592653589793238462643383279502884197169399375105820974944"
+        ).power(2, precision=60)
+    ).print_internal_representation()
+    # Internal Representation Details of BigDecimal
+    # ----------------------------------------------
+    # number:         9.8696044010893586188344909998
+    #                 761511353136994072407906264133
+    #                 5
+    # coefficient:    986960440108935861883449099987
+    #                 615113531369940724079062641335
+    # negative:       False
+    # scale:          59
+    # word 0:         62641335
+    # word 1:         940724079
+    # word 2:         113531369
+    # word 3:         99987615
+    # word 4:         861883449
+    # word 5:         440108935
+    # word 6:         986960
+    # ----------------------------------------------
 ```
+
+---
 
 Here is a comprehensive quick-start guide showcasing each major function of the `BigInt` type.
 
@@ -113,6 +171,8 @@ fn main() raises:
     # 3600 digits // 1800 digits
     print(BInt("123456789" * 400) // BInt("987654321" * 200))
 ```
+
+---
 
 Here is a comprehensive quick-start guide showcasing each major function of the `Decimal` type.
 
