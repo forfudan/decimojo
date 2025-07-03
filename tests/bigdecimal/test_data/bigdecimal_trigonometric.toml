@@ -1,0 +1,129 @@
+# ===----------------------------------------------------------------------=== #
+# Test cases for arctan
+# ===----------------------------------------------------------------------=== #
+
+[[arctan_tests]]
+a = "0"
+b = ""
+expected = "0.000000000000000000000000000000000000000000000E-6"
+description = "Arctan of 0"
+
+[[arctan_tests]]
+a = "1"
+b = ""
+expected = "0.78539816339744830961566084581987572104929234984378"
+description = "Arctan of 1 = π/4"
+
+[[arctan_tests]]
+a = "-1"
+b = ""
+expected = "-0.78539816339744830961566084581987572104929234984378"
+description = "Arctan of -1 = -π/4"
+
+[[arctan_tests]]
+a = "0.5"
+b = ""
+expected = "0.46364760900080611621425623146121440202853705428612"
+description = "Arctan of 0.5"
+
+[[arctan_tests]]
+a = "-0.5"
+b = ""
+expected = "-0.46364760900080611621425623146121440202853705428612"
+description = "Arctan of -0.5"
+
+[[arctan_tests]]
+a = "0.2"
+b = ""
+expected = "0.19739555984988075837004976519479029344758510378785"
+description = "Arctan of 0.2 (small positive value)"
+
+[[arctan_tests]]
+a = "0.1"
+b = ""
+expected = "0.09966865249116202737844611987802059024327832250431"
+description = "Arctan of 0.1 (very small value for good convergence)"
+
+[[arctan_tests]]
+a = "0.6"
+b = ""
+expected = "0.54041950027058415544357836460859991013514825146259"
+description = "Arctan of 0.6"
+
+[[arctan_tests]]
+a = "0.7"
+b = ""
+expected = "0.61072596438920861654375887649023609381850306612883"
+description = "Arctan of 0.7"
+
+[[arctan_tests]]
+a = "0.8"
+b = ""
+expected = "0.67474094222355266305652097360981361507400625484071"
+description = "Arctan of 0.8"
+
+[[arctan_tests]]
+a = "0.9"
+b = ""
+expected = "0.73281510178650659164079207273428025198575567935826"
+description = "Arctan of 0.9"
+
+[[arctan_tests]]
+a = "2"
+b = ""
+expected = "1.10714871779409050301706546017853704007004764540143"
+description = "Arctan of 2 (>1, tests convergence for larger values)"
+
+[[arctan_tests]]
+a = "3"
+b = ""
+expected = "1.24904577239825442582991707728109012307782940412990"
+description = "Arctan of 3"
+
+[[arctan_tests]]
+a = "5"
+b = ""
+expected = "1.37340076694501586086127192644496114865099959589970"
+description = "Arctan of 5 (large value)"
+
+[[arctan_tests]]
+a = "-10"
+b = ""
+expected = "-1.47112767430373459185287557176173085185530637718324"
+description = "Arctan of -10 (negative large value)"
+
+[[arctan_tests]]
+a = "-20"
+b = ""
+expected = "-1.52083793107295385782131540460490656060730761926405"
+description = "Arctan of -20 (negative large value)"
+
+[[arctan_tests]]
+a = "0.2679491924311227064725536584405014305617238566135711746170850036962728620449831"
+b = ""
+expected = "0.26179938779914943653855361522325797893391221422499"
+description = "Arctan of tan(π/12) should equal π/12"
+
+[[arctan_tests]]
+a = "0.5773502691896257645091487805019574556476017512701268760186023264839776723054951"
+b = ""
+expected = "0.52359877559829887307710723054658381403286156656252"
+description = "Arctan of tan(π/6) = √3/3 should equal π/6"
+
+[[arctan_tests]]
+a = "-1.7320508075688772935274463415058723669428052538103806280558069794519330169088000"
+b = ""
+expected = "-1.04719755119659774615421446109316762806572313312504"
+description = "Arctan of -√3 should equal -π/3"
+
+[[arctan_tests]]
+a = "0.00001"
+b = ""
+expected = "9.99999999966666666668666666666523809523820635E-6"
+description = "Arctan of very small value (near linear approximation)"
+
+[[arctan_tests]]
+a = "100"
+b = ""
+expected = "1.56079666010823138102498157543047189353721534714318"
+description = "Arctan of 100 (very large value, should approach π/2)"

@@ -23,6 +23,10 @@ from decimojo.bigdecimal.bigdecimal import BigDecimal
 from decimojo.rounding_mode import RoundingMode
 
 
+# TODO: When Mojo support global variables,
+# we save the value of π to a certain precision in the global scope.
+# This will allow us to use it everywhere without recalculating it
+# if the required precision is the same or lower.
 fn pi(precision: Int) raises -> BigDecimal:
     """Calculates π using Machin's formula.
     π/4 = 4*arctan(1/5) - arctan(1/239).

@@ -154,17 +154,36 @@ struct BigDecimal(
 
     @staticmethod
     fn from_raw_components(
-        coefficient: BigUInt, scale: Int = 0, sign: Bool = False
+        owned words: List[UInt32], scale: Int = 0, sign: Bool = False
     ) -> Self:
-        """Creates a BigDecimal from its raw components."""
-        return Self(coefficient, scale, sign)
+        """**UNSAFE** Creates a BigDecimal from its raw components.
+        The raw components are words, scale, and sign.
+
+        Args:
+            words: The raw words of the coefficient.
+            scale: The scale of the BigDecimal.
+            sign: The sign of the BigDecimal.
+
+        Returns:
+            A BigDecimal object constructed from the raw components.
+
+        Notes:
+
+        This method is unsafe because it does not check the validity of the
+        words. It is the caller's responsibility to ensure that the words
+        represent a valid BigUInt.
+        """
+        var coefficient = BigUInt(words=words^)
+        return Self(coefficient^, scale, sign)
 
     @staticmethod
     fn from_raw_components(
-        coefficient: UInt32, scale: Int = 0, sign: Bool = False
+        word: UInt32, scale: Int = 0, sign: Bool = False
     ) -> Self:
-        """Creates a BigDecimal from its raw components."""
-        return Self(BigUInt(List[UInt32](coefficient)), scale, sign)
+        """**UNSAFE** Creates a BigDecimal from its raw components.
+        The raw components are a single word, scale, and sign.
+        """
+        return Self(BigUInt(words=List[UInt32](word)), scale, sign)
 
     @staticmethod
     fn from_int(value: Int) -> Self:
@@ -644,6 +663,8 @@ struct BigDecimal(
     # Mathematical methods that do not implement a trait (not a dunder)
     # ===------------------------------------------------------------------=== #
 
+    # === Comparisons === #
+
     @always_inline
     fn compare(self, other: Self) raises -> Int8:
         """Compares two BigDecimal numbers.
@@ -657,6 +678,36 @@ struct BigDecimal(
         See `comparison.compare_absolute()` for more information.
         """
         return decimojo.bigdecimal.comparison.compare_absolute(self, other)
+
+    # === Extrema === #
+
+    @always_inline
+    fn max(self, other: Self) raises -> Self:
+        """Returns the maximum of two BigDecimal numbers."""
+        return decimojo.bigdecimal.comparison.max(self, other)
+
+    @always_inline
+    fn min(self, other: Self) raises -> Self:
+        """Returns the minimum of two BigDecimal numbers."""
+        return decimojo.bigdecimal.comparison.min(self, other)
+
+    # === Constants === #
+
+    @always_inline
+    @staticmethod
+    fn pi(precision: Int) raises -> Self:
+        """Returns the mathematical constant pi to the specified precision."""
+        return decimojo.bigdecimal.constants.pi(precision=precision)
+
+    @always_inline
+    @staticmethod
+    fn e(precision: Int) raises -> Self:
+        """Returns the mathematical constant e to the specified precision."""
+        return decimojo.bigdecimal.exponential.exp(
+            x=BigDecimal(BigUInt.ONE), precision=precision
+        )
+
+    # === Exponentional operations === #
 
     @always_inline
     fn exp(self, precision: Int = 28) raises -> Self:
@@ -680,16 +731,6 @@ struct BigDecimal(
         return decimojo.bigdecimal.exponential.log10(self, precision)
 
     @always_inline
-    fn max(self, other: Self) raises -> Self:
-        """Returns the maximum of two BigDecimal numbers."""
-        return decimojo.bigdecimal.comparison.max(self, other)
-
-    @always_inline
-    fn min(self, other: Self) raises -> Self:
-        """Returns the minimum of two BigDecimal numbers."""
-        return decimojo.bigdecimal.comparison.min(self, other)
-
-    @always_inline
     fn root(self, root: Self, precision: Int = 28) raises -> Self:
         """Returns the root of the BigDecimal number."""
         return decimojo.bigdecimal.exponential.root(self, root, precision)
@@ -703,6 +744,21 @@ struct BigDecimal(
     fn cbrt(self, precision: Int = 28) raises -> Self:
         """Returns the cube root of the BigDecimal number."""
         return decimojo.bigdecimal.exponential.cbrt(self, precision)
+
+    @always_inline
+    fn power(self, exponent: Self, precision: Int) raises -> Self:
+        """Returns the result of exponentiation with the given precision.
+        See `exponential.power()` for more information.
+        """
+        return decimojo.bigdecimal.exponential.power(self, exponent, precision)
+
+    # === Trigonometric operations === #
+    @always_inline
+    fn arctan(self, precision: Int = 28) raises -> Self:
+        """Returns the arctangent of the BigDecimal number."""
+        return decimojo.bigdecimal.trigonometric.arctan(self, precision)
+
+    # === Arithmetic operations === #
 
     @always_inline
     fn true_divide(self, other: Self, precision: Int) raises -> Self:
@@ -731,12 +787,7 @@ struct BigDecimal(
         """
         return decimojo.bigdecimal.arithmetics.truncate_divide(self, other)
 
-    @always_inline
-    fn power(self, exponent: Self, precision: Int) raises -> Self:
-        """Returns the result of exponentiation with the given precision.
-        See `exponential.power()` for more information.
-        """
-        return decimojo.bigdecimal.exponential.power(self, exponent, precision)
+    # === Rounding operations === #
 
     @always_inline
     fn round(
@@ -867,7 +918,7 @@ struct BigDecimal(
         )
 
     @always_inline
-    fn print_internal_representation(self) raises:
+    fn print_internal_representation(self):
         """Prints the internal representation of the BigDecimal."""
         var line_width = 30
         var string_of_number = self.to_string(line_width=line_width).split("\n")
@@ -897,13 +948,40 @@ struct BigDecimal(
             else:
                 ndigits = 3
             print(
-                String("word {}:{}{}")
-                .format(
-                    i, " " * (10 - ndigits), String(self.coefficient.words[i])
-                )
-                .rjust(9, fillchar="0")
+                String(
+                    "word ",
+                    i,
+                    ":",
+                    " " * (10 - ndigits),
+                    self.coefficient.words[i],
+                ).rjust(9, fillchar="0")
             )
         print("----------------------------------------------")
+
+    @always_inline
+    fn print_representation_as_components(self):
+        """Prints the representation of the BigDecimal as components."""
+        print(
+            (
+                "BigDecimal(\n    coefficient=BigUInt(\n       "
+                " words=List[UInt32](\n            "
+            ),
+            end="",
+        )
+        ref words = self.coefficient.words
+        for i in range(len(words)):
+            if i != len(words) - 1:
+                print(words[i], end=",\n            ")
+            else:
+                print(words[i], end=",\n        ),\n    ),\n")
+        print(
+            "    scale=",
+            self.scale,
+            ",\n    sign=",
+            self.sign,
+            ")",
+            sep="",
+        )
 
     @always_inline
     fn is_integer(self) -> Bool:
