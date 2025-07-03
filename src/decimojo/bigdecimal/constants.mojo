@@ -156,9 +156,9 @@ fn pi(precision: Int) raises -> BigDecimal:
     π/4 = 4*arctan(1/5) - arctan(1/239).
 
     Notes:
-        Time complexity is O(n^4) for precision n.
+        Time complexity is O(n^3) ~ O(n^4) for precision n.
         Every time you double the precision, the time taken increases by a
-        factor of 16.
+        factor of 8 ~ 16.
     """
 
     if precision < 0:
