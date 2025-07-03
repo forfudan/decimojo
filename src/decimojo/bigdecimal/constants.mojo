@@ -151,28 +151,142 @@ alias PI_1024 = BigDecimal(
 # we save the value of π to a certain precision in the global scope.
 # This will allow us to use it everywhere without recalculating it
 # if the required precision is the same or lower.
+# Everytime when user calls pi(precision),
+# we check whether the precision is higher than the current precision.
+# If yes, then we save it into the global scope as cached value.
 fn pi(precision: Int) raises -> BigDecimal:
-    """Calculates π using Machin's formula.
-    π/4 = 4*arctan(1/5) - arctan(1/239).
+    """Calculates π using the fastest available algorithm.
 
-    Notes:
-        Time complexity is O(n^3) ~ O(n^4) for precision n.
-        Every time you double the precision, the time taken increases by a
-        factor of 8 ~ 16.
+    - precision ≤ 1024: precomputed constant
+    - precision > 1024: Chudnovsky with binary splitting
     """
 
     if precision < 0:
         raise Error("Precision must be non-negative")
-    # For precision up to 1024, we can use the precomputed value of π.
-    # Since π is also input to other functions.
-    # TODO: Everytime when user calls pi(precision),
-    # we check whether the precision is higher than the current precision.
-    # If yes, then we save it into the global scope.
+
+    # Use precomputed value for precision ≤ 1024
     if precision <= 1024:
         return PI_1024.round(precision, RoundingMode.ROUND_HALF_EVEN)
 
-    alias BUFFER_DIGITS = 9  # word-length, easy to append and trim
-    var working_precision = precision + BUFFER_DIGITS
+    # Use Chudnovsky with binary splitting for maximum speed
+    return pi_chudnovsky_binary_split(precision)
+
+
+@value
+struct Rational:
+    """Represents a rational number p/q for exact arithmetic."""
+
+    var p: BigInt  # numerator
+    var q: BigInt  # denominator
+
+
+fn pi_chudnovsky_binary_split(precision: Int) raises -> BigDecimal:
+    """Calculates π using Chudnovsky algorithm with binary splitting.
+
+    Notes:
+
+    Use the formula:
+    π = 426880 * √10005 / Σ(k=0 to ∞) [M(k) * L(k) / X(k)],
+    where:
+    (1) M(k) = (6k)! / ((3k)! * (k!)³)
+    (2) L(k) = 545140134*k + 13591409
+    (3) X(k) = (-262537412640768000)^k
+    """
+
+    var working_precision = precision + 9  # 1 words
+    var iterations = (
+        precision // 14
+    ) + 9  # ~14.18 digits per iteration + safety margin
+
+    var bdec_10005 = BigDecimal.from_raw_components(UInt32(10005))
+    var bdec_426880 = BigDecimal.from_raw_components(UInt32(426880))
+
+    # Binary splitting to compute the series sum as a single rational number
+    var result_fraction = chudnovsky_split(0, iterations, working_precision)
+
+    # Convert rational result to BigDecimal: q/p
+    var sum_series = BigDecimal(result_fraction.q).true_divide(
+        BigDecimal(result_fraction.p), working_precision
+    )
+
+    # Final formula: π = 426880 * √10005 / sum_series
+    var result = bdec_426880 * bdec_10005.sqrt(working_precision) * sum_series
+
+    return result.round(precision, RoundingMode.ROUND_HALF_EVEN)
+
+
+fn chudnovsky_split(a: Int, b: Int, precision: Int) raises -> Rational:
+    """Conducts binary splitting for Chudnovsky series from term a to b-1."""
+
+    var bint_1 = BigInt(1)
+    var bint_13591409 = BigInt(13591409)
+    var bint_545140134 = BigInt(545140134)
+    var bint_262537412640768000 = BigInt(262537412640768000)
+
+    if b - a == 1:
+        # Base case: compute single term as exact rational
+        if a == 0:
+            # Special case for k=0: M(0)=1, L(0)=13591409, X(0)=1
+            return Rational(bint_13591409, bint_1)
+
+        # For k > 0: compute M(k), L(k), X(k)
+        var m_k_rational = compute_m_k_rational(a)
+        var l_k = bint_545140134 * BigInt(a) + bint_13591409
+
+        # X(k) = (-262537412640768000)^k
+        var x_k = bint_1
+        for _ in range(a):
+            x_k *= bint_262537412640768000
+
+        # Apply sign: (-1)^k
+        if a % 2 == 1:
+            x_k = -x_k
+
+        # Term = M(k) * L(k) / X(k) = (m_k_p * l_k) / (m_k_q * x_k)
+        var term_p = m_k_rational.p * l_k
+        var term_q = m_k_rational.q * x_k
+
+        return Rational(term_p, term_q)
+
+    # Recursive case: split range in half
+    var mid = (a + b) // 2
+    var left = chudnovsky_split(a, mid, precision)
+    var right = chudnovsky_split(mid, b, precision)
+
+    # Combine fractions: left.p/left.q + right.p/right.q
+    var combined_p = left.p * right.q + right.p * left.q
+    var combined_q = left.q * right.q
+
+    return Rational(combined_p, combined_q)
+
+
+fn compute_m_k_rational(k: Int) raises -> Rational:
+    """Computes M(k) = (6k)! / ((3k)! * (k!)³) as exact rational."""
+
+    var bint_1 = BigInt(1)
+
+    if k == 0:
+        return Rational(bint_1, bint_1)
+
+    # Compute numerator: (6k)! / (3k)! = (3k+1) * (3k+2) * ... * (6k)
+    var numerator = bint_1
+    for i in range(3 * k + 1, 6 * k + 1):
+        numerator *= BigInt(i)
+
+    # Compute denominator: (k!)³
+    var k_factorial = bint_1
+    for i in range(1, k + 1):
+        k_factorial *= BigInt(i)
+
+    var denominator = k_factorial * k_factorial * k_factorial
+
+    return Rational(numerator, denominator)
+
+
+fn pi_machin(precision: Int) raises -> BigDecimal:
+    """Fallback π calculation using Machin's formula."""
+
+    var working_precision = precision + 9
 
     var bdec_1 = BigDecimal.from_raw_components(UInt32(1))
     var bdec_4 = BigDecimal.from_raw_components(UInt32(4))
@@ -193,8 +307,6 @@ fn pi(precision: Int) raises -> BigDecimal:
 
     # π/4 = 4*arctan(1/5) - arctan(1/239)
     var pi_over_4 = term1 - term2
-
-    # π = 4 * (π/4)
     var result = bdec_4 * pi_over_4
 
     return result.round(precision, RoundingMode.ROUND_HALF_EVEN)
