@@ -166,7 +166,14 @@ fn pi(precision: Int) raises -> BigDecimal:
 
     # Use precomputed value for precision ≤ 1024
     if precision <= 1024:
-        return PI_1024.round(precision, RoundingMode.ROUND_HALF_EVEN)
+        var result = PI_1024
+        result.round_to_precision(
+            precision,
+            RoundingMode.ROUND_HALF_EVEN,
+            remove_extra_digit_due_to_rounding=True,
+            fill_zeros_to_precision=False,
+        )
+        return result^
 
     # Use Chudnovsky with binary splitting for maximum speed
     return pi_chudnovsky_binary_split(precision)
@@ -212,7 +219,13 @@ fn pi_chudnovsky_binary_split(precision: Int) raises -> BigDecimal:
     # Final formula: π = 426880 * √10005 / sum_series
     var result = bdec_426880 * bdec_10005.sqrt(working_precision) * sum_series
 
-    return result.round(precision, RoundingMode.ROUND_HALF_EVEN)
+    result.round_to_precision(
+        precision,
+        RoundingMode.ROUND_HALF_EVEN,
+        remove_extra_digit_due_to_rounding=True,
+        fill_zeros_to_precision=False,
+    )
+    return result^
 
 
 fn chudnovsky_split(a: Int, b: Int, precision: Int) raises -> Rational:
@@ -309,4 +322,10 @@ fn pi_machin(precision: Int) raises -> BigDecimal:
     var pi_over_4 = term1 - term2
     var result = bdec_4 * pi_over_4
 
-    return result.round(precision, RoundingMode.ROUND_HALF_EVEN)
+    result.round_to_precision(
+        precision,
+        RoundingMode.ROUND_HALF_EVEN,
+        remove_extra_digit_due_to_rounding=True,
+        fill_zeros_to_precision=False,
+    )
+    return result^

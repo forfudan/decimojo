@@ -524,6 +524,15 @@ struct BigDecimal(
         return decimojo.bigdecimal.arithmetics.truncate_divide(self, other)
 
     @always_inline
+    fn __mod__(self, other: Self) raises -> Self:
+        """Returns the result of modulo operation.
+        See `arithmetics.truncate_modulo()` for more information.
+        """
+        return decimojo.bigdecimal.arithmetics.truncate_modulo(
+            self, other, precision=28
+        )
+
+    @always_inline
     fn __pow__(self, exponent: Self) raises -> Self:
         """Returns the result of exponentiation."""
         return decimojo.bigdecimal.exponential.power(
@@ -826,6 +835,13 @@ struct BigDecimal(
         fill_zeros_to_precision: Bool,
     ) raises:
         """Rounds the number to the specified precision in-place.
+
+        Notes:
+
+        Note that precision is the number of significant digits,
+        not the number of decimal places. If you want to round to a
+        specific number of decimal places, use `round()` instead.
+
         See `rounding.round_to_precision()` for more information.
         """
         decimojo.bigdecimal.rounding.round_to_precision(

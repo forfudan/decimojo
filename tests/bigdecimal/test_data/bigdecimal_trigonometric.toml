@@ -1,11 +1,135 @@
 # ===----------------------------------------------------------------------=== #
+# Test cases for sin
+# ===----------------------------------------------------------------------=== #
+
+[[sin_tests]]
+a = "0"
+b = ""
+expected = "0.0000000000000000000000000000"
+description = "sin(0) = 0"
+
+[[sin_tests]]
+a = "0.5235987755982988730771072305"
+b = ""
+expected = "0.5000000000000000000000000000"
+description = "sin(π/6) = 0.5"
+
+[[sin_tests]]
+a = "0.7853981633974483096156608458"
+b = ""
+expected = "0.7071067811865475244008443621"
+description = "sin(π/4) = √2/2"
+
+[[sin_tests]]
+a = "1.0471975511965977461542144611"
+b = ""
+expected = "0.8660254037844386467637231707"
+description = "sin(π/3) = √3/2"
+
+[[sin_tests]]
+a = "1.5707963267948966192313216916"
+b = ""
+expected = "1.0000000000000000000000000000"
+description = "sin(π/2) = 1"
+
+[[sin_tests]]
+a = "2.0943951023931954923084289221"
+b = ""
+expected = "0.8660254037844386467637231707"
+description = "sin(2π/3) = √3/2"
+
+[[sin_tests]]
+a = "2.3561944901923449288469825375"
+b = ""
+expected = "0.7071067811865475244008443621"
+description = "sin(3π/4) = √2/2"
+
+[[sin_tests]]
+a = "2.6179938779914943653855361833"
+b = ""
+expected = "0.5000000000000000000000000000"
+description = "sin(5π/6) = 0.5"
+
+[[sin_tests]]
+a = "3.1415926535897932384626433833"
+b = ""
+expected = "0.0000000000000000000000000000"
+description = "sin(π) = 0"
+
+[[sin_tests]]
+a = "4.7123889803846898576939650749"
+b = ""
+expected = "-1.0000000000000000000000000000"
+description = "sin(3π/2) = -1"
+
+[[sin_tests]]
+a = "6.2831853071795864769252867666"
+b = ""
+expected = "0.0000000000000000000000000000"
+description = "sin(2π) = 0"
+
+[[sin_tests]]
+a = "-0.5235987755982988730771072305"
+b = ""
+expected = "-0.5000000000000000000000000000"
+description = "sin(-π/6) = -0.5"
+
+[[sin_tests]]
+a = "-1.5707963267948966192313216916"
+b = ""
+expected = "-1.0000000000000000000000000000"
+description = "sin(-π/2) = -1"
+
+[[sin_tests]]
+a = "-3.1415926535897932384626433833"
+b = ""
+expected = "0.0000000000000000000000000000"
+description = "sin(-π) = 0"
+
+[[sin_tests]]
+a = "0.1"
+b = ""
+expected = "0.0998334166468281523068141984"
+description = "sin(0.1) - small positive value"
+
+[[sin_tests]]
+a = "0.3"
+b = ""
+expected = "0.2955202066613395748356661423"
+description = "sin(0.3) - moderate small value"
+
+[[sin_tests]]
+a = "1.0"
+b = ""
+expected = "0.8414709848078965066525023216"
+description = "sin(1) - one radian"
+
+[[sin_tests]]
+a = "2.0"
+b = ""
+expected = "0.9092974268256816953960198659"
+description = "sin(2) - two radians"
+
+[[sin_tests]]
+a = "10.0"
+b = ""
+expected = "-0.5440211108893698134047476618"
+description = "sin(10) - large value test"
+
+[[sin_tests]]
+a = "0.0001"
+b = ""
+expected = "0.0000999999833333341666664583"
+description = "sin(0.0001) - very small value (linear approximation region)"
+
+# ===----------------------------------------------------------------------=== #
 # Test cases for arctan
 # ===----------------------------------------------------------------------=== #
 
 [[arctan_tests]]
 a = "0"
 b = ""
-expected = "0.000000000000000000000000000000000000000000000E-6"
+expected = "0E-50"
 description = "Arctan of 0"
 
 [[arctan_tests]]
@@ -41,7 +165,7 @@ description = "Arctan of 0.2 (small positive value)"
 [[arctan_tests]]
 a = "0.1"
 b = ""
-expected = "0.09966865249116202737844611987802059024327832250431"
+expected = "0.099668652491162027378446119878020590243278322504315"
 description = "Arctan of 0.1 (very small value for good convergence)"
 
 [[arctan_tests]]
@@ -71,31 +195,31 @@ description = "Arctan of 0.9"
 [[arctan_tests]]
 a = "2"
 b = ""
-expected = "1.10714871779409050301706546017853704007004764540143"
+expected = "1.1071487177940905030170654601785370400700476454014"
 description = "Arctan of 2 (>1, tests convergence for larger values)"
 
 [[arctan_tests]]
 a = "3"
 b = ""
-expected = "1.24904577239825442582991707728109012307782940412990"
+expected = "1.2490457723982544258299170772810901230778294041299"
 description = "Arctan of 3"
 
 [[arctan_tests]]
 a = "5"
 b = ""
-expected = "1.37340076694501586086127192644496114865099959589970"
+expected = "1.3734007669450158608612719264449611486509995958997"
 description = "Arctan of 5 (large value)"
 
 [[arctan_tests]]
 a = "-10"
 b = ""
-expected = "-1.47112767430373459185287557176173085185530637718324"
+expected = "-1.4711276743037345918528755717617308518553063771832"
 description = "Arctan of -10 (negative large value)"
 
 [[arctan_tests]]
 a = "-20"
 b = ""
-expected = "-1.52083793107295385782131540460490656060730761926405"
+expected = "-1.5208379310729538578213154046049065606073076192640"
 description = "Arctan of -20 (negative large value)"
 
 [[arctan_tests]]
@@ -113,17 +237,17 @@ description = "Arctan of tan(π/6) = √3/3 should equal π/6"
 [[arctan_tests]]
 a = "-1.7320508075688772935274463415058723669428052538103806280558069794519330169088000"
 b = ""
-expected = "-1.04719755119659774615421446109316762806572313312504"
+expected = "-1.0471975511965977461542144610931676280657231331250"
 description = "Arctan of -√3 should equal -π/3"
 
 [[arctan_tests]]
 a = "0.00001"
 b = ""
-expected = "9.99999999966666666668666666666523809523820635E-6"
+expected = "9.9999999996666666666866666666652380952382063492063E-6"
 description = "Arctan of very small value (near linear approximation)"
 
 [[arctan_tests]]
 a = "100"
 b = ""
-expected = "1.56079666010823138102498157543047189353721534714318"
+expected = "1.5607966601082313810249815754304718935372153471432"
 description = "Arctan of 100 (very large value, should approach π/2)"
