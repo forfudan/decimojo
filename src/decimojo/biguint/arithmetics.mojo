@@ -300,28 +300,96 @@ fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 # ===----------------------------------------------------------------------=== #
 
 
-fn multiply(x1: BigUInt, x2: BigUInt) -> BigUInt:
+fn multiply(
+    x: BigUInt, y: BigUInt, cutoff_number_of_words: Int = 768
+) -> BigUInt:
     """Returns the product of two BigUInt numbers.
 
     Args:
-        x1: The first BigUInt operand (multiplicand).
-        x2: The second BigUInt operand (multiplier).
+        x: The first BigUInt operand (multiplicand).
+        y: The second BigUInt operand (multiplier).
+        cutoff_number_of_words: The cutoff number of words for using Karatsuba
+            multiplication. If the number of words in either operand is less
+            than or equal to this value, the school method is used instead.
+            Default is 768 words (6912 digits).
 
     Returns:
         The product of the two BigUInt numbers.
+
+    Notes:
+        This function will adopts the Karatsuba multiplication algorithm
+        for larger numbers, and the school multiplication algorithm for smaller
+        numbers. The cutoff number of words is used to determine which algorithm
+        to use. If the number of words in either operand is less than or equal
+        to the cutoff number, the school multiplication algorithm is used.
     """
-    # CASE: One of the operands is zero
-    if x1.is_zero() or x2.is_zero():
-        return BigUInt(UInt32(0))
 
-    # CASE: One of the operands is one or negative one
-    if x1.is_one():
-        return x2
-    if x2.is_one():
-        return x1
+    # alias CUTOFF_NUMBER_OF_WORDS: Int = 512
+    # """The cutoff number of words for using Karatsuba multiplication."""
 
-    # The maximum number of words in the result is the sum of the words in the operands
-    var max_result_len = len(x1.words) + len(x2.words)
+    # SPECIAL CASE: One of the operands is zero or one
+    if len(x.words) == 1:
+        if x.words[0] == 0:
+            return BigUInt(UInt32(0))
+        if x.words[0] == 1:
+            return y
+    if len(y.words) == 1:
+        if y.words[0] == 0:
+            return BigUInt(UInt32(0))
+        if y.words[0] == 1:
+            return x
+
+    # CASE 1:
+    # If one number is only one-word long
+    # we can use school multiplication because this is only one loop
+    # No need to split the long number into two parts
+    if len(x.words) == 1 or len(y.words) == 1:
+        return multiply_school(x, y, 0, len(x.words), 0, len(y.words))
+
+    # CASE 2:
+    # The allocation cost is too high for small numbers to use Karatsuba
+    # Use school multiplication for small numbers
+    if max(len(x.words), len(y.words)) <= cutoff_number_of_words:
+        # return multiply_school (x, y)
+        return multiply_school(x, y, 0, len(x.words), 0, len(y.words))
+        # multiply_school can also takes in x, y, and indices
+
+    return multiply_karatsuba(
+        x, y, 0, len(x.words), 0, len(y.words), cutoff_number_of_words
+    )
+
+
+fn multiply_school(
+    x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int
+) -> BigUInt:
+    """Multiplies two BigUInt slices using the school method.
+
+    Args:
+        x: The first BigUInt operand (multiplicand).
+        y: The second BigUInt operand (multiplier).
+        start_x: The starting index of x to consider.
+        end_x: The ending index of x to consider.
+        start_y: The starting index of y to consider.
+        end_y: The ending index of y to consider.
+    """
+
+    n_words_x_slice = end_x - start_x
+    n_words_y_slice = end_y - start_y
+
+    # CASE: One of the operands is zero or one
+    if n_words_x_slice == 1:
+        if x.words[start_x] == 0:
+            return BigUInt(UInt32(0))
+        if x.words[start_x] == 1:
+            return BigUInt(words=y.words[start_y:end_y])
+    if n_words_y_slice == 1:
+        if y.words[start_y] == 0:
+            return BigUInt(UInt32(0))
+        if y.words[start_y] == 1:
+            return BigUInt(words=x.words[start_x:end_x])
+
+    # The max number of words in the result is the sum of the words in the operands
+    var max_result_len = n_words_x_slice + n_words_y_slice
     var words = List[UInt32](capacity=max_result_len)
 
     # Initialize result words with zeros
@@ -329,23 +397,26 @@ fn multiply(x1: BigUInt, x2: BigUInt) -> BigUInt:
         words.append(0)
 
     # Perform the multiplication word by word (from least significant to most significant)
-    # x1 = x1[0] + x1[1] * 10^9
-    # x2 = x2[0] + x2[1] * 10^9
-    # x1 * x2 = x1[0] * x2[0] + (x1[0] * x2[1] + x1[1] * x2[0]) * 10^9 + x1[1] * x2[1] * 10^18
+    # x = x[start_x] + x[start_x + 1] * 10^9
+    # y = y[start_y] + y[start_y + 1] * 10^9
+    # x * y = x[start_x] * y[start_y]
+    #       + (x[start_x] * y[start_y + 1]
+    #       + x[start_x + 1] * y[start_y]) * 10^9
+    #       + x[start_x + 1] * y[start_y + 1] * 10^18
     var carry: UInt64
-    for i in range(len(x1.words)):
+    for i in range(n_words_x_slice):
         # Skip if the word is zero
-        if x1.words[i] == 0:
+        if x.words[start_x + i] == 0:
             continue
 
         carry = UInt64(0)
 
-        for j in range(len(x2.words)):
+        for j in range(n_words_y_slice):
             # Calculate the product of the current words
             # plus the carry from the previous multiplication
             # plus the value already at this position in the result
             var product = (
-                UInt64(x1.words[i]) * UInt64(x2.words[j])
+                UInt64(x.words[start_x + i]) * UInt64(y.words[start_y + j])
                 + carry
                 + UInt64(words[i + j])
             )
@@ -357,21 +428,21 @@ fn multiply(x1: BigUInt, x2: BigUInt) -> BigUInt:
 
         # If there is a carry left, add it to the next position
         if carry > 0:
-            words[i + len(x2.words)] += UInt32(carry)
+            words[i + n_words_y_slice] += UInt32(carry)
 
     var result = BigUInt(words=words^)
     result.remove_leading_empty_words()
-    return result
-
-
-fn multiply_school(x1: BigUInt, x2: BigUInt) -> BigUInt:
-    return multiply(
-        x1, x2
-    )  # This is a placeholder for the school method multiplication
+    return result^
 
 
 fn multiply_karatsuba(
-    x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int
+    x: BigUInt,
+    y: BigUInt,
+    start_x: Int,
+    end_x: Int,
+    start_y: Int,
+    end_y: Int,
+    cutoff_number_of_words: Int = 768,
 ) -> BigUInt:
     """Multiplies two BigUInt numbers using the Karatsuba algorithm.
 
@@ -382,6 +453,10 @@ fn multiply_karatsuba(
         end_x: The ending index of x to consider.
         start_y: The starting index of y to consider.
         end_y: The ending index of y to consider.
+        cutoff_number_of_words: The cutoff number of words for using Karatsuba
+            multiplication. If the number of words in either operand is less
+            than or equal to this value, the school method is used instead.
+            Default is 768 words (6912 digits).
 
     Returns:
         The product of the two BigUInt numbers.
@@ -396,17 +471,21 @@ fn multiply_karatsuba(
     # Number of words in the slice 2: end_y - start_y
     var n_words_x_slice = end_x - start_x
     var n_words_y_slice = end_y - start_y
-    var n_words_max = max(n_words_x_slice, n_words_y_slice)
 
+    # CASE 1:
+    # If one number is only one-word long
+    # we can use school multiplication because this is only one loop
+    # No need to split the long number into two parts
+    if n_words_x_slice == 1 or n_words_y_slice == 1:
+        return multiply_school(x, y, start_x, end_x, start_y, end_y)
+
+    # CASE 2:
     # The allocation cost is too high for small numbers to use Karatsuba
     # Use school multiplication for small numbers
-
-    if n_words_max <= 64:
+    var n_words_max = max(n_words_x_slice, n_words_y_slice)
+    if n_words_max <= cutoff_number_of_words:
         # return multiply_school (x, y)
-        return multiply_school(
-            BigUInt(words=x.words[start_x:end_x]),
-            BigUInt(words=y.words[start_y:end_y]),
-        )
+        return multiply_school(x, y, start_x, end_x, start_y, end_y)
         # multiply_school can also takes in x, y, and indices
 
     # Otherwise, use Karatsuba
@@ -420,7 +499,9 @@ fn multiply_karatsuba(
     var z2: BigUInt
 
     if n_words_x_slice <= m:
+        # print("Karatsuba multiplication with x slice shorter than m words")
         # x slice is shorter than m words
+        # Two times of multiplication
         # x0 = x_slice
         # x1 = 0
         # y0 = y_slice.words[:m]
@@ -434,7 +515,9 @@ fn multiply_karatsuba(
         return z1^
 
     elif n_words_y_slice <= m:
+        # print("Karatsuba multiplication with y slice shorter than m words")
         # y slice is shorter than m words
+        # Two times of multiplication
         # x0 = x_slice.words[0:m]
         # x1 = x_slice.words[m:]
         # y0 = y_slice
@@ -447,6 +530,9 @@ fn multiply_karatsuba(
         return z1^
 
     else:
+        # print("normal Karatsuba multiplication")
+        # Normal Karatsuba multiplication
+        # Three times of multiplication
         # x0 = x_slice.words[0:m]
         # x1 = x_slice.words[m:]
         # y0 = y_slice.words[0:m]
