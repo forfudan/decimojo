@@ -768,6 +768,11 @@ struct BigDecimal(
         return decimojo.bigdecimal.trigonometric.sin(self, precision)
 
     @always_inline
+    fn cos(self, precision: Int = 28) raises -> Self:
+        """Returns the cosine of the BigDecimal number."""
+        return decimojo.bigdecimal.trigonometric.cos(self, precision)
+
+    @always_inline
     fn arctan(self, precision: Int = 28) raises -> Self:
         """Returns the arctangent of the BigDecimal number."""
         return decimojo.bigdecimal.trigonometric.arctan(self, precision)
