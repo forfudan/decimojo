@@ -300,18 +300,12 @@ fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 # ===----------------------------------------------------------------------=== #
 
 
-fn multiply(
-    x: BigUInt, y: BigUInt, cutoff_number_of_words: Int = 768
-) -> BigUInt:
+fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
     """Returns the product of two BigUInt numbers.
 
     Args:
         x: The first BigUInt operand (multiplicand).
         y: The second BigUInt operand (multiplier).
-        cutoff_number_of_words: The cutoff number of words for using Karatsuba
-            multiplication. If the number of words in either operand is less
-            than or equal to this value, the school method is used instead.
-            Default is 768 words (6912 digits).
 
     Returns:
         The product of the two BigUInt numbers.
@@ -324,8 +318,8 @@ fn multiply(
         to the cutoff number, the school multiplication algorithm is used.
     """
 
-    # alias CUTOFF_NUMBER_OF_WORDS: Int = 512
-    # """The cutoff number of words for using Karatsuba multiplication."""
+    alias CUTOFF_KARATSUBA: Int = 64
+    """The cutoff number of words for using Karatsuba multiplication."""
 
     # SPECIAL CASE: One of the operands is zero or one
     if len(x.words) == 1:
@@ -349,14 +343,17 @@ fn multiply(
     # CASE 2:
     # The allocation cost is too high for small numbers to use Karatsuba
     # Use school multiplication for small numbers
-    if max(len(x.words), len(y.words)) <= cutoff_number_of_words:
+
+    var max_words = max(len(x.words), len(y.words))
+    if max_words <= CUTOFF_KARATSUBA:
         # return multiply_school (x, y)
         return multiply_school(x, y, 0, len(x.words), 0, len(y.words))
         # multiply_school can also takes in x, y, and indices
 
-    return multiply_karatsuba(
-        x, y, 0, len(x.words), 0, len(y.words), cutoff_number_of_words
-    )
+    else:
+        return multiply_karatsuba(
+            x, y, 0, len(x.words), 0, len(y.words), CUTOFF_KARATSUBA
+        )
 
 
 fn multiply_school(
@@ -442,7 +439,7 @@ fn multiply_karatsuba(
     end_x: Int,
     start_y: Int,
     end_y: Int,
-    cutoff_number_of_words: Int = 768,
+    cutoff_number_of_words: Int,
 ) -> BigUInt:
     """Multiplies two BigUInt numbers using the Karatsuba algorithm.
 
@@ -456,7 +453,6 @@ fn multiply_karatsuba(
         cutoff_number_of_words: The cutoff number of words for using Karatsuba
             multiplication. If the number of words in either operand is less
             than or equal to this value, the school method is used instead.
-            Default is 768 words (6912 digits).
 
     Returns:
         The product of the two BigUInt numbers.
@@ -506,8 +502,12 @@ fn multiply_karatsuba(
         # x1 = 0
         # y0 = y_slice.words[:m]
         # y1 = y_slice.words[m:]
-        z0 = multiply_karatsuba(x, y, start_x, end_x, start_y, start_y + m)
-        z1 = multiply_karatsuba(x, y, start_x, end_x, start_y + m, end_y)
+        z0 = multiply_karatsuba(
+            x, y, start_x, end_x, start_y, start_y + m, cutoff_number_of_words
+        )
+        z1 = multiply_karatsuba(
+            x, y, start_x, end_x, start_y + m, end_y, cutoff_number_of_words
+        )
         # z2 = 0
 
         z1.scale_up_by_power_of_billion(m)
@@ -522,8 +522,12 @@ fn multiply_karatsuba(
         # x1 = x_slice.words[m:]
         # y0 = y_slice
         # y1 = 0
-        z0 = multiply_karatsuba(x, y, start_x, start_x + m, start_y, end_y)
-        z1 = multiply_karatsuba(x, y, start_x + m, end_x, start_y, end_y)
+        z0 = multiply_karatsuba(
+            x, y, start_x, start_x + m, start_y, end_y, cutoff_number_of_words
+        )
+        z1 = multiply_karatsuba(
+            x, y, start_x + m, end_x, start_y, end_y, cutoff_number_of_words
+        )
         # z2 = 0
         z1.scale_up_by_power_of_billion(m)
         z1 += z0
@@ -540,10 +544,18 @@ fn multiply_karatsuba(
 
         # z0 = multiply_karatsuba(x0, y0)
         z0 = multiply_karatsuba(
-            x, y, start_x, start_x + m, start_y, start_y + m
+            x,
+            y,
+            start_x,
+            start_x + m,
+            start_y,
+            start_y + m,
+            cutoff_number_of_words,
         )
         # z2 = multiply_karatsuba(x1, y1)
-        z2 = multiply_karatsuba(x, y, start_x + m, end_x, start_y + m, end_y)
+        z2 = multiply_karatsuba(
+            x, y, start_x + m, end_x, start_y + m, end_y, cutoff_number_of_words
+        )
         # z3 = multiply_karatsuba(x0 + x1, y0 + y1)
         # z1 = z3 - z2 -z0
         var x0 = BigUInt(words=x.words[start_x : start_x + m])
@@ -559,6 +571,7 @@ fn multiply_karatsuba(
             len(x0_plus_x1.words),
             0,
             len(y0_plus_y1.words),
+            cutoff_number_of_words,
         )
         try:
             z1 -= z2
