@@ -73,23 +73,25 @@ fn sin(x: BigDecimal, precision: Int) raises -> BigDecimal:
 
     # Step 1: Reduce to (-2π, 2π) using modulo and symmetry
     # sin(x) = sin(x mod 2π)
-    var x_reduced = x
+    var x_reduced: BigDecimal
     if x.compare_absolute(bdec_2pi) >= 0:
         # x_reduced = x mod 2π
         x_reduced = x % bdec_2pi
+    else:
+        x_reduced = x
 
     # Step 2: Reduce [-2π, -6] or [6, 2π] to [6-2π, 2π-6]
     # sin(x) = sin(x - 2π)
     # This is because 2π is an instable point for comparison.
     # To avoid infinite recursion in the final step,
     # we reduce it to [6-2π, 2π-6].
-    if x.compare_absolute(bdec_6) >= 0:
-        if x.sign:
+    if x_reduced.compare_absolute(bdec_6) >= 0:
+        if x_reduced.sign:
             # x in [-2π, -6], reduce to [0, 2π-6]
-            x_reduced = x + bdec_2pi
+            x_reduced += bdec_2pi
         else:
             # x in [6, 2π], reduce to [0, 2π-6]
-            x_reduced = x - bdec_2pi
+            x_reduced -= bdec_2pi
 
     # Step 2: Reduce to [0, 2π) using symmetry
     # At this stage, the value should be in the range [0, 6].
@@ -104,7 +106,6 @@ fn sin(x: BigDecimal, precision: Int) raises -> BigDecimal:
 
     # |x| ≤ π/4: Use Taylor series directly
     if x_reduced.compare_absolute(bdec_pi_div_4) <= 0:
-        print("Using Taylor series for sin(x) in [-π/4, π/4]")
         result = sin_taylor_series(
             x_reduced, minimum_precision=working_precision
         )
@@ -131,7 +132,7 @@ fn sin(x: BigDecimal, precision: Int) raises -> BigDecimal:
 
     # π < |x| < 2π: Use identity sin(x) = -sin(x - π)
     # 0 < (x - π) < π
-    # Note tha the acutal range is (π, 6), so it is reduced to (0, 6- π).
+    # Note tha the acutal range is (π, 6), so it is reduced to (0, 6 - π).
     else:
         x_reduced = x_reduced - bdec_pi
         result = -sin(x_reduced, precision=precision)
