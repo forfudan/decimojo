@@ -99,9 +99,9 @@ fn round_to_precision(
             RoundingMode.ROUND_UP: Round up.
             RoundingMode.ROUND_HALF_UP: Round half up.
             RoundingMode.ROUND_HALF_EVEN: Round half even.
-        remove_extra_digit_due_to_rounding: If True, remove an trailing.
-            digit if the rounding mode result in an extra digit.
-        fill_zeros_to_precision: If True, fill zeros to the precision.
+        remove_extra_digit_due_to_rounding: If True, remove a trailing digit if
+            the rounding mode result in an extra leading digit.
+        fill_zeros_to_precision: If True, fill trailing zeros to the precision.
     """
 
     var ndigits_coefficient = number.coefficient.number_of_digits()
