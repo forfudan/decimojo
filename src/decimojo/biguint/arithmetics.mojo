@@ -361,7 +361,138 @@ fn multiply(x1: BigUInt, x2: BigUInt) -> BigUInt:
 
     var result = BigUInt(words=words^)
     result.remove_leading_empty_words()
-    return result^
+    return result
+
+
+fn multiply_school(x1: BigUInt, x2: BigUInt) -> BigUInt:
+    return multiply(
+        x1, x2
+    )  # This is a placeholder for the school method multiplication
+
+
+fn multiply_karatsuba(
+    x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int
+) -> BigUInt:
+    """Multiplies two BigUInt numbers using the Karatsuba algorithm.
+
+    Args:
+        x: The first BigUInt operand (multiplicand).
+        y: The second BigUInt operand (multiplier).
+        start_x: The starting index of x to consider.
+        end_x: The ending index of x to consider.
+        start_y: The starting index of y to consider.
+        end_y: The ending index of y to consider.
+
+    Returns:
+        The product of the two BigUInt numbers.
+
+    Notes:
+
+    This function uses a technique to avoid making copies of x and y.
+    We just need to consider the slices of x and y by using the indices.
+    """
+
+    # Number of words in the slice 1: end_x - start_x
+    # Number of words in the slice 2: end_y - start_y
+    var n_words_x_slice = end_x - start_x
+    var n_words_y_slice = end_y - start_y
+    var n_words_max = max(n_words_x_slice, n_words_y_slice)
+
+    # The allocation cost is too high for small numbers to use Karatsuba
+    # Use school multiplication for small numbers
+
+    if n_words_max <= 64:
+        # return multiply_school (x, y)
+        return multiply_school(
+            BigUInt(words=x.words[start_x:end_x]),
+            BigUInt(words=y.words[start_y:end_y]),
+        )
+        # multiply_school can also takes in x, y, and indices
+
+    # Otherwise, use Karatsuba
+
+    # A number is split into two as-equal-length-as-possible parts:
+    # x = x1 * 10^(9*m) + x0
+    # The low part takes the first m words, the high part takes the rest.
+    var m = n_words_max // 2
+    var z0: BigUInt
+    var z1: BigUInt
+    var z2: BigUInt
+
+    if n_words_x_slice <= m:
+        # x slice is shorter than m words
+        # x0 = x_slice
+        # x1 = 0
+        # y0 = y_slice.words[:m]
+        # y1 = y_slice.words[m:]
+        z0 = multiply_karatsuba(x, y, start_x, end_x, start_y, start_y + m)
+        z1 = multiply_karatsuba(x, y, start_x, end_x, start_y + m, end_y)
+        # z2 = 0
+
+        z1.scale_up_by_power_of_billion(m)
+        z1 += z0
+        return z1^
+
+    elif n_words_y_slice <= m:
+        # y slice is shorter than m words
+        # x0 = x_slice.words[0:m]
+        # x1 = x_slice.words[m:]
+        # y0 = y_slice
+        # y1 = 0
+        z0 = multiply_karatsuba(x, y, start_x, start_x + m, start_y, end_y)
+        z1 = multiply_karatsuba(x, y, start_x + m, end_x, start_y, end_y)
+        # z2 = 0
+        z1.scale_up_by_power_of_billion(m)
+        z1 += z0
+        return z1^
+
+    else:
+        # x0 = x_slice.words[0:m]
+        # x1 = x_slice.words[m:]
+        # y0 = y_slice.words[0:m]
+        # y1 = y_slice.words[m:]
+
+        # z0 = multiply_karatsuba(x0, y0)
+        z0 = multiply_karatsuba(
+            x, y, start_x, start_x + m, start_y, start_y + m
+        )
+        # z2 = multiply_karatsuba(x1, y1)
+        z2 = multiply_karatsuba(x, y, start_x + m, end_x, start_y + m, end_y)
+        # z3 = multiply_karatsuba(x0 + x1, y0 + y1)
+        # z1 = z3 - z2 -z0
+        var x0 = BigUInt(words=x.words[start_x : start_x + m])
+        var x1 = BigUInt(words=x.words[start_x + m : end_x])
+        var y0 = BigUInt(words=y.words[start_y : start_y + m])
+        var y1 = BigUInt(words=y.words[start_y + m : end_y])
+        var x0_plus_x1 = x0 + x1
+        var y0_plus_y1 = y0 + y1
+        z1 = multiply_karatsuba(
+            x0_plus_x1,
+            y0_plus_y1,
+            0,
+            len(x0_plus_x1.words),
+            0,
+            len(y0_plus_y1.words),
+        )
+        try:
+            z1 -= z2
+            z1 -= z0
+        except e:
+            print(
+                (
+                    "biguint.arithmetics.multiply_karatsuba(): Error in"
+                    " subtraction"
+                ),
+                e,
+            )
+
+        # z2*9^(m * 2) + z1*9^m + z0
+        z2.scale_up_by_power_of_billion(2 * m)
+        z1.scale_up_by_power_of_billion(m)
+        z2 += z1
+        z2 += z0
+
+        return z2^
 
 
 fn scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt:
@@ -418,6 +549,33 @@ fn scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt:
             words.append(UInt32(carry))
 
     return BigUInt(words=words^)
+
+
+fn scale_up_by_power_of_billion(mut x: BigUInt, n: Int):
+    """Multiplies a BigUInt in-place by (10^9)^n if n > 0.
+    This equals to adding 9n zeros (n words) to the end of the number.
+
+    Args:
+        x: The BigUInt value to multiply.
+        n: The power of 10^9 to multiply by. Should be non-negative.
+    """
+
+    if n <= 0:
+        return  # No change needed
+
+    # The number of words to add is n
+    # For example, if n = 3, we add three words of zeros
+    # x1, x2, x3, x4 -> x1, x2, x3, x4, 0, 0, 0
+    orig_len_x = len(x.words)
+    x.words.resize(unsafe_uninit_length=orig_len_x + n)
+    # Move the existing words to the right by n positions
+    # x1, x2, x3, x4, 0, 0, 0 -> 0, 0, 0, x1, x2, x3, x4
+    for i in range(len(x.words) - 1, n - 1, -1):
+        x.words[i] = x.words[i - n]
+    # Fill the first n words with zeros
+    for i in range(n):
+        x.words[i] = UInt32(0)
+    return
 
 
 # ===----------------------------------------------------------------------=== #
