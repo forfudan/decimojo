@@ -39,3 +39,6 @@ bench_dec = "pixi run bench_decimal"
 bench_bint = "pixi run bench_bigint"
 bench_buint = "pixi run bench_biguint"
 bench_bdec = "pixi run bench_bigdecimal"
+
+# doc
+doc = "clear && pixi run mojo doc -o docs/doc.json --diagnose-missing-doc-strings --validate-doc-strings src/decimojo"

@@ -27,35 +27,77 @@ from decimojo.rounding_mode import RoundingMode
 
 # ===----------------------------------------------------------------------=== #
 # List of functions in this module:
+#
+# negative(x: BigUInt) -> BigUInt
+# absolute(x: BigUInt) -> BigUInt
+#
 # add(x1: BigUInt, x2: BigUInt) -> BigUInt
 # add_inplace(x1: BigUInt, x2: BigUInt)
 # add_inplace_by_1(x: BigUInt) -> None
+#
 # subtract(x1: BigUInt, x2: BigUInt) -> BigUInt
-# negative(x: BigUInt) -> BigUInt
-# absolute(x: BigUInt) -> BigUInt
+#
 # multiply(x1: BigUInt, x2: BigUInt) -> BigUInt
-# floor_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
-# truncate_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
-# ceil_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
-# floor_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
-# truncate_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
-# ceil_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
-# divmod(x1: BigUInt, x2: BigUInt) -> Tuple[BigUInt, BigUInt]
 # scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt
-# floor_divide_general(x1: BigUInt, x2: BigUInt) -> BigUInt
+#
+# floor_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
 # floor_divide_partition(x1: BigUInt, x2: BigUInt) -> BigUInt
 # floor_divide_inplace_by_single_word(x1: BigUInt, x2: BigUInt) -> None
 # floor_divide_inplace_by_double_words(x1: BigUInt, x2: BigUInt) -> None
-# floor_divide_inplace_by_2(x: BigUInt) -> None
+# floor_divide_inplace_by_2(x: BigUInt) -> Nonet, x2: BigUInt) -> BigUInt
+# truncate_mod# truncate_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
+# floor_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
+# ceil_divide(x1: BigUInt, x2: BigUInt) -> BigUIntulo(x1: BigUIn# floor_divide_general(x1: BigUInt, x2: BigUInt) -> BigUInt
+# ceil_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
+# divmod(x1: BigUInt, x2: BigUInt) -> Tuple[BigUInt, BigUInt]
 # scale_down_by_power_of_10(x: BigUInt, n: Int) -> BigUInt
+#
 # estimate_quotient(x1: BigUInt, x2: BigUInt, j: Int, m: Int) -> UInt64
 # shift_words_left(x: BigUInt, j: Int) -> BigUInt
 # power_of_10(n: Int) -> BigUInt
 # ===----------------------------------------------------------------------=== #
 
 # ===----------------------------------------------------------------------=== #
-# Arithmetic Operations
-# add, subtract, negative, absolute, multiply, floor_divide, modulo
+# Unary operations
+# negative, absolute
+# ===----------------------------------------------------------------------=== #
+
+
+fn negative(x: BigUInt) raises -> BigUInt:
+    """Returns the negative of a BigUInt number if it is zero.
+
+    Args:
+        x: The BigUInt value to compute the negative of.
+
+    Raises:
+        Error: If x is not zero, as negative of non-zero unsigned integer is undefined.
+
+    Returns:
+        A new BigUInt containing the negative of x.
+    """
+    if not x.is_zero():
+        raise Error(
+            "biguint.arithmetics.negative(): Negative of non-zero unsigned"
+            " integer is undefined"
+        )
+    return BigUInt()  # Return zero
+
+
+fn absolute(x: BigUInt) -> BigUInt:
+    """Returns the absolute value of a BigUInt number.
+
+    Args:
+        x: The BigUInt value to compute the absolute value of.
+
+    Returns:
+        A new BigUInt containing the absolute value of x.
+    """
+    return x
+
+
+# ===----------------------------------------------------------------------=== #
+# Addition algorithms
+# add, add_inplace, add_inplace_by_1
 # ===----------------------------------------------------------------------=== #
 
 
@@ -191,6 +233,11 @@ fn add_inplace_by_1(mut x: BigUInt) -> None:
     return
 
 
+# ===----------------------------------------------------------------------=== #
+# Subtraction algorithms
+# ===----------------------------------------------------------------------=== #
+
+
 fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """Returns the difference of two unsigned integers.
 
@@ -248,36 +295,9 @@ fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     return result^
 
 
-fn negative(x: BigUInt) raises -> BigUInt:
-    """Returns the negative of a BigUInt number if it is zero.
-
-    Args:
-        x: The BigUInt value to compute the negative of.
-
-    Raises:
-        Error: If x is not zero, as negative of non-zero unsigned integer is undefined.
-
-    Returns:
-        A new BigUInt containing the negative of x.
-    """
-    if not x.is_zero():
-        raise Error(
-            "biguint.arithmetics.negative(): Negative of non-zero unsigned"
-            " integer is undefined"
-        )
-    return BigUInt()  # Return zero
-
-
-fn absolute(x: BigUInt) -> BigUInt:
-    """Returns the absolute value of a BigUInt number.
-
-    Args:
-        x: The BigUInt value to compute the absolute value of.
-
-    Returns:
-        A new BigUInt containing the absolute value of x.
-    """
-    return x
+# ===----------------------------------------------------------------------=== #
+# Multiplication algorithms
+# ===----------------------------------------------------------------------=== #
 
 
 fn multiply(x1: BigUInt, x2: BigUInt) -> BigUInt:
@@ -342,6 +362,68 @@ fn multiply(x1: BigUInt, x2: BigUInt) -> BigUInt:
     var result = BigUInt(words=words^)
     result.remove_leading_empty_words()
     return result^
+
+
+fn scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt:
+    """Multiplies a BigUInt by 10^n if n > 0, otherwise doing nothing.
+
+    Args:
+        x: The BigUInt value to multiply.
+        n: The power of 10 to multiply by.
+
+    Returns:
+        A new BigUInt containing the result of the multiplication.
+    """
+    if n <= 0:
+        return x
+
+    var number_of_zero_words = n // 9
+    var number_of_remaining_digits = n % 9
+
+    var words = List[UInt32](capacity=number_of_zero_words + len(x.words) + 1)
+    # Add zero words
+    for _ in range(number_of_zero_words):
+        words.append(UInt32(0))
+    # Add the original words times 10^number_of_remaining_digits
+    if number_of_remaining_digits == 0:
+        for i in range(len(x.words)):
+            words.append(x.words[i])
+    else:  # number_of_remaining_digits > 0
+        var carry = UInt64(0)
+        var multiplier: UInt64
+
+        if number_of_remaining_digits == 1:
+            multiplier = UInt64(10)
+        elif number_of_remaining_digits == 2:
+            multiplier = UInt64(100)
+        elif number_of_remaining_digits == 3:
+            multiplier = UInt64(1000)
+        elif number_of_remaining_digits == 4:
+            multiplier = UInt64(10_000)
+        elif number_of_remaining_digits == 5:
+            multiplier = UInt64(100_000)
+        elif number_of_remaining_digits == 6:
+            multiplier = UInt64(1_000_000)
+        elif number_of_remaining_digits == 7:
+            multiplier = UInt64(10_000_000)
+        else:  # number_of_remaining_digits == 8
+            multiplier = UInt64(100_000_000)
+
+        for i in range(len(x.words)):
+            var product = UInt64(x.words[i]) * multiplier + carry
+            words.append(UInt32(product % UInt64(1_000_000_000)))
+            carry = product // UInt64(1_000_000_000)
+        # Add the last carry if it exists
+        if carry > 0:
+            words.append(UInt32(carry))
+
+    return BigUInt(words=words^)
+
+
+# ===----------------------------------------------------------------------=== #
+# Division Algorithms
+# floor_divide_general, floor_divide_inplace_by_2
+# ===----------------------------------------------------------------------=== #
 
 
 fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
@@ -467,223 +549,6 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
             normalized_x2 = multiply(x2, BigUInt(normalization_factor))
 
     return floor_divide_general(normalized_x1, normalized_x2)
-
-
-@always_inline
-fn truncate_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
-    """Returns the quotient of two BigUInt numbers, truncating toward zero.
-    It is equal to floored division for unsigned numbers.
-    See `floor_divide` for more details.
-    """
-    return floor_divide(x1, x2)
-
-
-fn ceil_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
-    """Returns the quotient of two BigUInt numbers, rounding up.
-
-    Args:
-        x1: The dividend.
-        x2: The divisor.
-
-    Returns:
-        The quotient of x1 / x2, rounded up.
-
-    Raises:
-        ValueError: If the divisor is zero.
-    """
-
-    # CASE: Division by zero
-    if x2.is_zero():
-        raise Error("biguint.arithmetics.ceil_divide(): Division by zero")
-
-    # Apply floor division and check if there is a remainder
-    var quotient = floor_divide(x1, x2)
-    if quotient * x2 < x1:
-        quotient += BigUInt(UInt32(1))
-    return quotient^
-
-
-fn floor_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
-    """Returns the remainder of two BigUInt numbers, truncating toward zero.
-    The remainder has the same sign as the dividend and satisfies:
-    x1 = floor_divide(x1, x2) * x2 + floor_modulo(x1, x2).
-
-    Args:
-        x1: The dividend.
-        x2: The divisor.
-
-    Returns:
-        The remainder of x1 being divided by x2.
-
-    Raises:
-        ValueError: If the divisor is zero.
-
-    Notes:
-        It is equal to floored modulo for positive numbers.
-    """
-    # CASE: Division by zero
-    if x2.is_zero():
-        raise Error("Error in `truncate_modulo`: Division by zero")
-
-    # CASE: Dividend is zero
-    if x1.is_zero():
-        return BigUInt()  # Return zero
-
-    # CASE: Divisor is one - no remainder
-    if x2.is_one():
-        return BigUInt()  # Always divisible with no remainder
-
-    # CASE: |dividend| < |divisor| - the remainder is the dividend itself
-    if x1.compare(x2) < 0:
-        return x1
-
-    # Calculate quotient with truncation
-    var quotient = floor_divide(x1, x2)
-
-    # Calculate remainder: dividend - (divisor * quotient)
-    var remainder = subtract(x1, multiply(x2, quotient))
-
-    return remainder^
-
-
-@always_inline
-fn truncate_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
-    """Returns the remainder of two BigUInt numbers, truncating toward zero.
-    It is equal to floored modulo for unsigned numbers.
-    See `floor_modulo` for more details.
-    """
-    return floor_modulo(x1, x2)
-
-
-fn ceil_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
-    """Returns the remainder of two BigUInt numbers, rounding up.
-    The remainder has the same sign as the dividend and satisfies:
-    x1 = ceil_divide(x1, x2) * x2 + ceil_modulo(x1, x2).
-
-    Args:
-        x1: The dividend.
-        x2: The divisor.
-
-    Returns:
-        The remainder of x1 being ceil-divided by x2.
-
-    Raises:
-        ValueError: If the divisor is zero.
-    """
-    # CASE: Division by zero
-    if x2.is_zero():
-        raise Error("Error in `truncate_modulo`: Division by zero")
-
-    # CASE: Dividend is zero
-    if x1.is_zero():
-        return BigUInt()  # Return zero
-
-    # CASE: Divisor is one - no remainder
-    if x2.is_one():
-        return BigUInt()  # Always divisible with no remainder
-
-    # CASE: |dividend| < |divisor| - the remainder is the dividend itself
-    if x1.compare(x2) < 0:
-        return x1
-
-    # Calculate quotient with truncation
-    var quotient = floor_divide(x1, x2)
-    # Calculate remainder: dividend - (divisor * quotient)
-    var remainder = subtract(x1, multiply(x2, quotient))
-
-    if remainder.is_zero():
-        return BigUInt()  # No remainder
-    else:
-        return subtract(x2, remainder)
-
-
-fn divmod(x1: BigUInt, x2: BigUInt) raises -> Tuple[BigUInt, BigUInt]:
-    """Returns the quotient and remainder of two numbers, truncating toward zero.
-
-    Args:
-        x1: The dividend.
-        x2: The divisor.
-
-    Returns:
-        The quotient of x1 / x2, truncated toward zero and the remainder.
-
-    Raises:
-        ValueError: If the divisor is zero.
-
-    Notes:
-        It is equal to truncated division for positive numbers.
-    """
-
-    var quotient = floor_divide(x1, x2)
-    var remainder = subtract(x1, multiply(x2, quotient))
-    return (quotient^, remainder^)
-
-
-# ===----------------------------------------------------------------------=== #
-# Multiplication Algorithms
-# ===----------------------------------------------------------------------=== #
-
-
-fn scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt:
-    """Multiplies a BigUInt by 10^n if n > 0, otherwise doing nothing.
-
-    Args:
-        x: The BigUInt value to multiply.
-        n: The power of 10 to multiply by.
-
-    Returns:
-        A new BigUInt containing the result of the multiplication.
-    """
-    if n <= 0:
-        return x
-
-    var number_of_zero_words = n // 9
-    var number_of_remaining_digits = n % 9
-
-    var words = List[UInt32](capacity=number_of_zero_words + len(x.words) + 1)
-    # Add zero words
-    for _ in range(number_of_zero_words):
-        words.append(UInt32(0))
-    # Add the original words times 10^number_of_remaining_digits
-    if number_of_remaining_digits == 0:
-        for i in range(len(x.words)):
-            words.append(x.words[i])
-    else:  # number_of_remaining_digits > 0
-        var carry = UInt64(0)
-        var multiplier: UInt64
-
-        if number_of_remaining_digits == 1:
-            multiplier = UInt64(10)
-        elif number_of_remaining_digits == 2:
-            multiplier = UInt64(100)
-        elif number_of_remaining_digits == 3:
-            multiplier = UInt64(1000)
-        elif number_of_remaining_digits == 4:
-            multiplier = UInt64(10_000)
-        elif number_of_remaining_digits == 5:
-            multiplier = UInt64(100_000)
-        elif number_of_remaining_digits == 6:
-            multiplier = UInt64(1_000_000)
-        elif number_of_remaining_digits == 7:
-            multiplier = UInt64(10_000_000)
-        else:  # number_of_remaining_digits == 8
-            multiplier = UInt64(100_000_000)
-
-        for i in range(len(x.words)):
-            var product = UInt64(x.words[i]) * multiplier + carry
-            words.append(UInt32(product % UInt64(1_000_000_000)))
-            carry = product // UInt64(1_000_000_000)
-        # Add the last carry if it exists
-        if carry > 0:
-            words.append(UInt32(carry))
-
-    return BigUInt(words=words^)
-
-
-# ===----------------------------------------------------------------------=== #
-# Division Algorithms
-# floor_divide_general, floor_divide_inplace_by_2
-# ===----------------------------------------------------------------------=== #
 
 
 fn floor_divide_general(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
@@ -911,6 +776,156 @@ fn floor_divide_inplace_by_2(mut x: BigUInt) -> None:
     # Remove leading zeros
     while len(x.words) > 1 and x.words[len(x.words) - 1] == 0:
         x.words.resize(len(x.words) - 1, UInt32(0))
+
+
+@always_inline
+fn truncate_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Returns the quotient of two BigUInt numbers, truncating toward zero.
+    It is equal to floored division for unsigned numbers.
+    See `floor_divide` for more details.
+    """
+    return floor_divide(x1, x2)
+
+
+fn ceil_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Returns the quotient of two BigUInt numbers, rounding up.
+
+    Args:
+        x1: The dividend.
+        x2: The divisor.
+
+    Returns:
+        The quotient of x1 / x2, rounded up.
+
+    Raises:
+        ValueError: If the divisor is zero.
+    """
+
+    # CASE: Division by zero
+    if x2.is_zero():
+        raise Error("biguint.arithmetics.ceil_divide(): Division by zero")
+
+    # Apply floor division and check if there is a remainder
+    var quotient = floor_divide(x1, x2)
+    if quotient * x2 < x1:
+        quotient += BigUInt(UInt32(1))
+    return quotient^
+
+
+fn floor_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Returns the remainder of two BigUInt numbers, truncating toward zero.
+    The remainder has the same sign as the dividend and satisfies:
+    x1 = floor_divide(x1, x2) * x2 + floor_modulo(x1, x2).
+
+    Args:
+        x1: The dividend.
+        x2: The divisor.
+
+    Returns:
+        The remainder of x1 being divided by x2.
+
+    Raises:
+        ValueError: If the divisor is zero.
+
+    Notes:
+        It is equal to floored modulo for positive numbers.
+    """
+    # CASE: Division by zero
+    if x2.is_zero():
+        raise Error("Error in `truncate_modulo`: Division by zero")
+
+    # CASE: Dividend is zero
+    if x1.is_zero():
+        return BigUInt()  # Return zero
+
+    # CASE: Divisor is one - no remainder
+    if x2.is_one():
+        return BigUInt()  # Always divisible with no remainder
+
+    # CASE: |dividend| < |divisor| - the remainder is the dividend itself
+    if x1.compare(x2) < 0:
+        return x1
+
+    # Calculate quotient with truncation
+    var quotient = floor_divide(x1, x2)
+
+    # Calculate remainder: dividend - (divisor * quotient)
+    var remainder = subtract(x1, multiply(x2, quotient))
+
+    return remainder^
+
+
+@always_inline
+fn truncate_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Returns the remainder of two BigUInt numbers, truncating toward zero.
+    It is equal to floored modulo for unsigned numbers.
+    See `floor_modulo` for more details.
+    """
+    return floor_modulo(x1, x2)
+
+
+fn ceil_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Returns the remainder of two BigUInt numbers, rounding up.
+    The remainder has the same sign as the dividend and satisfies:
+    x1 = ceil_divide(x1, x2) * x2 + ceil_modulo(x1, x2).
+
+    Args:
+        x1: The dividend.
+        x2: The divisor.
+
+    Returns:
+        The remainder of x1 being ceil-divided by x2.
+
+    Raises:
+        ValueError: If the divisor is zero.
+    """
+    # CASE: Division by zero
+    if x2.is_zero():
+        raise Error("Error in `truncate_modulo`: Division by zero")
+
+    # CASE: Dividend is zero
+    if x1.is_zero():
+        return BigUInt()  # Return zero
+
+    # CASE: Divisor is one - no remainder
+    if x2.is_one():
+        return BigUInt()  # Always divisible with no remainder
+
+    # CASE: |dividend| < |divisor| - the remainder is the dividend itself
+    if x1.compare(x2) < 0:
+        return x1
+
+    # Calculate quotient with truncation
+    var quotient = floor_divide(x1, x2)
+    # Calculate remainder: dividend - (divisor * quotient)
+    var remainder = subtract(x1, multiply(x2, quotient))
+
+    if remainder.is_zero():
+        return BigUInt()  # No remainder
+    else:
+        return subtract(x2, remainder)
+
+
+fn divmod(x1: BigUInt, x2: BigUInt) raises -> Tuple[BigUInt, BigUInt]:
+    """Returns the quotient and remainder of two numbers, truncating toward zero.
+
+    Args:
+        x1: The dividend.
+        x2: The divisor.
+
+    Returns:
+        The quotient of x1 / x2, truncated toward zero and the remainder.
+
+    Raises:
+        ValueError: If the divisor is zero.
+
+    Notes:
+        It is equal to truncated division for positive numbers.
+    """
+
+    var quotient = floor_divide(x1, x2)
+    var remainder = subtract(x1, multiply(x2, quotient))
+    return (quotient^, remainder^)
 
 
 fn scale_down_by_power_of_10(x: BigUInt, n: Int) raises -> BigUInt:
