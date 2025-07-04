@@ -36,19 +36,11 @@ fn test_bigdecimal_trignometric() raises:
         "arctan_tests",
         "arctan",
     )
-
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal arctan...")
-    # print("------------------------------------------------------")
-
-    # test_cases = load_test_cases(toml, "arctan_tests")
-    # for test_case in test_cases:
-    #     var result = BDec(test_case.a).arctan(precision=50)
-    #     testing.assert_equal(
-    #         lhs=String(result),
-    #         rhs=test_case.expected,
-    #         msg=test_case.description,
-    #     )
+    run_test[func = decimojo.bigdecimal.trigonometric.sin](
+        toml,
+        "sin_tests",
+        "sin",
+    )
 
 
 fn main() raises:

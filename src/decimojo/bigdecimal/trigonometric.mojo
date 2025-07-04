@@ -44,7 +44,13 @@ fn sin(x: BigDecimal, precision: Int) raises -> BigDecimal:
     This function adopts range reduction for optimal convergence.
     """
 
-    alias BUFFER_DIGITS = 9
+    # Yuhao Zhu's notes:
+    # I use a very comservative number of buffer digits because we need to have
+    # a very high precision to calculate the pi so that we can conduct range
+    # reduction accurately.
+    # Otherwise, the result will be inaccurate when x is close to π-related
+    # values, e.g., π/2, π, 3π/2, 2π, etc.
+    alias BUFFER_DIGITS = 99
     var working_precision = precision + BUFFER_DIGITS
 
     var result: BigDecimal
@@ -65,14 +71,28 @@ fn sin(x: BigDecimal, precision: Int) raises -> BigDecimal:
     )
     var bdec_pi_div_4 = bdec_pi.true_divide(bdec_4, precision=working_precision)
 
-    # Step 1: Reduce to (-2π, 2π) using modulo
-    # The treshold is 6 to be more aggressive in checking the range.
+    # Step 1: Reduce to (-2π, 2π) using modulo and symmetry
+    # sin(x) = sin(x mod 2π)
     var x_reduced = x
-    if x.compare_absolute(bdec_6) >= 0:
+    if x.compare_absolute(bdec_2pi) >= 0:
         # x_reduced = x mod 2π
-        var x_reduced = x % bdec_2pi
+        x_reduced = x % bdec_2pi
+
+    # Step 2: Reduce [-2π, -6] or [6, 2π] to [6-2π, 2π-6]
+    # sin(x) = sin(x - 2π)
+    # This is because 2π is an instable point for comparison.
+    # To avoid infinite recursion in the final step,
+    # we reduce it to [6-2π, 2π-6].
+    if x.compare_absolute(bdec_6) >= 0:
+        if x.sign:
+            # x in [-2π, -6], reduce to [0, 2π-6]
+            x_reduced = x + bdec_2pi
+        else:
+            # x in [6, 2π], reduce to [0, 2π-6]
+            x_reduced = x - bdec_2pi
 
     # Step 2: Reduce to [0, 2π) using symmetry
+    # At this stage, the value should be in the range [0, 6].
     var is_negative: Bool
     if x_reduced.sign:
         is_negative = True
@@ -80,19 +100,25 @@ fn sin(x: BigDecimal, precision: Int) raises -> BigDecimal:
     else:
         is_negative = False
 
-    # Step 3: Reduce to [0, π/4]
+    # Step 3: Reduce to [0, π/4] with different cases
 
     # |x| ≤ π/4: Use Taylor series directly
     if x_reduced.compare_absolute(bdec_pi_div_4) <= 0:
-        result = sin_taylor_series(x_reduced, minimum_precision=precision)
+        print("Using Taylor series for sin(x) in [-π/4, π/4]")
+        result = sin_taylor_series(
+            x_reduced, minimum_precision=working_precision
+        )
 
     # π/4 < |x| ≤ π/2: Use identity sin(x) = cos(π/2 - x)
     # 0 ≤ (π/2 - x) < π/4
-    # Use 1.6 as a threshold for better convergence
+    # Use 1.6 because π/4 is an instable point for the next case.
+    # To avoid infinite recursion, we use 1.6 as a threshold.
     # π/4 < |x| ≤ 1.6
     elif x_reduced.compare_absolute(bdec_1d6) <= 0:
         x_reduced = bdec_pi_div_2 - x_reduced
-        result = cos_taylor_series(x_reduced, minimum_precision=precision)
+        result = cos_taylor_series(
+            x_reduced, minimum_precision=working_precision
+        )
 
     # π/2 < |x| ≤ π: Use identity sin(x) = sin(π - x)
     # 0 ≤ (π - x) < π/2
@@ -105,9 +131,9 @@ fn sin(x: BigDecimal, precision: Int) raises -> BigDecimal:
 
     # π < |x| < 2π: Use identity sin(x) = -sin(x - π)
     # 0 < (x - π) < π
+    # Note tha the acutal range is (π, 6), so it is reduced to (0, 6- π).
     else:
-        # print("Using identity for sin with π < |x| < 2π")
-        var x_reduced = x_reduced - bdec_pi
+        x_reduced = x_reduced - bdec_pi
         result = -sin(x_reduced, precision=precision)
 
     if is_negative:
@@ -171,6 +197,7 @@ fn sin_taylor_series(
         else:
             result -= term
         sign *= -1
+
         # Ensure that the result will not explode in size
         result.round_to_precision(
             working_precision,
@@ -196,7 +223,7 @@ fn cos(x: BigDecimal, precision: Int) raises -> BigDecimal:
     This function adopts range reduction for optimal convergence.
     """
 
-    alias BUFFER_DIGITS = 9
+    alias BUFFER_DIGITS = 99
     var working_precision = precision + BUFFER_DIGITS
 
     if x.is_zero():
@@ -261,7 +288,7 @@ fn cos_taylor_series(
 
         sign *= -1
 
-        # Prevent size explosion
+        # # Prevent size explosion
         result.round_to_precision(
             working_precision,
             rounding_mode=RoundingMode.ROUND_DOWN,

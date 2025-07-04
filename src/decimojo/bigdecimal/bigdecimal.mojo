@@ -763,6 +763,11 @@ struct BigDecimal(
 
     # === Trigonometric operations === #
     @always_inline
+    fn sin(self, precision: Int = 28) raises -> Self:
+        """Returns the sine of the BigDecimal number."""
+        return decimojo.bigdecimal.trigonometric.sin(self, precision)
+
+    @always_inline
     fn arctan(self, precision: Int = 28) raises -> Self:
         """Returns the arctangent of the BigDecimal number."""
         return decimojo.bigdecimal.trigonometric.arctan(self, precision)
