@@ -55,7 +55,7 @@ from decimojo.rounding_mode import RoundingMode
 # divmod(x1: BigUInt, x2: BigUInt) -> Tuple[BigUInt, BigUInt]
 # scale_down_by_power_of_10(x: BigUInt, n: Int) -> BigUInt
 #
-# estimate_quotient(x1: BigUInt, x2: BigUInt, j: Int, m: Int) -> UInt64
+# floor_divide_estimate_quotient(x1: BigUInt, x2: BigUInt, j: Int, m: Int) -> UInt64
 # shift_words_left(x: BigUInt, j: Int) -> BigUInt
 # power_of_10(n: Int) -> BigUInt
 # ===----------------------------------------------------------------------=== #
@@ -896,7 +896,7 @@ fn floor_divide_general(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     var j = d
     while j >= 0:
         # OPTIMIZATION: Better quotient estimation
-        var q = estimate_quotient(remainder, x2, j, m)
+        var q = floor_divide_estimate_quotient(remainder, x2, j, m)
 
         # Calculate trial product
         var trial_product = x2 * BigUInt(UInt32(q))
@@ -930,6 +930,45 @@ fn floor_divide_general(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
     result.remove_leading_empty_words()
     return result^
+
+
+fn floor_divide_estimate_quotient(
+    dividend: BigUInt, divisor: BigUInt, j: Int, m: Int
+) -> UInt64:
+    """Gets a better estimate of the quotient digit."""
+    # Get three highest words of relevant dividend portion
+    var r2 = UInt64(0)
+    if j + m < len(dividend.words):
+        r2 = UInt64(dividend.words[j + m])
+
+    var r1 = UInt64(0)
+    if j + m - 1 < len(dividend.words):
+        r1 = UInt64(dividend.words[j + m - 1])
+
+    var r0 = UInt64(0)
+    if j + m - 2 < len(dividend.words):
+        r0 = UInt64(dividend.words[j + m - 2])
+
+    # Get two highest words of divisor
+    var d1 = UInt64(divisor.words[m - 1])
+    var d0 = UInt64(0)
+    if m >= 2:
+        d0 = UInt64(divisor.words[m - 2])
+
+    # If three most significant digits match, quotient would be max
+    if r2 == d1:
+        return 999_999_999
+
+    # Two-word by one-word division
+    var qhat = (r2 * 1_000_000_000 + r1) // d1
+
+    # Adjust if estimate is too large (happens less often with better estimate)
+    while (qhat >= 1_000_000_000) or (
+        qhat * d0 > (r2 * 1_000_000_000 + r1 - qhat * d1) * 1_000_000_000 + r0
+    ):
+        qhat -= 1
+
+    return min(qhat, UInt64(999_999_999))
 
 
 # fn floor_divide_partition(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
@@ -1313,47 +1352,8 @@ fn scale_down_by_power_of_10(x: BigUInt, n: Int) raises -> BigUInt:
 
 # ===----------------------------------------------------------------------=== #
 # Division Helper Functions
-# estimate_quotient, shift_words_left, power_of_10
+# shift_words_left, power_of_10
 # ===----------------------------------------------------------------------=== #
-
-
-fn estimate_quotient(
-    dividend: BigUInt, divisor: BigUInt, j: Int, m: Int
-) -> UInt64:
-    """Gets a better estimate of the quotient digit."""
-    # Get three highest words of relevant dividend portion
-    var r2 = UInt64(0)
-    if j + m < len(dividend.words):
-        r2 = UInt64(dividend.words[j + m])
-
-    var r1 = UInt64(0)
-    if j + m - 1 < len(dividend.words):
-        r1 = UInt64(dividend.words[j + m - 1])
-
-    var r0 = UInt64(0)
-    if j + m - 2 < len(dividend.words):
-        r0 = UInt64(dividend.words[j + m - 2])
-
-    # Get two highest words of divisor
-    var d1 = UInt64(divisor.words[m - 1])
-    var d0 = UInt64(0)
-    if m >= 2:
-        d0 = UInt64(divisor.words[m - 2])
-
-    # If three most significant digits match, quotient would be max
-    if r2 == d1:
-        return 999_999_999
-
-    # Two-word by one-word division
-    var qhat = (r2 * 1_000_000_000 + r1) // d1
-
-    # Adjust if estimate is too large (happens less often with better estimate)
-    while (qhat >= 1_000_000_000) or (
-        qhat * d0 > (r2 * 1_000_000_000 + r1 - qhat * d1) * 1_000_000_000 + r0
-    ):
-        qhat -= 1
-
-    return min(qhat, UInt64(999_999_999))
 
 
 fn shift_words_left(num: BigUInt, positions: Int) -> BigUInt:
