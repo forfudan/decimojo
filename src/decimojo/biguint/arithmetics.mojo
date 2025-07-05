@@ -101,12 +101,12 @@ fn absolute(x: BigUInt) -> BigUInt:
 # ===----------------------------------------------------------------------=== #
 
 
-fn add(x1: BigUInt, x2: BigUInt) -> BigUInt:
+fn add(x: BigUInt, y: BigUInt) -> BigUInt:
     """Returns the sum of two unsigned integers.
 
     Args:
-        x1: The first unsigned integer operand.
-        x2: The second unsigned integer operand.
+        x: The first unsigned integer operand.
+        y: The second unsigned integer operand.
 
     Returns:
         The sum of the two unsigned integers.
@@ -114,42 +114,88 @@ fn add(x1: BigUInt, x2: BigUInt) -> BigUInt:
 
     # Short circuit cases
     # Zero cases
-    if x1.is_zero():
-        return x2
+    if x.is_zero():
+        return y
 
-    if x2.is_zero():
-        return x1
+    if y.is_zero():
+        return x
 
     # If both numbers are single-word, we can handle them with UInt32
-    if len(x1.words) == 1 and len(x2.words) == 1:
-        return BigUInt.from_uint32(x1.words[0] + x2.words[0])
+    if len(x.words) == 1 and len(y.words) == 1:
+        return BigUInt.from_uint32(x.words[0] + y.words[0])
 
     # If both numbers are double-word, we can handle them with UInt64
-    if len(x1.words) <= 2 and len(x2.words) <= 2:
+    if len(x.words) <= 2 and len(y.words) <= 2:
         return BigUInt.from_unsigned_integral_scalar(
-            x1.to_uint64_with_first_2_words()
-            + x2.to_uint64_with_first_2_words()
+            x.to_uint64_with_first_2_words() + y.to_uint64_with_first_2_words()
         )
 
     # Normal cases
+    return add_slices(x, y, 0, len(x.words), 0, len(y.words))
+
+
+fn add_slices(
+    read x: BigUInt,
+    read y: BigUInt,
+    start_x: Int,
+    end_x: Int,
+    start_y: Int,
+    end_y: Int,
+) -> BigUInt:
+    """Adds two BigUInt slices using the school method.
+
+    Args:
+        x: The first BigUInt operand (first summand).
+        y: The second BigUInt operand (second summand).
+        start_x: The starting index of x to consider.
+        end_x: The ending index of x to consider.
+        start_y: The starting index of y to consider.
+        end_y: The ending index of y to consider.
+
+    Returns:
+        A new BigUInt containing the sum of the two slices.
+
+    Notes:
+        This function conducts addtion of the two BigUInt slices. It avoids
+        creating copies of the BigUInt objects by using the indices to access
+        the words directly. This is useful for performance in cases where the
+        BigUInt objects are large and we only need to add a part of them.
+    """
+
+    n_words_x_slice = end_x - start_x
+    n_words_y_slice = end_y - start_y
+
+    # Short circuit cases
+    if n_words_x_slice == 1:
+        # x is zero, return y
+        if x.words[start_x] == 0:
+            return BigUInt(words=y.words[start_y:end_y])
+        # If both numbers are single-word, we can handle them with UInt32
+        if n_words_y_slice == 1:
+            return BigUInt.from_uint32(x.words[start_x] + y.words[start_y])
+    if n_words_y_slice == 1:
+        if y.words[start_y] == 0:
+            return BigUInt(words=x.words[start_x:end_x])
+
+    # Normal cases
     # The result will have at most one more word than the longer operand
-    var words = List[UInt32](capacity=max(len(x1.words), len(x2.words)) + 1)
+    var words = List[UInt32](capacity=max(n_words_x_slice, n_words_y_slice) + 1)
 
     var carry: UInt32 = 0
     var ith: Int = 0
     var sum_of_words: UInt32
 
     # Add corresponding words from both numbers
-    while ith < len(x1.words) or ith < len(x2.words):
+    while ith < n_words_x_slice or ith < n_words_y_slice:
         sum_of_words = carry
 
         # Add x1's word if available
-        if ith < len(x1.words):
-            sum_of_words += x1.words[ith]
+        if ith < n_words_x_slice:
+            sum_of_words += x.words[start_x + ith]
 
         # Add x2's word if available
-        if ith < len(x2.words):
-            sum_of_words += x2.words[ith]
+        if ith < n_words_y_slice:
+            sum_of_words += y.words[start_y + ith]
 
         # Compute new word and carry
         carry = sum_of_words // UInt32(1_000_000_000)
@@ -338,7 +384,7 @@ fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
     # we can use school multiplication because this is only one loop
     # No need to split the long number into two parts
     if len(x.words) == 1 or len(y.words) == 1:
-        return multiply_school(x, y, 0, len(x.words), 0, len(y.words))
+        return multiply_slices(x, y, 0, len(x.words), 0, len(y.words))
 
     # CASE 2:
     # The allocation cost is too high for small numbers to use Karatsuba
@@ -346,9 +392,9 @@ fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
 
     var max_words = max(len(x.words), len(y.words))
     if max_words <= CUTOFF_KARATSUBA:
-        # return multiply_school (x, y)
-        return multiply_school(x, y, 0, len(x.words), 0, len(y.words))
-        # multiply_school can also takes in x, y, and indices
+        # return multiply_slices (x, y)
+        return multiply_slices(x, y, 0, len(x.words), 0, len(y.words))
+        # multiply_slices can also takes in x, y, and indices
 
     else:
         return multiply_karatsuba(
@@ -356,8 +402,13 @@ fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
         )
 
 
-fn multiply_school(
-    x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int
+fn multiply_slices(
+    read x: BigUInt,
+    read y: BigUInt,
+    start_x: Int,
+    end_x: Int,
+    start_y: Int,
+    end_y: Int,
 ) -> BigUInt:
     """Multiplies two BigUInt slices using the school method.
 
@@ -433,8 +484,8 @@ fn multiply_school(
 
 
 fn multiply_karatsuba(
-    x: BigUInt,
-    y: BigUInt,
+    read x: BigUInt,
+    read y: BigUInt,
     start_x: Int,
     end_x: Int,
     start_y: Int,
@@ -473,16 +524,16 @@ fn multiply_karatsuba(
     # we can use school multiplication because this is only one loop
     # No need to split the long number into two parts
     if n_words_x_slice == 1 or n_words_y_slice == 1:
-        return multiply_school(x, y, start_x, end_x, start_y, end_y)
+        return multiply_slices(x, y, start_x, end_x, start_y, end_y)
 
     # CASE 2:
     # The allocation cost is too high for small numbers to use Karatsuba
     # Use school multiplication for small numbers
     var n_words_max = max(n_words_x_slice, n_words_y_slice)
     if n_words_max <= cutoff_number_of_words:
-        # return multiply_school (x, y)
-        return multiply_school(x, y, start_x, end_x, start_y, end_y)
-        # multiply_school can also takes in x, y, and indices
+        # return multiply_slices (x, y)
+        return multiply_slices(x, y, start_x, end_x, start_y, end_y)
+        # multiply_slices can also takes in x, y, and indices
 
     # Otherwise, use Karatsuba
 
@@ -558,12 +609,12 @@ fn multiply_karatsuba(
         )
         # z3 = multiply_karatsuba(x0 + x1, y0 + y1)
         # z1 = z3 - z2 -z0
-        var x0 = BigUInt(words=x.words[start_x : start_x + m])
-        var x1 = BigUInt(words=x.words[start_x + m : end_x])
-        var y0 = BigUInt(words=y.words[start_y : start_y + m])
-        var y1 = BigUInt(words=y.words[start_y + m : end_y])
-        var x0_plus_x1 = x0 + x1
-        var y0_plus_y1 = y0 + y1
+        var x0_plus_x1 = add_slices(
+            x, x, start_x, start_x + m, start_x + m, end_x
+        )
+        var y0_plus_y1 = add_slices(
+            y, y, start_y, start_y + m, start_y + m, end_y
+        )
         z1 = multiply_karatsuba(
             x0_plus_x1,
             y0_plus_y1,
