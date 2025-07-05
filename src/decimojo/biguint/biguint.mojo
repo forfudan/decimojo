@@ -1155,18 +1155,27 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         for word in self.words:
             if word != 0:
                 return False
-        else:
-            return True
+        return True
 
     @always_inline
     fn is_one(self) -> Bool:
         """Returns True if this BigUInt represents one."""
-        return len(self.words) == 1 and self.words[0] == 1
+        if self.words[0] != 1:
+            return False
+        for i in self.words[1:]:
+            if i != 0:
+                return False
+        return True
 
     @always_inline
     fn is_two(self) -> Bool:
         """Returns True if this BigUInt represents two."""
-        return len(self.words) == 1 and self.words[0] == 2
+        if len(self.words) != 2:
+            return False
+        for i in self.words[1:]:
+            if i != 0:
+                return False
+        return True
 
     @always_inline
     fn is_power_of_10(x: BigUInt) -> Bool:
@@ -1176,15 +1185,15 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
                 return False
         var word = x.words[len(x.words) - 1]
         if (
-            (word == 1)
-            or (word == 10)
-            or (word == 100)
-            or (word == 1000)
-            or (word == 10_000)
-            or (word == 100_000)
-            or (word == 1_000_000)
-            or (word == 10_000_000)
-            or (word == 100_000_000)
+            (word == UInt32(1))
+            or (word == UInt32(10))
+            or (word == UInt32(100))
+            or (word == UInt32(1000))
+            or (word == UInt32(10_000))
+            or (word == UInt32(100_000))
+            or (word == UInt32(1_000_000))
+            or (word == UInt32(10_000_000))
+            or (word == UInt32(100_000_000))
         ):
             return True
         return False
