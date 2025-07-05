@@ -949,7 +949,7 @@ fn floor_divide_general(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
         # Calculate trial product
         trial_product = divisor
         multiply_by_uint32(trial_product, UInt32(quotient))
-        trial_product.scale_up_by_power_of_billion(index_of_word)
+        scale_up_by_power_of_billion(trial_product, index_of_word)
 
         # Should need at most 1-2 corrections after the estimation
         var correction_attempts = 0
@@ -959,10 +959,11 @@ fn floor_divide_general(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
             and (correction_attempts < 3)
         ):
             quotient -= 1
+            correction_attempts += 1
+
             trial_product = divisor
             multiply_by_uint32(trial_product, UInt32(quotient))
-            trial_product.scale_up_by_power_of_billion(index_of_word)
-            correction_attempts += 1
+            scale_up_by_power_of_billion(trial_product, index_of_word)
 
         # Store the quotient word
         result.words[index_of_word] = UInt32(quotient)
