@@ -21,6 +21,8 @@ fn open_log_file() raises -> PythonObject:
     """
     var python = Python.import_module("builtins")
     var datetime = Python.import_module("datetime")
+    var pysys = Python.import_module("sys")
+    pysys.set_int_max_str_digits(100000)
 
     # Create logs directory if it doesn't exist
     var log_dir = "./logs"
@@ -448,11 +450,31 @@ fn main() raises:
         speedup_factors,
     )
 
-    # Case 30: Extreme large numbers multiplication
+    # Case 30: Very large numbers multiplication
     run_benchmark_multiply(
         "Extreme large numbers multiplication (1800 digits * 1800 digits)",
         "123456789" * 200,  # 1800 digits
         "987654321" * 200,  # 1800 digits
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 31: Very, very large numbers multiplication
+    run_benchmark_multiply(
+        "Extreme large numbers multiplication (9000 digits * 9000 digits)",
+        "123456789" * 1000,  # 9000 digits
+        "987654321" * 1000,  # 9000 digits
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 32: Extremely large numbers multiplication
+    run_benchmark_multiply(
+        "Extreme large numbers multiplication (36000 digits * 36000 digits)",
+        "123456789" * 4000,  # 36000 digits
+        "987654321" * 4000,  # 36000 digits
         iterations,
         log_file,
         speedup_factors,

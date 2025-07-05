@@ -2,6 +2,12 @@
 
 This is a list of RELEASED changes for the DeciMojo Package.
 
+## 01/08/2025 (v0.4.2)
+
+### 🛠️ Fixed
+
+Fix a bug for `BigUInt` comparison: When there are leading zero words, the comparison returns incorrect results (#97).
+
 ## 01/07/2025 (v0.4.1)
 
 Version 0.4.1 of DeciMojo introduces implicit type conversion between built-in integral types and arbitrary-precision types.

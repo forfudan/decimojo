@@ -27,44 +27,86 @@ from decimojo.rounding_mode import RoundingMode
 
 # ===----------------------------------------------------------------------=== #
 # List of functions in this module:
+#
+# negative(x: BigUInt) -> BigUInt
+# absolute(x: BigUInt) -> BigUInt
+#
 # add(x1: BigUInt, x2: BigUInt) -> BigUInt
 # add_inplace(x1: BigUInt, x2: BigUInt)
 # add_inplace_by_1(x: BigUInt) -> None
+#
 # subtract(x1: BigUInt, x2: BigUInt) -> BigUInt
-# negative(x: BigUInt) -> BigUInt
-# absolute(x: BigUInt) -> BigUInt
+#
 # multiply(x1: BigUInt, x2: BigUInt) -> BigUInt
-# floor_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
-# truncate_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
-# ceil_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
-# floor_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
-# truncate_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
-# ceil_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
-# divmod(x1: BigUInt, x2: BigUInt) -> Tuple[BigUInt, BigUInt]
 # scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt
-# floor_divide_general(x1: BigUInt, x2: BigUInt) -> BigUInt
+#
+# floor_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
 # floor_divide_partition(x1: BigUInt, x2: BigUInt) -> BigUInt
 # floor_divide_inplace_by_single_word(x1: BigUInt, x2: BigUInt) -> None
 # floor_divide_inplace_by_double_words(x1: BigUInt, x2: BigUInt) -> None
-# floor_divide_inplace_by_2(x: BigUInt) -> None
+# floor_divide_inplace_by_2(x: BigUInt) -> Nonet, x2: BigUInt) -> BigUInt
+# truncate_mod# truncate_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
+# floor_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
+# ceil_divide(x1: BigUInt, x2: BigUInt) -> BigUIntulo(x1: BigUIn# floor_divide_general(x1: BigUInt, x2: BigUInt) -> BigUInt
+# ceil_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
+# divmod(x1: BigUInt, x2: BigUInt) -> Tuple[BigUInt, BigUInt]
 # scale_down_by_power_of_10(x: BigUInt, n: Int) -> BigUInt
+#
 # estimate_quotient(x1: BigUInt, x2: BigUInt, j: Int, m: Int) -> UInt64
 # shift_words_left(x: BigUInt, j: Int) -> BigUInt
 # power_of_10(n: Int) -> BigUInt
 # ===----------------------------------------------------------------------=== #
 
 # ===----------------------------------------------------------------------=== #
-# Arithmetic Operations
-# add, subtract, negative, absolute, multiply, floor_divide, modulo
+# Unary operations
+# negative, absolute
 # ===----------------------------------------------------------------------=== #
 
 
-fn add(x1: BigUInt, x2: BigUInt) -> BigUInt:
+fn negative(x: BigUInt) raises -> BigUInt:
+    """Returns the negative of a BigUInt number if it is zero.
+
+    Args:
+        x: The BigUInt value to compute the negative of.
+
+    Raises:
+        Error: If x is not zero, as negative of non-zero unsigned integer is undefined.
+
+    Returns:
+        A new BigUInt containing the negative of x.
+    """
+    if not x.is_zero():
+        raise Error(
+            "biguint.arithmetics.negative(): Negative of non-zero unsigned"
+            " integer is undefined"
+        )
+    return BigUInt()  # Return zero
+
+
+fn absolute(x: BigUInt) -> BigUInt:
+    """Returns the absolute value of a BigUInt number.
+
+    Args:
+        x: The BigUInt value to compute the absolute value of.
+
+    Returns:
+        A new BigUInt containing the absolute value of x.
+    """
+    return x
+
+
+# ===----------------------------------------------------------------------=== #
+# Addition algorithms
+# add, add_inplace, add_inplace_by_1
+# ===----------------------------------------------------------------------=== #
+
+
+fn add(x: BigUInt, y: BigUInt) -> BigUInt:
     """Returns the sum of two unsigned integers.
 
     Args:
-        x1: The first unsigned integer operand.
-        x2: The second unsigned integer operand.
+        x: The first unsigned integer operand.
+        y: The second unsigned integer operand.
 
     Returns:
         The sum of the two unsigned integers.
@@ -72,42 +114,88 @@ fn add(x1: BigUInt, x2: BigUInt) -> BigUInt:
 
     # Short circuit cases
     # Zero cases
-    if x1.is_zero():
-        return x2
+    if x.is_zero():
+        return y
 
-    if x2.is_zero():
-        return x1
+    if y.is_zero():
+        return x
 
     # If both numbers are single-word, we can handle them with UInt32
-    if len(x1.words) == 1 and len(x2.words) == 1:
-        return BigUInt.from_uint32(x1.words[0] + x2.words[0])
+    if len(x.words) == 1 and len(y.words) == 1:
+        return BigUInt.from_uint32(x.words[0] + y.words[0])
 
     # If both numbers are double-word, we can handle them with UInt64
-    if len(x1.words) <= 2 and len(x2.words) <= 2:
+    if len(x.words) <= 2 and len(y.words) <= 2:
         return BigUInt.from_unsigned_integral_scalar(
-            x1.to_uint64_with_first_2_words()
-            + x2.to_uint64_with_first_2_words()
+            x.to_uint64_with_first_2_words() + y.to_uint64_with_first_2_words()
         )
 
     # Normal cases
+    return add_slices(x, y, 0, len(x.words), 0, len(y.words))
+
+
+fn add_slices(
+    read x: BigUInt,
+    read y: BigUInt,
+    start_x: Int,
+    end_x: Int,
+    start_y: Int,
+    end_y: Int,
+) -> BigUInt:
+    """Adds two BigUInt slices using the school method.
+
+    Args:
+        x: The first BigUInt operand (first summand).
+        y: The second BigUInt operand (second summand).
+        start_x: The starting index of x to consider.
+        end_x: The ending index of x to consider.
+        start_y: The starting index of y to consider.
+        end_y: The ending index of y to consider.
+
+    Returns:
+        A new BigUInt containing the sum of the two slices.
+
+    Notes:
+        This function conducts addtion of the two BigUInt slices. It avoids
+        creating copies of the BigUInt objects by using the indices to access
+        the words directly. This is useful for performance in cases where the
+        BigUInt objects are large and we only need to add a part of them.
+    """
+
+    n_words_x_slice = end_x - start_x
+    n_words_y_slice = end_y - start_y
+
+    # Short circuit cases
+    if n_words_x_slice == 1:
+        # x is zero, return y
+        if x.words[start_x] == 0:
+            return BigUInt(words=y.words[start_y:end_y])
+        # If both numbers are single-word, we can handle them with UInt32
+        if n_words_y_slice == 1:
+            return BigUInt.from_uint32(x.words[start_x] + y.words[start_y])
+    if n_words_y_slice == 1:
+        if y.words[start_y] == 0:
+            return BigUInt(words=x.words[start_x:end_x])
+
+    # Normal cases
     # The result will have at most one more word than the longer operand
-    var words = List[UInt32](capacity=max(len(x1.words), len(x2.words)) + 1)
+    var words = List[UInt32](capacity=max(n_words_x_slice, n_words_y_slice) + 1)
 
     var carry: UInt32 = 0
     var ith: Int = 0
     var sum_of_words: UInt32
 
     # Add corresponding words from both numbers
-    while ith < len(x1.words) or ith < len(x2.words):
+    while ith < n_words_x_slice or ith < n_words_y_slice:
         sum_of_words = carry
 
         # Add x1's word if available
-        if ith < len(x1.words):
-            sum_of_words += x1.words[ith]
+        if ith < n_words_x_slice:
+            sum_of_words += x.words[start_x + ith]
 
         # Add x2's word if available
-        if ith < len(x2.words):
-            sum_of_words += x2.words[ith]
+        if ith < n_words_y_slice:
+            sum_of_words += y.words[start_y + ith]
 
         # Compute new word and carry
         carry = sum_of_words // UInt32(1_000_000_000)
@@ -191,6 +279,11 @@ fn add_inplace_by_1(mut x: BigUInt) -> None:
     return
 
 
+# ===----------------------------------------------------------------------=== #
+# Subtraction algorithms
+# ===----------------------------------------------------------------------=== #
+
+
 fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """Returns the difference of two unsigned integers.
 
@@ -205,11 +298,8 @@ fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         The result of subtracting x2 from x1.
     """
     # If the subtrahend is zero, return the minuend
-    if x2.is_zero():
+    if len(x2.words) == 1 and x2.words[0] == 0:
         return x1
-    if x1.is_zero():
-        # x2 is not zero, so the result is negative, raise an error
-        raise Error("biguint.arithmetics.subtract(): Underflow due to x1 < x2")
 
     # We need to determine which number has the larger magnitude
     var comparison_result = x1.compare(x2)
@@ -248,60 +338,103 @@ fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     return result^
 
 
-fn negative(x: BigUInt) raises -> BigUInt:
-    """Returns the negative of a BigUInt number if it is zero.
-
-    Args:
-        x: The BigUInt value to compute the negative of.
-
-    Raises:
-        Error: If x is not zero, as negative of non-zero unsigned integer is undefined.
-
-    Returns:
-        A new BigUInt containing the negative of x.
-    """
-    if not x.is_zero():
-        raise Error(
-            "biguint.arithmetics.negative(): Negative of non-zero unsigned"
-            " integer is undefined"
-        )
-    return BigUInt()  # Return zero
+# ===----------------------------------------------------------------------=== #
+# Multiplication algorithms
+# ===----------------------------------------------------------------------=== #
 
 
-fn absolute(x: BigUInt) -> BigUInt:
-    """Returns the absolute value of a BigUInt number.
-
-    Args:
-        x: The BigUInt value to compute the absolute value of.
-
-    Returns:
-        A new BigUInt containing the absolute value of x.
-    """
-    return x
-
-
-fn multiply(x1: BigUInt, x2: BigUInt) -> BigUInt:
+fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
     """Returns the product of two BigUInt numbers.
 
     Args:
-        x1: The first BigUInt operand (multiplicand).
-        x2: The second BigUInt operand (multiplier).
+        x: The first BigUInt operand (multiplicand).
+        y: The second BigUInt operand (multiplier).
 
     Returns:
         The product of the two BigUInt numbers.
+
+    Notes:
+        This function will adopts the Karatsuba multiplication algorithm
+        for larger numbers, and the school multiplication algorithm for smaller
+        numbers. The cutoff number of words is used to determine which algorithm
+        to use. If the number of words in either operand is less than or equal
+        to the cutoff number, the school multiplication algorithm is used.
     """
-    # CASE: One of the operands is zero
-    if x1.is_zero() or x2.is_zero():
-        return BigUInt(UInt32(0))
 
-    # CASE: One of the operands is one or negative one
-    if x1.is_one():
-        return x2
-    if x2.is_one():
-        return x1
+    alias CUTOFF_KARATSUBA: Int = 64
+    """The cutoff number of words for using Karatsuba multiplication."""
 
-    # The maximum number of words in the result is the sum of the words in the operands
-    var max_result_len = len(x1.words) + len(x2.words)
+    # SPECIAL CASE: One of the operands is zero or one
+    if len(x.words) == 1:
+        if x.words[0] == 0:
+            return BigUInt(UInt32(0))
+        if x.words[0] == 1:
+            return y
+    if len(y.words) == 1:
+        if y.words[0] == 0:
+            return BigUInt(UInt32(0))
+        if y.words[0] == 1:
+            return x
+
+    # CASE 1:
+    # If one number is only one-word long
+    # we can use school multiplication because this is only one loop
+    # No need to split the long number into two parts
+    if len(x.words) == 1 or len(y.words) == 1:
+        return multiply_slices(x, y, 0, len(x.words), 0, len(y.words))
+
+    # CASE 2:
+    # The allocation cost is too high for small numbers to use Karatsuba
+    # Use school multiplication for small numbers
+
+    var max_words = max(len(x.words), len(y.words))
+    if max_words <= CUTOFF_KARATSUBA:
+        # return multiply_slices (x, y)
+        return multiply_slices(x, y, 0, len(x.words), 0, len(y.words))
+        # multiply_slices can also takes in x, y, and indices
+
+    else:
+        return multiply_karatsuba(
+            x, y, 0, len(x.words), 0, len(y.words), CUTOFF_KARATSUBA
+        )
+
+
+fn multiply_slices(
+    read x: BigUInt,
+    read y: BigUInt,
+    start_x: Int,
+    end_x: Int,
+    start_y: Int,
+    end_y: Int,
+) -> BigUInt:
+    """Multiplies two BigUInt slices using the school method.
+
+    Args:
+        x: The first BigUInt operand (multiplicand).
+        y: The second BigUInt operand (multiplier).
+        start_x: The starting index of x to consider.
+        end_x: The ending index of x to consider.
+        start_y: The starting index of y to consider.
+        end_y: The ending index of y to consider.
+    """
+
+    n_words_x_slice = end_x - start_x
+    n_words_y_slice = end_y - start_y
+
+    # CASE: One of the operands is zero or one
+    if n_words_x_slice == 1:
+        if x.words[start_x] == 0:
+            return BigUInt(UInt32(0))
+        if x.words[start_x] == 1:
+            return BigUInt(words=y.words[start_y:end_y])
+    if n_words_y_slice == 1:
+        if y.words[start_y] == 0:
+            return BigUInt(UInt32(0))
+        if y.words[start_y] == 1:
+            return BigUInt(words=x.words[start_x:end_x])
+
+    # The max number of words in the result is the sum of the words in the operands
+    var max_result_len = n_words_x_slice + n_words_y_slice
     var words = List[UInt32](capacity=max_result_len)
 
     # Initialize result words with zeros
@@ -309,23 +442,26 @@ fn multiply(x1: BigUInt, x2: BigUInt) -> BigUInt:
         words.append(0)
 
     # Perform the multiplication word by word (from least significant to most significant)
-    # x1 = x1[0] + x1[1] * 10^9
-    # x2 = x2[0] + x2[1] * 10^9
-    # x1 * x2 = x1[0] * x2[0] + (x1[0] * x2[1] + x1[1] * x2[0]) * 10^9 + x1[1] * x2[1] * 10^18
+    # x = x[start_x] + x[start_x + 1] * 10^9
+    # y = y[start_y] + y[start_y + 1] * 10^9
+    # x * y = x[start_x] * y[start_y]
+    #       + (x[start_x] * y[start_y + 1]
+    #       + x[start_x + 1] * y[start_y]) * 10^9
+    #       + x[start_x + 1] * y[start_y + 1] * 10^18
     var carry: UInt64
-    for i in range(len(x1.words)):
+    for i in range(n_words_x_slice):
         # Skip if the word is zero
-        if x1.words[i] == 0:
+        if x.words[start_x + i] == 0:
             continue
 
         carry = UInt64(0)
 
-        for j in range(len(x2.words)):
+        for j in range(n_words_y_slice):
             # Calculate the product of the current words
             # plus the carry from the previous multiplication
             # plus the value already at this position in the result
             var product = (
-                UInt64(x1.words[i]) * UInt64(x2.words[j])
+                UInt64(x.words[start_x + i]) * UInt64(y.words[start_y + j])
                 + carry
                 + UInt64(words[i + j])
             )
@@ -337,11 +473,265 @@ fn multiply(x1: BigUInt, x2: BigUInt) -> BigUInt:
 
         # If there is a carry left, add it to the next position
         if carry > 0:
-            words[i + len(x2.words)] += UInt32(carry)
+            words[i + n_words_y_slice] += UInt32(carry)
 
     var result = BigUInt(words=words^)
     result.remove_leading_empty_words()
     return result^
+
+
+fn multiply_karatsuba(
+    read x: BigUInt,
+    read y: BigUInt,
+    start_x: Int,
+    end_x: Int,
+    start_y: Int,
+    end_y: Int,
+    cutoff_number_of_words: Int,
+) -> BigUInt:
+    """Multiplies two BigUInt numbers using the Karatsuba algorithm.
+
+    Args:
+        x: The first BigUInt operand (multiplicand).
+        y: The second BigUInt operand (multiplier).
+        start_x: The starting index of x to consider.
+        end_x: The ending index of x to consider.
+        start_y: The starting index of y to consider.
+        end_y: The ending index of y to consider.
+        cutoff_number_of_words: The cutoff number of words for using Karatsuba
+            multiplication. If the number of words in either operand is less
+            than or equal to this value, the school method is used instead.
+
+    Returns:
+        The product of the two BigUInt numbers.
+
+    Notes:
+
+    This function uses a technique to avoid making copies of x and y.
+    We just need to consider the slices of x and y by using the indices.
+    """
+
+    # Number of words in the slice 1: end_x - start_x
+    # Number of words in the slice 2: end_y - start_y
+    var n_words_x_slice = end_x - start_x
+    var n_words_y_slice = end_y - start_y
+
+    # CASE 1:
+    # If one number is only one-word long
+    # we can use school multiplication because this is only one loop
+    # No need to split the long number into two parts
+    if n_words_x_slice == 1 or n_words_y_slice == 1:
+        return multiply_slices(x, y, start_x, end_x, start_y, end_y)
+
+    # CASE 2:
+    # The allocation cost is too high for small numbers to use Karatsuba
+    # Use school multiplication for small numbers
+    var n_words_max = max(n_words_x_slice, n_words_y_slice)
+    if n_words_max <= cutoff_number_of_words:
+        # return multiply_slices (x, y)
+        return multiply_slices(x, y, start_x, end_x, start_y, end_y)
+        # multiply_slices can also takes in x, y, and indices
+
+    # Otherwise, use Karatsuba
+
+    # A number is split into two as-equal-length-as-possible parts:
+    # x = x1 * 10^(9*m) + x0
+    # The low part takes the first m words, the high part takes the rest.
+    var m = n_words_max // 2
+    var z0: BigUInt
+    var z1: BigUInt
+    var z2: BigUInt
+
+    if n_words_x_slice <= m:
+        # print("Karatsuba multiplication with x slice shorter than m words")
+        # x slice is shorter than m words
+        # Two times of multiplication
+        # x0 = x_slice
+        # x1 = 0
+        # y0 = y_slice.words[:m]
+        # y1 = y_slice.words[m:]
+        z0 = multiply_karatsuba(
+            x, y, start_x, end_x, start_y, start_y + m, cutoff_number_of_words
+        )
+        z1 = multiply_karatsuba(
+            x, y, start_x, end_x, start_y + m, end_y, cutoff_number_of_words
+        )
+        # z2 = 0
+
+        z1.scale_up_by_power_of_billion(m)
+        z1 += z0
+        return z1^
+
+    elif n_words_y_slice <= m:
+        # print("Karatsuba multiplication with y slice shorter than m words")
+        # y slice is shorter than m words
+        # Two times of multiplication
+        # x0 = x_slice.words[0:m]
+        # x1 = x_slice.words[m:]
+        # y0 = y_slice
+        # y1 = 0
+        z0 = multiply_karatsuba(
+            x, y, start_x, start_x + m, start_y, end_y, cutoff_number_of_words
+        )
+        z1 = multiply_karatsuba(
+            x, y, start_x + m, end_x, start_y, end_y, cutoff_number_of_words
+        )
+        # z2 = 0
+        z1.scale_up_by_power_of_billion(m)
+        z1 += z0
+        return z1^
+
+    else:
+        # print("normal Karatsuba multiplication")
+        # Normal Karatsuba multiplication
+        # Three times of multiplication
+        # x0 = x_slice.words[0:m]
+        # x1 = x_slice.words[m:]
+        # y0 = y_slice.words[0:m]
+        # y1 = y_slice.words[m:]
+
+        # z0 = multiply_karatsuba(x0, y0)
+        z0 = multiply_karatsuba(
+            x,
+            y,
+            start_x,
+            start_x + m,
+            start_y,
+            start_y + m,
+            cutoff_number_of_words,
+        )
+        # z2 = multiply_karatsuba(x1, y1)
+        z2 = multiply_karatsuba(
+            x, y, start_x + m, end_x, start_y + m, end_y, cutoff_number_of_words
+        )
+        # z3 = multiply_karatsuba(x0 + x1, y0 + y1)
+        # z1 = z3 - z2 -z0
+        var x0_plus_x1 = add_slices(
+            x, x, start_x, start_x + m, start_x + m, end_x
+        )
+        var y0_plus_y1 = add_slices(
+            y, y, start_y, start_y + m, start_y + m, end_y
+        )
+        z1 = multiply_karatsuba(
+            x0_plus_x1,
+            y0_plus_y1,
+            0,
+            len(x0_plus_x1.words),
+            0,
+            len(y0_plus_y1.words),
+            cutoff_number_of_words,
+        )
+        try:
+            z1 -= z2
+            z1 -= z0
+        except e:
+            print(
+                (
+                    "biguint.arithmetics.multiply_karatsuba(): Error in"
+                    " subtraction"
+                ),
+                e,
+            )
+            print("z1:", z1)
+            print("z2:", z2)
+            print("z0:", z0)
+
+        # z2*9^(m * 2) + z1*9^m + z0
+        z2.scale_up_by_power_of_billion(2 * m)
+        z1.scale_up_by_power_of_billion(m)
+        z2 += z1
+        z2 += z0
+
+        return z2^
+
+
+fn scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt:
+    """Multiplies a BigUInt by 10^n if n > 0, otherwise doing nothing.
+
+    Args:
+        x: The BigUInt value to multiply.
+        n: The power of 10 to multiply by.
+
+    Returns:
+        A new BigUInt containing the result of the multiplication.
+    """
+    if n <= 0:
+        return x
+
+    var number_of_zero_words = n // 9
+    var number_of_remaining_digits = n % 9
+
+    var words = List[UInt32](capacity=number_of_zero_words + len(x.words) + 1)
+    # Add zero words
+    for _ in range(number_of_zero_words):
+        words.append(UInt32(0))
+    # Add the original words times 10^number_of_remaining_digits
+    if number_of_remaining_digits == 0:
+        for i in range(len(x.words)):
+            words.append(x.words[i])
+    else:  # number_of_remaining_digits > 0
+        var carry = UInt64(0)
+        var multiplier: UInt64
+
+        if number_of_remaining_digits == 1:
+            multiplier = UInt64(10)
+        elif number_of_remaining_digits == 2:
+            multiplier = UInt64(100)
+        elif number_of_remaining_digits == 3:
+            multiplier = UInt64(1000)
+        elif number_of_remaining_digits == 4:
+            multiplier = UInt64(10_000)
+        elif number_of_remaining_digits == 5:
+            multiplier = UInt64(100_000)
+        elif number_of_remaining_digits == 6:
+            multiplier = UInt64(1_000_000)
+        elif number_of_remaining_digits == 7:
+            multiplier = UInt64(10_000_000)
+        else:  # number_of_remaining_digits == 8
+            multiplier = UInt64(100_000_000)
+
+        for i in range(len(x.words)):
+            var product = UInt64(x.words[i]) * multiplier + carry
+            words.append(UInt32(product % UInt64(1_000_000_000)))
+            carry = product // UInt64(1_000_000_000)
+        # Add the last carry if it exists
+        if carry > 0:
+            words.append(UInt32(carry))
+
+    return BigUInt(words=words^)
+
+
+fn scale_up_by_power_of_billion(mut x: BigUInt, n: Int):
+    """Multiplies a BigUInt in-place by (10^9)^n if n > 0.
+    This equals to adding 9n zeros (n words) to the end of the number.
+
+    Args:
+        x: The BigUInt value to multiply.
+        n: The power of 10^9 to multiply by. Should be non-negative.
+    """
+
+    if n <= 0:
+        return  # No change needed
+
+    # The number of words to add is n
+    # For example, if n = 3, we add three words of zeros
+    # x1, x2, x3, x4 -> x1, x2, x3, x4, 0, 0, 0
+    orig_len_x = len(x.words)
+    x.words.resize(unsafe_uninit_length=orig_len_x + n)
+    # Move the existing words to the right by n positions
+    # x1, x2, x3, x4, 0, 0, 0 -> 0, 0, 0, x1, x2, x3, x4
+    for i in range(len(x.words) - 1, n - 1, -1):
+        x.words[i] = x.words[i - n]
+    # Fill the first n words with zeros
+    for i in range(n):
+        x.words[i] = UInt32(0)
+    return
+
+
+# ===----------------------------------------------------------------------=== #
+# Division Algorithms
+# floor_divide_general, floor_divide_inplace_by_2
+# ===----------------------------------------------------------------------=== #
 
 
 fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
@@ -467,223 +857,6 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
             normalized_x2 = multiply(x2, BigUInt(normalization_factor))
 
     return floor_divide_general(normalized_x1, normalized_x2)
-
-
-@always_inline
-fn truncate_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
-    """Returns the quotient of two BigUInt numbers, truncating toward zero.
-    It is equal to floored division for unsigned numbers.
-    See `floor_divide` for more details.
-    """
-    return floor_divide(x1, x2)
-
-
-fn ceil_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
-    """Returns the quotient of two BigUInt numbers, rounding up.
-
-    Args:
-        x1: The dividend.
-        x2: The divisor.
-
-    Returns:
-        The quotient of x1 / x2, rounded up.
-
-    Raises:
-        ValueError: If the divisor is zero.
-    """
-
-    # CASE: Division by zero
-    if x2.is_zero():
-        raise Error("biguint.arithmetics.ceil_divide(): Division by zero")
-
-    # Apply floor division and check if there is a remainder
-    var quotient = floor_divide(x1, x2)
-    if quotient * x2 < x1:
-        quotient += BigUInt(UInt32(1))
-    return quotient^
-
-
-fn floor_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
-    """Returns the remainder of two BigUInt numbers, truncating toward zero.
-    The remainder has the same sign as the dividend and satisfies:
-    x1 = floor_divide(x1, x2) * x2 + floor_modulo(x1, x2).
-
-    Args:
-        x1: The dividend.
-        x2: The divisor.
-
-    Returns:
-        The remainder of x1 being divided by x2.
-
-    Raises:
-        ValueError: If the divisor is zero.
-
-    Notes:
-        It is equal to floored modulo for positive numbers.
-    """
-    # CASE: Division by zero
-    if x2.is_zero():
-        raise Error("Error in `truncate_modulo`: Division by zero")
-
-    # CASE: Dividend is zero
-    if x1.is_zero():
-        return BigUInt()  # Return zero
-
-    # CASE: Divisor is one - no remainder
-    if x2.is_one():
-        return BigUInt()  # Always divisible with no remainder
-
-    # CASE: |dividend| < |divisor| - the remainder is the dividend itself
-    if x1.compare(x2) < 0:
-        return x1
-
-    # Calculate quotient with truncation
-    var quotient = floor_divide(x1, x2)
-
-    # Calculate remainder: dividend - (divisor * quotient)
-    var remainder = subtract(x1, multiply(x2, quotient))
-
-    return remainder^
-
-
-@always_inline
-fn truncate_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
-    """Returns the remainder of two BigUInt numbers, truncating toward zero.
-    It is equal to floored modulo for unsigned numbers.
-    See `floor_modulo` for more details.
-    """
-    return floor_modulo(x1, x2)
-
-
-fn ceil_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
-    """Returns the remainder of two BigUInt numbers, rounding up.
-    The remainder has the same sign as the dividend and satisfies:
-    x1 = ceil_divide(x1, x2) * x2 + ceil_modulo(x1, x2).
-
-    Args:
-        x1: The dividend.
-        x2: The divisor.
-
-    Returns:
-        The remainder of x1 being ceil-divided by x2.
-
-    Raises:
-        ValueError: If the divisor is zero.
-    """
-    # CASE: Division by zero
-    if x2.is_zero():
-        raise Error("Error in `truncate_modulo`: Division by zero")
-
-    # CASE: Dividend is zero
-    if x1.is_zero():
-        return BigUInt()  # Return zero
-
-    # CASE: Divisor is one - no remainder
-    if x2.is_one():
-        return BigUInt()  # Always divisible with no remainder
-
-    # CASE: |dividend| < |divisor| - the remainder is the dividend itself
-    if x1.compare(x2) < 0:
-        return x1
-
-    # Calculate quotient with truncation
-    var quotient = floor_divide(x1, x2)
-    # Calculate remainder: dividend - (divisor * quotient)
-    var remainder = subtract(x1, multiply(x2, quotient))
-
-    if remainder.is_zero():
-        return BigUInt()  # No remainder
-    else:
-        return subtract(x2, remainder)
-
-
-fn divmod(x1: BigUInt, x2: BigUInt) raises -> Tuple[BigUInt, BigUInt]:
-    """Returns the quotient and remainder of two numbers, truncating toward zero.
-
-    Args:
-        x1: The dividend.
-        x2: The divisor.
-
-    Returns:
-        The quotient of x1 / x2, truncated toward zero and the remainder.
-
-    Raises:
-        ValueError: If the divisor is zero.
-
-    Notes:
-        It is equal to truncated division for positive numbers.
-    """
-
-    var quotient = floor_divide(x1, x2)
-    var remainder = subtract(x1, multiply(x2, quotient))
-    return (quotient^, remainder^)
-
-
-# ===----------------------------------------------------------------------=== #
-# Multiplication Algorithms
-# ===----------------------------------------------------------------------=== #
-
-
-fn scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt:
-    """Multiplies a BigUInt by 10^n if n > 0, otherwise doing nothing.
-
-    Args:
-        x: The BigUInt value to multiply.
-        n: The power of 10 to multiply by.
-
-    Returns:
-        A new BigUInt containing the result of the multiplication.
-    """
-    if n <= 0:
-        return x
-
-    var number_of_zero_words = n // 9
-    var number_of_remaining_digits = n % 9
-
-    var words = List[UInt32](capacity=number_of_zero_words + len(x.words) + 1)
-    # Add zero words
-    for _ in range(number_of_zero_words):
-        words.append(UInt32(0))
-    # Add the original words times 10^number_of_remaining_digits
-    if number_of_remaining_digits == 0:
-        for i in range(len(x.words)):
-            words.append(x.words[i])
-    else:  # number_of_remaining_digits > 0
-        var carry = UInt64(0)
-        var multiplier: UInt64
-
-        if number_of_remaining_digits == 1:
-            multiplier = UInt64(10)
-        elif number_of_remaining_digits == 2:
-            multiplier = UInt64(100)
-        elif number_of_remaining_digits == 3:
-            multiplier = UInt64(1000)
-        elif number_of_remaining_digits == 4:
-            multiplier = UInt64(10_000)
-        elif number_of_remaining_digits == 5:
-            multiplier = UInt64(100_000)
-        elif number_of_remaining_digits == 6:
-            multiplier = UInt64(1_000_000)
-        elif number_of_remaining_digits == 7:
-            multiplier = UInt64(10_000_000)
-        else:  # number_of_remaining_digits == 8
-            multiplier = UInt64(100_000_000)
-
-        for i in range(len(x.words)):
-            var product = UInt64(x.words[i]) * multiplier + carry
-            words.append(UInt32(product % UInt64(1_000_000_000)))
-            carry = product // UInt64(1_000_000_000)
-        # Add the last carry if it exists
-        if carry > 0:
-            words.append(UInt32(carry))
-
-    return BigUInt(words=words^)
-
-
-# ===----------------------------------------------------------------------=== #
-# Division Algorithms
-# floor_divide_general, floor_divide_inplace_by_2
-# ===----------------------------------------------------------------------=== #
 
 
 fn floor_divide_general(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
@@ -911,6 +1084,156 @@ fn floor_divide_inplace_by_2(mut x: BigUInt) -> None:
     # Remove leading zeros
     while len(x.words) > 1 and x.words[len(x.words) - 1] == 0:
         x.words.resize(len(x.words) - 1, UInt32(0))
+
+
+@always_inline
+fn truncate_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Returns the quotient of two BigUInt numbers, truncating toward zero.
+    It is equal to floored division for unsigned numbers.
+    See `floor_divide` for more details.
+    """
+    return floor_divide(x1, x2)
+
+
+fn ceil_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Returns the quotient of two BigUInt numbers, rounding up.
+
+    Args:
+        x1: The dividend.
+        x2: The divisor.
+
+    Returns:
+        The quotient of x1 / x2, rounded up.
+
+    Raises:
+        ValueError: If the divisor is zero.
+    """
+
+    # CASE: Division by zero
+    if x2.is_zero():
+        raise Error("biguint.arithmetics.ceil_divide(): Division by zero")
+
+    # Apply floor division and check if there is a remainder
+    var quotient = floor_divide(x1, x2)
+    if quotient * x2 < x1:
+        quotient += BigUInt(UInt32(1))
+    return quotient^
+
+
+fn floor_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Returns the remainder of two BigUInt numbers, truncating toward zero.
+    The remainder has the same sign as the dividend and satisfies:
+    x1 = floor_divide(x1, x2) * x2 + floor_modulo(x1, x2).
+
+    Args:
+        x1: The dividend.
+        x2: The divisor.
+
+    Returns:
+        The remainder of x1 being divided by x2.
+
+    Raises:
+        ValueError: If the divisor is zero.
+
+    Notes:
+        It is equal to floored modulo for positive numbers.
+    """
+    # CASE: Division by zero
+    if x2.is_zero():
+        raise Error("Error in `truncate_modulo`: Division by zero")
+
+    # CASE: Dividend is zero
+    if x1.is_zero():
+        return BigUInt()  # Return zero
+
+    # CASE: Divisor is one - no remainder
+    if x2.is_one():
+        return BigUInt()  # Always divisible with no remainder
+
+    # CASE: |dividend| < |divisor| - the remainder is the dividend itself
+    if x1.compare(x2) < 0:
+        return x1
+
+    # Calculate quotient with truncation
+    var quotient = floor_divide(x1, x2)
+
+    # Calculate remainder: dividend - (divisor * quotient)
+    var remainder = subtract(x1, multiply(x2, quotient))
+
+    return remainder^
+
+
+@always_inline
+fn truncate_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Returns the remainder of two BigUInt numbers, truncating toward zero.
+    It is equal to floored modulo for unsigned numbers.
+    See `floor_modulo` for more details.
+    """
+    return floor_modulo(x1, x2)
+
+
+fn ceil_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+    """Returns the remainder of two BigUInt numbers, rounding up.
+    The remainder has the same sign as the dividend and satisfies:
+    x1 = ceil_divide(x1, x2) * x2 + ceil_modulo(x1, x2).
+
+    Args:
+        x1: The dividend.
+        x2: The divisor.
+
+    Returns:
+        The remainder of x1 being ceil-divided by x2.
+
+    Raises:
+        ValueError: If the divisor is zero.
+    """
+    # CASE: Division by zero
+    if x2.is_zero():
+        raise Error("Error in `truncate_modulo`: Division by zero")
+
+    # CASE: Dividend is zero
+    if x1.is_zero():
+        return BigUInt()  # Return zero
+
+    # CASE: Divisor is one - no remainder
+    if x2.is_one():
+        return BigUInt()  # Always divisible with no remainder
+
+    # CASE: |dividend| < |divisor| - the remainder is the dividend itself
+    if x1.compare(x2) < 0:
+        return x1
+
+    # Calculate quotient with truncation
+    var quotient = floor_divide(x1, x2)
+    # Calculate remainder: dividend - (divisor * quotient)
+    var remainder = subtract(x1, multiply(x2, quotient))
+
+    if remainder.is_zero():
+        return BigUInt()  # No remainder
+    else:
+        return subtract(x2, remainder)
+
+
+fn divmod(x1: BigUInt, x2: BigUInt) raises -> Tuple[BigUInt, BigUInt]:
+    """Returns the quotient and remainder of two numbers, truncating toward zero.
+
+    Args:
+        x1: The dividend.
+        x2: The divisor.
+
+    Returns:
+        The quotient of x1 / x2, truncated toward zero and the remainder.
+
+    Raises:
+        ValueError: If the divisor is zero.
+
+    Notes:
+        It is equal to truncated division for positive numbers.
+    """
+
+    var quotient = floor_divide(x1, x2)
+    var remainder = subtract(x1, multiply(x2, quotient))
+    return (quotient^, remainder^)
 
 
 fn scale_down_by_power_of_10(x: BigUInt, n: Int) raises -> BigUInt:

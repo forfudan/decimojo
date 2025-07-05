@@ -19,3 +19,4 @@
 
 - #94. Implementing pi() with Machin's formula. Time taken for precision 2048: 33.580649 seconds.
 - #95. Implementing pi() with Chudnovsky algorithm (binary splitting). Time taken for precision 2048: 1.771954 seconds.
+- #97. Implementing Karatsuba multiplication for BigUInt. Time taken for precision 2048: 0.60656999994535 seconds.

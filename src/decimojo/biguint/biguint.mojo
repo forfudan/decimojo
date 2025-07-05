@@ -900,7 +900,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn __iadd__(mut self, other: Self) raises:
+    fn __iadd__(mut self, other: Self):
         """Adds `other` to `self` in place.
         See `add_inplace()` for more information.
         """
@@ -1062,6 +1062,16 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         """
         return decimojo.biguint.arithmetics.scale_down_by_power_of_10(self, n)
 
+    @always_inline
+    fn scale_up_by_power_of_billion(mut self, n: Int):
+        """Multiplies a BigUInt in-place by (10^9)^n if n > 0.
+        This equals to adding 9n zeros (n words) to the end of the number.
+
+        Args:
+            n: The power of 10^9 to multiply by. Should be non-negative.
+        """
+        decimojo.biguint.arithmetics.scale_up_by_power_of_billion(self, n)
+
     fn power(self, exponent: Int) raises -> Self:
         """Returns the result of raising this number to the power of `exponent`.
 
@@ -1142,7 +1152,11 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     @always_inline
     fn is_zero(self) -> Bool:
         """Returns True if this BigUInt represents zero."""
-        return len(self.words) == 1 and self.words[0] == 0
+        for word in self.words:
+            if word != 0:
+                return False
+        else:
+            return True
 
     @always_inline
     fn is_one(self) -> Bool:
