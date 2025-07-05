@@ -902,13 +902,16 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     @always_inline
     fn __iadd__(mut self, other: Self):
         """Adds `other` to `self` in place.
-        See `add_inplace()` for more information.
+        See `biguint.arithmetics.add_inplace()` for more information.
         """
         decimojo.biguint.arithmetics.add_inplace(self, other)
 
     @always_inline
     fn __isub__(mut self, other: Self) raises:
-        self = decimojo.biguint.arithmetics.subtract(self, other)
+        """Subtracts `other` from `self` in place.
+        See `biguint.arithmetics.subtract_inplace()` for more information.
+        """
+        decimojo.biguint.arithmetics.subtract_inplace(self, other)
 
     @always_inline
     fn __imul__(mut self, other: Self) raises:

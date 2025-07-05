@@ -56,7 +56,6 @@ from decimojo.rounding_mode import RoundingMode
 # scale_down_by_power_of_10(x: BigUInt, n: Int) -> BigUInt
 #
 # floor_divide_estimate_quotient(x1: BigUInt, x2: BigUInt, j: Int, m: Int) -> UInt64
-# shift_words_left(x: BigUInt, j: Int) -> BigUInt
 # power_of_10(n: Int) -> BigUInt
 # ===----------------------------------------------------------------------=== #
 
@@ -301,16 +300,14 @@ fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         The result of subtracting x2 from x1.
     """
     # If the subtrahend is zero, return the minuend
-    if len(x2.words) == 1 and x2.words[0] == 0:
+    if x2.is_zero():
         return x1
 
     # We need to determine which number has the larger magnitude
     var comparison_result = x1.compare(x2)
-
     if comparison_result == 0:
         # |x1| = |x2|
         return BigUInt()  # Return zero
-
     if comparison_result < 0:
         raise Error("biguint.arithmetics.subtract(): Underflow due to x1 < x2")
 
@@ -339,6 +336,47 @@ fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     var result = BigUInt(words=words^)
     result.remove_leading_empty_words()
     return result^
+
+
+fn subtract_inplace(mut x: BigUInt, y: BigUInt) raises -> None:
+    """Subtracts y from x in place."""
+
+    # If the subtrahend is zero, return the minuend
+    if y.is_zero():
+        return
+
+    # We need to determine which number has the larger magnitude
+    var comparison_result = x.compare(y)
+    if comparison_result == 0:
+        x.words.resize(unsafe_uninit_length=1)
+        x.words[0] = UInt32(0)  # Result is zero
+    elif comparison_result < 0:
+        raise Error(
+            "biguint.arithmetics.subtract_inplace(): Underflow due to x < y"
+        )
+
+    # Now it is safe to subtract the smaller number from the larger one
+    var borrow: Int32 = 0
+    var ith: Int = 0
+    var difference: Int32  # Int32 is sufficient for the difference
+
+    while ith < len(x.words):
+        # Subtract the borrow
+        difference = Int32(x.words[ith]) - borrow
+        # Subtract smaller's word if available
+        if ith < len(y.words):
+            difference -= Int32(y.words[ith])
+        # Handle borrowing if needed
+        if difference < Int32(0):
+            difference += Int32(1_000_000_000)
+            borrow = Int32(1)
+        else:
+            borrow = Int32(0)
+        x.words[ith] = UInt32(difference)
+        ith += 1
+
+    x.remove_leading_empty_words()
+    return
 
 
 # ===----------------------------------------------------------------------=== #
@@ -818,7 +856,7 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
         # SUB-CASE: Single word // single word
         if len(x1.words) == 1:
-            var result = BigUInt(UInt32(x1.words[0] // x2.words[0]))
+            var result = BigUInt(List[UInt32](x1.words[0] // x2.words[0]))
             return result^
 
         # SUB-CASE: Divisor is single word and is power of 2
@@ -967,7 +1005,7 @@ fn floor_divide_general(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
 
         # Store the quotient word
         result.words[index_of_word] = UInt32(quotient)
-        remainder = subtract(remainder, trial_product)
+        subtract_inplace(remainder, trial_product)
         index_of_word -= 1
 
     result.remove_leading_empty_words()
