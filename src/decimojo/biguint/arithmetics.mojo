@@ -367,35 +367,43 @@ fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
     alias CUTOFF_KARATSUBA: Int = 64
     """The cutoff number of words for using Karatsuba multiplication."""
 
-    # SPECIAL CASE: One of the operands is zero or one
-    if len(x.words) == 1:
-        if x.words[0] == 0:
-            return BigUInt(UInt32(0))
-        if x.words[0] == 1:
-            return y
-    if len(y.words) == 1:
-        if y.words[0] == 0:
-            return BigUInt(UInt32(0))
-        if y.words[0] == 1:
-            return x
-
-    # CASE 1:
-    # If one number is only one-word long
-    # we can use school multiplication because this is only one loop
+    # SPECIAL CASES
+    # If x or y is a single-word number
+    # We can use `multiply_by_uint32` because this is only one loop
     # No need to split the long number into two parts
-    if len(x.words) == 1 or len(y.words) == 1:
-        return multiply_slices(x, y, 0, len(x.words), 0, len(y.words))
+    if len(x.words) == 1:
+        var x_word = x.words[0]
+        if x_word == 0:
+            return BigUInt(UInt32(0))
+        elif x_word == 1:
+            return y
+        else:
+            var result = y
+            multiply_by_uint32(result, x_word)
+            return result^
 
-    # CASE 2:
+    if len(y.words) == 1:
+        var y_word = y.words[0]
+        if y_word == 0:
+            return BigUInt(UInt32(0))
+        if y_word == 1:
+            return x
+        else:
+            var result = x
+            multiply_by_uint32(result, y_word)
+            return result^
+
+    # CASE 1
     # The allocation cost is too high for small numbers to use Karatsuba
     # Use school multiplication for small numbers
-
     var max_words = max(len(x.words), len(y.words))
     if max_words <= CUTOFF_KARATSUBA:
         # return multiply_slices (x, y)
         return multiply_slices(x, y, 0, len(x.words), 0, len(y.words))
         # multiply_slices can also takes in x, y, and indices
 
+    # CASE 2
+    # Use Karatsuba multiplication for larger numbers
     else:
         return multiply_karatsuba(
             x, y, 0, len(x.words), 0, len(y.words), CUTOFF_KARATSUBA
@@ -426,15 +434,25 @@ fn multiply_slices(
 
     # CASE: One of the operands is zero or one
     if n_words_x_slice == 1:
-        if x.words[start_x] == 0:
+        var x_word = x.words[start_x]
+        if x_word == 0:
             return BigUInt(UInt32(0))
-        if x.words[start_x] == 1:
+        elif x_word == 1:
             return BigUInt(words=y.words[start_y:end_y])
+        else:
+            var result = BigUInt(words=y.words[start_y:end_y])
+            multiply_by_uint32(result, x_word)
+            return result^
     if n_words_y_slice == 1:
-        if y.words[start_y] == 0:
+        var y_word = y.words[start_y]
+        if y_word == 0:
             return BigUInt(UInt32(0))
-        if y.words[start_y] == 1:
+        elif y_word == 1:
             return BigUInt(words=x.words[start_x:end_x])
+        else:
+            var result = BigUInt(words=x.words[start_x:end_x])
+            multiply_by_uint32(result, y_word)
+            return result^
 
     # The max number of words in the result is the sum of the words in the operands
     var max_result_len = n_words_x_slice + n_words_y_slice
@@ -648,6 +666,34 @@ fn multiply_karatsuba(
         return z2^
 
 
+fn multiply_by_uint32(mut x: BigUInt, y: UInt32):
+    """Multiplies a BigUInt by an UInt32 word in-place.
+
+    Args:
+        x: The BigUInt value to multiply.
+        y: The single word to multiply by.
+    """
+    if y == 0:
+        x.words = List[UInt32](0)
+        return
+
+    if y == 1:
+        return
+
+    var y_as_uint64 = UInt64(y)
+    var product: UInt64
+    var carry: UInt64 = 0
+
+    for i in range(len(x.words)):
+        product = UInt64(x.words[i]) * y_as_uint64 + carry
+        x.words[i] = UInt32(product % UInt64(1_000_000_000))
+        carry = product // UInt64(1_000_000_000)
+
+    if carry > 0:
+        x.words.append(UInt32(carry))
+
+
+# TODO: Make this in-place
 fn scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt:
     """Multiplies a BigUInt by 10^n if n > 0, otherwise doing nothing.
 
@@ -896,38 +942,30 @@ fn floor_divide_general(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
     var trial_product: BigUInt
     while index_of_word >= 0:
         # OPTIMIZATION: Better quotient estimation
-        var q = floor_divide_estimate_quotient(
+        var quotient = floor_divide_estimate_quotient(
             remainder, divisor, index_of_word
         )
-        print("q:", q)
 
         # Calculate trial product
-        trial_product = divisor * BigUInt(UInt32(q))
+        trial_product = divisor
+        multiply_by_uint32(trial_product, UInt32(quotient))
         trial_product.scale_up_by_power_of_billion(index_of_word)
 
-        # OPTIMIZATION: Binary search for adjustment
-        if trial_product.compare(remainder) > 0:
-            var low: UInt64 = 0
-            var high: UInt64 = q - 1
-
-            while low <= high:
-                var mid = (low + high) / 2
-
-                # Recalculate with new q
-                trial_product = divisor * BigUInt(UInt32(mid))
-                trial_product.scale_up_by_power_of_billion(index_of_word)
-
-                if trial_product.compare(remainder) <= 0:
-                    q = mid
-                    low = mid + 1
-                else:
-                    high = mid - 1
-
-            # Final recalculation with best q
-            trial_product = divisor * BigUInt(UInt32(q))
+        # Should need at most 1-2 corrections after the estimation
+        var correction_attempts = 0
+        while (
+            (trial_product.compare(remainder) > 0)
+            and (quotient > 0)
+            and (correction_attempts < 3)
+        ):
+            quotient -= 1
+            trial_product = divisor
+            multiply_by_uint32(trial_product, UInt32(quotient))
             trial_product.scale_up_by_power_of_billion(index_of_word)
+            correction_attempts += 1
 
-        result.words[index_of_word] = UInt32(q)
+        # Store the quotient word
+        result.words[index_of_word] = UInt32(quotient)
         remainder = subtract(remainder, trial_product)
         index_of_word -= 1
 
