@@ -1152,7 +1152,11 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     @always_inline
     fn is_zero(self) -> Bool:
         """Returns True if this BigUInt represents zero."""
-        return len(self.words) == 1 and self.words[0] == 0
+        for word in self.words:
+            if word != 0:
+                return False
+        else:
+            return True
 
     @always_inline
     fn is_one(self) -> Bool:

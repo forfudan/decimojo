@@ -298,11 +298,8 @@ fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         The result of subtracting x2 from x1.
     """
     # If the subtrahend is zero, return the minuend
-    if x2.is_zero():
+    if len(x2.words) == 1 and x2.words[0] == 0:
         return x1
-    if x1.is_zero():
-        # x2 is not zero, so the result is negative, raise an error
-        raise Error("biguint.arithmetics.subtract(): Underflow due to x1 < x2")
 
     # We need to determine which number has the larger magnitude
     var comparison_result = x1.compare(x2)
@@ -635,6 +632,9 @@ fn multiply_karatsuba(
                 ),
                 e,
             )
+            print("z1:", z1)
+            print("z2:", z2)
+            print("z0:", z0)
 
         # z2*9^(m * 2) + z1*9^m + z0
         z2.scale_up_by_power_of_billion(2 * m)
