@@ -36,6 +36,7 @@ from decimojo.rounding_mode import RoundingMode
 # add_inplace_by_1(x: BigUInt) -> None
 #
 # subtract(x1: BigUInt, x2: BigUInt) -> BigUInt
+# subtract_inplace(x1: BigUInt, x2: BigUInt) -> None
 #
 # multiply(x1: BigUInt, x2: BigUInt) -> BigUInt
 # multiply_slices(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int) -> BigUInt
@@ -1087,74 +1088,6 @@ fn floor_divide_estimate_quotient(
 
     # Ensure we don't exceed the maximum value for a single word
     return min(quotient, UInt64(999_999_999))
-
-
-# fn floor_divide_partition(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
-#     """Partition division algorithm for BigInt numbers.
-
-#     Args:
-#         x1: The dividend.
-#         x2: The divisor.
-
-#     Returns:
-#         The quotient of x1 // x2.
-
-#     Raises:
-#         ValueError: If the divisor is zero.
-
-#     Notes:
-
-#     If words of x1 is more than 2 times the words of x2, then partition x1 into
-#     several parts and divide x2 sequentially using general division.
-
-#     words of x1: m
-#     words of x2: n
-#     number of partitions: m // n
-#     words of first partition: n + m % n
-#     the remainder is appended to the next partition.
-#     """
-
-#     if x2.is_zero():
-#         raise Error("Error in `floor_divide_partition`: Division by zero")
-
-#     # Initialize result and remainder
-#     var number_of_partitions = len(x1.words) // len(x2.words)
-#     var number_of_words_remainder = len(x1.words) % len(x2.words)
-#     var number_of_words_dividend: Int
-#     var result = x1
-#     result.words.resize(len(x1.words) - number_of_words_remainder, UInt32(0))
-#     var remainder = BigUInt(List[UInt32](capacity=len(x2.words)))
-#     for i in range(len(x1.words) - number_of_words_remainder, len(x1.words)):
-#         remainder.words.append(x1.words[i])
-
-#     for ith in range(number_of_partitions):
-#         number_of_words_dividend = len(x2.words) + number_of_words_remainder
-#         var dividend_list_of_words = List[UInt32](
-#             capacity=number_of_words_dividend
-#         )
-#         for i in range(len(x2.words)):
-#             dividend_list_of_words.append(
-#                 x1.words[(number_of_partitions - ith - 1) * len(x2.words) + i]
-#             )
-#         for i in range(number_of_words_remainder):
-#             dividend_list_of_words.append(remainder.words[i])
-
-#         var dividend = BigUInt(dividend_list_of_words)
-#         var quotient = floor_divide_general(dividend, x2)
-#         for i in range(len(x2.words)):
-#             if i < len(quotient.words):
-#                 result.words[
-#                     (number_of_partitions - ith - 1) * len(x2.words) + i
-#                 ] = quotient.words[i]
-#             else:
-#                 result.words[
-#                     (number_of_partitions - ith - 1) * len(x2.words) + i
-#                 ] = UInt32(0)
-#         remainder = subtract(dividend, multiply(quotient, x2))
-#         number_of_words_remainder = len(remainder.words)
-
-#     result.remove_leading_empty_words()
-#     return result^
 
 
 fn floor_divide_inplace_by_single_word(
