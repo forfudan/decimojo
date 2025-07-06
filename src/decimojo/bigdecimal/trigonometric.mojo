@@ -23,6 +23,7 @@ import time
 from decimojo.bigdecimal.bigdecimal import BigDecimal
 from decimojo.rounding_mode import RoundingMode
 import decimojo.utility
+import decimojo.bigdecimal.constants
 
 
 # ===----------------------------------------------------------------------=== #
@@ -296,6 +297,74 @@ fn cos_taylor_series(
             remove_extra_digit_due_to_rounding=False,
             fill_zeros_to_precision=False,
         )
+
+    return result^
+
+
+fn tan(
+    x: BigDecimal,
+    precision: Int,
+) raises -> BigDecimal:
+    """Calculates tangent (tan) of the number.
+
+    Args:
+        x: The input number in radians.
+        precision: The desired precision of the result.
+
+    Returns:
+        The tangent of x with the specified precision.
+
+    Notes:
+    This function calculates tan(x) = sin(x) / cos(x).
+    For better numerical stability, it uses range reduction and
+    special handling for values close to odd multiples of π/2
+    where tan approaches infinity.
+    """
+
+    alias BUFFER_DIGITS = 99
+    var working_precision_pi = precision + 2 * BUFFER_DIGITS
+    var working_precision = precision + BUFFER_DIGITS
+    if x.is_zero():
+        return BigDecimal.from_raw_components(
+            UInt32(0), scale=precision, sign=x.sign
+        )
+
+    var pi = decimojo.bigdecimal.constants.pi(precision=working_precision_pi)
+    var bdec_2 = BigDecimal.from_raw_components(UInt32(2), scale=0, sign=False)
+    var two_pi = bdec_2 * pi
+    var pi_div_2 = pi.true_divide(bdec_2, precision=working_precision_pi)
+
+    var x_reduced = x
+    # First reduce to (-π, π) range
+    if x_reduced.compare_absolute(pi) > 0:
+        x_reduced = x_reduced % two_pi
+        # Adjust to (-π, π) range
+        if x_reduced.compare_absolute(pi) > 0:
+            if x_reduced.sign:
+                x_reduced += two_pi
+            else:
+                x_reduced -= two_pi
+
+    # Now reduce to (-π/2, π/2) using tan(x + π) = tan(x)
+    if x_reduced.compare_absolute(pi_div_2) > 0:
+        if x_reduced.sign:
+            x_reduced += pi
+        else:
+            x_reduced -= pi
+
+    # Calculate tan(x) = sin(x) / cos(x)
+    var sin_x: BigDecimal = sin(x_reduced, precision=working_precision)
+    var cos_x: BigDecimal = cos(x_reduced, precision=working_precision)
+    var result: BigDecimal = sin_x.true_divide(
+        cos_x, precision=working_precision
+    )
+
+    result.round_to_precision(
+        precision,
+        RoundingMode.ROUND_HALF_EVEN,
+        remove_extra_digit_due_to_rounding=True,
+        fill_zeros_to_precision=False,
+    )
 
     return result^
 

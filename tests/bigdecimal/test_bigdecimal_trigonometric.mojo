@@ -41,6 +41,16 @@ fn test_bigdecimal_trignometric() raises:
         "sin_tests",
         "sin",
     )
+    run_test[func = decimojo.bigdecimal.trigonometric.cos](
+        toml,
+        "cos_tests",
+        "cos",
+    )
+    run_test[func = decimojo.bigdecimal.trigonometric.tan](
+        toml,
+        "tan_tests",
+        "tan",
+    )
 
 
 fn main() raises:
