@@ -1074,6 +1074,13 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         return decimojo.biguint.arithmetics.scale_up_by_power_of_10(self, n)
 
     @always_inline
+    fn scale_up_inplace_by_power_of_10(mut self, n: Int):
+        """Multiplies this number in-place by 10^n (n>=0).
+        See `scale_up_inplace_by_power_of_10()` for more information.
+        """
+        decimojo.biguint.arithmetics.scale_up_inplace_by_power_of_10(self, n)
+
+    @always_inline
     fn scale_down_by_power_of_10(self, n: Int) raises -> Self:
         """Returns the result of floored dividing this number by 10^n (n>=0).
         It is equal to removing the last n digits of the number.

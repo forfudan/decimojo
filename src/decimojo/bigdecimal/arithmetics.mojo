@@ -278,7 +278,7 @@ fn true_divide(
     # Scale up the dividend to ensure sufficient precision
     var scaled_x1 = x1.coefficient
     if additional_digits > 0:
-        scaled_x1 = scaled_x1.scale_up_by_power_of_10(additional_digits)
+        scaled_x1.scale_up_inplace_by_power_of_10(additional_digits)
 
     # Perform division
     var quotient: BigUInt
@@ -382,7 +382,7 @@ fn true_divide_inexact(
     # Scale up the dividend to ensure sufficient precision
     var scaled_x1 = x1.coefficient
     if buffer_digits > 0:
-        scaled_x1 = scaled_x1.scale_up_by_power_of_10(buffer_digits)
+        scaled_x1.scale_up_inplace_by_power_of_10(buffer_digits)
 
     # Perform division
     var quotient: BigUInt = scaled_x1 // x2.coefficient
