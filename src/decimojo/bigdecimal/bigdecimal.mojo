@@ -779,6 +779,26 @@ struct BigDecimal(
         return decimojo.bigdecimal.trigonometric.cos(self, precision)
 
     @always_inline
+    fn tan(self, precision: Int = 28) raises -> Self:
+        """Returns the tangent of the BigDecimal number."""
+        return decimojo.bigdecimal.trigonometric.tan(self, precision)
+
+    @always_inline
+    fn cot(self, precision: Int = 28) raises -> Self:
+        """Returns the cotangent of the BigDecimal number."""
+        return decimojo.bigdecimal.trigonometric.cot(self, precision)
+
+    @always_inline
+    fn csc(self, precision: Int = 28) raises -> Self:
+        """Returns the cosecant of the BigDecimal number."""
+        return decimojo.bigdecimal.trigonometric.csc(self, precision)
+
+    @always_inline
+    fn sec(self, precision: Int = 28) raises -> Self:
+        """Returns the secant of the BigDecimal number."""
+        return decimojo.bigdecimal.trigonometric.sec(self, precision)
+
+    @always_inline
     fn arctan(self, precision: Int = 28) raises -> Self:
         """Returns the arctangent of the BigDecimal number."""
         return decimojo.bigdecimal.trigonometric.arctan(self, precision)
