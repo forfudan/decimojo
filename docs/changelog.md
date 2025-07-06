@@ -6,7 +6,7 @@ This is a list of RELEASED changes for the DeciMojo Package.
 
 ### ⭐️ New
 
-1. Introduce trigonometric functions for `BigDecimal`: `sin()`, `cos()`. These functions compute the corresponding trigonometric values of a given angle in radians with arbitrary precision (#96).
+1. Introduce trigonometric functions for `BigDecimal`: `sin()`, `cos()`, `tan()`, `cot()`, `csc()`, `sec()`. These functions compute the corresponding trigonometric values of a given angle in radians with arbitrary precision (#96, #99).
 1. Introduce the function `pi()` for `BigDecimal` to compute the value of π (pi) with arbitrary precision with the Chudnovsky algorithm with binary splitting (#95).
 
 ### 🦋 Changed
