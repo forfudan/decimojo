@@ -2,11 +2,29 @@
 
 This is a list of RELEASED changes for the DeciMojo Package.
 
-## 01/08/2025 (v0.4.2)
+## 01/08/2025 (v0.5.0)
+
+### ⭐️ New
+
+1. Introduce trigonometric functions for `BigDecimal`: `sin()`, `cos()`. These functions compute the corresponding trigonometric values of a given angle in radians with arbitrary precision (#96).
+1. Introduce the function `pi()` for `BigDecimal` to compute the value of π (pi) with arbitrary precision with the Chudnovsky algorithm with binary splitting (#95).
+
+### 🦋 Changed
+
+1. Refine the `BigUInt` multiplication with the Karatsuba algorithm. The time complexity of maltiplication is reduced from $O(n^2)$ to $O(n^{ln(3/2)})$ for large integers, which significantly improves performance for big numbers. Doubling the size of the numbers will only increase the time taken by a factor of about 3, instead of 4 as in the previous implementation (#97).
+1. The `__isub__` method of `BigUInt` will now conduct in-place subtraction. `x -= y` will not lead to memory allocation, but will modify the original `BigUInt` object `x` directly (#98).
+1. Refine the arithmetic operations of `BigUInt` when the second operand is one-word long or is a `UInt32` value (#98).
+1. Add `to_uint64()` and `to_uint128()` methods to `BigUInt` to for fast type conversion (#91).
+1. Improve error messages and remove unnecessary `raises` keywords for all functions (#92).
 
 ### 🛠️ Fixed
 
-Fix a bug for `BigUInt` comparison: When there are leading zero words, the comparison returns incorrect results (#97).
+- Fix a bug for `BigUInt` comparison: When there are leading zero words, the comparison returns incorrect results (#97).
+- Fix the `is_zero()`, `is_one()`, and `is_two()` methods for `BigUInt` to correctly handle the case when there are leading zero words (#97).
+
+### 📚 Documentation and testing
+
+Refactor the test files for `BigDecimal` (PR #93).
 
 ## 01/07/2025 (v0.4.1)
 
