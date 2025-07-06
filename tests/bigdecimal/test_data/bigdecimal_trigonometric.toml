@@ -5,7 +5,7 @@
 [[sin_tests]]
 a = "0"
 b = ""
-expected = "0E-50"
+expected = "0"
 description = "sin(0) = 0"
 
 [[sin_tests]]
@@ -123,6 +123,28 @@ expected = "0.000099999999833333333416666666646825396828152557318973"
 description = "sin(0.0001) - very small value (linear approximation region)"
 
 # ===----------------------------------------------------------------------=== #
+# Test cases for cos
+# ===----------------------------------------------------------------------=== #
+
+[[cos_tests]]
+a = "0"
+b = ""
+expected = "1"
+description = "cos(0) = 1"
+
+[[cos_tests]]
+a = "0.5235987755982988730771072305"
+b = ""
+expected = "0.86602540378443864676372317077622809048783341018645"
+description = "cos(π/6) = √3/2"
+
+[[cos_tests]]
+a = "-1.2345678901234567890123456789012345678901234567890"
+b = ""
+expected = "0.32992906977373266497821982544739832858011036857534"
+description = "negative value"
+
+# ===----------------------------------------------------------------------=== #
 # Test cases for tan
 # ===----------------------------------------------------------------------=== #
 
@@ -135,7 +157,7 @@ description = "tan(π/2) - very large or small value"
 [[tan_tests]]
 a = "0"
 b = ""
-expected = "0E-50"
+expected = "0"
 description = "tan(0) = 0"
 
 [[tan_tests]]
@@ -165,8 +187,30 @@ description = "tan(-0.3) - small negative value"
 [[tan_tests]]
 a = "100"
 b = ""
-expected = "-5.6712818196177095309944184398639644216253782606898"
+expected = "-0.58721391515692907667780963564458789425876598687292"
 description = "tan(100) - very large value"
+
+# ===----------------------------------------------------------------------=== #
+# Test cases for cot
+# ===----------------------------------------------------------------------=== #
+
+[[cot_tests]]
+a = "1"
+b = ""
+expected = "0.64209261593433070300641998659426562023027811391817"
+description = "cot(1) - small positive value"
+
+[[cot_tests]]
+a = "-3"
+b = ""
+expected = "7.0152525514345334694285513795264765782931033520964"
+description = "cot(-3) - small negative value"
+
+[[cot_tests]]
+a = "10"
+b = ""
+expected = "1.5423510453569200482774693556824293113206672064020"
+description = "cot(10) - large positive value"
 
 # ===----------------------------------------------------------------------=== #
 # Test cases for arctan
@@ -175,7 +219,7 @@ description = "tan(100) - very large value"
 [[arctan_tests]]
 a = "0"
 b = ""
-expected = "0E-50"
+expected = "0"
 description = "Arctan of 0"
 
 [[arctan_tests]]

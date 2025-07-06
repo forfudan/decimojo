@@ -21,8 +21,8 @@ fn run_test[
     for test_case in test_cases:
         var result = func(BDec(test_case.a), 50)
         testing.assert_equal(
-            lhs=String(result),
-            rhs=test_case.expected,
+            lhs=result,
+            rhs=BDec(test_case.expected),
             msg=test_case.description,
         )
 
@@ -31,11 +31,6 @@ fn test_bigdecimal_trignometric() raises:
     # Load test cases from TOML file
     var toml = parse_file(file_path)
 
-    run_test[func = decimojo.bigdecimal.trigonometric.arctan](
-        toml,
-        "arctan_tests",
-        "arctan",
-    )
     run_test[func = decimojo.bigdecimal.trigonometric.sin](
         toml,
         "sin_tests",
@@ -50,6 +45,16 @@ fn test_bigdecimal_trignometric() raises:
         toml,
         "tan_tests",
         "tan",
+    )
+    run_test[func = decimojo.bigdecimal.trigonometric.cot](
+        toml,
+        "cot_tests",
+        "cot",
+    )
+    run_test[func = decimojo.bigdecimal.trigonometric.arctan](
+        toml,
+        "arctan_tests",
+        "arctan",
     )
 
 

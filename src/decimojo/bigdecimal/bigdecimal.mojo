@@ -35,7 +35,13 @@ alias BDec = BigDecimal
 
 @value
 struct BigDecimal(
-    Absable, Comparable, IntableRaising, Roundable, Stringable, Writable
+    Absable,
+    Comparable,
+    FloatableRaising,
+    IntableRaising,
+    Roundable,
+    Stringable,
+    Writable,
 ):
     """Represents a arbitrary-precision decimal.
 

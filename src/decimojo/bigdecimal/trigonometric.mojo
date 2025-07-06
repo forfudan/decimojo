@@ -57,9 +57,7 @@ fn sin(x: BigDecimal, precision: Int) raises -> BigDecimal:
     var result: BigDecimal
 
     if x.is_zero():
-        return BigDecimal.from_raw_components(
-            UInt32(0), scale=precision, sign=x.sign
-        )
+        return BigDecimal(BigUInt.ZERO)
 
     var bdec_2 = BigDecimal.from_raw_components(UInt32(2), scale=0, sign=False)
     var bdec_4 = BigDecimal.from_raw_components(UInt32(4), scale=0, sign=False)
@@ -174,9 +172,7 @@ fn sin_taylor_series(
     var working_precision = minimum_precision + BUFFER_DIGITS
 
     if x.is_zero():
-        return BigDecimal.from_raw_components(
-            UInt32(0), scale=minimum_precision, sign=x.sign
-        )
+        return BigDecimal(BigUInt.ZERO)
 
     var term = x  # x^n / n!
     var result = x
@@ -229,9 +225,7 @@ fn cos(x: BigDecimal, precision: Int) raises -> BigDecimal:
     var working_precision = precision + BUFFER_DIGITS
 
     if x.is_zero():
-        return BigDecimal.from_raw_components(
-            UInt32(1), scale=precision, sign=x.sign
-        )
+        return BigDecimal(BigUInt.ONE)
 
     # cos(x) = sin(π/2 - x)
     var pi = decimojo.bigdecimal.constants.pi(precision=working_precision)
@@ -301,10 +295,7 @@ fn cos_taylor_series(
     return result^
 
 
-fn tan(
-    x: BigDecimal,
-    precision: Int,
-) raises -> BigDecimal:
+fn tan(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculates tangent (tan) of the number.
 
     Args:
@@ -315,19 +306,61 @@ fn tan(
         The tangent of x with the specified precision.
 
     Notes:
+
     This function calculates tan(x) = sin(x) / cos(x).
-    For better numerical stability, it uses range reduction and
-    special handling for values close to odd multiples of π/2
-    where tan approaches infinity.
+    """
+    return tan_cot(x, precision, is_tan=True)
+
+
+fn cot(x: BigDecimal, precision: Int) raises -> BigDecimal:
+    """Calculates cotangent (cot) of the number.
+
+    Args:
+        x: The input number in radians.
+        precision: The desired precision of the result.
+
+    Returns:
+        The cotangent of x with the specified precision.
+
+    Notes:
+
+    This function calculates cot(x) = cos(x) / sin(x).
+    """
+    return tan_cot(x, precision, is_tan=False)
+
+
+fn tan_cot(x: BigDecimal, precision: Int, is_tan: Bool) raises -> BigDecimal:
+    """Calculates tangent (tan) or cotangent (cot) of the number.
+
+    Args:
+        x: The input number in radians.
+        precision: The desired precision of the result.
+        is_tan: If True, calculates tangent; if False, calculates cotangent.
+
+    Returns:
+        The cotangent of x with the specified precision.
+
+    Notes:
+
+    This function calculates tan(x) = cos(x) / sin(x) or
+    cot(x) = sin(x) / cos(x) depending on the is_tan flag.
     """
 
     alias BUFFER_DIGITS = 99
     var working_precision_pi = precision + 2 * BUFFER_DIGITS
     var working_precision = precision + BUFFER_DIGITS
+
     if x.is_zero():
-        return BigDecimal.from_raw_components(
-            UInt32(0), scale=precision, sign=x.sign
-        )
+        if is_tan:
+            return BigDecimal(BigUInt.ZERO)
+        else:
+            # cot(0) is undefined, but we return 0 for consistency
+            # since tan(0) is defined as 0.
+            # This is a design choice, not a mathematical one.
+            # In practice, cot(0) should raise an error.
+            raise Error(
+                "bigdecimal.trigonometric.tan_cot: cot(nπ) is undefined."
+            )
 
     var pi = decimojo.bigdecimal.constants.pi(precision=working_precision_pi)
     var bdec_2 = BigDecimal.from_raw_components(UInt32(2), scale=0, sign=False)
@@ -352,12 +385,19 @@ fn tan(
         else:
             x_reduced -= pi
 
-    # Calculate tan(x) = sin(x) / cos(x)
+    # Calculate
+    # tan(x) = sin(x) / cos(x)
+    # cot(x) = cos(x) / sin(x)
     var sin_x: BigDecimal = sin(x_reduced, precision=working_precision)
     var cos_x: BigDecimal = cos(x_reduced, precision=working_precision)
-    var result: BigDecimal = sin_x.true_divide(
-        cos_x, precision=working_precision
-    )
+    if is_tan:
+        result: BigDecimal = sin_x.true_divide(
+            cos_x, precision=working_precision
+        )
+    else:
+        result: BigDecimal = cos_x.true_divide(
+            sin_x, precision=working_precision
+        )
 
     result.round_to_precision(
         precision,
