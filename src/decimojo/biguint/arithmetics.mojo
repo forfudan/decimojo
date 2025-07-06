@@ -42,7 +42,7 @@ from decimojo.rounding_mode import RoundingMode
 # multiply_slices(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int) -> BigUInt
 # multiply_karatsuba(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int, cutoff_number_of_words: Int) -> BigUInt
 # scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt
-# scale_up_by_power_of_billion(mut x: BigUInt, n: Int)
+# scale_up_inplace_by_power_of_billion(mut x: BigUInt, n: Int)
 #
 # floor_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
 # floor_divide_general(x1: BigUInt, x2: BigUInt) -> BigUInt
@@ -618,7 +618,7 @@ fn multiply_karatsuba(
         )
         # z2 = 0
 
-        z1.scale_up_by_power_of_billion(m)
+        z1.scale_up_inplace_by_power_of_billion(m)
         z1 += z0
         return z1^
 
@@ -637,7 +637,7 @@ fn multiply_karatsuba(
             x, y, start_x + m, end_x, start_y, end_y, cutoff_number_of_words
         )
         # z2 = 0
-        z1.scale_up_by_power_of_billion(m)
+        z1.scale_up_inplace_by_power_of_billion(m)
         z1 += z0
         return z1^
 
@@ -697,8 +697,8 @@ fn multiply_karatsuba(
             print("z0:", z0)
 
         # z2*9^(m * 2) + z1*9^m + z0
-        z2.scale_up_by_power_of_billion(2 * m)
-        z1.scale_up_by_power_of_billion(m)
+        z2.scale_up_inplace_by_power_of_billion(2 * m)
+        z1.scale_up_inplace_by_power_of_billion(m)
         z2 += z1
         z2 += z0
 
@@ -732,7 +732,6 @@ fn multiply_by_uint32(mut x: BigUInt, y: UInt32):
         x.words.append(UInt32(carry))
 
 
-# TODO: Make this in-place
 fn scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt:
     """Multiplies a BigUInt by 10^n if n > 0, otherwise doing nothing.
 
@@ -760,6 +759,7 @@ fn scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt:
     else:  # number_of_remaining_digits > 0
         var carry = UInt64(0)
         var multiplier: UInt64
+        var product: UInt64
 
         if number_of_remaining_digits == 1:
             multiplier = UInt64(10)
@@ -779,7 +779,7 @@ fn scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt:
             multiplier = UInt64(100_000_000)
 
         for i in range(len(x.words)):
-            var product = UInt64(x.words[i]) * multiplier + carry
+            product = UInt64(x.words[i]) * multiplier + carry
             words.append(UInt32(product % UInt64(BigUInt.BASE)))
             carry = product // UInt64(BigUInt.BASE)
         # Add the last carry if it exists
@@ -789,7 +789,78 @@ fn scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt:
     return BigUInt(words=words^)
 
 
-fn scale_up_by_power_of_billion(mut x: BigUInt, n: Int):
+fn scale_up_inplace_by_power_of_10(mut x: BigUInt, n: Int):
+    """Multiplies a BigUInt in-place by 10^n if n > 0, otherwise doing nothing.
+
+    Args:
+        x: The BigUInt value to multiply.
+        n: The power of 10 to multiply by.
+    """
+    if n <= 0:
+        return
+
+    var number_of_zero_words = n // 9
+    var number_of_remaining_digits = n % 9
+
+    # SPECIAL CASE: If n is a multiple of 9
+    if number_of_remaining_digits == 0:
+        # If n is a multiple of 9, we just need to add zero words
+        x.scale_up_inplace_by_power_of_billion(number_of_zero_words)
+        return
+
+    else:  # number_of_remaining_digits > 0
+        # The number of words to add is number_of_zero_words + 1
+        # For example, if n = 10, we add two words
+        # The most significant word may not be used
+        # We need to make sure that it is initialized to zero finally
+        x_original_length = len(x.words)
+        x.words.resize(
+            unsafe_uninit_length=len(x.words) + number_of_zero_words + 1
+        )  # New length = original length + number of zero words + 1
+
+        var carry = UInt64(0)
+        var multiplier: UInt64
+        var product: UInt64
+
+        if number_of_remaining_digits == 1:
+            multiplier = UInt64(10)
+        elif number_of_remaining_digits == 2:
+            multiplier = UInt64(100)
+        elif number_of_remaining_digits == 3:
+            multiplier = UInt64(1000)
+        elif number_of_remaining_digits == 4:
+            multiplier = UInt64(10_000)
+        elif number_of_remaining_digits == 5:
+            multiplier = UInt64(100_000)
+        elif number_of_remaining_digits == 6:
+            multiplier = UInt64(1_000_000)
+        elif number_of_remaining_digits == 7:
+            multiplier = UInt64(10_000_000)
+        else:  # number_of_remaining_digits == 8
+            multiplier = UInt64(100_000_000)
+
+        for i in range(x_original_length):
+            product = UInt64(x.words[i]) * multiplier + carry
+            x.words[i] = UInt32(product % UInt64(BigUInt.BASE))
+            carry = product // UInt64(BigUInt.BASE)
+
+        # Add the last carry no matter it is 0 or not
+        x.words[x_original_length] = UInt32(carry)
+
+        # Now we shift the words to the right by number_of_zero_words
+        for i in range(len(x.words) - 1, number_of_zero_words - 1, -1):
+            x.words[i] = x.words[i - number_of_zero_words]
+
+        # Fill the first number_of_zero_words with zeros
+        for i in range(number_of_zero_words):
+            x.words[i] = UInt32(0)
+
+        # Remove the most significant zero word
+        x.remove_leading_empty_words()
+        return
+
+
+fn scale_up_inplace_by_power_of_billion(mut x: BigUInt, n: Int):
     """Multiplies a BigUInt in-place by (10^9)^n if n > 0.
     This equals to adding 9n zeros (n words) to the end of the number.
 
@@ -804,10 +875,9 @@ fn scale_up_by_power_of_billion(mut x: BigUInt, n: Int):
     # The number of words to add is n
     # For example, if n = 3, we add three words of zeros
     # x1, x2, x3, x4 -> x1, x2, x3, x4, 0, 0, 0
-    orig_len_x = len(x.words)
-    x.words.resize(unsafe_uninit_length=orig_len_x + n)
+    x.words.resize(unsafe_uninit_length=len(x.words) + n)
     # Move the existing words to the right by n positions
-    # x1, x2, x3, x4, 0, 0, 0 -> 0, 0, 0, x1, x2, x3, x4
+    # x1, x2, x3, x4, _, _, _ -> 0, 0, 0, x1, x2, x3, x4
     for i in range(len(x.words) - 1, n - 1, -1):
         x.words[i] = x.words[i - n]
     # Fill the first n words with zeros
@@ -1009,7 +1079,7 @@ fn floor_divide_general(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
         # Calculate trial product
         trial_product = divisor
         multiply_by_uint32(trial_product, UInt32(quotient))
-        scale_up_by_power_of_billion(trial_product, index_of_word)
+        scale_up_inplace_by_power_of_billion(trial_product, index_of_word)
 
         # Should need at most 1-2 corrections after the estimation
         # At most cases, no correction is needed
@@ -1021,7 +1091,7 @@ fn floor_divide_general(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
 
             trial_product = divisor
             multiply_by_uint32(trial_product, UInt32(quotient))
-            scale_up_by_power_of_billion(trial_product, index_of_word)
+            scale_up_inplace_by_power_of_billion(trial_product, index_of_word)
 
             if correction_attempts > 3:
                 print("correction attempts:", correction_attempts)

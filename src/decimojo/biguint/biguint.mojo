@@ -1082,14 +1082,16 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         return decimojo.biguint.arithmetics.scale_down_by_power_of_10(self, n)
 
     @always_inline
-    fn scale_up_by_power_of_billion(mut self, n: Int):
+    fn scale_up_inplace_by_power_of_billion(mut self, n: Int):
         """Multiplies a BigUInt in-place by (10^9)^n if n > 0.
         This equals to adding 9n zeros (n words) to the end of the number.
 
         Args:
             n: The power of 10^9 to multiply by. Should be non-negative.
         """
-        decimojo.biguint.arithmetics.scale_up_by_power_of_billion(self, n)
+        decimojo.biguint.arithmetics.scale_up_inplace_by_power_of_billion(
+            self, n
+        )
 
     fn power(self, exponent: Int) raises -> Self:
         """Returns the result of raising this number to the power of `exponent`.
@@ -1339,9 +1341,21 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
 
     @always_inline
     fn remove_leading_empty_words(mut self):
-        """Removes leading words of 0 from BigUInt's internal representation."""
-        while len(self.words) > 1 and self.words[-1] == 0:
-            self.words.resize(len(self.words) - 1, UInt32(0))
+        """Removes the most significant empty words of a BigUInt.
+
+        Notes:
+
+        The internal representation of a BigUInt is a list of words.
+        The most significant empty words are the words that are
+        equal to zero and are at the end of the list.
+        """
+        var n_empty_words: Int = 0
+        for i in range(len(self.words) - 1, -1, -1):
+            if self.words[i] == 0:
+                n_empty_words += 1
+            else:
+                break
+        self.words.resize(len(self.words) - n_empty_words, UInt32(0))
 
     @always_inline
     fn remove_trailing_digits_with_rounding(
