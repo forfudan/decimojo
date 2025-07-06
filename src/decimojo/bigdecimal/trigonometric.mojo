@@ -409,6 +409,56 @@ fn tan_cot(x: BigDecimal, precision: Int, is_tan: Bool) raises -> BigDecimal:
     return result^
 
 
+fn csc(x: BigDecimal, precision: Int) raises -> BigDecimal:
+    """Calculates cosecant (csc) of the number.
+
+    Args:
+        x: The input number in radians.
+        precision: The desired precision of the result.
+
+    Returns:
+        The cosecant of x with the specified precision.
+
+    Notes:
+
+    This function calculates csc(x) = 1 / sin(x).
+    """
+    if x.is_zero():
+        raise Error("bigdecimal.trigonometric.csc: csc(nπ) is undefined.")
+
+    alias BUFFER_DIGITS = 9
+    var working_precision = precision + BUFFER_DIGITS
+
+    var sin_x = sin(x, precision=working_precision)
+
+    return BigDecimal(BigUInt.ONE).true_divide(sin_x, precision=precision)
+
+
+fn sec(x: BigDecimal, precision: Int) raises -> BigDecimal:
+    """Calculates secant (sec) of the number.
+
+    Args:
+        x: The input number in radians.
+        precision: The desired precision of the result.
+
+    Returns:
+        The secant of x with the specified precision.
+
+    Notes:
+
+    This function calculates sec(x) = 1 / cos(x).
+    """
+    if x.is_zero():
+        return BigDecimal(BigUInt.ONE)
+
+    alias BUFFER_DIGITS = 9
+    var working_precision = precision + BUFFER_DIGITS
+
+    var cos_x = cos(x, precision=working_precision)
+
+    return BigDecimal(BigUInt.ONE).true_divide(cos_x, precision=precision)
+
+
 # ===----------------------------------------------------------------------=== #
 # Inverse trigonometric functions
 # ===----------------------------------------------------------------------=== #
