@@ -42,7 +42,7 @@ from decimojo.rounding_mode import RoundingMode
 # multiply_slices(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int) -> BigUInt
 # multiply_karatsuba(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int, cutoff_number_of_words: Int) -> BigUInt
 # scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt
-# scale_up_by_power_of_billion(mut x: BigUInt, n: Int)
+# scale_up_inplace_by_power_of_billion(mut x: BigUInt, n: Int)
 #
 # floor_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
 # floor_divide_general(x1: BigUInt, x2: BigUInt) -> BigUInt
@@ -201,8 +201,8 @@ fn add_slices(
             sum_of_words += y.words[start_y + ith]
 
         # Compute new word and carry
-        carry = sum_of_words // UInt32(1_000_000_000)
-        words.append(sum_of_words % UInt32(1_000_000_000))
+        carry = sum_of_words // BigUInt.BASE
+        words.append(sum_of_words % BigUInt.BASE)
 
         ith += 1
 
@@ -228,12 +228,12 @@ fn add_inplace(mut x1: BigUInt, x2: BigUInt) -> None:
             return
         if len(x2.words) == 1:
             var value = x1.words[0] + x2.words[0]
-            if value <= 999_999_999:
+            if value <= BigUInt.BASE_MAX:
                 x1.words[0] = value
                 return
             else:
-                x1.words[0] = value % UInt32(1_000_000_000)
-                x1.words.append(value // UInt32(1_000_000_000))
+                x1.words[0] = value % BigUInt.BASE
+                x1.words.append(value // BigUInt.BASE)
                 return
         else:
             pass
@@ -257,8 +257,8 @@ fn add_inplace(mut x1: BigUInt, x2: BigUInt) -> None:
             x1.words[i] += carry + x2.words[i]
         else:
             x1.words[i] += carry
-        carry = x1.words[i] // UInt32(1_000_000_000)
-        x1.words[i] %= UInt32(1_000_000_000)
+        carry = x1.words[i] // BigUInt.BASE
+        x1.words[i] %= BigUInt.BASE
 
     # Handle final carry if it exists
     if carry > 0:
@@ -271,7 +271,7 @@ fn add_inplace_by_1(mut x: BigUInt) -> None:
     """Increments a BigUInt number by 1."""
     var i = 0
     while i < len(x.words):
-        if x.words[i] < UInt32(999_999_999):
+        if x.words[i] < BigUInt.BASE_MAX:
             x.words[i] += UInt32(1)
             return
         else:  # If the word is 999_999_999, we need to carry over
@@ -327,7 +327,7 @@ fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
             difference -= Int32(x2.words[ith])
         # Handle borrowing if needed
         if difference < Int32(0):
-            difference += Int32(1_000_000_000)
+            difference += Int32(BigUInt.BASE)
             borrow = Int32(1)
         else:
             borrow = Int32(0)
@@ -369,7 +369,7 @@ fn subtract_inplace(mut x: BigUInt, y: BigUInt) raises -> None:
             difference -= Int32(y.words[ith])
         # Handle borrowing if needed
         if difference < Int32(0):
-            difference += Int32(1_000_000_000)
+            difference += Int32(BigUInt.BASE)
             borrow = Int32(1)
         else:
             borrow = Int32(0)
@@ -528,8 +528,8 @@ fn multiply_slices(
 
             # The lower 9 digits (base 10^9) go into the current word
             # The upper digits become the carry for the next position
-            words[i + j] = UInt32(product % 1_000_000_000)
-            carry = product // 1_000_000_000
+            words[i + j] = UInt32(product % BigUInt.BASE)
+            carry = product // BigUInt.BASE
 
         # If there is a carry left, add it to the next position
         if carry > 0:
@@ -618,7 +618,7 @@ fn multiply_karatsuba(
         )
         # z2 = 0
 
-        z1.scale_up_by_power_of_billion(m)
+        z1.scale_up_inplace_by_power_of_billion(m)
         z1 += z0
         return z1^
 
@@ -637,7 +637,7 @@ fn multiply_karatsuba(
             x, y, start_x + m, end_x, start_y, end_y, cutoff_number_of_words
         )
         # z2 = 0
-        z1.scale_up_by_power_of_billion(m)
+        z1.scale_up_inplace_by_power_of_billion(m)
         z1 += z0
         return z1^
 
@@ -697,8 +697,8 @@ fn multiply_karatsuba(
             print("z0:", z0)
 
         # z2*9^(m * 2) + z1*9^m + z0
-        z2.scale_up_by_power_of_billion(2 * m)
-        z1.scale_up_by_power_of_billion(m)
+        z2.scale_up_inplace_by_power_of_billion(2 * m)
+        z1.scale_up_inplace_by_power_of_billion(m)
         z2 += z1
         z2 += z0
 
@@ -725,14 +725,13 @@ fn multiply_by_uint32(mut x: BigUInt, y: UInt32):
 
     for i in range(len(x.words)):
         product = UInt64(x.words[i]) * y_as_uint64 + carry
-        x.words[i] = UInt32(product % UInt64(1_000_000_000))
-        carry = product // UInt64(1_000_000_000)
+        x.words[i] = UInt32(product % UInt64(BigUInt.BASE))
+        carry = product // UInt64(BigUInt.BASE)
 
     if carry > 0:
         x.words.append(UInt32(carry))
 
 
-# TODO: Make this in-place
 fn scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt:
     """Multiplies a BigUInt by 10^n if n > 0, otherwise doing nothing.
 
@@ -760,6 +759,7 @@ fn scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt:
     else:  # number_of_remaining_digits > 0
         var carry = UInt64(0)
         var multiplier: UInt64
+        var product: UInt64
 
         if number_of_remaining_digits == 1:
             multiplier = UInt64(10)
@@ -779,9 +779,9 @@ fn scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt:
             multiplier = UInt64(100_000_000)
 
         for i in range(len(x.words)):
-            var product = UInt64(x.words[i]) * multiplier + carry
-            words.append(UInt32(product % UInt64(1_000_000_000)))
-            carry = product // UInt64(1_000_000_000)
+            product = UInt64(x.words[i]) * multiplier + carry
+            words.append(UInt32(product % UInt64(BigUInt.BASE)))
+            carry = product // UInt64(BigUInt.BASE)
         # Add the last carry if it exists
         if carry > 0:
             words.append(UInt32(carry))
@@ -789,7 +789,78 @@ fn scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt:
     return BigUInt(words=words^)
 
 
-fn scale_up_by_power_of_billion(mut x: BigUInt, n: Int):
+fn scale_up_inplace_by_power_of_10(mut x: BigUInt, n: Int):
+    """Multiplies a BigUInt in-place by 10^n if n > 0, otherwise doing nothing.
+
+    Args:
+        x: The BigUInt value to multiply.
+        n: The power of 10 to multiply by.
+    """
+    if n <= 0:
+        return
+
+    var number_of_zero_words = n // 9
+    var number_of_remaining_digits = n % 9
+
+    # SPECIAL CASE: If n is a multiple of 9
+    if number_of_remaining_digits == 0:
+        # If n is a multiple of 9, we just need to add zero words
+        x.scale_up_inplace_by_power_of_billion(number_of_zero_words)
+        return
+
+    else:  # number_of_remaining_digits > 0
+        # The number of words to add is number_of_zero_words + 1
+        # For example, if n = 10, we add two words
+        # The most significant word may not be used
+        # We need to make sure that it is initialized to zero finally
+        x_original_length = len(x.words)
+        x.words.resize(
+            unsafe_uninit_length=len(x.words) + number_of_zero_words + 1
+        )  # New length = original length + number of zero words + 1
+
+        var carry = UInt64(0)
+        var multiplier: UInt64
+        var product: UInt64
+
+        if number_of_remaining_digits == 1:
+            multiplier = UInt64(10)
+        elif number_of_remaining_digits == 2:
+            multiplier = UInt64(100)
+        elif number_of_remaining_digits == 3:
+            multiplier = UInt64(1000)
+        elif number_of_remaining_digits == 4:
+            multiplier = UInt64(10_000)
+        elif number_of_remaining_digits == 5:
+            multiplier = UInt64(100_000)
+        elif number_of_remaining_digits == 6:
+            multiplier = UInt64(1_000_000)
+        elif number_of_remaining_digits == 7:
+            multiplier = UInt64(10_000_000)
+        else:  # number_of_remaining_digits == 8
+            multiplier = UInt64(100_000_000)
+
+        for i in range(x_original_length):
+            product = UInt64(x.words[i]) * multiplier + carry
+            x.words[i] = UInt32(product % UInt64(BigUInt.BASE))
+            carry = product // UInt64(BigUInt.BASE)
+
+        # Add the last carry no matter it is 0 or not
+        x.words[x_original_length] = UInt32(carry)
+
+        # Now we shift the words to the right by number_of_zero_words
+        for i in range(len(x.words) - 1, number_of_zero_words - 1, -1):
+            x.words[i] = x.words[i - number_of_zero_words]
+
+        # Fill the first number_of_zero_words with zeros
+        for i in range(number_of_zero_words):
+            x.words[i] = UInt32(0)
+
+        # Remove the most significant zero word
+        x.remove_leading_empty_words()
+        return
+
+
+fn scale_up_inplace_by_power_of_billion(mut x: BigUInt, n: Int):
     """Multiplies a BigUInt in-place by (10^9)^n if n > 0.
     This equals to adding 9n zeros (n words) to the end of the number.
 
@@ -804,10 +875,9 @@ fn scale_up_by_power_of_billion(mut x: BigUInt, n: Int):
     # The number of words to add is n
     # For example, if n = 3, we add three words of zeros
     # x1, x2, x3, x4 -> x1, x2, x3, x4, 0, 0, 0
-    orig_len_x = len(x.words)
-    x.words.resize(unsafe_uninit_length=orig_len_x + n)
+    x.words.resize(unsafe_uninit_length=len(x.words) + n)
     # Move the existing words to the right by n positions
-    # x1, x2, x3, x4, 0, 0, 0 -> 0, 0, 0, x1, x2, x3, x4
+    # x1, x2, x3, x4, _, _, _ -> 0, 0, 0, x1, x2, x3, x4
     for i in range(len(x.words) - 1, n - 1, -1):
         x.words[i] = x.words[i - n]
     # Fill the first n words with zeros
@@ -913,7 +983,7 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         # Get the last word of the divisor
         var x2_word = x2.words[len(x2.words) - 1]
         var carry = UInt32(0)
-        var power_of_carry = UInt32(1_000_000_000) // x2_word
+        var power_of_carry = BigUInt.BASE // x2_word
         for i in range(len(result.words) - 1, -1, -1):
             var quot = result.words[i] // x2_word
             var rem = result.words[i] % x2_word
@@ -928,23 +998,44 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
     # CASE: all other situations
     # Normalize divisor to improve quotient estimation
-    var normalized_x1 = x1
-    var normalized_x2 = x2
-    var normalization_factor: UInt32 = 1
-
-    # Calculate normalization factor to make leading digit of divisor large
+    # Calculate normalization factor to make leading digit of divisor
+    # as large as possible
+    # I use table lookup to find the normalization factor
+    var normalization_factor: Int  # Number of digits to shift
     var msw = x2.words[len(x2.words) - 1]
-    if msw < 500_000_000:
-        while msw < 100_000_000:  # Ensure leading digit is significant
-            msw *= 10
-            normalization_factor *= 10
+    if msw < 10_000:
+        if msw < 100:
+            if msw < 10:
+                normalization_factor = 8  # Shift by 8 digits
+            else:  # 10 <= msw < 100
+                normalization_factor = 7  # Shift by 7 digits
+        else:  # 100 <= msw < 10_000
+            if msw < 1_000:  # 100 <= msw < 1_000
+                normalization_factor = 6  # Shift by 6 digits
+            else:  # 1_000 <= msw < 10_000:
+                normalization_factor = 5  # Shift by 5 digits
+    elif msw < 100_000_000:  # 10_000 <= msw < 100_000_000
+        if msw < 1_000_000:
+            if msw < 100_000:  # 10_000 <= msw < 100_000
+                normalization_factor = 4  # Shift by 4 digits
+            else:  # 100_000 <= msw < 1_000_000
+                normalization_factor = 3  # Shift by 3 digits
+        else:  # 1_000_000 <= msw < 100_000_000
+            if msw < 10_000_000:  # 1_000_000 <= msw < 10_000_000
+                normalization_factor = 2  # Shift by 2 digits
+            else:  # 10_000_000 <= msw < 100_000_000
+                normalization_factor = 1  # Shift by 1 digit
+    else:  # 100_000_000 <= msw < 1_000_000_000
+        normalization_factor = 0  # No shift needed
 
-        # Apply normalization
-        if normalization_factor > 1:
-            normalized_x1 = multiply(x1, BigUInt(normalization_factor))
-            normalized_x2 = multiply(x2, BigUInt(normalization_factor))
-
-    return floor_divide_general(normalized_x1, normalized_x2)
+    if normalization_factor == 0:
+        # No normalization needed, just use the general division algorithm
+        return floor_divide_general(x1, x2)
+    else:
+        # Normalize the divisor and dividend
+        var normalized_x1 = scale_up_by_power_of_10(x1, normalization_factor)
+        var normalized_x2 = scale_up_by_power_of_10(x2, normalization_factor)
+        return floor_divide_general(normalized_x1, normalized_x2)
 
 
 fn floor_divide_general(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
@@ -988,21 +1079,23 @@ fn floor_divide_general(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
         # Calculate trial product
         trial_product = divisor
         multiply_by_uint32(trial_product, UInt32(quotient))
-        scale_up_by_power_of_billion(trial_product, index_of_word)
+        scale_up_inplace_by_power_of_billion(trial_product, index_of_word)
 
         # Should need at most 1-2 corrections after the estimation
+        # At most cases, no correction is needed
+        # Add correction attempts counter to avoid infinite loop
         var correction_attempts = 0
-        while (
-            (trial_product.compare(remainder) > 0)
-            and (quotient > 0)
-            and (correction_attempts < 3)
-        ):
+        while (trial_product.compare(remainder) > 0) and (quotient > 0):
             quotient -= 1
             correction_attempts += 1
 
             trial_product = divisor
             multiply_by_uint32(trial_product, UInt32(quotient))
-            scale_up_by_power_of_billion(trial_product, index_of_word)
+            scale_up_inplace_by_power_of_billion(trial_product, index_of_word)
+
+            if correction_attempts > 3:
+                print("correction attempts:", correction_attempts)
+                break
 
         # Store the quotient word
         result.words[index_of_word] = UInt32(quotient)
@@ -1060,25 +1153,27 @@ fn floor_divide_estimate_quotient(
     # Special case: if divisor is single word, fall back to 2-by-1 division
     if len(divisor.words) == 1:
         if r2 == d1:
-            return 999_999_999
-        return min((r2 * UInt64(1_000_000_000) + r1) // d1, UInt64(999_999_999))
+            return BigUInt.BASE_MAX
+        return min(
+            (r2 * UInt64(BigUInt.BASE) + r1) // d1, UInt64(BigUInt.BASE_MAX)
+        )
 
     # Special case: if high word of dividend equals high word of divisor
     # The quotient is likely to be large, so we use a conservative estimate
     if r2 == d1:
-        return UInt64(999_999_999)
+        return UInt64(BigUInt.BASE_MAX)
 
     # 3-by-2 division using 128-bit arithmetic
     # We need to compute: (r2 * 10^18 + r1 * 10^9 + r0) // (d1 * 10^9 + d0)
 
     # Convert to 128-bit for high precision calculation
-    var dividend_high = UInt128(r2) * UInt128(1_000_000_000) + UInt128(r1)
+    var dividend_high = UInt128(r2) * UInt128(BigUInt.BASE) + UInt128(r1)
     var dividend_low = UInt128(r0)
-    var divisor_128 = UInt128(d1) * UInt128(1_000_000_000) + UInt128(d0)
+    var divisor_128 = UInt128(d1) * UInt128(BigUInt.BASE) + UInt128(d0)
 
     # Handle the case where we need to consider the full 3-word dividend
     # We compute: (dividend_high * 10^9 + dividend_low) // divisor_128
-    var full_dividend = dividend_high * UInt128(1_000_000_000) + dividend_low
+    var full_dividend = dividend_high * UInt128(BigUInt.BASE) + dividend_low
 
     # Perform the division
     var quotient_128 = full_dividend // divisor_128
@@ -1087,7 +1182,7 @@ fn floor_divide_estimate_quotient(
     var quotient = UInt64(quotient_128)
 
     # Ensure we don't exceed the maximum value for a single word
-    return min(quotient, UInt64(999_999_999))
+    return min(quotient, UInt64(BigUInt.BASE_MAX))
 
 
 fn floor_divide_inplace_by_single_word(
@@ -1108,7 +1203,7 @@ fn floor_divide_inplace_by_single_word(
     var x2_value = UInt64(x2.words[0])
     var carry = UInt64(0)
     for i in range(len(x1.words) - 1, -1, -1):
-        var dividend = carry * UInt64(1_000_000_000) + UInt64(x1.words[i])
+        var dividend = carry * UInt64(BigUInt.BASE) + UInt64(x1.words[i])
         x1.words[i] = UInt32(dividend // x2_value)
         carry = dividend % x2_value
     x1.remove_leading_empty_words()
@@ -1133,7 +1228,7 @@ fn floor_divide_inplace_by_double_words(
         )
 
     # CASE: all other situations
-    var x2_value = UInt128(x2.words[1]) * UInt128(1_000_000_000) + UInt128(
+    var x2_value = UInt128(x2.words[1]) * UInt128(BigUInt.BASE) + UInt128(
         x2.words[0]
     )
 
@@ -1145,12 +1240,12 @@ fn floor_divide_inplace_by_double_words(
     for i in range(len(x1.words) - 1, -1, -2):
         var dividend = (
             carry * UInt128(1_000_000_000_000_000_000)
-            + UInt128(x1.words[i]) * UInt128(1_000_000_000)
+            + UInt128(x1.words[i]) * UInt128(BigUInt.BASE)
             + UInt128(x1.words[i - 1])
         )
         var quotient = dividend // x2_value
-        x1.words[i] = UInt32(quotient // UInt128(1_000_000_000))
-        x1.words[i - 1] = UInt32(quotient % UInt128(1_000_000_000))
+        x1.words[i] = UInt32(quotient // UInt128(BigUInt.BASE))
+        x1.words[i - 1] = UInt32(quotient % UInt128(BigUInt.BASE))
         carry = dividend % x2_value
 
     x1.remove_leading_empty_words()
@@ -1171,7 +1266,7 @@ fn floor_divide_inplace_by_2(mut x: BigUInt) -> None:
     # Process from most significant to least significant word
     for ith in range(len(x.words) - 1, -1, -1):
         x.words[ith] += carry
-        carry = UInt32(1_000_000_000) if (x.words[ith] & 1) else 0
+        carry = BigUInt.BASE if (x.words[ith] & 1) else 0
         x.words[ith] >>= 1
 
     # Remove leading zeros
@@ -1390,7 +1485,7 @@ fn scale_down_by_power_of_10(x: BigUInt, n: Int) raises -> BigUInt:
         divisor = UInt32(10000000)
     else:  # digit_shift == 8
         divisor = UInt32(100000000)
-    var power_of_carry = UInt32(1_000_000_000) // divisor
+    var power_of_carry = BigUInt.BASE // divisor
     for i in range(len(result.words) - 1, -1, -1):
         var quot = result.words[i] // divisor
         var rem = result.words[i] % divisor

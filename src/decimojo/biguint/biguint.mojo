@@ -43,7 +43,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
 
     Internal Representation:
 
-    Use base-10^9 representation for the unsigned integer.
+    Use base-10^9 (base-billion) representation for the unsigned integer.
     BigUInt uses a dynamic structure in memory, which contains:
     An pointer to an array of UInt32 words for the coefficient on the heap,
     which can be of arbitrary length stored in little-endian order.
@@ -52,6 +52,9 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     The value of the BigUInt is calculated as follows:
 
     x = x[0] * 10^0 + x[1] * 10^9 + x[2] * 10^18 + ... x[n] * 10^(9n)
+
+    You can think of the BigUInt as a list base-billion digits, where each
+    digit is ranging from 0 to 999_999_999.
     """
 
     var words: List[UInt32]
@@ -60,6 +63,14 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     # ===------------------------------------------------------------------=== #
     # Constants
     # ===------------------------------------------------------------------=== #
+
+    # TODO: Make these constants global, e.g., decimojo.BASE
+    alias BASE = 1_000_000_000
+    """The base used for the BigUInt representation."""
+    alias BASE_MAX = 999_999_999
+    """The maximum value of a single word in the BigUInt representation."""
+    alias BASE_HALF = 500_000_000
+    """Half of the base used for the BigUInt representation."""
 
     alias ZERO = Self.zero()
     alias ONE = Self.one()
@@ -843,6 +854,11 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         return decimojo.biguint.arithmetics.floor_divide(self, other)
 
     @always_inline
+    fn __ceildiv__(self, other: Self) raises -> Self:
+        """Returns the result of ceiling division."""
+        return decimojo.biguint.arithmetics.ceil_divide(self, other)
+
+    @always_inline
     fn __mod__(self, other: Self) raises -> Self:
         return decimojo.biguint.arithmetics.floor_modulo(self, other)
 
@@ -1058,6 +1074,13 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         return decimojo.biguint.arithmetics.scale_up_by_power_of_10(self, n)
 
     @always_inline
+    fn scale_up_inplace_by_power_of_10(mut self, n: Int):
+        """Multiplies this number in-place by 10^n (n>=0).
+        See `scale_up_inplace_by_power_of_10()` for more information.
+        """
+        decimojo.biguint.arithmetics.scale_up_inplace_by_power_of_10(self, n)
+
+    @always_inline
     fn scale_down_by_power_of_10(self, n: Int) raises -> Self:
         """Returns the result of floored dividing this number by 10^n (n>=0).
         It is equal to removing the last n digits of the number.
@@ -1066,14 +1089,16 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         return decimojo.biguint.arithmetics.scale_down_by_power_of_10(self, n)
 
     @always_inline
-    fn scale_up_by_power_of_billion(mut self, n: Int):
+    fn scale_up_inplace_by_power_of_billion(mut self, n: Int):
         """Multiplies a BigUInt in-place by (10^9)^n if n > 0.
         This equals to adding 9n zeros (n words) to the end of the number.
 
         Args:
             n: The power of 10^9 to multiply by. Should be non-negative.
         """
-        decimojo.biguint.arithmetics.scale_up_by_power_of_billion(self, n)
+        decimojo.biguint.arithmetics.scale_up_inplace_by_power_of_billion(
+            self, n
+        )
 
     fn power(self, exponent: Int) raises -> Self:
         """Returns the result of raising this number to the power of `exponent`.
@@ -1323,9 +1348,21 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
 
     @always_inline
     fn remove_leading_empty_words(mut self):
-        """Removes leading words of 0 from BigUInt's internal representation."""
-        while len(self.words) > 1 and self.words[-1] == 0:
-            self.words.resize(len(self.words) - 1, UInt32(0))
+        """Removes the most significant empty words of a BigUInt.
+
+        Notes:
+
+        The internal representation of a BigUInt is a list of words.
+        The most significant empty words are the words that are
+        equal to zero and are at the end of the list.
+        """
+        var n_empty_words: Int = 0
+        for i in range(len(self.words) - 1, -1, -1):
+            if self.words[i] == 0:
+                n_empty_words += 1
+            else:
+                break
+        self.words.resize(len(self.words) - n_empty_words, UInt32(0))
 
     @always_inline
     fn remove_trailing_digits_with_rounding(
