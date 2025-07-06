@@ -14,6 +14,7 @@ This is a list of RELEASED changes for the DeciMojo Package.
 1. Refine the `BigUInt` multiplication with the Karatsuba algorithm. The time complexity of maltiplication is reduced from $O(n^2)$ to $O(n^{ln(3/2)})$ for large integers, which significantly improves performance for big numbers. Doubling the size of the numbers will only increase the time taken by a factor of about 3, instead of 4 as in the previous implementation (#97).
 1. The `__isub__` method of `BigUInt` will now conduct in-place subtraction. `x -= y` will not lead to memory allocation, but will modify the original `BigUInt` object `x` directly (#98).
 1. Refine the arithmetic operations of `BigUInt` when the second operand is one-word long or is a `UInt32` value (#98).
+1. Refine the division of `BigUInt` to improve performance (#98, #100).
 1. Add `to_uint64()` and `to_uint128()` methods to `BigUInt` to for fast type conversion (#91).
 1. Improve error messages and remove unnecessary `raises` keywords for all functions (#92).
 
