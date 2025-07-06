@@ -12,7 +12,7 @@ This is the BigUInt Benchmarks
 =========================================
 add:         Add
 mul:         Multiply
-trunc:       Truncate divide (//)
+div:         Truncate divide (//)
 fromstr:     From string
 all:         Run all benchmarks
 q:           Exit
@@ -24,7 +24,7 @@ q:           Exit
         bench_add()
     elif command == "mul":
         bench_multiply()
-    elif command == "trunc":
+    elif command == "div":
         bench_truncate_divide()
     elif command == "fromstr":
         bench_from_string()

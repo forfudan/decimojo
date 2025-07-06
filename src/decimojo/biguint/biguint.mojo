@@ -902,13 +902,16 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     @always_inline
     fn __iadd__(mut self, other: Self):
         """Adds `other` to `self` in place.
-        See `add_inplace()` for more information.
+        See `biguint.arithmetics.add_inplace()` for more information.
         """
         decimojo.biguint.arithmetics.add_inplace(self, other)
 
     @always_inline
     fn __isub__(mut self, other: Self) raises:
-        self = decimojo.biguint.arithmetics.subtract(self, other)
+        """Subtracts `other` from `self` in place.
+        See `biguint.arithmetics.subtract_inplace()` for more information.
+        """
+        decimojo.biguint.arithmetics.subtract_inplace(self, other)
 
     @always_inline
     fn __imul__(mut self, other: Self) raises:
@@ -1155,18 +1158,27 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         for word in self.words:
             if word != 0:
                 return False
-        else:
-            return True
+        return True
 
     @always_inline
     fn is_one(self) -> Bool:
         """Returns True if this BigUInt represents one."""
-        return len(self.words) == 1 and self.words[0] == 1
+        if self.words[0] != 1:
+            return False
+        for i in self.words[1:]:
+            if i != 0:
+                return False
+        return True
 
     @always_inline
     fn is_two(self) -> Bool:
         """Returns True if this BigUInt represents two."""
-        return len(self.words) == 1 and self.words[0] == 2
+        if len(self.words) != 2:
+            return False
+        for i in self.words[1:]:
+            if i != 0:
+                return False
+        return True
 
     @always_inline
     fn is_power_of_10(x: BigUInt) -> Bool:
@@ -1176,15 +1188,15 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
                 return False
         var word = x.words[len(x.words) - 1]
         if (
-            (word == 1)
-            or (word == 10)
-            or (word == 100)
-            or (word == 1000)
-            or (word == 10_000)
-            or (word == 100_000)
-            or (word == 1_000_000)
-            or (word == 10_000_000)
-            or (word == 100_000_000)
+            (word == UInt32(1))
+            or (word == UInt32(10))
+            or (word == UInt32(100))
+            or (word == UInt32(1000))
+            or (word == UInt32(10_000))
+            or (word == UInt32(100_000))
+            or (word == UInt32(1_000_000))
+            or (word == UInt32(10_000_000))
+            or (word == UInt32(100_000_000))
         ):
             return True
         return False
@@ -1393,10 +1405,3 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
                         1,
                     )
         return result^
-
-    @always_inline
-    fn shift_words_left(self, position: Int) -> Self:
-        """Shifts the words of the BigUInt to the left by `position` bits.
-        See `arithmetics.shift_words_left()` for more information.
-        """
-        return decimojo.biguint.arithmetics.shift_words_left(self, position)

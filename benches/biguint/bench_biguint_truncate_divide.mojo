@@ -22,6 +22,8 @@ fn open_log_file() raises -> PythonObject:
     """
     var python = Python.import_module("builtins")
     var datetime = Python.import_module("datetime")
+    var pysys = Python.import_module("sys")
+    pysys.set_int_max_str_digits(1000000)
 
     # Create logs directory if it doesn't exist
     var log_dir = "./logs"
@@ -484,6 +486,26 @@ fn main() raises:
         ),
         "141421356237309504880168872420969807856967187537694",
         iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 31: Division of large numbers
+    run_benchmark_truncate_divide(
+        "Division of large numbers (1000 words vs 100 digits)",
+        "316227766_016824890_583648059_893174009_579947593" * 1000,
+        "141421356_237309504_880168872_420969807_856967187" * 100,
+        3,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 32: Division of large numbers
+    run_benchmark_truncate_divide(
+        "Division of large numbers (10000 words vs 1234 digits)",
+        "316227766_016824890_583648059_893174009_579947593" * 10000,
+        "141421356_237309504_880168872_420969807_856967187" * 1234,
+        3,
         log_file,
         speedup_factors,
     )

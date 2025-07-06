@@ -36,24 +36,27 @@ from decimojo.rounding_mode import RoundingMode
 # add_inplace_by_1(x: BigUInt) -> None
 #
 # subtract(x1: BigUInt, x2: BigUInt) -> BigUInt
+# subtract_inplace(x1: BigUInt, x2: BigUInt) -> None
 #
 # multiply(x1: BigUInt, x2: BigUInt) -> BigUInt
+# multiply_slices(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int) -> BigUInt
+# multiply_karatsuba(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int, cutoff_number_of_words: Int) -> BigUInt
 # scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt
+# scale_up_by_power_of_billion(mut x: BigUInt, n: Int)
 #
 # floor_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
-# floor_divide_partition(x1: BigUInt, x2: BigUInt) -> BigUInt
+# floor_divide_general(x1: BigUInt, x2: BigUInt) -> BigUInt
 # floor_divide_inplace_by_single_word(x1: BigUInt, x2: BigUInt) -> None
 # floor_divide_inplace_by_double_words(x1: BigUInt, x2: BigUInt) -> None
 # floor_divide_inplace_by_2(x: BigUInt) -> Nonet, x2: BigUInt) -> BigUInt
-# truncate_mod# truncate_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
+# truncate_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
 # floor_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
 # ceil_divide(x1: BigUInt, x2: BigUInt) -> BigUIntulo(x1: BigUIn# floor_divide_general(x1: BigUInt, x2: BigUInt) -> BigUInt
 # ceil_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
 # divmod(x1: BigUInt, x2: BigUInt) -> Tuple[BigUInt, BigUInt]
 # scale_down_by_power_of_10(x: BigUInt, n: Int) -> BigUInt
 #
-# estimate_quotient(x1: BigUInt, x2: BigUInt, j: Int, m: Int) -> UInt64
-# shift_words_left(x: BigUInt, j: Int) -> BigUInt
+# floor_divide_estimate_quotient(x1: BigUInt, x2: BigUInt, j: Int, m: Int) -> UInt64
 # power_of_10(n: Int) -> BigUInt
 # ===----------------------------------------------------------------------=== #
 
@@ -298,16 +301,14 @@ fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         The result of subtracting x2 from x1.
     """
     # If the subtrahend is zero, return the minuend
-    if len(x2.words) == 1 and x2.words[0] == 0:
+    if x2.is_zero():
         return x1
 
     # We need to determine which number has the larger magnitude
     var comparison_result = x1.compare(x2)
-
     if comparison_result == 0:
         # |x1| = |x2|
         return BigUInt()  # Return zero
-
     if comparison_result < 0:
         raise Error("biguint.arithmetics.subtract(): Underflow due to x1 < x2")
 
@@ -338,6 +339,47 @@ fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     return result^
 
 
+fn subtract_inplace(mut x: BigUInt, y: BigUInt) raises -> None:
+    """Subtracts y from x in place."""
+
+    # If the subtrahend is zero, return the minuend
+    if y.is_zero():
+        return
+
+    # We need to determine which number has the larger magnitude
+    var comparison_result = x.compare(y)
+    if comparison_result == 0:
+        x.words.resize(unsafe_uninit_length=1)
+        x.words[0] = UInt32(0)  # Result is zero
+    elif comparison_result < 0:
+        raise Error(
+            "biguint.arithmetics.subtract_inplace(): Underflow due to x < y"
+        )
+
+    # Now it is safe to subtract the smaller number from the larger one
+    var borrow: Int32 = 0
+    var ith: Int = 0
+    var difference: Int32  # Int32 is sufficient for the difference
+
+    while ith < len(x.words):
+        # Subtract the borrow
+        difference = Int32(x.words[ith]) - borrow
+        # Subtract smaller's word if available
+        if ith < len(y.words):
+            difference -= Int32(y.words[ith])
+        # Handle borrowing if needed
+        if difference < Int32(0):
+            difference += Int32(1_000_000_000)
+            borrow = Int32(1)
+        else:
+            borrow = Int32(0)
+        x.words[ith] = UInt32(difference)
+        ith += 1
+
+    x.remove_leading_empty_words()
+    return
+
+
 # ===----------------------------------------------------------------------=== #
 # Multiplication algorithms
 # ===----------------------------------------------------------------------=== #
@@ -364,35 +406,43 @@ fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
     alias CUTOFF_KARATSUBA: Int = 64
     """The cutoff number of words for using Karatsuba multiplication."""
 
-    # SPECIAL CASE: One of the operands is zero or one
-    if len(x.words) == 1:
-        if x.words[0] == 0:
-            return BigUInt(UInt32(0))
-        if x.words[0] == 1:
-            return y
-    if len(y.words) == 1:
-        if y.words[0] == 0:
-            return BigUInt(UInt32(0))
-        if y.words[0] == 1:
-            return x
-
-    # CASE 1:
-    # If one number is only one-word long
-    # we can use school multiplication because this is only one loop
+    # SPECIAL CASES
+    # If x or y is a single-word number
+    # We can use `multiply_by_uint32` because this is only one loop
     # No need to split the long number into two parts
-    if len(x.words) == 1 or len(y.words) == 1:
-        return multiply_slices(x, y, 0, len(x.words), 0, len(y.words))
+    if len(x.words) == 1:
+        var x_word = x.words[0]
+        if x_word == 0:
+            return BigUInt(UInt32(0))
+        elif x_word == 1:
+            return y
+        else:
+            var result = y
+            multiply_by_uint32(result, x_word)
+            return result^
 
-    # CASE 2:
+    if len(y.words) == 1:
+        var y_word = y.words[0]
+        if y_word == 0:
+            return BigUInt(UInt32(0))
+        if y_word == 1:
+            return x
+        else:
+            var result = x
+            multiply_by_uint32(result, y_word)
+            return result^
+
+    # CASE 1
     # The allocation cost is too high for small numbers to use Karatsuba
     # Use school multiplication for small numbers
-
     var max_words = max(len(x.words), len(y.words))
     if max_words <= CUTOFF_KARATSUBA:
         # return multiply_slices (x, y)
         return multiply_slices(x, y, 0, len(x.words), 0, len(y.words))
         # multiply_slices can also takes in x, y, and indices
 
+    # CASE 2
+    # Use Karatsuba multiplication for larger numbers
     else:
         return multiply_karatsuba(
             x, y, 0, len(x.words), 0, len(y.words), CUTOFF_KARATSUBA
@@ -423,15 +473,25 @@ fn multiply_slices(
 
     # CASE: One of the operands is zero or one
     if n_words_x_slice == 1:
-        if x.words[start_x] == 0:
+        var x_word = x.words[start_x]
+        if x_word == 0:
             return BigUInt(UInt32(0))
-        if x.words[start_x] == 1:
+        elif x_word == 1:
             return BigUInt(words=y.words[start_y:end_y])
+        else:
+            var result = BigUInt(words=y.words[start_y:end_y])
+            multiply_by_uint32(result, x_word)
+            return result^
     if n_words_y_slice == 1:
-        if y.words[start_y] == 0:
+        var y_word = y.words[start_y]
+        if y_word == 0:
             return BigUInt(UInt32(0))
-        if y.words[start_y] == 1:
+        elif y_word == 1:
             return BigUInt(words=x.words[start_x:end_x])
+        else:
+            var result = BigUInt(words=x.words[start_x:end_x])
+            multiply_by_uint32(result, y_word)
+            return result^
 
     # The max number of words in the result is the sum of the words in the operands
     var max_result_len = n_words_x_slice + n_words_y_slice
@@ -645,6 +705,34 @@ fn multiply_karatsuba(
         return z2^
 
 
+fn multiply_by_uint32(mut x: BigUInt, y: UInt32):
+    """Multiplies a BigUInt by an UInt32 word in-place.
+
+    Args:
+        x: The BigUInt value to multiply.
+        y: The single word to multiply by.
+    """
+    if y == 0:
+        x.words = List[UInt32](0)
+        return
+
+    if y == 1:
+        return
+
+    var y_as_uint64 = UInt64(y)
+    var product: UInt64
+    var carry: UInt64 = 0
+
+    for i in range(len(x.words)):
+        product = UInt64(x.words[i]) * y_as_uint64 + carry
+        x.words[i] = UInt32(product % UInt64(1_000_000_000))
+        carry = product // UInt64(1_000_000_000)
+
+    if carry > 0:
+        x.words.append(UInt32(carry))
+
+
+# TODO: Make this in-place
 fn scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt:
     """Multiplies a BigUInt by 10^n if n > 0, otherwise doing nothing.
 
@@ -769,7 +857,7 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
         # SUB-CASE: Single word // single word
         if len(x1.words) == 1:
-            var result = BigUInt(UInt32(x1.words[0] // x2.words[0]))
+            var result = BigUInt(List[UInt32](x1.words[0] // x2.words[0]))
             return result^
 
         # SUB-CASE: Divisor is single word and is power of 2
@@ -781,7 +869,7 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
                 remainder >>= 1
             return result^
 
-        # SUB-CASE: Divisor is single word (<= 10 digits)
+        # SUB-CASE: Divisor is single word (<= 9 digits)
         else:
             var result = x1
             floor_divide_inplace_by_single_word(result, x2)
@@ -859,142 +947,147 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     return floor_divide_general(normalized_x1, normalized_x2)
 
 
-fn floor_divide_general(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+fn floor_divide_general(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
     """General division algorithm for BigInt numbers.
 
     Args:
-        x1: The dividend.
-        x2: The divisor.
+        dividend: The dividend.
+        divisor: The divisor.
 
     Returns:
-        The quotient of x1 // x2.
+        The quotient of dividend // divisor.
 
     Raises:
-        ValueError: If the divisor is zero.
+        Error: If the divisor is zero.
     """
 
-    if x2.is_zero():
-        raise Error("Error in `floor_divide_general`: Division by zero")
+    if divisor.is_zero():
+        raise Error(
+            "`biguint.arithmetics.floor_divide_general()`: Division by zero"
+        )
 
     # Initialize result and remainder
-    var result = BigUInt(List[UInt32](capacity=len(x1.words)))
-    var remainder = x1
-
-    # Calculate significant digits
-    var n = len(remainder.words)
-    var m = len(x2.words)
+    var result = BigUInt(List[UInt32](capacity=len(dividend.words)))
+    var remainder = dividend
 
     # Shift and initialize
-    var d = n - m
-    for _ in range(d + 1):
+    var n_words_diff = len(remainder.words) - len(divisor.words)
+    # The quotient will have at most n_words_diff + 1 words
+    for _ in range(n_words_diff + 1):
         result.words.append(0)
 
     # Main division loop
-    var j = d
-    while j >= 0:
+    var index_of_word = n_words_diff  # Start from the most significant word
+    var trial_product: BigUInt
+    while index_of_word >= 0:
         # OPTIMIZATION: Better quotient estimation
-        var q = estimate_quotient(remainder, x2, j, m)
+        var quotient = floor_divide_estimate_quotient(
+            remainder, divisor, index_of_word
+        )
 
         # Calculate trial product
-        var trial_product = x2 * BigUInt(UInt32(q))
-        var shifted_product = shift_words_left(trial_product, j)
+        trial_product = divisor
+        multiply_by_uint32(trial_product, UInt32(quotient))
+        scale_up_by_power_of_billion(trial_product, index_of_word)
 
-        # OPTIMIZATION: Binary search for adjustment
-        if shifted_product.compare(remainder) > 0:
-            var low: UInt64 = 0
-            var high: UInt64 = q - 1
+        # Should need at most 1-2 corrections after the estimation
+        var correction_attempts = 0
+        while (
+            (trial_product.compare(remainder) > 0)
+            and (quotient > 0)
+            and (correction_attempts < 3)
+        ):
+            quotient -= 1
+            correction_attempts += 1
 
-            while low <= high:
-                var mid = (low + high) / 2
+            trial_product = divisor
+            multiply_by_uint32(trial_product, UInt32(quotient))
+            scale_up_by_power_of_billion(trial_product, index_of_word)
 
-                # Recalculate with new q
-                trial_product = x2 * BigUInt(UInt32(mid))
-                shifted_product = shift_words_left(trial_product, j)
-
-                if shifted_product.compare(remainder) <= 0:
-                    q = mid  # This works
-                    low = mid + 1
-                else:
-                    high = mid - 1
-
-            # Final recalculation with best q
-            trial_product = x2 * BigUInt(UInt32(q))
-            shifted_product = shift_words_left(trial_product, j)
-
-        result.words[j] = UInt32(q)
-        remainder = subtract(remainder, shifted_product)
-        j -= 1
+        # Store the quotient word
+        result.words[index_of_word] = UInt32(quotient)
+        subtract_inplace(remainder, trial_product)
+        index_of_word -= 1
 
     result.remove_leading_empty_words()
     return result^
 
 
-fn floor_divide_partition(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
-    """Partition division algorithm for BigInt numbers.
+fn floor_divide_estimate_quotient(
+    dividend: BigUInt, divisor: BigUInt, index_of_word: Int
+) -> UInt64:
+    """Estimates the quotient digit using 3-by-2 division.
+
+    This function implements a 3-by-2 quotient estimation algorithm,
+    which divides a 3-word dividend portion by a 2-word divisor to get
+    an accurate quotient estimate.
 
     Args:
-        x1: The dividend.
-        x2: The divisor.
+        dividend: The dividend BigUInt number.
+        divisor: The divisor BigUInt number.
+        index_of_word: The current position in the division algorithm.
 
     Returns:
-        The quotient of x1 // x2.
-
-    Raises:
-        ValueError: If the divisor is zero.
+        An estimated quotient digit (0 to 999_999_999).
 
     Notes:
 
-    If words of x1 is more than 2 times the words of x2, then partition x1 into
-    several parts and divide x2 sequentially using general division.
-
-    words of x1: m
-    words of x2: n
-    number of partitions: m // n
-    words of first partition: n + m % n
-    the remainder is appended to the next partition.
+    The function performs division of a 3-word number by a 2-word number:
+    Dividend portion: R = r2 * 10^18 + r1 * 10^9 + r0.
+    Divisor: D = d1 * 10^9 + d0.
+    Goal: Estimate Q = R // D.
     """
 
-    if x2.is_zero():
-        raise Error("Error in `floor_divide_partition`: Division by zero")
+    # Extract three highest words of relevant dividend portion
+    var r2 = UInt64(0)
+    if index_of_word + len(divisor.words) < len(dividend.words):
+        r2 = UInt64(dividend.words[index_of_word + len(divisor.words)])
 
-    # Initialize result and remainder
-    var number_of_partitions = len(x1.words) // len(x2.words)
-    var number_of_words_remainder = len(x1.words) % len(x2.words)
-    var number_of_words_dividend: Int
-    var result = x1
-    result.words.resize(len(x1.words) - number_of_words_remainder, UInt32(0))
-    var remainder = BigUInt(List[UInt32](capacity=len(x2.words)))
-    for i in range(len(x1.words) - number_of_words_remainder, len(x1.words)):
-        remainder.words.append(x1.words[i])
+    var r1 = UInt64(0)
+    if index_of_word + len(divisor.words) - 1 < len(dividend.words):
+        r1 = UInt64(dividend.words[index_of_word + len(divisor.words) - 1])
 
-    for ith in range(number_of_partitions):
-        number_of_words_dividend = len(x2.words) + number_of_words_remainder
-        var dividend_list_of_words = List[UInt32](
-            capacity=number_of_words_dividend
-        )
-        for i in range(len(x2.words)):
-            dividend_list_of_words.append(
-                x1.words[(number_of_partitions - ith - 1) * len(x2.words) + i]
-            )
-        for i in range(number_of_words_remainder):
-            dividend_list_of_words.append(remainder.words[i])
+    var r0 = UInt64(0)
+    if index_of_word + len(divisor.words) - 2 < len(dividend.words):
+        r0 = UInt64(dividend.words[index_of_word + len(divisor.words) - 2])
 
-        var dividend = BigUInt(dividend_list_of_words)
-        var quotient = floor_divide_general(dividend, x2)
-        for i in range(len(x2.words)):
-            if i < len(quotient.words):
-                result.words[
-                    (number_of_partitions - ith - 1) * len(x2.words) + i
-                ] = quotient.words[i]
-            else:
-                result.words[
-                    (number_of_partitions - ith - 1) * len(x2.words) + i
-                ] = UInt32(0)
-        remainder = subtract(dividend, multiply(quotient, x2))
-        number_of_words_remainder = len(remainder.words)
+    # Extract two highest words of divisor
+    var d1 = UInt64(divisor.words[len(divisor.words) - 1])
+    var d0 = UInt64(0)
+    if len(divisor.words) >= 2:
+        d0 = UInt64(divisor.words[len(divisor.words) - 2])
 
-    result.remove_leading_empty_words()
-    return result^
+    # Special case: if divisor is single word, fall back to 2-by-1 division
+    if len(divisor.words) == 1:
+        if r2 == d1:
+            return 999_999_999
+        return min((r2 * UInt64(1_000_000_000) + r1) // d1, UInt64(999_999_999))
+
+    # Special case: if high word of dividend equals high word of divisor
+    # The quotient is likely to be large, so we use a conservative estimate
+    if r2 == d1:
+        return UInt64(999_999_999)
+
+    # 3-by-2 division using 128-bit arithmetic
+    # We need to compute: (r2 * 10^18 + r1 * 10^9 + r0) // (d1 * 10^9 + d0)
+
+    # Convert to 128-bit for high precision calculation
+    var dividend_high = UInt128(r2) * UInt128(1_000_000_000) + UInt128(r1)
+    var dividend_low = UInt128(r0)
+    var divisor_128 = UInt128(d1) * UInt128(1_000_000_000) + UInt128(d0)
+
+    # Handle the case where we need to consider the full 3-word dividend
+    # We compute: (dividend_high * 10^9 + dividend_low) // divisor_128
+    var full_dividend = dividend_high * UInt128(1_000_000_000) + dividend_low
+
+    # Perform the division
+    var quotient_128 = full_dividend // divisor_128
+
+    # Convert back to UInt64
+    var quotient = UInt64(quotient_128)
+
+    # Ensure we don't exceed the maximum value for a single word
+    return min(quotient, UInt64(999_999_999))
 
 
 fn floor_divide_inplace_by_single_word(
@@ -1310,66 +1403,8 @@ fn scale_down_by_power_of_10(x: BigUInt, n: Int) raises -> BigUInt:
 
 # ===----------------------------------------------------------------------=== #
 # Division Helper Functions
-# estimate_quotient, shift_words_left, power_of_10
+# power_of_10
 # ===----------------------------------------------------------------------=== #
-
-
-fn estimate_quotient(
-    dividend: BigUInt, divisor: BigUInt, j: Int, m: Int
-) -> UInt64:
-    """Gets a better estimate of the quotient digit."""
-    # Get three highest words of relevant dividend portion
-    var r2 = UInt64(0)
-    if j + m < len(dividend.words):
-        r2 = UInt64(dividend.words[j + m])
-
-    var r1 = UInt64(0)
-    if j + m - 1 < len(dividend.words):
-        r1 = UInt64(dividend.words[j + m - 1])
-
-    var r0 = UInt64(0)
-    if j + m - 2 < len(dividend.words):
-        r0 = UInt64(dividend.words[j + m - 2])
-
-    # Get two highest words of divisor
-    var d1 = UInt64(divisor.words[m - 1])
-    var d0 = UInt64(0)
-    if m >= 2:
-        d0 = UInt64(divisor.words[m - 2])
-
-    # If three most significant digits match, quotient would be max
-    if r2 == d1:
-        return 999_999_999
-
-    # Two-word by one-word division
-    var qhat = (r2 * 1_000_000_000 + r1) // d1
-
-    # Adjust if estimate is too large (happens less often with better estimate)
-    while (qhat >= 1_000_000_000) or (
-        qhat * d0 > (r2 * 1_000_000_000 + r1 - qhat * d1) * 1_000_000_000 + r0
-    ):
-        qhat -= 1
-
-    return min(qhat, UInt64(999_999_999))
-
-
-fn shift_words_left(num: BigUInt, positions: Int) -> BigUInt:
-    """Shifts a BigUInt left by adding trailing zeros.
-    Equivalent to multiplying by 10^(9*positions)."""
-    if num.is_zero():
-        return BigUInt()
-
-    var result = BigUInt(List[UInt32](capacity=len(num.words) + positions))
-
-    # Add zeros for the shift
-    for _ in range(positions):
-        result.words.append(0)
-
-    # Add the original number's words
-    for i in range(len(num.words)):
-        result.words.append(num.words[i])
-
-    return result^
 
 
 fn power_of_10(n: Int) raises -> BigUInt:
