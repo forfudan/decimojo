@@ -1,4 +1,5 @@
 from bench_biguint_add import main as bench_add
+from bench_biguint_subtraction import main as bench_subtraction
 from bench_biguint_multiply import main as bench_multiply
 from bench_biguint_truncate_divide import main as bench_truncate_divide
 from bench_biguint_from_string import main as bench_from_string
@@ -11,6 +12,7 @@ fn main() raises:
 This is the BigUInt Benchmarks
 =========================================
 add:         Add
+sub:         Subtract
 mul:         Multiply
 div:         Truncate divide (//)
 fromstr:     From string
@@ -22,6 +24,8 @@ q:           Exit
     var command = input("Type name of bench you want to run: ")
     if command == "add":
         bench_add()
+    elif command == "sub":
+        bench_subtraction()
     elif command == "mul":
         bench_multiply()
     elif command == "div":
