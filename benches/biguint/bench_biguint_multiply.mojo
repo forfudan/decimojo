@@ -150,7 +150,9 @@ fn main() raises:
         log_print("Could not retrieve system information", log_file)
 
     # Use fewer iterations for multiplication as it's more compute-intensive
+    # For large numbers, we reduce iterations to avoid long runtimes
     var iterations = 100
+    var iterations_large = 20
 
     # Define benchmark cases
     log_print(
@@ -460,22 +462,122 @@ fn main() raises:
         speedup_factors,
     )
 
-    # Case 31: Very, very large numbers multiplication
+    # Case 31: 2 words * 2 words multiplication
     run_benchmark_multiply(
-        "Extreme large numbers multiplication (9000 digits * 9000 digits)",
-        "123456789" * 1000,  # 9000 digits
-        "987654321" * 1000,  # 9000 digits
+        "2 words * 2 words multiplication",
+        "123456789" * 2,
+        "987654321" * 2,
         iterations,
         log_file,
         speedup_factors,
     )
 
-    # Case 32: Extremely large numbers multiplication
+    # Case 32: 4 words * 4 words multiplication
     run_benchmark_multiply(
-        "Extreme large numbers multiplication (36000 digits * 36000 digits)",
-        "123456789" * 4000,  # 36000 digits
-        "987654321" * 4000,  # 36000 digits
+        "4 words * 4 words multiplication",
+        "123456789" * 4,
+        "987654321" * 4,
         iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 33: 8 words * 8 words multiplication
+    run_benchmark_multiply(
+        "8 words * 8 words multiplication",
+        "123456789" * 8,
+        "987654321" * 8,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 34: 16 words * 16 words multiplication
+    run_benchmark_multiply(
+        "16 words * 16 words multiplication",
+        "123456789" * 16,
+        "987654321" * 16,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 35: 32 words * 32 words multiplication
+    run_benchmark_multiply(
+        "32 words * 32 words multiplication",
+        "123456789" * 32,
+        "987654321" * 32,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 36: 64 words * 64 words multiplication
+    run_benchmark_multiply(
+        "64 words * 64 words multiplication",
+        "123456789" * 64,
+        "987654321" * 64,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 37: 128 words * 128 words multiplication
+    run_benchmark_multiply(
+        "128 words * 128 words multiplication",
+        "123456789" * 128,
+        "987654321" * 128,
+        iterations_large,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 38: 256 words * 256 words multiplication
+    run_benchmark_multiply(
+        "256 words * 256 words multiplication",
+        "123456789" * 256,
+        "987654321" * 256,
+        iterations_large,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 39: 512 words * 512 words multiplication
+    run_benchmark_multiply(
+        "512 words * 512 words multiplication",
+        "123456789" * 512,
+        "987654321" * 512,
+        iterations_large,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 40: 1024 words * 1024 words multiplication
+    run_benchmark_multiply(
+        "1024 words * 1024 words multiplication",
+        "123456789" * 1024,
+        "987654321" * 1024,
+        iterations_large,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 41: 2048 words * 2048 words multiplication
+    run_benchmark_multiply(
+        "2048 words * 2048 words multiplication",
+        "123456789" * 2048,
+        "987654321" * 2048,
+        iterations_large,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 42: 4096 words * 4096 words multiplication
+    run_benchmark_multiply(
+        "4096 words * 4096 words multiplication",
+        "123456789" * 4096,
+        "987654321" * 4096,
+        iterations_large,
         log_file,
         speedup_factors,
     )

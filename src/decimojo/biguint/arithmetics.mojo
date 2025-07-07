@@ -86,6 +86,16 @@ fn negative(x: BigUInt) raises -> BigUInt:
     return BigUInt()  # Return zero
 
 
+fn negative_inplace(mut x: BigUInt) raises -> None:
+    """Does nothing as negative of non-zero unsigned integer is undefined."""
+    if not x.is_zero():
+        raise Error(
+            "biguint.arithmetics.negative_inplace(): Negative of non-zero"
+            " unsigned integer is undefined"
+        )
+    return
+
+
 fn absolute(x: BigUInt) -> BigUInt:
     """Returns the absolute value of a BigUInt number.
 
@@ -96,6 +106,15 @@ fn absolute(x: BigUInt) -> BigUInt:
         A new BigUInt containing the absolute value of x.
     """
     return x
+
+
+fn absolute_inplace(mut x: BigUInt) -> None:
+    """Does nothing as absolute value of unsigned integer is itself.
+
+    Args:
+        x: The BigUInt value to compute the absolute value of.
+    """
+    return
 
 
 # ===----------------------------------------------------------------------=== #
@@ -252,12 +271,17 @@ fn add_inplace(mut x1: BigUInt, x2: BigUInt) -> None:
 
     var carry: UInt32 = 0
 
-    for i in range(len(x1.words)):
-        if i < len(x2.words):
-            x1.words[i] += carry + x2.words[i]
-        else:
-            x1.words[i] += carry
+    for i in range(len(x2.words)):
+        x1.words[i] += carry + x2.words[i]
         carry = x1.words[i] // BigUInt.BASE
+        x1.words[i] %= BigUInt.BASE
+
+    # If len(x1.words) == len(x2.words), this loop is skipped
+    for i in range(len(x2.words), len(x1.words)):
+        x1.words[i] += carry
+        carry = x1.words[i] // BigUInt.BASE
+        if carry == 0:
+            break  # No more carry, we can stop early
         x1.words[i] %= BigUInt.BASE
 
     # Handle final carry if it exists
@@ -408,7 +432,7 @@ fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
 
     # SPECIAL CASES
     # If x or y is a single-word number
-    # We can use `multiply_by_uint32` because this is only one loop
+    # We can use `multiply_inplace_by_uint32` because this is only one loop
     # No need to split the long number into two parts
     if len(x.words) == 1:
         var x_word = x.words[0]
@@ -418,7 +442,7 @@ fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
             return y
         else:
             var result = y
-            multiply_by_uint32(result, x_word)
+            multiply_inplace_by_uint32(result, x_word)
             return result^
 
     if len(y.words) == 1:
@@ -429,7 +453,7 @@ fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
             return x
         else:
             var result = x
-            multiply_by_uint32(result, y_word)
+            multiply_inplace_by_uint32(result, y_word)
             return result^
 
     # CASE 1
@@ -480,7 +504,7 @@ fn multiply_slices(
             return BigUInt(words=y.words[start_y:end_y])
         else:
             var result = BigUInt(words=y.words[start_y:end_y])
-            multiply_by_uint32(result, x_word)
+            multiply_inplace_by_uint32(result, x_word)
             return result^
     if n_words_y_slice == 1:
         var y_word = y.words[start_y]
@@ -490,7 +514,7 @@ fn multiply_slices(
             return BigUInt(words=x.words[start_x:end_x])
         else:
             var result = BigUInt(words=x.words[start_x:end_x])
-            multiply_by_uint32(result, y_word)
+            multiply_inplace_by_uint32(result, y_word)
             return result^
 
     # The max number of words in the result is the sum of the words in the operands
@@ -705,7 +729,7 @@ fn multiply_karatsuba(
         return z2^
 
 
-fn multiply_by_uint32(mut x: BigUInt, y: UInt32):
+fn multiply_inplace_by_uint32(mut x: BigUInt, y: UInt32):
     """Multiplies a BigUInt by an UInt32 word in-place.
 
     Args:
@@ -1078,7 +1102,7 @@ fn floor_divide_general(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
 
         # Calculate trial product
         trial_product = divisor
-        multiply_by_uint32(trial_product, UInt32(quotient))
+        multiply_inplace_by_uint32(trial_product, UInt32(quotient))
         scale_up_inplace_by_power_of_billion(trial_product, index_of_word)
 
         # Should need at most 1-2 corrections after the estimation
@@ -1090,7 +1114,7 @@ fn floor_divide_general(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
             correction_attempts += 1
 
             trial_product = divisor
-            multiply_by_uint32(trial_product, UInt32(quotient))
+            multiply_inplace_by_uint32(trial_product, UInt32(quotient))
             scale_up_inplace_by_power_of_billion(trial_product, index_of_word)
 
             if correction_attempts > 3:
