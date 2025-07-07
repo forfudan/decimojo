@@ -33,10 +33,12 @@ from decimojo.rounding_mode import RoundingMode
 #
 # add(x1: BigUInt, x2: BigUInt) -> BigUInt
 # add_inplace(x1: BigUInt, x2: BigUInt)
-# add_inplace_by_1(x: BigUInt) -> None
+# add_inplace_by_uint32(x: BigUInt, y: UInt32) -> None
 #
 # subtract(x1: BigUInt, x2: BigUInt) -> BigUInt
 # subtract_inplace(x1: BigUInt, x2: BigUInt) -> None
+# subtract_inplace_no_check(x1: BigUInt, x2: BigUInt) -> None
+# subtract_inplace_by_uint32(x: BigUInt, y: UInt32) -> None
 #
 # multiply(x1: BigUInt, x2: BigUInt) -> BigUInt
 # multiply_slices(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int) -> BigUInt
@@ -121,7 +123,7 @@ fn absolute_inplace(mut x: BigUInt) -> None:
 
 # ===----------------------------------------------------------------------=== #
 # Addition algorithms
-# add, add_inplace, add_inplace_by_1
+# add, add_inplace, add_inplace_by_uint32
 # ===----------------------------------------------------------------------=== #
 
 
@@ -469,6 +471,55 @@ fn subtract_inplace(mut x: BigUInt, y: BigUInt) raises -> None:
         return
 
 
+fn subtract_inplace_no_check(mut x: BigUInt, y: BigUInt) -> None:
+    """Subtracts y from x in-place without checking for underflow.
+
+    Notes:
+
+    This function assumes that x >= y, and it does not check for underflow.
+    It is the caller's responsibility to ensure that x is greater than or
+    equal to y before calling this function.
+    """
+
+    # If the subtrahend is zero, return the minuend
+    if y.is_zero():
+        return
+
+    # Underflow checks are skipped here, so we assume x >= y
+
+    # Now it is safe to subtract the smaller number from the larger one
+    # Note that len(x.words) >= len(y.words) here
+    var borrow: UInt32 = 0  # Can either be 0 or 1
+
+    for i in range(len(y.words)):
+        if x.words[i] < borrow + y.words[i]:
+            x.words[i] += BigUInt.BASE
+            x.words[i] -= borrow + y.words[i]
+            borrow = 1  # Set borrow for the next word
+        else:
+            x.words[i] -= borrow + y.words[i]
+            borrow = 0  # No borrow for the next word
+
+    # If x has more words than y, we need to handle the remaining words
+
+    if borrow == 0:
+        # If there is no borrow, we can stop early
+        x.remove_leading_empty_words()
+        return
+
+    else:
+        # At this stage, borrow can only be 0 or 1
+        for i in range(len(y.words), len(x.words)):
+            if x.words[i] >= borrow:
+                x.words[i] -= borrow
+                break  # No more borrow, we can stop early
+            else:  # x.words[i] == 0, borrow == 1
+                x.words[i] = BigUInt.BASE - borrow
+
+        x.remove_leading_empty_words()
+        return
+
+
 # ===----------------------------------------------------------------------=== #
 # Multiplication algorithms
 # ===----------------------------------------------------------------------=== #
@@ -770,20 +821,10 @@ fn multiply_karatsuba(
             len(y0_plus_y1.words),
             cutoff_number_of_words,
         )
-        try:
-            z1 -= z2
-            z1 -= z0
-        except e:
-            print(
-                (
-                    "biguint.arithmetics.multiply_karatsuba(): Error in"
-                    " subtraction"
-                ),
-                e,
-            )
-            print("z1:", z1)
-            print("z2:", z2)
-            print("z0:", z0)
+
+        # z1 >= z2 + z0 by construction
+        subtract_inplace_no_check(z1, z2)
+        subtract_inplace_no_check(z1, z0)
 
         # z2*9^(m * 2) + z1*9^m + z0
         z2.multiply_inplace_by_power_of_billion(2 * m)
@@ -1170,8 +1211,7 @@ fn floor_divide_general(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
         multiply_inplace_by_uint32(trial_product, UInt32(quotient))
         multiply_inplace_by_power_of_billion(trial_product, index_of_word)
 
-        # Should need at most 1-2 corrections after the estimation
-        # At most cases, no correction is needed
+        # By construction, no correction is needed
         # Add correction attempts counter to avoid infinite loop
         var correction_attempts = 0
         while (trial_product.compare(remainder) > 0) and (quotient > 0):
@@ -1188,7 +1228,8 @@ fn floor_divide_general(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
 
         # Store the quotient word
         result.words[index_of_word] = UInt32(quotient)
-        subtract_inplace(remainder, trial_product)
+        # By construction, trial_product <= remainder
+        subtract_inplace_no_check(remainder, trial_product)
         index_of_word -= 1
 
     result.remove_leading_empty_words()
