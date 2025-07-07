@@ -364,6 +364,10 @@ fn add_inplace(mut x: BigUInt, y: BigUInt) -> None:
     Args:
         x: The first unsigned integer operand.
         y: The second unsigned integer operand.
+
+    Notes:
+
+    This function uses SIMD operations to add the words of the two BigUInt.
     """
 
     # Short circuit cases
@@ -527,6 +531,12 @@ fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
     but I will take advantage of that.
     """
     # If the subtrahend is zero, return the minuend
+    # Yuhao ZHU:
+    # This step is important because y can be of zero words and is longer than x.
+    # This will makes the subtraction beyond the boundary of the result number,
+    # whose length is equal to the length of x.
+    # Note that our subtraction is via SIMD, so it is directly worked on unsafe
+    # pointers.
     if y.is_zero():
         return x
 
@@ -555,9 +565,7 @@ fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
             - y.words.data.load[width=simd_width](i),
         )
 
-    vectorize[vector_subtract, BigUInt.VECTOR_WIDTH](
-        min(len(x.words), len(y.words))
-    )
+    vectorize[vector_subtract, BigUInt.VECTOR_WIDTH](len(y.words))
 
     @parameter
     fn vector_copy_rest[simd_width: Int](i: Int):
@@ -642,38 +650,23 @@ fn subtract_inplace_no_check(mut x: BigUInt, y: BigUInt) -> None:
         return
 
     # Underflow checks are skipped here, so we assume x >= y
+    # Note that len(x.words) >= len(y.words) under this assumption
 
-    # Now it is safe to subtract the smaller number from the larger one
-    # Note that len(x.words) >= len(y.words) here
-    var borrow: UInt32 = 0  # Can either be 0 or 1
+    @parameter
+    fn vector_subtract[simd_width: Int](i: Int):
+        x.words.data.store[width=simd_width](
+            i,
+            x.words.data.load[width=simd_width](i)
+            - y.words.data.load[width=simd_width](i),
+        )
 
-    for i in range(len(y.words)):
-        if x.words[i] < borrow + y.words[i]:
-            x.words[i] += BigUInt.BASE
-            x.words[i] -= borrow + y.words[i]
-            borrow = 1  # Set borrow for the next word
-        else:
-            x.words[i] -= borrow + y.words[i]
-            borrow = 0  # No borrow for the next word
+    vectorize[vector_subtract, BigUInt.VECTOR_WIDTH](len(y.words))
 
-    # If x has more words than y, we need to handle the remaining words
+    # Normalize borrows after subtraction
+    normalize_borrows(x)
+    x.remove_leading_empty_words()
 
-    if borrow == 0:
-        # If there is no borrow, we can stop early
-        x.remove_leading_empty_words()
-        return
-
-    else:
-        # At this stage, borrow can only be 0 or 1
-        for i in range(len(y.words), len(x.words)):
-            if x.words[i] >= borrow:
-                x.words[i] -= borrow
-                break  # No more borrow, we can stop early
-            else:  # x.words[i] == 0, borrow == 1
-                x.words[i] = BigUInt.BASE - borrow
-
-        x.remove_leading_empty_words()
-        return
+    return
 
 
 # ===----------------------------------------------------------------------=== #
