@@ -17,7 +17,7 @@ DeciMojo v0.5.0 introduces significant enhancements to the `BigDecimal` and `Big
 1. Implement in-place subtraction for `BigUInt`. The `__isub__` method of `BigUInt` will now conduct in-place subtraction. `x -= y` will not lead to memory allocation, but will modify the original `BigUInt` object `x` directly (#98).
 1. Refine the arithmetic operations of `BigUInt` when the second operand is one-word long or is a `UInt32` value (#98).
 1. Refine the division of `BigUInt` to improve performance (#98, #100).
-1. Use SIMD for `BigUInt` addition. This allows the addition of two `BigUInt` objects to be performed in parallel, significantly improving performance for large numbers (#101).
+1. Use SIMD for `BigUInt` addition and subtraction operations. This allows the addition and subtraction of two `BigUInt` objects to be performed in parallel, significantly improving performance for large numbers (#101, #102).
 1. Add `to_uint64()` and `to_uint128()` methods to `BigUInt` to for fast type conversion (#91).
 1. Improve error messages and remove unnecessary `raises` keywords for all functions (#92).
 
