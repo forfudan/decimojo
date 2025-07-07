@@ -299,6 +299,7 @@ fn add_inplace(mut x1: BigUInt, x2: BigUInt) -> None:
 
     if len(x2.words) == 1:
         add_inplace_by_uint32(x1, x2.words[0])
+        return
 
     # Normal cases
     if len(x1.words) < len(x2.words):
@@ -307,17 +308,24 @@ fn add_inplace(mut x1: BigUInt, x2: BigUInt) -> None:
     var carry: UInt32 = 0
 
     for i in range(len(x2.words)):
-        x1.words[i] += carry + x2.words[i]
-        carry = x1.words[i] // BigUInt.BASE
-        x1.words[i] %= BigUInt.BASE
+        x1.words[i] += (
+            carry + x2.words[i]
+        )  # x1.words[i] <= 1 + 2*BASE_MAX = # 1_999_999_999
+        if x1.words[i] <= BigUInt.BASE_MAX:
+            carry = 0
+        else:
+            carry = 1  # Cannot be more than 1
+            x1.words[i] -= BigUInt.BASE
 
     # If len(x1.words) == len(x2.words), this loop is skipped
     for i in range(len(x2.words), len(x1.words)):
         x1.words[i] += carry
-        carry = x1.words[i] // BigUInt.BASE
-        if carry == 0:
+        if x1.words[i] <= BigUInt.BASE_MAX:
+            carry = 0
             break  # No more carry, we can stop early
-        x1.words[i] %= BigUInt.BASE
+        else:
+            carry = 1  # Cannot be more than 1
+            x1.words[i] -= BigUInt.BASE
 
     # Handle final carry if it exists
     if carry > 0:
@@ -334,7 +342,7 @@ fn add_inplace_by_uint32(mut x: BigUInt, y: UInt32) -> None:
         if x.words[i] <= BigUInt.BASE_MAX:
             return  # No carry, we can stop early
         else:
-            carry = 1  # Either 1 or 0
+            carry = 1  # Cannot be more than 1
             x.words[i] -= BigUInt.BASE
     else:
         x.words.append(UInt32(1))
