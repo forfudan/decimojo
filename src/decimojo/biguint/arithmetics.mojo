@@ -355,52 +355,64 @@ fn add_inplace_by_uint32(mut x: BigUInt, y: UInt32) -> None:
 # ===----------------------------------------------------------------------=== #
 
 
-fn subtract(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+fn subtract(x: BigUInt, y: BigUInt) raises -> BigUInt:
     """Returns the difference of two unsigned integers.
 
     Args:
-        x1: The first unsigned integer (minuend).
-        x2: The second unsigned integer (subtrahend).
+        x: The first unsigned integer (minuend).
+        y: The second unsigned integer (subtrahend).
 
     Raises:
-        Error: If x2 is greater than x1, resulting in an underflow.
+        Error: If y is greater than x, resulting in an underflow.
 
     Returns:
-        The result of subtracting x2 from x1.
+        The result of subtracting y from x.
     """
     # If the subtrahend is zero, return the minuend
-    if x2.is_zero():
-        return x1
+    if y.is_zero():
+        return x
 
     # We need to determine which number has the larger magnitude
-    var comparison_result = x1.compare(x2)
+    var comparison_result = x.compare(y)
     if comparison_result == 0:
-        # |x1| = |x2|
+        # |x| = |y|
         return BigUInt()  # Return zero
     if comparison_result < 0:
-        raise Error("biguint.arithmetics.subtract(): Underflow due to x1 < x2")
+        raise Error("biguint.arithmetics.subtract(): Underflow due to x < y")
 
     # Now it is safe to subtract the smaller number from the larger one
-    # The result will have no more words than the larger operand
-    var words = List[UInt32](capacity=max(len(x1.words), len(x2.words)))
-    var borrow: Int32 = 0
-    var ith: Int = 0
-    var difference: Int32  # Int32 is sufficient for the difference
+    # The result will have no more words than the first number
+    var words = List[UInt32](capacity=len(x.words))
+    var borrow: UInt32 = 0  # Can either be 0 or 1
 
-    while ith < len(x1.words):
-        # Subtract the borrow
-        difference = Int32(x1.words[ith]) - borrow
-        # Subtract smaller's word if available
-        if ith < len(x2.words):
-            difference -= Int32(x2.words[ith])
-        # Handle borrowing if needed
-        if difference < Int32(0):
-            difference += Int32(BigUInt.BASE)
-            borrow = Int32(1)
+    for i in range(len(y.words)):
+        if x.words[i] < borrow + y.words[i]:
+            words.append(x.words[i] + BigUInt.BASE - borrow - y.words[i])
+            borrow = 1  # Set borrow for the next word
         else:
-            borrow = Int32(0)
-        words.append(UInt32(difference))
-        ith += 1
+            words.append(x.words[i] - borrow - y.words[i])
+            borrow = 0  # No borrow for the next word
+
+    # If x has more words than y, we need to handle the remaining words
+
+    if borrow == 0:
+        # If there is no borrow, we can just copy the remaining words
+        for i in range(len(y.words), len(x.words)):
+            words.append(x.words[i])
+
+    else:
+        var no_borrow_idx: Int = 0
+        # At this stage, borrow can only be 0 or 1
+        for i in range(len(y.words), len(x.words)):
+            if x.words[i] >= borrow:
+                words.append(x.words[i] - borrow)
+                no_borrow_idx = i + 1
+                break  # No more borrow, we can stop early
+            else:  # x.words[i] == 0, borrow == 1
+                words.append(BigUInt.BASE - borrow)
+
+        for i in range(no_borrow_idx, len(x.words)):
+            words.append(x.words[i])  # Copy the remaining words
 
     var result = BigUInt(words=words^)
     result.remove_leading_empty_words()
