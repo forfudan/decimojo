@@ -188,6 +188,8 @@ fn add_slices(
 
     n_words_x_slice = end_x - start_x
     n_words_y_slice = end_y - start_y
+    min_n_words = min(n_words_x_slice, n_words_y_slice)
+    max_n_words = max(n_words_x_slice, n_words_y_slice)
 
     # Short circuit cases
     if n_words_x_slice == 1:
@@ -223,7 +225,7 @@ fn add_slices(
         start_longer = start_y
         start_shorter = start_x
 
-    for ith in range(min(n_words_x_slice, n_words_y_slice)):
+    for ith in range(min_n_words):
         # Add the words from both numbers
         sum_of_words = (
             carry
@@ -235,18 +237,24 @@ fn add_slices(
         words.append(sum_of_words % BigUInt.BASE)
 
     # If the numbers are of the same words, this loop will be skipped
+    var no_carry_idx: Int = max_n_words
     for ith in range(
-        min(n_words_x_slice, n_words_y_slice),
-        max(n_words_x_slice, n_words_y_slice),
+        min_n_words,
+        max_n_words,
     ):
         # If carry is zero, we can just append the word from the longer number
         if carry == 0:
-            words.append(longer[].words[start_longer + ith])
+            no_carry_idx = ith
+            break
         else:
             sum_of_words = carry + longer[].words[start_longer + ith]
             # Compute new word and carry
             carry = sum_of_words // BigUInt.BASE
             words.append(sum_of_words % BigUInt.BASE)
+
+    # If we reached here, it means we have no carry from no_carry_idx
+    for ith in range(no_carry_idx, max_n_words):
+        words.append(longer[].words[start_longer + ith])
 
     # Handle final carry if it exists
     if carry > 0:
