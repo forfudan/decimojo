@@ -156,11 +156,13 @@ fn integer_power(
     var abs_exp = abs(exponent)
     var exp_value: BigUInt
     if abs_exp.scale > 0:
-        exp_value = abs_exp.coefficient.scale_down_by_power_of_10(abs_exp.scale)
+        exp_value = abs_exp.coefficient.floor_divide_by_power_of_ten(
+            abs_exp.scale
+        )
     elif abs_exp.scale == 0:
         exp_value = abs_exp.coefficient
     else:
-        exp_value = abs_exp.coefficient.scale_up_by_power_of_10(-abs_exp.scale)
+        exp_value = abs_exp.coefficient.multiply_by_power_of_ten(-abs_exp.scale)
 
     var result = BigDecimal(BigUInt.ONE, 0, False)
     var current_power = base
@@ -357,7 +359,7 @@ fn integer_root(
         # Convert n to integer to check odd/even
         var n_uint: BigUInt
         if n.scale > 0:
-            n_uint = n.coefficient.scale_down_by_power_of_10(n.scale)
+            n_uint = n.coefficient.floor_divide_by_power_of_ten(n.scale)
         else:  # n.scale <= 0
             n_uint = n.coefficient
 

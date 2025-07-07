@@ -70,8 +70,8 @@ fn add(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
         return x1.extend_precision(scale_factor1)
 
     # Scale coefficients to match
-    var coef1 = x1.coefficient.scale_up_by_power_of_10(scale_factor1)
-    var coef2 = x2.coefficient.scale_up_by_power_of_10(scale_factor2)
+    var coef1 = x1.coefficient.multiply_by_power_of_ten(scale_factor1)
+    var coef2 = x2.coefficient.multiply_by_power_of_ten(scale_factor2)
 
     # Handle addition based on signs
     if x1.sign == x2.sign:
@@ -135,8 +135,8 @@ fn subtract(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
         return result^
 
     # Scale coefficients to match
-    var coef1 = x1.coefficient.scale_up_by_power_of_10(scale_factor1)
-    var coef2 = x2.coefficient.scale_up_by_power_of_10(scale_factor2)
+    var coef1 = x1.coefficient.multiply_by_power_of_ten(scale_factor1)
+    var coef2 = x2.coefficient.multiply_by_power_of_ten(scale_factor2)
 
     # Handle subtraction based on signs
     if x1.sign != x2.sign:
@@ -278,7 +278,7 @@ fn true_divide(
     # Scale up the dividend to ensure sufficient precision
     var scaled_x1 = x1.coefficient
     if additional_digits > 0:
-        scaled_x1.scale_up_inplace_by_power_of_10(additional_digits)
+        scaled_x1.multiply_inplace_by_power_of_ten(additional_digits)
 
     # Perform division
     var quotient: BigUInt
@@ -301,7 +301,7 @@ fn true_divide(
     if is_exact:
         var num_trailing_zeros = quotient.number_of_trailing_zeros()
         if num_trailing_zeros > 0:
-            quotient = quotient.scale_down_by_power_of_10(num_trailing_zeros)
+            quotient = quotient.floor_divide_by_power_of_ten(num_trailing_zeros)
             result_scale -= num_trailing_zeros
             # Recalculate digits after removing trailing zeros
             result_digits = quotient.number_of_digits()
@@ -382,7 +382,7 @@ fn true_divide_inexact(
     # Scale up the dividend to ensure sufficient precision
     var scaled_x1 = x1.coefficient
     if buffer_digits > 0:
-        scaled_x1.scale_up_inplace_by_power_of_10(buffer_digits)
+        scaled_x1.multiply_inplace_by_power_of_ten(buffer_digits)
 
     # Perform division
     var quotient: BigUInt = scaled_x1 // x2.coefficient
@@ -437,12 +437,12 @@ fn truncate_divide(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
     # If scale_diff is positive, we need to scale up the dividend
     # If scale_diff is negative, we need to scale up the divisor
     if scale_diff > 0:
-        var divisor = x2.coefficient.scale_up_by_power_of_10(scale_diff)
+        var divisor = x2.coefficient.multiply_by_power_of_ten(scale_diff)
         var quotient = x1.coefficient.truncate_divide(divisor)
         return BigDecimal(quotient^, 0, x1.sign != x2.sign)
 
     else:  # scale_diff < 0
-        var dividend = x1.coefficient.scale_up_by_power_of_10(-scale_diff)
+        var dividend = x1.coefficient.multiply_by_power_of_ten(-scale_diff)
         var quotient = dividend.truncate_divide(x2.coefficient)
         return BigDecimal(quotient^, 0, x1.sign != x2.sign)
 

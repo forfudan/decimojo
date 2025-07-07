@@ -129,7 +129,7 @@ fn main() raises:
 
     log_print("", log_file)
     log_print(
-        "Testing word sizes from 32 to 262144 words (powers of 2)", log_file
+        "Testing word sizes from 8 to 262144 words (powers of 2)", log_file
     )
     log_print("Each test uses 5 iterations for averaging", log_file)
     log_print(
@@ -138,8 +138,10 @@ fn main() raises:
     )
     log_print("", log_file)
 
-    # Test sizes: powers of 2 from 32 to 262144
+    # Test sizes: powers of 2 from 8 to 262144
     var test_sizes = List[Int]()
+    test_sizes.append(8)
+    test_sizes.append(16)
     test_sizes.append(32)
     test_sizes.append(64)
     test_sizes.append(128)

@@ -523,8 +523,10 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
     @always_inline
     fn __iadd__(mut self, other: Int) raises:
         # Optimize the case `i += 1`
-        if (self >= 0) and (other == 1):
-            self.magnitude.add_inplace_by_1()
+        if (self >= 0) and (other >= 0) and (other <= 999_999_999):
+            decimojo.biguint.arithmetics.add_inplace_by_uint32(
+                self.magnitude, UInt32(other)
+            )
         else:
             decimojo.bigint.arithmetics.add_inplace(self, other)
 

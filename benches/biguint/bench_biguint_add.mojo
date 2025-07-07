@@ -21,6 +21,8 @@ fn open_log_file() raises -> PythonObject:
     """
     var python = Python.import_module("builtins")
     var datetime = Python.import_module("datetime")
+    var pysys = Python.import_module("sys")
+    pysys.set_int_max_str_digits(1000000)
 
     # Create logs directory if it doesn't exist
     var log_dir = "./logs"
@@ -450,6 +452,56 @@ fn main() raises:
         "Addition with cryptographic numbers",
         "115792089237316195423570985008687907853269984665640564039457584007908834671663",  # ECDSA curve order for secp256k1
         "115792089237316195423570985008687907852837564279074904382605163141518161494337",  # secp256k1 field size
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 31: Addition with 64 words + 32 words
+    run_benchmark_add(
+        "Addition with 64 words + 32 words",
+        "123456789" * 64,
+        "987654321" * 32,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 32: Addition with 256 words + 128 words
+    run_benchmark_add(
+        "Addition with 256 words + 128 words",
+        "123456789" * 256,
+        "987654321" * 128,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 33: Addition with 1024 words + 512 words
+    run_benchmark_add(
+        "Addition with 1024 words + 512 words",
+        "123456789" * 1024,
+        "987654321" * 512,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 34: Addition with 4096 words + 2048 words
+    run_benchmark_add(
+        "Addition with 4096 words + 2048 words",
+        "123456789" * 4096,
+        "987654321" * 2048,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 35: Addition with 16384 words + 8192 words
+    run_benchmark_add(
+        "Addition with 16384 words + 8192 words",
+        "123456789" * 16384,
+        "987654321" * 8192,
         iterations,
         log_file,
         speedup_factors,

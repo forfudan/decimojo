@@ -71,6 +71,8 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     """The maximum value of a single word in the BigUInt representation."""
     alias BASE_HALF = 500_000_000
     """Half of the base used for the BigUInt representation."""
+    alias VECTOR_WIDTH = 4
+    """The width of the SIMD vector used for arithmetic operations (128-bit)."""
 
     alias ZERO = Self.zero()
     alias ONE = Self.one()
@@ -1001,14 +1003,6 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         decimojo.biguint.arithmetics.add_inplace(self, other)
 
     @always_inline
-    fn add_inplace_by_1(mut self) raises:
-        """Adds 1 to this number in place.
-        It is equal to `self += 1`.
-        See `add_inplace_by_1()` for more information.
-        """
-        decimojo.biguint.arithmetics.add_inplace_by_1(self)
-
-    @always_inline
     fn floor_divide(self, other: Self) raises -> Self:
         """Returns the result of floor dividing this number by `other`.
         It is equal to `self // other`.
@@ -1067,36 +1061,38 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         decimojo.biguint.arithmetics.floor_divide_inplace_by_2(self)
 
     @always_inline
-    fn scale_up_by_power_of_10(self, n: Int) -> Self:
+    fn multiply_by_power_of_ten(self, n: Int) -> Self:
         """Returns the result of multiplying this number by 10^n (n>=0).
-        See `scale_up_by_power_of_10()` for more information.
+        See `multiply_by_power_of_ten()` for more information.
         """
-        return decimojo.biguint.arithmetics.scale_up_by_power_of_10(self, n)
+        return decimojo.biguint.arithmetics.multiply_by_power_of_ten(self, n)
 
     @always_inline
-    fn scale_up_inplace_by_power_of_10(mut self, n: Int):
+    fn multiply_inplace_by_power_of_ten(mut self, n: Int):
         """Multiplies this number in-place by 10^n (n>=0).
-        See `scale_up_inplace_by_power_of_10()` for more information.
+        See `multiply_inplace_by_power_of_ten()` for more information.
         """
-        decimojo.biguint.arithmetics.scale_up_inplace_by_power_of_10(self, n)
+        decimojo.biguint.arithmetics.multiply_inplace_by_power_of_ten(self, n)
 
     @always_inline
-    fn scale_down_by_power_of_10(self, n: Int) raises -> Self:
+    fn floor_divide_by_power_of_ten(self, n: Int) raises -> Self:
         """Returns the result of floored dividing this number by 10^n (n>=0).
         It is equal to removing the last n digits of the number.
-        See `scale_down_by_power_of_10()` for more information.
+        See `floor_divide_by_power_of_ten()` for more information.
         """
-        return decimojo.biguint.arithmetics.scale_down_by_power_of_10(self, n)
+        return decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
+            self, n
+        )
 
     @always_inline
-    fn scale_up_inplace_by_power_of_billion(mut self, n: Int):
+    fn multiply_inplace_by_power_of_billion(mut self, n: Int):
         """Multiplies a BigUInt in-place by (10^9)^n if n > 0.
         This equals to adding 9n zeros (n words) to the end of the number.
 
         Args:
             n: The power of 10^9 to multiply by. Should be non-negative.
         """
-        decimojo.biguint.arithmetics.scale_up_inplace_by_power_of_billion(
+        decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
             self, n
         )
 
@@ -1405,8 +1401,8 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
                 " remove is larger than the number of digits in the BigUInt"
             )
 
-        # scale_down_by_power_of_10 is the same as removing the last n digits
-        var result = self.scale_down_by_power_of_10(ndigits)
+        # floor_divide_by_power_of_ten is the same as removing the last n digits
+        var result = self.floor_divide_by_power_of_ten(ndigits)
         var round_up: Bool = False
 
         if rounding_mode == RoundingMode.ROUND_DOWN:
@@ -1434,11 +1430,13 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
             )
 
         if round_up:
-            result.add_inplace_by_1()
+            decimojo.biguint.arithmetics.add_inplace_by_uint32(
+                result, UInt32(1)
+            )
             # Check whether rounding results in extra digit
             if result.is_power_of_10():
                 if remove_extra_digit_due_to_rounding:
-                    result = result.scale_down_by_power_of_10(
+                    result = result.floor_divide_by_power_of_ten(
                         1,
                     )
         return result^

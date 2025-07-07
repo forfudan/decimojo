@@ -63,11 +63,11 @@ fn compare_absolute(x1: BigDecimal, x2: BigDecimal) -> Int8:
 
     if scale_diff > 0:
         # x1 has larger scale (more decimal places)
-        var scaled_x2 = x2.coefficient.scale_up_by_power_of_10(scale_diff)
+        var scaled_x2 = x2.coefficient.multiply_by_power_of_ten(scale_diff)
         return x1.coefficient.compare(scaled_x2^)
     else:
         # x2 has larger scale (more decimal places)
-        var scaled_x1 = x1.coefficient.scale_up_by_power_of_10(-scale_diff)
+        var scaled_x1 = x1.coefficient.multiply_by_power_of_ten(-scale_diff)
         return scaled_x1.compare(x2.coefficient)
 
 
