@@ -354,54 +354,41 @@ fn add_slices(
     return BigUInt(words=words^)
 
 
-fn add_inplace(mut x1: BigUInt, x2: BigUInt) -> None:
+fn add_inplace(mut x: BigUInt, y: BigUInt) -> None:
     """Increments a BigUInt number by another BigUInt number in place.
 
     Args:
-        x1: The first unsigned integer operand.
-        x2: The second unsigned integer operand.
+        x: The first unsigned integer operand.
+        y: The second unsigned integer operand.
     """
 
     # Short circuit cases
-    if x1.is_zero():
-        x1.words = x2.words  # Copy the words from x2
+    if x.is_zero():
+        x.words = y.words  # Copy the words from y
         return
-    if x2.is_zero():
+    if y.is_zero():
         return
 
-    if len(x2.words) == 1:
-        add_inplace_by_uint32(x1, x2.words[0])
+    if len(y.words) == 1:
+        add_inplace_by_uint32(x, y.words[0])
         return
 
     # Normal cases
-    if len(x1.words) < len(x2.words):
-        x1.words.resize(new_size=len(x2.words), value=UInt32(0))
+    if len(x.words) < len(y.words):
+        x.words.resize(new_size=len(y.words), value=UInt32(0))
 
-    var carry: UInt32 = 0
+    @parameter
+    fn vector_add[simd_width: Int](i: Int):
+        x.words.data.store[width=simd_width](
+            i,
+            x.words.data.load[width=simd_width](i)
+            + y.words.data.load[width=simd_width](i),
+        )
 
-    for i in range(len(x2.words)):
-        x1.words[i] += (
-            carry + x2.words[i]
-        )  # x1.words[i] <= 1 + 2*BASE_MAX = # 1_999_999_999
-        if x1.words[i] <= BigUInt.BASE_MAX:
-            carry = 0
-        else:
-            carry = 1  # Cannot be more than 1
-            x1.words[i] -= BigUInt.BASE
+    vectorize[vector_add, BigUInt.VECTOR_WIDTH](len(y.words))
 
-    # If len(x1.words) == len(x2.words), this loop is skipped
-    for i in range(len(x2.words), len(x1.words)):
-        x1.words[i] += carry
-        if x1.words[i] <= BigUInt.BASE_MAX:
-            carry = 0
-            break  # No more carry, we can stop early
-        else:
-            carry = 1  # Cannot be more than 1
-            x1.words[i] -= BigUInt.BASE
-
-    # Handle final carry if it exists
-    if carry > 0:
-        x1.words.append(carry)
+    # Normalize carries after addition
+    normalize_carries(x)
 
     return
 
