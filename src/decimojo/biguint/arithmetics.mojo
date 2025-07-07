@@ -33,6 +33,8 @@ from decimojo.rounding_mode import RoundingMode
 # absolute(x: BigUInt) -> BigUInt
 #
 # add(x1: BigUInt, x2: BigUInt) -> BigUInt
+# add_simd(x: BigUInt, y: BigUInt) -> BigUInt
+# add_slices(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int) -> BigUInt
 # add_inplace(x1: BigUInt, x2: BigUInt)
 # add_inplace_by_uint32(x: BigUInt, y: UInt32) -> None
 #
@@ -44,6 +46,7 @@ from decimojo.rounding_mode import RoundingMode
 # multiply(x1: BigUInt, x2: BigUInt) -> BigUInt
 # multiply_slices(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int) -> BigUInt
 # multiply_karatsuba(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int, cutoff_number_of_words: Int) -> BigUInt
+# multiply_inplace_by_uint32(x: BigUInt, y: UInt32) -> None
 # multiply_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt
 # multiply_inplace_by_power_of_billion(mut x: BigUInt, n: Int)
 #
@@ -62,6 +65,7 @@ from decimojo.rounding_mode import RoundingMode
 # ceil_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
 # divmod(x1: BigUInt, x2: BigUInt) -> Tuple[BigUInt, BigUInt]
 #
+# normalize_carries(x: BigUInt) -> None
 # power_of_10(n: Int) -> BigUInt
 # ===----------------------------------------------------------------------=== #
 
@@ -427,6 +431,30 @@ fn subtract(x: BigUInt, y: BigUInt) raises -> BigUInt:
     Returns:
         The result of subtracting y from x.
     """
+    # I will use the SIMD approach for subtraction
+    # This speeds up the subtraction by 1.25x for large numbers.
+    return subtract_simd(x, y)
+
+    # Yuhao ZHU:
+    # Below is a school method for subtraction.
+    # You go from the least significant word to the most significant word.
+    #
+    # return subtract_school(x, y)
+
+
+fn subtract_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
+    """Returns the difference of two unsigned integers using the school method.
+
+    Args:
+        x: The first unsigned integer (minuend).
+        y: The second unsigned integer (subtrahend).
+
+    Raises:
+        Error: If y is greater than x, resulting in an underflow.
+
+    Returns:
+        The result of subtracting y from x.
+    """
     # If the subtrahend is zero, return the minuend
     if y.is_zero():
         return x
@@ -475,6 +503,77 @@ fn subtract(x: BigUInt, y: BigUInt) raises -> BigUInt:
 
     var result = BigUInt(words=words^)
     result.remove_leading_empty_words()
+    return result^
+
+
+fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
+    """Returns the difference of two unsigned integers using SIMD operations.
+
+    Args:
+        x: The first unsigned integer (minuend).
+        y: The second unsigned integer (subtrahend).
+
+    Raises:
+        Error: If y is greater than x, resulting in an underflow.
+
+    Returns:
+        The result of subtracting y from x.
+
+    Notes:
+
+    I will make use of SIMD operations to subtract the words in parallel.
+    This will first subtract the words in parallel and then handle the borrows.
+    Note that there will be potential overflow in the subtraction,
+    but I will take advantage of that.
+    """
+    # If the subtrahend is zero, return the minuend
+    if y.is_zero():
+        return x
+
+    # We need to determine which number has the larger magnitude
+    var comparison_result = x.compare(y)
+    if comparison_result == 0:
+        # |x| = |y|
+        return BigUInt()  # Return zero
+    if comparison_result < 0:
+        raise Error("biguint.arithmetics.subtract(): Underflow due to x < y")
+
+    # Now it is safe to subtract the smaller number from the larger one
+    # The result will have no more words than the first number
+    var words = List[UInt32](unsafe_uninit_length=len(x.words))
+
+    # Yuhao ZHU:
+    # We will make use of SIMD operations to subtract the words in parallel.
+    # This will first subtract the words in parallel and then handle the borrows.
+    # Note that there will be potential overflow in the subtraction,
+    # but we will take advantage of that.
+    @parameter
+    fn vector_subtract[simd_width: Int](i: Int):
+        words.data.store[width=simd_width](
+            i,
+            x.words.data.load[width=simd_width](i)
+            - y.words.data.load[width=simd_width](i),
+        )
+
+    vectorize[vector_subtract, BigUInt.VECTOR_WIDTH](
+        min(len(x.words), len(y.words))
+    )
+
+    @parameter
+    fn vector_copy_rest[simd_width: Int](i: Int):
+        words.data.store[width=simd_width](
+            len(y.words) + i,
+            x.words.data.load[width=simd_width](len(y.words) + i),
+        )
+
+    vectorize[vector_copy_rest, BigUInt.VECTOR_WIDTH](
+        len(x.words) - len(y.words)
+    )
+
+    var result = BigUInt(words=words^)
+    normalize_borrows(result)
+    result.remove_leading_empty_words()
+
     return result^
 
 
@@ -725,8 +824,8 @@ fn multiply_slices(
 
             # The lower 9 digits (base 10^9) go into the current word
             # The upper digits become the carry for the next position
-            words[i + j] = UInt32(product % BigUInt.BASE)
-            carry = product // BigUInt.BASE
+            words[i + j] = UInt32(product % UInt64(BigUInt.BASE))
+            carry = product // UInt64(BigUInt.BASE)
 
         # If there is a carry left, add it to the next position
         if carry > 0:
@@ -1703,11 +1802,11 @@ fn normalize_carries(mut x: BigUInt):
 
     # Yuhao ZHU:
     # By construction, the words of x are in the range [0, BASE*2).
-    # Thus, the crray can only be 0 or 1.
+    # Thus, the carry can only be 0 or 1.
     var carry: UInt32 = 0
     for ref word in x.words:
         if carry == 0:
-            if word < BigUInt.BASE:
+            if word <= BigUInt.BASE_MAX:
                 pass  # carry = 0
             else:
                 word -= BigUInt.BASE
@@ -1722,6 +1821,46 @@ fn normalize_carries(mut x: BigUInt):
     if carry > 0:
         # If there is still a carry, we need to add a new word
         x.words.append(UInt32(1))
+    return
+
+
+fn normalize_borrows(mut x: BigUInt):
+    """Normalizes the values of words into valid range by borrowing.
+    The caller should ensure that the final result is non-negative.
+    The initial values of the words should be in the range:
+    [0, BASE-1] or [3294967297, 4294967295], in other words,
+    [UInt32.MAX - 999_999_998, ..., UInt32.MAX, 0, ..., BASE-1].
+
+    Notes:
+
+    If we subtract two BigUInt numbers word-by-word, we may end up with
+    a situation where some words are **underflowed**. We can take advantage of
+    the overflowed values of the words to normalize the borrows,
+    ensuring that all words are within the valid range.
+    """
+
+    alias NEG_BASE_MAX = UInt32(3294967297)  # UInt32(0) - BigUInt.BASE_MAX
+
+    # Yuhao ZHU:
+    # By construction, the words of x are in the range [-BASE_MAX, BASE_MAX].
+    # Thus, the borrow can only be 0 or 1.
+    var borrow: UInt32 = 0
+    for ref word in x.words:
+        if borrow == 0:
+            if word <= BigUInt.BASE_MAX:  # 0 <= word <= 999_999_999
+                pass  # borrow = 0
+            else:  # word >= 3294967297, overflowed value
+                word += BigUInt.BASE
+                borrow = 1
+        else:  # borrow == 1
+            if (word >= 1) and (
+                word <= BigUInt.BASE_MAX
+            ):  # 1 <= word <= 999_999_999
+                word -= 1
+                borrow = 0
+            else:  # word >= 3294967297 or word == 0, overflowed value
+                word = (word + BigUInt.BASE) - 1
+                # borrow = 1
     return
 
 
