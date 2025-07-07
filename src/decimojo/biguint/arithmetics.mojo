@@ -137,16 +137,25 @@ fn add(x: BigUInt, y: BigUInt) -> BigUInt:
     """
 
     # Short circuit cases
-    # Zero cases
     if x.is_zero():
         return y
-
     if y.is_zero():
         return x
 
-    # If both numbers are single-word, we can handle them with UInt32
-    if len(x.words) == 1 and len(y.words) == 1:
-        return BigUInt.from_uint32(x.words[0] + y.words[0])
+    if len(x.words) == 1:
+        if len(y.words) == 1:
+            # If both numbers are single-word, we can handle them with UInt32
+            return BigUInt.from_uint32(x.words[0] + y.words[0])
+        else:  # If x is single-word, we can handle it with UInt32
+            var result = y
+            add_inplace_by_uint32(result, x.words[0])
+            return result^
+
+    if len(y.words) == 1:
+        # If y is single-word, we can handle it with UInt32
+        var result = x
+        add_inplace_by_uint32(result, y.words[0])
+        return result^
 
     # If both numbers are double-word, we can handle them with UInt64
     if len(x.words) <= 2 and len(y.words) <= 2:
@@ -193,15 +202,25 @@ fn add_slices(
 
     # Short circuit cases
     if n_words_x_slice == 1:
-        # x is zero, return y
         if x.words[start_x] == 0:
+            # x slice is zero, return y slice
             return BigUInt(words=y.words[start_y:end_y])
-        # If both numbers are single-word, we can handle them with UInt32
-        if n_words_y_slice == 1:
+        elif n_words_y_slice == 1:
+            # If both numbers are single-word, we can handle them with UInt32
             return BigUInt.from_uint32(x.words[start_x] + y.words[start_y])
+        else:
+            # If y slice is longer
+            var result = BigUInt(words=y.words[start_y:end_y])
+            add_inplace_by_uint32(result, x.words[start_x])
+            return result^
     if n_words_y_slice == 1:
         if y.words[start_y] == 0:
             return BigUInt(words=x.words[start_x:end_x])
+        else:
+            # If x slice is longer
+            var result = BigUInt(words=x.words[start_x:end_x])
+            add_inplace_by_uint32(result, y.words[start_y])
+            return result^
 
     # Normal cases
     # The result will have at most one more word than the longer operand
@@ -334,6 +353,22 @@ fn add_inplace_by_1(mut x: BigUInt) -> None:
             i += 1
     # If we reach here, we need to add a new word
     x.words.append(UInt32(1))
+    return
+
+
+fn add_inplace_by_uint32(mut x: BigUInt, y: UInt32) -> None:
+    """Increments a BigUInt number by a UInt32 value."""
+    var carry: UInt32 = y
+    for i in range(len(x.words)):
+        x.words[i] += carry
+        if x.words[i] <= BigUInt.BASE_MAX:
+            return  # No carry, we can stop early
+        else:
+            carry = 1  # Either 1 or 0
+            x.words[i] -= BigUInt.BASE
+    else:
+        x.words.append(UInt32(1))
+
     return
 
 
