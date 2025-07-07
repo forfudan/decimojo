@@ -1001,14 +1001,6 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         decimojo.biguint.arithmetics.add_inplace(self, other)
 
     @always_inline
-    fn add_inplace_by_1(mut self) raises:
-        """Adds 1 to this number in place.
-        It is equal to `self += 1`.
-        See `add_inplace_by_1()` for more information.
-        """
-        decimojo.biguint.arithmetics.add_inplace_by_1(self)
-
-    @always_inline
     fn floor_divide(self, other: Self) raises -> Self:
         """Returns the result of floor dividing this number by `other`.
         It is equal to `self // other`.
@@ -1436,7 +1428,9 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
             )
 
         if round_up:
-            result.add_inplace_by_1()
+            decimojo.biguint.arithmetics.add_inplace_by_uint32(
+                result, UInt32(1)
+            )
             # Check whether rounding results in extra digit
             if result.is_power_of_10():
                 if remove_extra_digit_due_to_rounding:

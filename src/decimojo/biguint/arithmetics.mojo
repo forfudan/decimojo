@@ -291,29 +291,14 @@ fn add_inplace(mut x1: BigUInt, x2: BigUInt) -> None:
     """
 
     # Short circuit cases
-    if len(x1.words) == 1:
-        if x1.is_zero():
-            x1.words[0] = x2.words[0]
-            return
-        if len(x2.words) == 1:
-            var value = x1.words[0] + x2.words[0]
-            if value <= BigUInt.BASE_MAX:
-                x1.words[0] = value
-                return
-            else:
-                x1.words[0] = value % BigUInt.BASE
-                x1.words.append(value // BigUInt.BASE)
-                return
-        else:
-            pass
+    if x1.is_zero():
+        x1.words = x2.words  # Copy the words from x2
+        return
+    if x2.is_zero():
+        return
 
     if len(x2.words) == 1:
-        if x2.words[0] == 0:
-            return  # No change needed
-        elif x2.words[0] == 1:
-            # Optimized case for adding 1
-            add_inplace_by_1(x1)
-            return
+        add_inplace_by_uint32(x1, x2.words[0])
 
     # Normal cases
     if len(x1.words) < len(x2.words):
@@ -338,21 +323,6 @@ fn add_inplace(mut x1: BigUInt, x2: BigUInt) -> None:
     if carry > 0:
         x1.words.append(carry)
 
-    return
-
-
-fn add_inplace_by_1(mut x: BigUInt) -> None:
-    """Increments a BigUInt number by 1."""
-    var i = 0
-    while i < len(x.words):
-        if x.words[i] < BigUInt.BASE_MAX:
-            x.words[i] += UInt32(1)
-            return
-        else:  # If the word is 999_999_999, we need to carry over
-            x.words[i] = 0
-            i += 1
-    # If we reach here, we need to add a new word
-    x.words.append(UInt32(1))
     return
 
 
