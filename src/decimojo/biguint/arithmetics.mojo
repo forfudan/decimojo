@@ -46,17 +46,19 @@ from decimojo.rounding_mode import RoundingMode
 #
 # floor_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
 # floor_divide_general(x1: BigUInt, x2: BigUInt) -> BigUInt
+# floor_divide_estimate_quotient(x1: BigUInt, x2: BigUInt, j: Int, m: Int) -> UInt64
 # floor_divide_inplace_by_single_word(x1: BigUInt, x2: BigUInt) -> None
 # floor_divide_inplace_by_double_words(x1: BigUInt, x2: BigUInt) -> None
 # floor_divide_inplace_by_2(x: BigUInt) -> Nonet, x2: BigUInt) -> BigUInt
-# truncate_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
-# floor_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
-# ceil_divide(x1: BigUInt, x2: BigUInt) -> BigUIntulo(x1: BigUIn# floor_divide_general(x1: BigUInt, x2: BigUInt) -> BigUInt
-# ceil_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
-# divmod(x1: BigUInt, x2: BigUInt) -> Tuple[BigUInt, BigUInt]
 # floor_divide_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt
 #
-# floor_divide_estimate_quotient(x1: BigUInt, x2: BigUInt, j: Int, m: Int) -> UInt64
+# truncate_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
+# ceil_divide(x1: BigUInt, x2: BigUInt) -> BigUIntulo(x1: BigUIn# floor_divide_general(x1: BigUInt, x2: BigUInt) -> BigUInt
+#
+# floor_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
+# ceil_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
+# divmod(x1: BigUInt, x2: BigUInt) -> Tuple[BigUInt, BigUInt]
+#
 # power_of_10(n: Int) -> BigUInt
 # ===----------------------------------------------------------------------=== #
 
@@ -202,28 +204,49 @@ fn add_slices(
     # Normal cases
     # The result will have at most one more word than the longer operand
     var words = List[UInt32](capacity=max(n_words_x_slice, n_words_y_slice) + 1)
-
     var carry: UInt32 = 0
-    var ith: Int = 0
     var sum_of_words: UInt32
 
-    # Add corresponding words from both numbers
-    while ith < n_words_x_slice or ith < n_words_y_slice:
-        sum_of_words = carry
+    var longer: Pointer[BigUInt, __origin_of(x, y)]
+    var shorter: Pointer[BigUInt, __origin_of(x, y)]
+    var start_longer: Int
+    var start_shorter: Int
 
-        # Add x1's word if available
-        if ith < n_words_x_slice:
-            sum_of_words += x.words[start_x + ith]
+    if n_words_x_slice >= n_words_y_slice:
+        longer = Pointer[BigUInt, __origin_of(x, y)](to=x)
+        shorter = Pointer[BigUInt, __origin_of(x, y)](to=y)
+        start_longer = start_x
+        start_shorter = start_y
+    else:
+        longer = Pointer[BigUInt, __origin_of(x, y)](to=y)
+        shorter = Pointer[BigUInt, __origin_of(x, y)](to=x)
+        start_longer = start_y
+        start_shorter = start_x
 
-        # Add x2's word if available
-        if ith < n_words_y_slice:
-            sum_of_words += y.words[start_y + ith]
-
+    for ith in range(min(n_words_x_slice, n_words_y_slice)):
+        # Add the words from both numbers
+        sum_of_words = (
+            carry
+            + longer[].words[start_longer + ith]
+            + shorter[].words[start_shorter + ith]
+        )
         # Compute new word and carry
         carry = sum_of_words // BigUInt.BASE
         words.append(sum_of_words % BigUInt.BASE)
 
-        ith += 1
+    # If the numbers are of the same words, this loop will be skipped
+    for ith in range(
+        min(n_words_x_slice, n_words_y_slice),
+        max(n_words_x_slice, n_words_y_slice),
+    ):
+        # If carry is zero, we can just append the word from the longer number
+        if carry == 0:
+            words.append(longer[].words[start_longer + ith])
+        else:
+            sum_of_words = carry + longer[].words[start_longer + ith]
+            # Compute new word and carry
+            carry = sum_of_words // BigUInt.BASE
+            words.append(sum_of_words % BigUInt.BASE)
 
     # Handle final carry if it exists
     if carry > 0:
@@ -1298,6 +1321,78 @@ fn floor_divide_inplace_by_2(mut x: BigUInt) -> None:
         x.words.resize(len(x.words) - 1, UInt32(0))
 
 
+fn floor_divide_by_power_of_ten(x: BigUInt, n: Int) raises -> BigUInt:
+    """Floor divide a BigUInt by 10^n (n>=0).
+    It is equal to removing the last n digits of the number.
+
+    Args:
+        x: The BigUInt value to multiply.
+        n: The power of 10 to multiply by.
+
+    Raises:
+        Error: If n is negative.
+
+    Returns:
+        A new BigUInt containing the result of the multiplication.
+    """
+    if n < 0:
+        raise Error(
+            "biguint.arithmetics.floor_divide_by_power_of_ten(): "
+            "n must be non-negative"
+        )
+    if n == 0:
+        return x
+
+    # First remove the last words (10^9)
+    var result: BigUInt
+    if len(x.words) == 1:
+        result = x
+    else:
+        var word_shift = n // 9
+        # If we need to drop more words than exists, result is zero
+        if word_shift >= len(x.words):
+            return BigUInt.ZERO
+        # Create result with the remaining words
+        words = List[UInt32]()
+        for i in range(word_shift, len(x.words)):
+            words.append(x.words[i])
+        result = BigUInt(words=words^)
+
+    # Then shift the remaining words right
+    # Get the last word of the divisor
+    var digit_shift = n % 9
+    var carry = UInt32(0)
+    var divisor: UInt32
+    if digit_shift == 0:
+        # No need to shift, just return the result
+        return result^
+    elif digit_shift == 1:
+        divisor = UInt32(10)
+    elif digit_shift == 2:
+        divisor = UInt32(100)
+    elif digit_shift == 3:
+        divisor = UInt32(1000)
+    elif digit_shift == 4:
+        divisor = UInt32(10000)
+    elif digit_shift == 5:
+        divisor = UInt32(100000)
+    elif digit_shift == 6:
+        divisor = UInt32(1000000)
+    elif digit_shift == 7:
+        divisor = UInt32(10000000)
+    else:  # digit_shift == 8
+        divisor = UInt32(100000000)
+    var power_of_carry = BigUInt.BASE // divisor
+    for i in range(len(result.words) - 1, -1, -1):
+        var quot = result.words[i] // divisor
+        var rem = result.words[i] % divisor
+        result.words[i] = quot + carry * power_of_carry
+        carry = rem
+
+    result.remove_leading_empty_words()
+    return result^
+
+
 @always_inline
 fn truncate_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """Returns the quotient of two BigUInt numbers, truncating toward zero.
@@ -1448,78 +1543,6 @@ fn divmod(x1: BigUInt, x2: BigUInt) raises -> Tuple[BigUInt, BigUInt]:
     return (quotient^, remainder^)
 
 
-fn floor_divide_by_power_of_ten(x: BigUInt, n: Int) raises -> BigUInt:
-    """Floor divide a BigUInt by 10^n (n>=0).
-    It is equal to removing the last n digits of the number.
-
-    Args:
-        x: The BigUInt value to multiply.
-        n: The power of 10 to multiply by.
-
-    Raises:
-        Error: If n is negative.
-
-    Returns:
-        A new BigUInt containing the result of the multiplication.
-    """
-    if n < 0:
-        raise Error(
-            "biguint.arithmetics.floor_divide_by_power_of_ten(): "
-            "n must be non-negative"
-        )
-    if n == 0:
-        return x
-
-    # First remove the last words (10^9)
-    var result: BigUInt
-    if len(x.words) == 1:
-        result = x
-    else:
-        var word_shift = n // 9
-        # If we need to drop more words than exists, result is zero
-        if word_shift >= len(x.words):
-            return BigUInt.ZERO
-        # Create result with the remaining words
-        words = List[UInt32]()
-        for i in range(word_shift, len(x.words)):
-            words.append(x.words[i])
-        result = BigUInt(words=words^)
-
-    # Then shift the remaining words right
-    # Get the last word of the divisor
-    var digit_shift = n % 9
-    var carry = UInt32(0)
-    var divisor: UInt32
-    if digit_shift == 0:
-        # No need to shift, just return the result
-        return result^
-    elif digit_shift == 1:
-        divisor = UInt32(10)
-    elif digit_shift == 2:
-        divisor = UInt32(100)
-    elif digit_shift == 3:
-        divisor = UInt32(1000)
-    elif digit_shift == 4:
-        divisor = UInt32(10000)
-    elif digit_shift == 5:
-        divisor = UInt32(100000)
-    elif digit_shift == 6:
-        divisor = UInt32(1000000)
-    elif digit_shift == 7:
-        divisor = UInt32(10000000)
-    else:  # digit_shift == 8
-        divisor = UInt32(100000000)
-    var power_of_carry = BigUInt.BASE // divisor
-    for i in range(len(result.words) - 1, -1, -1):
-        var quot = result.words[i] // divisor
-        var rem = result.words[i] % divisor
-        result.words[i] = quot + carry * power_of_carry
-        carry = rem
-
-    result.remove_leading_empty_words()
-    return result^
-
-
 # ===----------------------------------------------------------------------=== #
 # Division Helper Functions
 # power_of_10
@@ -1549,7 +1572,7 @@ fn power_of_10(n: Int) raises -> BigUInt:
 
     var result = BigUInt(List[UInt32]())
 
-    # Add trailing zeros for full power-of-billion words
+    # Add leading zeros for full power-of-billion words
     for _ in range(words):
         result.words.append(0)
 
