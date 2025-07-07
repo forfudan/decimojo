@@ -166,16 +166,41 @@ fn add(x: BigUInt, y: BigUInt) -> BigUInt:
         )
 
     # Normal cases
-    return add_slices(x, y, 0, len(x.words), 0, len(y.words))
+    # return add_slices(x, y, 0, len(x.words), 0, len(y.words))
+    return add_simd(x, y)
+
+
+fn add_simd(x: BigUInt, y: BigUInt) -> BigUInt:
+    """Adds two BigUInt numbers using SIMD operations.
+
+    Args:
+        x: The first BigUInt operand (first summand).
+        y: The second BigUInt operand (second summand).
+
+    Returns:
+        A new BigUInt containing the sum of the two numbers.
+    """
+    var words = List[UInt32](
+        unsafe_uninit_length=max(len(x.words), len(y.words))
+    )
+    for i in range(min(len(x.words), len(y.words))):
+        words[i] = x.words[i] + y.words[i]
+    if len(x.words) > len(y.words):
+        for i in range(len(y.words), len(x.words)):
+            words[i] = x.words[i]
+    elif len(y.words) > len(x.words):
+        for i in range(len(x.words), len(y.words)):
+            words[i] = y.words[i]
+    else:  # len(x.words) == len(y.words)
+        pass
+
+    var result = BigUInt(words=words^)
+    normalize_carries(result)
+    return result^
 
 
 fn add_slices(
-    read x: BigUInt,
-    read y: BigUInt,
-    start_x: Int,
-    end_x: Int,
-    start_y: Int,
-    end_y: Int,
+    x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int
 ) -> BigUInt:
     """Adds two BigUInt slices using the school method.
 
@@ -1630,6 +1655,42 @@ fn divmod(x1: BigUInt, x2: BigUInt) raises -> Tuple[BigUInt, BigUInt]:
 # Division Helper Functions
 # power_of_10
 # ===----------------------------------------------------------------------=== #
+
+
+fn normalize_carries(mut x: BigUInt):
+    """Normalizes the values of words into valid range by carrying over.
+    The initial values of the words should be in the range [0, BASE*2).
+
+    Notes:
+
+    If we adds two BigUInt numbers word-by-word, we may end up with
+    a situation where some words are larger than BASE. This function
+    normalizes the carries, ensuring that all words are within the valid range.
+    It modifies the input BigUInt in-place.
+    """
+
+    # Yuhao ZHU:
+    # By construction, the words of x are in the range [0, BASE*2).
+    # Thus, the crray can only be 0 or 1.
+    var carry: UInt32 = 0
+    for ref word in x.words:
+        if carry == 0:
+            if word < BigUInt.BASE:
+                pass  # carry = 0
+            else:
+                word -= BigUInt.BASE
+                carry = 1
+        else:  # carry == 1
+            if word < BigUInt.BASE_MAX:
+                word += 1
+                carry = 0
+            else:
+                word = word + 1 - BigUInt.BASE
+                # carry = 1
+    if carry > 0:
+        # If there is still a carry, we need to add a new word
+        x.words.append(UInt32(1))
+    return
 
 
 fn power_of_10(n: Int) raises -> BigUInt:
