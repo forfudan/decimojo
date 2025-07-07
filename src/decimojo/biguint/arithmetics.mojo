@@ -425,27 +425,36 @@ fn subtract_inplace(mut x: BigUInt, y: BigUInt) raises -> None:
         )
 
     # Now it is safe to subtract the smaller number from the larger one
-    var borrow: Int32 = 0
-    var ith: Int = 0
-    var difference: Int32  # Int32 is sufficient for the difference
+    # Note that len(x.words) >= len(y.words) here
+    var borrow: UInt32 = 0  # Can either be 0 or 1
 
-    while ith < len(x.words):
-        # Subtract the borrow
-        difference = Int32(x.words[ith]) - borrow
-        # Subtract smaller's word if available
-        if ith < len(y.words):
-            difference -= Int32(y.words[ith])
-        # Handle borrowing if needed
-        if difference < Int32(0):
-            difference += Int32(BigUInt.BASE)
-            borrow = Int32(1)
+    for i in range(len(y.words)):
+        if x.words[i] < borrow + y.words[i]:
+            x.words[i] += BigUInt.BASE
+            x.words[i] -= borrow + y.words[i]
+            borrow = 1  # Set borrow for the next word
         else:
-            borrow = Int32(0)
-        x.words[ith] = UInt32(difference)
-        ith += 1
+            x.words[i] -= borrow + y.words[i]
+            borrow = 0  # No borrow for the next word
 
-    x.remove_leading_empty_words()
-    return
+    # If x has more words than y, we need to handle the remaining words
+
+    if borrow == 0:
+        # If there is no borrow, we can stop early
+        x.remove_leading_empty_words()
+        return
+
+    else:
+        # At this stage, borrow can only be 0 or 1
+        for i in range(len(y.words), len(x.words)):
+            if x.words[i] >= borrow:
+                x.words[i] -= borrow
+                break  # No more borrow, we can stop early
+            else:  # x.words[i] == 0, borrow == 1
+                x.words[i] = BigUInt.BASE - borrow
+
+        x.remove_leading_empty_words()
+        return
 
 
 # ===----------------------------------------------------------------------=== #
