@@ -71,6 +71,8 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     """The maximum value of a single word in the BigUInt representation."""
     alias BASE_HALF = 500_000_000
     """Half of the base used for the BigUInt representation."""
+    alias VECTOR_WIDTH = 4
+    """The width of the SIMD vector used for arithmetic operations (128-bit)."""
 
     alias ZERO = Self.zero()
     alias ONE = Self.one()
