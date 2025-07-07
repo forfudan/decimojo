@@ -41,8 +41,8 @@ from decimojo.rounding_mode import RoundingMode
 # multiply(x1: BigUInt, x2: BigUInt) -> BigUInt
 # multiply_slices(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int) -> BigUInt
 # multiply_karatsuba(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int, cutoff_number_of_words: Int) -> BigUInt
-# scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt
-# scale_up_inplace_by_power_of_billion(mut x: BigUInt, n: Int)
+# multiply_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt
+# multiply_inplace_by_power_of_billion(mut x: BigUInt, n: Int)
 #
 # floor_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
 # floor_divide_general(x1: BigUInt, x2: BigUInt) -> BigUInt
@@ -54,7 +54,7 @@ from decimojo.rounding_mode import RoundingMode
 # ceil_divide(x1: BigUInt, x2: BigUInt) -> BigUIntulo(x1: BigUIn# floor_divide_general(x1: BigUInt, x2: BigUInt) -> BigUInt
 # ceil_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
 # divmod(x1: BigUInt, x2: BigUInt) -> Tuple[BigUInt, BigUInt]
-# scale_down_by_power_of_10(x: BigUInt, n: Int) -> BigUInt
+# floor_divide_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt
 #
 # floor_divide_estimate_quotient(x1: BigUInt, x2: BigUInt, j: Int, m: Int) -> UInt64
 # power_of_10(n: Int) -> BigUInt
@@ -642,7 +642,7 @@ fn multiply_karatsuba(
         )
         # z2 = 0
 
-        z1.scale_up_inplace_by_power_of_billion(m)
+        z1.multiply_inplace_by_power_of_billion(m)
         z1 += z0
         return z1^
 
@@ -661,7 +661,7 @@ fn multiply_karatsuba(
             x, y, start_x + m, end_x, start_y, end_y, cutoff_number_of_words
         )
         # z2 = 0
-        z1.scale_up_inplace_by_power_of_billion(m)
+        z1.multiply_inplace_by_power_of_billion(m)
         z1 += z0
         return z1^
 
@@ -721,8 +721,8 @@ fn multiply_karatsuba(
             print("z0:", z0)
 
         # z2*9^(m * 2) + z1*9^m + z0
-        z2.scale_up_inplace_by_power_of_billion(2 * m)
-        z1.scale_up_inplace_by_power_of_billion(m)
+        z2.multiply_inplace_by_power_of_billion(2 * m)
+        z1.multiply_inplace_by_power_of_billion(m)
         z2 += z1
         z2 += z0
 
@@ -756,7 +756,7 @@ fn multiply_inplace_by_uint32(mut x: BigUInt, y: UInt32):
         x.words.append(UInt32(carry))
 
 
-fn scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt:
+fn multiply_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
     """Multiplies a BigUInt by 10^n if n > 0, otherwise doing nothing.
 
     Args:
@@ -813,7 +813,7 @@ fn scale_up_by_power_of_10(x: BigUInt, n: Int) -> BigUInt:
     return BigUInt(words=words^)
 
 
-fn scale_up_inplace_by_power_of_10(mut x: BigUInt, n: Int):
+fn multiply_inplace_by_power_of_ten(mut x: BigUInt, n: Int):
     """Multiplies a BigUInt in-place by 10^n if n > 0, otherwise doing nothing.
 
     Args:
@@ -829,7 +829,7 @@ fn scale_up_inplace_by_power_of_10(mut x: BigUInt, n: Int):
     # SPECIAL CASE: If n is a multiple of 9
     if number_of_remaining_digits == 0:
         # If n is a multiple of 9, we just need to add zero words
-        x.scale_up_inplace_by_power_of_billion(number_of_zero_words)
+        x.multiply_inplace_by_power_of_billion(number_of_zero_words)
         return
 
     else:  # number_of_remaining_digits > 0
@@ -884,7 +884,7 @@ fn scale_up_inplace_by_power_of_10(mut x: BigUInt, n: Int):
         return
 
 
-fn scale_up_inplace_by_power_of_billion(mut x: BigUInt, n: Int):
+fn multiply_inplace_by_power_of_billion(mut x: BigUInt, n: Int):
     """Multiplies a BigUInt in-place by (10^9)^n if n > 0.
     This equals to adding 9n zeros (n words) to the end of the number.
 
@@ -1057,8 +1057,8 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         return floor_divide_general(x1, x2)
     else:
         # Normalize the divisor and dividend
-        var normalized_x1 = scale_up_by_power_of_10(x1, normalization_factor)
-        var normalized_x2 = scale_up_by_power_of_10(x2, normalization_factor)
+        var normalized_x1 = multiply_by_power_of_ten(x1, normalization_factor)
+        var normalized_x2 = multiply_by_power_of_ten(x2, normalization_factor)
         return floor_divide_general(normalized_x1, normalized_x2)
 
 
@@ -1103,7 +1103,7 @@ fn floor_divide_general(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
         # Calculate trial product
         trial_product = divisor
         multiply_inplace_by_uint32(trial_product, UInt32(quotient))
-        scale_up_inplace_by_power_of_billion(trial_product, index_of_word)
+        multiply_inplace_by_power_of_billion(trial_product, index_of_word)
 
         # Should need at most 1-2 corrections after the estimation
         # At most cases, no correction is needed
@@ -1115,7 +1115,7 @@ fn floor_divide_general(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
 
             trial_product = divisor
             multiply_inplace_by_uint32(trial_product, UInt32(quotient))
-            scale_up_inplace_by_power_of_billion(trial_product, index_of_word)
+            multiply_inplace_by_power_of_billion(trial_product, index_of_word)
 
             if correction_attempts > 3:
                 print("correction attempts:", correction_attempts)
@@ -1448,7 +1448,7 @@ fn divmod(x1: BigUInt, x2: BigUInt) raises -> Tuple[BigUInt, BigUInt]:
     return (quotient^, remainder^)
 
 
-fn scale_down_by_power_of_10(x: BigUInt, n: Int) raises -> BigUInt:
+fn floor_divide_by_power_of_ten(x: BigUInt, n: Int) raises -> BigUInt:
     """Floor divide a BigUInt by 10^n (n>=0).
     It is equal to removing the last n digits of the number.
 
@@ -1464,7 +1464,7 @@ fn scale_down_by_power_of_10(x: BigUInt, n: Int) raises -> BigUInt:
     """
     if n < 0:
         raise Error(
-            "biguint.arithmetics.scale_down_by_power_of_10(): "
+            "biguint.arithmetics.floor_divide_by_power_of_ten(): "
             "n must be non-negative"
         )
     if n == 0:
