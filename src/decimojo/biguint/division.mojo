@@ -97,7 +97,13 @@ fn divide_four_words_by_two(
 
 
 fn divide_three_by_two(
-    a2: BigUInt, a1: BigUInt, a0: BigUInt, b1: BigUInt, b0: BigUInt, n: Int
+    a2: BigUInt,
+    a1: BigUInt,
+    a0: BigUInt,
+    b1: BigUInt,
+    b0: BigUInt,
+    n: Int,
+    cut_off: Int,
 ) raises -> Tuple[BigUInt, BigUInt]:
     var a2a1: BigUInt
     if a2.is_zero():
@@ -108,7 +114,7 @@ fn divide_three_by_two(
             a2a1, n
         )
         a2a1 += a1
-    var q, c = divide_two_by_one(a2a1, b1, n)
+    var q, c = divide_two_by_one(a2a1, b1, n, cut_off)
     var d = q * b0
     decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(c, n)
     var r = c + a0
@@ -128,7 +134,7 @@ fn divide_three_by_two(
 
 
 fn divide_two_by_one(
-    a: BigUInt, b: BigUInt, n: Int
+    a: BigUInt, b: BigUInt, n: Int, cut_off: Int
 ) raises -> Tuple[BigUInt, BigUInt]:
     """Divides a BigUInt by another BigUInt using a recursive approach.
     The divisor has n words and the dividend has 2n words.
@@ -137,8 +143,9 @@ fn divide_two_by_one(
         a: The dividend as a BigUInt.
         b: The divisor as a BigUInt.
         n: The number of words in the divisor.
+        cut_off: The minimum number of words for the recursive division.
     """
-    if (n & 1) != 0 or n <= 2:  # n can be 16 or 32
+    if (n & 1) != 0 or n <= cut_off:
         return (a // b, a % b)
 
     if b.words[-1] < 500_000_000:
@@ -160,10 +167,10 @@ fn divide_two_by_one(
         b0 = BigUInt(b.words[0 : n // 2])
         b1 = BigUInt(b.words[n // 2 : n])
 
-        q1, r = divide_three_by_two(a3, a2, a1, b1, b0, n // 2)
+        q1, r = divide_three_by_two(a3, a2, a1, b1, b0, n // 2, cut_off)
         r0 = BigUInt(r.words[0 : n // 2])
         r1 = BigUInt(r.words[n // 2 : n])
-        q0, s = divide_three_by_two(r1, r0, a0, b1, b0, n // 2)
+        q0, s = divide_three_by_two(r1, r0, a0, b1, b0, n // 2, cut_off)
 
         q = q1
         decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
@@ -174,7 +181,9 @@ fn divide_two_by_one(
     return (q, s)
 
 
-fn divide_burnikel_ziegler(a: BigUInt, b: BigUInt) raises -> BigUInt:
+fn divide_burnikel_ziegler(
+    a: BigUInt, b: BigUInt, cut_off: Int = 16
+) raises -> BigUInt:
     """Divides BigUInt using the Burnikel-Ziegler algorithm."""
 
     # Yuhao Zhu:
@@ -182,7 +191,12 @@ fn divide_burnikel_ziegler(a: BigUInt, b: BigUInt) raises -> BigUInt:
     # "Fast Recursive Division" by Christoph Burnikel and Joachim Ziegler.
     # MPI-I-98-1-022, October 1998.
 
-    alias BLOCK_SIZE_OF_WORDS = 2
+    var BLOCK_SIZE_OF_WORDS = cut_off
+
+    if (len(a.words) <= cut_off) or (len(b.words) <= cut_off):
+        # If the number of words in a or b is less than or equal to 64,
+        # we can use the schoolbook division algorithm.
+        return a // b
 
     # STEP 1:
     # Normalize the divisor b to n words so that
@@ -251,7 +265,7 @@ fn divide_burnikel_ziegler(a: BigUInt, b: BigUInt) raises -> BigUInt:
     var z = BigUInt(normalized_a.words[(t - 2) * n : t * n])
     var q = BigUInt()
     for i in range(t - 2, -1, -1):
-        var q_i, r = divide_two_by_one(z, normalized_b, n)
+        var q_i, r = divide_two_by_one(z, normalized_b, n, cut_off)
         # print(z, "//", normalized_b, "=", q_i, "mod", r)
         if i == t - 2:
             q = q_i
@@ -269,29 +283,29 @@ fn divide_burnikel_ziegler(a: BigUInt, b: BigUInt) raises -> BigUInt:
     return q
 
 
-fn main() raises:
-    n = 2**14
-    var a = BUInt(String("987_654_321" * 3 * n))
-    var b = BUInt(String("3_141_592" * n))
-    # var a = BigUInt(
-    #     "123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789000000"
-    # )
-    # var b = BigUInt("678678678678000000")
+# fn main() raises:
+#     n = 2**14
+#     var a = BUInt(String("987_654_321" * 3 * n))
+#     var b = BUInt(String("3_141_592" * n))
+#     # var a = BigUInt(
+#     #     "123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789000000"
+#     # )
+#     # var b = BigUInt("678678678678000000")
 
-    var result1 = List[BigUInt]()
-    t0 = time.perf_counter_ns()
-    for _ in range(1):
-        q = divide_burnikel_ziegler(a, b)
-        result1.append(q)
-    print("time taken: ", time.perf_counter_ns() - t0, " ns")
+#     var result1 = List[BigUInt]()
+#     t0 = time.perf_counter_ns()
+#     for _ in range(1):
+#         q = divide_burnikel_ziegler(a, b)
+#         result1.append(q)
+#     print("time taken: ", time.perf_counter_ns() - t0, " ns")
 
-    var result2 = List[BigUInt]()
-    t0 = time.perf_counter_ns()
-    for _ in range(1):
-        p = a // b
-        result2.append(p)
-    print("time taken: ", time.perf_counter_ns() - t0, " ns")
+#     var result2 = List[BigUInt]()
+#     t0 = time.perf_counter_ns()
+#     for _ in range(1):
+#         p = a // b
+#         result2.append(p)
+#     print("time taken: ", time.perf_counter_ns() - t0, " ns")
 
-    # print("result1: ", result1[0])
-    # print("result2: ", result2[0])
-    print("result1 == result2: ", result1[0] == result2[0])
+#     # print("result1: ", result1[0])
+#     # print("result2: ", result2[0])
+#     print("result1 == result2: ", result1[0] == result2[0])
