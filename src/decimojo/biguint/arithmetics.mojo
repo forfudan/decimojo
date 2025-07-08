@@ -1305,31 +1305,7 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     # as large as possible
     # I use table lookup to find the normalization factor
     var normalization_factor: Int  # Number of digits to shift
-    var msw = x2.words[len(x2.words) - 1]
-    if msw < 10_000:
-        if msw < 100:
-            if msw < 10:
-                normalization_factor = 8  # Shift by 8 digits
-            else:  # 10 <= msw < 100
-                normalization_factor = 7  # Shift by 7 digits
-        else:  # 100 <= msw < 10_000
-            if msw < 1_000:  # 100 <= msw < 1_000
-                normalization_factor = 6  # Shift by 6 digits
-            else:  # 1_000 <= msw < 10_000:
-                normalization_factor = 5  # Shift by 5 digits
-    elif msw < 100_000_000:  # 10_000 <= msw < 100_000_000
-        if msw < 1_000_000:
-            if msw < 100_000:  # 10_000 <= msw < 100_000
-                normalization_factor = 4  # Shift by 4 digits
-            else:  # 100_000 <= msw < 1_000_000
-                normalization_factor = 3  # Shift by 3 digits
-        else:  # 1_000_000 <= msw < 100_000_000
-            if msw < 10_000_000:  # 1_000_000 <= msw < 10_000_000
-                normalization_factor = 2  # Shift by 2 digits
-            else:  # 10_000_000 <= msw < 100_000_000
-                normalization_factor = 1  # Shift by 1 digit
-    else:  # 100_000_000 <= msw < 1_000_000_000
-        normalization_factor = 0  # No shift needed
+    normalization_factor = calculate_normalization_factor(x2.words[-1])
 
     if normalization_factor == 0:
         # No normalization needed, just use the general division algorithm
@@ -1921,3 +1897,39 @@ fn power_of_10(n: Int) raises -> BigUInt:
         result.words.append(1)
 
     return result^
+
+
+fn calculate_normalization_factor(msw: UInt32) -> Int:
+    """Calculates the normalization factor based on the most significant word.
+    The normalized word should be as close to BASE as possible.
+
+    Notes:
+
+    This is a helper function for division algorithms.
+    """
+    if msw < 10_000:
+        if msw < 100:
+            if msw < 10:
+                normalization_factor = 8  # Shift by 8 digits
+            else:  # 10 <= msw < 100
+                normalization_factor = 7  # Shift by 7 digits
+        else:  # 100 <= msw < 10_000
+            if msw < 1_000:  # 100 <= msw < 1_000
+                normalization_factor = 6  # Shift by 6 digits
+            else:  # 1_000 <= msw < 10_000:
+                normalization_factor = 5  # Shift by 5 digits
+    elif msw < 100_000_000:  # 10_000 <= msw < 100_000_000
+        if msw < 1_000_000:
+            if msw < 100_000:  # 10_000 <= msw < 100_000
+                normalization_factor = 4  # Shift by 4 digits
+            else:  # 100_000 <= msw < 1_000_000
+                normalization_factor = 3  # Shift by 3 digits
+        else:  # 1_000_000 <= msw < 100_000_000
+            if msw < 10_000_000:  # 1_000_000 <= msw < 10_000_000
+                normalization_factor = 2  # Shift by 2 digits
+            else:  # 10_000_000 <= msw < 100_000_000
+                normalization_factor = 1  # Shift by 1 digit
+    else:  # 100_000_000 <= msw < 1_000_000_000
+        normalization_factor = 0  # No shift needed
+
+    return normalization_factor
