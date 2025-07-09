@@ -1,6 +1,6 @@
 # ===----------------------------------------------------------------------=== #
 # Benchmark for BigUInt division time complexity analysis
-# Testing word sizes from 32 to 65536 words (powers of 2)
+# Testing word sizes from 32 to 2**18 words (powers of 2)
 # ===----------------------------------------------------------------------=== #
 
 from time import perf_counter_ns
@@ -157,7 +157,7 @@ fn main() raises:
     )
     log_print("", log_file)
 
-    # Test sizes: powers of 2 from 32 to 65536
+    # Test sizes: powers of 2 from 32 to 2**18 words
     var test_sizes = List[Int]()
     test_sizes.append(32)
     test_sizes.append(64)
@@ -171,6 +171,8 @@ fn main() raises:
     test_sizes.append(16384)
     test_sizes.append(32768)
     test_sizes.append(65536)
+    test_sizes.append(131072)  # 2^17
+    test_sizes.append(262144)  # 2^18
 
     # Test Case 1: Large / Small division (2n / n)
     log_print("=== TEST CASE 1: LARGE / SMALL DIVISION (2n / n) ===", log_file)
@@ -183,7 +185,7 @@ fn main() raises:
     for i in range(len(test_sizes)):
         var divisor_size = test_sizes[i]
         var dividend_size = divisor_size * 2
-        if dividend_size <= 65536:  # Stay within our limit
+        if dividend_size <= 2**18:  # Stay within our limit
             var avg_time = benchmark_divide_at_size(
                 dividend_size, divisor_size, 5, log_file
             )
@@ -206,7 +208,7 @@ fn main() raises:
     for i in range(len(test_sizes)):
         var divisor_size = test_sizes[i]
         var dividend_size = divisor_size * 4
-        if dividend_size <= 65536:  # Stay within our limit
+        if dividend_size <= 2**18:  # Stay within our limit
             var avg_time = benchmark_divide_at_size(
                 dividend_size, divisor_size, 5, log_file
             )
@@ -274,7 +276,7 @@ fn main() raises:
     for i in range(len(test_sizes)):
         var divisor_size = test_sizes[i]
         var dividend_size = divisor_size * 4
-        if dividend_size <= 65536:  # Only show results within our limit
+        if dividend_size <= 2**18:  # Only show results within our limit
             var time_taken = very_large_small_results[i]
 
             if time_taken > 0.0:  # Only show valid results

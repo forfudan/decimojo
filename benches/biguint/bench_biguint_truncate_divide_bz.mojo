@@ -85,8 +85,10 @@ fn run_benchmark_truncate_divide(
 
     # Execute the operations once to verify correctness
     try:
-        var mojo_result = decimojo.biguint.division.divide_burnikel_ziegler(
-            mojo_dividend, mojo_divisor
+        var mojo_result = (
+            decimojo.biguint.arithmetics.floor_divide_burnikel_ziegler(
+                mojo_dividend, mojo_divisor
+            )
         )
         var py_result = py_dividend // py_divisor
 
@@ -97,7 +99,7 @@ fn run_benchmark_truncate_divide(
         # Benchmark Mojo implementation
         var t0 = perf_counter_ns()
         for _ in range(iterations):
-            _ = decimojo.biguint.division.divide_burnikel_ziegler(
+            _ = decimojo.biguint.arithmetics.floor_divide_burnikel_ziegler(
                 mojo_dividend, mojo_divisor
             )
         var mojo_time = (perf_counter_ns() - t0) / iterations
