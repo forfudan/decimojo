@@ -1328,7 +1328,7 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
     # CASE: division of very, very large numbers
     # Use the Burnikel-Ziegler division algorithm
-    print("Using Burnikel-Ziegler division algorithm for large numbers")
+    # print("Using Burnikel-Ziegler division algorithm for large numbers")
     return floor_divide_burnikel_ziegler(
         x1, x2, cut_off=CUTOFF_BURNIKEL_ZIEGLER
     )

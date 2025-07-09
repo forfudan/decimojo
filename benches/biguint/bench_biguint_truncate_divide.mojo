@@ -23,7 +23,7 @@ fn open_log_file() raises -> PythonObject:
     var python = Python.import_module("builtins")
     var datetime = Python.import_module("datetime")
     var pysys = Python.import_module("sys")
-    pysys.set_int_max_str_digits(1000000)
+    pysys.set_int_max_str_digits(10000000)
 
     # Create logs directory if it doesn't exist
     var log_dir = "./logs"
@@ -87,6 +87,15 @@ fn run_benchmark_truncate_divide(
     try:
         var mojo_result = mojo_dividend // mojo_divisor
         var py_result = py_dividend // py_divisor
+
+        if String(mojo_result) != String(py_result):
+            log_print(
+                "Error: Mojo and Python results do not match!",
+                log_file,
+            )
+            log_print("Mojo result:     " + String(mojo_result), log_file)
+            log_print("Python result:   " + String(py_result), log_file)
+            return  # Skip this benchmark case if results don't match
 
         # Display results for verification
         log_print("Mojo result:     " + String(mojo_result), log_file)
@@ -155,6 +164,7 @@ fn main() raises:
         log_print("Could not retrieve system information", log_file)
 
     var iterations = 100
+    var iterations_large_numbers = 10
 
     # Define benchmark cases (all positive numbers for BigUInt)
     log_print(
@@ -492,20 +502,40 @@ fn main() raises:
 
     # Case 31: Division of large numbers
     run_benchmark_truncate_divide(
-        "Division of large numbers (1000 words vs 100 digits)",
+        "Division of large numbers (5000 words vs words digits)",
         "316227766_016824890_583648059_893174009_579947593" * 1000,
         "141421356_237309504_880168872_420969807_856967187" * 100,
-        3,
+        iterations_large_numbers,
         log_file,
         speedup_factors,
     )
 
     # Case 32: Division of large numbers
     run_benchmark_truncate_divide(
-        "Division of large numbers (10000 words vs 1234 digits)",
+        "Division of large numbers (50000 words vs 6170 words)",
         "316227766_016824890_583648059_893174009_579947593" * 10000,
         "141421356_237309504_880168872_420969807_856967187" * 1234,
-        3,
+        iterations_large_numbers,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 33: Division of large numbers
+    run_benchmark_truncate_divide(
+        "Division of large numbers (2**16 words vs 2**12 digits)",
+        "123456789" * 2**16,
+        "987654321" * 2**12,
+        iterations_large_numbers,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 34: Division of large numbers
+    run_benchmark_truncate_divide(
+        "Division of large numbers (2**18 words vs 2**14 digits)",
+        "123456789" * 2**18,
+        "987654321" * 2**14,
+        iterations_large_numbers,
         log_file,
         speedup_factors,
     )
