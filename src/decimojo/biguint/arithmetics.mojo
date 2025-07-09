@@ -19,6 +19,7 @@ Implements basic arithmetic functions for the BigUInt type.
 """
 
 from algorithm import vectorize
+import math
 import time
 import testing
 
@@ -51,7 +52,7 @@ from decimojo.rounding_mode import RoundingMode
 # multiply_inplace_by_power_of_billion(mut x: BigUInt, n: Int)
 #
 # floor_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
-# floor_divide_general(x1: BigUInt, x2: BigUInt) -> BigUInt
+# floor_divide_school(x1: BigUInt, x2: BigUInt) -> BigUInt
 # floor_divide_estimate_quotient(x1: BigUInt, x2: BigUInt, j: Int, m: Int) -> UInt64
 # floor_divide_inplace_by_single_word(x1: BigUInt, x2: BigUInt) -> None
 # floor_divide_inplace_by_double_words(x1: BigUInt, x2: BigUInt) -> None
@@ -59,7 +60,7 @@ from decimojo.rounding_mode import RoundingMode
 # floor_divide_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt
 #
 # truncate_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
-# ceil_divide(x1: BigUInt, x2: BigUInt) -> BigUIntulo(x1: BigUIn# floor_divide_general(x1: BigUInt, x2: BigUInt) -> BigUInt
+# ceil_divide(x1: BigUInt, x2: BigUInt) -> BigUIntulo(x1: BigUIn# floor_divide_school(x1: BigUInt, x2: BigUInt) -> BigUInt
 #
 # floor_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
 # ceil_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
@@ -1191,7 +1192,9 @@ fn multiply_inplace_by_power_of_billion(mut x: BigUInt, n: Int):
 
 # ===----------------------------------------------------------------------=== #
 # Division Algorithms
-# floor_divide_general, floor_divide_inplace_by_2
+# floor_divide
+# floor_divide_school
+# floor_divide_burnikel_ziegler
 # ===----------------------------------------------------------------------=== #
 
 
@@ -1211,6 +1214,8 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     Notes:
         It is equal to truncated division for positive numbers.
     """
+
+    alias CUTOFF_BURNIKEL_ZIEGLER = 64
 
     # CASE: x2 is single word
     if len(x2.words) == 1:
@@ -1296,53 +1301,41 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         result.remove_leading_empty_words()
         return result^
 
+    # CASE: Division of small numbers
+    # If the number of words in a or b is small enough,
+    # we can use the schoolbook division algorithm.
+    if (len(x1.words) <= CUTOFF_BURNIKEL_ZIEGLER) and (
+        len(x2.words) <= CUTOFF_BURNIKEL_ZIEGLER
+    ):
+        # I will normalize the divisor to improve quotient estimation
+        var normalization_factor: Int  # Number of digits to shift
+        # Calculate normalization factor to make leading digit of divisor
+        # as large as possible
+        normalization_factor = calculate_normalization_factor(x2.words[-1])
+
+        if normalization_factor == 0:
+            # No normalization needed, just use the general division algorithm
+            return floor_divide_school(x1, x2)
+        else:
+            # Normalize the divisor and dividend
+            var normalized_x1 = multiply_by_power_of_ten(
+                x1, normalization_factor
+            )
+            var normalized_x2 = multiply_by_power_of_ten(
+                x2, normalization_factor
+            )
+            return floor_divide_school(normalized_x1, normalized_x2)
+
     # CASE: division of very, very large numbers
-    # Use Newton-Raphson division for large numbers?
-
-    # CASE: all other situations
-    # Normalize divisor to improve quotient estimation
-    # Calculate normalization factor to make leading digit of divisor
-    # as large as possible
-    # I use table lookup to find the normalization factor
-    var normalization_factor: Int  # Number of digits to shift
-    var msw = x2.words[len(x2.words) - 1]
-    if msw < 10_000:
-        if msw < 100:
-            if msw < 10:
-                normalization_factor = 8  # Shift by 8 digits
-            else:  # 10 <= msw < 100
-                normalization_factor = 7  # Shift by 7 digits
-        else:  # 100 <= msw < 10_000
-            if msw < 1_000:  # 100 <= msw < 1_000
-                normalization_factor = 6  # Shift by 6 digits
-            else:  # 1_000 <= msw < 10_000:
-                normalization_factor = 5  # Shift by 5 digits
-    elif msw < 100_000_000:  # 10_000 <= msw < 100_000_000
-        if msw < 1_000_000:
-            if msw < 100_000:  # 10_000 <= msw < 100_000
-                normalization_factor = 4  # Shift by 4 digits
-            else:  # 100_000 <= msw < 1_000_000
-                normalization_factor = 3  # Shift by 3 digits
-        else:  # 1_000_000 <= msw < 100_000_000
-            if msw < 10_000_000:  # 1_000_000 <= msw < 10_000_000
-                normalization_factor = 2  # Shift by 2 digits
-            else:  # 10_000_000 <= msw < 100_000_000
-                normalization_factor = 1  # Shift by 1 digit
-    else:  # 100_000_000 <= msw < 1_000_000_000
-        normalization_factor = 0  # No shift needed
-
-    if normalization_factor == 0:
-        # No normalization needed, just use the general division algorithm
-        return floor_divide_general(x1, x2)
-    else:
-        # Normalize the divisor and dividend
-        var normalized_x1 = multiply_by_power_of_ten(x1, normalization_factor)
-        var normalized_x2 = multiply_by_power_of_ten(x2, normalization_factor)
-        return floor_divide_general(normalized_x1, normalized_x2)
+    # Use the Burnikel-Ziegler division algorithm
+    # print("Using Burnikel-Ziegler division algorithm for large numbers")
+    return floor_divide_burnikel_ziegler(
+        x1, x2, cut_off=CUTOFF_BURNIKEL_ZIEGLER
+    )
 
 
-fn floor_divide_general(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
-    """General division algorithm for BigInt numbers.
+fn floor_divide_school(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
+    """General schoolbook division algorithm for BigInt numbers.
 
     Args:
         dividend: The dividend.
@@ -1357,7 +1350,7 @@ fn floor_divide_general(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
 
     if divisor.is_zero():
         raise Error(
-            "`biguint.arithmetics.floor_divide_general()`: Division by zero"
+            "`biguint.arithmetics.floor_divide_school()`: Division by zero"
         )
 
     # Initialize result and remainder
@@ -1649,6 +1642,335 @@ fn floor_divide_by_power_of_ten(x: BigUInt, n: Int) raises -> BigUInt:
     return result^
 
 
+# FAST RUCURSIVE DIVISION ALGORITHM
+# =============================== #
+# The following functions implement the Burnikel-Ziegler algorithm.
+#
+# floor_divide_burnikel_ziegler
+# floor_divide_two_by_one
+# floor_divide_three_by_two
+# floor_divide_three_by_two_uint32
+# floor_divide_four_by_two_uint32
+#
+# Yuhao Zhu:
+# I tried to write this implementation based on the research report
+# "Fast Recursive Division" by Christoph Burnikel and Joachim Ziegler.
+# MPI-I-98-1-022, October 1998.
+# The paper is mainly based on 2^k-based integers, and therefore, some tricks
+# cannot be applied to 10^k-based integers. For example, when normalizing the
+# divisor to let its most significant word be at least BASE//2, we cannot simply
+# shift the bits until the most significant bit is 1.
+# TODO:
+# Some optimization needs to be done in future to
+# (1) accelerate the normalization process
+# (2) avoid unnecessary memory allocations and copies
+
+
+fn floor_divide_burnikel_ziegler(
+    a: BigUInt, b: BigUInt, cut_off: Int = 16
+) raises -> BigUInt:
+    """Divides BigUInt using the Burnikel-Ziegler algorithm.
+
+    Args:
+        a: The dividend.
+        b: The divisor.
+        cut_off: The cutoff value for the number of words in the divisor to use
+            the schoolbook division algorithm. It also determines the size of
+            the blocks used in the recursive division algorithm.
+    """
+
+    var BLOCK_SIZE_OF_WORDS = cut_off
+
+    # STEP 1:
+    # Normalize the divisor b to n words so that
+    # (1) it is of the form j*2^k and
+    # (2) the most significant word is at least 500_000_000.
+
+    var normalized_b = b
+    var normalized_a = a
+    var normalization_factor: Int
+
+    if normalized_b.words[-1] == 0:
+        normalized_b.remove_leading_empty_words()
+    if normalized_b.words[-1] < 500_000_000:
+        normalization_factor = (
+            decimojo.biguint.arithmetics.calculate_normalization_factor(
+                normalized_b.words[-1]
+            )
+        )
+    else:
+        normalization_factor = 0
+
+    # The targeted number of blocks should be the smallest 2^k such that
+    # 2^k >= number of words in normalized_b ceil divided by BLOCK_SIZE_OF_WORDS.
+    # k is the depth of the recursion.
+    # n is the final number of words in the normalized b.
+    var n_blocks_divisor = math.ceildiv(
+        len(normalized_b.words), BLOCK_SIZE_OF_WORDS
+    )
+    var depth = Int(math.ceil(math.log2(Float64(n_blocks_divisor))))
+    n_blocks_divisor = 2**depth
+    var n = n_blocks_divisor * BLOCK_SIZE_OF_WORDS
+
+    var n_digits_to_scale_up = (
+        n - len(normalized_b.words)
+    ) * 9 + normalization_factor
+
+    decimojo.biguint.arithmetics.multiply_inplace_by_power_of_ten(
+        normalized_b, n_digits_to_scale_up
+    )
+    decimojo.biguint.arithmetics.multiply_inplace_by_power_of_ten(
+        normalized_a, n_digits_to_scale_up
+    )
+
+    # The normalized_b is now 9 digits, but may still be smaller than 500_000_000.
+    var gap_ratio = BigUInt.BASE // normalized_b.words[-1]
+    if gap_ratio > 2:
+        decimojo.biguint.arithmetics.multiply_inplace_by_uint32(
+            normalized_b, gap_ratio
+        )
+        decimojo.biguint.arithmetics.multiply_inplace_by_uint32(
+            normalized_a, gap_ratio
+        )
+
+    # STEP 2: Split the normalized a into blocks of size n.
+    # t is the number of blocks in the dividend.
+    var t = math.ceildiv(len(normalized_a.words), n)
+    if len(a.words) == t * n:
+        # If the number of words in a is already a multiple of n
+        # We check if the most significant word is >= 500_000_000.
+        # If it is, we need to add one more block to the dividend.
+        # This ensures that the most significant word of the dividend
+        # is smaller than 500_000_000.
+        if normalized_a.words[-1] >= 500_000_000:
+            t += 1
+
+    var z = BigUInt(normalized_a.words[(t - 2) * n : t * n])
+    var q = BigUInt()
+    for i in range(t - 2, -1, -1):
+        var q_i, r = floor_divide_two_by_one(z, normalized_b, n, cut_off)
+        # print(z, "//", normalized_b, "=", q_i, "mod", r)
+        if i == t - 2:
+            q = q_i
+        else:
+            decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
+                q, n
+            )
+            q += q_i
+        if i > 0:
+            decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
+                r, n
+            )
+            z = r + BigUInt(normalized_a.words[(i - 1) * n : i * n])
+
+    return q
+
+
+fn floor_divide_three_by_two(
+    a2: BigUInt,
+    a1: BigUInt,
+    a0: BigUInt,
+    b1: BigUInt,
+    b0: BigUInt,
+    n: Int,
+    cut_off: Int,
+) raises -> Tuple[BigUInt, BigUInt]:
+    """Divides a 3-word number by a 2-word number.
+
+    Args:
+        a2: The most significant word of the dividend.
+        a1: The middle word of the dividend.
+        a0: The least significant word of the dividend.
+        b1: The most significant word of the divisor.
+        b0: The least significant word of the divisor.
+        n: The number of words in the divisor.
+        cut_off: The minimum number of words for the recursive division.
+
+    Returns:
+        A tuple containing the quotient and the remainder as BigUInt.
+    """
+
+    var a2a1: BigUInt
+    if a2.is_zero():
+        a2a1 = a1
+    else:
+        a2a1 = a2
+        decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
+            a2a1, n
+        )
+        a2a1 += a1
+    var q, c = floor_divide_two_by_one(a2a1, b1, n, cut_off)
+    var d = q * b0
+    decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(c, n)
+    var r = c + a0
+
+    if r < d:
+        var b = b1
+        decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(b, n)
+        b += b0
+        q -= BigUInt.ONE
+        r += b
+        if r < d:
+            q -= BigUInt.ONE
+            r += b
+
+    r -= d
+    return (q, r)
+
+
+fn floor_divide_two_by_one(
+    a: BigUInt, b: BigUInt, n: Int, cut_off: Int
+) raises -> Tuple[BigUInt, BigUInt]:
+    """Divides a BigUInt by another BigUInt using a recursive approach.
+    The divisor has n words and the dividend has 2n words.
+
+    Args:
+        a: The dividend as a BigUInt.
+        b: The divisor as a BigUInt. The most significant word must be at least
+           500_000_000.
+        n: The number of words in the divisor.
+        cut_off: The minimum number of words for the recursive division.
+
+    Returns:
+        A tuple containing the quotient and the remainder as BigUInt.
+
+    Notes:
+
+    You need to ensure that n is even to continue with the algorithm.
+    Otherwise, it will use the schoolbook division algorithm.
+    """
+    if (n & 1 == 1) or (n <= cut_off):
+        var q = floor_divide_school(a, b)
+        var r = a - q * b
+        return (q^, r^)
+
+    if b.words[-1] < 500_000_000:
+        raise Error("b[-1] must be at least 500_000_000")
+
+    # b_modified = b
+    # decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
+    #     b_modified, n
+    # )
+    # if a.compare(b_modified) >= 0:
+    #     raise Error("a must be less than b * 10^18")
+
+    else:
+        a0 = BigUInt(a.words[0 : n // 2])
+        a1 = BigUInt(a.words[n // 2 : n])
+        a2 = BigUInt(a.words[n : n + n // 2])
+        a3 = BigUInt(a.words[n + n // 2 : n + n])
+
+        b0 = BigUInt(b.words[0 : n // 2])
+        b1 = BigUInt(b.words[n // 2 : n])
+
+        q1, r = floor_divide_three_by_two(a3, a2, a1, b1, b0, n // 2, cut_off)
+        r0 = BigUInt(r.words[0 : n // 2])
+        r1 = BigUInt(r.words[n // 2 : n])
+        q0, s = floor_divide_three_by_two(r1, r0, a0, b1, b0, n // 2, cut_off)
+
+        q = q1
+        decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
+            q, n // 2
+        )
+        q += q0
+
+    return (q, s)
+
+
+fn floor_divide_three_by_two_uint32(
+    a2: UInt32, a1: UInt32, a0: UInt32, b1: UInt32, b0: UInt32
+) raises -> Tuple[UInt32, UInt32, UInt32]:
+    """Divides a 3-word number by a 2-word number.
+    b1 must be at least 500_000_000.
+
+    Args:
+        a2: The most significant word of the dividend.
+        a1: The middle word of the dividend.
+        a0: The least significant word of the dividend.
+        b1: The most significant word of the divisor.
+        b0: The least significant word of the divisor.
+
+    Returns:
+        A tuple containing
+        (1) the quotient (as UInt32)
+        (2) the most significant word of the remainder (as UInt32)
+        (3) the least significant word of the remainder (as UInt32).
+
+    Notes:
+
+    a = a2 * BASE^2 + a1 * BASE + a0.
+    b = b1 * BASE + b0.
+    """
+    if b1 < 500_000_000:
+        raise Error("b1 must be at least 500_000_000")
+
+    var a2a1 = UInt64(a2) * 1_000_000_000 + UInt64(a1)
+
+    var q: UInt64 = UInt64(a2a1) // UInt64(b1)
+    var c = a2a1 - q * UInt64(b1)
+    var d: UInt64 = q * UInt64(b0)
+    var r = UInt64(c * 1_000_000_000) + UInt64(a0)
+
+    if r < UInt64(d):
+        var b = UInt64(b1) * 1_000_000_000 + UInt64(b0)
+        q -= 1
+        r += b
+        if r < UInt64(d):
+            q -= 1
+            r += b
+
+    r -= d
+    var r1: UInt32 = UInt32(r // 1_000_000_000)
+    var r0: UInt32 = UInt32(r % 1_000_000_000)
+
+    return (UInt32(q), r1, r0)
+
+
+fn floor_divide_four_by_two_uint32(
+    a3: UInt32,
+    a2: UInt32,
+    a1: UInt32,
+    a0: UInt32,
+    b1: UInt32,
+    b0: UInt32,
+) raises -> Tuple[UInt32, UInt32, UInt32, UInt32]:
+    """Divides a 4-word number by a 2-word number.
+
+    Args:
+        a3: The most significant word of the dividend.
+        a2: The second most significant word of the dividend.
+        a1: The second least significant word of the dividend.
+        a0: The least significant word of the dividend.
+        b1: The most significant word of the divisor.
+        b0: The least significant word of the divisor.
+
+    Returns:
+        A tuple containing
+        (1) the most significant word of the quotient (as UInt32)
+        (2) the least significant word of the quotient (as UInt32)
+        (3) the most significant word of the remainder (as UInt32)
+        (4) the least significant word of the remainder (as UInt32).
+    """
+
+    if b1 < 500_000_000:
+        raise Error("b1 must be at least 500_000_000")
+    if a3 > b1:
+        raise Error("a must be less than b * 10^18")
+    elif a3 == b1:
+        if a2 > b0:
+            raise Error("a must be less than b * 10^18")
+        elif a2 == b0:
+            if a1 > 0:
+                raise Error("a must be less than b * 10^18")
+            elif a1 == 0:
+                if a0 >= 0:
+                    raise Error("a must be less than b * 10^18")
+
+    var q1, r1, r0 = floor_divide_three_by_two_uint32(a3, a2, a1, b1, b0)
+    var q0, s1, s0 = floor_divide_three_by_two_uint32(r1, r0, a0, b1, b0)
+    return (q1, q0, s1, s0)
+
+
 @always_inline
 fn truncate_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """Returns the quotient of two BigUInt numbers, truncating toward zero.
@@ -1921,3 +2243,39 @@ fn power_of_10(n: Int) raises -> BigUInt:
         result.words.append(1)
 
     return result^
+
+
+fn calculate_normalization_factor(msw: UInt32) -> Int:
+    """Calculates the normalization factor based on the most significant word.
+    The normalized word should be as close to BASE as possible.
+
+    Notes:
+
+    This is a helper function for division algorithms.
+    """
+    if msw < 10_000:
+        if msw < 100:
+            if msw < 10:
+                normalization_factor = 8  # Shift by 8 digits
+            else:  # 10 <= msw < 100
+                normalization_factor = 7  # Shift by 7 digits
+        else:  # 100 <= msw < 10_000
+            if msw < 1_000:  # 100 <= msw < 1_000
+                normalization_factor = 6  # Shift by 6 digits
+            else:  # 1_000 <= msw < 10_000:
+                normalization_factor = 5  # Shift by 5 digits
+    elif msw < 100_000_000:  # 10_000 <= msw < 100_000_000
+        if msw < 1_000_000:
+            if msw < 100_000:  # 10_000 <= msw < 100_000
+                normalization_factor = 4  # Shift by 4 digits
+            else:  # 100_000 <= msw < 1_000_000
+                normalization_factor = 3  # Shift by 3 digits
+        else:  # 1_000_000 <= msw < 100_000_000
+            if msw < 10_000_000:  # 1_000_000 <= msw < 10_000_000
+                normalization_factor = 2  # Shift by 2 digits
+            else:  # 10_000_000 <= msw < 100_000_000
+                normalization_factor = 1  # Shift by 1 digit
+    else:  # 100_000_000 <= msw < 1_000_000_000
+        normalization_factor = 0  # No shift needed
+
+    return normalization_factor

@@ -114,7 +114,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
 
     fn __init__(out self, owned words: List[UInt32]):
         """Initializes a BigUInt from a list of UInt32 words.
-        It does not verify whether the list is empty or the words are invalid.
+        It does not verify whether the words are within the valid range
         See `from_list()` for safer initialization.
 
         Args:
@@ -124,11 +124,13 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
 
         Notes:
 
-        This method does not check whether
-        (1) the list is empty.
-        (2) the words are smaller than `999_999_999`.
+        This method does not check whether the words are smaller than
+        `999_999_999`.
         """
-        self.words = words^
+        if len(words) == 0:
+            self.words = List[UInt32](UInt32(0))
+        else:
+            self.words = words^
 
     fn __init__(out self, owned *words: UInt32):
         """Initializes a BigUInt from raw words without validating the words.
