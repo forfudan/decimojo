@@ -1019,7 +1019,8 @@ fn multiply_inplace_by_uint32(mut x: BigUInt, y: UInt32):
     """
     # Short circuit cases when y is between 0 and 4
     # See `multiply_inplace_by_uint32_le_4()` for details
-    if y <= 4:
+    # TODO: Check the performance of `y <= 4`
+    if y <= 2:
         multiply_inplace_by_uint32_le_4(x, y)
         return
 
@@ -1036,6 +1037,7 @@ fn multiply_inplace_by_uint32(mut x: BigUInt, y: UInt32):
         x.words.append(UInt32(carry))
 
 
+@always_inline
 fn multiply_inplace_by_uint32_le_4(mut x: BigUInt, y: UInt32):
     """Multiplies in-place a BigUInt by a UInt32 value which is between 0 and 4.
 
@@ -1052,28 +1054,11 @@ fn multiply_inplace_by_uint32_le_4(mut x: BigUInt, y: UInt32):
     which is less than 2^32-1. This means that we do not need to use UInt64 to
     store the product but use UInt32 directly. We can first use SIMD to do
     word-by-word multiplication, and then handle the carries.
+
+    This function works the best when y is 0, 1, or 2. For y = 3 or 4, the
+    normalization of carries is more expensive and may not compensate for the
+    extra loop overhead.
     """
-
-    @parameter
-    fn vector_multiply_by_2[simd_width: Int](i: Int):
-        """Shifts the digits of each word to the left by 1."""
-        x.words.data.store[width=simd_width](
-            i, x.words.data.load[width=simd_width](i) << 1
-        )
-
-    @parameter
-    fn vector_multiply_by_3[simd_width: Int](i: Int):
-        """Multiplies the digits of each word by 3."""
-        x.words.data.store[width=simd_width](
-            i, x.words.data.load[width=simd_width](i) * 3
-        )
-
-    @parameter
-    fn vector_multiply_by_4[simd_width: Int](i: Int):
-        """Shifts the digits of each word to the left by 2."""
-        x.words.data.store[width=simd_width](
-            i, x.words.data.load[width=simd_width](i) << 2
-        )
 
     # y is 0, x becomes 1
     if y == 0:
@@ -1085,18 +1070,39 @@ fn multiply_inplace_by_uint32_le_4(mut x: BigUInt, y: UInt32):
         return
 
     # y is 2, we can just shift the digits of each word to the left by 1
+    @parameter
+    fn vector_multiply_by_2[simd_width: Int](i: Int):
+        """Shifts the digits of each word to the left by 1."""
+        x.words.data.store[width=simd_width](
+            i, x.words.data.load[width=simd_width](i) << 1
+        )
+
     if y == 2:
         vectorize[vector_multiply_by_2, BigUInt.VECTOR_WIDTH](len(x.words))
         normalize_carries_lt_2_bases(x)
         return
 
     # y is 3, we can just multiply the digits of each word by 3
+    @parameter
+    fn vector_multiply_by_3[simd_width: Int](i: Int):
+        """Multiplies the digits of each word by 3."""
+        x.words.data.store[width=simd_width](
+            i, x.words.data.load[width=simd_width](i) * 3
+        )
+
     if y == 3:
         vectorize[vector_multiply_by_3, BigUInt.VECTOR_WIDTH](len(x.words))
         normalize_carries_lt_4_bases(x)
         return
 
     # y is 4, we can just shift the digits of each word to the left by 2
+    @parameter
+    fn vector_multiply_by_4[simd_width: Int](i: Int):
+        """Shifts the digits of each word to the left by 2."""
+        x.words.data.store[width=simd_width](
+            i, x.words.data.load[width=simd_width](i) << 2
+        )
+
     if y == 4:
         vectorize[vector_multiply_by_4, BigUInt.VECTOR_WIDTH](len(x.words))
         normalize_carries_lt_4_bases(x)
@@ -2251,17 +2257,54 @@ fn normalize_carries_lt_4_bases(mut x: BigUInt):
         if carry == 0:
             if word <= UInt32(999_999_999):
                 pass  # carry = 0
-            else:  # 1_000_000_000 <= word <= 3_999_999_996
-                carry = word // UInt32(1_000_000_000)
-                word %= UInt32(1_000_000_000)
-        else:  # carry == 1 or 2 or 3
-            if word <= UInt32(999_999_996):
-                word += carry
+            elif word <= UInt32(1_999_999_999):
+                word -= UInt32(1_000_000_000)
+                carry = 1
+            elif word <= UInt32(2_999_999_999):
+                word -= UInt32(2_000_000_000)
+                carry = 2
+            else:  # 3_000_000_000 <= word <= 3_999_999_996
+                word -= UInt32(3_000_000_000)
+                carry = 3
+        elif carry == 1:
+            if word <= UInt32(999_999_998):
+                word += 1
                 carry = 0
-            else:
-                word += carry
-                carry = word // UInt32(1_000_000_000)
-                word %= UInt32(1_000_000_000)
+            elif word <= UInt32(1_999_999_998):
+                word = word + 1 - UInt32(1_000_000_000)
+                carry = 1
+            elif word <= UInt32(2_999_999_998):
+                word = word + 1 - UInt32(2_000_000_000)
+                carry = 2
+            else:  # 2_999_999_999 <= word <= 3_999_999_996
+                word = word + 1 - UInt32(3_000_000_000)
+                carry = 3
+        elif carry == 2:
+            if word <= UInt32(999_999_997):
+                word += 2
+                carry = 0
+            elif word <= UInt32(1_999_999_997):
+                word = word + 2 - UInt32(1_000_000_000)
+                carry = 1
+            elif word <= UInt32(2_999_999_997):
+                word = word + 2 - UInt32(2_000_000_000)
+                carry = 2
+            else:  # 2_999_999_998 <= word <= 3_999_999_996
+                word = word + 2 - UInt32(3_000_000_000)
+                carry = 3
+        else:  # carry == 3
+            if word <= UInt32(999_999_996):
+                word += 3
+                carry = 0
+            elif word <= UInt32(1_999_999_996):
+                word = word + 3 - UInt32(1_000_000_000)
+                carry = 1
+            elif word <= UInt32(2_999_999_996):
+                word = word + 3 - UInt32(2_000_000_000)
+                carry = 2
+            else:  # 2_999_999_997 <= word <= 3_999_999_996
+                word = word + 3 - UInt32(3_000_000_000)
+                carry = 3
     if carry > 0:
         # If there is still a carry, we need to add a new word
         x.words.append(UInt32(carry))
