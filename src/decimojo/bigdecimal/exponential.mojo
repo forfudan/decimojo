@@ -192,7 +192,7 @@ fn integer_power(
             fill_zeros_to_precision=False,
         )
 
-        exp_value.floor_divide_inplace_by_2()
+        decimojo.biguint.arithmetics.floor_divide_inplace_by_2(exp_value)
 
     # For negative exponents, compute reciprocal
     if is_negative_exponent:

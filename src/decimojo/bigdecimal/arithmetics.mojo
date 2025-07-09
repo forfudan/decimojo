@@ -21,7 +21,6 @@ Implements functions for mathematical operations on BigDecimal objects.
 import time
 import testing
 
-from decimojo.decimal.decimal import Decimal
 from decimojo.rounding_mode import RoundingMode
 import decimojo.utility
 

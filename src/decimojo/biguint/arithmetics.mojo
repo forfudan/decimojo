@@ -1852,19 +1852,23 @@ fn floor_divide_three_by_two(
     n: Int,
     cut_off: Int,
 ) raises -> Tuple[BigUInt, BigUInt]:
-    """Divides a 3-word number by a 2-word number.
+    """Divides a 3-part number by a 2-part number.
 
     Args:
-        a2: The most significant word of the dividend.
-        a1: The middle word of the dividend.
-        a0: The least significant word of the dividend.
-        b1: The most significant word of the divisor.
-        b0: The least significant word of the divisor.
-        n: The number of words in the divisor.
-        cut_off: The minimum number of words for the recursive division.
+        a2: The most significant part of the dividend.
+        a1: The middle part of the dividend.
+        a0: The least significant part of the dividend.
+        b1: The most significant part of the divisor.
+        b0: The least significant part of the divisor.
+        n: The number of part in the divisor.
+        cut_off: The minimum number of part for the recursive division.
 
     Returns:
         A tuple containing the quotient and the remainder as BigUInt.
+
+    Notes:
+
+    a is a BigUInt with 3n words and b is a BigUInt with 2n words.
     """
 
     var a2a1: BigUInt
