@@ -1381,22 +1381,20 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         len(x2.words) <= CUTOFF_BURNIKEL_ZIEGLER
     ):
         # I will normalize the divisor to improve quotient estimation
-        var normalization_factor: Int  # Number of digits to shift
+        var ndigits_to_shift: Int  # Number of digits to shift
         # Calculate normalization factor to make leading digit of divisor
         # as large as possible
-        normalization_factor = calculate_normalization_factor(x2.words[-1])
+        ndigits_to_shift = calculate_number_of_shifted_digits_for_normalization(
+            x2.words[-1]
+        )
 
-        if normalization_factor == 0:
+        if ndigits_to_shift == 0:
             # No normalization needed, just use the general division algorithm
             return floor_divide_school(x1, x2)
         else:
             # Normalize the divisor and dividend
-            var normalized_x1 = multiply_by_power_of_ten(
-                x1, normalization_factor
-            )
-            var normalized_x2 = multiply_by_power_of_ten(
-                x2, normalization_factor
-            )
+            var normalized_x1 = multiply_by_power_of_ten(x1, ndigits_to_shift)
+            var normalized_x2 = multiply_by_power_of_ten(x2, ndigits_to_shift)
             return floor_divide_school(normalized_x1, normalized_x2)
 
     # CASE: division of very, very large numbers
@@ -1762,18 +1760,16 @@ fn floor_divide_burnikel_ziegler(
 
     var normalized_b = b
     var normalized_a = a
-    var normalization_factor: Int
+    var ndigits_to_shift: Int
 
     if normalized_b.words[-1] == 0:
         normalized_b.remove_leading_empty_words()
     if normalized_b.words[-1] < 500_000_000:
-        normalization_factor = (
-            decimojo.biguint.arithmetics.calculate_normalization_factor(
-                normalized_b.words[-1]
-            )
+        ndigits_to_shift = decimojo.biguint.arithmetics.calculate_number_of_shifted_digits_for_normalization(
+            normalized_b.words[-1]
         )
     else:
-        normalization_factor = 0
+        ndigits_to_shift = 0
 
     # The targeted number of blocks should be the smallest 2^k such that
     # 2^k >= number of words in normalized_b ceil divided by BLOCK_SIZE_OF_WORDS.
@@ -1788,7 +1784,7 @@ fn floor_divide_burnikel_ziegler(
 
     var n_digits_to_scale_up = (
         n - len(normalized_b.words)
-    ) * 9 + normalization_factor
+    ) * 9 + ndigits_to_shift
 
     decimojo.biguint.arithmetics.multiply_inplace_by_power_of_ten(
         normalized_b, n_digits_to_scale_up
@@ -1798,8 +1794,15 @@ fn floor_divide_burnikel_ziegler(
     )
 
     # The normalized_b is now 9 digits, but may still be smaller than 500_000_000.
-    var gap_ratio = BigUInt.BASE // normalized_b.words[-1]
-    if gap_ratio > 2:
+    var gap_ratio: UInt32
+    if normalized_b.words[-1] >= 500_000_000:  # Already normalized
+        gap_ratio = 1
+    elif normalized_b.words[-1] >= 125_000_000:  # 2x is enough
+        gap_ratio = 2
+    else:  # The most significant word is in [100_000_000, 125_000_000)
+        gap_ratio = BigUInt.BASE_MAX // normalized_b.words[-1]
+
+    if gap_ratio >= 2:
         decimojo.biguint.arithmetics.multiply_inplace_by_uint32(
             normalized_b, gap_ratio
         )
@@ -2393,37 +2396,44 @@ fn power_of_10(n: Int) raises -> BigUInt:
     return result^
 
 
-fn calculate_normalization_factor(msw: UInt32) -> Int:
-    """Calculates the normalization factor based on the most significant word.
-    The normalized word should be as close to BASE as possible.
+@always_inline
+fn calculate_number_of_shifted_digits_for_normalization(msw: UInt32) -> Int:
+    """Calculates the number of digits to shift left for normalization.
+
+    Args:
+        msw: The most significant word of the number to normalize.
+
+    Returns:
+        The number of digits to shift left to normalize the number.
 
     Notes:
 
     This is a helper function for division algorithms.
+    The normalized word should be as close to BASE as possible.
     """
     if msw < 10_000:
         if msw < 100:
             if msw < 10:
-                normalization_factor = 8  # Shift by 8 digits
+                ndigits = 8  # Shift by 8 digits
             else:  # 10 <= msw < 100
-                normalization_factor = 7  # Shift by 7 digits
+                ndigits = 7  # Shift by 7 digits
         else:  # 100 <= msw < 10_000
             if msw < 1_000:  # 100 <= msw < 1_000
-                normalization_factor = 6  # Shift by 6 digits
+                ndigits = 6  # Shift by 6 digits
             else:  # 1_000 <= msw < 10_000:
-                normalization_factor = 5  # Shift by 5 digits
+                ndigits = 5  # Shift by 5 digits
     elif msw < 100_000_000:  # 10_000 <= msw < 100_000_000
         if msw < 1_000_000:
             if msw < 100_000:  # 10_000 <= msw < 100_000
-                normalization_factor = 4  # Shift by 4 digits
+                ndigits = 4  # Shift by 4 digits
             else:  # 100_000 <= msw < 1_000_000
-                normalization_factor = 3  # Shift by 3 digits
+                ndigits = 3  # Shift by 3 digits
         else:  # 1_000_000 <= msw < 100_000_000
             if msw < 10_000_000:  # 1_000_000 <= msw < 10_000_000
-                normalization_factor = 2  # Shift by 2 digits
+                ndigits = 2  # Shift by 2 digits
             else:  # 10_000_000 <= msw < 100_000_000
-                normalization_factor = 1  # Shift by 1 digit
+                ndigits = 1  # Shift by 1 digit
     else:  # 100_000_000 <= msw < 1_000_000_000
-        normalization_factor = 0  # No shift needed
+        ndigits = 0  # No shift needed
 
-    return normalization_factor
+    return ndigits
