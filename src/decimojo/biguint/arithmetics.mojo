@@ -1797,7 +1797,7 @@ fn floor_divide_burnikel_ziegler(
     var gap_ratio: UInt32
     if normalized_b.words[-1] >= 500_000_000:  # Already normalized
         gap_ratio = 1
-    elif normalized_b.words[-1] >= 125_000_000:  # 2x is enough
+    elif normalized_b.words[-1] >= 250_000_000:  # 2x is enough
         gap_ratio = 2
     else:  # The most significant word is in [100_000_000, 125_000_000)
         gap_ratio = BigUInt.BASE_MAX // normalized_b.words[-1]
