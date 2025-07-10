@@ -45,8 +45,8 @@ from decimojo.rounding_mode import RoundingMode
 # subtract_inplace_by_uint32(x: BigUInt, y: UInt32) -> None
 #
 # multiply(x1: BigUInt, x2: BigUInt) -> BigUInt
-# multiply_slices(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int) -> BigUInt
-# multiply_karatsuba(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int, cutoff_number_of_words: Int) -> BigUInt
+# multiply_slices_school(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int) -> BigUInt
+# multiply_slices_karatsuba(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int, cutoff_number_of_words: Int) -> BigUInt
 # multiply_inplace_by_uint32(x: BigUInt, y: UInt32) -> None
 # multiply_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt
 # multiply_inplace_by_power_of_billion(mut x: BigUInt, n: Int)
@@ -681,6 +681,7 @@ fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
         to the cutoff number, the school multiplication algorithm is used.
     """
 
+    # TODO: Make this a global constant
     alias CUTOFF_KARATSUBA: Int = 64
     """The cutoff number of words for using Karatsuba multiplication."""
 
@@ -715,19 +716,72 @@ fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
     # Use school multiplication for small numbers
     var max_words = max(len(x.words), len(y.words))
     if max_words <= CUTOFF_KARATSUBA:
-        # return multiply_slices (x, y)
-        return multiply_slices(x, y, 0, len(x.words), 0, len(y.words))
-        # multiply_slices can also takes in x, y, and indices
+        # return multiply_slices_school (x, y)
+        return multiply_slices_school(x, y, 0, len(x.words), 0, len(y.words))
+        # multiply_slices_school can also takes in x, y, and indices
 
     # CASE 2
     # Use Karatsuba multiplication for larger numbers
     else:
-        return multiply_karatsuba(
+        return multiply_slices_karatsuba(
             x, y, 0, len(x.words), 0, len(y.words), CUTOFF_KARATSUBA
         )
 
 
 fn multiply_slices(
+    x: BigUInt,
+    y: BigUInt,
+    start_x: Int,
+    end_x: Int,
+    start_y: Int,
+    end_y: Int,
+) -> BigUInt:
+    """Returns the product of two BigUInt numbers.
+
+    Args:
+        x: The first BigUInt operand (multiplicand).
+        y: The second BigUInt operand (multiplier).
+        start_x: The starting index of x to consider.
+        end_x: The ending index of x to consider.
+        start_y: The starting index of y to consider.
+        end_y: The ending index of y to consider.
+
+    Returns:
+        The product of the two BigUInt numbers.
+
+    Notes:
+        This function will adopts the Karatsuba multiplication algorithm
+        for larger numbers, and the school multiplication algorithm for smaller
+        numbers. The cutoff number of words is used to determine which algorithm
+        to use. If the number of words in either operand is less than or equal
+        to the cutoff number, the school multiplication algorithm is used.
+    """
+
+    # TODO: Make this a global constant
+    alias CUTOFF_KARATSUBA: Int = 64
+    """The cutoff number of words for using Karatsuba multiplication."""
+
+    n_words_x_slice = end_x - start_x
+    n_words_y_slice = end_y - start_y
+
+    # CASE 1
+    # The allocation cost is too high for small numbers to use Karatsuba
+    # Use school multiplication for small numbers
+    var max_words = max(n_words_x_slice, n_words_y_slice)
+    if max_words <= CUTOFF_KARATSUBA:
+        # return multiply_slices_school (x, y)
+        return multiply_slices_school(x, y, start_x, end_x, start_y, end_y)
+        # multiply_slices_school can also takes in x, y, and indices
+
+    # CASE 2
+    # Use Karatsuba multiplication for larger numbers
+    else:
+        return multiply_slices_karatsuba(
+            x, y, start_x, end_x, start_y, end_y, CUTOFF_KARATSUBA
+        )
+
+
+fn multiply_slices_school(
     read x: BigUInt,
     read y: BigUInt,
     start_x: Int,
@@ -818,7 +872,7 @@ fn multiply_slices(
     return result^
 
 
-fn multiply_karatsuba(
+fn multiply_slices_karatsuba(
     read x: BigUInt,
     read y: BigUInt,
     start_x: Int,
@@ -859,16 +913,16 @@ fn multiply_karatsuba(
     # we can use school multiplication because this is only one loop
     # No need to split the long number into two parts
     if n_words_x_slice == 1 or n_words_y_slice == 1:
-        return multiply_slices(x, y, start_x, end_x, start_y, end_y)
+        return multiply_slices_school(x, y, start_x, end_x, start_y, end_y)
 
     # CASE 2:
     # The allocation cost is too high for small numbers to use Karatsuba
     # Use school multiplication for small numbers
     var n_words_max = max(n_words_x_slice, n_words_y_slice)
     if n_words_max <= cutoff_number_of_words:
-        # return multiply_slices (x, y)
-        return multiply_slices(x, y, start_x, end_x, start_y, end_y)
-        # multiply_slices can also takes in x, y, and indices
+        # return multiply_slices_school (x, y)
+        return multiply_slices_school(x, y, start_x, end_x, start_y, end_y)
+        # multiply_slices_school can also takes in x, y, and indices
 
     # Otherwise, use Karatsuba
 
@@ -888,10 +942,10 @@ fn multiply_karatsuba(
         # x1 = 0
         # y0 = y_slice.words[:m]
         # y1 = y_slice.words[m:]
-        z0 = multiply_karatsuba(
+        z0 = multiply_slices_karatsuba(
             x, y, start_x, end_x, start_y, start_y + m, cutoff_number_of_words
         )
-        z1 = multiply_karatsuba(
+        z1 = multiply_slices_karatsuba(
             x, y, start_x, end_x, start_y + m, end_y, cutoff_number_of_words
         )
         # z2 = 0
@@ -908,10 +962,10 @@ fn multiply_karatsuba(
         # x1 = x_slice.words[m:]
         # y0 = y_slice
         # y1 = 0
-        z0 = multiply_karatsuba(
+        z0 = multiply_slices_karatsuba(
             x, y, start_x, start_x + m, start_y, end_y, cutoff_number_of_words
         )
-        z1 = multiply_karatsuba(
+        z1 = multiply_slices_karatsuba(
             x, y, start_x + m, end_x, start_y, end_y, cutoff_number_of_words
         )
         # z2 = 0
@@ -928,8 +982,8 @@ fn multiply_karatsuba(
         # y0 = y_slice.words[0:m]
         # y1 = y_slice.words[m:]
 
-        # z0 = multiply_karatsuba(x0, y0)
-        z0 = multiply_karatsuba(
+        # z0 = multiply_slices_karatsuba(x0, y0)
+        z0 = multiply_slices_karatsuba(
             x,
             y,
             start_x,
@@ -938,11 +992,11 @@ fn multiply_karatsuba(
             start_y + m,
             cutoff_number_of_words,
         )
-        # z2 = multiply_karatsuba(x1, y1)
-        z2 = multiply_karatsuba(
+        # z2 = multiply_slices_karatsuba(x1, y1)
+        z2 = multiply_slices_karatsuba(
             x, y, start_x + m, end_x, start_y + m, end_y, cutoff_number_of_words
         )
-        # z3 = multiply_karatsuba(x0 + x1, y0 + y1)
+        # z3 = multiply_slices_karatsuba(x0 + x1, y0 + y1)
         # z1 = z3 - z2 -z0
         var x0_plus_x1 = add_slices(
             x, x, start_x, start_x + m, start_x + m, end_x
@@ -950,7 +1004,7 @@ fn multiply_karatsuba(
         var y0_plus_y1 = add_slices(
             y, y, start_y, start_y + m, start_y + m, end_y
         )
-        z1 = multiply_karatsuba(
+        z1 = multiply_slices_karatsuba(
             x0_plus_x1,
             y0_plus_y1,
             0,
@@ -1773,9 +1827,6 @@ fn floor_divide_burnikel_ziegler(
             normalized_a, gap_ratio
         )
 
-    # print("normalized_a:", String(normalized_a)[:18])
-    # print("normalized_b:", String(normalized_b)[:18])
-
     # STEP 2: Split the normalized a into blocks of size n.
     # t is the number of blocks in the dividend.
     var t = math.ceildiv(len(normalized_a.words), n)
@@ -1791,21 +1842,20 @@ fn floor_divide_burnikel_ziegler(
     var z = BigUInt(normalized_a.words[(t - 2) * n : t * n])
     var q = BigUInt()
 
-    # print("normalized_z =", String(z))
-    # print("normalized_b", String(normalized_b))
-    # print("number of words in z:", len(z.words))
-    # print("number of words in b:", len(normalized_b.words))
     for i in range(t - 2, -1, -1):
+        # The below function is the recursive division algorithm.
         # var q_i, r = floor_divide_two_by_one(z, normalized_b, n, cut_off)
+
+        # The below function is the recursive division algorithm but works
+        # with slices of the dividend and divisor.
         var q_i, r = floor_divide_slices_two_by_one(
             z,
             normalized_b,
-            (0, len(z.words)),
-            (0, len(normalized_b.words)),
-            n,
-            cut_off,
+            bounds_a=(0, len(z.words)),
+            bounds_b=(0, len(normalized_b.words)),
+            n=n,
+            cut_off=cut_off,
         )
-        # print("[DEBUG] ", z, "//\n", normalized_b, "=\n", q_i, sep="")
         if i == t - 2:
             q = q_i
         else:
@@ -1817,7 +1867,9 @@ fn floor_divide_burnikel_ziegler(
             decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
                 r, n
             )
-            z = r + BigUInt(normalized_a.words[(i - 1) * n : i * n])
+            # z = r + a[(i - 1) * n : i * n]
+            #   = r + BigUInt(normalized_a.words[(i - 1) * n : i * n])
+            z = add_slices(r, normalized_a, 0, len(r.words), (i - 1) * n, i * n)
 
     return q
 
@@ -1860,22 +1912,22 @@ fn floor_divide_two_by_one(
         var b0 = BigUInt(b.words[0 : n // 2])
         var b1 = BigUInt(b.words[n // 2 : n])
 
-        var q1, r = floor_divide_three_by_two(
+        var q, r = floor_divide_three_by_two(
             a3, a2, a1, b1, b0, n // 2, cut_off
-        )
+        )  # q is q1
         var r0 = BigUInt(r.words[0 : n // 2])
         var r1 = BigUInt(r.words[n // 2 : n])
         var q0, s = floor_divide_three_by_two(
             r1, r0, a0, b1, b0, n // 2, cut_off
         )
 
-        var q = q1
+        # q -> q1q0
         decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
             q, n // 2
         )
         q += q0
 
-        return (q, s)
+        return (q^, s^)
 
 
 fn floor_divide_three_by_two(
@@ -1983,7 +2035,10 @@ fn floor_divide_slices_two_by_one(
         var b_slice = BigUInt(b.words[bounds_b[0] : bounds_b[1]])
 
         var q = floor_divide_school(a_slice, b_slice)
-        a_slice -= q * b_slice  # r = a_slice - q * b_slice
+        # r = a_slice - q * b_slice
+        a_slice -= multiply_slices(
+            q, b, 0, len(q.words), bounds_b[0], bounds_b[1]
+        )
         return (q^, a_slice^)
 
     elif b.words[-1] < 500_000_000:
@@ -2027,23 +2082,24 @@ fn floor_divide_slices_two_by_one(
 
         # We use the most significant three parts of the dividend
         # a3a2a1 // b1b0
-        var q1, r = floor_divide_slices_three_by_two(
+        var q, r = floor_divide_slices_three_by_two(
             a, b, bounds_a1a3, bounds_b, n // 2, cut_off
         )
 
         r.multiply_inplace_by_power_of_billion(n // 2)
+        # TODO: Inplace add by slices for the following line
         r += BigUInt(a.words[bounds_a[0] : bounds_a[0] + n // 2])
         var q0, s = floor_divide_slices_three_by_two(
             r, b, (0, len(r.words)), bounds_b, n // 2, cut_off
         )
 
-        var q = q1
+        # q -> q1q0
         decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
             q, n // 2
         )
         q += q0
 
-        return (q, s)
+        return (q^, s^)
 
 
 fn floor_divide_slices_three_by_two(
@@ -2099,7 +2155,6 @@ fn floor_divide_slices_three_by_two(
     q, c = floor_divide_slices_two_by_one(
         a, b, bounds_a2a1, bounds_b1, n, cut_off
     )
-
     var d = multiply_slices(q, b, 0, len(q.words), bounds_b0[0], bounds_b0[1])
     decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(c, n)
     var r = add_slices(c, a, 0, len(c.words), bounds_a0[0], bounds_a0[1])
