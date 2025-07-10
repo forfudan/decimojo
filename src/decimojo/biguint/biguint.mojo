@@ -112,6 +112,10 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         """Initializes a BigUInt with value 0."""
         self.words = List[UInt32](UInt32(0))
 
+    fn __init__(out self, *, uninitialized_capacity: Int):
+        """Creates an uninitialized BigUInt with a given capacity."""
+        self.words = List[UInt32](capacity=uninitialized_capacity)
+
     fn __init__(out self, owned words: List[UInt32]):
         """Initializes a BigUInt from a list of UInt32 words.
         It does not verify whether the words are within the valid range
@@ -1369,9 +1373,11 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         The internal representation of a BigUInt is a list of words.
         The most significant empty words are the words that are
         equal to zero and are at the end of the list.
+
+        If the least significant word is zero, we do not remove it.
         """
         var n_empty_words: Int = 0
-        for i in range(len(self.words) - 1, -1, -1):
+        for i in range(len(self.words) - 1, 0, -1):
             if self.words[i] == 0:
                 n_empty_words += 1
             else:

@@ -1739,7 +1739,7 @@ fn floor_divide_by_power_of_ten(x: BigUInt, n: Int) raises -> BigUInt:
 
 
 fn floor_divide_burnikel_ziegler(
-    a: BigUInt, b: BigUInt, cut_off: Int = 16
+    a: BigUInt, b: BigUInt, cut_off: Int
 ) raises -> BigUInt:
     """Divides BigUInt using the Burnikel-Ziegler algorithm.
 
@@ -1810,6 +1810,9 @@ fn floor_divide_burnikel_ziegler(
             normalized_a, gap_ratio
         )
 
+    # print("normalized_a:", String(normalized_a)[:18])
+    # print("normalized_b:", String(normalized_b)[:18])
+
     # STEP 2: Split the normalized a into blocks of size n.
     # t is the number of blocks in the dividend.
     var t = math.ceildiv(len(normalized_a.words), n)
@@ -1824,6 +1827,11 @@ fn floor_divide_burnikel_ziegler(
 
     var z = BigUInt(normalized_a.words[(t - 2) * n : t * n])
     var q = BigUInt()
+
+    # print("normalized_z =", String(z))
+    # print("normalized_b", String(normalized_b))
+    # print("number of words in z:", len(z.words))
+    # print("number of words in b:", len(normalized_b.words))
     for i in range(t - 2, -1, -1):
         # var q_i, r = floor_divide_two_by_one(z, normalized_b, n, cut_off)
         var q_i, r = floor_divide_slices_two_by_one(
@@ -1834,7 +1842,7 @@ fn floor_divide_burnikel_ziegler(
             n,
             cut_off,
         )
-        # print(z, "//", normalized_b, "=", q_i, "mod", r)
+        # print("[DEBUG] ", z, "//\n", normalized_b, "=\n", q_i, sep="")
         if i == t - 2:
             q = q_i
         else:
@@ -1849,62 +1857,6 @@ fn floor_divide_burnikel_ziegler(
             z = r + BigUInt(normalized_a.words[(i - 1) * n : i * n])
 
     return q
-
-
-fn floor_divide_three_by_two(
-    a2: BigUInt,
-    a1: BigUInt,
-    a0: BigUInt,
-    b1: BigUInt,
-    b0: BigUInt,
-    n: Int,
-    cut_off: Int,
-) raises -> Tuple[BigUInt, BigUInt]:
-    """Divides a 3-part number by a 2-part number.
-
-    Args:
-        a2: The most significant part of the dividend.
-        a1: The middle part of the dividend.
-        a0: The least significant part of the dividend.
-        b1: The most significant part of the divisor.
-        b0: The least significant part of the divisor.
-        n: The number of part in the divisor.
-        cut_off: The minimum number of part for the recursive division.
-
-    Returns:
-        A tuple containing the quotient and the remainder as BigUInt.
-
-    Notes:
-
-    a is a BigUInt with 3n words and b is a BigUInt with 2n words.
-    """
-
-    var a2a1: BigUInt
-    if a2.is_zero():
-        a2a1 = a1
-    else:
-        a2a1 = a2
-        decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
-            a2a1, n
-        )
-        a2a1 += a1
-    var q, c = floor_divide_two_by_one(a2a1, b1, n, cut_off)
-    var d = q * b0
-    decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(c, n)
-    var r = c + a0
-
-    if r < d:
-        var b = b1
-        decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(b, n)
-        b += b0
-        q -= BigUInt.ONE
-        r += b
-        if r < d:
-            q -= BigUInt.ONE
-            r += b
-
-    r -= d
-    return (q, r)
 
 
 fn floor_divide_two_by_one(
@@ -1963,6 +1915,62 @@ fn floor_divide_two_by_one(
         return (q, s)
 
 
+fn floor_divide_three_by_two(
+    a2: BigUInt,
+    a1: BigUInt,
+    a0: BigUInt,
+    b1: BigUInt,
+    b0: BigUInt,
+    n: Int,
+    cut_off: Int,
+) raises -> Tuple[BigUInt, BigUInt]:
+    """Divides a 3-part number by a 2-part number.
+
+    Args:
+        a2: The most significant part of the dividend.
+        a1: The middle part of the dividend.
+        a0: The least significant part of the dividend.
+        b1: The most significant part of the divisor.
+        b0: The least significant part of the divisor.
+        n: The number of part in the divisor.
+        cut_off: The minimum number of part for the recursive division.
+
+    Returns:
+        A tuple containing the quotient and the remainder as BigUInt.
+
+    Notes:
+
+    a is a BigUInt with 3n words and b is a BigUInt with 2n words.
+    """
+
+    var a2a1: BigUInt
+    if a2.is_zero():
+        a2a1 = a1
+    else:
+        a2a1 = a2
+        decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
+            a2a1, n
+        )
+        a2a1 += a1
+    var q, c = floor_divide_two_by_one(a2a1, b1, n, cut_off)
+    var d = q * b0
+    decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(c, n)
+    var r = c + a0
+
+    if r < d:
+        var b = b1
+        decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(b, n)
+        b += b0
+        q -= BigUInt.ONE
+        r += b
+        if r < d:
+            q -= BigUInt.ONE
+            r += b
+
+    r -= d
+    return (q, r)
+
+
 # Yuhao ZHU:
 # The following two functions are optimized versions of the
 # `floor_divide_two_by_one` and `floor_divide_three_by_two` functions.
@@ -2010,26 +2018,79 @@ fn floor_divide_slices_two_by_one(
     bounds_b0 = (bounds_b[0], bounds_b[0] + n // 2).
     """
     if (n & 1 == 1) or (n <= cut_off):
-        var q = floor_divide_school(
-            BigUInt(a.words[bounds_a[0] : bounds_a[1]]),
-            BigUInt(b.words[bounds_b[0] : bounds_b[1]]),
-        )
-        var r = a - q * b
+        var a_slice = BigUInt(a.words[bounds_a[0] : bounds_a[1]])
+        var b_slice = BigUInt(b.words[bounds_b[0] : bounds_b[1]])
+
+        # print("[DEBUG] a slice school:", a_slice)
+        # print("[DEBUG] b slice school:", b_slice)
+
+        var q = floor_divide_school(a_slice, b_slice)
+
+        var r = a_slice - q * b_slice
+        # print("[DEBUG] q school:", q)
+        # print("[DEBUG] r school:", r)
         return (q^, r^)
 
-    if b.words[-1] < 500_000_000:
+    elif b.words[-1] < 500_000_000:
         raise Error("b[-1] must be at least 500_000_000")
 
-    else:
-        var q1, r = floor_divide_slices_three_by_two(
+    elif bounds_a[0] + n >= bounds_a[1]:
+        # If a3a2 is empty
+        var q = BigUInt()
+        var r = BigUInt(a.words[bounds_a[0] : bounds_a[1]])
+        return (q^, r^)
+
+    elif a.is_zero(bounds=(bounds_a[0] + n, bounds_a[1])):
+        # If a3a2 is zero
+        var q = BigUInt()
+        var r = BigUInt(a.words[bounds_a[0] : bounds_a[1]])
+        return (q^, r^)
+
+    elif bounds_a[0] + n + n // 2 >= bounds_a[1]:
+        # If a3 is empty
+        # We just need to use three-by-two division once: a2a1a0 // b1b0
+        var q, r = floor_divide_slices_three_by_two(
             a, b, bounds_a, bounds_b, n // 2, cut_off
         )
+        return (q^, r^)
+
+    elif a.is_zero(bounds=(bounds_a[0] + n + n // 2, bounds_a[1])):
+        # If a3 is zero
+        # We just need to use three-by-two division once: a2a1a0 // b1b0
+        var q, r = floor_divide_slices_three_by_two(
+            a,
+            b,
+            (bounds_a[0], bounds_a[0] + n + n // 2),
+            bounds_b,
+            n // 2,
+            cut_off,
+        )
+        return (q^, r^)
+
+    else:
+        var bounds_a1a3 = (bounds_a[0] + n // 2, bounds_a[1])
+        # print("[DEBUG] ")
+        # print("[DEBUG] bounds_a 2-by-1:", bounds_a[0], bounds_a[1])
+        # print("[DEBUG] bounds_b 2-by-1:", bounds_b[0], bounds_b[1])
+        # print("[DEBUG] bounds_a1a3 2-by-1:", bounds_a1a3[0], bounds_a1a3[1])
+
+        # We use the most significant three parts of the dividend
+        # a3a2a1 // b1b0
+        var q1, r = floor_divide_slices_three_by_two(
+            a, b, bounds_a1a3, bounds_b, n // 2, cut_off
+        )
+
+        # print("[DEBUG] ")
+        # print("[DEBUG] q1 2-by-1:", q1)
+        # print("[DEBUG] r 2-by-1:", r)
 
         # r ~ r1r0a0
         r.multiply_inplace_by_power_of_billion(n // 2)
         r += BigUInt(a.words[bounds_a[0] : bounds_a[0] + n // 2])
+        # print("[DEBUG] r after adding a0 2-by-1:", r)
+        # print("[DEBUG] a original              :", a)
         var q0, s = floor_divide_slices_three_by_two(
-            r, b, (0, n), bounds_b, n // 2, cut_off
+            r, b, (0, len(r.words)), bounds_b, n // 2, cut_off
         )
 
         var q = q1
@@ -2073,36 +2134,72 @@ fn floor_divide_slices_three_by_two(
     bounds_b0 = (bounds_b[0], bounds_b[0] + n).
     """
 
-    var bounds_a2 = (bounds_a[0] + 2 * n, bounds_a[0] + 3 * n)
+    # print("[DEBUG] ")
+    # print("[DEBUG] n 3-by-2:", n)
+    # print("[DEBUG] bounds_a 3-by-2:", bounds_a[0], bounds_a[1])
+    # print("[DEBUG] bounds_b 3-by-2:", bounds_b[0], bounds_b[1])
+    # print(
+    #     "[DEBUG] a slice 3-by-2:", BigUInt(a.words[bounds_a[0] : bounds_a[1]])
+    # )
+    # print(
+    #     "[DEBUG] b slice 3-by-2:", BigUInt(b.words[bounds_b[0] : bounds_b[1]])
+    # )
+
+    var bounds_a2 = (bounds_a[0] + 2 * n, bounds_a[1] + 3 * n)
     var bounds_a1 = (bounds_a[0] + n, bounds_a[0] + 2 * n)
     var bounds_a0 = (bounds_a[0], bounds_a[0] + n)
     var bounds_b1 = (bounds_b[0] + n, bounds_b[0] + 2 * n)
     var bounds_b0 = (bounds_b[0], bounds_b[0] + n)
 
     var bounds_a2a1: Tuple[Int, Int]
-    if a.is_zero(bounds=bounds_a2):
-        # If a2 is zero, we can use a1 directly
+    # If a2 is empty or zero, we can use a1 directly
+    if bounds_a2[0] >= bounds_a[1]:
         bounds_a2a1 = bounds_a1
+        # print("bounds_a2a1 3-by-2: a2 is empty")
+    elif a.is_zero(bounds=bounds_a2):
+        bounds_a2a1 = bounds_a1
+        # print("bounds_a2a1 3-by-2: a2 is zero")
     else:
-        bounds_a2a1 = (bounds_a[0] + n, bounds_a[0] + 3 * n)
+        bounds_a2a1 = (bounds_a1[0], bounds_a[1])
+
+    # print("[DEBUG] bounds_a2a1 3-by-2:", bounds_a2a1[0], bounds_a[1])
+    # print("[DEBUG] bounds_b1 3-by-2:", bounds_b1[0], bounds_b1[1])
 
     # var q, c = floor_divide_two_by_one(a2a1, b1, n, cut_off)
     q, c = floor_divide_slices_two_by_one(
         a, b, bounds_a2a1, bounds_b1, n, cut_off
     )
+    # print(
+    #     "[DEBUG] a2a1 3-by-2:",
+    #     BigUInt(a.words[bounds_a2a1[0] : bounds_a2a1[1]]),
+    # )
+    # print("[DEBUG] b1 3-by-2:", BigUInt(b.words[bounds_b1[0] : bounds_b1[1]]))
+    # print("[DEBUG] q 3-by-2:", String(q))
+    # print("[DEBUG] c 3-by-2:", String(c))
 
     var d = multiply_slices(q, b, 0, len(q.words), bounds_b0[0], bounds_b0[1])
     decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(c, n)
     var r = add_slices(c, a, 0, len(c.words), bounds_a0[0], bounds_a0[1])
 
+    # print("[DEBUG] d 3-by-2:", String(d))
+    # print("[DEBUG] r 3-by-2:", String(r))
+
     if r < d:
         q -= BigUInt.ONE
-        r = add_slices(r, b, 0, len(r.words), bounds_b0[0], bounds_b0[1])
+        # r + b
+        r = add_slices(r, b, 0, len(r.words), bounds_b[0], bounds_b[1])
         if r < d:
             q -= BigUInt.ONE
-            r = add_slices(r, b, 0, len(r.words), bounds_b0[0], bounds_b0[1])
+            # r + b
+            r = add_slices(r, b, 0, len(r.words), bounds_b[0], bounds_b[1])
+
+    # print("[DEBUG] d 3-by-2:", String(d))
+    # print("[DEBUG] r 3-by-2:", String(r))
 
     r -= d
+
+    # print("[DEBUG] q 3-by-2 final:", String(q))
+    # print("[DEBUG] r 3-by-2 final:", String(r))
     return (q, r)
 
 
