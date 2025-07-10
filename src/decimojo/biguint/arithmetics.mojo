@@ -1976,8 +1976,6 @@ fn floor_divide_three_by_two(
 # `floor_divide_two_by_one` and `floor_divide_three_by_two` functions.
 # They record the boundaries of the slices of the dividend and divisor
 # to avoid unnecessary recursive slicing and copying of the BigUInt objects.
-
-
 # TODO: bounds_a[1] and bounds_b[1] are not needed if the lengths of the
 # bounds are always n by design.
 fn floor_divide_slices_two_by_one(
@@ -2021,15 +2019,10 @@ fn floor_divide_slices_two_by_one(
         var a_slice = BigUInt(a.words[bounds_a[0] : bounds_a[1]])
         var b_slice = BigUInt(b.words[bounds_b[0] : bounds_b[1]])
 
-        # print("[DEBUG] a slice school:", a_slice)
-        # print("[DEBUG] b slice school:", b_slice)
-
         var q = floor_divide_school(a_slice, b_slice)
 
-        var r = a_slice - q * b_slice
-        # print("[DEBUG] q school:", q)
-        # print("[DEBUG] r school:", r)
-        return (q^, r^)
+        a_slice -= q * b_slice  # r = a_slice - q * b_slice
+        return (q^, a_slice^)
 
     elif b.words[-1] < 500_000_000:
         raise Error("b[-1] must be at least 500_000_000")
@@ -2069,10 +2062,6 @@ fn floor_divide_slices_two_by_one(
 
     else:
         var bounds_a1a3 = (bounds_a[0] + n // 2, bounds_a[1])
-        # print("[DEBUG] ")
-        # print("[DEBUG] bounds_a 2-by-1:", bounds_a[0], bounds_a[1])
-        # print("[DEBUG] bounds_b 2-by-1:", bounds_b[0], bounds_b[1])
-        # print("[DEBUG] bounds_a1a3 2-by-1:", bounds_a1a3[0], bounds_a1a3[1])
 
         # We use the most significant three parts of the dividend
         # a3a2a1 // b1b0
@@ -2080,15 +2069,8 @@ fn floor_divide_slices_two_by_one(
             a, b, bounds_a1a3, bounds_b, n // 2, cut_off
         )
 
-        # print("[DEBUG] ")
-        # print("[DEBUG] q1 2-by-1:", q1)
-        # print("[DEBUG] r 2-by-1:", r)
-
-        # r ~ r1r0a0
         r.multiply_inplace_by_power_of_billion(n // 2)
         r += BigUInt(a.words[bounds_a[0] : bounds_a[0] + n // 2])
-        # print("[DEBUG] r after adding a0 2-by-1:", r)
-        # print("[DEBUG] a original              :", a)
         var q0, s = floor_divide_slices_three_by_two(
             r, b, (0, len(r.words)), bounds_b, n // 2, cut_off
         )
@@ -2134,21 +2116,10 @@ fn floor_divide_slices_three_by_two(
     bounds_b0 = (bounds_b[0], bounds_b[0] + n).
     """
 
-    # print("[DEBUG] ")
-    # print("[DEBUG] n 3-by-2:", n)
-    # print("[DEBUG] bounds_a 3-by-2:", bounds_a[0], bounds_a[1])
-    # print("[DEBUG] bounds_b 3-by-2:", bounds_b[0], bounds_b[1])
-    # print(
-    #     "[DEBUG] a slice 3-by-2:", BigUInt(a.words[bounds_a[0] : bounds_a[1]])
-    # )
-    # print(
-    #     "[DEBUG] b slice 3-by-2:", BigUInt(b.words[bounds_b[0] : bounds_b[1]])
-    # )
-
-    var bounds_a2 = (bounds_a[0] + 2 * n, bounds_a[1] + 3 * n)
+    var bounds_a2 = (bounds_a[0] + 2 * n, bounds_a[1])
     var bounds_a1 = (bounds_a[0] + n, bounds_a[0] + 2 * n)
     var bounds_a0 = (bounds_a[0], bounds_a[0] + n)
-    var bounds_b1 = (bounds_b[0] + n, bounds_b[0] + 2 * n)
+    var bounds_b1 = (bounds_b[0] + n, bounds_b[1])
     var bounds_b0 = (bounds_b[0], bounds_b[0] + n)
 
     var bounds_a2a1: Tuple[Int, Int]
@@ -2162,27 +2133,14 @@ fn floor_divide_slices_three_by_two(
     else:
         bounds_a2a1 = (bounds_a1[0], bounds_a[1])
 
-    # print("[DEBUG] bounds_a2a1 3-by-2:", bounds_a2a1[0], bounds_a[1])
-    # print("[DEBUG] bounds_b1 3-by-2:", bounds_b1[0], bounds_b1[1])
-
     # var q, c = floor_divide_two_by_one(a2a1, b1, n, cut_off)
     q, c = floor_divide_slices_two_by_one(
         a, b, bounds_a2a1, bounds_b1, n, cut_off
     )
-    # print(
-    #     "[DEBUG] a2a1 3-by-2:",
-    #     BigUInt(a.words[bounds_a2a1[0] : bounds_a2a1[1]]),
-    # )
-    # print("[DEBUG] b1 3-by-2:", BigUInt(b.words[bounds_b1[0] : bounds_b1[1]]))
-    # print("[DEBUG] q 3-by-2:", String(q))
-    # print("[DEBUG] c 3-by-2:", String(c))
 
     var d = multiply_slices(q, b, 0, len(q.words), bounds_b0[0], bounds_b0[1])
     decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(c, n)
     var r = add_slices(c, a, 0, len(c.words), bounds_a0[0], bounds_a0[1])
-
-    # print("[DEBUG] d 3-by-2:", String(d))
-    # print("[DEBUG] r 3-by-2:", String(r))
 
     if r < d:
         q -= BigUInt.ONE
@@ -2193,13 +2151,8 @@ fn floor_divide_slices_three_by_two(
             # r + b
             r = add_slices(r, b, 0, len(r.words), bounds_b[0], bounds_b[1])
 
-    # print("[DEBUG] d 3-by-2:", String(d))
-    # print("[DEBUG] r 3-by-2:", String(r))
-
     r -= d
 
-    # print("[DEBUG] q 3-by-2 final:", String(q))
-    # print("[DEBUG] r 3-by-2 final:", String(r))
     return (q, r)
 
 
