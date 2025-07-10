@@ -1184,6 +1184,22 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         return True
 
     @always_inline
+    fn is_zero(self, bounds: Tuple[Int, Int]) -> Bool:
+        """Returns True if this BigUInt slice represents zero.
+
+        Args:
+            bounds: A tuple of two integers representing the start and end
+                indices of the slice to check. Then end index is exclusive.
+
+        Returns:
+            True if the slice of this BigUInt represents zero, False otherwise.
+        """
+        for i in range(bounds[0], bounds[1]):
+            if self.words[i] != 0:
+                return False
+        return True
+
+    @always_inline
     fn is_one(self) -> Bool:
         """Returns True if this BigUInt represents one."""
         if self.words[0] != 1:

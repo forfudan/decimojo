@@ -1825,7 +1825,15 @@ fn floor_divide_burnikel_ziegler(
     var z = BigUInt(normalized_a.words[(t - 2) * n : t * n])
     var q = BigUInt()
     for i in range(t - 2, -1, -1):
-        var q_i, r = floor_divide_two_by_one(z, normalized_b, n, cut_off)
+        # var q_i, r = floor_divide_two_by_one(z, normalized_b, n, cut_off)
+        var q_i, r = floor_divide_slices_two_by_one(
+            z,
+            normalized_b,
+            (0, len(z.words)),
+            (0, len(normalized_b.words)),
+            n,
+            cut_off,
+        )
         # print(z, "//", normalized_b, "=", q_i, "mod", r)
         if i == t - 2:
             q = q_i
@@ -1928,34 +1936,174 @@ fn floor_divide_two_by_one(
     if b.words[-1] < 500_000_000:
         raise Error("b[-1] must be at least 500_000_000")
 
-    # b_modified = b
-    # decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
-    #     b_modified, n
-    # )
-    # if a.compare(b_modified) >= 0:
-    #     raise Error("a must be less than b * 10^18")
-
     else:
-        a0 = BigUInt(a.words[0 : n // 2])
-        a1 = BigUInt(a.words[n // 2 : n])
-        a2 = BigUInt(a.words[n : n + n // 2])
-        a3 = BigUInt(a.words[n + n // 2 : n + n])
+        var a0 = BigUInt(a.words[0 : n // 2])
+        var a1 = BigUInt(a.words[n // 2 : n])
+        var a2 = BigUInt(a.words[n : n + n // 2])
+        var a3 = BigUInt(a.words[n + n // 2 : n + n])
 
-        b0 = BigUInt(b.words[0 : n // 2])
-        b1 = BigUInt(b.words[n // 2 : n])
+        var b0 = BigUInt(b.words[0 : n // 2])
+        var b1 = BigUInt(b.words[n // 2 : n])
 
-        q1, r = floor_divide_three_by_two(a3, a2, a1, b1, b0, n // 2, cut_off)
-        r0 = BigUInt(r.words[0 : n // 2])
-        r1 = BigUInt(r.words[n // 2 : n])
-        q0, s = floor_divide_three_by_two(r1, r0, a0, b1, b0, n // 2, cut_off)
+        var q1, r = floor_divide_three_by_two(
+            a3, a2, a1, b1, b0, n // 2, cut_off
+        )
+        var r0 = BigUInt(r.words[0 : n // 2])
+        var r1 = BigUInt(r.words[n // 2 : n])
+        var q0, s = floor_divide_three_by_two(
+            r1, r0, a0, b1, b0, n // 2, cut_off
+        )
 
-        q = q1
+        var q = q1
         decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
             q, n // 2
         )
         q += q0
 
-    return (q, s)
+        return (q, s)
+
+
+# Yuhao ZHU:
+# The following two functions are optimized versions of the
+# `floor_divide_two_by_one` and `floor_divide_three_by_two` functions.
+# They record the boundaries of the slices of the dividend and divisor
+# to avoid unnecessary recursive slicing and copying of the BigUInt objects.
+
+
+# TODO: bounds_a[1] and bounds_b[1] are not needed if the lengths of the
+# bounds are always n by design.
+fn floor_divide_slices_two_by_one(
+    a: BigUInt,
+    b: BigUInt,
+    bounds_a: Tuple[Int, Int],
+    bounds_b: Tuple[Int, Int],
+    n: Int,
+    cut_off: Int,
+) raises -> Tuple[BigUInt, BigUInt]:
+    """Divides a BigUInt by another BigUInt using a recursive approach.
+    The divisor has n words and the dividend has 2n words.
+
+    Args:
+        a: The dividend.
+        b: The divisor.
+        bounds_a: The range of words in the dividend to consider [start, end).
+        bounds_b: The range of words in the divisor to consider [start, end).
+            The most significant word must be at least 500_000_000.
+        n: The number of words in the divisor.
+        cut_off: The minimum number of words for the recursive division.
+
+    Returns:
+        A tuple containing the quotient and the remainder as BigUInt.
+
+    Notes:
+
+    You need to ensure that n is even to continue with the algorithm.
+    Otherwise, it will use the schoolbook division algorithm.
+
+    a_slice ~ [a0, a1, a2, a3] ~ a3a2a1a0 is a BigUInt with 2n words (n//2 per part).\\
+    b_slice ~ [b0, b1] ~ b1b0 is a BigUInt with n words (n//2 per part).\\
+    bounds_a3 = (bounds_a[0] + n + n // 2, bounds_a[0] + 2 * n)\\
+    bounds_a2 = (bounds_a[0] + n, bounds_a[0] + n + n // 2)\\
+    bounds_a1 = (bounds_a[0] + n // 2, bounds_a[0] + n)\\
+    bounds_a0 = (bounds_a[0], bounds_a[0] + n // 2)\\
+    bounds_b1 = (bounds_b[0] + n // 2, bounds_b[0] + n)\\
+    bounds_b0 = (bounds_b[0], bounds_b[0] + n // 2).
+    """
+    if (n & 1 == 1) or (n <= cut_off):
+        var q = floor_divide_school(
+            BigUInt(a.words[bounds_a[0] : bounds_a[1]]),
+            BigUInt(b.words[bounds_b[0] : bounds_b[1]]),
+        )
+        var r = a - q * b
+        return (q^, r^)
+
+    if b.words[-1] < 500_000_000:
+        raise Error("b[-1] must be at least 500_000_000")
+
+    else:
+        var q1, r = floor_divide_slices_three_by_two(
+            a, b, bounds_a, bounds_b, n // 2, cut_off
+        )
+
+        # r ~ r1r0a0
+        r.multiply_inplace_by_power_of_billion(n // 2)
+        r += BigUInt(a.words[bounds_a[0] : bounds_a[0] + n // 2])
+        var q0, s = floor_divide_slices_three_by_two(
+            r, b, (0, n), bounds_b, n // 2, cut_off
+        )
+
+        var q = q1
+        decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
+            q, n // 2
+        )
+        q += q0
+
+        return (q, s)
+
+
+fn floor_divide_slices_three_by_two(
+    a: BigUInt,
+    b: BigUInt,
+    bounds_a: Tuple[Int, Int],
+    bounds_b: Tuple[Int, Int],
+    n: Int,
+    cut_off: Int,
+) raises -> Tuple[BigUInt, BigUInt]:
+    """Divides a 3n-word BigUInt slice by a 2n-word BigUInt slice.
+
+    Args:
+        a: The dividend.
+        b: The divisor.
+        bounds_a: The range of words in the dividend to consider [start, end).
+        bounds_b: The range of words in the divisor to consider [start, end).
+        n: The number of words in each part of the dividend and divisor.
+        cut_off: The minimum number of words for the recursive division.
+
+    Returns:
+        A tuple containing the quotient and the remainder as BigUInt.
+
+    Notes:
+
+    a_slice ~ [a0, a1, a2] ~ a2a1a0 is a BigUInt with 3n words.\\
+    b_slice ~ [b0, b1] ~ b1b0 is a BigUInt with 2n words.\\
+    bounds_a2 = (bounds_a[0] + 2 * n, bounds_a[0] + 3 * n)\\
+    bounds_a1 = (bounds_a[0] + n, bounds_a[0] + 2 * n)\\
+    bounds_a0 = (bounds_a[0], bounds_a[0] + n)\\
+    bounds_b1 = (bounds_b[0] + n, bounds_b[0] + 2 * n)\\
+    bounds_b0 = (bounds_b[0], bounds_b[0] + n).
+    """
+
+    var bounds_a2 = (bounds_a[0] + 2 * n, bounds_a[0] + 3 * n)
+    var bounds_a1 = (bounds_a[0] + n, bounds_a[0] + 2 * n)
+    var bounds_a0 = (bounds_a[0], bounds_a[0] + n)
+    var bounds_b1 = (bounds_b[0] + n, bounds_b[0] + 2 * n)
+    var bounds_b0 = (bounds_b[0], bounds_b[0] + n)
+
+    var bounds_a2a1: Tuple[Int, Int]
+    if a.is_zero(bounds=bounds_a2):
+        # If a2 is zero, we can use a1 directly
+        bounds_a2a1 = bounds_a1
+    else:
+        bounds_a2a1 = (bounds_a[0] + n, bounds_a[0] + 3 * n)
+
+    # var q, c = floor_divide_two_by_one(a2a1, b1, n, cut_off)
+    q, c = floor_divide_slices_two_by_one(
+        a, b, bounds_a2a1, bounds_b1, n, cut_off
+    )
+
+    var d = multiply_slices(q, b, 0, len(q.words), bounds_b0[0], bounds_b0[1])
+    decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(c, n)
+    var r = add_slices(c, a, 0, len(c.words), bounds_a0[0], bounds_a0[1])
+
+    if r < d:
+        q -= BigUInt.ONE
+        r = add_slices(r, b, 0, len(r.words), bounds_b0[0], bounds_b0[1])
+        if r < d:
+            q -= BigUInt.ONE
+            r = add_slices(r, b, 0, len(r.words), bounds_b0[0], bounds_b0[1])
+
+    r -= d
+    return (q, r)
 
 
 fn floor_divide_three_by_two_uint32(
