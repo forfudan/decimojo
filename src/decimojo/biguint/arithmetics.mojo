@@ -623,43 +623,6 @@ fn subtract_inplace(mut x: BigUInt, y: BigUInt) raises -> None:
 
     return
 
-    # Yuhao ZHU:
-    # Below is a school method for subtraction.
-    # You go from the least significant word to the most significant word.
-    # I keep it here for reference.
-    # In case the behavior of the underflow of the SIMD subtraction changes
-    # in the future, we can fall back to this method.
-
-    # var borrow: UInt32 = 0  # Can either be 0 or 1
-
-    # for i in range(len(y.words)):
-    #     if x.words[i] < borrow + y.words[i]:
-    #         x.words[i] += BigUInt.BASE
-    #         x.words[i] -= borrow + y.words[i]
-    #         borrow = 1  # Set borrow for the next word
-    #     else:
-    #         x.words[i] -= borrow + y.words[i]
-    #         borrow = 0  # No borrow for the next word
-
-    # # If x has more words than y, we need to handle the remaining words
-
-    # if borrow == 0:
-    #     # If there is no borrow, we can stop early
-    #     x.remove_leading_empty_words()
-    #     return
-
-    # else:
-    #     # At this stage, borrow can only be 0 or 1
-    #     for i in range(len(y.words), len(x.words)):
-    #         if x.words[i] >= borrow:
-    #             x.words[i] -= borrow
-    #             break  # No more borrow, we can stop early
-    #         else:  # x.words[i] == 0, borrow == 1
-    #             x.words[i] = BigUInt.BASE - borrow
-
-    #     x.remove_leading_empty_words()
-    #     return
-
 
 fn subtract_inplace_no_check(mut x: BigUInt, y: BigUInt) -> None:
     """Subtracts y from x in-place without checking for underflow.
@@ -2020,7 +1983,6 @@ fn floor_divide_slices_two_by_one(
         var b_slice = BigUInt(b.words[bounds_b[0] : bounds_b[1]])
 
         var q = floor_divide_school(a_slice, b_slice)
-
         a_slice -= q * b_slice  # r = a_slice - q * b_slice
         return (q^, a_slice^)
 
