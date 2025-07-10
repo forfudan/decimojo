@@ -251,17 +251,15 @@ fn add_simd(x: BigUInt, y: BigUInt) -> BigUInt:
 
 
 fn add_slices(
-    x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int
+    x: BigUInt, y: BigUInt, bounds_x: Tuple[Int, Int], bounds_y: Tuple[Int, Int]
 ) -> BigUInt:
     """Adds two BigUInt slices using the school method.
 
     Args:
         x: The first BigUInt operand (first summand).
         y: The second BigUInt operand (second summand).
-        start_x: The starting index of x to consider.
-        end_x: The ending index of x to consider.
-        start_y: The starting index of y to consider.
-        end_y: The ending index of y to consider.
+        bounds_x: A tuple containing the start and end indices of the slice in x.
+        bounds_y: A tuple containing the start and end indices of the slice in y.
 
     Returns:
         A new BigUInt containing the sum of the two slices.
@@ -273,31 +271,33 @@ fn add_slices(
         BigUInt objects are large and we only need to add a part of them.
     """
 
-    n_words_x_slice = end_x - start_x
-    n_words_y_slice = end_y - start_y
+    n_words_x_slice = bounds_x[1] - bounds_x[0]
+    n_words_y_slice = bounds_y[1] - bounds_y[0]
     min_n_words = min(n_words_x_slice, n_words_y_slice)
     max_n_words = max(n_words_x_slice, n_words_y_slice)
 
     # Short circuit cases
     if n_words_x_slice == 1:
-        if x.words[start_x] == 0:
+        if x.words[bounds_x[1]] == 0:
             # x slice is zero, return y slice
-            return BigUInt(words=y.words[start_y:end_y])
+            return BigUInt(words=y.words[bounds_y[0] : bounds_y[1]])
         elif n_words_y_slice == 1:
             # If both numbers are single-word, we can handle them with UInt32
-            return BigUInt.from_uint32(x.words[start_x] + y.words[start_y])
+            return BigUInt.from_uint32(
+                x.words[bounds_x[0]] + y.words[bounds_y[0]]
+            )
         else:
             # If y slice is longer
-            var result = BigUInt(words=y.words[start_y:end_y])
-            add_inplace_by_uint32(result, x.words[start_x])
+            var result = BigUInt(words=y.words[bounds_y[0] : bounds_y[1]])
+            add_inplace_by_uint32(result, x.words[bounds_x[0]])
             return result^
     if n_words_y_slice == 1:
-        if y.words[start_y] == 0:
-            return BigUInt(words=x.words[start_x:end_x])
+        if y.words[bounds_y[0]] == 0:
+            return BigUInt(words=x.words[bounds_x[0] : bounds_x[1]])
         else:
             # If x slice is longer
-            var result = BigUInt(words=x.words[start_x:end_x])
-            add_inplace_by_uint32(result, y.words[start_y])
+            var result = BigUInt(words=x.words[bounds_x[0] : bounds_x[1]])
+            add_inplace_by_uint32(result, y.words[bounds_y[0]])
             return result^
 
     # Normal cases
@@ -314,13 +314,13 @@ fn add_slices(
     if n_words_x_slice >= n_words_y_slice:
         longer = Pointer[BigUInt, __origin_of(x, y)](to=x)
         shorter = Pointer[BigUInt, __origin_of(x, y)](to=y)
-        start_longer = start_x
-        start_shorter = start_y
+        start_longer = bounds_x[0]
+        start_shorter = bounds_y[0]
     else:
         longer = Pointer[BigUInt, __origin_of(x, y)](to=y)
         shorter = Pointer[BigUInt, __origin_of(x, y)](to=x)
-        start_longer = start_y
-        start_shorter = start_x
+        start_longer = bounds_y[0]
+        start_shorter = bounds_x[0]
 
     for ith in range(min_n_words):
         # Add the words from both numbers
@@ -717,34 +717,32 @@ fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
     var max_words = max(len(x.words), len(y.words))
     if max_words <= CUTOFF_KARATSUBA:
         # return multiply_slices_school (x, y)
-        return multiply_slices_school(x, y, 0, len(x.words), 0, len(y.words))
+        return multiply_slices_school(
+            x, y, (0, len(x.words)), (0, len(y.words))
+        )
         # multiply_slices_school can also takes in x, y, and indices
 
     # CASE 2
     # Use Karatsuba multiplication for larger numbers
     else:
         return multiply_slices_karatsuba(
-            x, y, 0, len(x.words), 0, len(y.words), CUTOFF_KARATSUBA
+            x, y, (0, len(x.words)), (0, len(y.words)), CUTOFF_KARATSUBA
         )
 
 
 fn multiply_slices(
     x: BigUInt,
     y: BigUInt,
-    start_x: Int,
-    end_x: Int,
-    start_y: Int,
-    end_y: Int,
+    bounds_x: Tuple[Int, Int],
+    bounds_y: Tuple[Int, Int],
 ) -> BigUInt:
     """Returns the product of two BigUInt numbers.
 
     Args:
         x: The first BigUInt operand (multiplicand).
         y: The second BigUInt operand (multiplier).
-        start_x: The starting index of x to consider.
-        end_x: The ending index of x to consider.
-        start_y: The starting index of y to consider.
-        end_y: The ending index of y to consider.
+        bounds_x: A tuple containing the start and end indices of the slice in x.
+        bounds_y: A tuple containing the start and end indices of the slice in y.
 
     Returns:
         The product of the two BigUInt numbers.
@@ -761,8 +759,8 @@ fn multiply_slices(
     alias CUTOFF_KARATSUBA: Int = 64
     """The cutoff number of words for using Karatsuba multiplication."""
 
-    n_words_x_slice = end_x - start_x
-    n_words_y_slice = end_y - start_y
+    n_words_x_slice = bounds_x[1] - bounds_x[0]
+    n_words_y_slice = bounds_y[1] - bounds_y[0]
 
     # CASE 1
     # The allocation cost is too high for small numbers to use Karatsuba
@@ -770,58 +768,54 @@ fn multiply_slices(
     var max_words = max(n_words_x_slice, n_words_y_slice)
     if max_words <= CUTOFF_KARATSUBA:
         # return multiply_slices_school (x, y)
-        return multiply_slices_school(x, y, start_x, end_x, start_y, end_y)
+        return multiply_slices_school(x, y, bounds_x, bounds_y)
         # multiply_slices_school can also takes in x, y, and indices
 
     # CASE 2
     # Use Karatsuba multiplication for larger numbers
     else:
         return multiply_slices_karatsuba(
-            x, y, start_x, end_x, start_y, end_y, CUTOFF_KARATSUBA
+            x, y, bounds_x, bounds_y, CUTOFF_KARATSUBA
         )
 
 
 fn multiply_slices_school(
     read x: BigUInt,
     read y: BigUInt,
-    start_x: Int,
-    end_x: Int,
-    start_y: Int,
-    end_y: Int,
+    bounds_x: Tuple[Int, Int],
+    bounds_y: Tuple[Int, Int],
 ) -> BigUInt:
     """Multiplies two BigUInt slices using the school method.
 
     Args:
         x: The first BigUInt operand (multiplicand).
         y: The second BigUInt operand (multiplier).
-        start_x: The starting index of x to consider.
-        end_x: The ending index of x to consider.
-        start_y: The starting index of y to consider.
-        end_y: The ending index of y to consider.
+        bounds_x: A tuple containing the start and end indices of the slice in x.
+        bounds_y: A tuple containing the start and end indices of the slice in y.
     """
 
-    n_words_x_slice = end_x - start_x
-    n_words_y_slice = end_y - start_y
+    n_words_x_slice = bounds_x[1] - bounds_x[0]
+    n_words_y_slice = bounds_y[1] - bounds_y[0]
 
     # CASE: One of the operands is zero or one
     if n_words_x_slice == 1:
-        var x_word = x.words[start_x]
+        var x_word = x.words[bounds_x[0]]
         if x_word == 0:
             return BigUInt(UInt32(0))
         elif x_word == 1:
-            return BigUInt(words=y.words[start_y:end_y])
+            return BigUInt(words=y.words[bounds_y[0] : bounds_y[1]])
         else:
-            var result = BigUInt(words=y.words[start_y:end_y])
+            var result = BigUInt(words=y.words[bounds_y[0] : bounds_y[1]])
             multiply_inplace_by_uint32(result, x_word)
             return result^
     if n_words_y_slice == 1:
-        var y_word = y.words[start_y]
+        var y_word = y.words[bounds_y[0]]
         if y_word == 0:
             return BigUInt(UInt32(0))
         elif y_word == 1:
-            return BigUInt(words=x.words[start_x:end_x])
+            return BigUInt(words=x.words[bounds_x[0] : bounds_x[1]])
         else:
-            var result = BigUInt(words=x.words[start_x:end_x])
+            var result = BigUInt(words=x.words[bounds_x[0] : bounds_x[1]])
             multiply_inplace_by_uint32(result, y_word)
             return result^
 
@@ -843,7 +837,7 @@ fn multiply_slices_school(
     var carry: UInt64
     for i in range(n_words_x_slice):
         # Skip if the word is zero
-        if x.words[start_x + i] == 0:
+        if x.words[bounds_x[0] + i] == 0:
             continue
 
         carry = UInt64(0)
@@ -853,7 +847,8 @@ fn multiply_slices_school(
             # plus the carry from the previous multiplication
             # plus the value already at this position in the result
             var product = (
-                UInt64(x.words[start_x + i]) * UInt64(y.words[start_y + j])
+                UInt64(x.words[bounds_x[0] + i])
+                * UInt64(y.words[bounds_y[0] + j])
                 + carry
                 + UInt64(words[i + j])
             )
@@ -875,10 +870,8 @@ fn multiply_slices_school(
 fn multiply_slices_karatsuba(
     read x: BigUInt,
     read y: BigUInt,
-    start_x: Int,
-    end_x: Int,
-    start_y: Int,
-    end_y: Int,
+    bounds_x: Tuple[Int, Int],
+    bounds_y: Tuple[Int, Int],
     cutoff_number_of_words: Int,
 ) -> BigUInt:
     """Multiplies two BigUInt numbers using the Karatsuba algorithm.
@@ -886,10 +879,8 @@ fn multiply_slices_karatsuba(
     Args:
         x: The first BigUInt operand (multiplicand).
         y: The second BigUInt operand (multiplier).
-        start_x: The starting index of x to consider.
-        end_x: The ending index of x to consider.
-        start_y: The starting index of y to consider.
-        end_y: The ending index of y to consider.
+        bounds_x: A tuple containing the start and end indices of the slice in x.
+        bounds_y: A tuple containing the start and end indices of the slice in y.
         cutoff_number_of_words: The cutoff number of words for using Karatsuba
             multiplication. If the number of words in either operand is less
             than or equal to this value, the school method is used instead.
@@ -905,15 +896,15 @@ fn multiply_slices_karatsuba(
 
     # Number of words in the slice 1: end_x - start_x
     # Number of words in the slice 2: end_y - start_y
-    var n_words_x_slice = end_x - start_x
-    var n_words_y_slice = end_y - start_y
+    var n_words_x_slice = bounds_x[1] - bounds_x[0]
+    var n_words_y_slice = bounds_y[1] - bounds_y[0]
 
     # CASE 1:
     # If one number is only one-word long
     # we can use school multiplication because this is only one loop
     # No need to split the long number into two parts
     if n_words_x_slice == 1 or n_words_y_slice == 1:
-        return multiply_slices_school(x, y, start_x, end_x, start_y, end_y)
+        return multiply_slices_school(x, y, bounds_x, bounds_y)
 
     # CASE 2:
     # The allocation cost is too high for small numbers to use Karatsuba
@@ -921,7 +912,7 @@ fn multiply_slices_karatsuba(
     var n_words_max = max(n_words_x_slice, n_words_y_slice)
     if n_words_max <= cutoff_number_of_words:
         # return multiply_slices_school (x, y)
-        return multiply_slices_school(x, y, start_x, end_x, start_y, end_y)
+        return multiply_slices_school(x, y, bounds_x, bounds_y)
         # multiply_slices_school can also takes in x, y, and indices
 
     # Otherwise, use Karatsuba
@@ -943,10 +934,18 @@ fn multiply_slices_karatsuba(
         # y0 = y_slice.words[:m]
         # y1 = y_slice.words[m:]
         z0 = multiply_slices_karatsuba(
-            x, y, start_x, end_x, start_y, start_y + m, cutoff_number_of_words
+            x,
+            y,
+            bounds_x,
+            (bounds_y[0], bounds_y[0] + m),
+            cutoff_number_of_words,
         )
         z1 = multiply_slices_karatsuba(
-            x, y, start_x, end_x, start_y + m, end_y, cutoff_number_of_words
+            x,
+            y,
+            bounds_x,
+            (bounds_y[0] + m, bounds_y[1]),
+            cutoff_number_of_words,
         )
         # z2 = 0
 
@@ -963,10 +962,18 @@ fn multiply_slices_karatsuba(
         # y0 = y_slice
         # y1 = 0
         z0 = multiply_slices_karatsuba(
-            x, y, start_x, start_x + m, start_y, end_y, cutoff_number_of_words
+            x,
+            y,
+            (bounds_x[0], bounds_x[0] + m),
+            bounds_y,
+            cutoff_number_of_words,
         )
         z1 = multiply_slices_karatsuba(
-            x, y, start_x + m, end_x, start_y, end_y, cutoff_number_of_words
+            x,
+            y,
+            (bounds_x[0] + m, bounds_x[1]),
+            bounds_y,
+            cutoff_number_of_words,
         )
         # z2 = 0
         z1.multiply_inplace_by_power_of_billion(m)
@@ -986,31 +993,37 @@ fn multiply_slices_karatsuba(
         z0 = multiply_slices_karatsuba(
             x,
             y,
-            start_x,
-            start_x + m,
-            start_y,
-            start_y + m,
+            (bounds_x[0], bounds_x[0] + m),
+            (bounds_y[0], bounds_y[0] + m),
             cutoff_number_of_words,
         )
         # z2 = multiply_slices_karatsuba(x1, y1)
         z2 = multiply_slices_karatsuba(
-            x, y, start_x + m, end_x, start_y + m, end_y, cutoff_number_of_words
+            x,
+            y,
+            (bounds_x[0] + m, bounds_x[1]),
+            (bounds_y[0] + m, bounds_y[1]),
+            cutoff_number_of_words,
         )
         # z3 = multiply_slices_karatsuba(x0 + x1, y0 + y1)
         # z1 = z3 - z2 -z0
         var x0_plus_x1 = add_slices(
-            x, x, start_x, start_x + m, start_x + m, end_x
+            x,
+            x,
+            (bounds_x[0], bounds_x[0] + m),
+            (bounds_x[0] + m, bounds_x[1]),
         )
         var y0_plus_y1 = add_slices(
-            y, y, start_y, start_y + m, start_y + m, end_y
+            y,
+            y,
+            (bounds_y[0], bounds_y[0] + m),
+            (bounds_y[0] + m, bounds_y[1]),
         )
         z1 = multiply_slices_karatsuba(
             x0_plus_x1,
             y0_plus_y1,
-            0,
-            len(x0_plus_x1.words),
-            0,
-            len(y0_plus_y1.words),
+            (0, len(x0_plus_x1.words)),
+            (0, len(y0_plus_y1.words)),
             cutoff_number_of_words,
         )
 
@@ -1869,7 +1882,12 @@ fn floor_divide_burnikel_ziegler(
             )
             # z = r + a[(i - 1) * n : i * n]
             #   = r + BigUInt(normalized_a.words[(i - 1) * n : i * n])
-            z = add_slices(r, normalized_a, 0, len(r.words), (i - 1) * n, i * n)
+            z = add_slices(
+                r,
+                normalized_a,
+                bounds_x=(0, len(r.words)),
+                bounds_y=((i - 1) * n, i * n),
+            )
 
     return q
 
@@ -2036,9 +2054,7 @@ fn floor_divide_slices_two_by_one(
 
         var q = floor_divide_school(a_slice, b_slice)
         # r = a_slice - q * b_slice
-        a_slice -= multiply_slices(
-            q, b, 0, len(q.words), bounds_b[0], bounds_b[1]
-        )
+        a_slice -= multiply_slices(q, b, (0, len(q.words)), bounds_b)
         return (q^, a_slice^)
 
     elif b.words[-1] < 500_000_000:
@@ -2155,18 +2171,30 @@ fn floor_divide_slices_three_by_two(
     q, c = floor_divide_slices_two_by_one(
         a, b, bounds_a2a1, bounds_b1, n, cut_off
     )
-    var d = multiply_slices(q, b, 0, len(q.words), bounds_b0[0], bounds_b0[1])
+    var d = multiply_slices(q, b, (0, len(q.words)), bounds_b0)
     decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(c, n)
-    var r = add_slices(c, a, 0, len(c.words), bounds_a0[0], bounds_a0[1])
+    var r = add_slices(
+        c, a, bounds_x=(0, len(c.words)), bounds_y=(bounds_a0[0], bounds_a0[1])
+    )
 
     if r < d:
         q -= BigUInt.ONE
         # r + b
-        r = add_slices(r, b, 0, len(r.words), bounds_b[0], bounds_b[1])
+        r = add_slices(
+            r,
+            b,
+            bounds_x=(0, len(r.words)),
+            bounds_y=(bounds_b[0], bounds_b[1]),
+        )
         if r < d:
             q -= BigUInt.ONE
             # r + b
-            r = add_slices(r, b, 0, len(r.words), bounds_b[0], bounds_b[1])
+            r = add_slices(
+                r,
+                b,
+                bounds_x=(0, len(r.words)),
+                bounds_y=(bounds_b[0], bounds_b[1]),
+            )
 
     r -= d
 

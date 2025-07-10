@@ -172,7 +172,7 @@ fn main() raises:
         log_print("Could not retrieve system information", log_file)
 
     var iterations = 100
-    var iterations_large_numbers = 5
+    var iterations_large_numbers = 2
 
     # Define benchmark cases (all positive numbers for BigUInt)
     log_print(
