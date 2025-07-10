@@ -64,7 +64,7 @@ from decimojo.rounding_mode import RoundingMode
 #
 # floor_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
 # ceil_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
-# divmod(x1: BigUInt, x2: BigUInt) -> Tuple[BigUInt, BigUInt]
+# floor_divide_modulo(x1: BigUInt, x2: BigUInt) -> Tuple[BigUInt, BigUInt]
 #
 # normalize_carries_lt_2_bases(x: BigUInt) -> None
 # normalize_carries_lt4_bases(x: BigUInt) -> None
@@ -365,6 +365,52 @@ fn add_inplace(mut x: BigUInt, y: BigUInt) -> None:
         )
 
     vectorize[vector_add, BigUInt.VECTOR_WIDTH](len(y.words))
+
+    # Normalize carries after addition
+    normalize_carries_lt_2_bases(x)
+
+    return
+
+
+fn add_inplace_by_slice(
+    mut x: BigUInt, y: BigUInt, bounds_y: Tuple[Int, Int]
+) -> None:
+    """Increments a BigUInt number in-place by another BigUInt slice.
+
+    Args:
+        x: The first unsigned integer operand.
+        y: The second unsigned integer operand.
+        bounds_y: A tuple containing the start and end indices of the slice in y.
+    """
+
+    # Short circuit cases
+    if x.is_zero():
+        x.words = BigUInt(
+            y.words[bounds_y[0] : bounds_y[1]]
+        ).words  # Copy the words from y
+        return
+    if y.is_zero(bounds=bounds_y):
+        return
+
+    var n_words_y_slice = bounds_y[1] - bounds_y[0]
+
+    if n_words_y_slice == 1:
+        add_inplace_by_uint32(x, y.words[bounds_y[0]])
+        return
+
+    # Normal cases
+    if len(x.words) < n_words_y_slice:
+        x.words.resize(new_size=n_words_y_slice, value=UInt32(0))
+
+    @parameter
+    fn vector_add[simd_width: Int](i: Int):
+        x.words.data.store[width=simd_width](
+            i,
+            x.words.data.load[width=simd_width](i)
+            + y.words.data.load[width=simd_width](i + bounds_y[0]),
+        )
+
+    vectorize[vector_add, BigUInt.VECTOR_WIDTH](n_words_y_slice)
 
     # Normalize carries after addition
     normalize_carries_lt_2_bases(x)
@@ -1970,7 +2016,7 @@ fn floor_divide_three_by_two(
             r += b
 
     r -= d
-    return (q, r)
+    return (q^, r^)
 
 
 # Yuhao ZHU:
@@ -2060,9 +2106,8 @@ fn floor_divide_slices_two_by_one(
             a, b, bounds_a1a3, bounds_b, n // 2, cut_off
         )
 
-        r.multiply_inplace_by_power_of_billion(n // 2)
-        # TODO: Inplace add by slices for the following line
-        r += BigUInt(a.words[bounds_a[0] : bounds_a[0] + n // 2])
+        multiply_inplace_by_power_of_billion(r, n // 2)
+        add_inplace_by_slice(r, a, (bounds_a[0], bounds_a[0] + n // 2))
         var q0, s = floor_divide_slices_three_by_two(
             r, b, (0, len(r.words)), bounds_b, n // 2, cut_off
         )
@@ -2137,26 +2182,15 @@ fn floor_divide_slices_three_by_two(
 
     if r < d:
         q -= BigUInt.ONE
-        # r + b
-        r = add_slices(
-            r,
-            b,
-            bounds_x=(0, len(r.words)),
-            bounds_y=(bounds_b[0], bounds_b[1]),
-        )
+        # r = r + b
+        add_inplace_by_slice(r, b, bounds_y=bounds_b)
         if r < d:
             q -= BigUInt.ONE
-            # r + b
-            r = add_slices(
-                r,
-                b,
-                bounds_x=(0, len(r.words)),
-                bounds_y=(bounds_b[0], bounds_b[1]),
-            )
+            # r = r + b
+            add_inplace_by_slice(r, b, bounds_y=bounds_b)
 
     r -= d
-
-    return (q, r)
+    return (q^, r^)
 
 
 fn floor_divide_three_by_two_uint32(
@@ -2381,7 +2415,9 @@ fn ceil_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         return subtract(x2, remainder)
 
 
-fn divmod(x1: BigUInt, x2: BigUInt) raises -> Tuple[BigUInt, BigUInt]:
+fn floor_divide_modulo(
+    x1: BigUInt, x2: BigUInt
+) raises -> Tuple[BigUInt, BigUInt]:
     """Returns the quotient and remainder of two numbers, truncating toward zero.
 
     Args:
@@ -2642,3 +2678,56 @@ fn calculate_number_of_shifted_digits_for_normalization(msw: UInt32) -> Int:
         ndigits = 0  # No shift needed
 
     return ndigits
+
+
+fn to_uint64_with_2_words(a: BigUInt, bounds_x: Tuple[Int, Int]) -> UInt64:
+    """Convert two words at given index of the BigUInt to UInt64."""
+    var n_words = bounds_x[1] - bounds_x[0]
+    if n_words == 1:
+        return a.words.data.load[width=1](bounds_x[0]).cast[DType.uint64]()
+    else:
+        return (
+            a.words.data.load[width=2](bounds_x[0]).cast[DType.uint64]()
+            * SIMD[DType.uint64, 2](1, 1_000_000_000)
+        ).reduce_add()
+
+
+fn to_uint128_with_2_words(a: BigUInt, bounds_x: Tuple[Int, Int]) -> UInt128:
+    """Convert two words at given index of the BigUInt to UInt128."""
+    var n_words = bounds_x[1] - bounds_x[0]
+    if n_words == 1:
+        return a.words.data.load[width=1](bounds_x[0]).cast[DType.uint128]()
+    else:
+        return (
+            a.words.data.load[width=2](bounds_x[0]).cast[DType.uint128]()
+            * SIMD[DType.uint128, 2](1, 1_000_000_000)
+        ).reduce_add()
+
+
+fn to_uint128_with_4_words(a: BigUInt, bounds_x: Tuple[Int, Int]) -> UInt128:
+    """Convert four words at given index of the BigUInt to UInt128."""
+    var n_words = bounds_x[1] - bounds_x[0]
+    if n_words == 1:
+        return a.words.data.load[width=1](bounds_x[0]).cast[DType.uint128]()
+    elif n_words == 2:
+        return (
+            a.words.data.load[width=2](bounds_x[0]).cast[DType.uint128]()
+            * SIMD[DType.uint128, 2](1, 1_000_000_000)
+        ).reduce_add()
+    elif n_words == 3:
+        return (
+            a.words.data.load[width=4](bounds_x[0]).cast[DType.uint128]()
+            * SIMD[DType.uint128, 4](
+                1, 1_000_000_000, 1_000_000_000_000_000_000, 0
+            )
+        ).reduce_add()
+    else:  # len(self.words) == 4
+        return (
+            a.words.data.load[width=4](bounds_x[0]).cast[DType.uint128]()
+            * SIMD[DType.uint128, 4](
+                1,
+                1_000_000_000,
+                1_000_000_000_000_000_000,
+                1_000_000_000_000_000_000_000_000_000,
+            )
+        ).reduce_add()

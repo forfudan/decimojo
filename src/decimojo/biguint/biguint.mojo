@@ -872,7 +872,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
 
     @always_inline
     fn __divmod__(self, other: Self) raises -> Tuple[Self, Self]:
-        return decimojo.biguint.arithmetics.divmod(self, other)
+        return decimojo.biguint.arithmetics.floor_divide_modulo(self, other)
 
     @always_inline
     fn __pow__(self, exponent: Self) raises -> Self:
@@ -910,7 +910,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
 
     @always_inline
     fn __rdivmod__(self, other: Self) raises -> Tuple[Self, Self]:
-        return decimojo.biguint.arithmetics.divmod(other, self)
+        return decimojo.biguint.arithmetics.floor_divide_modulo(other, self)
 
     @always_inline
     fn __rpow__(self, base: Self) raises -> Self:
@@ -1057,7 +1057,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         """Returns the result of divmod this number by `other`.
         See `divmod()` for more information.
         """
-        return decimojo.biguint.arithmetics.divmod(self, other)
+        return decimojo.biguint.arithmetics.floor_divide_modulo(self, other)
 
     @always_inline
     fn floor_divide_inplace_by_2(mut self) raises:
