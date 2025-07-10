@@ -29,6 +29,7 @@ c = "clear && pixi run clean"
 # tests (use the mojo testing tool)
 test = "pixi run package && pixi run mojo test tests -D ASSERT=all --filter"
 t = "clear && pixi run package && pixi run mojo test tests -D ASSERT=all --filter"
+b = "pixi run t big"
 
 # benches
 bench_decimal = "clear && pixi run package && cd benches/decimal && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"

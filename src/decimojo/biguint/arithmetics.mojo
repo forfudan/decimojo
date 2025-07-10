@@ -34,7 +34,7 @@ from decimojo.rounding_mode import RoundingMode
 # absolute(x: BigUInt) -> BigUInt
 #
 # add(x1: BigUInt, x2: BigUInt) -> BigUInt
-# add_simd(x: BigUInt, y: BigUInt) -> BigUInt
+# add_slices_simd(x: BigUInt, y: BigUInt) -> BigUInt
 # add_slices(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int) -> BigUInt
 # add_inplace(x1: BigUInt, x2: BigUInt)
 # add_inplace_by_uint32(x: BigUInt, y: UInt32) -> None
@@ -143,6 +143,11 @@ fn add(x: BigUInt, y: BigUInt) -> BigUInt:
 
     Returns:
         The sum of the two unsigned integers.
+
+    Notes:
+
+    This function will consider the special cases first, and then call
+    `add_slices_simd()` to handle the addition of the two BigUInt numbers.
     """
 
     # Short circuit cases
@@ -181,73 +186,7 @@ fn add(x: BigUInt, y: BigUInt) -> BigUInt:
     # can be simplified to addition and subtraction instead of floor division
     # and modulo operations.
     # This speeds up the addition by 2x-4x for large numbers.
-    return add_simd(x, y)
-
-
-fn add_simd(x: BigUInt, y: BigUInt) -> BigUInt:
-    """Adds two BigUInt numbers using SIMD operations.
-
-    Args:
-        x: The first BigUInt operand (first summand).
-        y: The second BigUInt operand (second summand).
-
-    Returns:
-        A new BigUInt containing the sum of the two numbers.
-
-    Notes:
-
-    This function uses SIMD operations to add the words of the two BigUInt
-    numbers in parallel. It is optimized for performance and can handle
-    large numbers efficiently.
-
-    After the parallel addition, it normalizes the carries to ensure that
-    the result is a valid BigUInt number.
-
-    Although you use an extra loop to normalize the carries, this is still
-    faster than the school method for large numbers, as the normalized carries
-    can be simplified to addition and subtraction instead of floor division
-    and modulo operations.
-    """
-    var words = List[UInt32](
-        unsafe_uninit_length=max(len(x.words), len(y.words))
-    )
-
-    @parameter
-    fn vector_add[simd_width: Int](i: Int):
-        words.data.store[width=simd_width](
-            i,
-            x.words.data.load[width=simd_width](i)
-            + y.words.data.load[width=simd_width](i),
-        )
-
-    vectorize[vector_add, BigUInt.VECTOR_WIDTH](min(len(x.words), len(y.words)))
-
-    var longer: Pointer[BigUInt, __origin_of(x, y)]
-    var shorter: Pointer[BigUInt, __origin_of(x, y)]
-
-    if len(x.words) >= len(y.words):
-        longer = Pointer[BigUInt, __origin_of(x, y)](to=x)
-        shorter = Pointer[BigUInt, __origin_of(x, y)](to=y)
-    else:
-        longer = Pointer[BigUInt, __origin_of(x, y)](to=y)
-        shorter = Pointer[BigUInt, __origin_of(x, y)](to=x)
-
-    @parameter
-    fn vector_copy_rest_from_longer[simd_width: Int](i: Int):
-        words.data.store[width=simd_width](
-            len(shorter[].words) + i,
-            longer[].words.data.load[width=simd_width](
-                len(shorter[].words) + i
-            ),
-        )
-
-    vectorize[vector_copy_rest_from_longer, BigUInt.VECTOR_WIDTH](
-        len(longer[].words) - len(shorter[].words)
-    )
-
-    var result = BigUInt(words=words^)
-    normalize_carries_lt_2_bases(result)
-    return result^
+    return add_slices_simd(x, y, (0, len(x.words)), (0, len(y.words)))
 
 
 fn add_slices(
@@ -265,16 +204,13 @@ fn add_slices(
         A new BigUInt containing the sum of the two slices.
 
     Notes:
-        This function conducts addtion of the two BigUInt slices. It avoids
-        creating copies of the BigUInt objects by using the indices to access
-        the words directly. This is useful for performance in cases where the
-        BigUInt objects are large and we only need to add a part of them.
+
+    This function will consider the special cases first, and then call
+    `add_slices_simd()` to handle the addition of the two BigUInt slices.
     """
 
     n_words_x_slice = bounds_x[1] - bounds_x[0]
     n_words_y_slice = bounds_y[1] - bounds_y[0]
-    min_n_words = min(n_words_x_slice, n_words_y_slice)
-    max_n_words = max(n_words_x_slice, n_words_y_slice)
 
     # Short circuit cases
     if n_words_x_slice == 1:
@@ -301,63 +237,96 @@ fn add_slices(
             return result^
 
     # Normal cases
-    # The result will have at most one more word than the longer operand
-    var words = List[UInt32](capacity=max(n_words_x_slice, n_words_y_slice) + 1)
-    var carry: UInt32 = 0
-    var sum_of_words: UInt32
+    # Use SIMD operations for addition if both numbers are large enough.
+    return add_slices_simd(x, y, bounds_x, bounds_y)
+
+
+fn add_slices_simd(
+    x: BigUInt, y: BigUInt, bounds_x: Tuple[Int, Int], bounds_y: Tuple[Int, Int]
+) -> BigUInt:
+    """Adds two BigUInt slices using SIMD operations.
+
+    Args:
+        x: The first BigUInt operand (first summand).
+        y: The second BigUInt operand (second summand).
+        bounds_x: A tuple containing the start and end indices of the slice in x.
+        bounds_y: A tuple containing the start and end indices of the slice in y.
+
+    Returns:
+        A new BigUInt containing the sum of the two numbers.
+
+    Notes:
+
+    **Special cases are not handled here**. Please handle them in the caller.
+
+    This function uses **SIMD operations** to add the words of the two BigUInt
+    slices in parallel. It is optimized for performance and can handle
+    large numbers efficiently.
+
+    After the parallel addition, it normalizes the carries to ensure that
+    the result is a valid BigUInt number.
+
+    Although you use an extra loop to normalize the carries, this is still
+    faster than the school method for large numbers, as the normalized carries
+    can be simplified to addition and subtraction instead of floor division
+    and modulo operations.
+
+    This function conducts addtion of the two **BigUInt slices**. It avoids
+    creating copies of the BigUInt objects by using the indices to access
+    the words directly. This is useful for performance in cases where the
+    BigUInt objects are large and we only need to add a part of them.
+    """
+    var n_words_x_slice = bounds_x[1] - bounds_x[0]
+    var n_words_y_slice = bounds_y[1] - bounds_y[0]
+
+    var words = List[UInt32](
+        unsafe_uninit_length=max(n_words_x_slice, n_words_y_slice)
+    )
+
+    @parameter
+    fn vector_add[simd_width: Int](i: Int):
+        words.data.store[width=simd_width](
+            i,
+            x.words.data.load[width=simd_width](i + bounds_x[0])
+            + y.words.data.load[width=simd_width](i + bounds_y[0]),
+        )
+
+    vectorize[vector_add, BigUInt.VECTOR_WIDTH](
+        min(n_words_x_slice, n_words_y_slice)
+    )
 
     var longer: Pointer[BigUInt, __origin_of(x, y)]
-    var shorter: Pointer[BigUInt, __origin_of(x, y)]
-    var start_longer: Int
-    var start_shorter: Int
+    var n_words_longer_slice: Int
+    var n_words_shorter_slice: Int
+    var longer_start: Int
 
     if n_words_x_slice >= n_words_y_slice:
         longer = Pointer[BigUInt, __origin_of(x, y)](to=x)
-        shorter = Pointer[BigUInt, __origin_of(x, y)](to=y)
-        start_longer = bounds_x[0]
-        start_shorter = bounds_y[0]
+        n_words_longer_slice = n_words_x_slice
+        n_words_shorter_slice = n_words_y_slice
+        longer_start = bounds_x[0]
     else:
         longer = Pointer[BigUInt, __origin_of(x, y)](to=y)
-        shorter = Pointer[BigUInt, __origin_of(x, y)](to=x)
-        start_longer = bounds_y[0]
-        start_shorter = bounds_x[0]
+        n_words_longer_slice = n_words_y_slice
+        n_words_shorter_slice = n_words_x_slice
+        longer_start = bounds_y[0]
 
-    for ith in range(min_n_words):
-        # Add the words from both numbers
-        sum_of_words = (
-            carry
-            + longer[].words[start_longer + ith]
-            + shorter[].words[start_shorter + ith]
+    @parameter
+    fn vector_copy_rest_from_longer[simd_width: Int](i: Int):
+        words.data.store[width=simd_width](
+            n_words_shorter_slice + i,
+            longer[].words.data.load[width=simd_width](
+                longer_start + n_words_shorter_slice + i
+            ),
         )
-        # Compute new word and carry
-        carry = sum_of_words // BigUInt.BASE
-        words.append(sum_of_words % BigUInt.BASE)
 
-    # If the numbers are of the same words, this loop will be skipped
-    var no_carry_idx: Int = max_n_words
-    for ith in range(
-        min_n_words,
-        max_n_words,
-    ):
-        # If carry is zero, we can just append the word from the longer number
-        if carry == 0:
-            no_carry_idx = ith
-            break
-        else:
-            sum_of_words = carry + longer[].words[start_longer + ith]
-            # Compute new word and carry
-            carry = sum_of_words // BigUInt.BASE
-            words.append(sum_of_words % BigUInt.BASE)
+    vectorize[vector_copy_rest_from_longer, BigUInt.VECTOR_WIDTH](
+        n_words_longer_slice - n_words_shorter_slice
+    )
 
-    # If we reached here, it means we have no carry from no_carry_idx
-    for ith in range(no_carry_idx, max_n_words):
-        words.append(longer[].words[start_longer + ith])
-
-    # Handle final carry if it exists
-    if carry > 0:
-        words.append(carry)
-
-    return BigUInt(words=words^)
+    var result = BigUInt(words=words^)
+    normalize_carries_lt_2_bases(result)
+    return result^
 
 
 fn add_inplace(mut x: BigUInt, y: BigUInt) -> None:
@@ -2048,6 +2017,7 @@ fn floor_divide_slices_two_by_one(
     bounds_b1 = (bounds_b[0] + n // 2, bounds_b[0] + n)\\
     bounds_b0 = (bounds_b[0], bounds_b[0] + n // 2).
     """
+
     if (n & 1 == 1) or (n <= cut_off):
         var a_slice = BigUInt(a.words[bounds_a[0] : bounds_a[1]])
         var b_slice = BigUInt(b.words[bounds_b[0] : bounds_b[1]])
@@ -2059,18 +2029,6 @@ fn floor_divide_slices_two_by_one(
 
     elif b.words[-1] < 500_000_000:
         raise Error("b[-1] must be at least 500_000_000")
-
-    elif bounds_a[0] + n >= bounds_a[1]:
-        # If a3a2 is empty
-        var q = BigUInt()
-        var r = BigUInt(a.words[bounds_a[0] : bounds_a[1]])
-        return (q^, r^)
-
-    elif a.is_zero(bounds=(bounds_a[0] + n, bounds_a[1])):
-        # If a3a2 is zero
-        var q = BigUInt()
-        var r = BigUInt(a.words[bounds_a[0] : bounds_a[1]])
-        return (q^, r^)
 
     elif bounds_a[0] + n + n // 2 >= bounds_a[1]:
         # If a3 is empty

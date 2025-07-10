@@ -414,7 +414,7 @@ fn main() raises:
 
     # Case 24: Division of very large numbers
     run_benchmark_truncate_divide(
-        "Division of very large numbers (2250 digits vs 900 digits)",
+        "Division of very large numbers (250 words vs 100 words)",
         "123456789" * 250,
         "987654321" * 100,
         iterations,
