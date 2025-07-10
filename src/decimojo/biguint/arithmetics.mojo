@@ -34,7 +34,7 @@ from decimojo.rounding_mode import RoundingMode
 # absolute(x: BigUInt) -> BigUInt
 #
 # add(x1: BigUInt, x2: BigUInt) -> BigUInt
-# add_simd(x: BigUInt, y: BigUInt) -> BigUInt
+# add_slices_simd(x: BigUInt, y: BigUInt) -> BigUInt
 # add_slices(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int) -> BigUInt
 # add_inplace(x1: BigUInt, x2: BigUInt)
 # add_inplace_by_uint32(x: BigUInt, y: UInt32) -> None
@@ -45,8 +45,8 @@ from decimojo.rounding_mode import RoundingMode
 # subtract_inplace_by_uint32(x: BigUInt, y: UInt32) -> None
 #
 # multiply(x1: BigUInt, x2: BigUInt) -> BigUInt
-# multiply_slices(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int) -> BigUInt
-# multiply_karatsuba(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int, cutoff_number_of_words: Int) -> BigUInt
+# multiply_slices_school(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int) -> BigUInt
+# multiply_slices_karatsuba(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int, cutoff_number_of_words: Int) -> BigUInt
 # multiply_inplace_by_uint32(x: BigUInt, y: UInt32) -> None
 # multiply_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt
 # multiply_inplace_by_power_of_billion(mut x: BigUInt, n: Int)
@@ -64,7 +64,7 @@ from decimojo.rounding_mode import RoundingMode
 #
 # floor_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
 # ceil_modulo(x1: BigUInt, x2: BigUInt) -> BigUInt
-# divmod(x1: BigUInt, x2: BigUInt) -> Tuple[BigUInt, BigUInt]
+# floor_divide_modulo(x1: BigUInt, x2: BigUInt) -> Tuple[BigUInt, BigUInt]
 #
 # normalize_carries_lt_2_bases(x: BigUInt) -> None
 # normalize_carries_lt4_bases(x: BigUInt) -> None
@@ -143,6 +143,11 @@ fn add(x: BigUInt, y: BigUInt) -> BigUInt:
 
     Returns:
         The sum of the two unsigned integers.
+
+    Notes:
+
+    This function will consider the special cases first, and then call
+    `add_slices_simd()` to handle the addition of the two BigUInt numbers.
     """
 
     # Short circuit cases
@@ -181,23 +186,81 @@ fn add(x: BigUInt, y: BigUInt) -> BigUInt:
     # can be simplified to addition and subtraction instead of floor division
     # and modulo operations.
     # This speeds up the addition by 2x-4x for large numbers.
-    return add_simd(x, y)
+    return add_slices_simd(x, y, (0, len(x.words)), (0, len(y.words)))
 
 
-fn add_simd(x: BigUInt, y: BigUInt) -> BigUInt:
-    """Adds two BigUInt numbers using SIMD operations.
+fn add_slices(
+    x: BigUInt, y: BigUInt, bounds_x: Tuple[Int, Int], bounds_y: Tuple[Int, Int]
+) -> BigUInt:
+    """Adds two BigUInt slices using the school method.
 
     Args:
         x: The first BigUInt operand (first summand).
         y: The second BigUInt operand (second summand).
+        bounds_x: A tuple containing the start and end indices of the slice in x.
+        bounds_y: A tuple containing the start and end indices of the slice in y.
+
+    Returns:
+        A new BigUInt containing the sum of the two slices.
+
+    Notes:
+
+    This function will consider the special cases first, and then call
+    `add_slices_simd()` to handle the addition of the two BigUInt slices.
+    """
+
+    n_words_x_slice = bounds_x[1] - bounds_x[0]
+    n_words_y_slice = bounds_y[1] - bounds_y[0]
+
+    # Short circuit cases
+    if n_words_x_slice == 1:
+        if x.words[bounds_x[1]] == 0:
+            # x slice is zero, return y slice
+            return BigUInt(words=y.words[bounds_y[0] : bounds_y[1]])
+        elif n_words_y_slice == 1:
+            # If both numbers are single-word, we can handle them with UInt32
+            return BigUInt.from_uint32(
+                x.words[bounds_x[0]] + y.words[bounds_y[0]]
+            )
+        else:
+            # If y slice is longer
+            var result = BigUInt(words=y.words[bounds_y[0] : bounds_y[1]])
+            add_inplace_by_uint32(result, x.words[bounds_x[0]])
+            return result^
+    if n_words_y_slice == 1:
+        if y.words[bounds_y[0]] == 0:
+            return BigUInt(words=x.words[bounds_x[0] : bounds_x[1]])
+        else:
+            # If x slice is longer
+            var result = BigUInt(words=x.words[bounds_x[0] : bounds_x[1]])
+            add_inplace_by_uint32(result, y.words[bounds_y[0]])
+            return result^
+
+    # Normal cases
+    # Use SIMD operations for addition if both numbers are large enough.
+    return add_slices_simd(x, y, bounds_x, bounds_y)
+
+
+fn add_slices_simd(
+    x: BigUInt, y: BigUInt, bounds_x: Tuple[Int, Int], bounds_y: Tuple[Int, Int]
+) -> BigUInt:
+    """Adds two BigUInt slices using SIMD operations.
+
+    Args:
+        x: The first BigUInt operand (first summand).
+        y: The second BigUInt operand (second summand).
+        bounds_x: A tuple containing the start and end indices of the slice in x.
+        bounds_y: A tuple containing the start and end indices of the slice in y.
 
     Returns:
         A new BigUInt containing the sum of the two numbers.
 
     Notes:
 
-    This function uses SIMD operations to add the words of the two BigUInt
-    numbers in parallel. It is optimized for performance and can handle
+    **Special cases are not handled here**. Please handle them in the caller.
+
+    This function uses **SIMD operations** to add the words of the two BigUInt
+    slices in parallel. It is optimized for performance and can handle
     large numbers efficiently.
 
     After the parallel addition, it normalizes the carries to ensure that
@@ -207,157 +270,63 @@ fn add_simd(x: BigUInt, y: BigUInt) -> BigUInt:
     faster than the school method for large numbers, as the normalized carries
     can be simplified to addition and subtraction instead of floor division
     and modulo operations.
+
+    This function conducts addtion of the two **BigUInt slices**. It avoids
+    creating copies of the BigUInt objects by using the indices to access
+    the words directly. This is useful for performance in cases where the
+    BigUInt objects are large and we only need to add a part of them.
     """
+    var n_words_x_slice = bounds_x[1] - bounds_x[0]
+    var n_words_y_slice = bounds_y[1] - bounds_y[0]
+
     var words = List[UInt32](
-        unsafe_uninit_length=max(len(x.words), len(y.words))
+        unsafe_uninit_length=max(n_words_x_slice, n_words_y_slice)
     )
 
     @parameter
     fn vector_add[simd_width: Int](i: Int):
         words.data.store[width=simd_width](
             i,
-            x.words.data.load[width=simd_width](i)
-            + y.words.data.load[width=simd_width](i),
+            x.words.data.load[width=simd_width](i + bounds_x[0])
+            + y.words.data.load[width=simd_width](i + bounds_y[0]),
         )
 
-    vectorize[vector_add, BigUInt.VECTOR_WIDTH](min(len(x.words), len(y.words)))
+    vectorize[vector_add, BigUInt.VECTOR_WIDTH](
+        min(n_words_x_slice, n_words_y_slice)
+    )
 
     var longer: Pointer[BigUInt, __origin_of(x, y)]
-    var shorter: Pointer[BigUInt, __origin_of(x, y)]
+    var n_words_longer_slice: Int
+    var n_words_shorter_slice: Int
+    var longer_start: Int
 
-    if len(x.words) >= len(y.words):
+    if n_words_x_slice >= n_words_y_slice:
         longer = Pointer[BigUInt, __origin_of(x, y)](to=x)
-        shorter = Pointer[BigUInt, __origin_of(x, y)](to=y)
+        n_words_longer_slice = n_words_x_slice
+        n_words_shorter_slice = n_words_y_slice
+        longer_start = bounds_x[0]
     else:
         longer = Pointer[BigUInt, __origin_of(x, y)](to=y)
-        shorter = Pointer[BigUInt, __origin_of(x, y)](to=x)
+        n_words_longer_slice = n_words_y_slice
+        n_words_shorter_slice = n_words_x_slice
+        longer_start = bounds_y[0]
 
     @parameter
     fn vector_copy_rest_from_longer[simd_width: Int](i: Int):
         words.data.store[width=simd_width](
-            len(shorter[].words) + i,
+            n_words_shorter_slice + i,
             longer[].words.data.load[width=simd_width](
-                len(shorter[].words) + i
+                longer_start + n_words_shorter_slice + i
             ),
         )
 
     vectorize[vector_copy_rest_from_longer, BigUInt.VECTOR_WIDTH](
-        len(longer[].words) - len(shorter[].words)
+        n_words_longer_slice - n_words_shorter_slice
     )
 
     var result = BigUInt(words=words^)
     normalize_carries_lt_2_bases(result)
     return result^
-
-
-fn add_slices(
-    x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int
-) -> BigUInt:
-    """Adds two BigUInt slices using the school method.
-
-    Args:
-        x: The first BigUInt operand (first summand).
-        y: The second BigUInt operand (second summand).
-        start_x: The starting index of x to consider.
-        end_x: The ending index of x to consider.
-        start_y: The starting index of y to consider.
-        end_y: The ending index of y to consider.
-
-    Returns:
-        A new BigUInt containing the sum of the two slices.
-
-    Notes:
-        This function conducts addtion of the two BigUInt slices. It avoids
-        creating copies of the BigUInt objects by using the indices to access
-        the words directly. This is useful for performance in cases where the
-        BigUInt objects are large and we only need to add a part of them.
-    """
-
-    n_words_x_slice = end_x - start_x
-    n_words_y_slice = end_y - start_y
-    min_n_words = min(n_words_x_slice, n_words_y_slice)
-    max_n_words = max(n_words_x_slice, n_words_y_slice)
-
-    # Short circuit cases
-    if n_words_x_slice == 1:
-        if x.words[start_x] == 0:
-            # x slice is zero, return y slice
-            return BigUInt(words=y.words[start_y:end_y])
-        elif n_words_y_slice == 1:
-            # If both numbers are single-word, we can handle them with UInt32
-            return BigUInt.from_uint32(x.words[start_x] + y.words[start_y])
-        else:
-            # If y slice is longer
-            var result = BigUInt(words=y.words[start_y:end_y])
-            add_inplace_by_uint32(result, x.words[start_x])
-            return result^
-    if n_words_y_slice == 1:
-        if y.words[start_y] == 0:
-            return BigUInt(words=x.words[start_x:end_x])
-        else:
-            # If x slice is longer
-            var result = BigUInt(words=x.words[start_x:end_x])
-            add_inplace_by_uint32(result, y.words[start_y])
-            return result^
-
-    # Normal cases
-    # The result will have at most one more word than the longer operand
-    var words = List[UInt32](capacity=max(n_words_x_slice, n_words_y_slice) + 1)
-    var carry: UInt32 = 0
-    var sum_of_words: UInt32
-
-    var longer: Pointer[BigUInt, __origin_of(x, y)]
-    var shorter: Pointer[BigUInt, __origin_of(x, y)]
-    var start_longer: Int
-    var start_shorter: Int
-
-    if n_words_x_slice >= n_words_y_slice:
-        longer = Pointer[BigUInt, __origin_of(x, y)](to=x)
-        shorter = Pointer[BigUInt, __origin_of(x, y)](to=y)
-        start_longer = start_x
-        start_shorter = start_y
-    else:
-        longer = Pointer[BigUInt, __origin_of(x, y)](to=y)
-        shorter = Pointer[BigUInt, __origin_of(x, y)](to=x)
-        start_longer = start_y
-        start_shorter = start_x
-
-    for ith in range(min_n_words):
-        # Add the words from both numbers
-        sum_of_words = (
-            carry
-            + longer[].words[start_longer + ith]
-            + shorter[].words[start_shorter + ith]
-        )
-        # Compute new word and carry
-        carry = sum_of_words // BigUInt.BASE
-        words.append(sum_of_words % BigUInt.BASE)
-
-    # If the numbers are of the same words, this loop will be skipped
-    var no_carry_idx: Int = max_n_words
-    for ith in range(
-        min_n_words,
-        max_n_words,
-    ):
-        # If carry is zero, we can just append the word from the longer number
-        if carry == 0:
-            no_carry_idx = ith
-            break
-        else:
-            sum_of_words = carry + longer[].words[start_longer + ith]
-            # Compute new word and carry
-            carry = sum_of_words // BigUInt.BASE
-            words.append(sum_of_words % BigUInt.BASE)
-
-    # If we reached here, it means we have no carry from no_carry_idx
-    for ith in range(no_carry_idx, max_n_words):
-        words.append(longer[].words[start_longer + ith])
-
-    # Handle final carry if it exists
-    if carry > 0:
-        words.append(carry)
-
-    return BigUInt(words=words^)
 
 
 fn add_inplace(mut x: BigUInt, y: BigUInt) -> None:
@@ -396,6 +365,52 @@ fn add_inplace(mut x: BigUInt, y: BigUInt) -> None:
         )
 
     vectorize[vector_add, BigUInt.VECTOR_WIDTH](len(y.words))
+
+    # Normalize carries after addition
+    normalize_carries_lt_2_bases(x)
+
+    return
+
+
+fn add_inplace_by_slice(
+    mut x: BigUInt, y: BigUInt, bounds_y: Tuple[Int, Int]
+) -> None:
+    """Increments a BigUInt number in-place by another BigUInt slice.
+
+    Args:
+        x: The first unsigned integer operand.
+        y: The second unsigned integer operand.
+        bounds_y: A tuple containing the start and end indices of the slice in y.
+    """
+
+    # Short circuit cases
+    if x.is_zero():
+        x.words = BigUInt(
+            y.words[bounds_y[0] : bounds_y[1]]
+        ).words  # Copy the words from y
+        return
+    if y.is_zero(bounds=bounds_y):
+        return
+
+    var n_words_y_slice = bounds_y[1] - bounds_y[0]
+
+    if n_words_y_slice == 1:
+        add_inplace_by_uint32(x, y.words[bounds_y[0]])
+        return
+
+    # Normal cases
+    if len(x.words) < n_words_y_slice:
+        x.words.resize(new_size=n_words_y_slice, value=UInt32(0))
+
+    @parameter
+    fn vector_add[simd_width: Int](i: Int):
+        x.words.data.store[width=simd_width](
+            i,
+            x.words.data.load[width=simd_width](i)
+            + y.words.data.load[width=simd_width](i + bounds_y[0]),
+        )
+
+    vectorize[vector_add, BigUInt.VECTOR_WIDTH](n_words_y_slice)
 
     # Normalize carries after addition
     normalize_carries_lt_2_bases(x)
@@ -623,43 +638,6 @@ fn subtract_inplace(mut x: BigUInt, y: BigUInt) raises -> None:
 
     return
 
-    # Yuhao ZHU:
-    # Below is a school method for subtraction.
-    # You go from the least significant word to the most significant word.
-    # I keep it here for reference.
-    # In case the behavior of the underflow of the SIMD subtraction changes
-    # in the future, we can fall back to this method.
-
-    # var borrow: UInt32 = 0  # Can either be 0 or 1
-
-    # for i in range(len(y.words)):
-    #     if x.words[i] < borrow + y.words[i]:
-    #         x.words[i] += BigUInt.BASE
-    #         x.words[i] -= borrow + y.words[i]
-    #         borrow = 1  # Set borrow for the next word
-    #     else:
-    #         x.words[i] -= borrow + y.words[i]
-    #         borrow = 0  # No borrow for the next word
-
-    # # If x has more words than y, we need to handle the remaining words
-
-    # if borrow == 0:
-    #     # If there is no borrow, we can stop early
-    #     x.remove_leading_empty_words()
-    #     return
-
-    # else:
-    #     # At this stage, borrow can only be 0 or 1
-    #     for i in range(len(y.words), len(x.words)):
-    #         if x.words[i] >= borrow:
-    #             x.words[i] -= borrow
-    #             break  # No more borrow, we can stop early
-    #         else:  # x.words[i] == 0, borrow == 1
-    #             x.words[i] = BigUInt.BASE - borrow
-
-    #     x.remove_leading_empty_words()
-    #     return
-
 
 fn subtract_inplace_no_check(mut x: BigUInt, y: BigUInt) -> None:
     """Subtracts y from x in-place without checking for underflow.
@@ -718,6 +696,7 @@ fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
         to the cutoff number, the school multiplication algorithm is used.
     """
 
+    # TODO: Make this a global constant
     alias CUTOFF_KARATSUBA: Int = 64
     """The cutoff number of words for using Karatsuba multiplication."""
 
@@ -752,59 +731,106 @@ fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
     # Use school multiplication for small numbers
     var max_words = max(len(x.words), len(y.words))
     if max_words <= CUTOFF_KARATSUBA:
-        # return multiply_slices (x, y)
-        return multiply_slices(x, y, 0, len(x.words), 0, len(y.words))
-        # multiply_slices can also takes in x, y, and indices
+        # return multiply_slices_school (x, y)
+        return multiply_slices_school(
+            x, y, (0, len(x.words)), (0, len(y.words))
+        )
+        # multiply_slices_school can also takes in x, y, and indices
 
     # CASE 2
     # Use Karatsuba multiplication for larger numbers
     else:
-        return multiply_karatsuba(
-            x, y, 0, len(x.words), 0, len(y.words), CUTOFF_KARATSUBA
+        return multiply_slices_karatsuba(
+            x, y, (0, len(x.words)), (0, len(y.words)), CUTOFF_KARATSUBA
         )
 
 
 fn multiply_slices(
+    x: BigUInt,
+    y: BigUInt,
+    bounds_x: Tuple[Int, Int],
+    bounds_y: Tuple[Int, Int],
+) -> BigUInt:
+    """Returns the product of two BigUInt numbers.
+
+    Args:
+        x: The first BigUInt operand (multiplicand).
+        y: The second BigUInt operand (multiplier).
+        bounds_x: A tuple containing the start and end indices of the slice in x.
+        bounds_y: A tuple containing the start and end indices of the slice in y.
+
+    Returns:
+        The product of the two BigUInt numbers.
+
+    Notes:
+        This function will adopts the Karatsuba multiplication algorithm
+        for larger numbers, and the school multiplication algorithm for smaller
+        numbers. The cutoff number of words is used to determine which algorithm
+        to use. If the number of words in either operand is less than or equal
+        to the cutoff number, the school multiplication algorithm is used.
+    """
+
+    # TODO: Make this a global constant
+    alias CUTOFF_KARATSUBA: Int = 64
+    """The cutoff number of words for using Karatsuba multiplication."""
+
+    n_words_x_slice = bounds_x[1] - bounds_x[0]
+    n_words_y_slice = bounds_y[1] - bounds_y[0]
+
+    # CASE 1
+    # The allocation cost is too high for small numbers to use Karatsuba
+    # Use school multiplication for small numbers
+    var max_words = max(n_words_x_slice, n_words_y_slice)
+    if max_words <= CUTOFF_KARATSUBA:
+        # return multiply_slices_school (x, y)
+        return multiply_slices_school(x, y, bounds_x, bounds_y)
+        # multiply_slices_school can also takes in x, y, and indices
+
+    # CASE 2
+    # Use Karatsuba multiplication for larger numbers
+    else:
+        return multiply_slices_karatsuba(
+            x, y, bounds_x, bounds_y, CUTOFF_KARATSUBA
+        )
+
+
+fn multiply_slices_school(
     read x: BigUInt,
     read y: BigUInt,
-    start_x: Int,
-    end_x: Int,
-    start_y: Int,
-    end_y: Int,
+    bounds_x: Tuple[Int, Int],
+    bounds_y: Tuple[Int, Int],
 ) -> BigUInt:
     """Multiplies two BigUInt slices using the school method.
 
     Args:
         x: The first BigUInt operand (multiplicand).
         y: The second BigUInt operand (multiplier).
-        start_x: The starting index of x to consider.
-        end_x: The ending index of x to consider.
-        start_y: The starting index of y to consider.
-        end_y: The ending index of y to consider.
+        bounds_x: A tuple containing the start and end indices of the slice in x.
+        bounds_y: A tuple containing the start and end indices of the slice in y.
     """
 
-    n_words_x_slice = end_x - start_x
-    n_words_y_slice = end_y - start_y
+    n_words_x_slice = bounds_x[1] - bounds_x[0]
+    n_words_y_slice = bounds_y[1] - bounds_y[0]
 
     # CASE: One of the operands is zero or one
     if n_words_x_slice == 1:
-        var x_word = x.words[start_x]
+        var x_word = x.words[bounds_x[0]]
         if x_word == 0:
             return BigUInt(UInt32(0))
         elif x_word == 1:
-            return BigUInt(words=y.words[start_y:end_y])
+            return BigUInt(words=y.words[bounds_y[0] : bounds_y[1]])
         else:
-            var result = BigUInt(words=y.words[start_y:end_y])
+            var result = BigUInt(words=y.words[bounds_y[0] : bounds_y[1]])
             multiply_inplace_by_uint32(result, x_word)
             return result^
     if n_words_y_slice == 1:
-        var y_word = y.words[start_y]
+        var y_word = y.words[bounds_y[0]]
         if y_word == 0:
             return BigUInt(UInt32(0))
         elif y_word == 1:
-            return BigUInt(words=x.words[start_x:end_x])
+            return BigUInt(words=x.words[bounds_x[0] : bounds_x[1]])
         else:
-            var result = BigUInt(words=x.words[start_x:end_x])
+            var result = BigUInt(words=x.words[bounds_x[0] : bounds_x[1]])
             multiply_inplace_by_uint32(result, y_word)
             return result^
 
@@ -826,7 +852,7 @@ fn multiply_slices(
     var carry: UInt64
     for i in range(n_words_x_slice):
         # Skip if the word is zero
-        if x.words[start_x + i] == 0:
+        if x.words[bounds_x[0] + i] == 0:
             continue
 
         carry = UInt64(0)
@@ -836,7 +862,8 @@ fn multiply_slices(
             # plus the carry from the previous multiplication
             # plus the value already at this position in the result
             var product = (
-                UInt64(x.words[start_x + i]) * UInt64(y.words[start_y + j])
+                UInt64(x.words[bounds_x[0] + i])
+                * UInt64(y.words[bounds_y[0] + j])
                 + carry
                 + UInt64(words[i + j])
             )
@@ -855,13 +882,11 @@ fn multiply_slices(
     return result^
 
 
-fn multiply_karatsuba(
+fn multiply_slices_karatsuba(
     read x: BigUInt,
     read y: BigUInt,
-    start_x: Int,
-    end_x: Int,
-    start_y: Int,
-    end_y: Int,
+    bounds_x: Tuple[Int, Int],
+    bounds_y: Tuple[Int, Int],
     cutoff_number_of_words: Int,
 ) -> BigUInt:
     """Multiplies two BigUInt numbers using the Karatsuba algorithm.
@@ -869,10 +894,8 @@ fn multiply_karatsuba(
     Args:
         x: The first BigUInt operand (multiplicand).
         y: The second BigUInt operand (multiplier).
-        start_x: The starting index of x to consider.
-        end_x: The ending index of x to consider.
-        start_y: The starting index of y to consider.
-        end_y: The ending index of y to consider.
+        bounds_x: A tuple containing the start and end indices of the slice in x.
+        bounds_y: A tuple containing the start and end indices of the slice in y.
         cutoff_number_of_words: The cutoff number of words for using Karatsuba
             multiplication. If the number of words in either operand is less
             than or equal to this value, the school method is used instead.
@@ -888,24 +911,24 @@ fn multiply_karatsuba(
 
     # Number of words in the slice 1: end_x - start_x
     # Number of words in the slice 2: end_y - start_y
-    var n_words_x_slice = end_x - start_x
-    var n_words_y_slice = end_y - start_y
+    var n_words_x_slice = bounds_x[1] - bounds_x[0]
+    var n_words_y_slice = bounds_y[1] - bounds_y[0]
 
     # CASE 1:
     # If one number is only one-word long
     # we can use school multiplication because this is only one loop
     # No need to split the long number into two parts
     if n_words_x_slice == 1 or n_words_y_slice == 1:
-        return multiply_slices(x, y, start_x, end_x, start_y, end_y)
+        return multiply_slices_school(x, y, bounds_x, bounds_y)
 
     # CASE 2:
     # The allocation cost is too high for small numbers to use Karatsuba
     # Use school multiplication for small numbers
     var n_words_max = max(n_words_x_slice, n_words_y_slice)
     if n_words_max <= cutoff_number_of_words:
-        # return multiply_slices (x, y)
-        return multiply_slices(x, y, start_x, end_x, start_y, end_y)
-        # multiply_slices can also takes in x, y, and indices
+        # return multiply_slices_school (x, y)
+        return multiply_slices_school(x, y, bounds_x, bounds_y)
+        # multiply_slices_school can also takes in x, y, and indices
 
     # Otherwise, use Karatsuba
 
@@ -925,11 +948,19 @@ fn multiply_karatsuba(
         # x1 = 0
         # y0 = y_slice.words[:m]
         # y1 = y_slice.words[m:]
-        z0 = multiply_karatsuba(
-            x, y, start_x, end_x, start_y, start_y + m, cutoff_number_of_words
+        z0 = multiply_slices_karatsuba(
+            x,
+            y,
+            bounds_x,
+            (bounds_y[0], bounds_y[0] + m),
+            cutoff_number_of_words,
         )
-        z1 = multiply_karatsuba(
-            x, y, start_x, end_x, start_y + m, end_y, cutoff_number_of_words
+        z1 = multiply_slices_karatsuba(
+            x,
+            y,
+            bounds_x,
+            (bounds_y[0] + m, bounds_y[1]),
+            cutoff_number_of_words,
         )
         # z2 = 0
 
@@ -945,11 +976,19 @@ fn multiply_karatsuba(
         # x1 = x_slice.words[m:]
         # y0 = y_slice
         # y1 = 0
-        z0 = multiply_karatsuba(
-            x, y, start_x, start_x + m, start_y, end_y, cutoff_number_of_words
+        z0 = multiply_slices_karatsuba(
+            x,
+            y,
+            (bounds_x[0], bounds_x[0] + m),
+            bounds_y,
+            cutoff_number_of_words,
         )
-        z1 = multiply_karatsuba(
-            x, y, start_x + m, end_x, start_y, end_y, cutoff_number_of_words
+        z1 = multiply_slices_karatsuba(
+            x,
+            y,
+            (bounds_x[0] + m, bounds_x[1]),
+            bounds_y,
+            cutoff_number_of_words,
         )
         # z2 = 0
         z1.multiply_inplace_by_power_of_billion(m)
@@ -965,35 +1004,41 @@ fn multiply_karatsuba(
         # y0 = y_slice.words[0:m]
         # y1 = y_slice.words[m:]
 
-        # z0 = multiply_karatsuba(x0, y0)
-        z0 = multiply_karatsuba(
+        # z0 = multiply_slices_karatsuba(x0, y0)
+        z0 = multiply_slices_karatsuba(
             x,
             y,
-            start_x,
-            start_x + m,
-            start_y,
-            start_y + m,
+            (bounds_x[0], bounds_x[0] + m),
+            (bounds_y[0], bounds_y[0] + m),
             cutoff_number_of_words,
         )
-        # z2 = multiply_karatsuba(x1, y1)
-        z2 = multiply_karatsuba(
-            x, y, start_x + m, end_x, start_y + m, end_y, cutoff_number_of_words
+        # z2 = multiply_slices_karatsuba(x1, y1)
+        z2 = multiply_slices_karatsuba(
+            x,
+            y,
+            (bounds_x[0] + m, bounds_x[1]),
+            (bounds_y[0] + m, bounds_y[1]),
+            cutoff_number_of_words,
         )
-        # z3 = multiply_karatsuba(x0 + x1, y0 + y1)
+        # z3 = multiply_slices_karatsuba(x0 + x1, y0 + y1)
         # z1 = z3 - z2 -z0
         var x0_plus_x1 = add_slices(
-            x, x, start_x, start_x + m, start_x + m, end_x
+            x,
+            x,
+            (bounds_x[0], bounds_x[0] + m),
+            (bounds_x[0] + m, bounds_x[1]),
         )
         var y0_plus_y1 = add_slices(
-            y, y, start_y, start_y + m, start_y + m, end_y
+            y,
+            y,
+            (bounds_y[0], bounds_y[0] + m),
+            (bounds_y[0] + m, bounds_y[1]),
         )
-        z1 = multiply_karatsuba(
+        z1 = multiply_slices_karatsuba(
             x0_plus_x1,
             y0_plus_y1,
-            0,
-            len(x0_plus_x1.words),
-            0,
-            len(y0_plus_y1.words),
+            (0, len(x0_plus_x1.words)),
+            (0, len(y0_plus_y1.words)),
             cutoff_number_of_words,
         )
 
@@ -1739,7 +1784,7 @@ fn floor_divide_by_power_of_ten(x: BigUInt, n: Int) raises -> BigUInt:
 
 
 fn floor_divide_burnikel_ziegler(
-    a: BigUInt, b: BigUInt, cut_off: Int = 16
+    a: BigUInt, b: BigUInt, cut_off: Int
 ) raises -> BigUInt:
     """Divides BigUInt using the Burnikel-Ziegler algorithm.
 
@@ -1797,7 +1842,7 @@ fn floor_divide_burnikel_ziegler(
     var gap_ratio: UInt32
     if normalized_b.words[-1] >= 500_000_000:  # Already normalized
         gap_ratio = 1
-    elif normalized_b.words[-1] >= 125_000_000:  # 2x is enough
+    elif normalized_b.words[-1] >= 250_000_000:  # 2x is enough
         gap_ratio = 2
     else:  # The most significant word is in [100_000_000, 125_000_000)
         gap_ratio = BigUInt.BASE_MAX // normalized_b.words[-1]
@@ -1824,9 +1869,21 @@ fn floor_divide_burnikel_ziegler(
 
     var z = BigUInt(normalized_a.words[(t - 2) * n : t * n])
     var q = BigUInt()
+
     for i in range(t - 2, -1, -1):
-        var q_i, r = floor_divide_two_by_one(z, normalized_b, n, cut_off)
-        # print(z, "//", normalized_b, "=", q_i, "mod", r)
+        # The below function is the recursive division algorithm.
+        # var q_i, r = floor_divide_two_by_one(z, normalized_b, n, cut_off)
+
+        # The below function is the recursive division algorithm but works
+        # with slices of the dividend and divisor.
+        var q_i, r = floor_divide_slices_two_by_one(
+            z,
+            normalized_b,
+            bounds_a=(0, len(z.words)),
+            bounds_b=(0, len(normalized_b.words)),
+            n=n,
+            cut_off=cut_off,
+        )
         if i == t - 2:
             q = q_i
         else:
@@ -1838,9 +1895,72 @@ fn floor_divide_burnikel_ziegler(
             decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
                 r, n
             )
-            z = r + BigUInt(normalized_a.words[(i - 1) * n : i * n])
+            # z = r + a[(i - 1) * n : i * n]
+            #   = r + BigUInt(normalized_a.words[(i - 1) * n : i * n])
+            z = add_slices(
+                r,
+                normalized_a,
+                bounds_x=(0, len(r.words)),
+                bounds_y=((i - 1) * n, i * n),
+            )
 
     return q
+
+
+fn floor_divide_two_by_one(
+    a: BigUInt, b: BigUInt, n: Int, cut_off: Int
+) raises -> Tuple[BigUInt, BigUInt]:
+    """Divides a BigUInt by another BigUInt using a recursive approach.
+    The divisor has n words and the dividend has 2n words.
+
+    Args:
+        a: The dividend as a BigUInt.
+        b: The divisor as a BigUInt. The most significant word must be at least
+           500_000_000.
+        n: The number of words in the divisor.
+        cut_off: The minimum number of words for the recursive division.
+
+    Returns:
+        A tuple containing the quotient and the remainder as BigUInt.
+
+    Notes:
+
+    You need to ensure that n is even to continue with the algorithm.
+    Otherwise, it will use the schoolbook division algorithm.
+    """
+    if (n & 1 == 1) or (n <= cut_off):
+        var q = floor_divide_school(a, b)
+        var r = a - q * b
+        return (q^, r^)
+
+    if b.words[-1] < 500_000_000:
+        raise Error("b[-1] must be at least 500_000_000")
+
+    else:
+        var a0 = BigUInt(a.words[0 : n // 2])
+        var a1 = BigUInt(a.words[n // 2 : n])
+        var a2 = BigUInt(a.words[n : n + n // 2])
+        var a3 = BigUInt(a.words[n + n // 2 : n + n])
+
+        var b0 = BigUInt(b.words[0 : n // 2])
+        var b1 = BigUInt(b.words[n // 2 : n])
+
+        var q, r = floor_divide_three_by_two(
+            a3, a2, a1, b1, b0, n // 2, cut_off
+        )  # q is q1
+        var r0 = BigUInt(r.words[0 : n // 2])
+        var r1 = BigUInt(r.words[n // 2 : n])
+        var q0, s = floor_divide_three_by_two(
+            r1, r0, a0, b1, b0, n // 2, cut_off
+        )
+
+        # q -> q1q0
+        decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
+            q, n // 2
+        )
+        q += q0
+
+        return (q^, s^)
 
 
 fn floor_divide_three_by_two(
@@ -1896,19 +2016,33 @@ fn floor_divide_three_by_two(
             r += b
 
     r -= d
-    return (q, r)
+    return (q^, r^)
 
 
-fn floor_divide_two_by_one(
-    a: BigUInt, b: BigUInt, n: Int, cut_off: Int
+# Yuhao ZHU:
+# The following two functions are optimized versions of the
+# `floor_divide_two_by_one` and `floor_divide_three_by_two` functions.
+# They record the boundaries of the slices of the dividend and divisor
+# to avoid unnecessary recursive slicing and copying of the BigUInt objects.
+# TODO: bounds_a[1] and bounds_b[1] are not needed if the lengths of the
+# bounds are always n by design.
+fn floor_divide_slices_two_by_one(
+    a: BigUInt,
+    b: BigUInt,
+    bounds_a: Tuple[Int, Int],
+    bounds_b: Tuple[Int, Int],
+    n: Int,
+    cut_off: Int,
 ) raises -> Tuple[BigUInt, BigUInt]:
     """Divides a BigUInt by another BigUInt using a recursive approach.
     The divisor has n words and the dividend has 2n words.
 
     Args:
-        a: The dividend as a BigUInt.
-        b: The divisor as a BigUInt. The most significant word must be at least
-           500_000_000.
+        a: The dividend.
+        b: The divisor.
+        bounds_a: The range of words in the dividend to consider [start, end).
+        bounds_b: The range of words in the divisor to consider [start, end).
+            The most significant word must be at least 500_000_000.
         n: The number of words in the divisor.
         cut_off: The minimum number of words for the recursive division.
 
@@ -1919,43 +2053,144 @@ fn floor_divide_two_by_one(
 
     You need to ensure that n is even to continue with the algorithm.
     Otherwise, it will use the schoolbook division algorithm.
-    """
-    if (n & 1 == 1) or (n <= cut_off):
-        var q = floor_divide_school(a, b)
-        var r = a - q * b
-        return (q^, r^)
 
-    if b.words[-1] < 500_000_000:
+    a_slice ~ [a0, a1, a2, a3] ~ a3a2a1a0 is a BigUInt with 2n words (n//2 per part).\\
+    b_slice ~ [b0, b1] ~ b1b0 is a BigUInt with n words (n//2 per part).\\
+    bounds_a3 = (bounds_a[0] + n + n // 2, bounds_a[0] + 2 * n)\\
+    bounds_a2 = (bounds_a[0] + n, bounds_a[0] + n + n // 2)\\
+    bounds_a1 = (bounds_a[0] + n // 2, bounds_a[0] + n)\\
+    bounds_a0 = (bounds_a[0], bounds_a[0] + n // 2)\\
+    bounds_b1 = (bounds_b[0] + n // 2, bounds_b[0] + n)\\
+    bounds_b0 = (bounds_b[0], bounds_b[0] + n // 2).
+    """
+
+    if (n & 1 == 1) or (n <= cut_off):
+        var a_slice = BigUInt(a.words[bounds_a[0] : bounds_a[1]])
+        var b_slice = BigUInt(b.words[bounds_b[0] : bounds_b[1]])
+
+        var q = floor_divide_school(a_slice, b_slice)
+        # r = a_slice - q * b_slice
+        a_slice -= multiply_slices(q, b, (0, len(q.words)), bounds_b)
+        return (q^, a_slice^)
+
+    elif b.words[-1] < 500_000_000:
         raise Error("b[-1] must be at least 500_000_000")
 
-    # b_modified = b
-    # decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
-    #     b_modified, n
-    # )
-    # if a.compare(b_modified) >= 0:
-    #     raise Error("a must be less than b * 10^18")
+    elif bounds_a[0] + n + n // 2 >= bounds_a[1]:
+        # If a3 is empty
+        # We just need to use three-by-two division once: a2a1a0 // b1b0
+        var q, r = floor_divide_slices_three_by_two(
+            a, b, bounds_a, bounds_b, n // 2, cut_off
+        )
+        return (q^, r^)
+
+    elif a.is_zero(bounds=(bounds_a[0] + n + n // 2, bounds_a[1])):
+        # If a3 is zero
+        # We just need to use three-by-two division once: a2a1a0 // b1b0
+        var q, r = floor_divide_slices_three_by_two(
+            a,
+            b,
+            (bounds_a[0], bounds_a[0] + n + n // 2),
+            bounds_b,
+            n // 2,
+            cut_off,
+        )
+        return (q^, r^)
 
     else:
-        a0 = BigUInt(a.words[0 : n // 2])
-        a1 = BigUInt(a.words[n // 2 : n])
-        a2 = BigUInt(a.words[n : n + n // 2])
-        a3 = BigUInt(a.words[n + n // 2 : n + n])
+        var bounds_a1a3 = (bounds_a[0] + n // 2, bounds_a[1])
 
-        b0 = BigUInt(b.words[0 : n // 2])
-        b1 = BigUInt(b.words[n // 2 : n])
+        # We use the most significant three parts of the dividend
+        # a3a2a1 // b1b0
+        var q, r = floor_divide_slices_three_by_two(
+            a, b, bounds_a1a3, bounds_b, n // 2, cut_off
+        )
 
-        q1, r = floor_divide_three_by_two(a3, a2, a1, b1, b0, n // 2, cut_off)
-        r0 = BigUInt(r.words[0 : n // 2])
-        r1 = BigUInt(r.words[n // 2 : n])
-        q0, s = floor_divide_three_by_two(r1, r0, a0, b1, b0, n // 2, cut_off)
+        multiply_inplace_by_power_of_billion(r, n // 2)
+        add_inplace_by_slice(r, a, (bounds_a[0], bounds_a[0] + n // 2))
+        var q0, s = floor_divide_slices_three_by_two(
+            r, b, (0, len(r.words)), bounds_b, n // 2, cut_off
+        )
 
-        q = q1
+        # q -> q1q0
         decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
             q, n // 2
         )
         q += q0
 
-    return (q, s)
+        return (q^, s^)
+
+
+fn floor_divide_slices_three_by_two(
+    a: BigUInt,
+    b: BigUInt,
+    bounds_a: Tuple[Int, Int],
+    bounds_b: Tuple[Int, Int],
+    n: Int,
+    cut_off: Int,
+) raises -> Tuple[BigUInt, BigUInt]:
+    """Divides a 3n-word BigUInt slice by a 2n-word BigUInt slice.
+
+    Args:
+        a: The dividend.
+        b: The divisor.
+        bounds_a: The range of words in the dividend to consider [start, end).
+        bounds_b: The range of words in the divisor to consider [start, end).
+        n: The number of words in each part of the dividend and divisor.
+        cut_off: The minimum number of words for the recursive division.
+
+    Returns:
+        A tuple containing the quotient and the remainder as BigUInt.
+
+    Notes:
+
+    a_slice ~ [a0, a1, a2] ~ a2a1a0 is a BigUInt with 3n words.\\
+    b_slice ~ [b0, b1] ~ b1b0 is a BigUInt with 2n words.\\
+    bounds_a2 = (bounds_a[0] + 2 * n, bounds_a[0] + 3 * n)\\
+    bounds_a1 = (bounds_a[0] + n, bounds_a[0] + 2 * n)\\
+    bounds_a0 = (bounds_a[0], bounds_a[0] + n)\\
+    bounds_b1 = (bounds_b[0] + n, bounds_b[0] + 2 * n)\\
+    bounds_b0 = (bounds_b[0], bounds_b[0] + n).
+    """
+
+    var bounds_a2 = (bounds_a[0] + 2 * n, bounds_a[1])
+    var bounds_a1 = (bounds_a[0] + n, bounds_a[0] + 2 * n)
+    var bounds_a0 = (bounds_a[0], bounds_a[0] + n)
+    var bounds_b1 = (bounds_b[0] + n, bounds_b[1])
+    var bounds_b0 = (bounds_b[0], bounds_b[0] + n)
+
+    var bounds_a2a1: Tuple[Int, Int]
+    # If a2 is empty or zero, we can use a1 directly
+    if bounds_a2[0] >= bounds_a[1]:
+        bounds_a2a1 = bounds_a1
+        # print("bounds_a2a1 3-by-2: a2 is empty")
+    elif a.is_zero(bounds=bounds_a2):
+        bounds_a2a1 = bounds_a1
+        # print("bounds_a2a1 3-by-2: a2 is zero")
+    else:
+        bounds_a2a1 = (bounds_a1[0], bounds_a[1])
+
+    # var q, c = floor_divide_two_by_one(a2a1, b1, n, cut_off)
+    q, c = floor_divide_slices_two_by_one(
+        a, b, bounds_a2a1, bounds_b1, n, cut_off
+    )
+    var d = multiply_slices(q, b, (0, len(q.words)), bounds_b0)
+    decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(c, n)
+    var r = add_slices(
+        c, a, bounds_x=(0, len(c.words)), bounds_y=(bounds_a0[0], bounds_a0[1])
+    )
+
+    if r < d:
+        q -= BigUInt.ONE
+        # r = r + b
+        add_inplace_by_slice(r, b, bounds_y=bounds_b)
+        if r < d:
+            q -= BigUInt.ONE
+            # r = r + b
+            add_inplace_by_slice(r, b, bounds_y=bounds_b)
+
+    r -= d
+    return (q^, r^)
 
 
 fn floor_divide_three_by_two_uint32(
@@ -2180,7 +2415,9 @@ fn ceil_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         return subtract(x2, remainder)
 
 
-fn divmod(x1: BigUInt, x2: BigUInt) raises -> Tuple[BigUInt, BigUInt]:
+fn floor_divide_modulo(
+    x1: BigUInt, x2: BigUInt
+) raises -> Tuple[BigUInt, BigUInt]:
     """Returns the quotient and remainder of two numbers, truncating toward zero.
 
     Args:
@@ -2441,3 +2678,56 @@ fn calculate_number_of_shifted_digits_for_normalization(msw: UInt32) -> Int:
         ndigits = 0  # No shift needed
 
     return ndigits
+
+
+fn to_uint64_with_2_words(a: BigUInt, bounds_x: Tuple[Int, Int]) -> UInt64:
+    """Convert two words at given index of the BigUInt to UInt64."""
+    var n_words = bounds_x[1] - bounds_x[0]
+    if n_words == 1:
+        return a.words.data.load[width=1](bounds_x[0]).cast[DType.uint64]()
+    else:
+        return (
+            a.words.data.load[width=2](bounds_x[0]).cast[DType.uint64]()
+            * SIMD[DType.uint64, 2](1, 1_000_000_000)
+        ).reduce_add()
+
+
+fn to_uint128_with_2_words(a: BigUInt, bounds_x: Tuple[Int, Int]) -> UInt128:
+    """Convert two words at given index of the BigUInt to UInt128."""
+    var n_words = bounds_x[1] - bounds_x[0]
+    if n_words == 1:
+        return a.words.data.load[width=1](bounds_x[0]).cast[DType.uint128]()
+    else:
+        return (
+            a.words.data.load[width=2](bounds_x[0]).cast[DType.uint128]()
+            * SIMD[DType.uint128, 2](1, 1_000_000_000)
+        ).reduce_add()
+
+
+fn to_uint128_with_4_words(a: BigUInt, bounds_x: Tuple[Int, Int]) -> UInt128:
+    """Convert four words at given index of the BigUInt to UInt128."""
+    var n_words = bounds_x[1] - bounds_x[0]
+    if n_words == 1:
+        return a.words.data.load[width=1](bounds_x[0]).cast[DType.uint128]()
+    elif n_words == 2:
+        return (
+            a.words.data.load[width=2](bounds_x[0]).cast[DType.uint128]()
+            * SIMD[DType.uint128, 2](1, 1_000_000_000)
+        ).reduce_add()
+    elif n_words == 3:
+        return (
+            a.words.data.load[width=4](bounds_x[0]).cast[DType.uint128]()
+            * SIMD[DType.uint128, 4](
+                1, 1_000_000_000, 1_000_000_000_000_000_000, 0
+            )
+        ).reduce_add()
+    else:  # len(self.words) == 4
+        return (
+            a.words.data.load[width=4](bounds_x[0]).cast[DType.uint128]()
+            * SIMD[DType.uint128, 4](
+                1,
+                1_000_000_000,
+                1_000_000_000_000_000_000,
+                1_000_000_000_000_000_000_000_000_000,
+            )
+        ).reduce_add()

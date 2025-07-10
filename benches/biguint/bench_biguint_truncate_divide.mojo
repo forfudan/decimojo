@@ -73,8 +73,8 @@ fn run_benchmark_truncate_divide(
         speedup_factors: Mojo List to store speedup factors for averaging.
     """
     log_print("\nBenchmark:       " + name, log_file)
-    log_print("Dividend:        " + dividend, log_file)
-    log_print("Divisor:         " + divisor, log_file)
+    log_print("Dividend:        " + dividend[:1024] + "...", log_file)
+    log_print("Divisor:         " + divisor[:1024] + "...", log_file)
 
     # Set up Mojo and Python values
     var mojo_dividend = BigUInt(dividend)
@@ -93,13 +93,21 @@ fn run_benchmark_truncate_divide(
                 "Error: Mojo and Python results do not match!",
                 log_file,
             )
-            log_print("Mojo result:     " + String(mojo_result), log_file)
-            log_print("Python result:   " + String(py_result), log_file)
+            log_print(
+                "Mojo result:     "
+                + String(mojo_result)[:1024]
+                + String("..."),
+                log_file,
+            )
+            log_print(
+                "Python result:   " + String(py_result)[:1024] + String("..."),
+                log_file,
+            )
             return  # Skip this benchmark case if results don't match
 
         # Display results for verification
-        log_print("Mojo result:     " + String(mojo_result), log_file)
-        log_print("Python result:   " + String(py_result), log_file)
+        log_print("Mojo result:     " + String(mojo_result)[:1024], log_file)
+        log_print("Python result:   " + String(py_result)[:1024], log_file)
 
         # Benchmark Mojo implementation
         var t0 = perf_counter_ns()
@@ -164,7 +172,7 @@ fn main() raises:
         log_print("Could not retrieve system information", log_file)
 
     var iterations = 100
-    var iterations_large_numbers = 10
+    var iterations_large_numbers = 2
 
     # Define benchmark cases (all positive numbers for BigUInt)
     log_print(
@@ -406,7 +414,7 @@ fn main() raises:
 
     # Case 24: Division of very large numbers
     run_benchmark_truncate_divide(
-        "Division of very large numbers (2250 digits vs 900 digits)",
+        "Division of very large numbers (250 words vs 100 words)",
         "123456789" * 250,
         "987654321" * 100,
         iterations,
@@ -502,7 +510,7 @@ fn main() raises:
 
     # Case 31: Division of large numbers
     run_benchmark_truncate_divide(
-        "Division of large numbers (5000 words vs words digits)",
+        "Division of large numbers (5000 words vs 500 words)",
         "316227766_016824890_583648059_893174009_579947593" * 1000,
         "141421356_237309504_880168872_420969807_856967187" * 100,
         iterations_large_numbers,

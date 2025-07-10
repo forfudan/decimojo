@@ -112,6 +112,10 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         """Initializes a BigUInt with value 0."""
         self.words = List[UInt32](UInt32(0))
 
+    fn __init__(out self, *, uninitialized_capacity: Int):
+        """Creates an uninitialized BigUInt with a given capacity."""
+        self.words = List[UInt32](capacity=uninitialized_capacity)
+
     fn __init__(out self, owned words: List[UInt32]):
         """Initializes a BigUInt from a list of UInt32 words.
         It does not verify whether the words are within the valid range
@@ -868,7 +872,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
 
     @always_inline
     fn __divmod__(self, other: Self) raises -> Tuple[Self, Self]:
-        return decimojo.biguint.arithmetics.divmod(self, other)
+        return decimojo.biguint.arithmetics.floor_divide_modulo(self, other)
 
     @always_inline
     fn __pow__(self, exponent: Self) raises -> Self:
@@ -906,7 +910,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
 
     @always_inline
     fn __rdivmod__(self, other: Self) raises -> Tuple[Self, Self]:
-        return decimojo.biguint.arithmetics.divmod(other, self)
+        return decimojo.biguint.arithmetics.floor_divide_modulo(other, self)
 
     @always_inline
     fn __rpow__(self, base: Self) raises -> Self:
@@ -1053,7 +1057,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         """Returns the result of divmod this number by `other`.
         See `divmod()` for more information.
         """
-        return decimojo.biguint.arithmetics.divmod(self, other)
+        return decimojo.biguint.arithmetics.floor_divide_modulo(self, other)
 
     @always_inline
     fn floor_divide_inplace_by_2(mut self) raises:
@@ -1180,6 +1184,22 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         """Returns True if this BigUInt represents zero."""
         for word in self.words:
             if word != 0:
+                return False
+        return True
+
+    @always_inline
+    fn is_zero(self, bounds: Tuple[Int, Int]) -> Bool:
+        """Returns True if this BigUInt slice represents zero.
+
+        Args:
+            bounds: A tuple of two integers representing the start and end
+                indices of the slice to check. Then end index is exclusive.
+
+        Returns:
+            True if the slice of this BigUInt represents zero, False otherwise.
+        """
+        for i in range(bounds[0], bounds[1]):
+            if self.words[i] != 0:
                 return False
         return True
 
@@ -1353,9 +1373,11 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         The internal representation of a BigUInt is a list of words.
         The most significant empty words are the words that are
         equal to zero and are at the end of the list.
+
+        If the least significant word is zero, we do not remove it.
         """
         var n_empty_words: Int = 0
-        for i in range(len(self.words) - 1, -1, -1):
+        for i in range(len(self.words) - 1, 0, -1):
             if self.words[i] == 0:
                 n_empty_words += 1
             else:
