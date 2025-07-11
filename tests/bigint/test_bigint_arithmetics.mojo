@@ -6,12 +6,14 @@ import testing
 from decimojo.bigint.bigint import BigInt
 from decimojo.tests import TestCase, parse_file, load_test_cases
 
-alias file_path = "tests/bigint/test_data/bigint_arithmetics.toml"
+alias file_path_arithmetics = "tests/bigint/test_data/bigint_arithmetics.toml"
+alias file_path_multiply = "tests/bigint/test_data/bigint_multiply.toml"
+alias file_path_floor_divide = "tests/bigint/test_data/bigint_floor_divide.toml"
 
 
 fn test_bigint_arithmetics() raises:
     # Load test cases from TOML file
-    var toml = parse_file(file_path)
+    var toml = parse_file(file_path_arithmetics)
     var test_cases: List[TestCase]
 
     print("------------------------------------------------------")
@@ -61,6 +63,42 @@ fn test_bigint_arithmetics() raises:
             msg=test_case.description,
         )
     print("BigInt absolute value tests passed!")
+
+
+fn test_bigint_multiply() raises:
+    # Load test cases from TOML file
+    var toml = parse_file(file_path_multiply)
+    var test_cases: List[TestCase]
+
+    print("------------------------------------------------------")
+    print("Testing BigInt multiplication...")
+    test_cases = load_test_cases(toml, "multiplication_tests")
+    for test_case in test_cases:
+        var result = BigInt(test_case.a) * BigInt(test_case.b)
+        testing.assert_equal(
+            lhs=String(result),
+            rhs=test_case.expected,
+            msg=test_case.description,
+        )
+    print("BigInt multiplication tests passed!")
+
+
+fn test_bigint_floor_divide() raises:
+    # Load test cases from TOML file
+    var toml = parse_file(file_path_floor_divide)
+    var test_cases: List[TestCase]
+
+    print("------------------------------------------------------")
+    print("Testing BigInt floor division...")
+    test_cases = load_test_cases(toml, "floor_divide_tests")
+    for test_case in test_cases:
+        var result = BigInt(test_case.a) // BigInt(test_case.b)
+        testing.assert_equal(
+            lhs=String(result),
+            rhs=test_case.expected,
+            msg=test_case.description,
+        )
+    print("BigInt floor division tests passed!")
 
 
 fn main() raises:

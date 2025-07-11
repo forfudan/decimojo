@@ -145,7 +145,7 @@ b = "9999999999"
 expected = "99999999980000000001"
 description = "Multiplication of very large numbers"
 
-[[extreme_multiplication_tests]]
+[[multiplication_tests]]
 a = "10000000000"
 b = "10000000000"
 expected = "100000000000000000000"
