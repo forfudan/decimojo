@@ -3,6 +3,9 @@ Test BigUInt arithmetic operations including addition, subtraction, and multipli
 BigUInt is an unsigned integer type, so it doesn't support negative values.
 """
 
+
+from python import Python
+from random import random_ui64
 from testing import assert_equal, assert_true
 from decimojo.biguint.biguint import BigUInt
 from decimojo.tests import TestCase, parse_file, load_test_cases
@@ -82,7 +85,7 @@ fn test_biguint_arithmetics() raises:
             )
         except:
             print("Implementation correctly throws error on underflow")
-    print("BigUInt subtraction tests passed!")
+    print("BigUInt multiplication tests passed!")
 
 
 fn test_biguint_truncate_divide() raises:
@@ -101,7 +104,42 @@ fn test_biguint_truncate_divide() raises:
             rhs=test_case.expected,
             msg=test_case.description,
         )
-    print("BigUInt addition tests passed!")
+    print("BigUInt truncate division tests passed!")
+
+
+fn test_biguint_truncate_divide_random_numbers_against_python() raises:
+    print("------------------------------------------------------")
+    print("Testing BigUInt truncate division on random numbers with python...")
+
+    var pysys = Python.import_module("sys")
+    pysys.set_int_max_str_digits(500000)
+
+    var number_a: String
+    var number_b: String
+
+    for _test_case in range(10):
+        number_a = String("")
+        number_b = String("")
+        for _i in range(12345):
+            number_a += String(random_ui64(0, 999_999_999_999_999_999))
+        for _i in range(789):
+            number_b += String(random_ui64(0, 999_999_999_999_999_999))
+        decimojo_result = String(BigUInt(number_a) // BigUInt(number_b))
+        python_result = String(Python.int(number_a) // Python.int(number_b))
+        assert_equal(
+            lhs=decimojo_result,
+            rhs=python_result,
+            msg="Python int division does not match BigUInt division\n"
+            + "number a: \n"
+            + number_a
+            + "\n\nnumber b: \n"
+            + number_b
+            + "\n\nDeciMojo BigUInt division: \n"
+            + decimojo_result
+            + "\n\nPython int division: \n"
+            + python_result,
+        )
+    print("BigUInt truncate division tests passed!")
 
 
 fn main() raises:
