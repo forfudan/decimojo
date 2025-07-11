@@ -1064,7 +1064,7 @@ fn multiply_inplace_by_uint32(mut x: BigUInt, y: UInt32):
     """
     # Short circuit cases when y is between 0 and 4
     # See `multiply_inplace_by_uint32_le_4()` for details
-    # TODO: Check the performance of `y <= 4`
+    # The performance is the best when `y <= 2`
     if y <= 2:
         multiply_inplace_by_uint32_le_4(x, y)
         return

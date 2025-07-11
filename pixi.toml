@@ -38,7 +38,7 @@ bench_biguint = "clear && pixi run package && cd benches/biguint && pixi run moj
 bench_bigdecimal = "clear && pixi run package && cd benches/bigdecimal && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
 bench_dec = "pixi run bench_decimal"
 bench_bint = "pixi run bench_bigint"
-bench_buint = "pixi run bench_biguint"
+bench_buint = "clear && pixi run package && cd benches/biguint && pixi run mojo run -I ../ bench.mojo && cd ../.. && pixi run clean"
 bench_bdec = "pixi run bench_bigdecimal"
 
 # doc
