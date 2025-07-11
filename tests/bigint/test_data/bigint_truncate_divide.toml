@@ -1,0 +1,321 @@
+# ===----------------------------------------------------------------------=== #
+# Test data for BigInt truncate division operations
+# - Basic truncate division with positive numbers
+# - Basic truncate division with negative numbers
+# - Mixed sign truncate division
+# - Zero handling cases
+# - Large number division
+# - Truncate division rounding behavior (rounds toward zero)
+# - Mathematical identity verification
+# - Edge cases
+# - Python comparison cases
+# 
+# Note: Truncate division rounds toward zero, while floor division rounds 
+# toward negative infinity. For negative numbers, the results differ:
+# -7/3 = -2.33... → truncate: -2, floor: -3
+# ===----------------------------------------------------------------------=== #
+
+# ===----------------------------------------------------------------------=== #
+# Basic truncate division with positive numbers
+# ===----------------------------------------------------------------------=== #
+[[truncate_divide_tests]]
+a = "10"
+b = "2"
+expected = "5"
+description = "Simple division with no remainder: 10 / 2"
+
+[[truncate_divide_tests]]
+a = "10"
+b = "3"
+expected = "3"
+description = "Division with remainder (truncate toward zero): 10 / 3"
+
+[[truncate_divide_tests]]
+a = "3"
+b = "10"
+expected = "0"
+description = "Division results in zero (smaller / larger): 3 / 10"
+
+[[truncate_divide_tests]]
+a = "42"
+b = "1"
+expected = "42"
+description = "Division by 1: 42 / 1"
+
+[[truncate_divide_tests]]
+a = "1000000000000"
+b = "1000000"
+expected = "1000000"
+description = "Large number division: 1000000000000 / 1000000"
+
+# ===----------------------------------------------------------------------=== #
+# Basic truncate division with negative numbers
+# ===----------------------------------------------------------------------=== #
+[[truncate_divide_tests]]
+a = "-10"
+b = "2"
+expected = "-5"
+description = "Negative dividend, positive divisor: -10 / 2"
+
+[[truncate_divide_tests]]
+a = "-10"
+b = "-2"
+expected = "5"
+description = "Negative dividend, negative divisor: -10 / -2"
+
+[[truncate_divide_tests]]
+a = "10"
+b = "-2"
+expected = "-5"
+description = "Positive dividend, negative divisor: 10 / -2"
+
+[[truncate_divide_tests]]
+a = "-7"
+b = "3"
+expected = "-2"
+description = "Negative dividend with remainder (truncate division case): -7 / 3 = -2.33... → -2"
+
+[[truncate_divide_tests]]
+a = "-5"
+b = "2"
+expected = "-2"
+description = "Key test for truncate division (negative numbers): -5 / 2 = -2.5 → -2"
+
+# ===----------------------------------------------------------------------=== #
+# Mixed sign truncate division
+# ===----------------------------------------------------------------------=== #
+[[truncate_divide_tests]]
+a = "-6"
+b = "3"
+expected = "-2"
+description = "Negative / positive with exact division: -6 / 3"
+
+[[truncate_divide_tests]]
+a = "-6"
+b = "-3"
+expected = "2"
+description = "Negative / negative with exact division: -6 / -3"
+
+[[truncate_divide_tests]]
+a = "6"
+b = "-3"
+expected = "-2"
+description = "Positive / negative with exact division: 6 / -3"
+
+[[truncate_divide_tests]]
+a = "-7"
+b = "4"
+expected = "-1"
+description = "Negative / positive with remainder (critical truncate case): -7 / 4 = -1.75 → -1"
+
+[[truncate_divide_tests]]
+a = "7"
+b = "-4"
+expected = "-1"
+description = "Positive / negative with remainder (critical truncate case): 7 / -4 = -1.75 → -1"
+
+# ===----------------------------------------------------------------------=== #
+# Zero handling cases
+# ===----------------------------------------------------------------------=== #
+[[truncate_divide_tests]]
+a = "0"
+b = "5"
+expected = "0"
+description = "Zero dividend, positive divisor: 0 / 5"
+
+[[truncate_divide_tests]]
+a = "0"
+b = "-5"
+expected = "0"
+description = "Zero dividend, negative divisor: 0 / -5"
+
+# Note: Division by zero cases are handled as exceptions in the test code
+
+# ===----------------------------------------------------------------------=== #
+# Large number division
+# ===----------------------------------------------------------------------=== #
+[[truncate_divide_tests]]
+a = "100000000000000000000000000000000000000000000000000"
+b = "7"
+expected = "14285714285714285714285714285714285714285714285714"
+description = "Large positive number divided by small number: 10^50 / 7"
+
+[[truncate_divide_tests]]
+a = "-100000000000000000000000000000000000000000000000000"
+b = "7"
+expected = "-14285714285714285714285714285714285714285714285714"
+description = "Large negative number divided by small number: -10^50 / 7"
+
+[[truncate_divide_tests]]
+a = "100000000000000000000000000000000000000000000000000"
+b = "-7"
+expected = "-14285714285714285714285714285714285714285714285714"
+description = "Large positive / small negative: 10^50 / -7"
+
+[[truncate_divide_tests]]
+a = "-100000000000000000000000000000000000000000000000000"
+b = "-7"
+expected = "14285714285714285714285714285714285714285714285714"
+description = "Large negative / small negative: -10^50 / -7"
+
+[[truncate_divide_tests]]
+a = "999999999999999999999999999999"
+b = "999999999999999"
+expected = "1000000000000001"
+description = "Large / large (same sign): 30 nines / 15 nines"
+
+[[truncate_divide_tests]]
+a = "999999999999999999999999999999"
+b = "-999999999999999"
+expected = "-1000000000000001"
+description = "Large / large (opposite sign): 30 nines / -15 nines"
+
+# ===----------------------------------------------------------------------=== #
+# Truncate division rounding behavior (rounds toward zero)
+# ===----------------------------------------------------------------------=== #
+[[truncate_divide_tests]]
+a = "7"
+b = "2"
+expected = "3"
+description = "Positive / positive with remainder: 7 / 2 = 3.5 → 3"
+
+[[truncate_divide_tests]]
+a = "-7"
+b = "2"
+expected = "-3"
+description = "Negative / positive with remainder (key truncate case): -7 / 2 = -3.5 → -3"
+
+[[truncate_divide_tests]]
+a = "7"
+b = "-2"
+expected = "-3"
+description = "Positive / negative with remainder (key truncate case): 7 / -2 = -3.5 → -3"
+
+[[truncate_divide_tests]]
+a = "-7"
+b = "-2"
+expected = "3"
+description = "Negative / negative with remainder: -7 / -2 = 3.5 → 3"
+
+[[truncate_divide_tests]]
+a = "1"
+b = "4"
+expected = "0"
+description = "Small dividend / large divisor: 1 / 4 = 0.25 → 0"
+
+[[truncate_divide_tests]]
+a = "-1"
+b = "4"
+expected = "0"
+description = "Negative small / positive large (truncate toward zero): -1 / 4 = -0.25 → 0"
+
+[[truncate_divide_tests]]
+a = "-9"
+b = "5"
+expected = "-1"
+description = "Truncate vs floor example: -9 / 5 = -1.8 → -1 (truncate), -2 (floor)"
+
+# ===----------------------------------------------------------------------=== #
+# Mathematical identity verification cases
+# ===----------------------------------------------------------------------=== #
+[[truncate_divide_tests]]
+a = "17"
+b = "5"
+expected = "3"
+description = "Identity test: positive dividend, positive divisor: 17 / 5"
+
+[[truncate_divide_tests]]
+a = "-17"
+b = "5"
+expected = "-3"
+description = "Identity test: negative dividend, positive divisor: -17 / 5"
+
+[[truncate_divide_tests]]
+a = "17"
+b = "-5"
+expected = "-3"
+description = "Identity test: positive dividend, negative divisor: 17 / -5"
+
+[[truncate_divide_tests]]
+a = "-17"
+b = "-5"
+expected = "3"
+description = "Identity test: negative dividend, negative divisor: -17 / -5"
+
+[[truncate_divide_tests]]
+a = "12345678901234567890"
+b = "987654321"
+expected = "12499999887"
+description = "Identity test with large numbers: 12345678901234567890 / 987654321"
+
+# ===----------------------------------------------------------------------=== #
+# Edge cases
+# ===----------------------------------------------------------------------=== #
+[[truncate_divide_tests]]
+a = "1000"
+b = "999"
+expected = "1"
+description = "Maximum divisor (just below dividend): 1000 / 999"
+
+[[truncate_divide_tests]]
+a = "1000"
+b = "-999"
+expected = "-1"
+description = "Maximum negative divisor: 1000 / -999"
+
+[[truncate_divide_tests]]
+a = "101"
+b = "100"
+expected = "1"
+description = "Consecutive numbers (positive): 101 / 100"
+
+[[truncate_divide_tests]]
+a = "-101"
+b = "100"
+expected = "-1"
+description = "Consecutive numbers (negative): -101 / 100"
+
+[[truncate_divide_tests]]
+a = "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+b = "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+expected = "1"
+description = "Equal large positive numbers: 100 nines / 100 nines"
+
+[[truncate_divide_tests]]
+a = "-999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+b = "-999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+expected = "1"
+description = "Equal large negative numbers: -100 nines / -100 nines"
+
+[[truncate_divide_tests]]
+a = "-23"
+b = "5"
+expected = "-4"
+description = "Truncate vs floor comparison: -23 / 5 = -4.6 → -4 (truncate), -5 (floor)"
+
+[[truncate_divide_tests]]
+a = "100000000000000000000"
+b = "100000"
+expected = "1000000000000000"
+description = "Powers of 10 division: 10^20 / 10^5"
+
+# ===----------------------------------------------------------------------=== #
+# Python comparison cases (for verification)
+# ===----------------------------------------------------------------------=== #
+[[truncate_divide_tests]]
+a = "42"
+b = "5"
+expected = "8"
+description = "Python comparison: positive numbers (same as floor division): 42 / 5"
+
+[[truncate_divide_tests]]
+a = "-42"
+b = "5"
+expected = "-8"
+description = "Python comparison: negative dividend (differs from floor): -42 / 5 → -8 (truncate), -9 (floor)"
+
+[[truncate_divide_tests]]
+a = "999999999999999999999"
+b = "3"
+expected = "333333333333333333333"
+description = "Python comparison: large positive numbers: 21 nines / 3"

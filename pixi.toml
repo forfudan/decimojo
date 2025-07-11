@@ -32,14 +32,14 @@ t = "clear && pixi run package && pixi run mojo test tests -D ASSERT=all --filte
 b = "pixi run t big"
 
 # benches
-bench_decimal = "clear && pixi run package && cd benches/decimal && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
-bench_bigint = "clear && pixi run package && cd benches/bigint && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
-bench_biguint = "clear && pixi run package && cd benches/biguint && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
-bench_bigdecimal = "clear && pixi run package && cd benches/bigdecimal && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
-bench_dec = "pixi run bench_decimal"
-bench_bint = "pixi run bench_bigint"
-bench_buint = "pixi run bench_biguint"
-bench_bdec = "pixi run bench_bigdecimal"
+dec = "clear && pixi run package && cd benches/decimal && pixi run mojo run -I ../ bench.mojo && cd ../.. && pixi run clean"
+bint = "clear && pixi run package && cd benches/bigint && pixi run mojo run -I ../ bench.mojo && cd ../.. && pixi run clean"
+buint = "clear && pixi run package && cd benches/biguint && pixi run mojo run -I ../ bench.mojo && cd ../.. && pixi run clean"
+bdec = "clear && pixi run package && cd benches/bigdecimal && pixi run mojo run -I ../ bench.mojo && cd ../.. && pixi run clean"
+dec_debug = "clear && pixi run package && cd benches/decimal && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
+bint_debug = "clear && pixi run package && cd benches/bigint && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
+buint_debug = "clear && pixi run package && cd benches/biguint && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
+bdec_debug = "clear && pixi run package && cd benches/bigdecimal && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
 
 # doc
 doc = "clear && pixi run mojo doc -o docs/doc.json --diagnose-missing-doc-strings --validate-doc-strings src/decimojo"

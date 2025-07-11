@@ -1,0 +1,349 @@
+# ===----------------------------------------------------------------------=== #
+# Test data for BigInt floor division operations
+# - Basic floor division with positive numbers
+# - Basic floor division with negative numbers
+# - Mixed sign floor division
+# - Zero handling cases
+# - Large number division
+# - Floor division rounding behavior
+# - Mathematical identity verification
+# - Edge cases
+# ===----------------------------------------------------------------------=== #
+
+# ===----------------------------------------------------------------------=== #
+# Basic floor division with positive numbers
+# ===----------------------------------------------------------------------=== #
+[[floor_divide_tests]]
+a = "10"
+b = "2"
+expected = "5"
+description = "Simple division with no remainder: 10 // 2"
+
+[[floor_divide_tests]]
+a = "10"
+b = "3"
+expected = "3"
+description = "Division with remainder (floor towards negative infinity): 10 // 3"
+
+[[floor_divide_tests]]
+a = "3"
+b = "10"
+expected = "0"
+description = "Division results in zero (smaller // larger): 3 // 10"
+
+[[floor_divide_tests]]
+a = "42"
+b = "1"
+expected = "42"
+description = "Division by 1: 42 // 1"
+
+[[floor_divide_tests]]
+a = "1000000000000"
+b = "1000000"
+expected = "1000000"
+description = "Large number division: 1000000000000 // 1000000"
+
+# ===----------------------------------------------------------------------=== #
+# Basic floor division with negative numbers
+# ===----------------------------------------------------------------------=== #
+[[floor_divide_tests]]
+a = "-10"
+b = "2"
+expected = "-5"
+description = "Negative dividend, positive divisor: -10 // 2"
+
+[[floor_divide_tests]]
+a = "-10"
+b = "-2"
+expected = "5"
+description = "Negative dividend, negative divisor: -10 // -2"
+
+[[floor_divide_tests]]
+a = "10"
+b = "-2"
+expected = "-5"
+description = "Positive dividend, negative divisor: 10 // -2"
+
+[[floor_divide_tests]]
+a = "-7"
+b = "3"
+expected = "-3"
+description = "Negative dividend with remainder (floor division special case): -7 // 3"
+
+[[floor_divide_tests]]
+a = "-5"
+b = "2"
+expected = "-3"
+description = "Key test for floor division (negative numbers): -5 // 2"
+
+# ===----------------------------------------------------------------------=== #
+# Mixed sign floor division
+# ===----------------------------------------------------------------------=== #
+[[floor_divide_tests]]
+a = "-6"
+b = "3"
+expected = "-2"
+description = "Negative // positive with exact division: -6 // 3"
+
+[[floor_divide_tests]]
+a = "-6"
+b = "-3"
+expected = "2"
+description = "Negative // negative with exact division: -6 // -3"
+
+[[floor_divide_tests]]
+a = "6"
+b = "-3"
+expected = "-2"
+description = "Positive // negative with exact division: 6 // -3"
+
+[[floor_divide_tests]]
+a = "-7"
+b = "4"
+expected = "-2"
+description = "Negative // positive with remainder (critical floor division case): -7 // 4"
+
+[[floor_divide_tests]]
+a = "7"
+b = "-4"
+expected = "-2"
+description = "Positive // negative with remainder (critical floor division case): 7 // -4"
+
+# ===----------------------------------------------------------------------=== #
+# Zero handling cases
+# ===----------------------------------------------------------------------=== #
+[[floor_divide_tests]]
+a = "0"
+b = "5"
+expected = "0"
+description = "Zero dividend, positive divisor: 0 // 5"
+
+[[floor_divide_tests]]
+a = "0"
+b = "-5"
+expected = "0"
+description = "Zero dividend, negative divisor: 0 // -5"
+
+# Note: Division by zero cases are handled as exceptions in the test code
+
+# ===----------------------------------------------------------------------=== #
+# Large number division
+# ===----------------------------------------------------------------------=== #
+[[floor_divide_tests]]
+a = "100000000000000000000000000000000000000000000000000"
+b = "7"
+expected = "14285714285714285714285714285714285714285714285714"
+description = "Large positive number divided by small number: 10^50 // 7"
+
+[[floor_divide_tests]]
+a = "-100000000000000000000000000000000000000000000000000"
+b = "7"
+expected = "-14285714285714285714285714285714285714285714285715"
+description = "Large negative number divided by small number: -10^50 // 7"
+
+[[floor_divide_tests]]
+a = "100000000000000000000000000000000000000000000000000"
+b = "-7"
+expected = "-14285714285714285714285714285714285714285714285715"
+description = "Large positive // small negative: 10^50 // -7"
+
+[[floor_divide_tests]]
+a = "-100000000000000000000000000000000000000000000000000"
+b = "-7"
+expected = "14285714285714285714285714285714285714285714285714"
+description = "Large negative // small negative: -10^50 // -7"
+
+[[floor_divide_tests]]
+a = "999999999999999999999999999999"
+b = "999999999999999"
+expected = "1000000000000001"
+description = "Large // large (same sign): 30 nines // 15 nines"
+
+[[floor_divide_tests]]
+a = "999999999999999999999999999999"
+b = "-999999999999999"
+expected = "-1000000000000001"
+description = "Large // large (opposite sign): 30 nines // -15 nines"
+
+[[floor_divide_tests]]
+a = "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+b = "1000000000000000000000000000000000000000000"
+expected = "10000000000000000000000000000000000000000000000000000000000"
+description = "Power of 10 division: 10^100 // 10^40"
+
+[[floor_divide_tests]]
+a = "-10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+b = "1000000000000000000000000000000000000000000"
+expected = "-10000000000000000000000000000000000000000000000000000000000"
+description = "Negative power of 10 division: -10^100 // 10^40"
+
+# ===----------------------------------------------------------------------=== #
+# Floor division rounding behavior
+# ===----------------------------------------------------------------------=== #
+[[floor_divide_tests]]
+a = "7"
+b = "2"
+expected = "3"
+description = "Positive // positive with remainder: 7 // 2"
+
+[[floor_divide_tests]]
+a = "-7"
+b = "2"
+expected = "-4"
+description = "Negative // positive with remainder (key floor division case): -7 // 2"
+
+[[floor_divide_tests]]
+a = "7"
+b = "-2"
+expected = "-4"
+description = "Positive // negative with remainder (key floor division case): 7 // -2"
+
+[[floor_divide_tests]]
+a = "-7"
+b = "-2"
+expected = "3"
+description = "Negative // negative with remainder: -7 // -2"
+
+[[floor_divide_tests]]
+a = "1"
+b = "4"
+expected = "0"
+description = "Small dividend // large divisor: 1 // 4"
+
+[[floor_divide_tests]]
+a = "-1"
+b = "4"
+expected = "-1"
+description = "Negative small // positive large: -1 // 4"
+
+[[floor_divide_tests]]
+a = "-9"
+b = "5"
+expected = "-2"
+description = "Borderline case: -9 // 5"
+
+[[floor_divide_tests]]
+a = "9"
+b = "-5"
+expected = "-2"
+description = "Another borderline case: 9 // -5"
+
+[[floor_divide_tests]]
+a = "-1"
+b = "3"
+expected = "-1"
+description = "Close to zero negative: -1 // 3"
+
+[[floor_divide_tests]]
+a = "1"
+b = "-3"
+expected = "-1"
+description = "Close to zero positive with negative divisor: 1 // -3"
+
+# ===----------------------------------------------------------------------=== #
+# Mathematical identity verification cases
+# ===----------------------------------------------------------------------=== #
+[[floor_divide_tests]]
+a = "17"
+b = "5"
+expected = "3"
+description = "Identity test: positive dividend, positive divisor: 17 // 5"
+
+[[floor_divide_tests]]
+a = "-17"
+b = "5"
+expected = "-4"
+description = "Identity test: negative dividend, positive divisor: -17 // 5"
+
+[[floor_divide_tests]]
+a = "17"
+b = "-5"
+expected = "-4"
+description = "Identity test: positive dividend, negative divisor: 17 // -5"
+
+[[floor_divide_tests]]
+a = "-17"
+b = "-5"
+expected = "3"
+description = "Identity test: negative dividend, negative divisor: -17 // -5"
+
+[[floor_divide_tests]]
+a = "12345678901234567890"
+b = "987654321"
+expected = "12499999887"
+description = "Identity test with large numbers: 12345678901234567890 // 987654321"
+
+# ===----------------------------------------------------------------------=== #
+# Edge cases
+# ===----------------------------------------------------------------------=== #
+[[floor_divide_tests]]
+a = "1000"
+b = "999"
+expected = "1"
+description = "Maximum divisor (just below dividend): 1000 // 999"
+
+[[floor_divide_tests]]
+a = "1000"
+b = "-999"
+expected = "-2"
+description = "Maximum negative divisor: 1000 // -999"
+
+[[floor_divide_tests]]
+a = "101"
+b = "100"
+expected = "1"
+description = "Consecutive numbers (positive): 101 // 100"
+
+[[floor_divide_tests]]
+a = "-101"
+b = "100"
+expected = "-2"
+description = "Consecutive numbers (negative): -101 // 100"
+
+[[floor_divide_tests]]
+a = "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+b = "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+expected = "1"
+description = "Equal large positive numbers: 100 nines // 100 nines"
+
+[[floor_divide_tests]]
+a = "-999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+b = "-999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+expected = "1"
+description = "Equal large negative numbers: -100 nines // -100 nines"
+
+[[floor_divide_tests]]
+a = "10000000001"
+b = "10000000000"
+expected = "1"
+description = "Very small remainder (positive numbers): 10000000001 // 10000000000"
+
+[[floor_divide_tests]]
+a = "-10000000001"
+b = "10000000000"
+expected = "-2"
+description = "Very small remainder (negative dividend): -10000000001 // 10000000000"
+
+[[floor_divide_tests]]
+a = "123"
+b = "45"
+expected = "2"
+description = "Integer constructor test: 123 // 45"
+
+[[floor_divide_tests]]
+a = "128"
+b = "2"
+expected = "64"
+description = "Power of 2 divisions (positive): 128 // 2"
+
+[[floor_divide_tests]]
+a = "-128"
+b = "2"
+expected = "-64"
+description = "Power of 2 divisions (negative dividend): -128 // 2"
+
+[[floor_divide_tests]]
+a = "1000"
+b = "10"
+expected = "100"
+description = "Power of 10 divisions: 1000 // 10"

@@ -92,22 +92,47 @@ fn parse_file(file_path: String) raises -> tomlmojo.parser.TOMLDocument:
         )
 
 
-fn load_test_cases(
-    toml: tomlmojo.parser.TOMLDocument, table_name: String
-) raises -> List[TestCase]:
-    """Load test cases from a TOMLDocument."""
+fn load_test_cases[
+    unary: Bool = False
+](toml: tomlmojo.parser.TOMLDocument, table_name: String) raises -> List[
+    TestCase
+]:
+    """Load test cases from a TOMLDocument.
+
+    Parameters:
+        unary: Whether the test cases are unary (single operand) or binary (two operands).
+
+    Args:
+        toml: The TOMLDocument containing the test cases.
+        table_name: The name of the table in the TOMLDocument to load test cases from.
+
+    Returns:
+        A list of TestCase objects containing the test cases.
+    """
     # Get array of test cases
     var cases_array = toml.get_array_of_tables(table_name)
 
     var test_cases = List[TestCase]()
-    for case_table in cases_array:
-        test_cases.append(
-            TestCase(
-                case_table["a"].as_string(),
-                case_table["b"].as_string(),
-                case_table["expected"].as_string(),
-                case_table["description"].as_string(),
+
+    if unary:
+        for case_table in cases_array:
+            test_cases.append(
+                TestCase(
+                    case_table["a"].as_string(),
+                    "",
+                    case_table["expected"].as_string(),
+                    case_table["description"].as_string(),
+                )
             )
-        )
+    else:
+        for case_table in cases_array:
+            test_cases.append(
+                TestCase(
+                    case_table["a"].as_string(),
+                    case_table["b"].as_string(),
+                    case_table["expected"].as_string(),
+                    case_table["description"].as_string(),
+                )
+            )
 
     return test_cases
