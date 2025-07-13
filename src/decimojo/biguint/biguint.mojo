@@ -23,7 +23,7 @@ operation dunders, and other dunders that implement traits, as well as
 mathematical methods that do not implement a trait.
 """
 
-from memory import UnsafePointer
+from memory import UnsafePointer, memcpy
 import testing
 import time
 
@@ -54,7 +54,11 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     x = x[0] * 10^0 + x[1] * 10^9 + x[2] * 10^18 + ... x[n] * 10^(9n)
 
     You can think of the BigUInt as a list base-billion digits, where each
-    digit is ranging from 0 to 999_999_999.
+    digit is ranging from 0 to 999_999_999. Depending on the context, the
+    following terms are used interchangeably:
+    (1) words,
+    (2) limbs,
+    (3) base-billion digits.
     """
 
     var words: List[UInt32]
@@ -151,6 +155,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         `999_999_999`.
 
         Example:
+
         ```console
         BigUInt(123456789, 987654321) # 987654321_123456789
         ```
@@ -272,6 +277,45 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
                 list_of_words.append(word)
 
         return Self(list_of_words^)
+
+    @staticmethod
+    fn from_slice(value: Self, bounds: Tuple[Int, Int]) -> Self:
+        """Initializes a BigUInt from a BigUInt slice.
+
+        Args:
+            value: The BigUInt to copy from.
+            bounds: A tuple of two integers representing the bounds
+                for the words to copy.
+                The first integer is the start index (inclusive),
+                and the second integer is the end index (exclusive).
+        """
+        # Safty checks on bounds
+        var start_index: Int
+        var end_index: Int
+
+        if bounds[0] < 0:
+            start_index = 0
+        else:
+            start_index = bounds[0]
+
+        if bounds[1] > len(value.words):
+            end_index = len(value.words)
+        else:
+            end_index = bounds[1]
+
+        var n_words = end_index - start_index
+        if n_words <= 0:
+            return Self()
+
+        # Now we can safely copy the words
+        result = BigUInt(words=List[UInt32](unsafe_uninit_length=n_words))
+        memcpy(
+            dest=result.words.data,
+            src=value.words.data + start_index,
+            count=n_words,
+        )
+        result.remove_leading_empty_words()
+        return result^
 
     @staticmethod
     fn from_int(value: Int) raises -> Self:
@@ -1154,7 +1198,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     # Other methods
     # ===------------------------------------------------------------------=== #
 
-    fn print_internal_representation(self) raises:
+    fn print_internal_representation(self):
         """Prints the internal representation details of a BigUInt."""
         var string_of_number = self.to_string(line_width=30).split("\n")
         print("\nInternal Representation Details of BigUInt")
@@ -1173,19 +1217,49 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
             else:
                 ndigits = 3
             print(
-                String("word {}:{}{}")
-                .format(i, " " * (10 - ndigits), String(self.words[i]))
-                .rjust(9, fillchar="0")
+                "word ",
+                i,
+                ":",
+                " " * (10 - ndigits),
+                String(self.words[i]).rjust(9, fillchar="0"),
+                sep="",
             )
         print("----------------------------------------------")
 
     @always_inline
     fn is_zero(self) -> Bool:
         """Returns True if this BigUInt represents zero."""
-        for word in self.words:
-            if word != 0:
-                return False
-        return True
+        # Yuhao ZHU:
+        # We should by design not have leading zero words so that we only need
+        # to check words[0] for zero.
+        # If there are leading zero words, it means that we have to loop over
+        # all words to check if the number is zero.
+        # TODO:
+        # Currently, the BigUInt sub-package by design ensures no leading zeros.
+        # However, the BigDecimal sub-package may still lead to leading zeros
+        # When we refine the BigDecimal sub-package, we should ensure that
+        # BigUInt does not have leading zeros.
+        #
+        # debug_assert[assert_mode="none"](
+        #     len(self.words) == 1,
+        #     "BigUInt should not contain leading zero words.",
+        # )  # 0 should have only one word by design
+
+        if self.words[0] != 0:
+            # Least significant word is not zero
+            return False
+        elif len(self.words) == 1:
+            # Least significant word is zero and there is no other word
+            return True
+        else:
+            # Least significant word is zero and there are other words
+            # Check if all other words are zero
+            for word in self.words[1:]:
+                if word != 0:
+                    return False
+            else:
+                # All words are zero
+                return True
 
     @always_inline
     fn is_zero(self, bounds: Tuple[Int, Int]) -> Bool:
@@ -1207,11 +1281,19 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     fn is_one(self) -> Bool:
         """Returns True if this BigUInt represents one."""
         if self.words[0] != 1:
+            # Least significant word is not 1
             return False
-        for i in self.words[1:]:
-            if i != 0:
-                return False
-        return True
+        elif len(self.words) == 1:
+            # Least significant word is 1 and there is no other word
+            return True
+        else:
+            # Least significant word is 1 and there are other words
+            # Check if all other words are zero
+            for i in self.words[1:]:
+                if i != 0:
+                    return False
+            else:
+                return True
 
     @always_inline
     fn is_two(self) -> Bool:
