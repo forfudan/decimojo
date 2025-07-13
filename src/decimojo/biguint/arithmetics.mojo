@@ -149,6 +149,12 @@ fn add(x: BigUInt, y: BigUInt) -> BigUInt:
     This function will consider the special cases first, and then call
     `add_slices_simd()` to handle the addition of the two BigUInt numbers.
     """
+    debug_assert[assert_mode="none"](
+        len(x.words) != 0, "BigUInt is uninitialized!"
+    )
+    debug_assert[assert_mode="none"](
+        len(y.words) != 0, "BigUInt is uninitialized!"
+    )
 
     # Short circuit cases
     if x.is_zero():
@@ -476,6 +482,13 @@ fn subtract_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
     Returns:
         The result of subtracting y from x.
     """
+    debug_assert[assert_mode="none"](
+        len(x.words) != 0, "BigUInt is uninitialized!"
+    )
+    debug_assert[assert_mode="none"](
+        len(y.words) != 0, "BigUInt is uninitialized!"
+    )
+
     # If the subtrahend is zero, return the minuend
     if y.is_zero():
         return x
@@ -547,6 +560,13 @@ fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
     Note that there will be potential overflow in the subtraction,
     but I will take advantage of that.
     """
+    debug_assert[assert_mode="none"](
+        len(x.words) != 0, "BigUInt is uninitialized!"
+    )
+    debug_assert[assert_mode="none"](
+        len(y.words) != 0, "BigUInt is uninitialized!"
+    )
+
     # If the subtrahend is zero, return the minuend
     # Yuhao ZHU:
     # This step is important because y can be of zero words and is longer than x.
@@ -699,6 +719,13 @@ fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
     # TODO: Make this a global constant
     alias CUTOFF_KARATSUBA: Int = 64
     """The cutoff number of words for using Karatsuba multiplication."""
+
+    debug_assert[assert_mode="none"](
+        len(x.words) != 0, "BigUInt is uninitialized!"
+    )
+    debug_assert[assert_mode="none"](
+        len(y.words) != 0, "BigUInt is uninitialized!"
+    )
 
     # SPECIAL CASES
     # If x or y is a single-word number
@@ -1335,6 +1362,13 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
     alias CUTOFF_BURNIKEL_ZIEGLER = 64
 
+    debug_assert[assert_mode="none"](
+        len(x1.words) != 0, "BigUInt ", x1, " is uninitialized!"
+    )
+    debug_assert[assert_mode="none"](
+        len(x2.words) != 0, "BigUInt ", x2, " is uninitialized!"
+    )
+
     # CASE: x2 is single word
     if len(x2.words) == 1:
         # SUB-CASE: Division by zero
@@ -1504,9 +1538,9 @@ fn floor_divide_school(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
             multiply_inplace_by_uint32(trial_product, UInt32(quotient))
             multiply_inplace_by_power_of_billion(trial_product, index_of_word)
 
-            if correction_attempts > 3:
-                print("correction attempts:", correction_attempts)
-                break
+            debug_assert[assert_mode="none"](
+                correction_attempts <= 3, "Too many correction attempts"
+            )
 
         # Store the quotient word
         result.words[index_of_word] = UInt32(quotient)
@@ -1864,6 +1898,8 @@ fn floor_divide_burnikel_ziegler(
         # If it is, we need to add one more block to the dividend.
         # This ensures that the most significant word of the dividend
         # is smaller than 500_000_000.
+        # In this sense, the first 2-by-1 division will generate a quotient
+        # of either 0 or 1, which would exceeds n-word capacity.
         if normalized_a.words[-1] >= 500_000_000:
             t += 1
 
@@ -2020,12 +2056,10 @@ fn floor_divide_three_by_two(
 
 
 # Yuhao ZHU:
-# The following two functions are optimized versions of the
+# The following two functions are OPTIMIZED versions of the
 # `floor_divide_two_by_one` and `floor_divide_three_by_two` functions.
 # They record the boundaries of the slices of the dividend and divisor
 # to avoid unnecessary recursive slicing and copying of the BigUInt objects.
-# TODO: bounds_a[1] and bounds_b[1] are not needed if the lengths of the
-# bounds are always n by design.
 fn floor_divide_slices_two_by_one(
     a: BigUInt,
     b: BigUInt,
@@ -2153,32 +2187,39 @@ fn floor_divide_slices_three_by_two(
     bounds_b0 = (bounds_b[0], bounds_b[0] + n).
     """
 
-    var bounds_a2 = (bounds_a[0] + 2 * n, bounds_a[1])
-    var bounds_a1 = (bounds_a[0] + n, bounds_a[0] + 2 * n)
+    # SPECIAL CASE:
+    # If a2 is empty or zero, than it beomes a2a1 // b1b0
+    # Because the most significant word of b1 is at least 500_000_000,
+    # The quotient will be either 1 or 0.
+    if bounds_a[0] + 2 * n == bounds_a[1]:
+        debug_assert[assert_mode="none"](
+            a.words[bounds_a[1] - 1] != 0,
+            "the most significant word of a must not be zero",
+        )
+        if a.words[bounds_a[1] - 1] >= b.words[bounds_b[1] - 1]:
+            return (
+                BigUInt.ONE,
+                BigUInt(a.words[bounds_a[0] : bounds_a[1]])
+                - BigUInt(b.words[bounds_b[0] : bounds_b[1]]),
+            )
+        else:
+            return (
+                BigUInt.ZERO,
+                BigUInt(a.words[bounds_a[0] : bounds_a[1]]),
+            )
+
+    # Now we can safely assume that a2 is not empty.
     var bounds_a0 = (bounds_a[0], bounds_a[0] + n)
+    var bounds_a2a1 = (bounds_a[0] + n, bounds_a[1])
     var bounds_b1 = (bounds_b[0] + n, bounds_b[1])
     var bounds_b0 = (bounds_b[0], bounds_b[0] + n)
 
-    var bounds_a2a1: Tuple[Int, Int]
-    # If a2 is empty or zero, we can use a1 directly
-    if bounds_a2[0] >= bounds_a[1]:
-        bounds_a2a1 = bounds_a1
-        # print("bounds_a2a1 3-by-2: a2 is empty")
-    elif a.is_zero(bounds=bounds_a2):
-        bounds_a2a1 = bounds_a1
-        # print("bounds_a2a1 3-by-2: a2 is zero")
-    else:
-        bounds_a2a1 = (bounds_a1[0], bounds_a[1])
-
-    # var q, c = floor_divide_two_by_one(a2a1, b1, n, cut_off)
     q, c = floor_divide_slices_two_by_one(
         a, b, bounds_a2a1, bounds_b1, n, cut_off
     )
     var d = multiply_slices(q, b, (0, len(q.words)), bounds_b0)
     decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(c, n)
-    var r = add_slices(
-        c, a, bounds_x=(0, len(c.words)), bounds_y=(bounds_a0[0], bounds_a0[1])
-    )
+    var r = add_slices(c, a, bounds_x=(0, len(c.words)), bounds_y=bounds_a0)
 
     if r < d:
         q -= BigUInt.ONE
@@ -2193,6 +2234,14 @@ fn floor_divide_slices_three_by_two(
     return (q^, r^)
 
 
+# Yuhao ZHU:
+# The following functions are most granular implementations of the
+# Burnikel-Ziegler algorithm, which divide a 3-word number by a 2-word number
+# and a 4-word number by a 2-word number, respectively.
+# They are not used because they are too granular and not efficient.
+# When then size of the divisor is less than N, we switch to the schoolbook
+# division algorithm.
+# However, these functions are still valid and can be used if needed.
 fn floor_divide_three_by_two_uint32(
     a2: UInt32, a1: UInt32, a0: UInt32, b1: UInt32, b0: UInt32
 ) raises -> Tuple[UInt32, UInt32, UInt32]:
