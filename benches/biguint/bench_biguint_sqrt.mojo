@@ -106,7 +106,7 @@ fn run_benchmark_sqrt(
         # Benchmark Mojo implementation
         var t0 = perf_counter_ns()
         for _ in range(iterations):
-            _ = decimojo.biguint.exponential.sqrt(mojo_number)
+            _ = String(decimojo.biguint.exponential.sqrt(mojo_number))
         var mojo_time = (perf_counter_ns() - t0) / iterations
         if mojo_time == 0:
             mojo_time = 1  # Prevent division by zero
@@ -114,7 +114,7 @@ fn run_benchmark_sqrt(
         # Benchmark Python implementation
         t0 = perf_counter_ns()
         for _ in range(iterations):
-            _ = math.isqrt(py_number)
+            _ = py.str(math.isqrt(py_number))
         var python_time = (perf_counter_ns() - t0) / iterations
 
         # Calculate speedup factor
@@ -166,7 +166,7 @@ fn main() raises:
         log_print("Could not retrieve system information", log_file)
 
     var iterations = 1000
-    var iterations_large_numbers = 10
+    var iterations_large_numbers = 5
 
     # Define benchmark cases (all positive numbers for BigUInt)
     log_print(
@@ -442,6 +442,51 @@ fn main() raises:
         "Random large number",
         "8675309192837465019283746501928374650192837465019283746501928374650192837465019283746501928374650192837465019283746501928374650192837465019283746501928374650192837465019283746501928374650",
         iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 31: Very large number
+    run_benchmark_sqrt(
+        "Very large number (1024 words)",
+        "123456789" * 1024,
+        iterations_large_numbers,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 32: Very large number
+    run_benchmark_sqrt(
+        "Very large number (2048 words)",
+        "123456789" * 2048,
+        iterations_large_numbers,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 33: Very large number
+    run_benchmark_sqrt(
+        "Very large number (4096 words)",
+        "123456789" * 4096,
+        iterations_large_numbers,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 34: Very large number
+    run_benchmark_sqrt(
+        "Very large number (8192 words)",
+        "123456789" * 8192,
+        iterations_large_numbers,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 35: Very large number
+    run_benchmark_sqrt(
+        "Very large number (16384 words)",
+        "123456789" * 16384,
+        iterations_large_numbers,
         log_file,
         speedup_factors,
     )

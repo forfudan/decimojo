@@ -52,18 +52,15 @@ fn sqrt(x: BigUInt) -> BigUInt:
             return BigUInt(List[UInt32](math.sqrt(x.words[0])))
 
     elif len(x.words) == 2:
-        return BigUInt(
-            List[UInt32](
-                UInt32(
-                    math.sqrt(
-                        (
-                            x.words.data.load[width=2]().cast[DType.uint64]()
-                            * SIMD[DType.uint64, 2](1, 1_000_000_000)
-                        ).reduce_add()
-                    )
-                )
+        var res = UInt32(
+            math.sqrt(
+                (
+                    x.words.data.load[width=2]().cast[DType.uint64]()
+                    * SIMD[DType.uint64, 2](1, 1_000_000_000)
+                ).reduce_add()
             )
         )
+        return BigUInt(List[UInt32](res))
 
     # Use Newton's method for larger numbers
     else:  # len(x.words) > 2
@@ -77,7 +74,6 @@ fn sqrt(x: BigUInt) -> BigUInt:
         # Start with a initial guess
         # The initial guess is smaller or equal to the actual square root
         var guess = sqrt_initial_guess(x)
-        print("Initial guess:", String(guess))
         if guess.is_zero():
             return BigUInt.ONE
 
@@ -102,13 +98,10 @@ fn sqrt(x: BigUInt) -> BigUInt:
             decimojo.biguint.arithmetics.floor_divide_inplace_by_2(guess)
 
             if guess == prev_guess:
-                print("Converged after", iterations, "iterations")
                 break
             if prev_guess == guess + BigUInt.ONE:
-                print("Converged after", iterations, "iterations")
                 break
             if guess == prev_guess + BigUInt.ONE:
-                print("Converged after", iterations, "iterations")
                 return prev_guess^
 
         # # Ensure we return the floor of the square root
@@ -162,7 +155,9 @@ fn sqrt_initial_guess(x: BigUInt) -> BigUInt:
 
     var n_words = (len(x.words) - 1) // 2  # Number of words to append later
     var msw_sqrt: UInt32
+    var nsw: UInt32  # Next significant word
     if len(x.words) & 1 == 0:  # If even, we use the most significant 2 words
+        nsw = x.words[len(x.words) - 3]
         msw_sqrt = UInt32(
             math.sqrt(
                 (
@@ -174,9 +169,19 @@ fn sqrt_initial_guess(x: BigUInt) -> BigUInt:
             )
         )
     else:  # If odd, we use the most significant word
+        nsw = x.words[len(x.words) - 2]
         msw_sqrt = math.sqrt(x.words[len(x.words) - 1])
 
+    # Some additional adjustments based on the next significant word
+    nsw //= 2 * msw_sqrt  # The next word contributes to the guess
+    if nsw > 999_999_999:  # Cap at max word value
+        nsw = 999_999_999
+
     words = List[UInt32](length=n_words + 1, fill=UInt32(0))
-    words.unsafe_set(n_words, msw_sqrt)  # Boundary checks are not needed here
+    # Boundary checks are not needed here because len(x.words) > 2
+    words.unsafe_set(n_words, msw_sqrt)
+    words.unsafe_set(
+        n_words - 1, UInt32(nsw)
+    )  # Set the next significant word contribution
 
     return BigUInt(words^)
