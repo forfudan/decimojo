@@ -77,18 +77,21 @@ fn sqrt(x: BigUInt) -> BigUInt:
         # Start with a initial guess
         # The initial guess is smaller or equal to the actual square root
         var guess = sqrt_initial_guess(x)
+        print("Initial guess:", String(guess))
         if guess.is_zero():
             return BigUInt.ONE
 
         # Newton's iteration: x_{k+1} = (x_k + n/x_k) / 2
         # Continue until convergence
-        var prev_guess = BigUInt()  # Start with zero to avoid early termination
+        var prev_guess: BigUInt
+        var quotient: BigUInt
 
-        while (guess != prev_guess) and (guess != prev_guess + BigUInt.ONE):
+        var iterations = 0
+        while True:
+            iterations += 1
             prev_guess = guess
 
             # Calculate (x_k + n/x_k) // 2
-            var quotient: BigUInt
             try:
                 # Division by zero should not occur if guess is positive
                 quotient = x.floor_divide(guess)
@@ -98,12 +101,22 @@ fn sqrt(x: BigUInt) -> BigUInt:
             guess += quotient
             decimojo.biguint.arithmetics.floor_divide_inplace_by_2(guess)
 
-        # Ensure we return the floor of the square root
-        # Check if guess^2 > x, if so, decrement guess
-        var guess_squared = guess * guess
-        if guess_squared > x:
-            # guess must be larger than 1
-            decimojo.biguint.arithmetics.subtract_inplace_by_uint32(guess, 1)
+            if guess == prev_guess:
+                print("Converged after", iterations, "iterations")
+                break
+            if prev_guess == guess + BigUInt.ONE:
+                print("Converged after", iterations, "iterations")
+                break
+            if guess == prev_guess + BigUInt.ONE:
+                print("Converged after", iterations, "iterations")
+                return prev_guess^
+
+        # # Ensure we return the floor of the square root
+        # # Check if guess^2 > x, if so, decrement guess
+        # var guess_squared = guess * guess
+        # if guess_squared > x:
+        #     # guess must be larger than 1
+        #     decimojo.biguint.arithmetics.subtract_inplace_by_uint32(guess, 1)
 
         return guess^
 
