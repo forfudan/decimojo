@@ -140,10 +140,3 @@ fn test_biguint_truncate_divide_random_numbers_against_python() raises:
             + python_result,
         )
     print("BigUInt truncate division tests passed!")
-
-
-fn main() raises:
-    print("Running BigUInt arithmetic tests")
-    test_biguint_arithmetics()
-    test_biguint_truncate_divide()
-    print("All BigUInt arithmetic tests passed!")

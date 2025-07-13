@@ -1187,6 +1187,31 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         var exponent_as_int = exponent.to_int()
         return self.power(exponent_as_int)
 
+    fn sqrt(self) -> Self:
+        """Returns the square root of this number.
+
+        Returns:
+            The square root of x as a BigUInt.
+
+        Notes:
+
+        The square root is the largest integer y such that y * y <= x.
+        """
+        return decimojo.biguint.exponential.sqrt(self)
+
+    fn isqrt(self) -> Self:
+        """Returns the square root of this number.
+        It is equal to `sqrt()`.
+
+        Returns:
+            The square root of x as a BigUInt.
+
+        Notes:
+
+        The square root is the largest integer y such that y * y <= x.
+        """
+        return decimojo.biguint.exponential.sqrt(self)
+
     @always_inline
     fn compare(self, other: Self) -> Int8:
         """Compares the magnitudes of two BigUInts.
@@ -1458,13 +1483,17 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
 
         If the least significant word is zero, we do not remove it.
         """
-        var n_empty_words: Int = 0
-        for i in range(len(self.words) - 1, 0, -1):
-            if self.words[i] == 0:
-                n_empty_words += 1
-            else:
-                break
-        self.words.resize(len(self.words) - n_empty_words, UInt32(0))
+        if self.words[len(self.words) - 1] != 0:
+            # The least significant word is not zero, so we do not remove it
+            return
+        else:
+            var n_empty_words: Int = 0
+            for i in range(len(self.words) - 1, 0, -1):
+                if self.words[i] == 0:
+                    n_empty_words += 1
+                else:
+                    break
+            self.words.resize(len(self.words) - n_empty_words, UInt32(0))
 
     @always_inline
     fn remove_trailing_digits_with_rounding(

@@ -210,7 +210,7 @@ fn add_slices(
 
     # Short circuit cases
     if n_words_x_slice == 1:
-        if x.words[bounds_x[1]] == 0:
+        if x.words[bounds_x[0]] == 0:
             # x slice is zero, return y slice
             return BigUInt.from_slice(y, bounds_y)
         elif n_words_y_slice == 1:
@@ -648,6 +648,12 @@ fn subtract_inplace(mut x: BigUInt, y: BigUInt) raises -> None:
         )
 
     # Now it is safe to subtract the smaller number from the larger one
+
+    # If y is a single-word number, we can handle it with UInt32
+    if len(y.words) == 1:
+        subtract_inplace_by_uint32(x, y.words[0])
+        return
+
     # Note that len(x.words) >= len(y.words) here
     # Use SIMD operations to subtract the words in parallel.
     @parameter
@@ -702,6 +708,50 @@ fn subtract_inplace_no_check(mut x: BigUInt, y: BigUInt) -> None:
     x.remove_leading_empty_words()
 
     return
+
+
+fn subtract_inplace_by_uint32(mut x: BigUInt, y: UInt32) -> None:
+    """Subtracts a UInt32 value from a BigUInt number in-place.
+
+    Args:
+        x: The BigUInt number to subtract from.
+        y: The UInt32 value to subtract.
+
+    Notes:
+        This function assumes that x >= y, and it does not check for underflow.
+        It is the caller's responsibility to ensure that x is greater than or
+        equal to y before calling this function.
+    """
+
+    debug_assert[assert_mode="none"](
+        (len(x.words) > 1) or (x.words[0] >= y),
+        "subtract_inplace_by_uint32(): Underflow due to x < y.",
+    )
+
+    x.words[0] -= y
+
+    if len(x.words) == 1:
+        return
+    else:  # len(x.words) > 1
+        # We need to handle the borrow for the rest of the words
+        var borrow: UInt32 = 0
+        for ref word in x.words:
+            if borrow == 0:
+                if word <= BigUInt.BASE_MAX:  # 0 <= word <= 999_999_999
+                    break  # No borrow, we can stop early
+                else:  # word >= 3294967297, overflowed value
+                    word += BigUInt.BASE
+                    borrow = 1
+            else:  # borrow == 1
+                if (word >= 1) and (
+                    word <= BigUInt.BASE_MAX
+                ):  # 1 <= word <= 999_999_999
+                    word -= 1
+                    borrow = 0
+                else:  # word >= 3294967297 or word == 0, overflowed value
+                    word = (word + BigUInt.BASE) - 1
+                    # borrow = 1
+        return
 
 
 # ===----------------------------------------------------------------------=== #
@@ -1976,6 +2026,7 @@ fn floor_divide_burnikel_ziegler(
             n=n,
             cut_off=cut_off,
         )
+
         if i == t - 2:
             q = q_i
         else:
@@ -1983,6 +2034,7 @@ fn floor_divide_burnikel_ziegler(
                 q, n
             )
             q += q_i
+
         if i > 0:
             decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
                 r, n
@@ -1994,7 +2046,6 @@ fn floor_divide_burnikel_ziegler(
                 bounds_x=(0, len(r.words)),
                 bounds_y=((i - 1) * n, i * n),
             )
-
     return q
 
 
@@ -2157,6 +2208,11 @@ fn floor_divide_slices_two_by_one(
     bounds_b0 = (bounds_b[0], bounds_b[0] + n // 2).
     """
 
+    debug_assert[assert_mode="none"](
+        b.words[-1] >= 500_000_000,
+        "floor_divide_slices_two_by_one(): b[-1] must be at least 500_000_000",
+    )
+
     if (n & 1 == 1) or (n <= cut_off):
         var a_slice = BigUInt.from_slice(a, bounds_a)
         var b_slice = BigUInt.from_slice(b, bounds_b)
@@ -2164,9 +2220,6 @@ fn floor_divide_slices_two_by_one(
         # r = a_slice - q * b_slice
         a_slice -= multiply_slices(q, b, (0, len(q.words)), bounds_b)
         return (q^, a_slice^)
-
-    elif b.words[-1] < 500_000_000:
-        raise Error("b[-1] must be at least 500_000_000")
 
     elif bounds_a[0] + n + n // 2 >= bounds_a[1]:
         # If a3 is empty
@@ -2180,12 +2233,7 @@ fn floor_divide_slices_two_by_one(
         # If a3 is zero
         # We just need to use three-by-two division once: a2a1a0 // b1b0
         var q, r = floor_divide_slices_three_by_two(
-            a,
-            b,
-            (bounds_a[0], bounds_a[0] + n + n // 2),
-            bounds_b,
-            n // 2,
-            cut_off,
+            a, b, bounds_a, bounds_b, n // 2, cut_off
         )
         return (q^, r^)
 
