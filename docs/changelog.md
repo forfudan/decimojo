@@ -2,7 +2,7 @@
 
 This is a list of RELEASED changes for the DeciMojo Package.
 
-## 01/08/2025 (v0.5.0)
+## 20250801 (v0.5.0)
 
 DeciMojo v0.5.0 introduces significant enhancements to the `BigDecimal` and `BigUInt` types, including new mathematical functions and performance optimizations. The release adds **trigonometric functions** for `BigDecimal`, implements the **Chudnovsky algorithm** for computing π, implements the **Karatsuba multiplication algorithm** and **Burnikel-Ziegler fast division algorithm** for `BigUInt`. In-place subtraction is now supported for `BigUInt`, and SIMD is utilized for arithmetic operations. The release also includes improved error handling, optimized type conversions, and comprehensive documentation updates.
 
@@ -34,7 +34,7 @@ DeciMojo v0.5.0 introduces significant enhancements to the `BigDecimal` and `Big
 - Refactor the test files for `BigDecimal` (PR #93).
 - Refactor the test files for `BigInt` (PR #106).
 
-## 01/07/2025 (v0.4.1)
+## 20250701 (v0.4.1)
 
 Version 0.4.1 of DeciMojo introduces implicit type conversion between built-in integral types and arbitrary-precision types.
 
@@ -113,15 +113,15 @@ Fix a bug in `BigDecimal` where it cannot create a correct value from a integral
 
 Update the `tests` module and refactor the test files for `BigUInt` (PR #88).
 
-## 25/06/2025 (v0.4.0)
+## 20250625 (v0.4.0)
 
 DeciMojo v0.4.0 updates the codebase to Mojo v25.4. This release enables you to use DeciMojo with the latest Mojo features.
 
-## 06/06/2025 (v0.3.1)
+## 20250606 (v0.3.1)
 
 DeciMojo v0.3.1 updates the codebase to Mojo v25.3 and replaces the `magic` package manager with `pixi`. This release enables you to use DeciMojo with the latest Mojo features and the new package manager.
 
-## 15/04/2025 (v0.3.0)
+## 20250415 (v0.3.0)
 
 DeciMojo v0.3.0 introduces the arbitrary-precision `BigDecimal` type with comprehensive arithmetic operations, comparisons, and mathematical functions (`sqrt`, `root`, `log`, `exp`, `power`). A new `tomlmojo` package supports test refactoring. Improvements include refined `BigUInt` constructors, enhanced `scale_up_by_power_of_10()` functionality, and a critical multiplication bug fix.
 
@@ -144,7 +144,7 @@ DeciMojo v0.3.0 introduces the arbitrary-precision `BigDecimal` type with compre
 
 - Fix a bug in `BigUInt` multiplication where the calcualtion of carry is mistakenly skipped if a word of x2 is zero (PR #70).
 
-## 01/04/2025 (v0.2.0)
+## 20250401 (v0.2.0)
 
 Version 0.2.0 marks a significant expansion of DeciMojo with the introduction of `BigInt` and `BigUInt` types, providing unlimited precision integer arithmetic to complement the existing fixed-precision `Decimal` type. Core arithmetic functions for the `Decimal` type have been completely rewritten using Mojo 25.2's `UInt128`, delivering substantial performance improvements. This release also extends mathematical capabilities with advanced operations including logarithms, exponentials, square roots, and n-th roots for the `Decimal` type. The codebase has been reorganized into a more modular structure, enhancing maintainability and extensibility. With comprehensive test coverage, improved documentation in multiple languages, and optimized memory management, v0.2.0 represents a major advancement in both functionality and performance for numerical computing in Mojo.
 
