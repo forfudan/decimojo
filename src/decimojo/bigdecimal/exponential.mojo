@@ -663,10 +663,6 @@ fn sqrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
     elif n_digits_to_extend == 0:
         extended_coefficient = x.coefficient
     else:  # n_digits_to_extend < 0
-        debug_assert(
-            -n_digits_to_extend >= 0,
-            "n_digits_to_extend should not be negative",
-        )
         extended_coefficient = (
             decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
                 x.coefficient, -n_digits_to_extend
@@ -681,11 +677,9 @@ fn sqrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
     # If the last p digits of the coefficient are zeros, this means that
     # we have a perfect square, so we can scale down the coefficient
     # and the scale.
-    if sqrt_coefficient.number_of_trailing_zeros() >= half_n_digits_to_extend:
-        debug_assert(
-            -half_n_digits_to_extend >= 0,
-            "half_n_digits_to_extend should not be negative",
-        )
+    if (
+        sqrt_coefficient.number_of_trailing_zeros() >= half_n_digits_to_extend
+    ) and (half_n_digits_to_extend > 0):
         sqrt_coefficient = (
             decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
                 sqrt_coefficient, half_n_digits_to_extend

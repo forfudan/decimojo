@@ -1877,7 +1877,8 @@ fn floor_divide_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
         n >= 0,
         (
             "biguint.arithmetics.floor_divide_by_power_of_ten(): "
-            "n must be non-negative"
+            "n must be non-negative but got "
+            + String(n)
         ),
     )
 
