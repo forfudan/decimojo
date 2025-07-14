@@ -10,6 +10,7 @@ DeciMojo v0.5.0 introduces significant enhancements to the `BigDecimal` and `Big
 
 1. Introduce trigonometric functions for `BigDecimal`: `sin()`, `cos()`, `tan()`, `cot()`, `csc()`, `sec()`. These functions compute the corresponding trigonometric values of a given angle in radians with arbitrary precision (#96, #99).
 1. Introduce the function `pi()` for `BigDecimal` to compute the value of π (pi) with arbitrary precision with the Chudnovsky algorithm with binary splitting (#95).
+1. Implement the `sqrt()` function for `BigUInt` to compute the square root of a `BigUInt` number as a `BigUInt` object (#107).
 
 ### 🦋 Changed
 
