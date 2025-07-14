@@ -20,6 +20,7 @@ Implements basic arithmetic functions for the BigUInt type.
 
 from algorithm import vectorize
 import math
+from memory import memcpy, memset_zero
 import time
 import testing
 
@@ -1388,6 +1389,36 @@ fn multiply_inplace_by_power_of_ten(mut x: BigUInt, n: Int):
         return
 
 
+fn multiply_by_power_of_billion(x: BigUInt, n: Int) -> BigUInt:
+    """Multiplies a BigUInt by (10^9)^n if n > 0.
+    This equals to adding 9n zeros (n words) to the end of the number.
+
+    Args:
+        x: The BigUInt value to multiply.
+        n: The power of 10^9 to multiply by. Should be non-negative.
+    """
+
+    if n <= 0:
+        return x  # No change needed
+
+    if x.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x.words) == 1,
+            "multiply_inplace_by_power_of_billion(): leading zero words",
+        )
+        # If x is zero, we can just return
+        # No need to add zeros, it will still be zero
+        return BigUInt()
+
+    var words = List[UInt32](unsafe_uninit_length=len(x.words) + n)
+    # Fill the first n words with zeros
+    memset_zero(ptr=words.data, count=n)
+    # Copy the original words to the end of the new list
+    memcpy(dest=words.data + n, src=x.words.data, count=len(x.words))
+
+    return BigUInt(words=words^)
+
+
 fn multiply_inplace_by_power_of_billion(mut x: BigUInt, n: Int):
     """Multiplies a BigUInt in-place by (10^9)^n if n > 0.
     This equals to adding 9n zeros (n words) to the end of the number.
@@ -1825,25 +1856,31 @@ fn floor_divide_inplace_by_2(mut x: BigUInt) -> None:
     x.remove_leading_empty_words()
 
 
-fn floor_divide_by_power_of_ten(x: BigUInt, n: Int) raises -> BigUInt:
-    """Floor divide a BigUInt by 10^n (n>=0).
+# TODO: Implement a in-place version of this function
+fn floor_divide_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
+    """Floor divides a BigUInt by 10^n (n>=0).
     It is equal to removing the last n digits of the number.
 
     Args:
-        x: The BigUInt value to multiply.
-        n: The power of 10 to multiply by.
-
-    Raises:
-        Error: If n is negative.
+        x: The BigUInt value to divide.
+        n: The power of 10 to divide by.
 
     Returns:
         A new BigUInt containing the result of the multiplication.
+
+    Notes:
+
+    Please note that this function does not check if n is negative.
+    Please ensure that n is non-negative before calling this function.
     """
-    if n < 0:
-        raise Error(
+    debug_assert[assert_mode="none"](
+        n >= 0,
+        (
             "biguint.arithmetics.floor_divide_by_power_of_ten(): "
             "n must be non-negative"
-        )
+        ),
+    )
+
     if n == 0:
         return x
 
