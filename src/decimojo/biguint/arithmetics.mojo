@@ -90,21 +90,14 @@ fn negative(x: BigUInt) raises -> BigUInt:
         A new BigUInt containing the negative of x.
     """
     if not x.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x.words) == 1, "negative(): leading zero words"
+        )
         raise Error(
             "biguint.arithmetics.negative(): Negative of non-zero unsigned"
             " integer is undefined"
         )
     return BigUInt()  # Return zero
-
-
-fn negative_inplace(mut x: BigUInt) raises -> None:
-    """Does nothing as negative of non-zero unsigned integer is undefined."""
-    if not x.is_zero():
-        raise Error(
-            "biguint.arithmetics.negative_inplace(): Negative of non-zero"
-            " unsigned integer is undefined"
-        )
-    return
 
 
 fn absolute(x: BigUInt) -> BigUInt:
@@ -117,15 +110,6 @@ fn absolute(x: BigUInt) -> BigUInt:
         A new BigUInt containing the absolute value of x.
     """
     return x
-
-
-fn absolute_inplace(mut x: BigUInt) -> None:
-    """Does nothing as absolute value of unsigned integer is itself.
-
-    Args:
-        x: The BigUInt value to compute the absolute value of.
-    """
-    return
 
 
 # ===----------------------------------------------------------------------=== #
@@ -149,11 +133,23 @@ fn add(x: BigUInt, y: BigUInt) -> BigUInt:
     This function will consider the special cases first, and then call
     `add_slices_simd()` to handle the addition of the two BigUInt numbers.
     """
+    debug_assert[assert_mode="none"](
+        len(x.words) != 0, "BigUInt is uninitialized!"
+    )
+    debug_assert[assert_mode="none"](
+        len(y.words) != 0, "BigUInt is uninitialized!"
+    )
 
     # Short circuit cases
     if x.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x.words) == 1, "add(): leading zero words"
+        )
         return y
     if y.is_zero():
+        debug_assert[assert_mode="none"](
+            len(y.words) == 1, "add(): leading zero words"
+        )
         return x
 
     if len(x.words) == 1:
@@ -214,9 +210,9 @@ fn add_slices(
 
     # Short circuit cases
     if n_words_x_slice == 1:
-        if x.words[bounds_x[1]] == 0:
+        if x.words[bounds_x[0]] == 0:
             # x slice is zero, return y slice
-            return BigUInt(words=y.words[bounds_y[0] : bounds_y[1]])
+            return BigUInt.from_slice(y, bounds_y)
         elif n_words_y_slice == 1:
             # If both numbers are single-word, we can handle them with UInt32
             return BigUInt.from_uint32(
@@ -224,15 +220,15 @@ fn add_slices(
             )
         else:
             # If y slice is longer
-            var result = BigUInt(words=y.words[bounds_y[0] : bounds_y[1]])
+            var result = BigUInt.from_slice(y, bounds_y)
             add_inplace_by_uint32(result, x.words[bounds_x[0]])
             return result^
     if n_words_y_slice == 1:
         if y.words[bounds_y[0]] == 0:
-            return BigUInt(words=x.words[bounds_x[0] : bounds_x[1]])
+            return BigUInt.from_slice(x, bounds_x)
         else:
             # If x slice is longer
-            var result = BigUInt(words=x.words[bounds_x[0] : bounds_x[1]])
+            var result = BigUInt.from_slice(x, bounds_x)
             add_inplace_by_uint32(result, y.words[bounds_y[0]])
             return result^
 
@@ -343,9 +339,15 @@ fn add_inplace(mut x: BigUInt, y: BigUInt) -> None:
 
     # Short circuit cases
     if x.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x.words) == 1, "add_inplace(): leading zero words"
+        )
         x.words = y.words  # Copy the words from y
         return
     if y.is_zero():
+        debug_assert[assert_mode="none"](
+            len(y.words) == 1, "add_inplace(): leading zero words"
+        )
         return
 
     if len(y.words) == 1:
@@ -385,6 +387,9 @@ fn add_inplace_by_slice(
 
     # Short circuit cases
     if x.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x.words) == 1, "add_inplace_by_slice(): leading zero words"
+        )
         x.words = BigUInt(
             y.words[bounds_y[0] : bounds_y[1]]
         ).words  # Copy the words from y
@@ -476,8 +481,18 @@ fn subtract_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
     Returns:
         The result of subtracting y from x.
     """
+    debug_assert[assert_mode="none"](
+        len(x.words) != 0, "BigUInt is uninitialized!"
+    )
+    debug_assert[assert_mode="none"](
+        len(y.words) != 0, "BigUInt is uninitialized!"
+    )
+
     # If the subtrahend is zero, return the minuend
     if y.is_zero():
+        debug_assert[assert_mode="none"](
+            len(y.words) == 1, "subtract_school(): leading zero words"
+        )
         return x
 
     # We need to determine which number has the larger magnitude
@@ -547,6 +562,13 @@ fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
     Note that there will be potential overflow in the subtraction,
     but I will take advantage of that.
     """
+    debug_assert[assert_mode="none"](
+        len(x.words) != 0, "BigUInt is uninitialized!"
+    )
+    debug_assert[assert_mode="none"](
+        len(y.words) != 0, "BigUInt is uninitialized!"
+    )
+
     # If the subtrahend is zero, return the minuend
     # Yuhao ZHU:
     # This step is important because y can be of zero words and is longer than x.
@@ -555,6 +577,9 @@ fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
     # Note that our subtraction is via SIMD, so it is directly worked on unsafe
     # pointers.
     if y.is_zero():
+        debug_assert[assert_mode="none"](
+            len(y.words) == 1, "subtract_simd(): leading zero words"
+        )
         return x
 
     # We need to determine which number has the larger magnitude
@@ -607,6 +632,9 @@ fn subtract_inplace(mut x: BigUInt, y: BigUInt) raises -> None:
 
     # If the subtrahend is zero, return the minuend
     if y.is_zero():
+        debug_assert[assert_mode="none"](
+            len(y.words) == 1, "subtract_inplace(): leading zero words"
+        )
         return
 
     # We need to determine which number has the larger magnitude
@@ -620,6 +648,12 @@ fn subtract_inplace(mut x: BigUInt, y: BigUInt) raises -> None:
         )
 
     # Now it is safe to subtract the smaller number from the larger one
+
+    # If y is a single-word number, we can handle it with UInt32
+    if len(y.words) == 1:
+        subtract_inplace_by_uint32(x, y.words[0])
+        return
+
     # Note that len(x.words) >= len(y.words) here
     # Use SIMD operations to subtract the words in parallel.
     @parameter
@@ -651,6 +685,9 @@ fn subtract_inplace_no_check(mut x: BigUInt, y: BigUInt) -> None:
 
     # If the subtrahend is zero, return the minuend
     if y.is_zero():
+        debug_assert[assert_mode="none"](
+            len(y.words) == 1, "subtract_inplace_no_check(): leading zero words"
+        )
         return
 
     # Underflow checks are skipped here, so we assume x >= y
@@ -671,6 +708,50 @@ fn subtract_inplace_no_check(mut x: BigUInt, y: BigUInt) -> None:
     x.remove_leading_empty_words()
 
     return
+
+
+fn subtract_inplace_by_uint32(mut x: BigUInt, y: UInt32) -> None:
+    """Subtracts a UInt32 value from a BigUInt number in-place.
+
+    Args:
+        x: The BigUInt number to subtract from.
+        y: The UInt32 value to subtract.
+
+    Notes:
+        This function assumes that x >= y, and it does not check for underflow.
+        It is the caller's responsibility to ensure that x is greater than or
+        equal to y before calling this function.
+    """
+
+    debug_assert[assert_mode="none"](
+        (len(x.words) > 1) or (x.words[0] >= y),
+        "subtract_inplace_by_uint32(): Underflow due to x < y.",
+    )
+
+    x.words[0] -= y
+
+    if len(x.words) == 1:
+        return
+    else:  # len(x.words) > 1
+        # We need to handle the borrow for the rest of the words
+        var borrow: UInt32 = 0
+        for ref word in x.words:
+            if borrow == 0:
+                if word <= BigUInt.BASE_MAX:  # 0 <= word <= 999_999_999
+                    break  # No borrow, we can stop early
+                else:  # word >= 3294967297, overflowed value
+                    word += BigUInt.BASE
+                    borrow = 1
+            else:  # borrow == 1
+                if (word >= 1) and (
+                    word <= BigUInt.BASE_MAX
+                ):  # 1 <= word <= 999_999_999
+                    word -= 1
+                    borrow = 0
+                else:  # word >= 3294967297 or word == 0, overflowed value
+                    word = (word + BigUInt.BASE) - 1
+                    # borrow = 1
+        return
 
 
 # ===----------------------------------------------------------------------=== #
@@ -699,6 +780,13 @@ fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
     # TODO: Make this a global constant
     alias CUTOFF_KARATSUBA: Int = 64
     """The cutoff number of words for using Karatsuba multiplication."""
+
+    debug_assert[assert_mode="none"](
+        len(x.words) != 0, "BigUInt is uninitialized!"
+    )
+    debug_assert[assert_mode="none"](
+        len(y.words) != 0, "BigUInt is uninitialized!"
+    )
 
     # SPECIAL CASES
     # If x or y is a single-word number
@@ -818,9 +906,9 @@ fn multiply_slices_school(
         if x_word == 0:
             return BigUInt(UInt32(0))
         elif x_word == 1:
-            return BigUInt(words=y.words[bounds_y[0] : bounds_y[1]])
+            return BigUInt.from_slice(y, (bounds_y[0], bounds_y[1]))
         else:
-            var result = BigUInt(words=y.words[bounds_y[0] : bounds_y[1]])
+            var result = BigUInt.from_slice(y, (bounds_y[0], bounds_y[1]))
             multiply_inplace_by_uint32(result, x_word)
             return result^
     if n_words_y_slice == 1:
@@ -828,9 +916,9 @@ fn multiply_slices_school(
         if y_word == 0:
             return BigUInt(UInt32(0))
         elif y_word == 1:
-            return BigUInt(words=x.words[bounds_x[0] : bounds_x[1]])
+            return BigUInt.from_slice(x, (bounds_x[0], bounds_x[1]))
         else:
-            var result = BigUInt(words=x.words[bounds_x[0] : bounds_x[1]])
+            var result = BigUInt.from_slice(x, (bounds_x[0], bounds_x[1]))
             multiply_inplace_by_uint32(result, y_word)
             return result^
 
@@ -908,6 +996,9 @@ fn multiply_slices_karatsuba(
     This function uses a technique to avoid making copies of x and y.
     We just need to consider the slices of x and y by using the indices.
     """
+
+    if x.is_zero(bounds=bounds_x) or y.is_zero(bounds=bounds_y):
+        return BigUInt(UInt32(0))
 
     # Number of words in the slice 1: end_x - start_x
     # Number of words in the slice 2: end_y - start_y
@@ -1167,6 +1258,12 @@ fn multiply_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
     if n <= 0:
         return x
 
+    if x.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x.words) == 1, "multiply_by_power_of_ten(): leading zero words"
+        )
+        return BigUInt(UInt32(0))  # Multiplying zero by anything is still zero
+
     var number_of_zero_words = n // 9
     var number_of_remaining_digits = n % 9
 
@@ -1219,6 +1316,15 @@ fn multiply_inplace_by_power_of_ten(mut x: BigUInt, n: Int):
         n: The power of 10 to multiply by.
     """
     if n <= 0:
+        return
+
+    if x.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x.words) == 1,
+            "multiply_inplace_by_power_of_ten(): leading zero words",
+        )
+        # If x is zero, we can just return
+        # No need to add zeros, it will still be zero
         return
 
     var number_of_zero_words = n // 9
@@ -1294,6 +1400,15 @@ fn multiply_inplace_by_power_of_billion(mut x: BigUInt, n: Int):
     if n <= 0:
         return  # No change needed
 
+    if x.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x.words) == 1,
+            "multiply_inplace_by_power_of_billion(): leading zero words",
+        )
+        # If x is zero, we can just return
+        # No need to add zeros, it will still be zero
+        return
+
     # The number of words to add is n
     # For example, if n = 3, we add three words of zeros
     # x1, x2, x3, x4 -> x1, x2, x3, x4, 0, 0, 0
@@ -1334,6 +1449,13 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """
 
     alias CUTOFF_BURNIKEL_ZIEGLER = 64
+
+    debug_assert[assert_mode="none"](
+        len(x1.words) != 0, "BigUInt ", x1, " is uninitialized!"
+    )
+    debug_assert[assert_mode="none"](
+        len(x2.words) != 0, "BigUInt ", x2, " is uninitialized!"
+    )
 
     # CASE: x2 is single word
     if len(x2.words) == 1:
@@ -1379,6 +1501,9 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
     # CASE: Dividend is zero
     if x1.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x1.words) == 1, "floor_divide(): x1 has leading zero words"
+        )
         return BigUInt()  # Return zero
 
     var comparison_result: Int8 = x1.compare(x2)
@@ -1429,9 +1554,7 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         var ndigits_to_shift: Int  # Number of digits to shift
         # Calculate normalization factor to make leading digit of divisor
         # as large as possible
-        ndigits_to_shift = calculate_number_of_shifted_digits_for_normalization(
-            x2.words[-1]
-        )
+        ndigits_to_shift = calculate_ndigits_for_normalization(x2.words[-1])
 
         if ndigits_to_shift == 0:
             # No normalization needed, just use the general division algorithm
@@ -1465,6 +1588,10 @@ fn floor_divide_school(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
     """
 
     if divisor.is_zero():
+        debug_assert[assert_mode="none"](
+            len(divisor.words) == 1,
+            "floor_divide_school(): leading zero words",
+        )
         raise Error(
             "`biguint.arithmetics.floor_divide_school()`: Division by zero"
         )
@@ -1504,9 +1631,9 @@ fn floor_divide_school(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
             multiply_inplace_by_uint32(trial_product, UInt32(quotient))
             multiply_inplace_by_power_of_billion(trial_product, index_of_word)
 
-            if correction_attempts > 3:
-                print("correction attempts:", correction_attempts)
-                break
+            debug_assert[assert_mode="none"](
+                correction_attempts <= 3, "Too many correction attempts"
+            )
 
         # Store the quotient word
         result.words[index_of_word] = UInt32(quotient)
@@ -1607,6 +1734,10 @@ fn floor_divide_inplace_by_single_word(
         x2: The single word divisor.
     """
     if x2.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x2.words) == 1,
+            "floor_divide_inplace_by_single_word(): leading zero words",
+        )
         raise Error(
             "Error in `floor_divide_inplace_by_single_word`: Division by zero"
         )
@@ -1634,6 +1765,10 @@ fn floor_divide_inplace_by_double_words(
         Error: If the divisor is zero.
     """
     if x2.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x2.words) == 1,
+            "floor_divide_inplace_by_double_words(): leading zero words",
+        )
         raise Error(
             "biguint.arithmetics.floor_divide_inplace_by_double_words():"
             " Division by zero"
@@ -1671,6 +1806,9 @@ fn floor_divide_inplace_by_2(mut x: BigUInt) -> None:
         x: The BigUInt value to divide by 2.
     """
     if x.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x.words) == 1, "floor_divide_inplace_by_2(): leading zero words"
+        )
         return
 
     # Process from most significant to least significant word
@@ -1810,8 +1948,10 @@ fn floor_divide_burnikel_ziegler(
     if normalized_b.words[-1] == 0:
         normalized_b.remove_leading_empty_words()
     if normalized_b.words[-1] < 500_000_000:
-        ndigits_to_shift = decimojo.biguint.arithmetics.calculate_number_of_shifted_digits_for_normalization(
-            normalized_b.words[-1]
+        ndigits_to_shift = (
+            decimojo.biguint.arithmetics.calculate_ndigits_for_normalization(
+                normalized_b.words[-1]
+            )
         )
     else:
         ndigits_to_shift = 0
@@ -1864,10 +2004,12 @@ fn floor_divide_burnikel_ziegler(
         # If it is, we need to add one more block to the dividend.
         # This ensures that the most significant word of the dividend
         # is smaller than 500_000_000.
+        # In this sense, the first 2-by-1 division will generate a quotient
+        # of either 0 or 1, which would exceeds n-word capacity.
         if normalized_a.words[-1] >= 500_000_000:
             t += 1
 
-    var z = BigUInt(normalized_a.words[(t - 2) * n : t * n])
+    var z = BigUInt.from_slice(normalized_a, ((t - 2) * n, t * n))
     var q = BigUInt()
 
     for i in range(t - 2, -1, -1):
@@ -1884,6 +2026,7 @@ fn floor_divide_burnikel_ziegler(
             n=n,
             cut_off=cut_off,
         )
+
         if i == t - 2:
             q = q_i
         else:
@@ -1891,19 +2034,18 @@ fn floor_divide_burnikel_ziegler(
                 q, n
             )
             q += q_i
+
         if i > 0:
             decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
                 r, n
             )
             # z = r + a[(i - 1) * n : i * n]
-            #   = r + BigUInt(normalized_a.words[(i - 1) * n : i * n])
             z = add_slices(
                 r,
                 normalized_a,
                 bounds_x=(0, len(r.words)),
                 bounds_y=((i - 1) * n, i * n),
             )
-
     return q
 
 
@@ -1993,6 +2135,10 @@ fn floor_divide_three_by_two(
 
     var a2a1: BigUInt
     if a2.is_zero():
+        debug_assert[assert_mode="none"](
+            len(a2.words) == 1,
+            "floor_divide_three_by_two(): leading zero words",
+        )
         a2a1 = a1
     else:
         a2a1 = a2
@@ -2020,12 +2166,10 @@ fn floor_divide_three_by_two(
 
 
 # Yuhao ZHU:
-# The following two functions are optimized versions of the
+# The following two functions are OPTIMIZED versions of the
 # `floor_divide_two_by_one` and `floor_divide_three_by_two` functions.
 # They record the boundaries of the slices of the dividend and divisor
 # to avoid unnecessary recursive slicing and copying of the BigUInt objects.
-# TODO: bounds_a[1] and bounds_b[1] are not needed if the lengths of the
-# bounds are always n by design.
 fn floor_divide_slices_two_by_one(
     a: BigUInt,
     b: BigUInt,
@@ -2064,17 +2208,18 @@ fn floor_divide_slices_two_by_one(
     bounds_b0 = (bounds_b[0], bounds_b[0] + n // 2).
     """
 
-    if (n & 1 == 1) or (n <= cut_off):
-        var a_slice = BigUInt(a.words[bounds_a[0] : bounds_a[1]])
-        var b_slice = BigUInt(b.words[bounds_b[0] : bounds_b[1]])
+    debug_assert[assert_mode="none"](
+        b.words[-1] >= 500_000_000,
+        "floor_divide_slices_two_by_one(): b[-1] must be at least 500_000_000",
+    )
 
+    if (n & 1 == 1) or (n <= cut_off):
+        var a_slice = BigUInt.from_slice(a, bounds_a)
+        var b_slice = BigUInt.from_slice(b, bounds_b)
         var q = floor_divide_school(a_slice, b_slice)
         # r = a_slice - q * b_slice
         a_slice -= multiply_slices(q, b, (0, len(q.words)), bounds_b)
         return (q^, a_slice^)
-
-    elif b.words[-1] < 500_000_000:
-        raise Error("b[-1] must be at least 500_000_000")
 
     elif bounds_a[0] + n + n // 2 >= bounds_a[1]:
         # If a3 is empty
@@ -2088,12 +2233,7 @@ fn floor_divide_slices_two_by_one(
         # If a3 is zero
         # We just need to use three-by-two division once: a2a1a0 // b1b0
         var q, r = floor_divide_slices_three_by_two(
-            a,
-            b,
-            (bounds_a[0], bounds_a[0] + n + n // 2),
-            bounds_b,
-            n // 2,
-            cut_off,
+            a, b, bounds_a, bounds_b, n // 2, cut_off
         )
         return (q^, r^)
 
@@ -2153,32 +2293,37 @@ fn floor_divide_slices_three_by_two(
     bounds_b0 = (bounds_b[0], bounds_b[0] + n).
     """
 
-    var bounds_a2 = (bounds_a[0] + 2 * n, bounds_a[1])
-    var bounds_a1 = (bounds_a[0] + n, bounds_a[0] + 2 * n)
+    # SPECIAL CASE:
+    # If a2 is empty or zero, than it beomes a2a1 // b1b0
+    # Because the most significant word of b1 is at least 500_000_000,
+    # The quotient will be either 1 or 0.
+    if bounds_a[0] + 2 * n == bounds_a[1]:
+        debug_assert[assert_mode="none"](
+            a.words[bounds_a[1] - 1] != 0,
+            "the most significant word of a must not be zero",
+        )
+        if a.words[bounds_a[1] - 1] >= b.words[bounds_b[1] - 1]:
+            var r = BigUInt.from_slice(a, (bounds_a[0], bounds_a[1]))
+            subtract_inplace(r, BigUInt.from_slice(b, bounds_b))
+            return (BigUInt.ONE, r^)
+        else:
+            return (
+                BigUInt.ZERO,
+                BigUInt.from_slice(a, bounds_a),
+            )
+
+    # Now we can safely assume that a2 is not empty.
     var bounds_a0 = (bounds_a[0], bounds_a[0] + n)
+    var bounds_a2a1 = (bounds_a[0] + n, bounds_a[1])
     var bounds_b1 = (bounds_b[0] + n, bounds_b[1])
     var bounds_b0 = (bounds_b[0], bounds_b[0] + n)
 
-    var bounds_a2a1: Tuple[Int, Int]
-    # If a2 is empty or zero, we can use a1 directly
-    if bounds_a2[0] >= bounds_a[1]:
-        bounds_a2a1 = bounds_a1
-        # print("bounds_a2a1 3-by-2: a2 is empty")
-    elif a.is_zero(bounds=bounds_a2):
-        bounds_a2a1 = bounds_a1
-        # print("bounds_a2a1 3-by-2: a2 is zero")
-    else:
-        bounds_a2a1 = (bounds_a1[0], bounds_a[1])
-
-    # var q, c = floor_divide_two_by_one(a2a1, b1, n, cut_off)
     q, c = floor_divide_slices_two_by_one(
         a, b, bounds_a2a1, bounds_b1, n, cut_off
     )
     var d = multiply_slices(q, b, (0, len(q.words)), bounds_b0)
     decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(c, n)
-    var r = add_slices(
-        c, a, bounds_x=(0, len(c.words)), bounds_y=(bounds_a0[0], bounds_a0[1])
-    )
+    var r = add_slices(c, a, bounds_x=(0, len(c.words)), bounds_y=bounds_a0)
 
     if r < d:
         q -= BigUInt.ONE
@@ -2193,6 +2338,14 @@ fn floor_divide_slices_three_by_two(
     return (q^, r^)
 
 
+# Yuhao ZHU:
+# The following functions are most granular implementations of the
+# Burnikel-Ziegler algorithm, which divide a 3-word number by a 2-word number
+# and a 4-word number by a 2-word number, respectively.
+# They are not used because they are too granular and not efficient.
+# When then size of the divisor is less than N, we switch to the schoolbook
+# division algorithm.
+# However, these functions are still valid and can be used if needed.
 fn floor_divide_three_by_two_uint32(
     a2: UInt32, a1: UInt32, a0: UInt32, b1: UInt32, b0: UInt32
 ) raises -> Tuple[UInt32, UInt32, UInt32]:
@@ -2312,6 +2465,10 @@ fn ceil_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
     # CASE: Division by zero
     if x2.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x2.words) == 1,
+            "ceil_divide(): leading zero words",
+        )
         raise Error("biguint.arithmetics.ceil_divide(): Division by zero")
 
     # Apply floor division and check if there is a remainder
@@ -2341,10 +2498,17 @@ fn floor_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """
     # CASE: Division by zero
     if x2.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x2.words) == 1,
+            "truncate_modulo(): leading zero words",
+        )
         raise Error("Error in `truncate_modulo`: Division by zero")
 
     # CASE: Dividend is zero
     if x1.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x1.words) == 1, "truncate_modulo(): leading zero words"
+        )
         return BigUInt()  # Return zero
 
     # CASE: Divisor is one - no remainder
@@ -2390,10 +2554,16 @@ fn ceil_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """
     # CASE: Division by zero
     if x2.is_zero():
-        raise Error("Error in `truncate_modulo`: Division by zero")
+        debug_assert[assert_mode="none"](
+            len(x2.words) == 1, "ceil_modulo(): leading zero words"
+        )
+        raise Error("Error in `ceil_modulo`: Division by zero")
 
     # CASE: Dividend is zero
     if x1.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x1.words) == 1, "ceil_modulo(): leading zero words"
+        )
         return BigUInt()  # Return zero
 
     # CASE: Divisor is one - no remainder
@@ -2410,6 +2580,9 @@ fn ceil_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     var remainder = subtract(x1, multiply(x2, quotient))
 
     if remainder.is_zero():
+        debug_assert[assert_mode="none"](
+            len(remainder.words) == 1, "ceil_modulo(): leading zero words"
+        )
         return BigUInt()  # No remainder
     else:
         return subtract(x2, remainder)
@@ -2638,7 +2811,7 @@ fn power_of_10(n: Int) raises -> BigUInt:
 
 
 @always_inline
-fn calculate_number_of_shifted_digits_for_normalization(msw: UInt32) -> Int:
+fn calculate_ndigits_for_normalization(msw: UInt32) -> Int:
     """Calculates the number of digits to shift left for normalization.
 
     Args:

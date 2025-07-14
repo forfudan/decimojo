@@ -14,13 +14,7 @@
 # limitations under the License.
 # ===----------------------------------------------------------------------=== #
 
-# ===----------------------------------------------------------------------=== #
-# Power and root functions
-# ===----------------------------------------------------------------------=== #
-
 """Implements exponential functions for the BigDecimal type."""
-
-import time
 
 from decimojo.bigdecimal.bigdecimal import BigDecimal
 from decimojo.rounding_mode import RoundingMode

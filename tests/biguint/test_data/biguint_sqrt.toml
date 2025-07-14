@@ -1,0 +1,63 @@
+# ===----------------------------------------------------------------------=== #
+# Test cases for BigUInt sqrt operations
+# ===----------------------------------------------------------------------=== #
+
+[[sqrt_tests]]
+a = "0"
+expected = "0"
+description = "sqrt(0) = 0"
+
+[[sqrt_tests]]
+a = "1"
+expected = "1"
+description = "sqrt(1) = 1"
+
+[[sqrt_tests]]
+a = "2"
+expected = "1"
+description = "sqrt(2) = 1.414... → 1 (truncated)"
+
+[[sqrt_tests]]
+a = "3"
+expected = "1"
+description = "sqrt(3) = 1.732... → 1 (truncated)"
+
+[[sqrt_tests]]
+a = "4"
+expected = "2"
+description = "sqrt(4) = 2"
+
+[[sqrt_tests]]
+a = "9"
+expected = "3"
+description = "sqrt(9) = 3" 
+
+[[sqrt_tests]]
+a = "123"
+expected = "11"
+description = "sqrt(123) = 11.090... → 11 (truncated)"
+
+[[sqrt_tests]]
+a = "1000"
+expected = "31"
+description = "sqrt(1000) = 31.622... → 31 (truncated)"
+
+[[sqrt_tests]]
+a = "10000"
+expected = "100"
+description = "sqrt(10000) = 100"
+
+[[sqrt_tests]]
+a = "12345678901234567890"
+expected = "3513641828"
+description = "sqrt(12345678901234567890) = 3513641828.820... → 3513641828 (truncated)"
+
+[[sqrt_tests]]
+a = "2134046123987508516283704689065901286490832650912368523046783496512308974908123650912364982165901236489037589016230894363274653012643028560123467389065012389640"
+expected = "46195737075919770589653035762589470420235915593494302749617514351576404175199142"
+description = "Large number square root"
+
+[[sqrt_tests]]
+a = "1440000000000000000000000000000000000000000"
+expected = "1200000000000000000000"
+description = "Square root of a large perfect square"
