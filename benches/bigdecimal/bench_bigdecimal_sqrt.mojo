@@ -10,6 +10,8 @@ import time
 import os
 from collections import List
 
+alias PRECISION = 5000
+
 
 fn open_log_file() raises -> PythonObject:
     """
@@ -76,17 +78,38 @@ fn run_benchmark_sqrt(
 
     # Execute the operations once to verify correctness
     try:
-        var mojo_result = mojo_value.sqrt(precision=28)
+        var mojo_result = mojo_value.sqrt(precision=PRECISION)
         var py_result = py_value.sqrt()
 
         # Display results for verification
         log_print("Mojo result:       " + String(mojo_result), log_file)
         log_print("Python result:     " + String(py_result), log_file)
 
+        # Check if results match
+        var mojo_str = String(mojo_result)
+        var py_str = String(py_result)
+        var results_match = mojo_str == py_str
+
+        if results_match:
+            log_print(
+                "✓ Results MATCH",
+                log_file,
+            )
+        else:
+            log_print("✗ Results DIFFER!", log_file)
+            log_print(
+                "  Mojo: " + mojo_str,
+                log_file,
+            )
+            log_print(
+                "  Python: " + py_str,
+                log_file,
+            )
+
         # Benchmark Mojo implementation
         var t0 = perf_counter_ns()
         for _ in range(iterations):
-            _ = mojo_value.sqrt(precision=28)
+            _ = mojo_value.sqrt(precision=PRECISION)
         var mojo_time = (perf_counter_ns() - t0) / iterations
         if mojo_time == 0:
             mojo_time = 1  # Prevent division by zero
@@ -149,12 +172,12 @@ fn main() raises:
     var pydecimal = Python().import_module("decimal")
 
     # Set Python decimal precision to match Mojo's
-    pydecimal.getcontext().prec = 28
+    pydecimal.getcontext().prec = PRECISION
     log_print(
         "Python decimal precision: " + String(pydecimal.getcontext().prec),
         log_file,
     )
-    log_print("Mojo decimal precision: 28", log_file)
+    log_print("Mojo decimal precision: PRECISION", log_file)
 
     # Define benchmark cases
     log_print(
@@ -619,6 +642,188 @@ fn main() raises:
     run_benchmark_sqrt(
         "Square root of 137",
         "137",
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # === VERY LARGE DECIMAL TESTS ===
+
+    # Case 51: 100-word decimal (approximately 900 digits)
+    run_benchmark_sqrt(
+        "100-word decimal square root",
+        "123456789." + "123456789" * 100,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 52: 200-word decimal (approximately 1800 digits)
+    run_benchmark_sqrt(
+        "200-word decimal square root",
+        "987654321." + "987654321" * 200,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 53: 300-word decimal (approximately 2700 digits)
+    run_benchmark_sqrt(
+        "300-word decimal square root",
+        "555666777." + "555666777" * 300,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 54: 400-word decimal (approximately 3600 digits)
+    run_benchmark_sqrt(
+        "400-word decimal square root",
+        "111222333." + "111222333" * 400,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 55: 500-word decimal (approximately 4500 digits)
+    run_benchmark_sqrt(
+        "500-word decimal square root",
+        "999888777." + "999888777" * 500,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 56: 750-word decimal (approximately 6750 digits)
+    run_benchmark_sqrt(
+        "750-word decimal square root",
+        "147258369." + "147258369" * 750,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 57: 1000-word decimal (approximately 9000 digits)
+    run_benchmark_sqrt(
+        "1000-word decimal square root",
+        "369258147." + "369258147" * 1000,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 58: 1250-word decimal (approximately 11250 digits)
+    run_benchmark_sqrt(
+        "1250-word decimal square root",
+        "789456123." + "789456123" * 1250,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 59: 1500-word decimal (approximately 13500 digits)
+    run_benchmark_sqrt(
+        "1500-word decimal square root",
+        "456789123." + "456789123" * 1500,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 60: 1750-word decimal (approximately 15750 digits)
+    run_benchmark_sqrt(
+        "1750-word decimal square root",
+        "321654987." + "321654987" * 1750,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 61: 2000-word decimal (approximately 18000 digits)
+    run_benchmark_sqrt(
+        "2000-word decimal square root",
+        "654987321." + "654987321" * 2000,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 62: 2250-word decimal (approximately 20250 digits)
+    run_benchmark_sqrt(
+        "2250-word decimal square root",
+        "852741963." + "852741963" * 2250,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 63: 2500-word decimal (approximately 22500 digits)
+    run_benchmark_sqrt(
+        "2500-word decimal square root",
+        "741852963." + "741852963" * 2500,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 64: 2750-word decimal (approximately 24750 digits)
+    run_benchmark_sqrt(
+        "2750-word decimal square root",
+        "123456789" * 1000 + "963852741." + "963852741" * 2750,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 65: 3000-word decimal (approximately 27000 digits)
+    run_benchmark_sqrt(
+        "3000-word decimal square root",
+        "159357426." + "159357426" * 3000,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 66: 3500-word decimal (approximately 31500 digits)
+    run_benchmark_sqrt(
+        "3500-word decimal square root",
+        "426159357." + "426159357" * 3500,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 67: 4000-word decimal (approximately 36000 digits)
+    run_benchmark_sqrt(
+        "4000-word decimal square root",
+        "357426159." + "357426159" * 4000,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 68: 4250-word decimal (approximately 38250 digits)
+    run_benchmark_sqrt(
+        "4250-word decimal square root",
+        "624813579." + "624813579" * 4250,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 69: 4750-word decimal (approximately 42750 digits)
+    run_benchmark_sqrt(
+        "4750-word decimal square root",
+        "813579624." + "813579624" * 4750,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 70: 5000-word decimal (approximately 45000 digits)
+    run_benchmark_sqrt(
+        "5000-word decimal square root",
+        "0." + "000000000579624813" * 5000,
         iterations,
         log_file,
         speedup_factors,

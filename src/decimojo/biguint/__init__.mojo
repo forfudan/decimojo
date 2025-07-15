@@ -14,7 +14,7 @@
 # limitations under the License.
 # ===----------------------------------------------------------------------=== #
 
-"""Sub-package for big unsigned integer arithmetic."""
+"""Sub-package for base-10^9 big unsigned integer type."""
 
 # About the module name `biguint`:
 # According to PEP-8, Modules should have short, all-lowercase names.

@@ -33,6 +33,7 @@ import decimojo.str
 
 # Type aliases
 alias BUInt = BigUInt
+alias BigUInt10 = BigUInt
 
 
 @value

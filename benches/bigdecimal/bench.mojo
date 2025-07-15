@@ -7,7 +7,6 @@ from bench_bigdecimal_exp import main as bench_exp
 from bench_bigdecimal_ln import main as bench_ln
 from bench_bigdecimal_root import main as bench_root
 from bench_bigdecimal_round import main as bench_round
-from bench_bigdecimal_scale_up_by_power_of_10 import main as bench_scale_up
 
 
 fn main() raises:
@@ -63,8 +62,6 @@ scaleup:     Scale up by power of 10
         bench_round()
     elif command == "q":
         return
-    elif command == "scaleup":
-        bench_scale_up()
     else:
         print("Invalid input")
         main()

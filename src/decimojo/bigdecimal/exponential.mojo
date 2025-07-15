@@ -43,7 +43,6 @@ import decimojo.utility
 # Power and root functions
 # power(base, exponent, precision)
 # integer_power(base, exponent, precision)
-# sqrt(x, precision)
 # ===----------------------------------------------------------------------=== #
 
 
@@ -432,18 +431,44 @@ fn is_odd_reciprocal(n: BigDecimal) raises -> Bool:
         return False
 
 
-fn sqrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
+# ===----------------------------------------------------------------------=== #
+# Square root functions
+#
+# Yuhao ZHU:
+# In DeciMojo v0.3.0, `sqrt` is implemented by using the BigDecimal objects to
+# store the intermediate results. While this is more direct, it is not very
+# efficient because it requires a lot of calculations to ensure that the scales
+# and the precisions in the intermediate results are correct. It is also error-
+# prone when scales are negative or there are two many significant digits.
+# In DeciMojo v0.5.0, `sqrt` is re-implemented by using the BigUInt.sqrt()
+# function. It first calculates the square root of the coefficient of x, and
+# then adjust the scale based on the input scale, which is more efficient and
+# error-free.
+# The old implementation is still available as `sqrt_decimal_approach`.
+# ===----------------------------------------------------------------------=== #
+
+
+fn sqrt_decimal_approach(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculate the square root of a BigDecimal number.
 
     Args:
         x: The number to calculate the square root of.
-        precision: The desired precision (number of significant digits) of the result.
+        precision: The desired precision (number of significant digits) of the
+            result.
 
     Returns:
         The square root of x with the specified precision.
 
     Raises:
         Error: If x is negative.
+
+    Notes:
+
+    This function uses Newton's method to iteratively approximate the square
+    root. The intermediate calculations are done with BigDecimal objects.
+    An other approach is to use the BigUInt.sqrt() function to calculate the
+    square root of the coefficient of x, and then adjust the scale based on the
+    input scale.
     """
     alias BUFFER_DIGITS = 9
 
@@ -577,6 +602,103 @@ fn sqrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
             guess.scale = (x.scale + 1) // 2
 
     return guess^
+
+
+fn sqrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
+    """Calculate the square root of a BigDecimal number.
+
+    Args:
+        x: The number to calculate the square root of.
+        precision: The desired precision (number of significant digits) of the
+            result.
+
+    Returns:
+        The square root of x with the specified precision.
+
+    Raises:
+        Error: If x is negative.
+
+    Notes:
+        This function uses BigUInt.sqrt() to calculate the square root of the
+        coefficient of x, and then adjusts the scale based on the input scale.
+    """
+
+    # Yuhao ZHU:
+    # I am using the following tricks to ensure that the scales are correct
+    # during scale up and scale down operations.
+    # A BigDecimal has a coefficient (c) and a scale (s) -> c*10^(-s).
+    # Let the final targeted scale to be t. So the result should have
+    # (c*10^(-s))^(1/2) = (c*10^(2t-s)*10^(-2t+s)*10^(-s))^(1/2)
+    #                   = (c*10^(2t-s))^(1/2) * 10^(-t)
+    #                   = c_0 * 10^(-t)
+    # where c_0 is the new coefficient after taking the square root and
+    # t is the new scale.
+    # So we first need to extend the coefficient by 10^(2t-s) to ensure
+    # the square root has enough precision. Let's denote the precision as p.
+    # Thus, the number of digits of c*10^(2t-s) should be at least 2p.
+    # That is t > p + (s - d(c)) // 2
+
+    # Handle special cases
+    if x.sign:
+        raise Error(
+            "Error in `sqrt`: Cannot compute square root of negative number"
+        )
+
+    if x.coefficient.is_zero():
+        return BigDecimal(BigUInt.ZERO, (x.scale + 1) // 2, False)
+
+    # STEP 1: Extend the coefficient by 10^(2p-s)
+    var working_precision = precision + 9  # p
+    var n_digits_coef = x.coefficient.number_of_digits()  # d(c)
+    var new_scale = working_precision + (x.scale - n_digits_coef) // 2 + 1  # t
+    var n_digits_to_extend = new_scale * 2 - x.scale  # 2t - s
+    var half_n_digits_to_extend = n_digits_to_extend // 2
+    var extended_coefficient: BigUInt
+    if n_digits_to_extend > 0:
+        extended_coefficient = (
+            decimojo.biguint.arithmetics.multiply_by_power_of_ten(
+                x.coefficient, n_digits_to_extend
+            )
+        )
+    elif n_digits_to_extend == 0:
+        extended_coefficient = x.coefficient
+    else:  # n_digits_to_extend < 0
+        extended_coefficient = (
+            decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
+                x.coefficient, -n_digits_to_extend
+            )
+        )
+
+    # STEP 2: Calculate the square root of the extended coefficient
+    var sqrt_coefficient = decimojo.biguint.exponential.sqrt(
+        extended_coefficient
+    )
+
+    # If the last p digits of the coefficient are zeros, this means that
+    # we have a perfect square, so we can scale down the coefficient
+    # and the scale.
+    if (
+        sqrt_coefficient.number_of_trailing_zeros() >= half_n_digits_to_extend
+    ) and (half_n_digits_to_extend > 0):
+        sqrt_coefficient = (
+            decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
+                sqrt_coefficient, half_n_digits_to_extend
+            )
+        )
+        new_scale -= half_n_digits_to_extend
+
+    var result = BigDecimal(
+        sqrt_coefficient^,
+        new_scale,
+        False,
+    )
+    result.round_to_precision(
+        precision=precision,
+        rounding_mode=RoundingMode.ROUND_HALF_UP,
+        remove_extra_digit_due_to_rounding=True,
+        fill_zeros_to_precision=False,
+    )
+    return result^
 
 
 fn cbrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
