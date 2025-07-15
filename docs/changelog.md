@@ -14,6 +14,8 @@ DeciMojo v0.5.0 introduces significant enhancements to the `BigDecimal` and `Big
 
 ### 🦋 Changed
 
+Changes in **BigUInt**:
+
 1. Refine the `BigUInt` multiplication with the **Karatsuba algorithm**. The time complexity of maltiplication is reduced from $O(n^2)$ to $O(n^{ln(3/2)})$ for large integers, which significantly improves performance for big numbers. Doubling the size of the numbers will only increase the time taken by a factor of about 3, instead of 4 as in the previous implementation (#97).
 1. Refine the `BigUInt` division with the **Burnikel-Ziegler fast recursive division algorithm**. The time complexity of division is also reduced from $O(n^2)$ to $O(n^{ln(3/2)})$ for large integers (#103).
 1. Refine the fall-back **schoolbook division** of `BigUInt` to improve performance. The fallback division is used when the divisor is small enough (#98, #100).
@@ -22,6 +24,13 @@ DeciMojo v0.5.0 introduces significant enhancements to the `BigDecimal` and `Big
 1. Use SIMD for `BigUInt` addition and subtraction operations. This allows the addition and subtraction of two `BigUInt` objects to be performed in parallel, significantly improving performance for large numbers (#101, #102).
 1. Implement functions for all arithmetic operations on slices of `BigUInt` objects. This allows you to perform arithmetic operations on slices of `BigUInt` objects without having to convert them to `BigUInt` first, leading to less memory allocation and improved performance (#105).
 1. Add `to_uint64()` and `to_uint128()` methods to `BigUInt` to for fast type conversion (#91).
+
+Changes in **BigDecimal**:
+
+1. Re-implemente the `sqrt()` function for `BigDecimal` to use the new `BigUInt.sqrt()` method for better performance and accuracy. The new implementation adjusts the scale and coefficient directly, which is more efficient than the previous method. Introduce a new `sqrt_decimal_approach()` function to preserve the old implementation for reference (#108).
+
+Other changes:
+
 1. Improve error messages and remove unnecessary `raises` keywords for all functions (#92).
 
 ### 🛠️ Fixed
