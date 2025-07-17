@@ -903,71 +903,85 @@ struct BigDecimal(
         """
         return self.coefficient.number_of_digits() - 1 - self.scale
 
-    fn extend_precision(self, precision_diff: Int) raises -> BigDecimal:
+    fn extend_precision(self, precision_diff: Int) -> BigDecimal:
         """Returns a number with additional decimal places (trailing zeros).
         This multiplies the coefficient by 10^precision_diff and increases
         the scale accordingly, preserving the numeric value.
+        If `precision_diff` is negative, nothing is done and the
+        original number is returned.
 
         Args:
-            precision_diff: The number of decimal places to add.
+            precision_diff: The number of decimal places to add, which must be
+                non-negative.
 
         Returns:
             A new BigDecimal with increased precision.
 
-        Raises:
-            Error: If `precision_diff` is negative.
+        Notes:
+
+        In debug mode, negative `precision_diff` raises an assertion error.
 
         Examples:
         ```
         print(BigDecimal("123.456).scale_up(5))  # Output: 123.45600000
         print(BigDecimal("123456").scale_up(3))  # Output: 123456.000
-        print(BigDecimal("123456").scale_up(-1))  # Error!
+        print(BigDecimal("123456").scale_up(-1))  # Output: 123456 (no change)
         ```
-        End of examples.
         """
-        if precision_diff < 0:
-            raise Error(
-                "`extend_precision()`: "
-                "Cannot extend precision with negative value"
-            )
+        debug_assert(
+            precision_diff >= 0,
+            "bigdecimal.BigDecimal.extend_precision(): ",
+            "precision_diff must be non-negative, got: ",
+            precision_diff,
+        )
 
-        if precision_diff == 0:
+        if precision_diff <= 0:
             return self
 
-        var number_of_words_to_add = precision_diff // 9
-        var number_of_remaining_digits_to_add = precision_diff % 9
-
-        var coefficient = self.coefficient
-
-        if number_of_remaining_digits_to_add == 0:
-            pass
-        elif number_of_remaining_digits_to_add == 1:
-            coefficient = coefficient * BigUInt(UInt32(10))
-        elif number_of_remaining_digits_to_add == 2:
-            coefficient = coefficient * BigUInt(UInt32(100))
-        elif number_of_remaining_digits_to_add == 3:
-            coefficient = coefficient * BigUInt(UInt32(1_000))
-        elif number_of_remaining_digits_to_add == 4:
-            coefficient = coefficient * BigUInt(UInt32(10_000))
-        elif number_of_remaining_digits_to_add == 5:
-            coefficient = coefficient * BigUInt(UInt32(100_000))
-        elif number_of_remaining_digits_to_add == 6:
-            coefficient = coefficient * BigUInt(UInt32(1_000_000))
-        elif number_of_remaining_digits_to_add == 7:
-            coefficient = coefficient * BigUInt(UInt32(10_000_000))
-        else:  # number_of_remaining_digits_to_add == 8
-            coefficient = coefficient * BigUInt(UInt32(100_000_000))
-
-        var words: List[UInt32] = List[UInt32]()
-        for _ in range(number_of_words_to_add):
-            words.append(UInt32(0))
-        words.extend(coefficient.words)
-
         return BigDecimal(
-            BigUInt(words^),
+            decimojo.biguint.arithmetics.multiply_by_power_of_ten(
+                self.coefficient, precision_diff
+            ),
             self.scale + precision_diff,
             self.sign,
         )
+
+    fn extend_precision_inplace(mut self, precision_diff: Int):
+        """Add additional decimal places (trailing zeros) in-place.
+        This multiplies the coefficient by 10^precision_diff and increases
+        the scale accordingly, preserving the numeric value.
+        If `precision_diff` is negative, nothing is done and the
+        original number is returned.
+
+        Args:
+            precision_diff: The number of decimal places to add, which must be
+                non-negative.
+
+        Notes:
+
+        In debug mode, negative `precision_diff` raises an assertion error.
+
+        Examples:
+        ```
+        print(BigDecimal("123.456).scale_up(5))  # Output: 123.45600000
+        print(BigDecimal("123456").scale_up(3))  # Output: 123456.000
+        print(BigDecimal("123456").scale_up(-1))  # Output: 123456 (no change)
+        ```
+        """
+        debug_assert(
+            precision_diff >= 0,
+            "bigdecimal.BigDecimal.extend_precision(): ",
+            "precision_diff must be non-negative, got: ",
+            precision_diff,
+        )
+
+        if precision_diff <= 0:
+            return
+
+        decimojo.biguint.arithmetics.multiply_inplace_by_power_of_ten(
+            self.coefficient, precision_diff
+        )
+        self.scale += precision_diff
 
     @always_inline
     fn print_internal_representation(self):
