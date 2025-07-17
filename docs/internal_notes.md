@@ -1,8 +1,8 @@
 # Internal Notes
 
-## Values and results
+## Inconsistencies between libraries
 
-- For power functionality: `BigDecimal.power()`, Python's decimal, WolframAlpha give the same result, but `mpmath` gives a different result. Eamples: 
+- For power functionality: `BigDecimal.power()`, Python's decimal, WolframAlpha give the same result, but `mpmath` gives a different result. Eamples:
   - `0.123456789 ** 1000`
   - `1234523894766789 ** 1098.1209848`
 - For sin functionality: `BigDecimal.sin()` and WolframAlpha give the same results, but `mpmath` gives a different result. This occurs mainly for pi-related values. Examples:
@@ -15,7 +15,13 @@
     - WolframAlpha: 4.4.0994231605661201249788358050110815384367187427582 x 10-29
     - mpmath:       4.0994231605661201249789078578417210843506987202039e-29
 
-## Time complexity
+## Roadmap for Decimojo
+
+- [ ] Re-implement some methods of `BigUInt` to improve the performance, since it is the building block of `BigDecimal` and `BigInt`.
+- [ ] Refine the methods of `BigDecimal` to improve the performance.
+- [ ] Implement the big **binary** (signed and unsigned) integer type (`BigBinaryUInt`) when users do not need the full precision of BigDecimal. When it is finished, the current BigUInt will be renamed to `BigDecimalUInt`. The alias `BUInt` may be rebound to `BigBinaryUInt`.
+
+## Time complexity for pi() implementations
 
 - #94. Implementing pi() with Machin's formula. Time taken for precision 2048: 33.580649 seconds.
 - #95. Implementing pi() with Chudnovsky algorithm (binary splitting). Time taken for precision 2048: 1.771954 seconds.
