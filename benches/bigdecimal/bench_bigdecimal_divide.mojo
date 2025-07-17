@@ -10,6 +10,9 @@ import time
 import os
 from collections import List
 
+alias PRECISION = 4096
+alias ITERATIONS = 100
+
 
 fn open_log_file() raises -> PythonObject:
     """
@@ -63,8 +66,8 @@ fn run_benchmark_divide(
         speedup_factors: Mojo List to store speedup factors for averaging.
     """
     log_print("\nBenchmark:       " + name, log_file)
-    log_print("Dividend:        " + dividend, log_file)
-    log_print("Divisor:         " + divisor, log_file)
+    log_print("Dividend:        " + dividend[:500] + "...", log_file)
+    log_print("Divisor:         " + divisor[:500] + "...", log_file)
 
     # Set up Mojo and Python values
     var mojo_dividend = BigDecimal(dividend)
@@ -75,12 +78,22 @@ fn run_benchmark_divide(
 
     # Execute the operations once to verify correctness
     try:
-        var mojo_result = mojo_dividend / mojo_divisor
+        var mojo_result = mojo_dividend.true_divide(
+            mojo_divisor, precision=PRECISION
+        )
         var py_result = py_dividend / py_divisor
+        var mojo_result_str = String(mojo_result)
+        var py_result_str = String(py_result)
 
         # Display results for verification
-        log_print("Mojo result:     " + String(mojo_result), log_file)
-        log_print("Python result:   " + String(py_result), log_file)
+        log_print("Mojo result:     " + mojo_result_str[:100] + "...", log_file)
+        log_print("Python result:   " + py_result_str[:100] + "...", log_file)
+
+        # Check if results match exactly
+        if mojo_result == BigDecimal(py_result_str):
+            log_print("✓ Results match exactly", log_file)
+        else:
+            log_print("⚠ WARNING: Results differ!", log_file)
 
         # Benchmark Mojo implementation
         var t0 = perf_counter_ns()
@@ -119,6 +132,8 @@ fn main() raises:
     # Open log file
     var log_file = open_log_file()
     var datetime = Python.import_module("datetime")
+    var pysys = Python.import_module("sys")
+    pysys.set_int_max_str_digits(10000000)
 
     # Create a Mojo List to store speedup factors for averaging later
     var speedup_factors = List[Float64]()
@@ -144,16 +159,16 @@ fn main() raises:
     except:
         log_print("Could not retrieve system information", log_file)
 
-    var iterations = 1000
+    var iterations = ITERATIONS
     var pydecimal = Python().import_module("decimal")
 
     # Set Python decimal precision to match Mojo's
-    pydecimal.getcontext().prec = 28
+    pydecimal.getcontext().prec = PRECISION
     log_print(
         "Python decimal precision: " + String(pydecimal.getcontext().prec),
         log_file,
     )
-    log_print("Mojo decimal precision: 28", log_file)
+    log_print("Mojo decimal precision: " + String(PRECISION), log_file)
 
     # Define benchmark cases
     log_print(
@@ -678,6 +693,66 @@ fn main() raises:
         "Division resulting in negative zero",
         "0.0",
         "1",
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 51: Division 1024 words / 1024 words
+    run_benchmark_divide(
+        "Division 1024 words / 1024 words",
+        "123456789" * 512 + "." + "123456789" * 512,
+        "987654321" * 512 + "." + "987654321" * 512,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 52: Division 2048 words / 2048 words
+    run_benchmark_divide(
+        "Division 2048 words / 2048 words",
+        "123456789" * 1024 + "." + "123456789" * 1024,
+        "987654321" * 1024 + "." + "987654321" * 1024,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 53: Division 4096 words / 4096 words
+    run_benchmark_divide(
+        "Division 4096 words / 4096 words",
+        "123456789" * 2048 + "." + "123456789" * 2048,
+        "987654321" * 2048 + "." + "987654321" * 2048,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 54: Division 8192 words / 8192 words
+    run_benchmark_divide(
+        "Division 8192 words / 8192 words",
+        "123456789" * 4096 + "." + "123456789" * 4096,
+        "987654321" * 4096 + "." + "987654321" * 4096,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 55: Division 16384 words / 16384 words
+    run_benchmark_divide(
+        "Division 16384 words / 16384 words",
+        "123456789" * 8192 + "." + "123456789" * 8192,
+        "987654321" * 8192 + "." + "987654321" * 8192,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 56: Division 32768 words / 32768 words
+    run_benchmark_divide(
+        "Division 32768 words / 32768 words",
+        "123456789" * 16384 + "." + "123456789" * 16384,
+        "987654321" * 16384 + "." + "987654321" * 16384,
         iterations,
         log_file,
         speedup_factors,

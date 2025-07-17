@@ -14,9 +14,7 @@
 # limitations under the License.
 # ===----------------------------------------------------------------------=== #
 
-"""String manipulation functions."""
-
-import time
+"""String parsing and manipulation functions."""
 
 
 fn parse_numeric_string(
@@ -93,13 +91,16 @@ fn parse_numeric_string(
 
     for code_ptr in value_bytes:
         ref code = code_ptr
+
         # If the char is " ", skip it
         if code == 32:
             pass
+
         # If the char is "," or "_", skip it
         elif code == 44 or code == 95:
             unexpected_end_char = True
         # If the char is "-"
+
         elif code == 45:
             unexpected_end_char = True
             if exponent_sign_read:
@@ -112,6 +113,7 @@ fn parse_numeric_string(
             else:
                 mantissa_sign = True
                 mantissa_sign_read = True
+
         # If the char is "+"
         elif code == 43:
             unexpected_end_char = True
@@ -124,6 +126,7 @@ fn parse_numeric_string(
             else:
                 mantissa_sign_read = True
         # If the char is "."
+
         elif code == 46:
             unexpected_end_char = False
             if decimal_point_read:
@@ -132,6 +135,7 @@ fn parse_numeric_string(
                 decimal_point_read = True
                 mantissa_sign_read = True
         # If the char is "e" or "E"
+
         elif code == 101 or code == 69:
             unexpected_end_char = True
             if exponent_notation_read:

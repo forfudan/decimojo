@@ -18,4 +18,5 @@ tempCodeRunnerFile.mojo
 *.log
 # local files
 /test*.mojo
+/test*.py
 local
