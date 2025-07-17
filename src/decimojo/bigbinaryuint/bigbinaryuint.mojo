@@ -142,16 +142,6 @@ struct BigBinaryUInt:
         self.words = List[UInt32](elements=words^)
 
     # ===------------------------------------------------------------------=== #
-    # Output dunders, type-transfer dunders
-    # ===------------------------------------------------------------------=== #
-
-    fn __str__(self) -> String:
-        """Returns secimal string representation of the BigBinaryUInt.
-        See `to_decimal_string()` for more information.
-        """
-        return self.to_decimal_string()
-
-    # ===------------------------------------------------------------------=== #
     # Constructing methods that are not dunders
     # ===------------------------------------------------------------------=== #
 
@@ -183,6 +173,48 @@ struct BigBinaryUInt:
 
         return Self(words^)
 
+    @staticmethod
+    fn from_biguint(value: BigUInt) -> Self:
+        """Initializes a binary unsigned integer from a decimal unsigned integer.
+        """
+        # Convert from base 10^9 to base 20^30 using repeated division
+        # No extra words are needed, as the maximum number of words is N.
+        var dividend = value
+        var result = Self(uninitialized_capacity=len(value.words))
+        var remainder: UInt64
+
+        while not dividend.is_zero():
+            # Repeat division by 2^30
+            # The number of iterations is close to the number of words
+            # After each iteration, the dividend is reduced by one word
+            # So the complexity is O(N^2)
+            remainder = 0
+            for i in range(len(dividend.words) - 1, -1, -1):
+                # Process from most significant to least significant word
+                var temp = remainder * UInt64(value.BASE) + UInt64(
+                    dividend.words[i]
+                )
+                dividend.words[i] = UInt32(temp // Self.BASE)
+                remainder = temp % Self.BASE
+
+            # Remove leading zeros
+            while len(dividend.words) > 1 and dividend.words[-1] == 0:
+                dividend.words.shrink(len(dividend.words) - 1)
+
+            result.words.append(UInt32(remainder))
+
+        return result^
+
+    # ===------------------------------------------------------------------=== #
+    # Output dunders, type-transfer dunders
+    # ===------------------------------------------------------------------=== #
+
+    fn __str__(self) -> String:
+        """Returns secimal string representation of the BigBinaryUInt.
+        See `to_decimal_string()` for more information.
+        """
+        return self.to_decimal_string()
+
     # ===------------------------------------------------------------------=== #
     # Type-transfer or output methods that are not dunders
     # ===------------------------------------------------------------------=== #
@@ -198,10 +230,9 @@ struct BigBinaryUInt:
         # Max words in base 10^9 is ⌈(30 × N) / 29.897⌉ ≈ ⌈1.00345 × N⌉
         # 1 extra word is okay for most cases
         var dividend = self
-        var result = BigUInt(uninitialized_capacity=len(self.words))
+        var result = BigUInt(uninitialized_capacity=len(self.words) + 1)
         var remainder: UInt64
 
-        # Repeated division by 10^9
         while not dividend.is_zero():
             # Repeat division by 10^9
             # The number of iterations is close to the number of words
