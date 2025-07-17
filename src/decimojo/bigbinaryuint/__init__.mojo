@@ -16,10 +16,10 @@
 
 """Sub-package for base-2^30 big unsigned integer type."""
 
-# About the module name `biguint2`:
+# About the module name `bigbinaryuint`:
 # According to PEP-8, Modules should have short, all-lowercase names.
 # Underscores can be used in the module name if it improves readability.
 # Python packages should also have short, all-lowercase names, although the use
 # of underscores is discouraged.
-# Becuase the readability of `biguint2` is already good, I use `biguint2` instead of
+# Becuase the readability of `bigbinaryuint` is already good, I use `bigbinaryuint` instead of
 # `big_uint_2` for this sub-package and the module.
