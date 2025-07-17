@@ -27,7 +27,7 @@ from decimojo.prelude import *
 
 import decimojo as dm
 from decimojo.decimal.decimal import Decimal, Dec
-from decimojo.bigdecimal.bigdecimal import BigDecimal, BDec
+from decimojo.bigdecimal.bigdecimal import BigDecimal, BDec, bdec
 from decimojo.biguint.biguint import BigUInt, BUInt
 from decimojo.bigint.bigint import BigInt, BInt
 from decimojo.rounding_mode import (

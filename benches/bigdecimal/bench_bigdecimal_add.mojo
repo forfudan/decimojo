@@ -1,6 +1,7 @@
 """
 Comprehensive benchmarks for BigDecimal addition.
-Compares performance against Python's decimal module with 50 diverse test cases.
+Compares performance against Python's decimal module with 60 diverse test cases,
+including 10 cases with very large numbers (1000+ digits).
 """
 
 from decimojo import BigDecimal, RoundingMode
@@ -84,9 +85,19 @@ fn run_benchmark_add(
         var mojo_result = mojo_value1 + mojo_value2
         var py_result = py_value1 + py_value2
 
+        # Convert results to strings for comparison
+        var mojo_result_str = String(mojo_result)
+        var py_result_str = String(py_result)
+
         # Display results for verification
-        log_print("Mojo result:     " + String(mojo_result), log_file)
-        log_print("Python result:   " + String(py_result), log_file)
+        log_print("Mojo result:     " + mojo_result_str, log_file)
+        log_print("Python result:   " + py_result_str, log_file)
+
+        # Check if results match exactly
+        if mojo_result == BigDecimal(py_result_str):
+            log_print("✓ Results match exactly", log_file)
+        else:
+            log_print("⚠ WARNING: Results differ!", log_file)
 
         # Benchmark Mojo implementation
         var t0 = perf_counter_ns()
@@ -153,19 +164,20 @@ fn main() raises:
     var iterations = 1000
     var pydecimal = Python().import_module("decimal")
 
-    # Set Python decimal precision to match Mojo's
-    pydecimal.getcontext().prec = 28
+    # Set Python decimal precision to handle very large numbers
+    pydecimal.getcontext().prec = 10000
     log_print(
         "Python decimal precision: " + String(pydecimal.getcontext().prec),
         log_file,
     )
-    log_print("Mojo decimal precision: 28", log_file)
+    log_print("Mojo decimal precision: dynamic (no fixed limit)", log_file)
 
     # Define benchmark cases
     log_print(
         "\nRunning decimal addition benchmarks with "
         + String(iterations)
-        + " iterations each",
+        + " iterations each (60 test cases including 10 very large number"
+        " cases)",
         log_file,
     )
 
@@ -689,6 +701,184 @@ fn main() raises:
         speedup_factors,
     )
 
+    # === VERY LARGE NUMBER TESTS (1000+ digits) ===
+
+    # Case 51: Addition of 1000-digit decimals
+    var big_dec_1000_a = (
+        "1" + "23456789" * 62 + "123456." + "789012345" * 62 + "789012345"
+    )  # ~1000 digits
+    var big_dec_1000_b = (
+        "9" + "87654321" * 62 + "987654." + "321098765" * 62 + "321098765"
+    )  # ~1000 digits
+    run_benchmark_add(
+        "Addition of 1000-digit decimals",
+        big_dec_1000_a,
+        big_dec_1000_b,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 52: Addition of 1500-digit decimals with large fractional parts
+    var big_dec_1500_a = (
+        "1" + "23456789" * 93 + "123456." + "789012345" * 93 + "789012345"
+    )  # ~1500 digits
+    var big_dec_1500_b = (
+        "9" + "87654321" * 93 + "987654." + "321098765" * 93 + "321098765"
+    )  # ~1500 digits
+    run_benchmark_add(
+        "Addition of 1500-digit decimals with large fractional parts",
+        big_dec_1500_a,
+        big_dec_1500_b,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 53: Addition of 2000-digit decimals with carries
+    var big_dec_2000_a = (
+        "9" * 1000 + "." + "9" * 1000
+    )  # 2000 digits, all 9s to force maximum carries
+    var big_dec_2000_b = (
+        "0." + "0" * 999 + "1"
+    )  # Adding small amount to trigger cascading carries
+    run_benchmark_add(
+        "Addition of 2000-digit decimals with carries",
+        big_dec_2000_a,
+        big_dec_2000_b,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 54: Large decimal addition with scientific notation (1200 digits)
+    var big_dec_sci_a = (
+        "1." + "23456789" * 149 + "123456789e+500"
+    )  # ~1200 significant digits
+    var big_dec_sci_b = (
+        "9." + "87654321" * 149 + "987654321e+495"
+    )  # ~1200 significant digits
+    run_benchmark_add(
+        "Large decimal addition with scientific notation (1200 digits)",
+        big_dec_sci_a,
+        big_dec_sci_b,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 55: Very large positive + very large negative decimals (1800 digits)
+    var big_dec_1800_pos = (
+        "1" + "23456789" * 112 + "1234567." + "890123456" * 112 + "890123456"
+    )  # ~1800 digits positive
+    var big_dec_1800_neg = (
+        "-1" + "23456789" * 112 + "1234566." + "890123456" * 112 + "890123455"
+    )  # ~1800 digits negative (slightly smaller)
+    run_benchmark_add(
+        "Very large positive + very large negative decimals (1800 digits)",
+        big_dec_1800_pos,
+        big_dec_1800_neg,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 56: Addition of decimals with vastly different scales (2500 digits total)
+    var big_dec_large = (
+        "1" + "23456789" * 124 + "1234567." + "890123456" * 124 + "890123456"
+    )  # ~2500 digits
+    var big_dec_small_frac = (
+        "0." + "0" * 1200 + "1" + "23456789" * 37 + "123456789"
+    )  # ~1300 decimal places
+    run_benchmark_add(
+        "Addition of decimals with vastly different scales (2500 digits total)",
+        big_dec_large,
+        big_dec_small_frac,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 57: Fibonacci-like large decimal addition (1100 digits each)
+    var fib_dec_a = (
+        "1"
+        + "12358132134" * 49
+        + "1123581321."
+        + "34455891442" * 49
+        + "34455891442"
+    )  # ~1100 digits with Fibonacci pattern
+    var fib_dec_b = (
+        "2"
+        + "35813213455" * 49
+        + "3358132134."
+        + "55891442334" * 49
+        + "55891442334"
+    )  # ~1100 digits with Fibonacci pattern
+    run_benchmark_add(
+        "Fibonacci-like large decimal addition (1100 digits each)",
+        fib_dec_a,
+        fib_dec_b,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 58: Prime-like large decimal addition (1300 digits)
+    var prime_dec_a = (
+        "2"
+        + "357111317192329" * 43
+        + "23571113171923."
+        + "41434751617379" * 43
+        + "41434751617379"
+    )  # ~1300 digits with prime pattern
+    var prime_dec_b = (
+        "4"
+        + "143717919293137" * 43
+        + "14137171929313."
+        + "17918389719497" * 43
+        + "17918389719497"
+    )  # ~1300 digits
+    run_benchmark_add(
+        "Prime-like large decimal addition (1300 digits)",
+        prime_dec_a,
+        prime_dec_b,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 59: Very large decimal with maximum fractional precision (2000+ digits)
+    var max_prec_dec_a = (
+        "1" + "23456789" * 62 + "1234567." + "890123456" * 186 + "890123456"
+    )  # ~2000 digits
+    var max_prec_dec_b = (
+        "0." + "0" * 500 + "1" + "987654321" * 186 + "987654321"
+    )  # ~2000 total digits
+    run_benchmark_add(
+        "Very large decimal with maximum fractional precision (2000+ digits)",
+        max_prec_dec_a,
+        max_prec_dec_b,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 60: Extreme scale difference with large decimals (3000+ digits combined)
+    var extreme_large_dec = (
+        "9" + "87654321" * 187 + "987654321." + "123456789" * 187 + "123456789"
+    )  # ~3000 digits
+    var extreme_small_dec = (
+        "0." + "0" * 1500 + "1" + "23456789" * 93 + "123456789"
+    )  # ~3000 total precision
+    run_benchmark_add(
+        "Extreme scale difference with large decimals (3000+ digits combined)",
+        extreme_large_dec,
+        extreme_small_dec,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
     # Calculate average speedup factor (ignoring any cases that might have failed)
     if len(speedup_factors) > 0:
         var sum_speedup: Float64 = 0.0
@@ -701,7 +891,7 @@ fn main() raises:
         log_print(
             "Benchmarked:      "
             + String(len(speedup_factors))
-            + " different addition cases",
+            + " different addition cases (out of 60 total)",
             log_file,
         )
         log_print(

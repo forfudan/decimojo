@@ -75,26 +75,20 @@ fn add(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
     # Handle addition based on signs
     if x1.sign == x2.sign:
         # Same sign: Add coefficients, keep sign
-        coef1.add_inplace(coef2)
+        coef1 += coef2
         return BigDecimal(coefficient=coef1^, scale=max_scale, sign=x1.sign)
     # Different signs: Subtract smaller coefficient from larger
     if coef1 > coef2:
         # |x1| > |x2|, result sign is x1's sign
-        var result_coef = coef1 - coef2
-        return BigDecimal(
-            coefficient=result_coef^, scale=max_scale, sign=x1.sign
-        )
+        coef1 -= coef2
+        return BigDecimal(coefficient=coef1^, scale=max_scale, sign=x1.sign)
     elif coef2 > coef1:
         # |x2| > |x1|, result sign is x2's sign
-        var result_coef = coef2 - coef1
-        return BigDecimal(
-            coefficient=result_coef^, scale=max_scale, sign=x2.sign
-        )
+        coef2 -= coef1
+        return BigDecimal(coefficient=coef2^, scale=max_scale, sign=x2.sign)
     else:
         # |x1| == |x2|, signs differ, result is 0
-        return BigDecimal(
-            coefficient=BigUInt(UInt32(0)), scale=max_scale, sign=False
-        )
+        return BigDecimal(coefficient=BigUInt.ZERO, scale=max_scale, sign=False)
 
 
 fn subtract(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
@@ -140,22 +134,18 @@ fn subtract(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
     # Handle subtraction based on signs
     if x1.sign != x2.sign:
         # Different signs: x1 - (-x2) = x1 + x2, or (-x1) - x2 = -(x1 + x2)
-        coef1.add_inplace(coef2)
+        coef1 += coef2
         return BigDecimal(coefficient=coef1^, scale=max_scale, sign=x1.sign)
 
     # Same signs: Must perform actual subtraction
     if coef1 > coef2:
         # |x1| > |x2|, result sign is x1's sign
-        var result_coef = coef1 - coef2
-        return BigDecimal(
-            coefficient=result_coef^, scale=max_scale, sign=x1.sign
-        )
+        coef1 -= coef2
+        return BigDecimal(coefficient=coef1^, scale=max_scale, sign=x1.sign)
     elif coef2 > coef1:
         # |x1| < |x2|, result sign is opposite of x1's sign
-        var result_coef = coef2 - coef1
-        return BigDecimal(
-            coefficient=result_coef^, scale=max_scale, sign=not x1.sign
-        )
+        coef2 -= coef1
+        return BigDecimal(coefficient=coef2^, scale=max_scale, sign=not x1.sign)
     else:
         # |x1| == |x2|, result is 0
         return BigDecimal(coefficient=BigUInt.ZERO, scale=max_scale, sign=False)

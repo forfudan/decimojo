@@ -29,8 +29,10 @@ import testing
 from decimojo.rounding_mode import RoundingMode
 from decimojo.bigdecimal.rounding import round_to_precision
 
-alias BigDec = BigDecimal
 alias BDec = BigDecimal
+"""Short alias for `BigDecimal`."""
+alias bdec = BigDecimal
+"""Short alias for `BigDecimal` constructor."""
 
 
 @value

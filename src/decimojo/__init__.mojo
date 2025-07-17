@@ -28,7 +28,7 @@ from decimojo import Decimal, BigInt, RoundingMode
 from .decimal.decimal import Decimal, Dec
 from .bigint.bigint import BigInt, BInt
 from .biguint.biguint import BigUInt, BUInt
-from .bigdecimal.bigdecimal import BigDecimal, BigDec, BDec
+from .bigdecimal.bigdecimal import BigDecimal, BDec
 from .rounding_mode import (
     RoundingMode,
     RM,
