@@ -12,6 +12,7 @@ from collections import List
 
 alias PRECISION = 4096
 alias ITERATIONS = 100
+alias ITERATIONS_LARGE_NUMBERS = 3
 
 
 fn open_log_file() raises -> PythonObject:
@@ -754,6 +755,86 @@ fn main() raises:
         "123456789" * 16384 + "." + "123456789" * 16384,
         "987654321" * 16384 + "." + "987654321" * 16384,
         iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 57: Division 65536 words / 65536 words
+    run_benchmark_divide(
+        "Division 65536 words / 65536 words",
+        "123456789" * 32768 + "." + "123456789" * 32768,
+        "987654321" * 32768 + "." + "987654321" * 32768,
+        iterations,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 58: Division 262144 words / 262144 words
+    run_benchmark_divide(
+        "Division 262144 words / 262144 words",
+        "123456789" * 131072 + "." + "123456789" * 131072,
+        "987654321" * 131072 + "." + "987654321" * 131072,
+        ITERATIONS_LARGE_NUMBERS,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 59: Division 65536 words / 32768 words
+    run_benchmark_divide(
+        "Division 65536 words / 32768 words",
+        "123456789" * 32768 + "." + "123456789" * 32768,
+        "987654321" * 16384 + "." + "987654321" * 16384,
+        ITERATIONS_LARGE_NUMBERS,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 60: Division 65536 words / 16384 words
+    run_benchmark_divide(
+        "Division 65536 words / 16384 words",
+        "123456789" * 16384 + "." + "123456789" * 16384,
+        "987654321" * 8192 + "." + "987654321" * 8192,
+        ITERATIONS_LARGE_NUMBERS,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 61: Division 65536 words / 8192 words
+    run_benchmark_divide(
+        "Division 65536 words / 8192 words",
+        "123456789" * 8192 + "." + "123456789" * 8192,
+        "987654321" * 4096 + "." + "987654321" * 4096,
+        ITERATIONS_LARGE_NUMBERS,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 62: Division 65536 words / 4096 words
+    run_benchmark_divide(
+        "Division 65536 words / 4096 words",
+        "123456789" * 4096 + "." + "123456789" * 4096,
+        "987654321" * 2048 + "." + "987654321" * 2048,
+        ITERATIONS_LARGE_NUMBERS,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 63: Division 65536 words / 2048 words
+    run_benchmark_divide(
+        "Division 65536 words / 2048 words",
+        "123456789" * 2048 + "." + "123456789" * 2048,
+        "987654321" * 1024 + "." + "987654321" * 1024,
+        ITERATIONS_LARGE_NUMBERS,
+        log_file,
+        speedup_factors,
+    )
+
+    # Case 64: Division 65536 words / 1024 words
+    run_benchmark_divide(
+        "Division 65536 words / 1024 words",
+        "123456789" * 1024 + "." + "123456789" * 1024,
+        "987654321" * 512 + "." + "987654321" * 512,
+        ITERATIONS_LARGE_NUMBERS,
         log_file,
         speedup_factors,
     )
