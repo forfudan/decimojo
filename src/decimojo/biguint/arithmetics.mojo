@@ -2047,7 +2047,7 @@ fn floor_divide_burnikel_ziegler(
         if normalized_a.words[-1] >= 500_000_000:
             t += 1
 
-    var z = BigUInt.from_slice(normalized_a, ((t - 2) * n, t * n))
+    var z = BigUInt(0)
     var q = BigUInt(0)
     var q_i: BigUInt
 
@@ -2059,18 +2059,26 @@ fn floor_divide_burnikel_ziegler(
         # with slices of the dividend and divisor.
         # Save the remainder in z as it will be carried over to the next
         # iteration and we can do some inplace operations.
-        q_i, z = floor_divide_slices_two_by_one(
-            z,
-            normalized_b,
-            bounds_a=(0, len(z.words)),
-            bounds_b=(0, len(normalized_b.words)),
-            n=n,
-            cut_off=cut_off,
-        )
 
         if i == t - 2:
-            q = q_i
+            # The first iteration, we can use the slize of normalized_a
+            q, z = floor_divide_slices_two_by_one(
+                normalized_a,
+                normalized_b,
+                bounds_a=((t - 2) * n, len(normalized_a.words)),
+                bounds_b=(0, len(normalized_b.words)),
+                n=n,
+                cut_off=cut_off,
+            )
         else:
+            q_i, z = floor_divide_slices_two_by_one(
+                z,
+                normalized_b,
+                bounds_a=(0, len(z.words)),
+                bounds_b=(0, len(normalized_b.words)),
+                n=n,
+                cut_off=cut_off,
+            )
             decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
                 q, n
             )
