@@ -18,8 +18,7 @@
 Implements functions for mathematical operations on BigDecimal objects.
 """
 
-import time
-import testing
+import math
 
 from decimojo.rounding_mode import RoundingMode
 import decimojo.utility
@@ -323,6 +322,154 @@ fn true_divide(
         scale=result_scale,
         sign=x1.sign != x2.sign,
     )
+
+
+fn true_divide_fast(
+    x: BigDecimal, y: BigDecimal, minimum_precision: Int
+) raises -> BigDecimal:
+    """Returns the quotient of two numbers.
+
+    Args:
+        x: The first operand (dividend).
+        y: The second operand (divisor).
+        minimum_precision: The minimum number of significant digits in the
+            result. Should be greater than 0.
+
+    Returns:
+        The quotient of x and y with at least `minimum_precision`
+        significant digits.
+
+    Notes:
+
+    This function conduct a quick division that:
+    (1) does not round the result to the specified precision.
+    (2) does not check the exact division nor remove extra trailing zeros.
+    """
+
+    # Yuhao Zhu:
+    # x = a * 10*(-m)
+    # y = b * 10*(-n)
+    # Let s = extra digits to ensure precision
+    # x / y = x * 10^s / y / 10^s = (a * 10^s // b) * 10*(-(m + s - n))
+    # We need to ensure that a * 10^s // b has more significant digits than p.
+    # A quicker way is to add whole empty words to the dividend.
+    # Note that if b has k+1 words and a has k words,
+    # then a // b has at least 1 digit.
+    # Thus, when len(a.words) - len(b.words) = n,
+    # we add ceil(precision // 9) + 2 - n words.
+
+    debug_assert[assert_mode="none"](
+        minimum_precision > 0,
+        "Minimum precision should be greater than 0",
+    )
+
+    var diff_n_words = len(x.coefficient.words) - len(y.coefficient.words)
+    var extra_words = math.ceildiv(minimum_precision, 9) + 2 - diff_n_words
+    var extra_digits = extra_words * 9
+
+    var coef_x: BigUInt
+    if extra_words > 0:
+        coef_x = decimojo.biguint.arithmetics.multiply_by_power_of_billion(
+            x.coefficient, extra_words
+        )
+    elif extra_words < 0:
+        # TODO: Replace this with `floor_divide_by_power_of_billion()`
+        coef_x = decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
+            x.coefficient, -extra_words * 9
+        )
+    else:
+        coef_x = x.coefficient
+
+    var coef = coef_x // y.coefficient
+    var scale = x.scale + extra_digits - y.scale
+    return BigDecimal(
+        coefficient=coef^,
+        scale=scale,
+        sign=x.sign != y.sign,
+    )
+
+
+fn true_divide_general(
+    x: BigDecimal, y: BigDecimal, precision: Int
+) raises -> BigDecimal:
+    """Returns the quotient of two numbers with the specified precision.
+
+    Args:
+        x: The first operand (dividend).
+        y: The second operand (divisor).
+        precision: The minimum number of significant digits in the
+            result. Should be greater than 0.
+
+    Returns:
+        The quotient of x and y with the specified precision.
+
+    Notes:
+
+    This function conduct a division that:
+    (1) rounds the result to the specified precision,
+    (2) checks the exact division and remove extra trailing zeros.
+    """
+
+    # Yuhao Zhu:
+    # x = a * 10*(-m)
+    # y = b * 10*(-n)
+    # Let s = extra digits to ensure precision
+    # x / y = x * 10^s / y / 10^s = (a * 10^s // b) * 10*(-(m + s - n))
+    # We need to ensure that a * 10^s // b has more significant digits than p.
+    # A quicker way is to add whole empty words to the dividend.
+    # Note that if b has k+1 words and a has k words,
+    # then a // b has at least 1 digit.
+    # Thus, when len(a.words) - len(b.words) = n <= 0,
+    # we add ceil(precision // 9) + 2 - n words,
+    # otherwise we add ceil(precision // 9) + 2 words.
+
+    debug_assert[assert_mode="none"](
+        precision > 0,
+        "Precision should be greater than 0",
+    )
+
+    var diff_n_words = len(x.coefficient.words) - len(y.coefficient.words)
+    var extra_words = math.ceildiv(precision, 9) + 2
+    if diff_n_words < 0:
+        extra_words -= diff_n_words  # diff_n_words is negative, so we add words
+    var extra_digits = extra_words * 9
+
+    var coef_x: BigUInt
+    if extra_words > 0:
+        coef_x = decimojo.biguint.arithmetics.multiply_by_power_of_billion(
+            x.coefficient, extra_words
+        )
+    else:
+        coef_x = x.coefficient
+
+    var coef = coef_x // y.coefficient
+    if coef * y.coefficient == coef_x:
+        # The division is exact, so we need to remove the extra trailing zeros
+        # so that the final scale is at least (x.scale - y.scale).
+        # If x.scale - y.scale < 0, we can safely remove all trailing zeros.
+        # Otherwise, we can remove at most extra digits added.
+        var num_digits_to_remove = min(
+            extra_digits, coef.number_of_trailing_zeros()
+        )
+        # TODO: Make a in-place version of this
+        coef = decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
+            coef, num_digits_to_remove
+        )
+        extra_digits -= num_digits_to_remove
+
+    var scale = x.scale + extra_digits - y.scale
+    var result = BigDecimal(
+        coefficient=coef^,
+        scale=scale,
+        sign=x.sign != y.sign,
+    )
+    result.round_to_precision(
+        precision,
+        RoundingMode.ROUND_HALF_EVEN,
+        remove_extra_digit_due_to_rounding=True,
+        fill_zeros_to_precision=False,
+    )
+    return result^
 
 
 fn true_divide_inexact(
