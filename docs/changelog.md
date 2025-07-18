@@ -28,6 +28,7 @@ Changes in **BigUInt**:
 Changes in **BigDecimal**:
 
 1. Re-implemente the `sqrt()` function for `BigDecimal` to use the new `BigUInt.sqrt()` method for better performance and accuracy. The new implementation adjusts the scale and coefficient directly, which is more efficient than the previous method. Introduce a new `sqrt_decimal_approach()` function to preserve the old implementation for reference (#108).
+1. Refine or re-implement the basic arithmetic operations, *e.g.,*, addition, subtraction, multiplication, division, etc, for `BigDecimal` and simplify the logic. The new implementation is more efficient and easier to understand, leading to better performance (#109, #110).
 
 Other changes:
 
