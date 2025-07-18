@@ -8,8 +8,10 @@ pixi.lock
 magic.lock
 # mojopkg files
 *.mojopkg
-# VSCode environments
+# Editor environments
 .vscode
+.helix
+# Temporary files
 tempCodeRunnerFile.mojo
 /temp*.mojo
 # macOS environments

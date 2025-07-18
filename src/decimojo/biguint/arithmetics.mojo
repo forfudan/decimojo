@@ -2048,7 +2048,8 @@ fn floor_divide_burnikel_ziegler(
             t += 1
 
     var z = BigUInt.from_slice(normalized_a, ((t - 2) * n, t * n))
-    var q = BigUInt()
+    var q = BigUInt(0)
+    var q_i: BigUInt
 
     for i in range(t - 2, -1, -1):
         # The below function is the recursive division algorithm.
@@ -2056,7 +2057,9 @@ fn floor_divide_burnikel_ziegler(
 
         # The below function is the recursive division algorithm but works
         # with slices of the dividend and divisor.
-        var q_i, r = floor_divide_slices_two_by_one(
+        # Save the remainder in z as it will be carried over to the next
+        # iteration and we can do some inplace operations.
+        q_i, z = floor_divide_slices_two_by_one(
             z,
             normalized_b,
             bounds_a=(0, len(z.words)),
@@ -2075,16 +2078,15 @@ fn floor_divide_burnikel_ziegler(
 
         if i > 0:
             decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
-                r, n
+                z, n
             )
             # z = r + a[(i - 1) * n : i * n]
-            z = add_slices(
-                r,
+            decimojo.biguint.arithmetics.add_inplace_by_slice(
+                z,
                 normalized_a,
-                bounds_x=(0, len(r.words)),
                 bounds_y=((i - 1) * n, i * n),
             )
-    return q
+    return q^
 
 
 fn floor_divide_two_by_one(
