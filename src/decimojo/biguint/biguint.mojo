@@ -118,8 +118,30 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         self.words = List[UInt32](UInt32(0))
 
     fn __init__(out self, *, uninitialized_capacity: Int):
-        """Creates an uninitialized BigUInt with a given capacity."""
+        """Creates an uninitialized BigUInt with a given capacity.
+
+        Args:
+            uninitialized_capacity: The capacity of the BigUInt.
+                This is the number of UInt32 words that can be stored in the
+                BigUInt without reallocating memory.
+
+        Notes:
+
+        The length of the BigUInt is zero.
+        """
         self.words = List[UInt32](capacity=uninitialized_capacity)
+
+    fn __init__(out self, *, unsafe_uninit_length: Int):
+        """Creates an uninitialized BigUInt with a given length.
+
+        Args:
+            unsafe_uninit_length: The length of the BigUInt.
+
+        Notes:
+
+        The length of the BigUInt is `unsafe_uninit_length`.
+        """
+        self.words = List[UInt32](unsafe_uninit_length=unsafe_uninit_length)
 
     fn __init__(out self, owned words: List[UInt32]):
         """Initializes a BigUInt from a list of UInt32 words.

@@ -1507,9 +1507,7 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
         # SUB-CASE: Divisor is single word (<= 9 digits)
         else:
-            var result = x1
-            floor_divide_inplace_by_single_word(result, x2)
-            return result^
+            return floor_divide_by_uint32(x1, x2.words[0])
 
     # CASE: Dividend is zero
     if x1.is_zero():
@@ -1596,9 +1594,7 @@ fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
 
         # SUB-CASE: y is single word (<= 9 digits)
         else:
-            var result = x
-            floor_divide_inplace_by_single_word(result, y)
-            return result^
+            return floor_divide_by_uint32(x, y.words[0])
 
     # CASE: Dividend is zero
     if x.is_zero():
@@ -1745,78 +1741,145 @@ fn floor_divide_estimate_quotient(
     return min(quotient, UInt64(BigUInt.BASE_MAX))
 
 
-fn floor_divide_inplace_by_single_word(
-    mut x1: BigUInt, x2: BigUInt
-) raises -> None:
-    """Divides a BigUInt by a single word divisor in-place.
+fn floor_divide_by_uint32(x: BigUInt, y: UInt32) -> BigUInt:
+    """**[PRIVATE]** Divides a BigUInt by a UInt32 divisor.
 
     Args:
-        x1: The BigUInt value to divide by the divisor.
-        x2: The single word divisor.
+        x: The BigUInt value to divide by the divisor.
+        y: The UInt32 divisor. Must be non-zero.
+
+    Notes:
+
+    This function is used internally for division by single word divisors.
+    It is not intended for public use. You need to ensure that y is non-zero.
     """
-    if x2.is_zero():
-        debug_assert[assert_mode="none"](
-            len(x2.words) == 1,
-            "floor_divide_inplace_by_single_word(): leading zero words",
-        )
-        raise Error(
-            "Error in `floor_divide_inplace_by_single_word`: Division by zero"
-        )
+    debug_assert[assert_mode="none"](
+        y != 0, "biguint.arithmetics.floor_divide_by_uint32(): Division by zero"
+    )
 
-    # CASE: all other situations
-    var x2_value = UInt64(x2.words[0])
-    var carry = UInt64(0)
-    for i in range(len(x1.words) - 1, -1, -1):
-        var dividend = carry * UInt64(BigUInt.BASE) + UInt64(x1.words[i])
-        x1.words[i] = UInt32(dividend // x2_value)
-        carry = dividend % x2_value
-    x1.remove_leading_empty_words()
+    # Most significant word of the dividend
+    var dividend = UInt64(x.words[-1] // y)
+    var carry = UInt64(x.words[-1] % y)
+    var y_uint64 = UInt64(y)
+    var result: BigUInt
+    if dividend == 0:
+        result = BigUInt(unsafe_uninit_length=len(x.words) - 1)
+    else:
+        result = BigUInt(unsafe_uninit_length=len(x.words))
+        result.words[-1] = UInt32(dividend)
+
+    # Process the rest of the words
+    for i in range(len(x.words) - 2, -1, -1):
+        dividend = carry * UInt64(BigUInt.BASE) + UInt64(x.words[i])
+        result.words[i] = UInt32(dividend // y_uint64)
+        carry = dividend % y_uint64
+    return result^
 
 
-fn floor_divide_inplace_by_double_words(
-    mut x1: BigUInt, x2: BigUInt
-) raises -> None:
-    """Divides a BigUInt by double-word divisor in-place.
+fn floor_divide_inplace_by_uint32(mut x: BigUInt, y: UInt32) -> None:
+    """Divides a BigUInt by a UInt32 divisor in-place.
 
     Args:
-        x1: The BigUInt value to divide by the divisor.
-        x2: The double-word divisor.
+        x: The BigUInt value to divide by the divisor.
+        y: The UInt32 divisor. Must be non-zero.
 
-    Raises:
-        Error: If the divisor is zero.
+    Notes:
+
+    This function is used internally for division by single word divisors.
+    It is not intended for public use. You need to ensure that y is non-zero.
     """
-    if x2.is_zero():
-        debug_assert[assert_mode="none"](
-            len(x2.words) == 1,
-            "floor_divide_inplace_by_double_words(): leading zero words",
-        )
-        raise Error(
-            "biguint.arithmetics.floor_divide_inplace_by_double_words():"
-            " Division by zero"
-        )
+    debug_assert[assert_mode="none"](
+        y != 0, "biguint.arithmetics.floor_divide_by_uint32(): Division by zero"
+    )
 
-    # CASE: all other situations
-    var x2_value = UInt128(x2.words[1]) * UInt128(BigUInt.BASE) + UInt128(
-        x2.words[0]
+    # Most significant word of the dividend
+    var dividend = UInt64(x.words[-1] // y)
+    var carry = UInt64(x.words[-1] % y)
+    var y_uint64 = UInt64(y)
+    if dividend == 0:
+        x.words.shrink(len(x.words) - 1)
+    else:
+        x.words[-1] = UInt32(dividend)
+
+    # Process the rest of the words
+    for i in range(len(x.words) - 2, -1, -1):
+        dividend = carry * UInt64(BigUInt.BASE) + UInt64(x.words[i])
+        x.words[i] = UInt32(dividend // y_uint64)
+        carry = dividend % y_uint64
+
+
+fn floor_divide_by_uint64(x: BigUInt, y: UInt64) -> BigUInt:
+    """Divides a BigUInt by UInt64.
+
+    Args:
+        x: The BigUInt value to divide by the divisor.
+        y: The UInt64 divisor. Must be smaller than 10^18.
+    """
+    debug_assert[assert_mode="none"](
+        y != 0,
+        "biguint.arithmetics.floor_divide_inplace_by_uint64(): ",
+        "Division by zero.",
     )
 
     var carry = UInt128(0)
-    if len(x1.words) % 2 == 1:
-        carry = UInt128(x1.words[-1])
-        x1.words.resize(len(x1.words) - 1, UInt32(0))
+    var y_uint128 = UInt128(y)
+    var result: BigUInt
+    if len(x.words) % 2 == 1:
+        carry = UInt128(x.words[-1])
+        result = BigUInt(unsafe_uninit_length=len(x.words) - 1)
+    else:
+        result = BigUInt(unsafe_uninit_length=len(x.words))
 
-    for i in range(len(x1.words) - 1, -1, -2):
+    for i in range(len(result.words) - 1, -1, -2):
         var dividend = (
             carry * UInt128(1_000_000_000_000_000_000)
-            + UInt128(x1.words[i]) * UInt128(BigUInt.BASE)
-            + UInt128(x1.words[i - 1])
+            + (
+                x.words.data.load[width=2](i - 1).cast[DType.uint128]()
+                * SIMD[DType.uint128, 2](1, 1_000_000_000)
+            ).reduce_add()
         )
-        var quotient = dividend // x2_value
-        x1.words[i] = UInt32(quotient // UInt128(BigUInt.BASE))
-        x1.words[i - 1] = UInt32(quotient % UInt128(BigUInt.BASE))
-        carry = dividend % x2_value
+        var quotient = dividend // y_uint128
+        result.words[i] = UInt32(quotient // UInt128(BigUInt.BASE))
+        result.words[i - 1] = UInt32(quotient % UInt128(BigUInt.BASE))
+        carry = dividend % y_uint128
 
-    x1.remove_leading_empty_words()
+    result.remove_leading_empty_words()
+    return result^
+
+
+fn floor_divide_inplace_by_uint64(mut x: BigUInt, y: UInt64) -> None:
+    """Divides a BigUInt by UInt64 in-place.
+
+    Args:
+        x: The BigUInt value to divide by the divisor.
+        y: The UInt64 divisor. Must be smaller than 10^18.
+    """
+    debug_assert[assert_mode="none"](
+        y != 0,
+        "biguint.arithmetics.floor_divide_inplace_by_uint64(): ",
+        "Division by zero.",
+    )
+
+    var carry = UInt128(0)
+    var y_uint128 = UInt128(y)
+    if len(x.words) % 2 == 1:
+        carry = UInt128(x.words[-1])
+        x.words.resize(len(x.words) - 1, UInt32(0))
+
+    for i in range(len(x.words) - 1, -1, -2):
+        var dividend = (
+            carry * UInt128(1_000_000_000_000_000_000)
+            + (
+                x.words.data.load[width=2](i - 1).cast[DType.uint128]()
+                * SIMD[DType.uint128, 2](1, 1_000_000_000)
+            ).reduce_add()
+        )
+        var quotient = dividend // y_uint128
+        x.words[i] = UInt32(quotient // UInt128(BigUInt.BASE))
+        x.words[i - 1] = UInt32(quotient % UInt128(BigUInt.BASE))
+        carry = dividend % y_uint128
+
+    x.remove_leading_empty_words()
     return
 
 
