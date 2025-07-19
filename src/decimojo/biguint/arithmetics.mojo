@@ -1458,15 +1458,15 @@ fn multiply_inplace_by_power_of_billion(mut x: BigUInt, n: Int):
 # ===----------------------------------------------------------------------=== #
 
 
-fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+fn floor_divide(x: BigUInt, y: BigUInt) raises -> BigUInt:
     """Returns the quotient of two BigUInt numbers, truncating toward zero.
 
     Args:
-        x1: The dividend.
-        x2: The divisor.
+        x: The dividend.
+        y: The divisor.
 
     Returns:
-        The quotient of x1 / x2, truncated toward zero.
+        The quotient of x / y, truncated toward zero.
 
     Raises:
         ValueError: If the divisor is zero.
@@ -1476,92 +1476,90 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """
 
     debug_assert[assert_mode="none"](
-        len(x1.words) != 0,
-        "biguint.arithmetics.floor_divide(): ",
-        "BigUInt ",
-        x1,
-        " is uninitialized!",
-    )
-    debug_assert[assert_mode="none"](
-        len(x2.words) != 0,
-        "biguint.arithmetics.floor_divide(): ",
-        "BigUInt ",
-        x2,
+        (len(x.words) != 0) and (len(y.words) != 0),
+        "biguint.arithmetics.floor_divide(): BigUInt ",
+        x,
+        " and / or ",
+        y,
         " is uninitialized!",
     )
 
-    # CASE: x2 is single word
-    if len(x2.words) == 1:
-        # SUB-CASE: Division by zero
-        if x2.words[0] == 0:
-            raise Error("biguint.arithmetics.floor_divide(): Division by zero")
+    # CASE: y is zero
+    if y.is_zero():
+        raise Error("biguint.arithmetics.floor_divide(): Division by zero")
 
+    # CASE: Dividend is zero
+    if x.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x.words) == 1,
+            "biguint.arithmetics.floor_divide(): x has leading zero words",
+        )
+        return BigUInt()  # Return zero
+
+    # CASE: y is single word
+    if len(y.words) == 1:
         # SUB-CASE: Division by one
-        if x2.words[0] == 1:
-            return x1
+        if y.words[0] == 1:
+            return x
 
         # SUB-CASE: Single word // single word
-        if len(x1.words) == 1:
-            var result = BigUInt(List[UInt32](x1.words[0] // x2.words[0]))
+        if len(x.words) == 1:
+            var result = BigUInt(List[UInt32](x.words[0] // y.words[0]))
             return result^
 
         # SUB-CASE: Divisor is single word (<= 9 digits)
         else:
-            return floor_divide_by_uint32(x1, x2.words[0])
+            return floor_divide_by_uint32(x, y.words[0])
 
-    # CASE: Dividend is zero
-    if x1.is_zero():
-        debug_assert[assert_mode="none"](
-            len(x1.words) == 1,
-            "biguint.arithmetics.floor_divide(): x1 has leading zero words",
-        )
-        return BigUInt()  # Return zero
+    # CASE: y is double words
+    if len(y.words) == 2:
+        # Use `floor_divide_by_uint64`.
+        return floor_divide_by_uint64(x, y.to_uint64_with_first_2_words())
 
-    var comparison_result: Int8 = x1.compare(x2)
-    # CASE: dividend < divisor
+    # CASE: x is not greater than y
+    var comparison_result: Int8 = x.compare(y)
+    # SUB-CASE: dividend < divisor
     if comparison_result < 0:
         return BigUInt()  # Return zero
-    # CASE: dividend == divisor
+    # SUB-CASE: dividend == divisor
     if comparison_result == 0:
         return BigUInt(UInt32(1))
 
     # CASE: Divisor is 10^n
-    if x2.is_power_of_10():
+    if y.is_power_of_10():
         var result = floor_divide_by_power_of_ten(
-            x1, x2.number_of_trailing_zeros()
+            x, y.number_of_trailing_zeros()
         )
         return result^
 
     # CASE: Division of small numbers
     # If the number of words in the dividend and the divisor is small enough,
     # we can use the schoolbook division algorithm.
-    if (len(x1.words) <= CUTOFF_BURNIKEL_ZIEGLER) and (
-        len(x2.words) <= CUTOFF_BURNIKEL_ZIEGLER
+    if (len(x.words) <= CUTOFF_BURNIKEL_ZIEGLER) and (
+        len(y.words) <= CUTOFF_BURNIKEL_ZIEGLER
     ):
         # I will normalize the divisor to improve quotient estimation
         var ndigits_to_shift: Int  # Number of digits to shift
         # Calculate normalization factor to make leading digit of divisor
         # as large as possible
-        ndigits_to_shift = calculate_ndigits_for_normalization(x2.words[-1])
+        ndigits_to_shift = calculate_ndigits_for_normalization(y.words[-1])
 
         if ndigits_to_shift == 0:
             # No normalization needed, just use the general division algorithm
-            return floor_divide_school(x1, x2)
+            return floor_divide_school(x, y)
         else:
             # Normalize the divisor and dividend
-            var normalized_x1 = multiply_by_power_of_ten(x1, ndigits_to_shift)
-            var normalized_x2 = multiply_by_power_of_ten(x2, ndigits_to_shift)
-            return floor_divide_school(normalized_x1, normalized_x2)
+            var normalized_x = multiply_by_power_of_ten(x, ndigits_to_shift)
+            var normalized_y = multiply_by_power_of_ten(y, ndigits_to_shift)
+            return floor_divide_school(normalized_x, normalized_y)
 
     # CASE: division of very, very large numbers
     # Use the Burnikel-Ziegler division algorithm
-    return floor_divide_burnikel_ziegler(
-        x1, x2, cut_off=CUTOFF_BURNIKEL_ZIEGLER
-    )
+    return floor_divide_burnikel_ziegler(x, y, cut_off=CUTOFF_BURNIKEL_ZIEGLER)
 
 
 fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
-    """General schoolbook division algorithm for BigInt numbers.
+    """**[PRIVATE]** General schoolbook division algorithm for BigInt numbers.
 
     Args:
         x: The dividend.
