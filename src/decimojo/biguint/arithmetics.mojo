@@ -1612,7 +1612,9 @@ fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
     if comparison_result == 0:
         return BigUInt(UInt32(1))
 
-    # ALL OTHER CASES: Use the schoolbook division algorithm
+    # ===----------------------------------------------=== #
+    # ALL OTHER CASES
+    # Use the schoolbook division algorithm
     # Initialize result and remainder
     var result = BigUInt(List[UInt32](capacity=len(x.words)))
     var remainder = x
@@ -1626,11 +1628,10 @@ fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
     # Main division loop
     var index_of_word = n_words_diff  # Start from the most significant word
     var trial_product: BigUInt
+    var quotient: UInt64
     while index_of_word >= 0:
         # OPTIMIZATION: Better quotient estimation
-        var quotient = floor_divide_estimate_quotient(
-            remainder, y, index_of_word
-        )
+        quotient = floor_divide_estimate_quotient(remainder, y, index_of_word)
 
         # Calculate trial product
         trial_product = y
@@ -1643,13 +1644,9 @@ fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
         while (trial_product.compare(remainder) > 0) and (quotient > 0):
             quotient -= 1
             correction_attempts += 1
-
-            trial_product = y
-            multiply_inplace_by_uint32(trial_product, UInt32(quotient))
-            multiply_inplace_by_power_of_billion(trial_product, index_of_word)
-
+            trial_product -= multiply_by_power_of_billion(y, index_of_word)
             debug_assert[assert_mode="none"](
-                correction_attempts <= 3, "Too many correction attempts"
+                correction_attempts <= 2, "Too many correction attempts"
             )
 
         # Store the quotient word
