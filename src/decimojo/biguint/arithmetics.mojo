@@ -1595,7 +1595,7 @@ fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
 
     # CASE: y is double words
     if len(y.words) == 2:
-        # Use `floor_divide_by_uint64`.
+        # Use `floor_divide_by_uint64` as it is more efficient
         return floor_divide_by_uint64(x, y.to_uint64_with_first_2_words())
 
     # CASE: x is not greater than y
@@ -1873,6 +1873,81 @@ fn floor_divide_inplace_by_uint64(mut x: BigUInt, y: UInt64) -> None:
 
     x.remove_leading_empty_words()
     return
+
+
+fn floor_divide_by_uint128(x: BigUInt, y: UInt128) -> BigUInt:
+    """Divides a BigUInt by UInt128.
+
+    Args:
+        x: The BigUInt value to divide by the divisor.
+        y: The UInt128 divisor. Must be smaller than 10^36.
+    """
+    debug_assert[assert_mode="none"](
+        y != 0,
+        "biguint.arithmetics.floor_divide_inplace_by_uint128(): ",
+        "Division by zero.",
+    )
+
+    var carry = UInt256(0)
+    var y_uint255 = UInt256(y)
+    var result: BigUInt
+    if len(x.words) % 4 == 1:
+        carry = UInt256(x.words[-1])
+        result = BigUInt(unsafe_uninit_length=len(x.words) - 1)
+    elif len(x.words) % 4 == 2:
+        carry = UInt256(
+            (
+                x.words.data.load[width=2](len(x.words) - 2).cast[
+                    DType.uint64
+                ]()
+                * SIMD[DType.uint64, 2](1, 1_000_000_000)
+            ).reduce_add()
+        )
+        result = BigUInt(unsafe_uninit_length=len(x.words) - 2)
+    elif len(x.words) % 4 == 3:
+        carry = UInt256(
+            (
+                x.words.data.load[width=4](len(x.words) - 3).cast[
+                    DType.uint128
+                ]()
+                * SIMD[DType.uint128, 4](
+                    1, 1_000_000_000, 1_000_000_000_000_000_000
+                )
+            ).reduce_add()
+        )
+        result = BigUInt(unsafe_uninit_length=len(x.words) - 3)
+    else:
+        result = BigUInt(unsafe_uninit_length=len(x.words))
+
+    for i in range(len(result.words) - 1, -1, -4):
+        var dividend = (
+            carry * UInt256(1_000_000_000_000_000_000_000_000_000_000_000_000)
+            + (
+                x.words.data.load[width=4](i - 3).cast[DType.uint256]()
+                * SIMD[DType.uint256, 4](
+                    1,
+                    1_000_000_000,
+                    1_000_000_000_000_000_000,
+                    1_000_000_000_000_000_000_000_000_000,
+                )
+            ).reduce_add()
+        )
+        var quotient = dividend // y_uint255
+        result.words[i] = UInt32(
+            quotient // UInt256(1_000_000_000_000_000_000_000_000_000)
+        )
+        quotient %= UInt256(1_000_000_000_000_000_000_000_000_000)
+        result.words[i - 1] = UInt32(
+            quotient // UInt256(1_000_000_000_000_000_000)
+        )
+        quotient %= UInt256(1_000_000_000_000_000_000)
+        result.words[i - 2] = UInt32(quotient // UInt256(1_000_000_000))
+        quotient %= UInt256(1_000_000_000)
+        result.words[i - 3] = UInt32(quotient)
+        carry = dividend % y_uint255
+
+    result.remove_leading_empty_words()
+    return result^
 
 
 fn floor_divide_inplace_by_2(mut x: BigUInt) -> None:
