@@ -1491,6 +1491,15 @@ fn floor_divide(x: BigUInt, y: BigUInt) raises -> BigUInt:
         )
         return BigUInt()  # Return zero
 
+    # CASE: x is not greater than y
+    var comparison_result: Int8 = x.compare(y)
+    # SUB-CASE: dividend < divisor
+    if comparison_result < 0:
+        return BigUInt()  # Return zero
+    # SUB-CASE: dividend == divisor
+    if comparison_result == 0:
+        return BigUInt(UInt32(1))
+
     # CASE: y is single word
     if len(y.words) == 1:
         # SUB-CASE: Division by one
@@ -1506,17 +1515,13 @@ fn floor_divide(x: BigUInt, y: BigUInt) raises -> BigUInt:
 
     # CASE: y is double words
     if len(y.words) == 2:
-        # Use `floor_divide_by_uint64`.
+        # Use `floor_divide_by_uint64` as it is more efficient
         return floor_divide_by_uint64(x, y.to_uint64_with_first_2_words())
 
-    # CASE: x is not greater than y
-    var comparison_result: Int8 = x.compare(y)
-    # SUB-CASE: dividend < divisor
-    if comparison_result < 0:
-        return BigUInt()  # Return zero
-    # SUB-CASE: dividend == divisor
-    if comparison_result == 0:
-        return BigUInt(UInt32(1))
+    # CASE: y is triple or quadraple words
+    if len(y.words) <= 4:
+        # Use `floor_divide_by_uint128` as it is more efficient
+        return floor_divide_by_uint128(x, y.to_uint128_with_first_4_words())
 
     # CASE: Divisor is 10^n
     if y.is_power_of_10():
@@ -1580,6 +1585,15 @@ fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
         )
         return BigUInt()  # Return zero
 
+    # CASE: x is not greater than y
+    var comparison_result: Int8 = x.compare(y)
+    # SUB-CASE: dividend < divisor
+    if comparison_result < 0:
+        return BigUInt()  # Return zero
+    # SUB-CASE: dividend == divisor
+    if comparison_result == 0:
+        return BigUInt(UInt32(1))
+
     # CASE: y is single word
     if len(y.words) == 1:
         # SUB-CASE: Division by one
@@ -1598,14 +1612,10 @@ fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
         # Use `floor_divide_by_uint64` as it is more efficient
         return floor_divide_by_uint64(x, y.to_uint64_with_first_2_words())
 
-    # CASE: x is not greater than y
-    var comparison_result: Int8 = x.compare(y)
-    # SUB-CASE: dividend < divisor
-    if comparison_result < 0:
-        return BigUInt()  # Return zero
-    # SUB-CASE: dividend == divisor
-    if comparison_result == 0:
-        return BigUInt(UInt32(1))
+    # CASE: y is triple or quadraple words
+    if len(y.words) <= 4:
+        # Use `floor_divide_by_uint128` as it is more efficient
+        return floor_divide_by_uint128(x, y.to_uint128_with_first_4_words())
 
     # ===----------------------------------------------=== #
     # ALL OTHER CASES
