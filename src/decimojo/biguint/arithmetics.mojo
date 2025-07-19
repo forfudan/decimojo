@@ -1616,6 +1616,7 @@ fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
     if comparison_result == 0:
         return BigUInt(UInt32(1))
 
+    # ALL OTHER CASES: Use the schoolbook division algorithm
     # Initialize result and remainder
     var result = BigUInt(List[UInt32](capacity=len(x.words)))
     var remainder = x
@@ -2058,13 +2059,14 @@ fn floor_divide_two_by_one(
     You need to ensure that n is even to continue with the algorithm.
     Otherwise, it will use the schoolbook division algorithm.
     """
+    debug_assert[assert_mode="none"](
+        b.words[-1] >= 500_000_000, "b[-1] must be at least 500_000_000"
+    )
+
     if (n & 1 == 1) or (n <= cut_off):
         var q = floor_divide_school(a, b)
         var r = a - q * b
         return (q^, r^)
-
-    if b.words[-1] < 500_000_000:
-        raise Error("b[-1] must be at least 500_000_000")
 
     else:
         var a0 = BigUInt(a.words[0 : n // 2])
