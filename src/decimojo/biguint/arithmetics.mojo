@@ -1541,7 +1541,7 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         return result^
 
     # CASE: Division of small numbers
-    # If the number of words in a or b is small enough,
+    # If the number of words in the dividend and the divisor is small enough,
     # we can use the schoolbook division algorithm.
     if (len(x1.words) <= CUTOFF_BURNIKEL_ZIEGLER) and (
         len(x2.words) <= CUTOFF_BURNIKEL_ZIEGLER
@@ -1563,41 +1563,55 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
     # CASE: division of very, very large numbers
     # Use the Burnikel-Ziegler division algorithm
-    # print("Using Burnikel-Ziegler division algorithm for large numbers")
     return floor_divide_burnikel_ziegler(
         x1, x2, cut_off=CUTOFF_BURNIKEL_ZIEGLER
     )
 
 
-fn floor_divide_school(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
+fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
     """General schoolbook division algorithm for BigInt numbers.
 
     Args:
-        dividend: The dividend.
-        divisor: The divisor.
+        x: The dividend.
+        y: The divisor.
 
     Returns:
-        The quotient of dividend // divisor.
+        The quotient of x // y.
 
     Raises:
-        Error: If the divisor is zero.
+        Error: If the y is zero.
     """
 
-    if divisor.is_zero():
-        debug_assert[assert_mode="none"](
-            len(divisor.words) == 1,
-            "floor_divide_school(): leading zero words",
-        )
-        raise Error(
-            "`biguint.arithmetics.floor_divide_school()`: Division by zero"
-        )
+    # Because the Burnikel-Ziegler division algorithm will fall back to this
+    # function for small numbers, we need to ensure that special cases are
+    # handled properly to improve performance.
+    # CASE: y is single word
+    if len(y.words) == 1:
+        # SUB-CASE: Division by zero
+        if y.words[0] == 0:
+            raise Error("biguint.arithmetics.floor_divide(): Division by zero")
+
+        # SUB-CASE: Division by one
+        if y.words[0] == 1:
+            return x
+
+        # SUB-CASE: Single word // single word
+        if len(x.words) == 1:
+            var result = BigUInt(List[UInt32](x.words[0] // y.words[0]))
+            return result^
+
+        # SUB-CASE: y is single word (<= 9 digits)
+        else:
+            var result = x
+            floor_divide_inplace_by_single_word(result, y)
+            return result^
 
     # Initialize result and remainder
-    var result = BigUInt(List[UInt32](capacity=len(dividend.words)))
-    var remainder = dividend
+    var result = BigUInt(List[UInt32](capacity=len(x.words)))
+    var remainder = x
 
     # Shift and initialize
-    var n_words_diff = len(remainder.words) - len(divisor.words)
+    var n_words_diff = len(remainder.words) - len(y.words)
     # The quotient will have at most n_words_diff + 1 words
     for _ in range(n_words_diff + 1):
         result.words.append(0)
@@ -1608,11 +1622,11 @@ fn floor_divide_school(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
     while index_of_word >= 0:
         # OPTIMIZATION: Better quotient estimation
         var quotient = floor_divide_estimate_quotient(
-            remainder, divisor, index_of_word
+            remainder, y, index_of_word
         )
 
         # Calculate trial product
-        trial_product = divisor
+        trial_product = y
         multiply_inplace_by_uint32(trial_product, UInt32(quotient))
         multiply_inplace_by_power_of_billion(trial_product, index_of_word)
 
@@ -1623,7 +1637,7 @@ fn floor_divide_school(dividend: BigUInt, divisor: BigUInt) raises -> BigUInt:
             quotient -= 1
             correction_attempts += 1
 
-            trial_product = divisor
+            trial_product = y
             multiply_inplace_by_uint32(trial_product, UInt32(quotient))
             multiply_inplace_by_power_of_billion(trial_product, index_of_word)
 
