@@ -921,11 +921,7 @@ fn multiply_slices_school(
 
     # The max number of words in the result is the sum of the words in the operands
     var max_result_len = n_words_x_slice + n_words_y_slice
-    var words = List[UInt32](capacity=max_result_len)
-
-    # Initialize result words with zeros
-    for _ in range(max_result_len):
-        words.append(0)
+    var words = List[UInt32](length=max_result_len, fill=0)
 
     # Perform the multiplication word by word (from least significant to most significant)
     # x = x[start_x] + x[start_x + 1] * 10^9
@@ -1170,7 +1166,6 @@ fn multiply_inplace_by_uint32(mut x: BigUInt, y: UInt32):
         x.words.append(UInt32(carry))
 
 
-@always_inline
 fn multiply_inplace_by_uint32_le_4(mut x: BigUInt, y: UInt32):
     """Multiplies in-place a BigUInt by a UInt32 value which is between 0 and 4.
 
