@@ -1773,6 +1773,53 @@ fn floor_divide_inplace_by_single_word(
     x1.remove_leading_empty_words()
 
 
+fn floor_divide_inplace_by_double_words(
+    mut x1: BigUInt, x2: BigUInt
+) raises -> None:
+    """Divides a BigUInt by double-word divisor in-place.
+
+    Args:
+        x1: The BigUInt value to divide by the divisor.
+        x2: The double-word divisor.
+
+    Raises:
+        Error: If the divisor is zero.
+    """
+    if x2.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x2.words) == 1,
+            "floor_divide_inplace_by_double_words(): leading zero words",
+        )
+        raise Error(
+            "biguint.arithmetics.floor_divide_inplace_by_double_words():"
+            " Division by zero"
+        )
+
+    # CASE: all other situations
+    var x2_value = UInt128(x2.words[1]) * UInt128(BigUInt.BASE) + UInt128(
+        x2.words[0]
+    )
+
+    var carry = UInt128(0)
+    if len(x1.words) % 2 == 1:
+        carry = UInt128(x1.words[-1])
+        x1.words.resize(len(x1.words) - 1, UInt32(0))
+
+    for i in range(len(x1.words) - 1, -1, -2):
+        var dividend = (
+            carry * UInt128(1_000_000_000_000_000_000)
+            + UInt128(x1.words[i]) * UInt128(BigUInt.BASE)
+            + UInt128(x1.words[i - 1])
+        )
+        var quotient = dividend // x2_value
+        x1.words[i] = UInt32(quotient // UInt128(BigUInt.BASE))
+        x1.words[i - 1] = UInt32(quotient % UInt128(BigUInt.BASE))
+        carry = dividend % x2_value
+
+    x1.remove_leading_empty_words()
+    return
+
+
 fn floor_divide_inplace_by_2(mut x: BigUInt) -> None:
     """Divides a BigUInt by 2 in-place.
 
