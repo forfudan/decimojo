@@ -28,6 +28,11 @@ from decimojo.biguint.biguint import BigUInt
 import decimojo.biguint.comparison
 from decimojo.rounding_mode import RoundingMode
 
+alias CUTOFF_KARATSUBA: Int = 64
+"""The cutoff number of words for using Karatsuba multiplication."""
+alias CUTOFF_BURNIKEL_ZIEGLER = 64
+"""The cutoff number of words for using Burnikel-Ziegler division."""
+
 # ===----------------------------------------------------------------------=== #
 # List of functions in this module:
 #
@@ -778,10 +783,6 @@ fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
         to the cutoff number, the school multiplication algorithm is used.
     """
 
-    # TODO: Make this a global constant
-    alias CUTOFF_KARATSUBA: Int = 64
-    """The cutoff number of words for using Karatsuba multiplication."""
-
     debug_assert[assert_mode="none"](
         len(x.words) != 0, "BigUInt is uninitialized!"
     )
@@ -858,11 +859,6 @@ fn multiply_slices(
         to use. If the number of words in either operand is less than or equal
         to the cutoff number, the school multiplication algorithm is used.
     """
-
-    # TODO: Make this a global constant
-    alias CUTOFF_KARATSUBA: Int = 64
-    """The cutoff number of words for using Karatsuba multiplication."""
-
     n_words_x_slice = bounds_x[1] - bounds_x[0]
     n_words_y_slice = bounds_y[1] - bounds_y[0]
 
@@ -1479,8 +1475,6 @@ fn floor_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         It is equal to truncated division for positive numbers.
     """
 
-    alias CUTOFF_BURNIKEL_ZIEGLER = 64
-
     debug_assert[assert_mode="none"](
         len(x1.words) != 0,
         "biguint.arithmetics.floor_divide(): ",
@@ -1605,6 +1599,22 @@ fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
             var result = x
             floor_divide_inplace_by_single_word(result, y)
             return result^
+
+    # CASE: Dividend is zero
+    if x.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x.words) == 1,
+            "biguint.arithmetics.floor_divide(): x has leading zero words",
+        )
+        return BigUInt()  # Return zero
+
+    var comparison_result: Int8 = x.compare(y)
+    # CASE: dividend < divisor
+    if comparison_result < 0:
+        return BigUInt()  # Return zero
+    # CASE: dividend == divisor
+    if comparison_result == 0:
+        return BigUInt(UInt32(1))
 
     # Initialize result and remainder
     var result = BigUInt(List[UInt32](capacity=len(x.words)))
@@ -1885,10 +1895,8 @@ fn floor_divide_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
 # cannot be applied to 10^k-based integers. For example, when normalizing the
 # divisor to let its most significant word be at least BASE//2, we cannot simply
 # shift the bits until the most significant bit is 1.
-# TODO:
-# Some optimization needs to be done in future to
-# (1) accelerate the normalization process
-# (2) avoid unnecessary memory allocations and copies
+# TODO: Some optimization needs to be done in future to
+# - avoid unnecessary memory allocations and copies
 
 
 fn floor_divide_burnikel_ziegler(
@@ -2194,6 +2202,12 @@ fn floor_divide_slices_two_by_one(
     )
 
     if (n & 1 == 1) or (n <= cut_off):
+        debug_assert[assert_mode="none"](
+            (n <= cut_off) or (n & 1 == 0),
+            "floor_divide_slices_two_by_one(): ",
+            "n must be even by design but got ",
+            n,
+        )
         # If n is odd or less than the cutoff, use the schoolbook division
         # algorithm.
         var a_slice = BigUInt.from_slice(a, bounds_a)
@@ -2204,17 +2218,13 @@ fn floor_divide_slices_two_by_one(
         a_slice -= multiply_slices(q, b, (0, len(q.words)), bounds_b)
         return (q^, a_slice^)
 
-    elif bounds_a[0] + n + n // 2 >= bounds_a[1]:
-        # If a3 is empty
+    elif (bounds_a[0] + n + n // 2 >= bounds_a[1]) or a.is_zero(
+        bounds=(bounds_a[0] + n + n // 2, bounds_a[1])
+    ):
+        # If a3 is empty or zero
         # We just need to use three-by-two division once: a2a1a0 // b1b0
-        var q, r = floor_divide_slices_three_by_two(
-            a, b, bounds_a, bounds_b, n // 2, cut_off
-        )
-        return (q^, r^)
-
-    elif a.is_zero(bounds=(bounds_a[0] + n + n // 2, bounds_a[1])):
-        # If a3 is zero
-        # We just need to use three-by-two division once: a2a1a0 // b1b0
+        # Note that the condition must be short-circuited to avoid slicing
+        # an empty BigUInt.
         var q, r = floor_divide_slices_three_by_two(
             a, b, bounds_a, bounds_b, n // 2, cut_off
         )
