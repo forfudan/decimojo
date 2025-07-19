@@ -1501,12 +1501,10 @@ fn floor_divide(x: BigUInt, y: BigUInt) raises -> BigUInt:
         # SUB-CASE: Division by one
         if y.words[0] == 1:
             return x
-
         # SUB-CASE: Single word // single word
         if len(x.words) == 1:
             var result = BigUInt(List[UInt32](x.words[0] // y.words[0]))
             return result^
-
         # SUB-CASE: Divisor is single word (<= 9 digits)
         else:
             return floor_divide_by_uint32(x, y.words[0])
@@ -1575,24 +1573,9 @@ fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
     # Because the Burnikel-Ziegler division algorithm will fall back to this
     # function for small numbers, we need to ensure that special cases are
     # handled properly to improve performance.
-    # CASE: y is single word
-    if len(y.words) == 1:
-        # SUB-CASE: Division by zero
-        if y.words[0] == 0:
-            raise Error("biguint.arithmetics.floor_divide(): Division by zero")
-
-        # SUB-CASE: Division by one
-        if y.words[0] == 1:
-            return x
-
-        # SUB-CASE: Single word // single word
-        if len(x.words) == 1:
-            var result = BigUInt(List[UInt32](x.words[0] // y.words[0]))
-            return result^
-
-        # SUB-CASE: y is single word (<= 9 digits)
-        else:
-            return floor_divide_by_uint32(x, y.words[0])
+    # CASE: y is zero
+    if y.is_zero():
+        raise Error("biguint.arithmetics.floor_divide(): Division by zero")
 
     # CASE: Dividend is zero
     if x.is_zero():
@@ -1602,11 +1585,30 @@ fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
         )
         return BigUInt()  # Return zero
 
+    # CASE: y is single word
+    if len(y.words) == 1:
+        # SUB-CASE: Division by one
+        if y.words[0] == 1:
+            return x
+        # SUB-CASE: Single word // single word
+        if len(x.words) == 1:
+            var result = BigUInt(List[UInt32](x.words[0] // y.words[0]))
+            return result^
+        # SUB-CASE: Divisor is single word (<= 9 digits)
+        else:
+            return floor_divide_by_uint32(x, y.words[0])
+
+    # CASE: y is double words
+    if len(y.words) == 2:
+        # Use `floor_divide_by_uint64`.
+        return floor_divide_by_uint64(x, y.to_uint64_with_first_2_words())
+
+    # CASE: x is not greater than y
     var comparison_result: Int8 = x.compare(y)
-    # CASE: dividend < divisor
+    # SUB-CASE: dividend < divisor
     if comparison_result < 0:
         return BigUInt()  # Return zero
-    # CASE: dividend == divisor
+    # SUB-CASE: dividend == divisor
     if comparison_result == 0:
         return BigUInt(UInt32(1))
 
