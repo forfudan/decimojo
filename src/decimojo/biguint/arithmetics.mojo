@@ -30,7 +30,7 @@ from decimojo.rounding_mode import RoundingMode
 
 alias CUTOFF_KARATSUBA: Int = 64
 """The cutoff number of words for using Karatsuba multiplication."""
-alias CUTOFF_BURNIKEL_ZIEGLER = 64
+alias CUTOFF_BURNIKEL_ZIEGLER = 32
 """The cutoff number of words for using Burnikel-Ziegler division."""
 
 # ===----------------------------------------------------------------------=== #
