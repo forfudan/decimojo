@@ -1533,14 +1533,14 @@ fn floor_divide(x: BigUInt, y: BigUInt) raises -> BigUInt:
     # CASE: Division of small numbers
     # If the number of words in the dividend and the divisor is small enough,
     # we can use the schoolbook division algorithm.
-    if (len(x.words) <= CUTOFF_BURNIKEL_ZIEGLER) and (
+    # 2n-by-n where n is the cutoff number of words for Burnikel-Ziegler
+    if (len(x.words) <= CUTOFF_BURNIKEL_ZIEGLER * 2) and (
         len(y.words) <= CUTOFF_BURNIKEL_ZIEGLER
     ):
         # I will normalize the divisor to improve quotient estimation
-        var ndigits_to_shift: Int  # Number of digits to shift
         # Calculate normalization factor to make leading digit of divisor
         # as large as possible
-        ndigits_to_shift = calculate_ndigits_for_normalization(y.words[-1])
+        var ndigits_to_shift = calculate_ndigits_for_normalization(y.words[-1])
 
         if ndigits_to_shift == 0:
             # No normalization needed, just use the general division algorithm
@@ -1556,6 +1556,8 @@ fn floor_divide(x: BigUInt, y: BigUInt) raises -> BigUInt:
     return floor_divide_burnikel_ziegler(x, y, cut_off=CUTOFF_BURNIKEL_ZIEGLER)
 
 
+# TODO: Implement a `floor_divide_slices_school()` function that
+# can be used for slices of BigUInt numbers.
 fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
     """**[PRIVATE]** General schoolbook division algorithm for BigInt numbers.
 
@@ -1633,14 +1635,14 @@ fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
     # Main division loop
     var index_of_word = n_words_diff  # Start from the most significant word
     var trial_product: BigUInt
-    var quotient: UInt64
+    var quotient: UInt32
     while index_of_word >= 0:
         # OPTIMIZATION: Better quotient estimation
         quotient = floor_divide_estimate_quotient(remainder, y, index_of_word)
 
         # Calculate trial product
         trial_product = y
-        multiply_inplace_by_uint32(trial_product, UInt32(quotient))
+        multiply_inplace_by_uint32(trial_product, quotient)
         multiply_inplace_by_power_of_billion(trial_product, index_of_word)
 
         # By construction, no correction is needed
@@ -1655,7 +1657,7 @@ fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
             )
 
         # Store the quotient word
-        result.words[index_of_word] = UInt32(quotient)
+        result.words[index_of_word] = quotient
         # By construction, trial_product <= remainder
         subtract_inplace_no_check(remainder, trial_product)
         index_of_word -= 1
@@ -1666,7 +1668,7 @@ fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
 
 fn floor_divide_estimate_quotient(
     dividend: BigUInt, divisor: BigUInt, index_of_word: Int
-) -> UInt64:
+) -> UInt32:
     """Estimates the quotient digit using 3-by-2 division.
 
     This function implements a 3-by-2 quotient estimation algorithm,
@@ -1734,11 +1736,11 @@ fn floor_divide_estimate_quotient(
     # Use the SIMD-computed full dividend
     var quotient_128 = numerator // denominator
 
-    # Convert back to UInt64
-    var quotient = UInt64(quotient_128)
+    # Convert back to UInt32
+    var quotient = UInt32(quotient_128)
 
     # Ensure we don't exceed the maximum value for a single word
-    return min(quotient, UInt64(BigUInt.BASE_MAX))
+    return min(quotient, BigUInt.BASE_MAX)
 
 
 fn floor_divide_by_uint32(x: BigUInt, y: UInt32) -> BigUInt:
@@ -1895,8 +1897,6 @@ fn floor_divide_by_uint128(x: BigUInt, y: UInt128) -> BigUInt:
         "biguint.arithmetics.floor_divide_inplace_by_uint128(): ",
         "Division by zero.",
     )
-
-    print("DEBUG: floor_divide_by_uint128() used.")
 
     var carry = UInt256(0)
     var y_uint255 = UInt256(y)
@@ -2175,7 +2175,7 @@ fn floor_divide_burnikel_ziegler(
         if normalized_a.words[-1] >= 500_000_000:
             t += 1
 
-    var z = BigUInt(0)
+    var z = BigUInt(0)  # Remainder of the division
     var q = BigUInt(0)
     var q_i: BigUInt
 
