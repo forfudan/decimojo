@@ -1675,7 +1675,7 @@ fn floor_divide_estimate_quotient(
 
     Args:
         dividend: The dividend BigUInt number.
-        divisor: The divisor BigUInt number.
+        divisor: The divisor BigUInt number. Should be at least 2 words.
         index_of_word: The current position in the division algorithm.
 
     Returns:
@@ -1690,51 +1690,49 @@ fn floor_divide_estimate_quotient(
     """
 
     # Extract three highest words of relevant dividend portion
-    var r2 = UInt64(0)
-    if index_of_word + len(divisor.words) < len(dividend.words):
-        r2 = UInt64(dividend.words[index_of_word + len(divisor.words)])
+    # numerator = r2r1r0
+    # Extract 3-word dividend portion using SIMD for better performance
+    var numerator: UInt128
+    var base_index = index_of_word + len(divisor.words) - 2
 
-    var r1 = UInt64(0)
-    if index_of_word + len(divisor.words) - 1 < len(dividend.words):
-        r1 = UInt64(dividend.words[index_of_word + len(divisor.words) - 1])
+    # Ensure we don't read beyond bounds
+    if base_index + 2 < len(dividend.words):
+        # We can safely load 3 words: r0, r1, r2
+        numerator = (
+            dividend.words.data.load[width=4](base_index).cast[DType.uint128]()
+            * SIMD[DType.uint128, 4](
+                1, 1_000_000_000, 1_000_000_000_000_000_000, 0
+            )
+        ).reduce_add()
+    elif base_index + 1 < len(dividend.words):
+        # We can safely load 2 words: r0, r1 (r2 = 0)
+        numerator = (
+            dividend.words.data.load[width=2](base_index).cast[DType.uint128]()
+            * SIMD[DType.uint128, 2](1, 1_000_000_000)
+        ).reduce_add()
+    elif base_index < len(dividend.words):
+        # We can only load 1 word: r0 (r1 = r2 = 0)
+        numerator = UInt128(dividend.words[base_index])
+    else:
+        # All words are zero
+        numerator = UInt128(0)
 
-    var r0 = UInt64(0)
-    if index_of_word + len(divisor.words) - 2 < len(dividend.words):
-        r0 = UInt64(dividend.words[index_of_word + len(divisor.words) - 2])
+    # Extract two highest words of divisor using SIMD
+    var denominator: UInt128
+    debug_assert[assert_mode="none"](
+        len(divisor.words) >= 2,
+        "biguint.arithmetics.floor_divide_estimate_quotient(): ",
+        "Divisor must have at least 2 words by design.",
+    )
+    denominator = (
+        divisor.words.data.load[width=2](len(divisor.words) - 2).cast[
+            DType.uint128
+        ]()
+        * SIMD[DType.uint128, 2](1, 1_000_000_000)
+    ).reduce_add()
 
-    # Extract two highest words of divisor
-    var d1 = UInt64(divisor.words[len(divisor.words) - 1])
-    var d0 = UInt64(0)
-    if len(divisor.words) >= 2:
-        d0 = UInt64(divisor.words[len(divisor.words) - 2])
-
-    # Special case: if divisor is single word, fall back to 2-by-1 division
-    if len(divisor.words) == 1:
-        if r2 == d1:
-            return BigUInt.BASE_MAX
-        return min(
-            (r2 * UInt64(BigUInt.BASE) + r1) // d1, UInt64(BigUInt.BASE_MAX)
-        )
-
-    # Special case: if high word of dividend equals high word of divisor
-    # The quotient is likely to be large, so we use a conservative estimate
-    if r2 == d1:
-        return UInt64(BigUInt.BASE_MAX)
-
-    # 3-by-2 division using 128-bit arithmetic
-    # We need to compute: (r2 * 10^18 + r1 * 10^9 + r0) // (d1 * 10^9 + d0)
-
-    # Convert to 128-bit for high precision calculation
-    var dividend_high = UInt128(r2) * UInt128(BigUInt.BASE) + UInt128(r1)
-    var dividend_low = UInt128(r0)
-    var divisor_128 = UInt128(d1) * UInt128(BigUInt.BASE) + UInt128(d0)
-
-    # Handle the case where we need to consider the full 3-word dividend
-    # We compute: (dividend_high * 10^9 + dividend_low) // divisor_128
-    var full_dividend = dividend_high * UInt128(BigUInt.BASE) + dividend_low
-
-    # Perform the division
-    var quotient_128 = full_dividend // divisor_128
+    # Use the SIMD-computed full dividend
+    var quotient_128 = numerator // denominator
 
     # Convert back to UInt64
     var quotient = UInt64(quotient_128)
@@ -1898,6 +1896,8 @@ fn floor_divide_by_uint128(x: BigUInt, y: UInt128) -> BigUInt:
         "Division by zero.",
     )
 
+    print("DEBUG: floor_divide_by_uint128() used.")
+
     var carry = UInt256(0)
     var y_uint255 = UInt256(y)
     var result: BigUInt
@@ -1921,7 +1921,7 @@ fn floor_divide_by_uint128(x: BigUInt, y: UInt128) -> BigUInt:
                     DType.uint128
                 ]()
                 * SIMD[DType.uint128, 4](
-                    1, 1_000_000_000, 1_000_000_000_000_000_000
+                    1, 1_000_000_000, 1_000_000_000_000_000_000, 0
                 )
             ).reduce_add()
         )
