@@ -70,7 +70,7 @@ This will import the following types or aliases into your namespace:
 
 ---
 
-Here are some examples showcasing the arbitrary-precision feature of the `BigDecimal` type. Note that Mojo does not support global variables at the moment, so we need to pass the `precision` parameter explicitly to each function call. In future, we will add a global precision setting with the default value of, *e.g.*, `28`, to avoid passing it around.
+Here are some examples showcasing the arbitrary-precision feature of the `BigDecimal` type. For some mathematical operations, the default precision (number of significant digits) is set to `36`. You can change the precision by passing the `precision` argument to the function. This default precision will be configurable globally in future when Mojo supports global variables.
 
 ```mojo
 from decimojo.prelude import *
@@ -84,7 +84,7 @@ fn main() raises:
     print(a + b)  # 123458023.691346789
     print(a - b)  # 123455554.555566789
     print(a * b)  # 152415787654.32099750190521
-    print(a.true_divide(b, precision=80))  # 100000.0001
+    print(a.true_divide(b + 1))  # 99919.0656560820700835791386582569736
 
     # === Exponential Functions === #
     print(a.sqrt(precision=80))
