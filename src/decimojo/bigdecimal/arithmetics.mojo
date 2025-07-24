@@ -21,7 +21,6 @@ Implements functions for mathematical operations on BigDecimal objects.
 import math
 
 from decimojo.rounding_mode import RoundingMode
-import decimojo.utility
 
 # ===----------------------------------------------------------------------=== #
 # Arithmetic operations on BigDecimal objects

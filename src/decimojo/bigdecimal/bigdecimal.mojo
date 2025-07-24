@@ -31,8 +31,13 @@ from decimojo.bigdecimal.rounding import round_to_precision
 
 alias BDec = BigDecimal
 """Short alias for `BigDecimal`."""
-alias bdec = BigDecimal
-"""Short alias for `BigDecimal` constructor."""
+alias Decimal = BigDecimal
+"""Python-like alias for `BigDecimal`."""
+
+alias PRECISION = 36
+"""Default precision for BigDecimal operations.
+This will be configurable in future when Mojo supports global variables.
+"""
 
 
 @value
@@ -521,7 +526,7 @@ struct BigDecimal(
     @always_inline
     fn __truediv__(self, other: Self) raises -> Self:
         return decimojo.bigdecimal.arithmetics.true_divide(
-            self, other, precision=28
+            self, other, precision=PRECISION
         )
 
     @always_inline
@@ -537,14 +542,14 @@ struct BigDecimal(
         See `arithmetics.truncate_modulo()` for more information.
         """
         return decimojo.bigdecimal.arithmetics.truncate_modulo(
-            self, other, precision=28
+            self, other, precision=PRECISION
         )
 
     @always_inline
     fn __pow__(self, exponent: Self) raises -> Self:
         """Returns the result of exponentiation."""
         return decimojo.bigdecimal.exponential.power(
-            self, exponent, precision=28
+            self, exponent, precision=PRECISION
         )
 
     # ===------------------------------------------------------------------=== #
@@ -572,12 +577,14 @@ struct BigDecimal(
     @always_inline
     fn __rmod__(self, other: Self) raises -> Self:
         return decimojo.bigdecimal.arithmetics.truncate_modulo(
-            other, self, precision=28
+            other, self, precision=PRECISION
         )
 
     @always_inline
     fn __rpow__(self, base: Self) raises -> Self:
-        return decimojo.bigdecimal.exponential.power(base, self, precision=28)
+        return decimojo.bigdecimal.exponential.power(
+            base, self, precision=PRECISION
+        )
 
     # ===------------------------------------------------------------------=== #
     # Basic binary augmented arithmetic assignments dunders
@@ -601,7 +608,7 @@ struct BigDecimal(
     @always_inline
     fn __itruediv__(mut self, other: Self) raises:
         self = decimojo.bigdecimal.arithmetics.true_divide(
-            self, other, precision=28
+            self, other, precision=PRECISION
         )
 
     # ===------------------------------------------------------------------=== #
@@ -727,43 +734,43 @@ struct BigDecimal(
     # === Exponentional operations === #
 
     @always_inline
-    fn exp(self, precision: Int = 28) raises -> Self:
+    fn exp(self, precision: Int = PRECISION) raises -> Self:
         """Returns the exponential of the BigDecimal number."""
         return decimojo.bigdecimal.exponential.exp(self, precision)
 
     @always_inline
-    fn ln(self, precision: Int = 28) raises -> Self:
+    fn ln(self, precision: Int = PRECISION) raises -> Self:
         """Returns the natural logarithm of the BigDecimal number."""
         return decimojo.bigdecimal.exponential.ln(self, precision)
 
     @always_inline
-    fn log(self, base: Self, precision: Int = 28) raises -> Self:
+    fn log(self, base: Self, precision: Int = PRECISION) raises -> Self:
         """Returns the logarithm of the BigDecimal number with the given base.
         """
         return decimojo.bigdecimal.exponential.log(self, base, precision)
 
     @always_inline
-    fn log10(self, precision: Int = 28) raises -> Self:
+    fn log10(self, precision: Int = PRECISION) raises -> Self:
         """Returns the base-10 logarithm of the BigDecimal number."""
         return decimojo.bigdecimal.exponential.log10(self, precision)
 
     @always_inline
-    fn root(self, root: Self, precision: Int = 28) raises -> Self:
+    fn root(self, root: Self, precision: Int = PRECISION) raises -> Self:
         """Returns the root of the BigDecimal number."""
         return decimojo.bigdecimal.exponential.root(self, root, precision)
 
     @always_inline
-    fn sqrt(self, precision: Int = 28) raises -> Self:
+    fn sqrt(self, precision: Int = PRECISION) raises -> Self:
         """Returns the square root of the BigDecimal number."""
         return decimojo.bigdecimal.exponential.sqrt(self, precision)
 
     @always_inline
-    fn cbrt(self, precision: Int = 28) raises -> Self:
+    fn cbrt(self, precision: Int = PRECISION) raises -> Self:
         """Returns the cube root of the BigDecimal number."""
         return decimojo.bigdecimal.exponential.cbrt(self, precision)
 
     @always_inline
-    fn power(self, exponent: Self, precision: Int) raises -> Self:
+    fn power(self, exponent: Self, precision: Int = PRECISION) raises -> Self:
         """Returns the result of exponentiation with the given precision.
         See `exponential.power()` for more information.
         """
@@ -771,44 +778,46 @@ struct BigDecimal(
 
     # === Trigonometric operations === #
     @always_inline
-    fn sin(self, precision: Int = 28) raises -> Self:
+    fn sin(self, precision: Int = PRECISION) raises -> Self:
         """Returns the sine of the BigDecimal number."""
         return decimojo.bigdecimal.trigonometric.sin(self, precision)
 
     @always_inline
-    fn cos(self, precision: Int = 28) raises -> Self:
+    fn cos(self, precision: Int = PRECISION) raises -> Self:
         """Returns the cosine of the BigDecimal number."""
         return decimojo.bigdecimal.trigonometric.cos(self, precision)
 
     @always_inline
-    fn tan(self, precision: Int = 28) raises -> Self:
+    fn tan(self, precision: Int = PRECISION) raises -> Self:
         """Returns the tangent of the BigDecimal number."""
         return decimojo.bigdecimal.trigonometric.tan(self, precision)
 
     @always_inline
-    fn cot(self, precision: Int = 28) raises -> Self:
+    fn cot(self, precision: Int = PRECISION) raises -> Self:
         """Returns the cotangent of the BigDecimal number."""
         return decimojo.bigdecimal.trigonometric.cot(self, precision)
 
     @always_inline
-    fn csc(self, precision: Int = 28) raises -> Self:
+    fn csc(self, precision: Int = PRECISION) raises -> Self:
         """Returns the cosecant of the BigDecimal number."""
         return decimojo.bigdecimal.trigonometric.csc(self, precision)
 
     @always_inline
-    fn sec(self, precision: Int = 28) raises -> Self:
+    fn sec(self, precision: Int = PRECISION) raises -> Self:
         """Returns the secant of the BigDecimal number."""
         return decimojo.bigdecimal.trigonometric.sec(self, precision)
 
     @always_inline
-    fn arctan(self, precision: Int = 28) raises -> Self:
+    fn arctan(self, precision: Int = PRECISION) raises -> Self:
         """Returns the arctangent of the BigDecimal number."""
         return decimojo.bigdecimal.trigonometric.arctan(self, precision)
 
     # === Arithmetic operations === #
 
     @always_inline
-    fn true_divide(self, other: Self, precision: Int) raises -> Self:
+    fn true_divide(
+        self, other: Self, precision: Int = PRECISION
+    ) raises -> Self:
         """Returns the result of true division of two BigDecimal numbers.
         See `arithmetics.true_divide()` for more information.
         """

@@ -21,17 +21,17 @@ DeciMojo provides an arbitrary-precision decimal and integer mathematics library
 The core types are:
 
 - A base-10 arbitrary-precision signed integer type (`BigInt`) and a base-10 arbitrary-precision unsigned integer type (`BigUInt`) supporting unlimited digits[^integer]. It features comprehensive arithmetic operations, comparison functions, and supports extremely large integer calculations efficiently.
-- An arbitrary-precision decimal implementation `BigDecimal` allowing for calculations with unlimited digits and decimal places[^arbitrary]. It provides a complete set of arithmetic operations, comparisons, and mathematical functions like logarithms, exponentiation, roots, trigonometric functions, etc. It also supports rounding modes and conversions to/from built-in types.
-- A 128-bit fixed-point decimal implementation (`Decimal`) supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed]. It features a complete set of mathematical functions including logarithms, exponentiation, roots, etc.
+- An arbitrary-precision decimal implementation (`BigDecimal`) allowing for calculations with unlimited digits and decimal places[^arbitrary]. It provides a complete set of arithmetic operations, comparisons, and mathematical functions like logarithms, exponentiation, roots, trigonometric functions, etc. It also supports rounding modes and conversions to/from built-in types.
+- A 128-bit fixed-point decimal implementation (`Decimal128`) supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed]. It features a complete set of mathematical functions including logarithms, exponentiation, roots, etc.
 
 This repository includes [TOMLMojo](https://github.com/forfudan/decimojo/tree/main/src/tomlmojo), a lightweight TOML parser in pure Mojo. It parses configuration files and test data, supporting basic types, arrays, and nested tables. While created for DeciMojo's testing framework, it offers general-purpose structured data parsing with a clean, simple API.
 
-| type         | alias   | information                          | internal representation             |
-| ------------ | ------- | ------------------------------------ | ----------------------------------- |
-| `BigUInt`    | `BUInt` | arbitrary-precision unsigned integer | `List[UInt32]`                      |
-| `BigInt`     | `BInt`  | arbitrary-precision integer          | `BigUInt`, `Bool`                   |
-| `BigDecimal` | `BDec`  | arbitrary-precision decimal          | `BigUInt`, `Int`, `Bool`            |
-| `Decimal`    | `Dec`   | 128-bit fixed-precision decimal      | `UInt32`,`UInt32`,`UInt32`,`UInt32` |
+| type         | alias             | information                          | internal representation             |
+| ------------ | ----------------- | ------------------------------------ | ----------------------------------- |
+| `BigUInt`    | `BUInt`           | arbitrary-precision unsigned integer | `List[UInt32]`                      |
+| `BigInt`     | `BInt`            | arbitrary-precision integer          | `BigUInt`, `Bool`                   |
+| `BigDecimal` | `BDec`, `Decimal` | arbitrary-precision decimal          | `BigUInt`, `Int`, `Bool`            |
+| `Decimal128` | `Dec128`          | 128-bit fixed-precision decimal      | `UInt32`,`UInt32`,`UInt32`,`UInt32` |
 
 ## Installation
 
@@ -63,28 +63,30 @@ This will import the following types or aliases into your namespace:
 
 - `dm`: An alias for the `decimojo` module.
 - `BigInt` (alias `BInt`): An arbitrary-precision signed integer type.
-- `BigDecimal` (alias `BDec`): An arbitrary-precision decimal type.
-- `Decimal` (alias `Dec`): A 128-bit fixed-precision decimal type.
+- `BigDecimal` (aliases `BDec` and `Decimal`): An arbitrary-precision decimal type.
+- `Decimal128` (alias `Dec128`): A 128-bit fixed-precision decimal type.
 - `RoundingMode` (alias `RM`): An enumeration for rounding modes.
 - `ROUND_DOWN`, `ROUND_HALF_UP`, `ROUND_HALF_EVEN`, `ROUND_UP`: Constants for common rounding modes.
 
 ---
 
-Here are some examples showcasing the arbitrary-precision feature of the `BigDecimal` type. Note that Mojo does not support global variables at the moment, so we need to pass the `precision` parameter explicitly to each function call. In future, we will add a global precision setting with the default value of, *e.g.*, `28`, to avoid passing it around.
+Here are some examples showcasing the arbitrary-precision feature of the `BigDecimal` type (`BDec`). For some mathematical operations, the default precision (number of significant digits) is set to `36`. You can change the precision by passing the `precision` argument to the function. This default precision will be configurable globally in future when Mojo supports global variables.
 
 ```mojo
 from decimojo.prelude import *
 
 
 fn main() raises:
-    var a = BDec("123456789.123456789")
-    var b = BDec("1234.56789")
+    var a = BDec("123456789.123456789")  # BDec is an alias for BigDecimal
+    var b = Decimal(
+        "1234.56789"
+    )  # Decimal is a Python-like alias for BigDecimal
 
     # === Basic Arithmetic === #
     print(a + b)  # 123458023.691346789
     print(a - b)  # 123455554.555566789
     print(a * b)  # 152415787654.32099750190521
-    print(a.true_divide(b, precision=80))  # 100000.0001
+    print(a.true_divide(b + 1))  # 99919.0656560820700835791386582569736
 
     # === Exponential Functions === #
     print(a.sqrt(precision=80))
@@ -122,7 +124,7 @@ fn main() raises:
 
     # === Internal representation of the number === #
     (
-        BDec(
+        Decimal(
             "3.141592653589793238462643383279502884197169399375105820974944"
         ).power(2, precision=60)
     ).print_internal_representation()
@@ -147,11 +149,10 @@ fn main() raises:
 
 ---
 
-Here is a comprehensive quick-start guide showcasing each major function of the `BigInt` type.
+Here is a comprehensive quick-start guide showcasing each major function of the `BigInt` type (`BInt`).
 
 ```mojo
-from decimojo import BigInt, BInt
-# BInt is an alias for BigInt
+from decimojo.prelude import *
 
 fn main() raises:
     # === Construction ===
@@ -192,17 +193,17 @@ fn main() raises:
 
 ---
 
-Here is a comprehensive quick-start guide showcasing each major function of the `Decimal` type.
+Here is a comprehensive quick-start guide showcasing each major function of the `Decimal128` type (`Dec128`).
 
 ```mojo
-from decimojo import Decimal, RoundingMode
+from decimojo.prelude import *
 
 fn main() raises:
     # === Construction ===
-    var a = Decimal("123.45")                        # From string
-    var b = Decimal(123)                             # From integer
-    var c = Decimal(123, 2)                          # Integer with scale (1.23)
-    var d = Decimal.from_float(3.14159)              # From floating-point
+    var a = Dec128("123.45")                         # From string
+    var b = Dec128(123)                              # From integer
+    var c = Dec128(123, 2)                           # Integer with scale (1.23)
+    var d = Dec128.from_float(3.14159)               # From floating-point
     
     # === Basic Arithmetic ===
     print(a + b)                                     # Addition: 246.45
@@ -212,14 +213,14 @@ fn main() raises:
     
     # === Rounding & Precision ===
     print(a.round(1))                                # Round to 1 decimal place: 123.5
-    print(a.quantize(Decimal("0.01")))               # Format to 2 decimal places: 123.45
+    print(a.quantize(Dec128("0.01")))                # Format to 2 decimal places: 123.45
     print(a.round(0, RoundingMode.ROUND_DOWN))       # Round down to integer: 123
     
     # === Comparison ===
     print(a > b)                                     # Greater than: True
-    print(a == Decimal("123.45"))                    # Equality: True
+    print(a == Dec128("123.45"))                     # Equality: True
     print(a.is_zero())                               # Check for zero: False
-    print(Decimal("0").is_zero())                    # Check for zero: True
+    print(Dec128("0").is_zero())                     # Check for zero: True
     
     # === Type Conversions ===
     print(Float64(a))                                # To float: 123.45
@@ -229,33 +230,31 @@ fn main() raises:
     print(a.scale())                                 # Get scale: 2
     
     # === Mathematical Functions ===
-    print(Decimal("2").sqrt())                       # Square root: 1.4142135623730950488016887242
-    print(Decimal("100").root(3))                    # Cube root: 4.641588833612778892410076351
-    print(Decimal("2.71828").ln())                   # Natural log: 0.9999993273472820031578910056
-    print(Decimal("10").log10())                     # Base-10 log: 1
-    print(Decimal("16").log(Decimal("2")))           # Log base 2: 3.9999999999999999999999999999
-    print(Decimal("10").exp())                       # e^10: 22026.465794806716516957900645
-    print(Decimal("2").power(10))                    # Power: 1024
+    print(Dec128("2").sqrt())                        # Square root: 1.4142135623730950488016887242
+    print(Dec128("100").root(3))                     # Cube root: 4.641588833612778892410076351
+    print(Dec128("2.71828").ln())                    # Natural log: 0.9999993273472820031578910056
+    print(Dec128("10").log10())                      # Base-10 log: 1
+    print(Dec128("16").log(Dec128("2")))             # Log base 2: 3.9999999999999999999999999999
+    print(Dec128("10").exp())                        # e^10: 22026.465794806716516957900645
+    print(Dec128("2").power(10))                     # Power: 1024
     
     # === Sign Handling ===
     print(-a)                                        # Negation: -123.45
-    print(abs(Decimal("-123.45")))                   # Absolute value: 123.45
-    print(Decimal("123.45").is_negative())           # Check if negative: False
+    print(abs(Dec128("-123.45")))                    # Absolute value: 123.45
+    print(Dec128("123.45").is_negative())            # Check if negative: False
     
     # === Special Values ===
-    print(Decimal.PI())                              # π constant: 3.1415926535897932384626433833
-    print(Decimal.E())                               # e constant: 2.7182818284590452353602874714
-    print(Decimal.ONE())                             # Value 1: 1
-    print(Decimal.ZERO())                            # Value 0: 0
-    print(Decimal.MAX())                             # Maximum value: 79228162514264337593543950335
+    print(Dec128.PI())                               # π constant: 3.1415926535897932384626433833
+    print(Dec128.E())                                # e constant: 2.7182818284590452353602874714
+    print(Dec128.ONE())                              # Value 1: 1
+    print(Dec128.ZERO())                             # Value 0: 0
+    print(Dec128.MAX())                              # Maximum value: 79228162514264337593543950335
     
     # === Convenience Methods ===
-    print(Decimal("123.400").is_integer())           # Check if integer: False
+    print(Dec128("123.400").is_integer())            # Check if integer: False
     print(a.number_of_significant_digits())          # Count significant digits: 5
-    print(Decimal("12.34").to_str_scientific())      # Scientific notation: 1.234E+1
+    print(Dec128("12.34").to_str_scientific())       # Scientific notation: 1.234E+1
 ```
-
-[Click here for 8 key examples](https://zhuyuhao.com/decimojo/docs/examples) highlighting the most important features of the `Decimal` type.
 
 ## Objective
 
@@ -284,7 +283,7 @@ Regular benchmarks against Python's `decimal` module are available in the `bench
 After cloning the repo onto your local disk, you can:
 
 - Use `pixi run test` to run tests.
-- Use `pixi run bench_decimal` to generate logs for benchmarking tests against `python.decimal` module. The log files are saved in `benches/decimal/logs/`.
+- Use `pixi run bdec` to generate logs for benchmarking tests against `python.decimal` module. The log files are saved in `benches/bigdecimal/logs/`.
 
 ## Citation
 
@@ -305,6 +304,6 @@ If you find DeciMojo useful for your research, consider listing it in your citat
 
 This repository and its contributions are licensed under the Apache License v2.0.
 
-[^fixed]: The `Decimal` type can represent values with up to 29 significant digits and a maximum of 28 digits after the decimal point. When a value exceeds the maximum representable value (`2^96 - 1`), DeciMojo either raises an error or rounds the value to fit within these constraints. For example, the significant digits of `8.8888888888888888888888888888` (29 eights total with 28 after the decimal point) exceeds the maximum representable value (`2^96 - 1`) and is automatically rounded to `8.888888888888888888888888889` (28 eights total with 27 after the decimal point). DeciMojo's `Decimal` type is similar to `System.Decimal` (C#/.NET), `rust_decimal` in Rust, `DECIMAL/NUMERIC` in SQL Server, etc.
+[^fixed]: The `Decimal128` type can represent values with up to 29 significant digits and a maximum of 28 digits after the decimal point. When a value exceeds the maximum representable value (`2^96 - 1`), DeciMojo either raises an error or rounds the value to fit within these constraints. For example, the significant digits of `8.8888888888888888888888888888` (29 eights total with 28 after the decimal point) exceeds the maximum representable value (`2^96 - 1`) and is automatically rounded to `8.888888888888888888888888889` (28 eights total with 27 after the decimal point). DeciMojo's `Decimal128` type is similar to `System.Decimal` (C#/.NET), `rust_decimal` in Rust, `DECIMAL/NUMERIC` in SQL Server, etc.
 [^integer]: The BigInt implementation uses a base-10 representation for users (maintaining decimal semantics), while internally using an optimized base-10^9 storage system for efficient calculations. This approach balances human-readable decimal operations with high-performance computing. It provides both floor division (round toward negative infinity) and truncate division (round toward zero) semantics, enabling precise handling of division operations with correct mathematical behavior regardless of operand signs.
 [^arbitrary]: Built on top of our completed BigInt implementation, BigDecimal will support arbitrary precision for both the integer and fractional parts, similar to `decimal` and `mpmath` in Python, `java.math.BigDecimal` in Java, etc.

@@ -2,14 +2,16 @@ from decimojo.prelude import *
 
 
 fn main() raises:
-    var a = BDec("123456789.123456789")
-    var b = BDec("1234.56789")
+    var a = BDec("123456789.123456789")  # BDec is an alias for BigDecimal
+    var b = Decimal(
+        "1234.56789"
+    )  # Decimal is a Python-like alias for BigDecimal
 
     # === Basic Arithmetic === #
     print(a + b)  # 123458023.691346789
     print(a - b)  # 123455554.555566789
     print(a * b)  # 152415787654.32099750190521
-    print(a.true_divide(b, precision=80))  # 100000.0001
+    print(a.true_divide(b + 1))  # 99919.0656560820700835791386582569736
 
     # === Exponential Functions === #
     print(a.sqrt(precision=80))
@@ -47,7 +49,7 @@ fn main() raises:
 
     # === Internal representation of the number === #
     (
-        BDec(
+        Decimal(
             "3.141592653589793238462643383279502884197169399375105820974944"
         ).power(2, precision=60)
     ).print_internal_representation()

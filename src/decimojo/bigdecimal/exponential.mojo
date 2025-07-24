@@ -18,7 +18,6 @@
 
 from decimojo.bigdecimal.bigdecimal import BigDecimal
 from decimojo.rounding_mode import RoundingMode
-import decimojo.utility
 
 # ===----------------------------------------------------------------------=== #
 # List of functions in this module:
@@ -532,7 +531,7 @@ fn sqrt_decimal_approach(x: BigDecimal, precision: Int) raises -> BigDecimal:
         )
     if odd_ndigits_frac_part:
         value = value * UInt128(10)
-    var sqrt_value = decimojo.utility.sqrt(value)
+    var sqrt_value = decimojo.decimal128.utility.sqrt(value)
     var sqrt_value_biguint = BigUInt.from_unsigned_integral_scalar(sqrt_value)
     guess = BigDecimal(
         sqrt_value_biguint,
