@@ -22,7 +22,6 @@ import time
 
 from decimojo.bigdecimal.bigdecimal import BigDecimal
 from decimojo.rounding_mode import RoundingMode
-import decimojo.utility
 import decimojo.bigdecimal.constants
 
 

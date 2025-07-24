@@ -31,8 +31,8 @@ from decimojo.bigdecimal.rounding import round_to_precision
 
 alias BDec = BigDecimal
 """Short alias for `BigDecimal`."""
-alias bdec = BigDecimal
-"""Short alias for `BigDecimal` constructor."""
+alias Decimal = BigDecimal
+"""Python-like alias for `BigDecimal`."""
 
 alias PRECISION = 36
 """Default precision for BigDecimal operations.

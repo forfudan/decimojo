@@ -25,10 +25,10 @@ from decimojo import Decimal, BigInt, RoundingMode
 """
 
 # Core types
-from .decimal.decimal import Decimal, Dec
+from .decimal128.decimal128 import Decimal128, Dec128
 from .bigint.bigint import BigInt, BInt
 from .biguint.biguint import BigUInt, BUInt
-from .bigdecimal.bigdecimal import BigDecimal, BDec
+from .bigdecimal.bigdecimal import BigDecimal, BDec, Decimal
 from .rounding_mode import (
     RoundingMode,
     RM,
@@ -37,26 +37,3 @@ from .rounding_mode import (
     ROUND_HALF_EVEN,
     ROUND_UP,
 )
-
-# Core functions
-from .decimal.arithmetics import (
-    add,
-    subtract,
-    absolute,
-    negative,
-    multiply,
-    divide,
-    truncate_divide,
-    modulo,
-)
-from .decimal.comparison import (
-    greater,
-    greater_equal,
-    less,
-    less_equal,
-    equal,
-    not_equal,
-)
-from .decimal.exponential import power, root, sqrt, exp, ln, log, log10
-from .decimal.rounding import round, quantize
-from .decimal.special import factorial
