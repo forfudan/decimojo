@@ -4,7 +4,7 @@ This is a list of RELEASED changes for the DeciMojo Package.
 
 ## 20250801 (v0.5.0)
 
-DeciMojo v0.5.0 introduces significant enhancements to the `BigDecimal` and `BigUInt` types, including new mathematical functions and performance optimizations. The release adds **trigonometric functions** for `BigDecimal`, implements the **Chudnovsky algorithm** for computing π, implements the **Karatsuba multiplication algorithm** and **Burnikel-Ziegler fast division algorithm** for `BigUInt`. In-place subtraction is now supported for `BigUInt`, and SIMD is utilized for arithmetic operations. The release also includes improved error handling, optimized type conversions, and comprehensive documentation updates.
+DeciMojo v0.5.0 introduces significant enhancements to the `BigDecimal` and `BigUInt` types, including new mathematical functions and performance optimizations. The release adds **trigonometric functions** for `BigDecimal`, implements the **Chudnovsky algorithm** for computing π, implements the **Karatsuba multiplication algorithm** and **Burnikel-Ziegler fast division algorithm** for `BigUInt`. In-place subtraction is now supported for `BigUInt`, and SIMD is utilized for arithmetic operations. The `Decimal` type is renamed to `Decimal128` to reflect its 128-bit fixed precision. The release also includes improved error handling, optimized type conversions, and comprehensive documentation updates.
 
 ### ⭐️ New
 
@@ -19,7 +19,7 @@ Changes in **BigUInt**:
 1. Refine the `BigUInt` multiplication with the **Karatsuba algorithm**. The time complexity of maltiplication is reduced from $O(n^2)$ to $O(n^{ln(3/2)})$ for large integers, which significantly improves performance for big numbers. Doubling the size of the numbers will only increase the time taken by a factor of about 3, instead of 4 as in the previous implementation (#97).
 1. Refine the `BigUInt` division with the **Burnikel-Ziegler fast recursive division algorithm**. The time complexity of division is also reduced from $O(n^2)$ to $O(n^{ln(3/2)})$ for large integers (#103).
 1. Refine the fall-back **schoolbook division** of `BigUInt` to improve performance. The fallback division is used when the divisor is small enough (#98, #100).
-1. Implement auxiliary functions for arithmetic operations of `BigUInt` to handle **special cases** more efficiently, e.g., when the second operand is one-word long or is a `UInt32` value (#98, #104).
+1. Implement auxiliary functions for arithmetic operations of `BigUInt` to handle **special cases** more efficiently, e.g., when the second operand is one-word long or is a `UInt32` value (#98, #104, #111).
 1. Implement in-place subtraction for `BigUInt`. The `__isub__` method of `BigUInt` will now conduct in-place subtraction. `x -= y` will not lead to memory allocation, but will modify the original `BigUInt` object `x` directly (#98).
 1. Use SIMD for `BigUInt` addition and subtraction operations. This allows the addition and subtraction of two `BigUInt` objects to be performed in parallel, significantly improving performance for large numbers (#101, #102).
 1. Implement functions for all arithmetic operations on slices of `BigUInt` objects. This allows you to perform arithmetic operations on slices of `BigUInt` objects without having to convert them to `BigUInt` first, leading to less memory allocation and improved performance (#105).
@@ -29,10 +29,13 @@ Changes in **BigDecimal**:
 
 1. Re-implemente the `sqrt()` function for `BigDecimal` to use the new `BigUInt.sqrt()` method for better performance and accuracy. The new implementation adjusts the scale and coefficient directly, which is more efficient than the previous method. Introduce a new `sqrt_decimal_approach()` function to preserve the old implementation for reference (#108).
 1. Refine or re-implement the basic arithmetic operations, *e.g.,*, addition, subtraction, multiplication, division, etc, for `BigDecimal` and simplify the logic. The new implementation is more efficient and easier to understand, leading to better performance (#109, #110).
+1. Add a default precision 36 for `BigDecimal` methods (#112).
 
 Other changes:
 
 1. Improve error messages and remove unnecessary `raises` keywords for all functions (#92).
+1. Rename the `Decimal` type to `Decimal128` to reflect its fixed precision of 128 bits. It has a new alias `Dec128` (#112).
+1. `Decimal` is now an alias for `BigDecimal` (#112).
 
 ### 🛠️ Fixed
 
