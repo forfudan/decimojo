@@ -21,14 +21,12 @@ Implements basic arithmetic functions for the BigUInt type.
 from algorithm import vectorize
 import math
 from memory import memcpy, memset_zero
-import time
-import testing
 
 from decimojo.biguint.biguint import BigUInt
 import decimojo.biguint.comparison
 from decimojo.rounding_mode import RoundingMode
 
-alias CUTOFF_KARATSUBA: Int = 64
+alias CUTOFF_KARATSUBA = 64
 """The cutoff number of words for using Karatsuba multiplication."""
 alias CUTOFF_BURNIKEL_ZIEGLER = 32
 """The cutoff number of words for using Burnikel-Ziegler division."""
@@ -2795,8 +2793,7 @@ fn floor_divide_modulo(
 
 
 # ===----------------------------------------------------------------------=== #
-# Division Helper Functions
-# power_of_10
+# Helper Functions
 # ===----------------------------------------------------------------------=== #
 
 
