@@ -24,8 +24,6 @@ mathematical methods that do not implement a trait.
 """
 
 from memory import UnsafePointer
-import testing
-import time
 
 import decimojo.bigint.arithmetics
 import decimojo.bigint.comparison
@@ -38,7 +36,17 @@ alias BInt = BigInt
 
 
 @value
-struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
+struct BigInt(
+    Absable,
+    AnyType,
+    Comparable,
+    Copyable,
+    IntableRaising,
+    Movable,
+    Representable,
+    Stringable,
+    Writable,
+):
     """Represents a base-10 arbitrary-precision signed integer.
 
     Notes:
