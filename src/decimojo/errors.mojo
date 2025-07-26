@@ -18,40 +18,71 @@
 Implement error handling for DeciMojo.
 """
 
+alias OverflowError = DeciMojoError[error_type="OverflowError"]
+alias IndexError = DeciMojoError[error_type="IndexError"]
+alias KeyError = DeciMojoError[error_type="KeyError"]
+alias ZeroDivisionError = DeciMojoError[error_type="ZeroDivisionError"]
 
-struct DeciError(Stringable):
-    var error_type: String
-    var message: String
-    var function: String
+alias HEADER_OF_ERROR_MESSAGE = """
+---------------------------------------------------------------------------
+DeciMojoError                             Traceback (most recent call last)
+"""
+
+
+struct DeciMojoError[error_type: String](Stringable, Writable):
     var file: String
-    var line: Int
+    var function: String
+    var message: Optional[String]
 
     fn __init__(
         out self,
-        error_type: String,
-        message: String,
-        function: String,
         file: String,
-        line: Int,
+        function: String,
+        message: Optional[String],
     ):
-        self.error_type = error_type
-        self.message = message
-        self.function = function
         self.file = file
-        self.line = line
+        self.function = function
+        self.message = message
 
     fn __str__(self) -> String:
-        return (
-            "Traceback (most recent call last):\n"
-            + '  File "'
-            + String(self.file)
-            + '", line '
-            + String(self.line)
-            + " in "
-            + String(self.function)
-            + "\n"
-            + String(self.error_type)
-            + ": "
-            + String(self.message)
-            + '"'
-        )
+        if self.message is None:
+            return (
+                "Traceback (most recent call last):\n"
+                + '  File "'
+                + self.file
+                + '"'
+                + " in "
+                + self.function
+                + "\n\n"
+            )
+
+        else:
+            return (
+                "Traceback (most recent call last):\n"
+                + '  File "'
+                + self.file
+                + '"'
+                + " in "
+                + self.function
+                + "\n\n"
+                + String(error_type)
+                + ": "
+                + self.message.value()
+                + "\n"
+            )
+
+    fn write_to[W: Writer](self, mut writer: W):
+        writer.write('File "')
+        writer.write(self.file)
+        writer.write('"')
+        writer.write(" in ")
+        writer.write(self.function)
+        if self.message is None:
+            writer.write("\n\n")
+        else:
+            writer.write("\n\n")
+            writer.write(error_type)
+            writer.write(": ")
+            writer.write(self.message.value())
+            writer.write('"')
+            writer.write("\n")

@@ -27,6 +27,7 @@ from memory import UnsafePointer, memcpy
 
 import decimojo.biguint.arithmetics
 import decimojo.biguint.comparison
+from decimojo.errors import OverflowError
 import decimojo.str
 
 # Type aliases
@@ -260,8 +261,13 @@ struct BigUInt(
         for word in words:
             if word > UInt32(999_999_999):
                 raise Error(
-                    "Error in `BigUInt.from_list()`: Word value exceeds maximum"
-                    " value of 999_999_999"
+                    OverflowError(
+                        message=(
+                            "Word value exceeds maximum value of 999_999_999"
+                        ),
+                        function="BigUInt.from_list()",
+                        file="src/decimojo/biguint/biguint.mojo",
+                    )
                 )
 
         return Self(words^)
@@ -292,8 +298,13 @@ struct BigUInt(
         for word in words:
             if word > UInt32(999_999_999):
                 raise Error(
-                    "Error in `BigUInt.__init__()`: Word value exceeds maximum"
-                    " value of 999_999_999"
+                    OverflowError(
+                        message=(
+                            "Word value exceeds maximum value of 999_999_999"
+                        ),
+                        function="BigUInt.from_words()",
+                        file="src/decimojo/biguint/biguint.mojo",
+                    )
                 )
             else:
                 list_of_words.append(word)
@@ -1524,7 +1535,7 @@ struct BigUInt(
         rounding_mode: RoundingMode,
         remove_extra_digit_due_to_rounding: Bool,
     ) raises -> Self:
-        """Removes trailing digits from the BigUInt.
+        """Removes trailing digits from the BigUInt with rounding.
 
         Args:
             ndigits: The number of digits to remove.
