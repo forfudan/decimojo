@@ -1502,7 +1502,7 @@ struct Decimal128(
         #     | UInt128(self.low)
         # )
 
-    fn extend_precision(self, owned precision_diff: Int) raises -> Decimal128:
+    fn extend_precision(self, var precision_diff: Int) raises -> Decimal128:
         """Returns a number with additional decimal128 places (trailing zeros).
         This multiplies the coefficient by 10^precision_diff and increases
         the scale accordingly, preserving the numeric value.

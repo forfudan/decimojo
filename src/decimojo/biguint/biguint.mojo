@@ -34,8 +34,9 @@ alias BUInt = BigUInt
 alias BigUInt10 = BigUInt
 
 
-@value
-struct BigUInt(Absable, IntableRaising, Stringable, Writable):
+struct BigUInt(
+    Absable, Copyable, IntableRaising, Movable, Stringable, Writable
+):
     """Represents a base-10 arbitrary-precision unsigned integer.
 
     Notes:
@@ -104,8 +105,8 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     # Constructors and life time dunder methods
     #
     # __init__(out self)
-    # __init__(out self, owned words: List[UInt32])
-    # __init__(out self, owned *words: UInt32)
+    # __init__(out self, var words: List[UInt32])
+    # __init__(out self, var *words: UInt32)
     # __init__(out self, value: Int) raises
     # __init__(out self, value: Scalar) raises
     # __init__(out self, value: String, ignore_sign: Bool = False) raises
@@ -141,7 +142,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         """
         self.words = List[UInt32](unsafe_uninit_length=unsafe_uninit_length)
 
-    fn __init__(out self, owned words: List[UInt32]):
+    fn __init__(out self, var words: List[UInt32]):
         """Initializes a BigUInt from a list of UInt32 words.
         It does not verify whether the words are within the valid range
         See `from_list()` for safer initialization.
@@ -161,7 +162,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         else:
             self.words = words^
 
-    fn __init__(out self, owned *words: UInt32):
+    fn __init__(out self, var *words: UInt32):
         """Initializes a BigUInt from raw words without validating the words.
         See `from_words()` for safer initialization.
 
@@ -230,7 +231,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     # ===------------------------------------------------------------------=== #
     # Constructing methods that are not dunders
     #
-    # from_list(owned words: List[UInt32]) -> Self
+    # from_list(var words: List[UInt32]) -> Self
     # from_words(*words: UInt32) -> Self
     # from_int(value: Int) -> Self
     # from_unsigned_integral_scalar[dtype: DType](value: Scalar[dtype]) -> Self
@@ -238,7 +239,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
     # ===------------------------------------------------------------------=== #
 
     @staticmethod
-    fn from_list(owned words: List[UInt32]) raises -> Self:
+    fn from_list(var words: List[UInt32]) raises -> Self:
         """Initializes a BigUInt from a list of UInt32 words safely.
         If the list is empty, the BigUInt is initialized with value 0.
         The words are validated to ensure they are smaller than `999_999_999`.
@@ -331,8 +332,8 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         # Now we can safely copy the words
         result = BigUInt(words=List[UInt32](unsafe_uninit_length=n_words))
         memcpy(
-            dest=result.words.data,
-            src=value.words.data + start_index,
+            dest=result.words._data,
+            src=value.words._data + start_index,
             count=n_words,
         )
         result.remove_leading_empty_words()
@@ -685,15 +686,15 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
             )
 
         if len(self.words) == 1:
-            return self.words.data.load[width=1]().cast[DType.uint64]()
+            return self.words._data.load[width=1]().cast[DType.uint64]()
         elif len(self.words) == 2:
             return (
-                self.words.data.load[width=2]().cast[DType.uint64]()
+                self.words._data.load[width=2]().cast[DType.uint64]()
                 * SIMD[DType.uint64, 2](1, 1_000_000_000)
             ).reduce_add()
         else:
             return (
-                self.words.data.load[width=4]().cast[DType.uint64]()
+                self.words._data.load[width=4]().cast[DType.uint64]()
                 * SIMD[DType.uint64, 4](
                     1,
                     1_000_000_000,
@@ -709,10 +710,10 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
             This method quickly convert BigUInt with 2 words into UInt64.
         """
         if len(self.words) == 1:
-            return self.words.data.load[width=1]().cast[DType.uint64]()
+            return self.words._data.load[width=1]().cast[DType.uint64]()
         else:  # len(self.words) == 2
             return (
-                self.words.data.load[width=2]().cast[DType.uint64]()
+                self.words._data.load[width=2]().cast[DType.uint64]()
                 * SIMD[DType.uint64, 2](1, 1_000_000_000)
             ).reduce_add()
 
@@ -738,22 +739,22 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         var result: UInt128 = 0
 
         if len(self.words) == 1:
-            result = self.words.data.load[width=1]().cast[DType.uint128]()
+            result = self.words._data.load[width=1]().cast[DType.uint128]()
         elif len(self.words) == 2:
             result = (
-                self.words.data.load[width=2]().cast[DType.uint128]()
+                self.words._data.load[width=2]().cast[DType.uint128]()
                 * SIMD[DType.uint128, 2](1, 1_000_000_000)
             ).reduce_add()
         elif len(self.words) == 3:
             result = (
-                self.words.data.load[width=4]().cast[DType.uint128]()
+                self.words._data.load[width=4]().cast[DType.uint128]()
                 * SIMD[DType.uint128, 4](
                     1, 1_000_000_000, 1_000_000_000_000_000_000, 0
                 )
             ).reduce_add()
         elif len(self.words) == 4:
             result = (
-                self.words.data.load[width=4]().cast[DType.uint128]()
+                self.words._data.load[width=4]().cast[DType.uint128]()
                 * SIMD[DType.uint128, 4](
                     1,
                     1_000_000_000,
@@ -763,7 +764,7 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
             ).reduce_add()
         else:
             result = (
-                self.words.data.load[width=8]().cast[DType.uint128]()
+                self.words._data.load[width=8]().cast[DType.uint128]()
                 * SIMD[DType.uint128, 8](
                     1,
                     1_000_000_000,
@@ -786,22 +787,22 @@ struct BigUInt(Absable, IntableRaising, Stringable, Writable):
         """
 
         if len(self.words) == 1:
-            return self.words.data.load[width=1]().cast[DType.uint128]()
+            return self.words._data.load[width=1]().cast[DType.uint128]()
         elif len(self.words) == 2:
             return (
-                self.words.data.load[width=2]().cast[DType.uint128]()
+                self.words._data.load[width=2]().cast[DType.uint128]()
                 * SIMD[DType.uint128, 2](1, 1_000_000_000)
             ).reduce_add()
         elif len(self.words) == 3:
             return (
-                self.words.data.load[width=4]().cast[DType.uint128]()
+                self.words._data.load[width=4]().cast[DType.uint128]()
                 * SIMD[DType.uint128, 4](
                     1, 1_000_000_000, 1_000_000_000_000_000_000, 0
                 )
             ).reduce_add()
         else:  # len(self.words) == 4
             return (
-                self.words.data.load[width=4]().cast[DType.uint128]()
+                self.words._data.load[width=4]().cast[DType.uint128]()
                 * SIMD[DType.uint128, 4](
                     1,
                     1_000_000_000,

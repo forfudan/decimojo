@@ -40,7 +40,6 @@ This will be configurable in future when Mojo supports global variables.
 """
 
 
-@value
 struct BigDecimal(
     Absable,
     AnyType,
@@ -171,7 +170,7 @@ struct BigDecimal(
 
     @staticmethod
     fn from_raw_components(
-        owned words: List[UInt32], scale: Int = 0, sign: Bool = False
+        var words: List[UInt32], scale: Int = 0, sign: Bool = False
     ) -> Self:
         """**UNSAFE** Creates a BigDecimal from its raw components.
         The raw components are words, scale, and sign.

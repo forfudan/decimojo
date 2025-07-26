@@ -24,8 +24,7 @@ from collections import Dict
 from .tokenizer import Token, TokenType, Tokenizer
 
 
-@value
-struct TOMLValue:
+struct TOMLValue(Copyable, Movable):
     """Represents a value in the TOML document."""
 
     var type: TOMLValueType
@@ -123,8 +122,7 @@ struct TOMLValue:
             return False
 
 
-@value
-struct TOMLValueType:
+struct TOMLValueType(Copyable, Movable):
     """Types of values in TOML."""
 
     # Aliases to mimic enum constants
@@ -198,8 +196,7 @@ struct TOMLValueType:
             return "UNKNOWN"
 
 
-@value
-struct TOMLDocument:
+struct TOMLDocument(Copyable, Movable):
     """Represents a parsed TOML document."""
 
     var root: Dict[String, TOMLValue]
