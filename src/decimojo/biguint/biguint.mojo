@@ -267,6 +267,7 @@ struct BigUInt(
                         ),
                         function="BigUInt.from_list()",
                         file="src/decimojo/biguint/biguint.mojo",
+                        previous_error=None,
                     )
                 )
 
@@ -304,6 +305,7 @@ struct BigUInt(
                         ),
                         function="BigUInt.from_words()",
                         file="src/decimojo/biguint/biguint.mojo",
+                        previous_error=None,
                     )
                 )
             else:
