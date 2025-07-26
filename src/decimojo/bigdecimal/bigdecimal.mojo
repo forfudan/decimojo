@@ -40,12 +40,15 @@ This will be configurable in future when Mojo supports global variables.
 """
 
 
-@value
 struct BigDecimal(
     Absable,
+    AnyType,
     Comparable,
+    Copyable,
     FloatableRaising,
     IntableRaising,
+    Movable,
+    Representable,
     Roundable,
     Stringable,
     Writable,
@@ -167,7 +170,7 @@ struct BigDecimal(
 
     @staticmethod
     fn from_raw_components(
-        owned words: List[UInt32], scale: Int = 0, sign: Bool = False
+        var words: List[UInt32], scale: Int = 0, sign: Bool = False
     ) -> Self:
         """**UNSAFE** Creates a BigDecimal from its raw components.
         The raw components are words, scale, and sign.
@@ -617,32 +620,32 @@ struct BigDecimal(
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn __gt__(self, other: BigDecimal) -> Bool:
+    fn __gt__(self, other: Self) -> Bool:
         """Returns whether self is greater than other."""
         return decimojo.bigdecimal.comparison.compare(self, other) > 0
 
     @always_inline
-    fn __ge__(self, other: BigDecimal) -> Bool:
+    fn __ge__(self, other: Self) -> Bool:
         """Returns whether self is greater than or equal to other."""
         return decimojo.bigdecimal.comparison.compare(self, other) >= 0
 
     @always_inline
-    fn __lt__(self, other: BigDecimal) -> Bool:
+    fn __lt__(self, other: Self) -> Bool:
         """Returns whether self is less than other."""
         return decimojo.bigdecimal.comparison.compare(self, other) < 0
 
     @always_inline
-    fn __le__(self, other: BigDecimal) -> Bool:
+    fn __le__(self, other: Self) -> Bool:
         """Returns whether self is less than or equal to other."""
         return decimojo.bigdecimal.comparison.compare(self, other) <= 0
 
     @always_inline
-    fn __eq__(self, other: BigDecimal) -> Bool:
+    fn __eq__(self, other: Self) -> Bool:
         """Returns whether self equals other."""
         return decimojo.bigdecimal.comparison.compare(self, other) == 0
 
     @always_inline
-    fn __ne__(self, other: BigDecimal) -> Bool:
+    fn __ne__(self, other: Self) -> Bool:
         """Returns whether self does not equal other."""
         return decimojo.bigdecimal.comparison.compare(self, other) != 0
 
@@ -728,7 +731,7 @@ struct BigDecimal(
     fn e(precision: Int) raises -> Self:
         """Returns the mathematical constant e to the specified precision."""
         return decimojo.bigdecimal.exponential.exp(
-            x=BigDecimal(BigUInt.ONE), precision=precision
+            x=Self(BigUInt.ONE), precision=precision
         )
 
     # === Exponentional operations === #
@@ -914,7 +917,7 @@ struct BigDecimal(
         """
         return self.coefficient.number_of_digits() - 1 - self.scale
 
-    fn extend_precision(self, precision_diff: Int) -> BigDecimal:
+    fn extend_precision(self, precision_diff: Int) -> Self:
         """Returns a number with additional decimal places (trailing zeros).
         This multiplies the coefficient by 10^precision_diff and increases
         the scale accordingly, preserving the numeric value.
@@ -933,10 +936,11 @@ struct BigDecimal(
         In debug mode, negative `precision_diff` raises an assertion error.
 
         Examples:
+
         ```
-        print(BigDecimal("123.456).scale_up(5))  # Output: 123.45600000
-        print(BigDecimal("123456").scale_up(3))  # Output: 123456.000
-        print(BigDecimal("123456").scale_up(-1))  # Output: 123456 (no change)
+        print(BigDecimal("123.456).extend_precision(5))  # Output: 123.45600000
+        print(BigDecimal("123456").extend_precision(3))  # Output: 123456.000
+        print(BigDecimal("123456").extend_precision(-1))  # Output: 123456 (no change)
         ```
         """
         debug_assert(
@@ -949,7 +953,7 @@ struct BigDecimal(
         if precision_diff <= 0:
             return self
 
-        return BigDecimal(
+        return Self(
             decimojo.biguint.arithmetics.multiply_by_power_of_ten(
                 self.coefficient, precision_diff
             ),
@@ -974,9 +978,9 @@ struct BigDecimal(
 
         Examples:
         ```
-        print(BigDecimal("123.456).scale_up(5))  # Output: 123.45600000
-        print(BigDecimal("123456").scale_up(3))  # Output: 123456.000
-        print(BigDecimal("123456").scale_up(-1))  # Output: 123456 (no change)
+        BigDecimal("123.456).extend_precision_inplace(5)  # Output: 123.45600000
+        BigDecimal("123456").extend_precision_inplace(3)  # Output: 123456.000
+        BigDecimal("123456").extend_precision_inplace(-1)  # Output: 123456 (no change)
         ```
         """
         debug_assert(
@@ -1107,7 +1111,7 @@ struct BigDecimal(
         """Returns True if this number represents zero."""
         return self.coefficient.is_zero()
 
-    fn normalize(self) raises -> BigDecimal:
+    fn normalize(self) raises -> Self:
         """Removes trailing zeros from coefficient while adjusting scale.
 
         Notes:
@@ -1115,7 +1119,7 @@ struct BigDecimal(
         Only call it when necessary. Do not normalize after every operation.
         """
         if self.coefficient.is_zero():
-            return BigDecimal(BigUInt(UInt32(0)), 0, False)
+            return Self(BigUInt(UInt32(0)), 0, False)
 
         var number_of_digits_to_remove = self.number_of_trailing_zeros()
 
@@ -1146,7 +1150,7 @@ struct BigDecimal(
         else:  # number_of_remaining_digits_to_remove == 8
             coefficient = coefficient // BigUInt(UInt32(100_000_000))
 
-        return BigDecimal(
+        return Self(
             coefficient,
             self.scale - number_of_digits_to_remove,
             self.sign,

@@ -52,7 +52,7 @@ struct TestCase(Copyable, Movable, Stringable, Writable):
         self.expected = other.expected
         self.description = other.description
 
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, var other: Self):
         self.a = other.a^
         self.b = other.b^
         self.expected = other.expected^

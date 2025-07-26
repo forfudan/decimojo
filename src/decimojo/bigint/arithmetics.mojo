@@ -18,9 +18,6 @@
 Implements basic arithmetic functions for the BigInt type.
 """
 
-import time
-import testing
-
 from decimojo.bigint.bigint import BigInt
 from decimojo.biguint.biguint import BigUInt
 from decimojo.rounding_mode import RoundingMode
@@ -38,8 +35,16 @@ fn add(x1: BigInt, x2: BigInt) raises -> BigInt:
     """
     # If one of the numbers is zero, return the other number
     if x1.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x1.magnitude.words) == 1,
+            "decimojo.bigint.arithmetics.add(): leading zero words in x1",
+        )
         return x2
     if x2.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x2.magnitude.words) == 1,
+            "decimojo.bigint.arithmetics.add(): leading zero words in x2",
+        )
         return x1
 
     # If signs are different, delegate to `subtract`
@@ -82,9 +87,17 @@ fn subtract(x1: BigInt, x2: BigInt) raises -> BigInt:
     """
     # If the subtrahend is zero, return the minuend
     if x2.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x2.magnitude.words) == 1,
+            "decimojo.bigint.arithmetics.add(): leading zero words in x2",
+        )
         return x1
     # If the minuend is zero, return the negated subtrahend
     if x1.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x1.magnitude.words) == 1,
+            "decimojo.bigint.arithmetics.add(): leading zero words in x1",
+        )
         return -x2
 
     # If signs are different, delegate to `add`
@@ -126,6 +139,10 @@ fn negative(x: BigInt) -> BigInt:
     """
     # If x is zero, return zero
     if x.is_zero():
+        debug_assert[assert_mode="none"](
+            len(x.magnitude.words) == 1,
+            "decimojo.bigint.arithmetics.add(): leading zero words in x",
+        )
         return BigInt()
 
     var result = x

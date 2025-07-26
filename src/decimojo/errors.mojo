@@ -19,7 +19,7 @@ Implement error handling for DeciMojo.
 """
 
 
-struct DeciError:
+struct DeciError(Stringable):
     var error_type: String
     var message: String
     var function: String

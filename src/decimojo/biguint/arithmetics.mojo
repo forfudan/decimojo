@@ -21,14 +21,12 @@ Implements basic arithmetic functions for the BigUInt type.
 from algorithm import vectorize
 import math
 from memory import memcpy, memset_zero
-import time
-import testing
 
 from decimojo.biguint.biguint import BigUInt
 import decimojo.biguint.comparison
 from decimojo.rounding_mode import RoundingMode
 
-alias CUTOFF_KARATSUBA: Int = 64
+alias CUTOFF_KARATSUBA = 64
 """The cutoff number of words for using Karatsuba multiplication."""
 alias CUTOFF_BURNIKEL_ZIEGLER = 32
 """The cutoff number of words for using Burnikel-Ziegler division."""
@@ -287,10 +285,10 @@ fn add_slices_simd(
 
     @parameter
     fn vector_add[simd_width: Int](i: Int):
-        words.data.store[width=simd_width](
+        words._data.store[width=simd_width](
             i,
-            x.words.data.load[width=simd_width](i + bounds_x[0])
-            + y.words.data.load[width=simd_width](i + bounds_y[0]),
+            x.words._data.load[width=simd_width](i + bounds_x[0])
+            + y.words._data.load[width=simd_width](i + bounds_y[0]),
         )
 
     vectorize[vector_add, BigUInt.VECTOR_WIDTH](
@@ -315,9 +313,9 @@ fn add_slices_simd(
 
     @parameter
     fn vector_copy_rest_from_longer[simd_width: Int](i: Int):
-        words.data.store[width=simd_width](
+        words._data.store[width=simd_width](
             n_words_shorter_slice + i,
-            longer[].words.data.load[width=simd_width](
+            longer[].words._data.load[width=simd_width](
                 longer_start + n_words_shorter_slice + i
             ),
         )
@@ -366,10 +364,10 @@ fn add_inplace(mut x: BigUInt, y: BigUInt) -> None:
 
     @parameter
     fn vector_add[simd_width: Int](i: Int):
-        x.words.data.store[width=simd_width](
+        x.words._data.store[width=simd_width](
             i,
-            x.words.data.load[width=simd_width](i)
-            + y.words.data.load[width=simd_width](i),
+            x.words._data.load[width=simd_width](i)
+            + y.words._data.load[width=simd_width](i),
         )
 
     vectorize[vector_add, BigUInt.VECTOR_WIDTH](len(y.words))
@@ -415,10 +413,10 @@ fn add_inplace_by_slice(
 
     @parameter
     fn vector_add[simd_width: Int](i: Int):
-        x.words.data.store[width=simd_width](
+        x.words._data.store[width=simd_width](
             i,
-            x.words.data.load[width=simd_width](i)
-            + y.words.data.load[width=simd_width](i + bounds_y[0]),
+            x.words._data.load[width=simd_width](i)
+            + y.words._data.load[width=simd_width](i + bounds_y[0]),
         )
 
     vectorize[vector_add, BigUInt.VECTOR_WIDTH](n_words_y_slice)
@@ -607,19 +605,19 @@ fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
     # but we will take advantage of that.
     @parameter
     fn vector_subtract[simd_width: Int](i: Int):
-        words.data.store[width=simd_width](
+        words._data.store[width=simd_width](
             i,
-            x.words.data.load[width=simd_width](i)
-            - y.words.data.load[width=simd_width](i),
+            x.words._data.load[width=simd_width](i)
+            - y.words._data.load[width=simd_width](i),
         )
 
     vectorize[vector_subtract, BigUInt.VECTOR_WIDTH](len(y.words))
 
     @parameter
     fn vector_copy_rest[simd_width: Int](i: Int):
-        words.data.store[width=simd_width](
+        words._data.store[width=simd_width](
             len(y.words) + i,
-            x.words.data.load[width=simd_width](len(y.words) + i),
+            x.words._data.load[width=simd_width](len(y.words) + i),
         )
 
     vectorize[vector_copy_rest, BigUInt.VECTOR_WIDTH](
@@ -664,10 +662,10 @@ fn subtract_inplace(mut x: BigUInt, y: BigUInt) raises -> None:
     # Use SIMD operations to subtract the words in parallel.
     @parameter
     fn vector_subtract[simd_width: Int](i: Int):
-        x.words.data.store[width=simd_width](
+        x.words._data.store[width=simd_width](
             i,
-            x.words.data.load[width=simd_width](i)
-            - y.words.data.load[width=simd_width](i),
+            x.words._data.load[width=simd_width](i)
+            - y.words._data.load[width=simd_width](i),
         )
 
     vectorize[vector_subtract, BigUInt.VECTOR_WIDTH](len(y.words))
@@ -701,10 +699,10 @@ fn subtract_inplace_no_check(mut x: BigUInt, y: BigUInt) -> None:
 
     @parameter
     fn vector_subtract[simd_width: Int](i: Int):
-        x.words.data.store[width=simd_width](
+        x.words._data.store[width=simd_width](
             i,
-            x.words.data.load[width=simd_width](i)
-            - y.words.data.load[width=simd_width](i),
+            x.words._data.load[width=simd_width](i)
+            - y.words._data.load[width=simd_width](i),
         )
 
     vectorize[vector_subtract, BigUInt.VECTOR_WIDTH](len(y.words))
@@ -1201,8 +1199,8 @@ fn multiply_inplace_by_uint32_le_4(mut x: BigUInt, y: UInt32):
     @parameter
     fn vector_multiply_by_2[simd_width: Int](i: Int):
         """Shifts the digits of each word to the left by 1."""
-        x.words.data.store[width=simd_width](
-            i, x.words.data.load[width=simd_width](i) << 1
+        x.words._data.store[width=simd_width](
+            i, x.words._data.load[width=simd_width](i) << 1
         )
 
     if y == 2:
@@ -1214,8 +1212,8 @@ fn multiply_inplace_by_uint32_le_4(mut x: BigUInt, y: UInt32):
     @parameter
     fn vector_multiply_by_3[simd_width: Int](i: Int):
         """Multiplies the digits of each word by 3."""
-        x.words.data.store[width=simd_width](
-            i, x.words.data.load[width=simd_width](i) * 3
+        x.words._data.store[width=simd_width](
+            i, x.words._data.load[width=simd_width](i) * 3
         )
 
     if y == 3:
@@ -1227,8 +1225,8 @@ fn multiply_inplace_by_uint32_le_4(mut x: BigUInt, y: UInt32):
     @parameter
     fn vector_multiply_by_4[simd_width: Int](i: Int):
         """Shifts the digits of each word to the left by 2."""
-        x.words.data.store[width=simd_width](
-            i, x.words.data.load[width=simd_width](i) << 2
+        x.words._data.store[width=simd_width](
+            i, x.words._data.load[width=simd_width](i) << 2
         )
 
     if y == 4:
@@ -1403,9 +1401,9 @@ fn multiply_by_power_of_billion(x: BigUInt, n: Int) -> BigUInt:
 
     var words = List[UInt32](unsafe_uninit_length=len(x.words) + n)
     # Fill the first n words with zeros
-    memset_zero(ptr=words.data, count=n)
+    memset_zero(ptr=words._data, count=n)
     # Copy the original words to the end of the new list
-    memcpy(dest=words.data + n, src=x.words.data, count=len(x.words))
+    memcpy(dest=words._data + n, src=x.words._data, count=len(x.words))
 
     return BigUInt(words=words^)
 
@@ -1701,7 +1699,7 @@ fn floor_divide_estimate_quotient(
     if base_index + 2 < len(dividend.words):
         # We can safely load 3 words: r0, r1, r2
         numerator = (
-            dividend.words.data.load[width=4](base_index).cast[DType.uint128]()
+            dividend.words._data.load[width=4](base_index).cast[DType.uint128]()
             * SIMD[DType.uint128, 4](
                 1, 1_000_000_000, 1_000_000_000_000_000_000, 0
             )
@@ -1709,7 +1707,7 @@ fn floor_divide_estimate_quotient(
     elif base_index + 1 < len(dividend.words):
         # We can safely load 2 words: r0, r1 (r2 = 0)
         numerator = (
-            dividend.words.data.load[width=2](base_index).cast[DType.uint128]()
+            dividend.words._data.load[width=2](base_index).cast[DType.uint128]()
             * SIMD[DType.uint128, 2](1, 1_000_000_000)
         ).reduce_add()
     elif base_index < len(dividend.words):
@@ -1727,7 +1725,7 @@ fn floor_divide_estimate_quotient(
         "Divisor must have at least 2 words by design.",
     )
     denominator = (
-        divisor.words.data.load[width=2](len(divisor.words) - 2).cast[
+        divisor.words._data.load[width=2](len(divisor.words) - 2).cast[
             DType.uint128
         ]()
         * SIMD[DType.uint128, 2](1, 1_000_000_000)
@@ -1836,7 +1834,7 @@ fn floor_divide_by_uint64(x: BigUInt, y: UInt64) -> BigUInt:
         var dividend = (
             carry * UInt128(1_000_000_000_000_000_000)
             + (
-                x.words.data.load[width=2](i - 1).cast[DType.uint128]()
+                x.words._data.load[width=2](i - 1).cast[DType.uint128]()
                 * SIMD[DType.uint128, 2](1, 1_000_000_000)
             ).reduce_add()
         )
@@ -1872,7 +1870,7 @@ fn floor_divide_inplace_by_uint64(mut x: BigUInt, y: UInt64) -> None:
         var dividend = (
             carry * UInt128(1_000_000_000_000_000_000)
             + (
-                x.words.data.load[width=2](i - 1).cast[DType.uint128]()
+                x.words._data.load[width=2](i - 1).cast[DType.uint128]()
                 * SIMD[DType.uint128, 2](1, 1_000_000_000)
             ).reduce_add()
         )
@@ -1907,7 +1905,7 @@ fn floor_divide_by_uint128(x: BigUInt, y: UInt128) -> BigUInt:
     elif len(x.words) % 4 == 2:
         carry = UInt256(
             (
-                x.words.data.load[width=2](len(x.words) - 2).cast[
+                x.words._data.load[width=2](len(x.words) - 2).cast[
                     DType.uint64
                 ]()
                 * SIMD[DType.uint64, 2](1, 1_000_000_000)
@@ -1917,7 +1915,7 @@ fn floor_divide_by_uint128(x: BigUInt, y: UInt128) -> BigUInt:
     elif len(x.words) % 4 == 3:
         carry = UInt256(
             (
-                x.words.data.load[width=4](len(x.words) - 3).cast[
+                x.words._data.load[width=4](len(x.words) - 3).cast[
                     DType.uint128
                 ]()
                 * SIMD[DType.uint128, 4](
@@ -1933,7 +1931,7 @@ fn floor_divide_by_uint128(x: BigUInt, y: UInt128) -> BigUInt:
         var dividend = (
             carry * UInt256(1_000_000_000_000_000_000_000_000_000_000_000_000)
             + (
-                x.words.data.load[width=4](i - 3).cast[DType.uint256]()
+                x.words._data.load[width=4](i - 3).cast[DType.uint256]()
                 * SIMD[DType.uint256, 4](
                     1,
                     1_000_000_000,
@@ -2795,8 +2793,7 @@ fn floor_divide_modulo(
 
 
 # ===----------------------------------------------------------------------=== #
-# Division Helper Functions
-# power_of_10
+# Helper Functions
 # ===----------------------------------------------------------------------=== #
 
 
@@ -3039,10 +3036,10 @@ fn to_uint64_with_2_words(a: BigUInt, bounds_x: Tuple[Int, Int]) -> UInt64:
     """Convert two words at given index of the BigUInt to UInt64."""
     var n_words = bounds_x[1] - bounds_x[0]
     if n_words == 1:
-        return a.words.data.load[width=1](bounds_x[0]).cast[DType.uint64]()
+        return a.words._data.load[width=1](bounds_x[0]).cast[DType.uint64]()
     else:
         return (
-            a.words.data.load[width=2](bounds_x[0]).cast[DType.uint64]()
+            a.words._data.load[width=2](bounds_x[0]).cast[DType.uint64]()
             * SIMD[DType.uint64, 2](1, 1_000_000_000)
         ).reduce_add()
 
@@ -3051,10 +3048,10 @@ fn to_uint128_with_2_words(a: BigUInt, bounds_x: Tuple[Int, Int]) -> UInt128:
     """Convert two words at given index of the BigUInt to UInt128."""
     var n_words = bounds_x[1] - bounds_x[0]
     if n_words == 1:
-        return a.words.data.load[width=1](bounds_x[0]).cast[DType.uint128]()
+        return a.words._data.load[width=1](bounds_x[0]).cast[DType.uint128]()
     else:
         return (
-            a.words.data.load[width=2](bounds_x[0]).cast[DType.uint128]()
+            a.words._data.load[width=2](bounds_x[0]).cast[DType.uint128]()
             * SIMD[DType.uint128, 2](1, 1_000_000_000)
         ).reduce_add()
 
@@ -3063,22 +3060,22 @@ fn to_uint128_with_4_words(a: BigUInt, bounds_x: Tuple[Int, Int]) -> UInt128:
     """Convert four words at given index of the BigUInt to UInt128."""
     var n_words = bounds_x[1] - bounds_x[0]
     if n_words == 1:
-        return a.words.data.load[width=1](bounds_x[0]).cast[DType.uint128]()
+        return a.words._data.load[width=1](bounds_x[0]).cast[DType.uint128]()
     elif n_words == 2:
         return (
-            a.words.data.load[width=2](bounds_x[0]).cast[DType.uint128]()
+            a.words._data.load[width=2](bounds_x[0]).cast[DType.uint128]()
             * SIMD[DType.uint128, 2](1, 1_000_000_000)
         ).reduce_add()
     elif n_words == 3:
         return (
-            a.words.data.load[width=4](bounds_x[0]).cast[DType.uint128]()
+            a.words._data.load[width=4](bounds_x[0]).cast[DType.uint128]()
             * SIMD[DType.uint128, 4](
                 1, 1_000_000_000, 1_000_000_000_000_000_000, 0
             )
         ).reduce_add()
     else:  # len(self.words) == 4
         return (
-            a.words.data.load[width=4](bounds_x[0]).cast[DType.uint128]()
+            a.words._data.load[width=4](bounds_x[0]).cast[DType.uint128]()
             * SIMD[DType.uint128, 4](
                 1,
                 1_000_000_000,

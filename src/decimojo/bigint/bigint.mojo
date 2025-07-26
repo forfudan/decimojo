@@ -24,8 +24,6 @@ mathematical methods that do not implement a trait.
 """
 
 from memory import UnsafePointer
-import testing
-import time
 
 import decimojo.bigint.arithmetics
 import decimojo.bigint.comparison
@@ -37,8 +35,17 @@ import decimojo.str
 alias BInt = BigInt
 
 
-@value
-struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
+struct BigInt(
+    Absable,
+    AnyType,
+    Comparable,
+    Copyable,
+    IntableRaising,
+    Movable,
+    Representable,
+    Stringable,
+    Writable,
+):
     """Represents a base-10 arbitrary-precision signed integer.
 
     Notes:
@@ -106,7 +113,7 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
         self.magnitude = BigUInt(words)
         self.sign = sign
 
-    fn __init__(out self, owned *words: UInt32, sign: Bool) raises:
+    fn __init__(out self, var *words: UInt32, sign: Bool) raises:
         """***UNSAFE!*** Initializes a BigInt from raw components.
         It does not check whether the words are invalid.
         See `from_words()` for safer initialization.
@@ -175,7 +182,7 @@ struct BigInt(Absable, IntableRaising, Representable, Stringable, Writable):
     # ===------------------------------------------------------------------=== #
 
     @staticmethod
-    fn from_list(owned words: List[UInt32], sign: Bool) raises -> Self:
+    fn from_list(var words: List[UInt32], sign: Bool) raises -> Self:
         """Initializes a BigInt from a list of UInt32 words safely.
         If the list is empty, the BigInt is initialized with value 0.
 

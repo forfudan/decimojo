@@ -532,7 +532,7 @@ fn number_of_digits[dtype: DType, //](value: Scalar[dtype]) -> Int:
     return 59
 
 
-fn number_of_bits[dtype: DType, //](owned value: Scalar[dtype]) -> Int:
+fn number_of_bits[dtype: DType, //](var value: Scalar[dtype]) -> Int:
     """
     Returns the number of significant bits in an integer value.
 

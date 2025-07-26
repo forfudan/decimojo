@@ -18,8 +18,6 @@
 Implements functions for comparison operations on BigUInt objects.
 """
 
-import testing
-
 from decimojo.biguint.biguint import BigUInt
 
 

@@ -179,7 +179,7 @@ fn pi(precision: Int) raises -> BigDecimal:
     return pi_chudnovsky_binary_split(precision)
 
 
-@value
+@fieldwise_init
 struct Rational:
     """Represents a rational number p/q for exact arithmetic."""
 

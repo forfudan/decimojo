@@ -27,8 +27,7 @@ alias QUOTE = '"'
 alias LITERAL_QUOTE = "'"
 
 
-@value
-struct Token:
+struct Token(Copyable, Movable):
     """Represents a token in the TOML document."""
 
     var type: TokenType
@@ -45,7 +44,6 @@ struct Token:
         self.column = column
 
 
-@value
 struct SourcePosition:
     """Tracks position in the source text."""
 
@@ -68,8 +66,7 @@ struct SourcePosition:
         self.index += 1
 
 
-@value
-struct TokenType:
+struct TokenType(Copyable, Movable):
     """
     TokenType mimics an enum for token types in TOML.
     """
