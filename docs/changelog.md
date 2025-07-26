@@ -6,6 +6,8 @@ This is a list of RELEASED changes for the DeciMojo Package.
 
 DeciMojo v0.5.0 introduces significant enhancements to the `BigDecimal` and `BigUInt` types, including new mathematical functions and performance optimizations. The release adds **trigonometric functions** for `BigDecimal`, implements the **Chudnovsky algorithm** for computing π, implements the **Karatsuba multiplication algorithm** and **Burnikel-Ziegler fast division algorithm** for `BigUInt`. In-place subtraction is now supported for `BigUInt`, and SIMD is utilized for arithmetic operations. The `Decimal` type is renamed to `Decimal128` to reflect its 128-bit fixed precision. The release also includes improved error handling, optimized type conversions, and comprehensive documentation updates.
 
+DeciMojo v0.5.0 is compatible with Mojo v25.5.
+
 ### ⭐️ New
 
 1. Introduce trigonometric functions for `BigDecimal`: `sin()`, `cos()`, `tan()`, `cot()`, `csc()`, `sec()`. These functions compute the corresponding trigonometric values of a given angle in radians with arbitrary precision (#96, #99).
@@ -33,6 +35,7 @@ Changes in **BigDecimal**:
 
 Other changes:
 
+1. Update the codebase to Mojo v25.5 (#113).
 1. Improve error messages and remove unnecessary `raises` keywords for all functions (#92).
 1. Rename the `Decimal` type to `Decimal128` to reflect its fixed precision of 128 bits. It has a new alias `Dec128` (#112).
 1. `Decimal` is now an alias for `BigDecimal` (#112).
