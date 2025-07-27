@@ -15,13 +15,65 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-Implement error handling for DeciMojo.
+Implements error handling for DeciMojo.
 """
 
 alias OverflowError = DeciMojoError[error_type="OverflowError"]
+"""Type for overflow errors in DeciMojo.
+
+Fields:
+
+file: The file where the error occurred.\\
+function: The function where the error occurred.\\
+message: An optional message describing the error.\\
+previous_error: An optional previous error that caused this error.
+"""
+
 alias IndexError = DeciMojoError[error_type="IndexError"]
+"""Type for index errors in DeciMojo.
+
+Fields:
+
+file: The file where the error occurred.\\
+function: The function where the error occurred.\\
+message: An optional message describing the error.\\
+previous_error: An optional previous error that caused this error.
+"""
+
 alias KeyError = DeciMojoError[error_type="KeyError"]
+"""Type for key errors in DeciMojo.
+
+Fields:
+
+file: The file where the error occurred.\\
+function: The function where the error occurred.\\
+message: An optional message describing the error.\\
+previous_error: An optional previous error that caused this error.
+"""
+
 alias ZeroDivisionError = DeciMojoError[error_type="ZeroDivisionError"]
+
+"""Type for divided-by-zero errors in DeciMojo.
+
+Fields:
+
+file: The file where the error occurred.\\
+function: The function where the error occurred.\\
+message: An optional message describing the error.\\
+previous_error: An optional previous error that caused this error.
+"""
+
+alias ConversionError = DeciMojoError[error_type="ConversionError"]
+
+"""Type for conversion errors in DeciMojo.
+
+Fields:
+
+file: The file where the error occurred.\\
+function: The function where the error occurred.\\
+message: An optional message describing the error.\\
+previous_error: An optional previous error that caused this error.
+"""
 
 alias HEADER_OF_ERROR_MESSAGE = """
 ---------------------------------------------------------------------------
@@ -32,6 +84,19 @@ DeciMojoError                             Traceback (most recent call last)
 struct DeciMojoError[error_type: String = "DeciMojoError"](
     Stringable, Writable
 ):
+    """Base type for all DeciMojo errors.
+
+    Parameters:
+        error_type: The type of the error, e.g., "OverflowError", "IndexError".
+
+    Fields:
+
+    file: The file where the error occurred.\\
+    function: The function where the error occurred.\\
+    message: An optional message describing the error.\\
+    previous_error: An optional previous error that caused this error.
+    """
+
     var file: String
     var function: String
     var message: Optional[String]
@@ -99,7 +164,6 @@ struct DeciMojoError[error_type: String = "DeciMojoError"](
             writer.write(error_type)
             writer.write(": ")
             writer.write(self.message.value())
-            writer.write('"')
             writer.write("\n")
         if self.previous_error is not None:
             writer.write("\n")
