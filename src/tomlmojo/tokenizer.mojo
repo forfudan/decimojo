@@ -21,7 +21,7 @@ needed for test case parsing.
 """
 
 alias WHITESPACE = " \t"
-alias NEWLINE = "\n\r"
+alias NEWLINE = "\n"
 alias COMMENT_START = "#"
 alias QUOTE = '"'
 alias LITERAL_QUOTE = "'"
@@ -85,7 +85,7 @@ struct TokenType(Copyable, Movable):
     alias ARRAY_OF_TABLES_START = TokenType.array_of_tables_start()
     alias EQUAL = TokenType.equal()
     alias COMMA = TokenType.comma()
-    alias NEWLINE = TokenType.newline()  # Renamed to avoid conflict with NEWLINE constant
+    alias NEWLINE = TokenType.newline()
     alias DOT = TokenType.dot()
     alias EOF = TokenType.eof()
     alias ERROR = TokenType.error()
