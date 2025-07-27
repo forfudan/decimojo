@@ -18,6 +18,8 @@
 Implements error handling for DeciMojo.
 """
 
+from pathlib.path import cwd
+
 alias OverflowError = DeciMojoError[error_type="OverflowError"]
 """Type for overflow errors in DeciMojo.
 
@@ -148,14 +150,20 @@ struct DeciMojoError[error_type: String = "DeciMojoError"](
 
     fn write_to[W: Writer](self, mut writer: W):
         writer.write("\n")
-        writer.write(("-" * 75))
+        writer.write(("-" * 80))
         writer.write("\n")
-        writer.write(error_type.ljust(42, " "))
+        writer.write(error_type.ljust(47, " "))
         writer.write("Traceback (most recent call last)\n")
         writer.write('File "')
+        try:
+            writer.write(String(cwd()))
+        except e:
+            pass
+        finally:
+            writer.write("/")
         writer.write(self.file)
-        writer.write('"')
-        writer.write(" in ")
+        writer.write('"\n')
+        writer.write("----> ")
         writer.write(self.function)
         if self.message is None:
             writer.write("\n")

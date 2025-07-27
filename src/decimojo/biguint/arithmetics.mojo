@@ -24,6 +24,7 @@ from memory import memcpy, memset_zero
 
 from decimojo.biguint.biguint import BigUInt
 import decimojo.biguint.comparison
+from decimojo.errors import DeciMojoError, OverflowError, ZeroDivisionError
 from decimojo.rounding_mode import RoundingMode
 
 alias CUTOFF_KARATSUBA = 64
@@ -98,8 +99,12 @@ fn negative(x: BigUInt) raises -> BigUInt:
             len(x.words) == 1, "negative(): leading zero words"
         )
         raise Error(
-            "biguint.arithmetics.negative(): Negative of non-zero unsigned"
-            " integer is undefined"
+            OverflowError(
+                file="src/decimojo/biguint/arithmetics.mojo",
+                function="negative()",
+                message="Negative of non-zero unsigned integer is undefined",
+                previous_error=None,
+            )
         )
     return BigUInt()  # Return zero
 
@@ -480,7 +485,7 @@ fn subtract_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
         y: The second unsigned integer (subtrahend).
 
     Raises:
-        Error: If y is greater than x, resulting in an underflow.
+        OverflowError: If y is greater than x.
 
     Returns:
         The result of subtracting y from x.
@@ -505,7 +510,17 @@ fn subtract_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
         # |x| = |y|
         return BigUInt()  # Return zero
     if comparison_result < 0:
-        raise Error("biguint.arithmetics.subtract(): Underflow due to x < y")
+        raise Error(
+            OverflowError(
+                file="src/decimojo/biguint/arithmetics.mojo",
+                function="subtract_school()",
+                message=(
+                    "biguint.arithmetics.subtract(): Result is negative due to"
+                    " x < y"
+                ),
+                previous_error=None,
+            )
+        )
 
     # Now it is safe to subtract the smaller number from the larger one
     # The result will have no more words than the first number
@@ -554,7 +569,7 @@ fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
         y: The second unsigned integer (subtrahend).
 
     Raises:
-        Error: If y is greater than x, resulting in an underflow.
+        OverflowError: If y is greater than x.
 
     Returns:
         The result of subtracting y from x.
@@ -592,7 +607,17 @@ fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
         # |x| = |y|
         return BigUInt()  # Return zero
     if comparison_result < 0:
-        raise Error("biguint.arithmetics.subtract(): Underflow due to x < y")
+        raise Error(
+            OverflowError(
+                file="src/decimojo/biguint/arithmetics.mojo",
+                function="subtract()",
+                message=(
+                    "biguint.arithmetics.subtract(): Result is negative due to"
+                    " x < y"
+                ),
+                previous_error=None,
+            )
+        )
 
     # Now it is safe to subtract the smaller number from the larger one
     # The result will have no more words than the first number
@@ -648,7 +673,15 @@ fn subtract_inplace(mut x: BigUInt, y: BigUInt) raises -> None:
         x.words[0] = UInt32(0)  # Result is zero
     elif comparison_result < 0:
         raise Error(
-            "biguint.arithmetics.subtract_inplace(): Underflow due to x < y"
+            OverflowError(
+                file="src/decimojo/biguint/arithmetics.mojo",
+                function="subtract_inplace()",
+                message=(
+                    "biguint.arithmetics.subtract(): Result is negative due to"
+                    " x < y"
+                ),
+                previous_error=None,
+            )
         )
 
     # Now it is safe to subtract the smaller number from the larger one
@@ -1479,7 +1512,14 @@ fn floor_divide(x: BigUInt, y: BigUInt) raises -> BigUInt:
 
     # CASE: y is zero
     if y.is_zero():
-        raise Error("biguint.arithmetics.floor_divide(): Division by zero")
+        raise Error(
+            ZeroDivisionError(
+                file="src/decimojo/biguint/arithmetics.mojo",
+                function="floor_divide",
+                message="Division by zero",
+                previous_error=None,
+            )
+        )
 
     # CASE: Dividend is zero
     if x.is_zero():
@@ -2671,7 +2711,8 @@ fn floor_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         The remainder of x1 being divided by x2.
 
     Raises:
-        ValueError: If the divisor is zero.
+        Error: If `floor_divide()` raises a ZeroDivisionError.
+        Error: If `subtract()` raises an OverflowError.
 
     Notes:
         It is equal to floored modulo for positive numbers.
@@ -2700,10 +2741,32 @@ fn floor_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         return x1
 
     # Calculate quotient with truncation
-    var quotient = floor_divide(x1, x2)
+    var quotient: BigUInt
+    try:
+        quotient = floor_divide(x1, x2)
+    except e:
+        raise Error(
+            DeciMojoError(
+                file="src/decimojo/biguint/arithmetics.py",
+                function="floor_modulo()",
+                message=None,
+                previous_error=e,
+            )
+        )
 
     # Calculate remainder: dividend - (divisor * quotient)
-    var remainder = subtract(x1, multiply(x2, quotient))
+    var remainder: BigUInt
+    try:
+        remainder = subtract(x1, multiply(x2, quotient))
+    except e:
+        raise Error(
+            DeciMojoError(
+                file="src/decimojo/biguint/arithmetics.py",
+                function="floor_modulo()",
+                message=None,
+                previous_error=e,
+            )
+        )
 
     return remainder^
 
@@ -2713,8 +2776,28 @@ fn truncate_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """Returns the remainder of two BigUInt numbers, truncating toward zero.
     It is equal to floored modulo for unsigned numbers.
     See `floor_modulo` for more details.
+
+    Args:
+        x1: The dividend.
+        x2: The divisor.
+
+    Returns:
+        The remainder of x1 being divided by x2.
+
+    Raises:
+        Error: If `floor_modulo()` raises an OverflowError.
     """
-    return floor_modulo(x1, x2)
+    try:
+        return floor_modulo(x1, x2)
+    except e:
+        raise Error(
+            DeciMojoError(
+                file="src/decimojo/biguint/arithmetics.py",
+                function="truncate_modulo()",
+                message=None,
+                previous_error=e,
+            )
+        )
 
 
 fn ceil_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:

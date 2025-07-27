@@ -722,9 +722,24 @@ struct BigUInt(
 
     fn __int__(self) raises -> Int:
         """Returns the number as Int.
-        See `to_int()` for more information.
+
+        Returns:
+            The number as Int.
+
+        Raises:
+            Error: If to_int() raises an error.
         """
-        return self.to_int()
+        try:
+            return self.to_int()
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.__int__()",
+                    message=None,
+                    previous_error=e,
+                )
+            )
 
     fn __str__(self) -> String:
         """Returns string representation of the BigUInt.
