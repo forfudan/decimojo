@@ -20,10 +20,11 @@ Implements basic arithmetic functions for the BigInt type.
 
 from decimojo.bigint.bigint import BigInt
 from decimojo.biguint.biguint import BigUInt
+from decimojo.errors import DeciMojoError
 from decimojo.rounding_mode import RoundingMode
 
 
-fn add(x1: BigInt, x2: BigInt) raises -> BigInt:
+fn add(x1: BigInt, x2: BigInt) -> BigInt:
     """Returns the sum of two BigInts.
 
     Args:
@@ -57,7 +58,7 @@ fn add(x1: BigInt, x2: BigInt) raises -> BigInt:
     return BigInt(magnitude^, sign=x1.sign)
 
 
-fn add_inplace(mut x1: BigInt, x2: BigInt) raises -> None:
+fn add_inplace(mut x1: BigInt, x2: BigInt) -> None:
     """Increments a BigInt number by another BigInt number in place.
 
     Args:
@@ -67,15 +68,17 @@ fn add_inplace(mut x1: BigInt, x2: BigInt) raises -> None:
 
     # If signs are different, delegate to `subtract`
     if x1.sign != x2.sign:
-        x1 = subtract(x1, -x2)
+        x1 = subtract(x1, negative(x2))
         return
 
     # Same sign: add magnitudes in place
     else:
-        x1.magnitude += x2.magnitude
+        decimojo.biguint.arithmetics.add_inplace(x1.magnitude, x2.magnitude)
+
+    return
 
 
-fn subtract(x1: BigInt, x2: BigInt) raises -> BigInt:
+fn subtract(x1: BigInt, x2: BigInt) -> BigInt:
     """Returns the difference of two numbers.
 
     Args:
@@ -102,7 +105,7 @@ fn subtract(x1: BigInt, x2: BigInt) raises -> BigInt:
 
     # If signs are different, delegate to `add`
     if x1.sign != x2.sign:
-        return x1 + (-x2)
+        return add(x1, negative(x2))
 
     # Same sign, compare magnitudes to determine result sign and operation
     var comparison_result = x1.magnitude.compare(x2.magnitude)
@@ -114,12 +117,18 @@ fn subtract(x1: BigInt, x2: BigInt) raises -> BigInt:
     var sign: Bool
     if comparison_result > 0:  # |x1| > |x2|
         # Subtract smaller from larger
-        magnitude = x1.magnitude - x2.magnitude
+        magnitude = x1.magnitude
+        decimojo.biguint.arithmetics.subtract_inplace_no_check(
+            magnitude, x2.magnitude
+        )
         sign = x1.sign
 
     else:  # |x1| < |x2|
         # Subtract larger from smaller and negate the result
-        magnitude = x2.magnitude - x1.magnitude
+        magnitude = x2.magnitude
+        decimojo.biguint.arithmetics.subtract_inplace_no_check(
+            magnitude, x1.magnitude
+        )
         sign = not x1.sign
 
     return BigInt(magnitude^, sign=sign)
@@ -165,7 +174,7 @@ fn absolute(x: BigInt) -> BigInt:
         return x
 
 
-fn multiply(x1: BigInt, x2: BigInt) raises -> BigInt:
+fn multiply(x1: BigInt, x2: BigInt) -> BigInt:
     """Returns the product of two BigInt numbers.
 
     Args:
@@ -197,25 +206,51 @@ fn floor_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
 
     Returns:
         The quotient of x1 / x2, rounded toward negative infinity.
+
+    Raises:
+        DeciMojoError: If `decimojo.biguint.arithmetics.floor_divide()` fails.
+        DeciMojoError: If `decimojo.biguint.arithmetics.ceil_divide()` fails.
     """
-
-    if x2.is_zero():
-        raise Error("Error in `floor_divide`: Division by zero")
-
-    if x1.is_zero():
-        return BigInt()
 
     # For floor division, the sign rules are:
     # (1) Same signs: result is positive, use `floor_divide` on magnitudes
     # (1) Different signs: result is negative, use `ceil_divide` on magnitudes
 
+    var magnitude: BigUInt
+
     if x1.sign == x2.sign:
-        # Use floor (truncate) division between magnitudes
-        return BigInt(x1.magnitude.floor_divide(x2.magnitude), sign=False)
+        # Use floor division of the magnitudes
+        try:
+            magnitude = decimojo.biguint.arithmetics.floor_divide(
+                x1.magnitude, x2.magnitude
+            )
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/bigint/arithmetics",
+                    function="floor_divide()",
+                    message=None,
+                    previous_error=e,
+                ),
+            )
+        return BigInt(magnitude^, sign=False)
 
     else:
         # Use ceil division of the magnitudes
-        return BigInt(x1.magnitude.ceil_divide(x2.magnitude), sign=True)
+        try:
+            magnitude = decimojo.biguint.arithmetics.ceil_divide(
+                x1.magnitude, x2.magnitude
+            )
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/bigint/arithmetics",
+                    function="floor_divide()",
+                    message=None,
+                    previous_error=e,
+                ),
+            )
+        return BigInt(magnitude^, sign=True)
 
 
 fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
@@ -231,15 +266,22 @@ fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
         The quotient of x1 / x2, truncated toward zero.
 
     Raises:
-        ValueError: If the divisor is zero.
+        DeciMojoError: If `decimojo.biguint.arithmetics.floor_divide()` fails.
     """
-    if x2.is_zero():
-        raise Error("Error in `truncate_divide`: Division by zero")
-
-    if x1.is_zero():
-        return BigInt()  # Return zero
-
-    var magnitude = x1.magnitude.floor_divide(x2.magnitude)
+    var magnitude: BigUInt
+    try:
+        magnitude = decimojo.biguint.arithmetics.floor_divide(
+            x1.magnitude, x2.magnitude
+        )
+    except e:
+        raise Error(
+            DeciMojoError(
+                file="src/decimojo/bigint/arithmetics",
+                function="truncate_divide()",
+                message=None,
+                previous_error=e,
+            ),
+        )
     return BigInt(magnitude^, sign=x1.sign != x2.sign)
 
 
@@ -254,21 +296,47 @@ fn floor_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
 
     Returns:
         The remainder of x1 being divided by x2, with the same sign as x2.
+
+    Raises:
+        DeciMojoError: If `decimojo.biguint.arithmetics.floor_modulo()` fails.
+        DeciMojoError: If `decimojo.biguint.arithmetics.ceil_modulo()` fails.
     """
 
-    if x2.is_zero():
-        raise Error("Error in `floor_modulo`: Division by zero")
-
-    if x1.is_zero():
-        return BigInt()  # Return zero
+    var magnitude: BigUInt
 
     if x1.sign == x2.sign:
         # Use floor (truncate) division between magnitudes
-        return BigInt(x1.magnitude.floor_modulo(x2.magnitude), sign=x2.sign)
+        try:
+            magnitude = decimojo.biguint.arithmetics.floor_modulo(
+                x1.magnitude, x2.magnitude
+            )
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/bigint/arithmetics",
+                    function="floor_modulo()",
+                    message=None,
+                    previous_error=e,
+                ),
+            )
+        return BigInt(magnitude^, sign=x2.sign)
 
     else:
         # Use ceil division of the magnitudes
-        return BigInt(x1.magnitude.ceil_modulo(x2.magnitude), sign=x2.sign)
+        try:
+            magnitude = decimojo.biguint.arithmetics.ceil_modulo(
+                x1.magnitude, x2.magnitude
+            )
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/bigint/arithmetics",
+                    function="floor_modulo()",
+                    message=None,
+                    previous_error=e,
+                ),
+            )
+        return BigInt(magnitude^, sign=x2.sign)
 
 
 fn truncate_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
@@ -284,13 +352,20 @@ fn truncate_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
         The remainder of x1 being divided by x2, with the same sign as x1.
 
     Raises:
-        ValueError: If the divisor is zero.
+        DeciMojoError: If `decimojo.biguint.arithmetics.floor_modulo()` fails.
     """
-    if x2.is_zero():
-        raise Error("Error in `truncate_modulo`: Division by zero")
-
-    if x1.is_zero():
-        return BigInt()  # Return zero
-
-    var magnitude = x1.magnitude.floor_modulo(x2.magnitude)
+    var magnitude: BigUInt
+    try:
+        magnitude = decimojo.biguint.arithmetics.floor_modulo(
+            x1.magnitude, x2.magnitude
+        )
+    except e:
+        raise Error(
+            DeciMojoError(
+                file="src/decimojo/bigint/arithmetics",
+                function="truncate_modulo()",
+                message=None,
+                previous_error=e,
+            ),
+        )
     return BigInt(magnitude^, sign=x1.sign)

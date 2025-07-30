@@ -30,6 +30,7 @@ import decimojo.biguint.comparison
 from decimojo.errors import (
     DeciMojoError,
     ConversionError,
+    ValueError,
     IndexError,
     OverflowError,
 )
@@ -1051,7 +1052,17 @@ struct BigUInt(
 
     @always_inline
     fn __sub__(self, other: Self) raises -> Self:
-        return decimojo.biguint.arithmetics.subtract(self, other)
+        try:
+            return decimojo.biguint.arithmetics.subtract(self, other)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.__sub__(other: Self)",
+                    message=None,
+                    previous_error=e,
+                )
+            )
 
     @always_inline
     fn __mul__(self, other: Self) -> Self:
@@ -1059,28 +1070,88 @@ struct BigUInt(
 
     @always_inline
     fn __floordiv__(self, other: Self) raises -> Self:
-        return decimojo.biguint.arithmetics.floor_divide(self, other)
+        try:
+            return decimojo.biguint.arithmetics.floor_divide(self, other)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.__floordiv__(other: Self)",
+                    message=None,
+                    previous_error=e,
+                )
+            )
 
     @always_inline
     fn __ceildiv__(self, other: Self) raises -> Self:
         """Returns the result of ceiling division."""
-        return decimojo.biguint.arithmetics.ceil_divide(self, other)
+        try:
+            return decimojo.biguint.arithmetics.ceil_divide(self, other)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.__ceildiv__(other: Self)",
+                    message=None,
+                    previous_error=e,
+                )
+            )
 
     @always_inline
     fn __mod__(self, other: Self) raises -> Self:
-        return decimojo.biguint.arithmetics.floor_modulo(self, other)
+        try:
+            return decimojo.biguint.arithmetics.floor_modulo(self, other)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.__mod__(other: Self)",
+                    message=None,
+                    previous_error=e,
+                )
+            )
 
     @always_inline
     fn __divmod__(self, other: Self) raises -> Tuple[Self, Self]:
-        return decimojo.biguint.arithmetics.floor_divide_modulo(self, other)
+        try:
+            return decimojo.biguint.arithmetics.floor_divide_modulo(self, other)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.__divmod__(other: Self)",
+                    message=None,
+                    previous_error=e,
+                )
+            )
 
     @always_inline
     fn __pow__(self, exponent: Self) raises -> Self:
-        return self.power(exponent)
+        try:
+            return self.power(exponent)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.__pow__(exponent: Self)",
+                    message=None,
+                    previous_error=e,
+                )
+            )
 
     @always_inline
     fn __pow__(self, exponent: Int) raises -> Self:
-        return self.power(exponent)
+        try:
+            return self.power(exponent)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.__pow__(exponent: Int)",
+                    message=None,
+                    previous_error=e,
+                )
+            )
 
     # ===------------------------------------------------------------------=== #
     # Basic binary right-side arithmetic operation dunders
@@ -1281,7 +1352,7 @@ struct BigUInt(
         decimojo.biguint.arithmetics.multiply_inplace_by_power_of_ten(self, n)
 
     @always_inline
-    fn floor_divide_by_power_of_ten(self, n: Int) raises -> Self:
+    fn floor_divide_by_power_of_ten(self, n: Int) -> Self:
         """Returns the result of floored dividing this number by 10^n (n>=0).
         It is equal to removing the last n digits of the number.
         See `floor_divide_by_power_of_ten()` for more information.
@@ -1619,7 +1690,7 @@ struct BigUInt(
             The ith least significant digit of the BigUInt.
 
         Raises:
-            Error: If the index is negative.
+            IndexError: If the index is negative.
         """
         if i < 0:
             raise Error(
@@ -1731,6 +1802,9 @@ struct BigUInt(
         Returns:
             The BigUInt with the trailing digits removed.
 
+        Raises:
+            ValueError: If the number of digits to remove is negative.
+
         Notes:
 
         Rounding can result in an extra digit. Exmaple: remove last 1 digit of
@@ -1739,19 +1813,38 @@ struct BigUInt(
         """
         if ndigits < 0:
             raise Error(
-                "Error in `remove_trailing_digits()`: The number of digits to"
-                " remove is negative"
+                ValueError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.remove_trailing_digits_with_rounding()",
+                    message=(
+                        "The number of digits to remove is negative: "
+                        + String(ndigits)
+                    ),
+                    previous_error=None,
+                )
             )
         if ndigits == 0:
             return self
         if ndigits > self.number_of_digits():
             raise Error(
-                "Error in `remove_trailing_digits()`: The number of digits to"
-                " remove is larger than the number of digits in the BigUInt"
+                ValueError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.remove_trailing_digits_with_rounding()",
+                    message=(
+                        "The number of digits to remove is larger than the "
+                        "number of digits in the BigUInt: "
+                        + String(ndigits)
+                        + " > "
+                        + String(self.number_of_digits())
+                    ),
+                    previous_error=None,
+                )
             )
 
         # floor_divide_by_power_of_ten is the same as removing the last n digits
-        var result = self.floor_divide_by_power_of_ten(ndigits)
+        var result = decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
+            self, ndigits
+        )
         var round_up: Bool = False
 
         if rounding_mode == RoundingMode.ROUND_DOWN:
@@ -1775,7 +1868,12 @@ struct BigUInt(
                     round_up = self.ith_digit(ndigits) % 2 == 1
         else:
             raise Error(
-                "Error in `remove_trailing_digits()`: Unknown rounding mode"
+                ValueError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.remove_trailing_digits_with_rounding()",
+                    message=("Unknown rounding mode: " + String(rounding_mode)),
+                    previous_error=None,
+                )
             )
 
         if round_up:
@@ -1785,7 +1883,7 @@ struct BigUInt(
             # Check whether rounding results in extra digit
             if result.is_power_of_10():
                 if remove_extra_digit_due_to_rounding:
-                    result = result.floor_divide_by_power_of_ten(
-                        1,
+                    result = decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
+                        result, 1
                     )
         return result^

@@ -53,6 +53,18 @@ message: An optional message describing the error.\\
 previous_error: An optional previous error that caused this error.
 """
 
+alias ValueError = DeciMojoError[error_type="ValueError"]
+"""Type for value errors in DeciMojo.
+
+Fields:
+
+file: The file where the error occurred.\\
+function: The function where the error occurred.\\ 
+message: An optional message describing the error.\\
+previous_error: An optional previous error that caused this error.
+"""
+
+
 alias ZeroDivisionError = DeciMojoError[error_type="ZeroDivisionError"]
 
 """Type for divided-by-zero errors in DeciMojo.

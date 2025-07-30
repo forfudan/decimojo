@@ -1515,7 +1515,7 @@ fn floor_divide(x: BigUInt, y: BigUInt) raises -> BigUInt:
         raise Error(
             ZeroDivisionError(
                 file="src/decimojo/biguint/arithmetics.mojo",
-                function="floor_divide",
+                function="floor_divide()",
                 message="Division by zero",
                 previous_error=None,
             )
@@ -2711,8 +2711,9 @@ fn floor_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         The remainder of x1 being divided by x2.
 
     Raises:
-        Error: If `floor_divide()` raises a ZeroDivisionError.
-        Error: If `subtract()` raises an OverflowError.
+        ZeroDivisionError: If the divisor is zero.
+        Error: If `floor_divide()` raises an error.
+        Error: If `subtract()` raises an error.
 
     Notes:
         It is equal to floored modulo for positive numbers.
@@ -2723,7 +2724,14 @@ fn floor_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
             len(x2.words) == 1,
             "truncate_modulo(): leading zero words",
         )
-        raise Error("Error in `truncate_modulo`: Division by zero")
+        raise Error(
+            ZeroDivisionError(
+                file="src/decimojo/biguint/arithmetics.py",
+                function="floor_modulo()",
+                message="Division by zero",
+                previous_error=None,
+            )
+        )
 
     # CASE: Dividend is zero
     if x1.is_zero():
@@ -2864,15 +2872,26 @@ fn floor_divide_modulo(
         The quotient of x1 / x2, truncated toward zero and the remainder.
 
     Raises:
-        ValueError: If the divisor is zero.
+        Error: If `floor_divide()` raises an error.
+        Error: If `subtract()` raises an error.
 
     Notes:
         It is equal to truncated division for positive numbers.
     """
 
-    var quotient = floor_divide(x1, x2)
-    var remainder = subtract(x1, multiply(x2, quotient))
-    return (quotient^, remainder^)
+    try:
+        var quotient = floor_divide(x1, x2)
+        var remainder = subtract(x1, multiply(x2, quotient))
+        return (quotient^, remainder^)
+    except e:
+        raise Error(
+            DeciMojoError(
+                file="src/decimojo/biguint/arithmetics.py",
+                function="floor_divide_modulo()",
+                message=None,
+                previous_error=e,
+            )
+        )
 
 
 # ===----------------------------------------------------------------------=== #
@@ -3031,10 +3050,25 @@ fn normalize_borrows(mut x: BigUInt):
 
 
 fn power_of_10(n: Int) raises -> BigUInt:
-    """Calculates 10^n efficiently."""
+    """Calculates 10^n efficiently for non-negative n.
+
+    Args:
+        n: The exponent, must be non-negative.
+
+    Returns:
+        A BigUInt representing 10 raised to the power of n.
+
+    Raises:
+        DeciMojoError: If n is negative.
+    """
     if n < 0:
         raise Error(
-            "biguint.arithmetics.power_of_10(): Negative exponent not supported"
+            DeciMojoError(
+                file="src/decimojo/biguint/arithmetics.py",
+                function="power_of_10()",
+                message="Negative exponent not supported",
+                previous_error=None,
+            )
         )
 
     if n == 0:
