@@ -180,7 +180,6 @@ fn multiply(x1: BigDecimal, x2: BigDecimal) -> BigDecimal:
     )
 
 
-# TODO: Optimize when divided by power of 10
 fn true_divide(
     x: BigDecimal, y: BigDecimal, precision: Int
 ) raises -> BigDecimal:
@@ -270,8 +269,7 @@ fn true_divide_fast(
             x.coefficient, extra_words
         )
     elif extra_words < 0:
-        # TODO: Replace this with `floor_divide_by_power_of_billion()`
-        coef_x = decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
+        coef_x = decimojo.biguint.arithmetics.floor_divide_by_power_of_billion(
             x.coefficient, -extra_words * 9
         )
     else:
