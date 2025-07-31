@@ -13,6 +13,7 @@ DeciMojo v0.5.0 is compatible with Mojo v25.5.
 1. Introduce trigonometric functions for `BigDecimal`: `sin()`, `cos()`, `tan()`, `cot()`, `csc()`, `sec()`. These functions compute the corresponding trigonometric values of a given angle in radians with arbitrary precision (#96, #99).
 1. Introduce the function `pi()` for `BigDecimal` to compute the value of π (pi) with arbitrary precision with the Chudnovsky algorithm with binary splitting (#95).
 1. Implement the `sqrt()` function for `BigUInt` to compute the square root of a `BigUInt` number as a `BigUInt` object (#107).
+1. Introduce a `DeciMojoError` type and various aliases to handle errors in DeciMojo. This enables a more consistent error handling mechanism across the library and allows users to track errors more easily (#114).
 
 ### 🦋 Changed
 
@@ -36,7 +37,7 @@ Changes in **BigDecimal**:
 Other changes:
 
 1. Update the codebase to Mojo v25.5 (#113).
-1. Improve error messages and remove unnecessary `raises` keywords for all functions (#92).
+1. Remove unnecessary `raises` keywords for all functions (#92).
 1. Rename the `Decimal` type to `Decimal128` to reflect its fixed precision of 128 bits. It has a new alias `Dec128` (#112).
 1. `Decimal` is now an alias for `BigDecimal` (#112).
 
