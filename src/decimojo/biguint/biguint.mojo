@@ -1380,8 +1380,8 @@ struct BigUInt(
             exponent: The exponent to raise the number to.
 
         Returns:
-            OverflowError: If the exponent is negative.
-            OverflowError: If the exponent is too large.
+            ValueError: If the exponent is negative.
+            ValueError: If the exponent is too large.
 
         Raises:
             Error: If the exponent is negative.
@@ -1389,7 +1389,7 @@ struct BigUInt(
         """
         if exponent < 0:
             raise Error(
-                OverflowError(
+                ValueError(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.power(exponent: Int)",
                     message=(
@@ -1407,7 +1407,7 @@ struct BigUInt(
 
         if exponent >= 1_000_000_000:
             raise Error(
-                OverflowError(
+                ValueError(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.power(exponent: Int)",
                     message=(
@@ -1438,14 +1438,14 @@ struct BigUInt(
             exponent: The exponent to raise the number to.
 
         Raises:
-            OverflowError: If the exponent is too large.
+            ValueError: If the exponent is too large.
 
         Returns:
             The result of raising this number to the power of `exponent`.
         """
         if len(exponent.words) > 1:
             raise Error(
-                OverflowError(
+                ValueError(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.power(exponent: BigUInt)",
                     message=(
