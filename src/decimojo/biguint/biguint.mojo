@@ -27,6 +27,13 @@ from memory import UnsafePointer, memcpy
 
 import decimojo.biguint.arithmetics
 import decimojo.biguint.comparison
+from decimojo.errors import (
+    DeciMojoError,
+    ConversionError,
+    ValueError,
+    IndexError,
+    OverflowError,
+)
 import decimojo.str
 
 # Type aliases
@@ -196,9 +203,12 @@ struct BigUInt(
             self = Self.from_int(value)
         except e:
             raise Error(
-                "`BigUInt.__init__()`: Error calling"
-                " `BigUInt.from_int()`.\nTrace back:"
-                + String(e)
+                DeciMojoError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.__init__(value: Int)",
+                    message=None,
+                    previous_error=e,
+                )
             )
 
     @implicit
@@ -224,9 +234,27 @@ struct BigUInt(
 
     fn __init__(out self, value: String, ignore_sign: Bool = False) raises:
         """Initializes a BigUInt from a string representation.
-        See `from_string()` for more information.
+
+        Args:
+            value: The string representation of the BigUInt.
+            ignore_sign: A Bool value indicating whether to ignore the sign.
+                If True, the sign is ignored.
+                If False, the sign is considered.
+
+        Raises:
+            Error: If an error occurs in `from_string()`.
         """
-        self = Self.from_string(value, ignore_sign=ignore_sign)
+        try:
+            self = Self.from_string(value, ignore_sign=ignore_sign)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.__init__(value: String)",
+                    message=None,
+                    previous_error=e,
+                )
+            )
 
     # ===------------------------------------------------------------------=== #
     # Constructing methods that are not dunders
@@ -249,6 +277,9 @@ struct BigUInt(
                 Each UInt32 word represents digits ranging from 0 to 10^9 - 1.
                 The words are stored in little-endian order.
 
+        Raises:
+            Error: If any word is larger than `999_999_999`.
+
         Returns:
             The BigUInt representation of the list of UInt32 words.
         """
@@ -260,8 +291,16 @@ struct BigUInt(
         for word in words:
             if word > UInt32(999_999_999):
                 raise Error(
-                    "Error in `BigUInt.from_list()`: Word value exceeds maximum"
-                    " value of 999_999_999"
+                    OverflowError(
+                        message=(
+                            "Word value "
+                            + String(word)
+                            + " exceeds maximum value of 999_999_999"
+                        ),
+                        function="BigUInt.from_list()",
+                        file="src/decimojo/biguint/biguint.mojo",
+                        previous_error=None,
+                    )
                 )
 
         return Self(words^)
@@ -275,11 +314,15 @@ struct BigUInt(
                 Each UInt32 word represents digits ranging from 0 to 10^9 - 1.
                 The words are stored in little-endian order.
 
+        Raises:
+            Error: If any word is larger than `999_999_999`.
+
         Notes:
 
         This method validates whether the words are smaller than `999_999_999`.
 
         Example:
+
         ```console
         BigUInt.from_words(123456789, 987654321) # 987654321_123456789
         ```
@@ -292,8 +335,16 @@ struct BigUInt(
         for word in words:
             if word > UInt32(999_999_999):
                 raise Error(
-                    "Error in `BigUInt.__init__()`: Word value exceeds maximum"
-                    " value of 999_999_999"
+                    OverflowError(
+                        message=(
+                            "Word value "
+                            + String(word)
+                            + " exceeds maximum value of 999_999_999"
+                        ),
+                        function="BigUInt.from_words()",
+                        file="src/decimojo/biguint/biguint.mojo",
+                        previous_error=None,
+                    )
                 )
             else:
                 list_of_words.append(word)
@@ -341,16 +392,32 @@ struct BigUInt(
 
     @staticmethod
     fn from_int(value: Int) raises -> Self:
-        """Creates a BigUInt from an integer."""
+        """Creates a BigUInt from an integer.
+
+        Args:
+            value: The integer value to be converted to BigUInt.
+
+        Returns:
+            The BigUInt representation of the integer value.
+
+        Raises:
+            Error: If the input value is negative.
+        """
         if value == 0:
             return Self()
 
         if value < 0:
             raise Error(
-                "`BigUInt.from_int()`: The input value ",
-                value,
-                " is negative and is not compatible with BigUInt.",
-                sep="",
+                OverflowError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.from_int(value: Int)",
+                    message=(
+                        "The input value "
+                        + String(value)
+                        + " is negative and is not compatible with BigUInt."
+                    ),
+                    previous_error=None,
+                )
             )
 
         var list_of_words = List[UInt32]()
@@ -522,6 +589,14 @@ struct BigUInt(
                 If True, the sign is ignored.
                 If False, the sign is considered.
 
+        Raises:
+            OverflowError: If the input value is negative and `ignore_sign` is
+                False.
+            ConversionError: If the input value is not a valid integer string.
+                The scale is larger than the number of digits.
+            ConversionError: If the input value is not an integer string.
+                The fractional part is not zero.
+
         Returns:
             The BigUInt representation of the string.
         """
@@ -531,7 +606,20 @@ struct BigUInt(
         coef, scale, sign = decimojo.str.parse_numeric_string(value)
 
         if (not ignore_sign) and sign:
-            raise Error("Error in `from_string()`: The value is negative")
+            raise Error(
+                OverflowError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.from_string(value: String)",
+                    message=(
+                        'The input value "'
+                        + value
+                        + '" is negative but `ignore_sign` is False.\n'
+                        + "Consider using `ignore_sign=True` to ignore the"
+                        " sign."
+                    ),
+                    previous_error=None,
+                )
+            )
 
         # Check if the number is zero
         if len(coef) == 1 and coef[0] == UInt8(0):
@@ -543,12 +631,32 @@ struct BigUInt(
         if scale > 0:
             if scale >= len(coef):
                 raise Error(
-                    "Error in `from_string`: The number is not an integer."
+                    ConversionError(
+                        file="src/decimojo/biguint/biguint.mojo",
+                        function="BigUInt.from_string(value: String)",
+                        message=(
+                            'The input value "'
+                            + value
+                            + '" is not an integer.\n'
+                            + "The scale is larger than the number of digits."
+                        ),
+                        previous_error=None,
+                    )
                 )
             for i in range(1, scale + 1):
                 if coef[-i] != 0:
                     raise Error(
-                        "Error in `from_string`: The number is not an integer."
+                        ConversionError(
+                            file="src/decimojo/biguint/biguint.mojo",
+                            function="BigUInt.from_string(value: String)",
+                            message=(
+                                'The input value "'
+                                + value
+                                + '" is not an integer.\n'
+                                + "The fractional part is not zero."
+                            ),
+                            previous_error=None,
+                        )
                     )
             coef.resize(len(coef) - scale, UInt8(0))
             scale = 0
@@ -615,9 +723,24 @@ struct BigUInt(
 
     fn __int__(self) raises -> Int:
         """Returns the number as Int.
-        See `to_int()` for more information.
+
+        Returns:
+            The number as Int.
+
+        Raises:
+            Error: If to_int() raises an error.
         """
-        return self.to_int()
+        try:
+            return self.to_int()
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.__int__()",
+                    message=None,
+                    previous_error=e,
+                )
+            )
 
     fn __str__(self) -> String:
         """Returns string representation of the BigUInt.
@@ -646,27 +769,31 @@ struct BigUInt(
             The number as Int.
 
         Raises:
-            Error: If the number is too large or too small to fit in Int.
+            OverflowError: If the number exceeds the size of Int (2^63-1).
         """
 
         # 2^63-1 = 9_223_372_036_854_775_807
         # is larger than 10^18 -1 but smaller than 10^27 - 1
 
-        if len(self.words) > 3:
-            raise Error(
-                "Error in `BigUInt.to_int()`: The number exceeds the size"
-                " of Int"
+        var overflow_error: Error = Error(
+            OverflowError(
+                file="src/decimojo/biguint/biguint.mojo",
+                function="BigUInt.to_int()",
+                message="The number exceeds the size of Int ("
+                + String(Int.MAX)
+                + ")",
+                previous_error=None,
             )
+        )
+        if len(self.words) > 3:
+            raise overflow_error
 
         var value: Int128 = 0
         for i in range(len(self.words)):
             value += Int128(self.words[i]) * Int128(1_000_000_000) ** i
 
         if value > Int128(Int.MAX):
-            raise Error(
-                "Error in `BigUInt.to_int()`: The number exceeds the size"
-                " of Int"
-            )
+            raise overflow_error
 
         return Int(value)
 
@@ -677,12 +804,20 @@ struct BigUInt(
             The number as UInt64.
 
         Raises:
-            Error: If the number is too large or too small to fit in Int.
+            Error: If the number exceeds the size of UInt64.
         """
         if self.is_uint64_overflow():
             raise Error(
-                "`BigUInt.to_int()`: The number exceeds the size"
-                " of UInt64 (18446744073709551615)"
+                OverflowError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.to_uint64()",
+                    message=(
+                        "The number exceeds the size of UInt64 ("
+                        + String(UInt64.MAX)
+                        + ")"
+                    ),
+                    previous_error=None,
+                )
             )
 
         if len(self.words) == 1:
@@ -897,7 +1032,7 @@ struct BigUInt(
         return decimojo.biguint.arithmetics.negative(self)
 
     @always_inline
-    fn __rshift__(self, shift_amount: Int) raises -> Self:
+    fn __rshift__(self, shift_amount: Int) -> Self:
         """Returns the result of floored divison by 2 to the power of `shift_amount`.
         """
         var result = self
@@ -917,7 +1052,17 @@ struct BigUInt(
 
     @always_inline
     fn __sub__(self, other: Self) raises -> Self:
-        return decimojo.biguint.arithmetics.subtract(self, other)
+        try:
+            return decimojo.biguint.arithmetics.subtract(self, other)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.__sub__(other: Self)",
+                    message=None,
+                    previous_error=e,
+                )
+            )
 
     @always_inline
     fn __mul__(self, other: Self) -> Self:
@@ -925,28 +1070,88 @@ struct BigUInt(
 
     @always_inline
     fn __floordiv__(self, other: Self) raises -> Self:
-        return decimojo.biguint.arithmetics.floor_divide(self, other)
+        try:
+            return decimojo.biguint.arithmetics.floor_divide(self, other)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.__floordiv__(other: Self)",
+                    message=None,
+                    previous_error=e,
+                )
+            )
 
     @always_inline
     fn __ceildiv__(self, other: Self) raises -> Self:
         """Returns the result of ceiling division."""
-        return decimojo.biguint.arithmetics.ceil_divide(self, other)
+        try:
+            return decimojo.biguint.arithmetics.ceil_divide(self, other)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.__ceildiv__(other: Self)",
+                    message=None,
+                    previous_error=e,
+                )
+            )
 
     @always_inline
     fn __mod__(self, other: Self) raises -> Self:
-        return decimojo.biguint.arithmetics.floor_modulo(self, other)
+        try:
+            return decimojo.biguint.arithmetics.floor_modulo(self, other)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.__mod__(other: Self)",
+                    message=None,
+                    previous_error=e,
+                )
+            )
 
     @always_inline
     fn __divmod__(self, other: Self) raises -> Tuple[Self, Self]:
-        return decimojo.biguint.arithmetics.floor_divide_modulo(self, other)
+        try:
+            return decimojo.biguint.arithmetics.floor_divide_modulo(self, other)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.__divmod__(other: Self)",
+                    message=None,
+                    previous_error=e,
+                )
+            )
 
     @always_inline
     fn __pow__(self, exponent: Self) raises -> Self:
-        return self.power(exponent)
+        try:
+            return self.power(exponent)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.__pow__(exponent: Self)",
+                    message=None,
+                    previous_error=e,
+                )
+            )
 
     @always_inline
     fn __pow__(self, exponent: Int) raises -> Self:
-        return self.power(exponent)
+        try:
+            return self.power(exponent)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.__pow__(exponent: Int)",
+                    message=None,
+                    previous_error=e,
+                )
+            )
 
     # ===------------------------------------------------------------------=== #
     # Basic binary right-side arithmetic operation dunders
@@ -1147,7 +1352,7 @@ struct BigUInt(
         decimojo.biguint.arithmetics.multiply_inplace_by_power_of_ten(self, n)
 
     @always_inline
-    fn floor_divide_by_power_of_ten(self, n: Int) raises -> Self:
+    fn floor_divide_by_power_of_ten(self, n: Int) -> Self:
         """Returns the result of floored dividing this number by 10^n (n>=0).
         It is equal to removing the last n digits of the number.
         See `floor_divide_by_power_of_ten()` for more information.
@@ -1175,20 +1380,45 @@ struct BigUInt(
             exponent: The exponent to raise the number to.
 
         Returns:
-            The result of raising this number to the power of `exponent`.
+            ValueError: If the exponent is negative.
+            ValueError: If the exponent is too large.
 
         Raises:
             Error: If the exponent is negative.
             Error: If the exponent is too large, e.g., larger than 1_000_000_000.
         """
         if exponent < 0:
-            raise Error("Error in `BigUInt.power()`: The exponent is negative")
+            raise Error(
+                ValueError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.power(exponent: Int)",
+                    message=(
+                        "The exponent "
+                        + String(exponent)
+                        + " is negative.\n"
+                        + "Consider using a non-negative exponent."
+                    ),
+                    previous_error=None,
+                )
+            )
 
         if exponent == 0:
             return Self(1)
 
-        if exponent > 1_000_000_000:
-            raise Error("Error in `BigUInt.power()`: The exponent is too large")
+        if exponent >= 1_000_000_000:
+            raise Error(
+                ValueError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.power(exponent: Int)",
+                    message=(
+                        "The exponent "
+                        + String(exponent)
+                        + " is too large.\n"
+                        + "Consider using an exponent below 1_000_000_000."
+                    ),
+                    previous_error=None,
+                )
+            )
 
         var result = Self(1)
         var base = self
@@ -1203,9 +1433,30 @@ struct BigUInt(
 
     fn power(self, exponent: Self) raises -> Self:
         """Returns the result of raising this number to the power of `exponent`.
+
+        Args:
+            exponent: The exponent to raise the number to.
+
+        Raises:
+            ValueError: If the exponent is too large.
+
+        Returns:
+            The result of raising this number to the power of `exponent`.
         """
-        if exponent > BigUInt(UInt32(0), UInt32(1)):
-            raise Error("Error in `BigUInt.power()`: The exponent is too large")
+        if len(exponent.words) > 1:
+            raise Error(
+                ValueError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.power(exponent: BigUInt)",
+                    message=(
+                        "The exponent "
+                        + String(exponent)
+                        + " is too large.\n"
+                        + "Consider using an exponent below 1_000_000_000."
+                    ),
+                    previous_error=None,
+                )
+            )
         var exponent_as_int = exponent.to_int()
         return self.power(exponent_as_int)
 
@@ -1429,6 +1680,7 @@ struct BigUInt(
     @always_inline
     fn ith_digit(self, i: Int) raises -> UInt8:
         """Returns the ith least significant digit of the BigUInt.
+        If the index is more than the number of digits, it returns 0.
 
         Args:
             i: The index of the digit to return. The least significant digit
@@ -1438,11 +1690,22 @@ struct BigUInt(
             The ith least significant digit of the BigUInt.
 
         Raises:
-            Error: If the index is negative or larger than the number of digits
-                in the BigUInt.
+            IndexError: If the index is negative.
         """
         if i < 0:
-            raise Error("Error in `ith_digit()`: The index is negative")
+            raise Error(
+                IndexError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.ith_digit(i: Int)",
+                    message=(
+                        "The index "
+                        + String(i)
+                        + " is negative.\n"
+                        + "Consider using a non-negative index."
+                    ),
+                    previous_error=None,
+                )
+            )
         if i >= len(self.words) * 9:
             return 0
         var word_index = i // 9
@@ -1524,7 +1787,7 @@ struct BigUInt(
         rounding_mode: RoundingMode,
         remove_extra_digit_due_to_rounding: Bool,
     ) raises -> Self:
-        """Removes trailing digits from the BigUInt.
+        """Removes trailing digits from the BigUInt with rounding.
 
         Args:
             ndigits: The number of digits to remove.
@@ -1539,6 +1802,9 @@ struct BigUInt(
         Returns:
             The BigUInt with the trailing digits removed.
 
+        Raises:
+            ValueError: If the number of digits to remove is negative.
+
         Notes:
 
         Rounding can result in an extra digit. Exmaple: remove last 1 digit of
@@ -1547,19 +1813,38 @@ struct BigUInt(
         """
         if ndigits < 0:
             raise Error(
-                "Error in `remove_trailing_digits()`: The number of digits to"
-                " remove is negative"
+                ValueError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.remove_trailing_digits_with_rounding()",
+                    message=(
+                        "The number of digits to remove is negative: "
+                        + String(ndigits)
+                    ),
+                    previous_error=None,
+                )
             )
         if ndigits == 0:
             return self
         if ndigits > self.number_of_digits():
             raise Error(
-                "Error in `remove_trailing_digits()`: The number of digits to"
-                " remove is larger than the number of digits in the BigUInt"
+                ValueError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.remove_trailing_digits_with_rounding()",
+                    message=(
+                        "The number of digits to remove is larger than the "
+                        "number of digits in the BigUInt: "
+                        + String(ndigits)
+                        + " > "
+                        + String(self.number_of_digits())
+                    ),
+                    previous_error=None,
+                )
             )
 
         # floor_divide_by_power_of_ten is the same as removing the last n digits
-        var result = self.floor_divide_by_power_of_ten(ndigits)
+        var result = decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
+            self, ndigits
+        )
         var round_up: Bool = False
 
         if rounding_mode == RoundingMode.ROUND_DOWN:
@@ -1583,7 +1868,12 @@ struct BigUInt(
                     round_up = self.ith_digit(ndigits) % 2 == 1
         else:
             raise Error(
-                "Error in `remove_trailing_digits()`: Unknown rounding mode"
+                ValueError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.remove_trailing_digits_with_rounding()",
+                    message=("Unknown rounding mode: " + String(rounding_mode)),
+                    previous_error=None,
+                )
             )
 
         if round_up:
@@ -1593,7 +1883,7 @@ struct BigUInt(
             # Check whether rounding results in extra digit
             if result.is_power_of_10():
                 if remove_extra_digit_due_to_rounding:
-                    result = result.floor_divide_by_power_of_ten(
-                        1,
+                    result = decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
+                        result, 1
                     )
         return result^

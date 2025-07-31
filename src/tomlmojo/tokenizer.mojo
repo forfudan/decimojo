@@ -21,7 +21,6 @@ needed for test case parsing.
 """
 
 alias WHITESPACE = " \t"
-alias NEWLINE = "\n\r"
 alias COMMENT_START = "#"
 alias QUOTE = '"'
 alias LITERAL_QUOTE = "'"
@@ -85,7 +84,7 @@ struct TokenType(Copyable, Movable):
     alias ARRAY_OF_TABLES_START = TokenType.array_of_tables_start()
     alias EQUAL = TokenType.equal()
     alias COMMA = TokenType.comma()
-    alias NEWLINE = TokenType.newline()  # Renamed to avoid conflict with NEWLINE constant
+    alias NEWLINE = TokenType.newline()
     alias DOT = TokenType.dot()
     alias EOF = TokenType.eof()
     alias ERROR = TokenType.error()
@@ -208,7 +207,16 @@ struct Tokenizer:
     fn _skip_comment(mut self):
         """Skip comment lines."""
         if self.current_char == COMMENT_START:
-            while self.current_char and self.current_char not in NEWLINE:
+            while self.current_char:
+                # Stop at LF or CR
+                if self.current_char == "\n":
+                    break
+                if self.current_char == "\r":
+                    # If next char is \n, treat as CRLF and break
+                    if self._get_char(self.position.index + 1) == "\n":
+                        break
+                    else:
+                        break
                 self._advance()
 
     fn _read_string(mut self) -> Token:
@@ -296,10 +304,32 @@ struct Tokenizer:
             self._skip_comment()
             return self.next_token()
 
-        if self.current_char in NEWLINE:
+        # Handle CRLF and LF newlines
+        if self.current_char == "\r":
+            # Check for CRLF
+            if self._get_char(self.position.index + 1) == "\n":
+                token = Token(
+                    TokenType.NEWLINE,
+                    "\r\n",
+                    self.position.line,
+                    self.position.column,
+                )
+                self._advance()  # Skip \r
+                self._advance()  # Skip \n
+                return token
+            else:
+                token = Token(
+                    TokenType.NEWLINE,
+                    "\r",
+                    self.position.line,
+                    self.position.column,
+                )
+                self._advance()
+                return token
+        elif self.current_char == "\n":
             token = Token(
                 TokenType.NEWLINE,
-                self.current_char,
+                "\n",
                 self.position.line,
                 self.position.column,
             )

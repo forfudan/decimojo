@@ -29,6 +29,7 @@ import decimojo.bigint.arithmetics
 import decimojo.bigint.comparison
 from decimojo.bigdecimal.bigdecimal import BigDecimal
 from decimojo.biguint.biguint import BigUInt
+from decimojo.errors import DeciMojoError
 import decimojo.str
 
 # Type aliases
@@ -463,24 +464,44 @@ struct BigInt(
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn __add__(self, other: Self) raises -> Self:
+    fn __add__(self, other: Self) -> Self:
         return decimojo.bigint.arithmetics.add(self, other)
 
     @always_inline
-    fn __sub__(self, other: Self) raises -> Self:
+    fn __sub__(self, other: Self) -> Self:
         return decimojo.bigint.arithmetics.subtract(self, other)
 
     @always_inline
-    fn __mul__(self, other: Self) raises -> Self:
+    fn __mul__(self, other: Self) -> Self:
         return decimojo.bigint.arithmetics.multiply(self, other)
 
     @always_inline
     fn __floordiv__(self, other: Self) raises -> Self:
-        return decimojo.bigint.arithmetics.floor_divide(self, other)
+        try:
+            return decimojo.bigint.arithmetics.floor_divide(self, other)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    message=None,
+                    function="BigInt.__floordiv__()",
+                    file="src/decimojo/bigint/bigint.mojo",
+                    previous_error=e,
+                )
+            )
 
     @always_inline
     fn __mod__(self, other: Self) raises -> Self:
-        return decimojo.bigint.arithmetics.floor_modulo(self, other)
+        try:
+            return decimojo.bigint.arithmetics.floor_modulo(self, other)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    message=None,
+                    function="BigInt.__mod__()",
+                    file="src/decimojo/bigint/bigint.mojo",
+                    previous_error=e,
+                )
+            )
 
     @always_inline
     fn __pow__(self, exponent: Self) raises -> Self:
@@ -493,15 +514,15 @@ struct BigInt(
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn __radd__(self, other: Self) raises -> Self:
+    fn __radd__(self, other: Self) -> Self:
         return decimojo.bigint.arithmetics.add(self, other)
 
     @always_inline
-    fn __rsub__(self, other: Self) raises -> Self:
+    fn __rsub__(self, other: Self) -> Self:
         return decimojo.bigint.arithmetics.subtract(other, self)
 
     @always_inline
-    fn __rmul__(self, other: Self) raises -> Self:
+    fn __rmul__(self, other: Self) -> Self:
         return decimojo.bigint.arithmetics.multiply(self, other)
 
     @always_inline
@@ -524,11 +545,11 @@ struct BigInt(
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn __iadd__(mut self, other: Self) raises:
+    fn __iadd__(mut self, other: Self):
         decimojo.bigint.arithmetics.add_inplace(self, other)
 
     @always_inline
-    fn __iadd__(mut self, other: Int) raises:
+    fn __iadd__(mut self, other: Int):
         # Optimize the case `i += 1`
         if (self >= 0) and (other >= 0) and (other <= 999_999_999):
             decimojo.biguint.arithmetics.add_inplace_by_uint32(
@@ -538,11 +559,11 @@ struct BigInt(
             decimojo.bigint.arithmetics.add_inplace(self, other)
 
     @always_inline
-    fn __isub__(mut self, other: Self) raises:
+    fn __isub__(mut self, other: Self):
         self = decimojo.bigint.arithmetics.subtract(self, other)
 
     @always_inline
-    fn __imul__(mut self, other: Self) raises:
+    fn __imul__(mut self, other: Self):
         self = decimojo.bigint.arithmetics.multiply(self, other)
 
     @always_inline

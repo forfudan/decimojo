@@ -15,43 +15,176 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-Implement error handling for DeciMojo.
+Implements error handling for DeciMojo.
+"""
+
+from pathlib.path import cwd
+
+alias OverflowError = DeciMojoError[error_type="OverflowError"]
+"""Type for overflow errors in DeciMojo.
+
+Fields:
+
+file: The file where the error occurred.\\
+function: The function where the error occurred.\\
+message: An optional message describing the error.\\
+previous_error: An optional previous error that caused this error.
+"""
+
+alias IndexError = DeciMojoError[error_type="IndexError"]
+"""Type for index errors in DeciMojo.
+
+Fields:
+
+file: The file where the error occurred.\\
+function: The function where the error occurred.\\
+message: An optional message describing the error.\\
+previous_error: An optional previous error that caused this error.
+"""
+
+alias KeyError = DeciMojoError[error_type="KeyError"]
+"""Type for key errors in DeciMojo.
+
+Fields:
+
+file: The file where the error occurred.\\
+function: The function where the error occurred.\\
+message: An optional message describing the error.\\
+previous_error: An optional previous error that caused this error.
+"""
+
+alias ValueError = DeciMojoError[error_type="ValueError"]
+"""Type for value errors in DeciMojo.
+
+Fields:
+
+file: The file where the error occurred.\\
+function: The function where the error occurred.\\ 
+message: An optional message describing the error.\\
+previous_error: An optional previous error that caused this error.
 """
 
 
-struct DeciError(Stringable):
-    var error_type: String
-    var message: String
-    var function: String
+alias ZeroDivisionError = DeciMojoError[error_type="ZeroDivisionError"]
+
+"""Type for divided-by-zero errors in DeciMojo.
+
+Fields:
+
+file: The file where the error occurred.\\
+function: The function where the error occurred.\\
+message: An optional message describing the error.\\
+previous_error: An optional previous error that caused this error.
+"""
+
+alias ConversionError = DeciMojoError[error_type="ConversionError"]
+
+"""Type for conversion errors in DeciMojo.
+
+Fields:
+
+file: The file where the error occurred.\\
+function: The function where the error occurred.\\
+message: An optional message describing the error.\\
+previous_error: An optional previous error that caused this error.
+"""
+
+alias HEADER_OF_ERROR_MESSAGE = """
+---------------------------------------------------------------------------
+DeciMojoError                             Traceback (most recent call last)
+"""
+
+
+struct DeciMojoError[error_type: String = "DeciMojoError"](
+    Stringable, Writable
+):
+    """Base type for all DeciMojo errors.
+
+    Parameters:
+        error_type: The type of the error, e.g., "OverflowError", "IndexError".
+
+    Fields:
+
+    file: The file where the error occurred.\\
+    function: The function where the error occurred.\\
+    message: An optional message describing the error.\\
+    previous_error: An optional previous error that caused this error.
+    """
+
     var file: String
-    var line: Int
+    var function: String
+    var message: Optional[String]
+    var previous_error: Optional[String]
 
     fn __init__(
         out self,
-        error_type: String,
-        message: String,
-        function: String,
         file: String,
-        line: Int,
+        function: String,
+        message: Optional[String],
+        previous_error: Optional[Error],
     ):
-        self.error_type = error_type
-        self.message = message
-        self.function = function
         self.file = file
-        self.line = line
+        self.function = function
+        self.message = message
+        if previous_error is None:
+            self.previous_error = None
+        else:
+            self.previous_error = "\n".join(
+                previous_error.value().as_string_slice().split("\n")[3:]
+            )
 
     fn __str__(self) -> String:
-        return (
-            "Traceback (most recent call last):\n"
-            + '  File "'
-            + String(self.file)
-            + '", line '
-            + String(self.line)
-            + " in "
-            + String(self.function)
-            + "\n"
-            + String(self.error_type)
-            + ": "
-            + String(self.message)
-            + '"'
-        )
+        if self.message is None:
+            return (
+                "Traceback (most recent call last):\n"
+                + '  File "'
+                + self.file
+                + '"'
+                + " in "
+                + self.function
+                + "\n\n"
+            )
+
+        else:
+            return (
+                "Traceback (most recent call last):\n"
+                + '  File "'
+                + self.file
+                + '"'
+                + " in "
+                + self.function
+                + "\n\n"
+                + String(error_type)
+                + ": "
+                + self.message.value()
+                + "\n"
+            )
+
+    fn write_to[W: Writer](self, mut writer: W):
+        writer.write("\n")
+        writer.write(("-" * 80))
+        writer.write("\n")
+        writer.write(error_type.ljust(47, " "))
+        writer.write("Traceback (most recent call last)\n")
+        writer.write('File "')
+        try:
+            writer.write(String(cwd()))
+        except e:
+            pass
+        finally:
+            writer.write("/")
+        writer.write(self.file)
+        writer.write('"\n')
+        writer.write("----> ")
+        writer.write(self.function)
+        if self.message is None:
+            writer.write("\n")
+        else:
+            writer.write("\n\n")
+            writer.write(error_type)
+            writer.write(": ")
+            writer.write(self.message.value())
+            writer.write("\n")
+        if self.previous_error is not None:
+            writer.write("\n")
+            writer.write(self.previous_error.value())
