@@ -1269,7 +1269,7 @@ fn multiply_inplace_by_uint32_le_4(mut x: BigUInt, y: UInt32):
 
 
 fn multiply_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
-    """Multiplies a BigUInt by 10^n if n > 0, otherwise doing nothing.
+    """Multiplies a BigUInt by 10^n (n >= 0).
 
     Args:
         x: The BigUInt value to multiply.
@@ -1277,7 +1277,16 @@ fn multiply_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
 
     Returns:
         A new BigUInt containing the result of the multiplication.
+
+    Notes:
+
+    In non-debug model, if n is less than or equal to 0, the function returns x
+    unchanged. In debug mode, it asserts that n is non-negative.
     """
+    debug_assert[assert_mode="none"](
+        n >= 0, "multiply_by_power_of_ten(): n must be non-negative, got ", n
+    )
+
     if n <= 0:
         return x
 
@@ -1332,12 +1341,23 @@ fn multiply_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
 
 
 fn multiply_inplace_by_power_of_ten(mut x: BigUInt, n: Int):
-    """Multiplies a BigUInt in-place by 10^n if n > 0, otherwise doing nothing.
+    """Multiplies a BigUInt in-place by 10^n (n >= 0).
 
     Args:
         x: The BigUInt value to multiply.
         n: The power of 10 to multiply by.
+
+    Notes:
+
+    In non-debug model, if n is less than or equal to 0, the function returns x
+    unchanged. In debug mode, it asserts that n is non-negative.
     """
+    debug_assert[assert_mode="none"](
+        n >= 0,
+        "multiply_inplace_by_power_of_ten(): n must be non-negative, got ",
+        n,
+    )
+
     if n <= 0:
         return
 
@@ -1412,13 +1432,23 @@ fn multiply_inplace_by_power_of_ten(mut x: BigUInt, n: Int):
 
 
 fn multiply_by_power_of_billion(x: BigUInt, n: Int) -> BigUInt:
-    """Multiplies a BigUInt by (10^9)^n if n > 0.
+    """Multiplies a BigUInt by (10^9)^n (n >= 0).
     This equals to adding 9n zeros (n words) to the end of the number.
 
     Args:
         x: The BigUInt value to multiply.
         n: The power of 10^9 to multiply by. Should be non-negative.
+
+    Notes:
+
+    In non-debug model, if n is less than or equal to 0, the function returns x
+    unchanged. In debug mode, it asserts that n is non-negative.
     """
+    debug_assert[assert_mode="none"](
+        n >= 0,
+        "multiply_by_power_of_billion(): n must be non-negative, got ",
+        n,
+    )
 
     if n <= 0:
         return x  # No change needed
@@ -1442,13 +1472,23 @@ fn multiply_by_power_of_billion(x: BigUInt, n: Int) -> BigUInt:
 
 
 fn multiply_inplace_by_power_of_billion(mut x: BigUInt, n: Int):
-    """Multiplies a BigUInt in-place by (10^9)^n if n > 0.
+    """Multiplies a BigUInt in-place by (10^9)^n (n >= 0).
     This equals to adding 9n zeros (n words) to the end of the number.
 
     Args:
         x: The BigUInt value to multiply.
         n: The power of 10^9 to multiply by. Should be non-negative.
+
+    Notes:
+
+    In non-debug model, if n is less than or equal to 0, the function returns x
+    unchanged. In debug mode, it asserts that n is non-negative.
     """
+    debug_assert[assert_mode="none"](
+        n >= 0,
+        "multiply_inplace_by_power_of_billion(): n must be non-negative, got ",
+        n,
+    )
 
     if n <= 0:
         return  # No change needed
@@ -2031,15 +2071,15 @@ fn floor_divide_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
 
     Args:
         x: The BigUInt value to divide.
-        n: The power of 10 to divide by.
+        n: The power of 10 to divide by. Should be non-negative.
 
     Returns:
         A new BigUInt containing the result of the multiplication.
 
     Notes:
 
-    Please note that this function does not check if n is negative.
-    Please ensure that n is non-negative before calling this function.
+    In non-debug model, if n is less than or equal to 0, the function returns x
+    unchanged. In debug mode, it asserts that n is non-negative.
     """
     debug_assert[assert_mode="none"](
         n >= 0,
@@ -2050,7 +2090,7 @@ fn floor_divide_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
         ),
     )
 
-    if n == 0:
+    if n <= 0:
         return x
 
     # First remove the last words (10^9)
@@ -2101,6 +2141,48 @@ fn floor_divide_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
 
     result.remove_leading_empty_words()
     return result^
+
+
+fn floor_divide_by_power_of_billion(x: BigUInt, n: Int) -> BigUInt:
+    """Floor divides a BigUInt by (10^9)^n (n>=0).
+    This function is equivalent to removing the last n words of the number.
+
+    Args:
+        x: The BigUInt value to divide.
+        n: The power of 10^9 to divide by. Should be non-negative.
+
+    Returns:
+        A new BigUInt containing the result of the division.
+
+    Notes:
+
+    In non-debug model, if n is less than or equal to 0, the function returns x
+    unchanged. In debug mode, it asserts that n is non-negative.
+    """
+    debug_assert[assert_mode="none"](
+        n >= 0,
+        (
+            "biguint.arithmetics.floor_divide_by_power_of_billion(): "
+            "n must be non-negative but got "
+            + String(n)
+        ),
+    )
+
+    if n <= 0:
+        return x
+
+    var n_words_of_result = len(x.words) - n
+    if n_words_of_result <= 0:
+        # If we need to drop more words than exists, result is zero
+        return BigUInt.ZERO
+    else:
+        var result = BigUInt(unsafe_uninit_length=n_words_of_result)
+        memcpy(
+            dest=result.words._data,
+            src=x.words._data + n,
+            count=n_words_of_result,
+        )
+        return result^
 
 
 # FAST RUCURSIVE DIVISION ALGORITHM
