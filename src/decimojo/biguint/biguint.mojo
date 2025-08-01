@@ -23,7 +23,7 @@ operation dunders, and other dunders that implement traits, as well as
 mathematical methods that do not implement a trait.
 """
 
-from memory import UnsafePointer, memcpy
+from memory import UnsafePointer, memcpy, memcmp
 
 import decimojo.biguint.arithmetics
 import decimojo.biguint.comparison
@@ -1542,22 +1542,10 @@ struct BigUInt(
         #     len(self.words) == 1,
         #     "BigUInt should not contain leading zero words.",
         # )  # 0 should have only one word by design
-
-        if self.words[0] != 0:
-            # Least significant word is not zero
-            return False
-        elif len(self.words) == 1:
-            # Least significant word is zero and there is no other word
-            return True
-        else:
-            # Least significant word is zero and there are other words
-            # Check if all other words are zero
-            for word in self.words[1:]:
-                if word != 0:
-                    return False
-            else:
-                # All words are zero
-                return True
+        return (self.words._data[] == 0) and (
+            memcmp(self.words._data, self.words._data + 1, len(self.words) - 1)
+            == 0
+        )
 
     @always_inline
     fn is_zero(self, bounds: Tuple[Int, Int]) -> Bool:
@@ -1718,7 +1706,6 @@ struct BigUInt(
         var digit = word % 10
         return UInt8(digit)
 
-    @always_inline
     fn number_of_digits(self) -> Int:
         """Returns the number of digits in the BigUInt.
 
@@ -1736,12 +1723,10 @@ struct BigUInt(
             last_word = last_word // 10
         return result
 
-    @always_inline
     fn number_of_words(self) -> Int:
         """Returns the number of words in the BigInt."""
         return len(self.words)
 
-    @always_inline
     fn number_of_trailing_zeros(self) -> Int:
         """Returns the number of trailing zeros in the BigUInt."""
         var result: Int = 0

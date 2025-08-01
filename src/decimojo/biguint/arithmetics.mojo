@@ -1294,7 +1294,7 @@ fn multiply_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
         debug_assert[assert_mode="none"](
             len(x.words) == 1, "multiply_by_power_of_ten(): leading zero words"
         )
-        return BigUInt(UInt32(0))  # Multiplying zero by anything is still zero
+        return BigUInt.ZERO  # Multiplying zero by anything is still zero
 
     var number_of_zero_words = n // 9
     var number_of_remaining_digits = n % 9
@@ -1460,7 +1460,7 @@ fn multiply_by_power_of_billion(x: BigUInt, n: Int) -> BigUInt:
         )
         # If x is zero, we can just return
         # No need to add zeros, it will still be zero
-        return BigUInt()
+        return BigUInt.ZERO
 
     var words = List[UInt32](unsafe_uninit_length=len(x.words) + n)
     # Fill the first n words with zeros
