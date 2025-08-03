@@ -1574,12 +1574,17 @@ struct BigUInt(
             "BigUInt should not contain leading zero words.",
         )  # 0 should have only one word by design
 
+        return len(self.words) == 1 and self.words._data[] == 0
+
         # Yuhao ZHU:
-        # memcmp does not require pointers to non-overlapping memory regions.
-        return (self.words._data[] == 0) and (
-            memcmp(self.words._data, self.words._data + 1, len(self.words) - 1)
-            == 0
-        )
+        # The following code is commented out because BigUInt is designed
+        # to have no leading zero words.
+        # We only need to check the first word.
+        # They are left here for reference.
+        # return (self.words._data[] == 0) and (
+        #     memcmp(self.words._data, self.words._data + 1, len(self.words) - 1)
+        #     == 0
+        # )
 
     @always_inline
     fn is_zero_in_bounds(self, bounds: Tuple[Int, Int]) -> Bool:
