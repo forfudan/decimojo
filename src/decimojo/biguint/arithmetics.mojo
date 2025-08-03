@@ -398,13 +398,16 @@ fn add_inplace_by_slice(
     # Short circuit cases
     if x.is_zero():
         debug_assert[assert_mode="none"](
-            len(x.words) == 1, "add_inplace_by_slice(): leading zero words"
+            len(x.words) == 1, "add_inplace_by_slice(): leading zero words in x"
         )
         x = BigUInt.from_slice(
             y, bounds=(bounds_y[0], bounds_y[1])
         )  # Copy the words from y
         return
-    if y.is_zero(bounds=bounds_y):
+    if y.is_zero_in_bounds(bounds=bounds_y):
+        debug_assert[assert_mode="none"](
+            len(y.words) == 1, "add_inplace_by_slice(): leading zero words in y"
+        )
         return
 
     var n_words_y_slice = bounds_y[1] - bounds_y[0]
@@ -1023,7 +1026,9 @@ fn multiply_slices_karatsuba(
     We just need to consider the slices of x and y by using the indices.
     """
 
-    if x.is_zero(bounds=bounds_x) or y.is_zero(bounds=bounds_y):
+    if x.is_zero_in_bounds(bounds=bounds_x) or y.is_zero_in_bounds(
+        bounds=bounds_y
+    ):
         return BigUInt.ZERO
 
     # Number of words in the slice 1: end_x - start_x
@@ -2557,7 +2562,7 @@ fn floor_divide_slices_two_by_one(
         a_slice -= multiply_slices(q, b, (0, len(q.words)), bounds_b)
         return (q^, a_slice^)
 
-    elif (bounds_a[0] + n + n // 2 >= bounds_a[1]) or a.is_zero(
+    elif (bounds_a[0] + n + n // 2 >= bounds_a[1]) or a.is_zero_in_bounds(
         bounds=(bounds_a[0] + n + n // 2, bounds_a[1])
     ):
         # If a3 is empty or zero

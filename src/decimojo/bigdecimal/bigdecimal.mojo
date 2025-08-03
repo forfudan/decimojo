@@ -938,7 +938,7 @@ struct BigDecimal(
         Examples:
 
         ```
-        print(BigDecimal("123.456).extend_precision(5))  # Output: 123.45600000
+        print(BigDecimal("123.456").extend_precision(5))  # Output: 123.45600000
         print(BigDecimal("123456").extend_precision(3))  # Output: 123456.000
         print(BigDecimal("123456").extend_precision(-1))  # Output: 123456 (no change)
         ```

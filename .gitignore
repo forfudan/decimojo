@@ -14,6 +14,7 @@ magic.lock
 # Temporary files
 tempCodeRunnerFile.mojo
 /temp*.mojo
+kgen.trace.json*
 # macOS environments
 .DS_Store
 # log files
