@@ -57,6 +57,7 @@ fn test_biguint_arithmetics() raises:
             rhs=test_case.expected,
             msg=test_case.description,
         )
+    print("BigUInt subtraction tests passed!")
 
     print("------------------------------------------------------")
     print("Testing BigUInt multiplication...")
@@ -140,3 +141,11 @@ fn test_biguint_truncate_divide_random_numbers_against_python() raises:
             + python_result,
         )
     print("BigUInt truncate division tests passed!")
+
+
+fn main() raises:
+    test_biguint_arithmetics()
+    test_biguint_truncate_divide()
+    test_biguint_truncate_divide_random_numbers_against_python()
+    print("All BigUInt arithmetic tests passed!")
+    print("------------------------------------------------------")

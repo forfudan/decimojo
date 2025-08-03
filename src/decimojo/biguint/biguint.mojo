@@ -168,6 +168,12 @@ struct BigUInt(
             self.words = List[UInt32](UInt32(0))
         else:
             self.words = words^
+            # if (
+            #     len(self.words) > 1
+            #     and self.words.unsafe_get(len(self.words) - 1) == 0
+            # ):
+            #     print("Warning: BigUInt has leading zero words.")
+            # self.remove_leading_empty_words()
 
     fn __init__(out self, var *words: UInt32):
         """Initializes a BigUInt from raw words without validating the words.
@@ -303,7 +309,9 @@ struct BigUInt(
                     )
                 )
 
-        return Self(words^)
+        var res = Self(words^)
+        res.remove_leading_empty_words()
+        return res^
 
     @staticmethod
     fn from_words(*words: UInt32) raises -> Self:
@@ -381,7 +389,7 @@ struct BigUInt(
             return Self()
 
         # Now we can safely copy the words
-        result = BigUInt(words=List[UInt32](unsafe_uninit_length=n_words))
+        result = BigUInt(unsafe_uninit_length=n_words)
         memcpy(
             dest=result.words._data,
             src=value.words._data + start_index,
@@ -455,7 +463,8 @@ struct BigUInt(
         """Creates a BigUInt from an `UInt32` object.
 
         Notes:
-            UInt32 is special, so we have a separate method for it.
+
+        UInt32 is special, so we have a separate method for it.
         """
         # One word is enough
         if value <= 999_999_999:
@@ -469,6 +478,12 @@ struct BigUInt(
                     value // UInt32(1_000_000_000),
                 )
             )
+
+    @staticmethod
+    fn from_uint32_unsafe(unsafe_value: UInt32) -> Self:
+        """Creates a BigUInt from an `UInt32` object without checking the value.
+        """
+        return Self(words=List[UInt32](unsafe_value))
 
     @staticmethod
     fn from_unsigned_integral_scalar[
@@ -1763,7 +1778,7 @@ struct BigUInt(
                     n_empty_words += 1
                 else:
                     break
-            self.words.resize(len(self.words) - n_empty_words, UInt32(0))
+            self.words.shrink(len(self.words) - n_empty_words)
 
     @always_inline
     fn remove_trailing_digits_with_rounding(

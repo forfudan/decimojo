@@ -59,3 +59,10 @@ fn test_biguint_sqrt_random_numbers_against_python() raises:
             + python_result,
         )
     print("BigUInt sqrt tests passed!")
+
+
+fn main() raises:
+    test_biguint_sqrt()
+    test_biguint_sqrt_random_numbers_against_python()
+    print("All BigUInt exponential tests passed!")
+    print("------------------------------------------------------")
