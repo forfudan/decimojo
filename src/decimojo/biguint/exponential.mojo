@@ -17,6 +17,8 @@
 """Implements exponential functions for the BigUInt type."""
 
 import math
+from memory import memset_zero
+
 from decimojo.biguint.biguint import BigUInt
 import decimojo.biguint.arithmetics
 
@@ -45,11 +47,11 @@ fn sqrt(x: BigUInt) -> BigUInt:
     # Use built-in methods for small numbers (up to 2 words)
     if len(x.words) == 1:
         if x.words[0] == 0:
-            return BigUInt(UInt32(0))
+            return BigUInt.ZERO
         elif x.words[0] == 1:
-            return BigUInt(UInt32(1))
+            return BigUInt.ONE
         else:
-            return BigUInt(List[UInt32](math.sqrt(x.words[0])))
+            return BigUInt.from_uint32_unsafe(math.sqrt(x.words[0]))
 
     elif len(x.words) == 2:
         var res = UInt32(
@@ -60,7 +62,7 @@ fn sqrt(x: BigUInt) -> BigUInt:
                 ).reduce_add()
             )
         )
-        return BigUInt(List[UInt32](res))
+        return BigUInt.from_uint32_unsafe(res)
 
     # Use Newton's method for larger numbers
     else:  # len(x.words) > 2
@@ -177,11 +179,12 @@ fn sqrt_initial_guess(x: BigUInt) -> BigUInt:
     if nsw > 999_999_999:  # Cap at max word value
         nsw = 999_999_999
 
-    words = List[UInt32](length=n_words + 1, fill=UInt32(0))
+    result = BigUInt(unsafe_uninit_length=n_words + 1)
+    memset_zero(ptr=result.words._data, count=n_words + 1)
     # Boundary checks are not needed here because len(x.words) > 2
-    words.unsafe_set(n_words, msw_sqrt)
-    words.unsafe_set(
+    result.words.unsafe_set(n_words, msw_sqrt)
+    result.words.unsafe_set(
         n_words - 1, UInt32(nsw)
     )  # Set the next significant word contribution
 
-    return BigUInt(words^)
+    return result^

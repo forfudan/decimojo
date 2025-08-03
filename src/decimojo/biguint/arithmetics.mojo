@@ -106,7 +106,7 @@ fn negative(x: BigUInt) raises -> BigUInt:
                 previous_error=None,
             )
         )
-    return BigUInt()  # Return zero
+    return BigUInt.ZERO  # Return zero
 
 
 fn absolute(x: BigUInt) -> BigUInt:
@@ -284,13 +284,13 @@ fn add_slices_simd(
     var n_words_x_slice = bounds_x[1] - bounds_x[0]
     var n_words_y_slice = bounds_y[1] - bounds_y[0]
 
-    var words = List[UInt32](
+    var result = BigUInt(
         unsafe_uninit_length=max(n_words_x_slice, n_words_y_slice)
     )
 
     @parameter
     fn vector_add[simd_width: Int](i: Int):
-        words._data.store[width=simd_width](
+        result.words._data.store[width=simd_width](
             i,
             x.words._data.load[width=simd_width](i + bounds_x[0])
             + y.words._data.load[width=simd_width](i + bounds_y[0]),
@@ -318,7 +318,7 @@ fn add_slices_simd(
 
     @parameter
     fn vector_copy_rest_from_longer[simd_width: Int](i: Int):
-        words._data.store[width=simd_width](
+        result.words._data.store[width=simd_width](
             n_words_shorter_slice + i,
             longer[].words._data.load[width=simd_width](
                 longer_start + n_words_shorter_slice + i
@@ -329,8 +329,8 @@ fn add_slices_simd(
         n_words_longer_slice - n_words_shorter_slice
     )
 
-    var result = BigUInt(words=words^)
     normalize_carries_lt_2_bases(result)
+    result.remove_leading_empty_words()
     return result^
 
 
@@ -379,6 +379,7 @@ fn add_inplace(mut x: BigUInt, y: BigUInt) -> None:
 
     # Normalize carries after addition
     normalize_carries_lt_2_bases(x)
+    x.remove_leading_empty_words()
 
     return
 
@@ -397,13 +398,16 @@ fn add_inplace_by_slice(
     # Short circuit cases
     if x.is_zero():
         debug_assert[assert_mode="none"](
-            len(x.words) == 1, "add_inplace_by_slice(): leading zero words"
+            len(x.words) == 1, "add_inplace_by_slice(): leading zero words in x"
         )
-        x.words = BigUInt(
-            y.words[bounds_y[0] : bounds_y[1]]
-        ).words  # Copy the words from y
+        x = BigUInt.from_slice(
+            y, bounds=(bounds_y[0], bounds_y[1])
+        )  # Copy the words from y
         return
-    if y.is_zero(bounds=bounds_y):
+    if y.is_zero_in_bounds(bounds=bounds_y):
+        debug_assert[assert_mode="none"](
+            len(y.words) == 1, "add_inplace_by_slice(): leading zero words in y"
+        )
         return
 
     var n_words_y_slice = bounds_y[1] - bounds_y[0]
@@ -508,7 +512,7 @@ fn subtract_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
     var comparison_result = x.compare(y)
     if comparison_result == 0:
         # |x| = |y|
-        return BigUInt()  # Return zero
+        return BigUInt.ZERO  # Return zero
     if comparison_result < 0:
         raise Error(
             OverflowError(
@@ -524,15 +528,15 @@ fn subtract_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
 
     # Now it is safe to subtract the smaller number from the larger one
     # The result will have no more words than the first number
-    var words = List[UInt32](capacity=len(x.words))
+    var result = BigUInt(uninitialized_capacity=len(x.words))
     var borrow: UInt32 = 0  # Can either be 0 or 1
 
     for i in range(len(y.words)):
         if x.words[i] < borrow + y.words[i]:
-            words.append(x.words[i] + BigUInt.BASE - borrow - y.words[i])
+            result.words.append(x.words[i] + BigUInt.BASE - borrow - y.words[i])
             borrow = 1  # Set borrow for the next word
         else:
-            words.append(x.words[i] - borrow - y.words[i])
+            result.words.append(x.words[i] - borrow - y.words[i])
             borrow = 0  # No borrow for the next word
 
     # If x has more words than y, we need to handle the remaining words
@@ -540,23 +544,22 @@ fn subtract_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
     if borrow == 0:
         # If there is no borrow, we can just copy the remaining words
         for i in range(len(y.words), len(x.words)):
-            words.append(x.words[i])
+            result.words.append(x.words[i])
 
     else:
         var no_borrow_idx: Int = 0
         # At this stage, borrow can only be 0 or 1
         for i in range(len(y.words), len(x.words)):
             if x.words[i] >= borrow:
-                words.append(x.words[i] - borrow)
+                result.words.append(x.words[i] - borrow)
                 no_borrow_idx = i + 1
                 break  # No more borrow, we can stop early
             else:  # x.words[i] == 0, borrow == 1
-                words.append(BigUInt.BASE - borrow)
+                result.words.append(BigUInt.BASE - borrow)
 
         for i in range(no_borrow_idx, len(x.words)):
-            words.append(x.words[i])  # Copy the remaining words
+            result.words.append(x.words[i])  # Copy the remaining words
 
-    var result = BigUInt(words=words^)
     result.remove_leading_empty_words()
     return result^
 
@@ -605,7 +608,7 @@ fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
     var comparison_result = x.compare(y)
     if comparison_result == 0:
         # |x| = |y|
-        return BigUInt()  # Return zero
+        return BigUInt.ZERO  # Return zero
     if comparison_result < 0:
         raise Error(
             OverflowError(
@@ -621,7 +624,7 @@ fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
 
     # Now it is safe to subtract the smaller number from the larger one
     # The result will have no more words than the first number
-    var words = List[UInt32](unsafe_uninit_length=len(x.words))
+    var result = BigUInt(unsafe_uninit_length=len(x.words))
 
     # Yuhao ZHU:
     # We will make use of SIMD operations to subtract the words in parallel.
@@ -630,7 +633,7 @@ fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
     # but we will take advantage of that.
     @parameter
     fn vector_subtract[simd_width: Int](i: Int):
-        words._data.store[width=simd_width](
+        result.words._data.store[width=simd_width](
             i,
             x.words._data.load[width=simd_width](i)
             - y.words._data.load[width=simd_width](i),
@@ -640,7 +643,7 @@ fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
 
     @parameter
     fn vector_copy_rest[simd_width: Int](i: Int):
-        words._data.store[width=simd_width](
+        result.words._data.store[width=simd_width](
             len(y.words) + i,
             x.words._data.load[width=simd_width](len(y.words) + i),
         )
@@ -649,7 +652,6 @@ fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
         len(x.words) - len(y.words)
     )
 
-    var result = BigUInt(words=words^)
     normalize_borrows(result)
     result.remove_leading_empty_words()
 
@@ -788,6 +790,7 @@ fn subtract_inplace_by_uint32(mut x: BigUInt, y: UInt32) -> None:
                 else:  # word >= 3294967297 or word == 0, overflowed value
                     word = (word + BigUInt.BASE) - 1
                     # borrow = 1
+        x.remove_leading_empty_words()
         return
 
 
@@ -828,7 +831,7 @@ fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
     if len(x.words) == 1:
         var x_word = x.words[0]
         if x_word == 0:
-            return BigUInt(UInt32(0))
+            return BigUInt.ZERO
         elif x_word == 1:
             return y
         else:
@@ -839,7 +842,7 @@ fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
     if len(y.words) == 1:
         var y_word = y.words[0]
         if y_word == 0:
-            return BigUInt(UInt32(0))
+            return BigUInt.ZERO
         if y_word == 1:
             return x
         else:
@@ -932,7 +935,7 @@ fn multiply_slices_school(
     if n_words_x_slice == 1:
         var x_word = x.words[bounds_x[0]]
         if x_word == 0:
-            return BigUInt(UInt32(0))
+            return BigUInt.ZERO
         elif x_word == 1:
             return BigUInt.from_slice(y, (bounds_y[0], bounds_y[1]))
         else:
@@ -942,7 +945,7 @@ fn multiply_slices_school(
     if n_words_y_slice == 1:
         var y_word = y.words[bounds_y[0]]
         if y_word == 0:
-            return BigUInt(UInt32(0))
+            return BigUInt.ZERO
         elif y_word == 1:
             return BigUInt.from_slice(x, (bounds_x[0], bounds_x[1]))
         else:
@@ -952,7 +955,10 @@ fn multiply_slices_school(
 
     # The max number of words in the result is the sum of the words in the operands
     var max_result_len = n_words_x_slice + n_words_y_slice
-    var words = List[UInt32](length=max_result_len, fill=0)
+    # Allocate the result of zero words with the maximum length
+    # The leading zeros need to be removed before returning the result
+    var result = BigUInt(unsafe_uninit_length=max_result_len)
+    memset_zero(ptr=result.words._data, count=max_result_len)
 
     # Perform the multiplication word by word (from least significant to most significant)
     # x = x[start_x] + x[start_x + 1] * 10^9
@@ -977,19 +983,18 @@ fn multiply_slices_school(
                 UInt64(x.words[bounds_x[0] + i])
                 * UInt64(y.words[bounds_y[0] + j])
                 + carry
-                + UInt64(words[i + j])
+                + UInt64(result.words[i + j])
             )
 
             # The lower 9 digits (base 10^9) go into the current word
             # The upper digits become the carry for the next position
-            words[i + j] = UInt32(product % UInt64(BigUInt.BASE))
+            result.words[i + j] = UInt32(product % UInt64(BigUInt.BASE))
             carry = product // UInt64(BigUInt.BASE)
 
         # If there is a carry left, add it to the next position
         if carry > 0:
-            words[i + n_words_y_slice] += UInt32(carry)
+            result.words[i + n_words_y_slice] += UInt32(carry)
 
-    var result = BigUInt(words=words^)
     result.remove_leading_empty_words()
     return result^
 
@@ -1021,8 +1026,10 @@ fn multiply_slices_karatsuba(
     We just need to consider the slices of x and y by using the indices.
     """
 
-    if x.is_zero(bounds=bounds_x) or y.is_zero(bounds=bounds_y):
-        return BigUInt(UInt32(0))
+    if x.is_zero_in_bounds(bounds=bounds_x) or y.is_zero_in_bounds(
+        bounds=bounds_y
+    ):
+        return BigUInt.ZERO
 
     # Number of words in the slice 1: end_x - start_x
     # Number of words in the slice 2: end_y - start_y
@@ -1081,6 +1088,7 @@ fn multiply_slices_karatsuba(
 
         z1.multiply_inplace_by_power_of_billion(m)
         z1 += z0
+        z1.remove_leading_empty_words()
         return z1^
 
     elif n_words_y_slice <= m:
@@ -1108,6 +1116,7 @@ fn multiply_slices_karatsuba(
         # z2 = 0
         z1.multiply_inplace_by_power_of_billion(m)
         z1 += z0
+        z1.remove_leading_empty_words()
         return z1^
 
     else:
@@ -1167,6 +1176,7 @@ fn multiply_slices_karatsuba(
         z2 += z1
         z2 += z0
 
+        z2.remove_leading_empty_words()
         return z2^
 
 
@@ -1294,19 +1304,21 @@ fn multiply_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
         debug_assert[assert_mode="none"](
             len(x.words) == 1, "multiply_by_power_of_ten(): leading zero words"
         )
-        return BigUInt(UInt32(0))  # Multiplying zero by anything is still zero
+        return BigUInt.ZERO  # Multiplying zero by anything is still zero
 
     var number_of_zero_words = n // 9
     var number_of_remaining_digits = n % 9
 
-    var words = List[UInt32](capacity=number_of_zero_words + len(x.words) + 1)
+    var result = BigUInt(
+        uninitialized_capacity=number_of_zero_words + len(x.words) + 1
+    )
     # Add zero words
     for _ in range(number_of_zero_words):
-        words.append(UInt32(0))
+        result.words.append(UInt32(0))
     # Add the original words times 10^number_of_remaining_digits
     if number_of_remaining_digits == 0:
         for i in range(len(x.words)):
-            words.append(x.words[i])
+            result.words.append(x.words[i])
     else:  # number_of_remaining_digits > 0
         var carry = UInt64(0)
         var multiplier: UInt64
@@ -1331,13 +1343,14 @@ fn multiply_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
 
         for i in range(len(x.words)):
             product = UInt64(x.words[i]) * multiplier + carry
-            words.append(UInt32(product % UInt64(BigUInt.BASE)))
+            result.words.append(UInt32(product % UInt64(BigUInt.BASE)))
             carry = product // UInt64(BigUInt.BASE)
         # Add the last carry if it exists
         if carry > 0:
-            words.append(UInt32(carry))
+            result.words.append(UInt32(carry))
 
-    return BigUInt(words=words^)
+    result.remove_leading_empty_words()
+    return result^
 
 
 fn multiply_inplace_by_power_of_ten(mut x: BigUInt, n: Int):
@@ -1460,15 +1473,16 @@ fn multiply_by_power_of_billion(x: BigUInt, n: Int) -> BigUInt:
         )
         # If x is zero, we can just return
         # No need to add zeros, it will still be zero
-        return BigUInt()
+        return BigUInt.ZERO
 
-    var words = List[UInt32](unsafe_uninit_length=len(x.words) + n)
+    var res = BigUInt(unsafe_uninit_length=len(x.words) + n)
     # Fill the first n words with zeros
-    memset_zero(ptr=words._data, count=n)
+    memset_zero(ptr=res.words._data, count=n)
     # Copy the original words to the end of the new list
-    memcpy(dest=words._data + n, src=x.words._data, count=len(x.words))
+    memcpy(dest=res.words._data + n, src=x.words._data, count=len(x.words))
 
-    return BigUInt(words=words^)
+    res.remove_leading_empty_words()
+    return res^
 
 
 fn multiply_inplace_by_power_of_billion(mut x: BigUInt, n: Int):
@@ -1513,6 +1527,8 @@ fn multiply_inplace_by_power_of_billion(mut x: BigUInt, n: Int):
     # Fill the first n words with zeros
     for i in range(n):
         x.words[i] = UInt32(0)
+
+    x.remove_leading_empty_words()
     return
 
 
@@ -1543,11 +1559,24 @@ fn floor_divide(x: BigUInt, y: BigUInt) raises -> BigUInt:
 
     debug_assert[assert_mode="none"](
         (len(x.words) != 0) and (len(y.words) != 0),
-        "biguint.arithmetics.floor_divide(): BigUInt ",
+        "biguint.arithmetics.floor_divide(): BigUInt x ",
         x,
         " and / or ",
         y,
         " is uninitialized!",
+    )
+
+    debug_assert[assert_mode="none"](
+        (len(x.words) == 1) or (x.words[-1] != 0),
+        "biguint.arithmetics.floor_divide(): BigUInt x ",
+        x,
+        " has leading zero words!",
+    )
+    debug_assert[assert_mode="none"](
+        (len(y.words) == 1) or (y.words[-1] != 0),
+        "biguint.arithmetics.floor_divide(): BigUInt y ",
+        y,
+        " has leading zero words!",
     )
 
     # CASE: y is zero
@@ -1567,16 +1596,16 @@ fn floor_divide(x: BigUInt, y: BigUInt) raises -> BigUInt:
             len(x.words) == 1,
             "biguint.arithmetics.floor_divide(): x has leading zero words",
         )
-        return BigUInt()  # Return zero
+        return BigUInt.ZERO  # Return zero
 
     # CASE: x is not greater than y
     var comparison_result: Int8 = x.compare(y)
     # SUB-CASE: dividend < divisor
     if comparison_result < 0:
-        return BigUInt()  # Return zero
+        return BigUInt.ZERO  # Return zero
     # SUB-CASE: dividend == divisor
     if comparison_result == 0:
-        return BigUInt(UInt32(1))
+        return BigUInt.ONE  # Return one
 
     # CASE: y is single word
     if len(y.words) == 1:
@@ -1585,7 +1614,7 @@ fn floor_divide(x: BigUInt, y: BigUInt) raises -> BigUInt:
             return x
         # SUB-CASE: Single word // single word
         if len(x.words) == 1:
-            var result = BigUInt(List[UInt32](x.words[0] // y.words[0]))
+            var result = BigUInt.from_uint32_unsafe(x.words[0] // y.words[0])
             return result^
         # SUB-CASE: Divisor is single word (<= 9 digits)
         else:
@@ -1663,16 +1692,16 @@ fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
             len(x.words) == 1,
             "biguint.arithmetics.floor_divide(): x has leading zero words",
         )
-        return BigUInt()  # Return zero
+        return BigUInt.ZERO  # Return zero
 
     # CASE: x is not greater than y
     var comparison_result: Int8 = x.compare(y)
     # SUB-CASE: dividend < divisor
     if comparison_result < 0:
-        return BigUInt()  # Return zero
+        return BigUInt.ZERO  # Return zero
     # SUB-CASE: dividend == divisor
     if comparison_result == 0:
-        return BigUInt(UInt32(1))
+        return BigUInt.ONE
 
     # CASE: y is single word
     if len(y.words) == 1:
@@ -1681,7 +1710,7 @@ fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
             return x
         # SUB-CASE: Single word // single word
         if len(x.words) == 1:
-            var result = BigUInt(List[UInt32](x.words[0] // y.words[0]))
+            var result = BigUInt.from_uint32_unsafe(x.words[0] // y.words[0])
             return result^
         # SUB-CASE: Divisor is single word (<= 9 digits)
         else:
@@ -1701,7 +1730,7 @@ fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
     # ALL OTHER CASES
     # Use the schoolbook division algorithm
     # Initialize result and remainder
-    var result = BigUInt(List[UInt32](capacity=len(x.words)))
+    var result = BigUInt(uninitialized_capacity=len(x.words))
     var remainder = x
 
     # Shift and initialize
@@ -1853,6 +1882,12 @@ fn floor_divide_by_uint32(x: BigUInt, y: UInt32) -> BigUInt:
         dividend = carry * UInt64(BigUInt.BASE) + UInt64(x.words[i])
         result.words[i] = UInt32(dividend // y_uint64)
         carry = dividend % y_uint64
+
+    debug_assert[assert_mode="none"](
+        (len(result.words) == 1) or (result.words[-1] != 0),
+        "biguint.arithmetics.floor_divide_by_uint32(): ",
+        "Result has leading zero words",
+    )
     return result^
 
 
@@ -2103,10 +2138,9 @@ fn floor_divide_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
         if word_shift >= len(x.words):
             return BigUInt.ZERO
         # Create result with the remaining words
-        words = List[UInt32]()
+        result = BigUInt(uninitialized_capacity=len(x.words) - word_shift)
         for i in range(word_shift, len(x.words)):
-            words.append(x.words[i])
-        result = BigUInt(words=words^)
+            result.words.append(x.words[i])
 
     # Then shift the remaining words right
     # Get the last word of the divisor
@@ -2115,6 +2149,7 @@ fn floor_divide_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
     var divisor: UInt32
     if digit_shift == 0:
         # No need to shift, just return the result
+        result.remove_leading_empty_words()
         return result^
     elif digit_shift == 1:
         divisor = UInt32(10)
@@ -2231,8 +2266,6 @@ fn floor_divide_burnikel_ziegler(
     var normalized_a = a
     var ndigits_to_shift: Int
 
-    if normalized_b.words[-1] == 0:
-        normalized_b.remove_leading_empty_words()
     if normalized_b.words[-1] < 500_000_000:
         ndigits_to_shift = (
             decimojo.biguint.arithmetics.calculate_ndigits_for_normalization(
@@ -2295,8 +2328,8 @@ fn floor_divide_burnikel_ziegler(
         if normalized_a.words[-1] >= 500_000_000:
             t += 1
 
-    var z = BigUInt(0)  # Remainder of the division
-    var q = BigUInt(0)
+    var z = BigUInt.ZERO  # Remainder of the division
+    var q = BigUInt.ZERO
     var q_i: BigUInt
 
     for i in range(t - 2, -1, -1):
@@ -2342,6 +2375,8 @@ fn floor_divide_burnikel_ziegler(
                 normalized_a,
                 bounds_y=((i - 1) * n, i * n),
             )
+
+    q.remove_leading_empty_words()
     return q^
 
 
@@ -2376,19 +2411,19 @@ fn floor_divide_two_by_one(
         return (q^, r^)
 
     else:
-        var a0 = BigUInt(a.words[0 : n // 2])
-        var a1 = BigUInt(a.words[n // 2 : n])
-        var a2 = BigUInt(a.words[n : n + n // 2])
-        var a3 = BigUInt(a.words[n + n // 2 : n + n])
+        var a0 = BigUInt.from_slice(a, bounds=(0, n // 2))
+        var a1 = BigUInt.from_slice(a, bounds=(n // 2, n))
+        var a2 = BigUInt.from_slice(a, bounds=(n, n + n // 2))
+        var a3 = BigUInt.from_slice(a, bounds=(n + n // 2, n + n))
 
-        var b0 = BigUInt(b.words[0 : n // 2])
-        var b1 = BigUInt(b.words[n // 2 : n])
+        var b0 = BigUInt.from_slice(b, bounds=(0, n // 2))
+        var b1 = BigUInt.from_slice(b, bounds=(n // 2, n))
 
         var q, r = floor_divide_three_by_two(
             a3, a2, a1, b1, b0, n // 2, cut_off
         )  # q is q1
-        var r0 = BigUInt(r.words[0 : n // 2])
-        var r1 = BigUInt(r.words[n // 2 : n])
+        var r0 = BigUInt.from_slice(r, bounds=(0, n // 2))
+        var r1 = BigUInt.from_slice(r, bounds=(n // 2, n))
         var q0, s = floor_divide_three_by_two(
             r1, r0, a0, b1, b0, n // 2, cut_off
         )
@@ -2527,7 +2562,7 @@ fn floor_divide_slices_two_by_one(
         a_slice -= multiply_slices(q, b, (0, len(q.words)), bounds_b)
         return (q^, a_slice^)
 
-    elif (bounds_a[0] + n + n // 2 >= bounds_a[1]) or a.is_zero(
+    elif (bounds_a[0] + n + n // 2 >= bounds_a[1]) or a.is_zero_in_bounds(
         bounds=(bounds_a[0] + n + n // 2, bounds_a[1])
     ):
         # If a3 is empty or zero
@@ -2637,6 +2672,8 @@ fn floor_divide_slices_three_by_two(
             add_inplace_by_slice(r, b, bounds_y=bounds_b)
 
     r -= d
+    q.remove_leading_empty_words()
+    r.remove_leading_empty_words()
     return (q^, r^)
 
 
@@ -2776,7 +2813,7 @@ fn ceil_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     # Apply floor division and check if there is a remainder
     var quotient = floor_divide(x1, x2)
     if quotient * x2 < x1:
-        quotient += BigUInt(UInt32(1))
+        add_inplace_by_uint32(quotient, 1)
     return quotient^
 
 
@@ -2820,11 +2857,11 @@ fn floor_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         debug_assert[assert_mode="none"](
             len(x1.words) == 1, "truncate_modulo(): leading zero words"
         )
-        return BigUInt()  # Return zero
+        return BigUInt.ZERO  # Return zero
 
     # CASE: Divisor is one - no remainder
     if x2.is_one():
-        return BigUInt()  # Always divisible with no remainder
+        return BigUInt.ZERO  # Always divisible with no remainder
 
     # CASE: |dividend| < |divisor| - the remainder is the dividend itself
     if x1.compare(x2) < 0:
@@ -2917,11 +2954,11 @@ fn ceil_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         debug_assert[assert_mode="none"](
             len(x1.words) == 1, "ceil_modulo(): leading zero words"
         )
-        return BigUInt()  # Return zero
+        return BigUInt.ZERO  # Return zero
 
     # CASE: Divisor is one - no remainder
     if x2.is_one():
-        return BigUInt()  # Always divisible with no remainder
+        return BigUInt.ZERO  # Always divisible with no remainder
 
     # CASE: |dividend| < |divisor| - the remainder is the dividend itself
     if x1.compare(x2) < 0:
@@ -2936,7 +2973,7 @@ fn ceil_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         debug_assert[assert_mode="none"](
             len(remainder.words) == 1, "ceil_modulo(): leading zero words"
         )
-        return BigUInt()  # No remainder
+        return BigUInt.ZERO  # No remainder
     else:
         return subtract(x2, remainder)
 
@@ -3154,20 +3191,20 @@ fn power_of_10(n: Int) raises -> BigUInt:
         )
 
     if n == 0:
-        return BigUInt(1)
+        return BigUInt.ONE
 
     # Handle small powers directly
     if n < 9:
         var value: UInt32 = 1
         for _ in range(n):
             value *= 10
-        return BigUInt(value)
+        return BigUInt.from_uint32_unsafe(value)
 
     # For larger powers, split into groups of 9 digits
     var words = n // 9
     var remainder = n % 9
 
-    var result = BigUInt(List[UInt32]())
+    var result = BigUInt.ZERO
 
     # Add leading zeros for full power-of-billion words
     for _ in range(words):

@@ -23,7 +23,7 @@ operation dunders, and other dunders that implement traits, as well as
 mathematical methods that do not implement a trait.
 """
 
-from memory import UnsafePointer, memcpy
+from memory import UnsafePointer, memcpy, memcmp
 
 import decimojo.biguint.arithmetics
 import decimojo.biguint.comparison
@@ -151,8 +151,10 @@ struct BigUInt(
 
     fn __init__(out self, var words: List[UInt32]):
         """Initializes a BigUInt from a list of UInt32 words.
-        It does not verify whether the words are within the valid range
-        See `from_list()` for safer initialization.
+        If the list is empty, the BigUInt is initialized with value 0.
+        If there are trailing empty words, they are NOT removed.
+        This method does NOT check whether the words are smaller than
+        `999_999_999`.
 
         Args:
             words: A list of UInt32 words representing the coefficient.
@@ -161,8 +163,10 @@ struct BigUInt(
 
         Notes:
 
-        This method does not check whether the words are smaller than
-        `999_999_999`.
+        If you want to remove trailing empty words and validate the words,
+        use `BigUInt.from_list_unsafe()`.
+        If you also want to validate the words and remove trailing empty words,
+        use `BigUInt.from_list()`.
         """
         if len(words) == 0:
             self.words = List[UInt32](UInt32(0))
@@ -270,6 +274,7 @@ struct BigUInt(
     fn from_list(var words: List[UInt32]) raises -> Self:
         """Initializes a BigUInt from a list of UInt32 words safely.
         If the list is empty, the BigUInt is initialized with value 0.
+        If there are trailing empty words, they are removed.
         The words are validated to ensure they are smaller than `999_999_999`.
 
         Args:
@@ -303,7 +308,28 @@ struct BigUInt(
                     )
                 )
 
-        return Self(words^)
+        var res = Self(words^)
+        res.remove_leading_empty_words()
+        return res^
+
+    @staticmethod
+    fn from_list_unsafe(var words: List[UInt32]) -> Self:
+        """Initializes a BigUInt from a list of UInt32 words without checks.
+        If the list is empty, the BigUInt is initialized with value 0.
+        If there are trailing empty words, they are removed.
+        The words are not validated to ensure they are smaller than a billion.
+
+        Args:
+            words: A list of UInt32 words representing the coefficient.
+                Each UInt32 word represents digits ranging from 0 to 10^9 - 1.
+                The words are stored in little-endian order.
+
+        Returns:
+            The BigUInt representation of the list of UInt32 words.
+        """
+        var result = Self(words=words^)
+        result.remove_leading_empty_words()
+        return result^
 
     @staticmethod
     fn from_words(*words: UInt32) raises -> Self:
@@ -381,7 +407,7 @@ struct BigUInt(
             return Self()
 
         # Now we can safely copy the words
-        result = BigUInt(words=List[UInt32](unsafe_uninit_length=n_words))
+        result = BigUInt(unsafe_uninit_length=n_words)
         memcpy(
             dest=result.words._data,
             src=value.words._data + start_index,
@@ -455,7 +481,8 @@ struct BigUInt(
         """Creates a BigUInt from an `UInt32` object.
 
         Notes:
-            UInt32 is special, so we have a separate method for it.
+
+        UInt32 is special, so we have a separate method for it.
         """
         # One word is enough
         if value <= 999_999_999:
@@ -469,6 +496,12 @@ struct BigUInt(
                     value // UInt32(1_000_000_000),
                 )
             )
+
+    @staticmethod
+    fn from_uint32_unsafe(unsafe_value: UInt32) -> Self:
+        """Creates a BigUInt from an `UInt32` object without checking the value.
+        """
+        return Self(words=List[UInt32](unsafe_value))
 
     @staticmethod
     fn from_unsigned_integral_scalar[
@@ -961,6 +994,9 @@ struct BigUInt(
             return String("Unitilialized BigUInt")
 
         if self.is_zero():
+            debug_assert(
+                len(self.words) == 1, "There are trailing empty words."
+            )
             return String("0")
 
         var result = String("")
@@ -1528,39 +1564,30 @@ struct BigUInt(
     fn is_zero(self) -> Bool:
         """Returns True if this BigUInt represents zero."""
         # Yuhao ZHU:
-        # We should by design not have leading zero words so that we only need
-        # to check words[0] for zero.
+        # BigUInt are desgined to have no leading zero words,
+        # so that we only need to check words[0] for zero.
         # If there are leading zero words, it means that we have to loop over
         # all words to check if the number is zero.
-        # TODO:
-        # Currently, the BigUInt sub-package by design ensures no leading zeros.
-        # However, the BigDecimal sub-package may still lead to leading zeros
-        # When we refine the BigDecimal sub-package, we should ensure that
-        # BigUInt does not have leading zeros.
-        #
-        # debug_assert[assert_mode="none"](
-        #     len(self.words) == 1,
-        #     "BigUInt should not contain leading zero words.",
-        # )  # 0 should have only one word by design
+        debug_assert[assert_mode="none"](
+            (len(self.words) == 1) or (self.words[-1] != 0),
+            "biguint.BigUInt.is_zero(): ",
+            "BigUInt should not contain leading zero words.",
+        )  # 0 should have only one word by design
 
-        if self.words[0] != 0:
-            # Least significant word is not zero
-            return False
-        elif len(self.words) == 1:
-            # Least significant word is zero and there is no other word
-            return True
-        else:
-            # Least significant word is zero and there are other words
-            # Check if all other words are zero
-            for word in self.words[1:]:
-                if word != 0:
-                    return False
-            else:
-                # All words are zero
-                return True
+        return len(self.words) == 1 and self.words._data[] == 0
+
+        # Yuhao ZHU:
+        # The following code is commented out because BigUInt is designed
+        # to have no leading zero words.
+        # We only need to check the first word.
+        # They are left here for reference.
+        # return (self.words._data[] == 0) and (
+        #     memcmp(self.words._data, self.words._data + 1, len(self.words) - 1)
+        #     == 0
+        # )
 
     @always_inline
-    fn is_zero(self, bounds: Tuple[Int, Int]) -> Bool:
+    fn is_zero_in_bounds(self, bounds: Tuple[Int, Int]) -> Bool:
         """Returns True if this BigUInt slice represents zero.
 
         Args:
@@ -1718,7 +1745,6 @@ struct BigUInt(
         var digit = word % 10
         return UInt8(digit)
 
-    @always_inline
     fn number_of_digits(self) -> Int:
         """Returns the number of digits in the BigUInt.
 
@@ -1727,6 +1753,9 @@ struct BigUInt(
         Zero has 1 digit.
         """
         if self.is_zero():
+            debug_assert(
+                len(self.words) == 1, "There are trailing empty words."
+            )
             return 1
 
         var result: Int = (len(self.words) - 1) * 9
@@ -1736,12 +1765,10 @@ struct BigUInt(
             last_word = last_word // 10
         return result
 
-    @always_inline
     fn number_of_words(self) -> Int:
         """Returns the number of words in the BigInt."""
         return len(self.words)
 
-    @always_inline
     fn number_of_trailing_zeros(self) -> Int:
         """Returns the number of trailing zeros in the BigUInt."""
         var result: Int = 0
@@ -1778,7 +1805,7 @@ struct BigUInt(
                     n_empty_words += 1
                 else:
                     break
-            self.words.resize(len(self.words) - n_empty_words, UInt32(0))
+            self.words.shrink(len(self.words) - n_empty_words)
 
     @always_inline
     fn remove_trailing_digits_with_rounding(

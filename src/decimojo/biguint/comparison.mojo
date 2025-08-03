@@ -34,17 +34,28 @@ fn compare(x1: BigUInt, x2: BigUInt) -> Int8:
         (2)  0 if x1 = x2.
         (3) -1 if x1 < x2.
     """
+    debug_assert[assert_mode="none"](
+        (len(x1.words) == 1) or (x1.words[-1] != 0),
+        "biguint.comparison.compare(): ",
+        "BigUInt x1 contains leading zero words.",
+    )
+    debug_assert[assert_mode="none"](
+        (len(x2.words) == 1) or (x2.words[-1] != 0),
+        "biguint.comparison.compare(): ",
+        "BigUInt x2 contains leading zero words.",
+    )
+
     # Compare the number of words
     if len(x1.words) > len(x2.words):
-        for i in range(len(x2.words), len(x1.words)):
-            # Check if the extra words in x1 are non-zero
-            if x1.words[i] != 0:
-                return Int8(1)
+        # for i in range(len(x2.words), len(x1.words)):
+        #     # Check if the extra words in x1 are non-zero
+        #     if x1.words[i] != 0:
+        return Int8(1)
     if len(x1.words) < len(x2.words):
-        for i in range(len(x1.words), len(x2.words)):
-            # Check if the extra words in x2 are non-zero
-            if x2.words[i] != 0:
-                return Int8(-1)
+        # for i in range(len(x1.words), len(x2.words)):
+        #     # Check if the extra words in x2 are non-zero
+        #     if x2.words[i] != 0:
+        return Int8(-1)
 
     # If the number of words that are not leading zeros are equal,
     # compare the words from the most significant to the least significant.
