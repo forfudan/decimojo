@@ -405,9 +405,7 @@ fn add_inplace_by_slice(
         )  # Copy the words from y
         return
     if y.is_zero_in_bounds(bounds=bounds_y):
-        debug_assert[assert_mode="none"](
-            len(y.words) == 1, "add_inplace_by_slice(): leading zero words in y"
-        )
+        # y slice is zero, which means that all the words in the slice are zero
         return
 
     var n_words_y_slice = bounds_y[1] - bounds_y[0]

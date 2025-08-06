@@ -155,25 +155,22 @@ alias PI_1024 = BigDecimal(
 # we check whether the precision is higher than the current precision.
 # If yes, then we save it into the global scope as cached value.
 fn pi(precision: Int) raises -> BigDecimal:
-    """Calculates π using the fastest available algorithm.
-
-    - precision ≤ 1024: precomputed constant
-    - precision > 1024: Chudnovsky with binary splitting
-    """
+    """Calculates π using the fastest available algorithm."""
 
     if precision < 0:
         raise Error("Precision must be non-negative")
 
-    # Use precomputed value for precision ≤ 1024
-    if precision <= 1024:
-        var result = PI_1024
-        result.round_to_precision(
-            precision,
-            RoundingMode.ROUND_HALF_EVEN,
-            remove_extra_digit_due_to_rounding=True,
-            fill_zeros_to_precision=False,
-        )
-        return result^
+    # TODO: When global variables are supported,
+    # we can check if we have a cached value for the requested precision.
+    # if precision <= 1024:
+    #     var result = PI_1024
+    #     result.round_to_precision(
+    #         precision,
+    #         RoundingMode.ROUND_HALF_EVEN,
+    #         remove_extra_digit_due_to_rounding=True,
+    #         fill_zeros_to_precision=False,
+    #     )
+    #     return result^
 
     # Use Chudnovsky with binary splitting for maximum speed
     return pi_chudnovsky_binary_split(precision)
