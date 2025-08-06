@@ -37,17 +37,19 @@ This repository includes [TOMLMojo](https://github.com/forfudan/decimojo/tree/ma
 
 DeciMojo is available in the [modular-community](https://repo.prefix.dev/modular-community) package repository. You can install it using any of these methods:
 
-From the `pixi` CLI, simply run ```pixi add decimojo```. This fetches the latest version and makes it immediately available for import.
+1. From the `pixi` CLI, run the command ```pixi add decimojo```. This fetches the latest version and makes it immediately available for import.
 
-For projects with a `mojoproject.toml`file, add the dependency:
+1. In the `mojoproject.toml` file of your project, add the following dependency:
 
-```toml
-decimojo = "==0.5.0"
-```
+    ```toml
+    decimojo = "==0.5.0"
+    ```
 
-Then run `pixi install` to download and install the package.
+    Then run `pixi install` to download and install the package.
 
-For the latest development version, clone the [GitHub repository](https://github.com/forfudan/decimojo) and build the package locally.
+1. For the latest development version in the `main` branch, clone [this GitHub repository](https://github.com/forfudan/decimojo) and build the package locally using the command `pixi run package`.
+
+The following table summarizes the package versions and their corresponding Mojo versions:
 
 | `decimojo` | `mojo`        | package manager |
 | ---------- | ------------- | --------------- |
@@ -56,7 +58,7 @@ For the latest development version, clone the [GitHub repository](https://github
 | v0.3.0     | ==25.2        | magic           |
 | v0.3.1     | >=25.2, <25.4 | pixi            |
 | v0.4.x     | ==25.4        | pixi            |
-| v0.5.0     | ==25.4        | pixi            |
+| v0.5.0     | ==25.5        | pixi            |
 
 ## Quick start
 
@@ -77,7 +79,7 @@ This will import the following types or aliases into your namespace:
 
 ---
 
-Here are some examples showcasing the arbitrary-precision feature of the `BigDecimal` type (`BDec`). For some mathematical operations, the default precision (number of significant digits) is set to `36`. You can change the precision by passing the `precision` argument to the function. This default precision will be configurable globally in future when Mojo supports global variables.
+Here are some examples showcasing the arbitrary-precision feature of the `BigDecimal` type (aliases: `BDec` and `Decimal`). For some mathematical operations, the default precision (number of significant digits) is set to `36`. You can change the precision by passing the `precision` argument to the function. This default precision will be configurable globally in future when Mojo supports global variables.
 
 ```mojo
 from decimojo.prelude import *
@@ -186,7 +188,7 @@ fn main() raises:
     print(a.is_zero())                             # Check for zero: False
     
     # === Type Conversions ===
-    print(a.to_str())                              # To string: "12345678901234567890"
+    print(String(a))                               # To string: "12345678901234567890"
     
     # === Sign Handling ===
     print(-a)                                      # Negation: -12345678901234567890

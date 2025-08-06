@@ -94,6 +94,7 @@ fn sqrt(x: BigUInt) -> BigUInt:
                 # Division by zero should not occur if guess is positive
                 quotient = x.floor_divide(guess)
             except:
+                # This should not happen
                 quotient = BigUInt.ONE
 
             guess += quotient
