@@ -2,9 +2,9 @@
 
 This is a list of RELEASED changes for the DeciMojo Package.
 
-## 20250801 (v0.5.0)
+## 20250806 (v0.5.0)
 
-DeciMojo v0.5.0 introduces significant enhancements to the `BigDecimal` and `BigUInt` types, including new mathematical functions and performance optimizations. The release adds **trigonometric functions** for `BigDecimal`, implements the **Chudnovsky algorithm** for computing π, implements the **Karatsuba multiplication algorithm** and **Burnikel-Ziegler fast division algorithm** for `BigUInt`. In-place subtraction is now supported for `BigUInt`, and SIMD is utilized for arithmetic operations. The `Decimal` type is renamed to `Decimal128` to reflect its 128-bit fixed precision. The release also includes improved error handling, optimized type conversions, and comprehensive documentation updates.
+DeciMojo v0.5.0 introduces significant enhancements to the `BigDecimal` and `BigUInt` types, including new mathematical functions and performance optimizations. The release adds **trigonometric functions** for `BigDecimal`, implements the **Chudnovsky algorithm** for computing π, and implements the **Karatsuba multiplication algorithm** and **Burnikel-Ziegler division algorithm** for `BigUInt`. In-place operations, slice operations, and SIMD operations are now supported for `BigUInt` arithmetic. The `Decimal` type is renamed to `Decimal128` to reflect its 128-bit fixed precision. The release also includes improved error handling, optimized type conversions, refactored testing suites, and documentation updates.
 
 DeciMojo v0.5.0 is compatible with Mojo v25.5.
 
