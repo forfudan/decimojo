@@ -24,7 +24,9 @@ fn test_bigdecimal_rounding() raises:
     pydecimal.getcontext().rounding = pydecimal.ROUND_DOWN
     test_cases = load_test_cases(toml, "round_down_tests")
     for test_case in test_cases:
-        var result = BDec(test_case.a).round(Int(test_case.b), ROUND_DOWN)
+        var result = BDec(test_case.a).round(
+            Int(test_case.b), RoundingMode.down()
+        )
         try:
             testing.assert_equal(
                 lhs=String(result),
@@ -51,7 +53,9 @@ fn test_bigdecimal_rounding() raises:
     pydecimal.getcontext().rounding = pydecimal.ROUND_UP
     test_cases = load_test_cases(toml, "round_up_tests")
     for test_case in test_cases:
-        var result = BDec(test_case.a).round(Int(test_case.b), ROUND_UP)
+        var result = BDec(test_case.a).round(
+            Int(test_case.b), RoundingMode.up()
+        )
         try:
             testing.assert_equal(
                 lhs=String(result),
@@ -78,7 +82,9 @@ fn test_bigdecimal_rounding() raises:
     pydecimal.getcontext().rounding = pydecimal.ROUND_HALF_UP
     test_cases = load_test_cases(toml, "round_half_up_tests")
     for test_case in test_cases:
-        var result = BDec(test_case.a).round(Int(test_case.b), ROUND_HALF_UP)
+        var result = BDec(test_case.a).round(
+            Int(test_case.b), RoundingMode.up()
+        )
         try:
             testing.assert_equal(
                 lhs=String(result),
@@ -105,7 +111,9 @@ fn test_bigdecimal_rounding() raises:
     pydecimal.getcontext().rounding = pydecimal.ROUND_HALF_EVEN
     test_cases = load_test_cases(toml, "round_half_even_tests")
     for test_case in test_cases:
-        var result = BDec(test_case.a).round(Int(test_case.b), ROUND_HALF_EVEN)
+        var result = BDec(test_case.a).round(
+            Int(test_case.b), RoundingMode.half_even()
+        )
         try:
             testing.assert_equal(
                 lhs=String(result),
@@ -131,7 +139,9 @@ fn test_bigdecimal_rounding() raises:
 
     test_cases = load_test_cases(toml, "extreme_value_tests")
     for test_case in test_cases:
-        var result = BDec(test_case.a).round(Int(test_case.b), ROUND_HALF_EVEN)
+        var result = BDec(test_case.a).round(
+            Int(test_case.b), RoundingMode.half_even()
+        )
         try:
             testing.assert_equal(
                 lhs=String(result),
@@ -157,7 +167,9 @@ fn test_bigdecimal_rounding() raises:
 
     test_cases = load_test_cases(toml, "edge_case_tests")
     for test_case in test_cases:
-        var result = BDec(test_case.a).round(Int(test_case.b), ROUND_HALF_EVEN)
+        var result = BDec(test_case.a).round(
+            Int(test_case.b), RoundingMode.half_even()
+        )
         try:
             testing.assert_equal(
                 lhs=String(result),
@@ -186,7 +198,9 @@ fn test_bigdecimal_rounding() raises:
 
     test_cases = load_test_cases(toml, "precision_tests")
     for test_case in test_cases:
-        var result = BDec(test_case.a).round(Int(test_case.b), ROUND_HALF_EVEN)
+        var result = BDec(test_case.a).round(
+            Int(test_case.b), RoundingMode.half_even()
+        )
         try:
             testing.assert_equal(
                 lhs=String(result),
@@ -212,7 +226,9 @@ fn test_bigdecimal_rounding() raises:
 
     test_cases = load_test_cases(toml, "scientific_tests")
     for test_case in test_cases:
-        var result = BDec(test_case.a).round(Int(test_case.b), ROUND_HALF_EVEN)
+        var result = BDec(test_case.a).round(
+            Int(test_case.b), RoundingMode.half_even()
+        )
         try:
             testing.assert_equal(
                 lhs=String(result),

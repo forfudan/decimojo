@@ -176,12 +176,15 @@ fn pi(precision: Int) raises -> BigDecimal:
     return pi_chudnovsky_binary_split(precision)
 
 
-@fieldwise_init
 struct Rational:
     """Represents a rational number p/q for exact arithmetic."""
 
     var p: BigInt  # numerator
     var q: BigInt  # denominator
+
+    fn __init__(out self, p: BigInt, q: BigInt):
+        self.p = p.copy()
+        self.q = q.copy()
 
 
 fn pi_chudnovsky_binary_split(precision: Int) raises -> BigDecimal:
@@ -218,7 +221,7 @@ fn pi_chudnovsky_binary_split(precision: Int) raises -> BigDecimal:
 
     result.round_to_precision(
         precision,
-        RoundingMode.ROUND_HALF_EVEN,
+        RoundingMode.half_even(),
         remove_extra_digit_due_to_rounding=True,
         fill_zeros_to_precision=False,
     )
@@ -244,7 +247,7 @@ fn chudnovsky_split(a: Int, b: Int, precision: Int) raises -> Rational:
         var l_k = bint_545140134 * BigInt(a) + bint_13591409
 
         # X(k) = (-262537412640768000)^k
-        var x_k = bint_1
+        var x_k = bint_1^
         for _ in range(a):
             x_k *= bint_262537412640768000
 
@@ -256,7 +259,7 @@ fn chudnovsky_split(a: Int, b: Int, precision: Int) raises -> Rational:
         var term_p = m_k_rational.p * l_k
         var term_q = m_k_rational.q * x_k
 
-        return Rational(term_p, term_q)
+        return Rational(term_p^, term_q^)
 
     # Recursive case: split range in half
     var mid = (a + b) // 2
@@ -267,7 +270,7 @@ fn chudnovsky_split(a: Int, b: Int, precision: Int) raises -> Rational:
     var combined_p = left.p * right.q + right.p * left.q
     var combined_q = left.q * right.q
 
-    return Rational(combined_p, combined_q)
+    return Rational(combined_p^, combined_q^)
 
 
 fn compute_m_k_rational(k: Int) raises -> Rational:
@@ -279,12 +282,12 @@ fn compute_m_k_rational(k: Int) raises -> Rational:
         return Rational(bint_1, bint_1)
 
     # Compute numerator: (6k)! / (3k)! = (3k+1) * (3k+2) * ... * (6k)
-    var numerator = bint_1
+    var numerator = bint_1.copy()
     for i in range(3 * k + 1, 6 * k + 1):
         numerator *= BigInt(i)
 
     # Compute denominator: (k!)³
-    var k_factorial = bint_1
+    var k_factorial = bint_1.copy()
     for i in range(1, k + 1):
         k_factorial *= BigInt(i)
 
@@ -321,7 +324,7 @@ fn pi_machin(precision: Int) raises -> BigDecimal:
 
     result.round_to_precision(
         precision,
-        RoundingMode.ROUND_HALF_EVEN,
+        RoundingMode.half_even(),
         remove_extra_digit_due_to_rounding=True,
         fill_zeros_to_precision=False,
     )

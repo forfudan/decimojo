@@ -97,7 +97,7 @@ fn test_rounding_modes() raises:
     var py_value = pydecimal.Decimal("3.5")
     var py_quantizer = pydecimal.Decimal("1")
 
-    var result1 = test_value.quantize(quantizer, RoundingMode.ROUND_HALF_EVEN)
+    var result1 = test_value.quantize(quantizer, RoundingMode.half_even())
     var py_result1 = py_value.quantize(
         py_quantizer, rounding=pydecimal.ROUND_HALF_EVEN
     )
@@ -107,7 +107,7 @@ fn test_rounding_modes() raises:
         "ROUND_HALF_EVEN gave incorrect result: " + String(result1),
     )
 
-    var result2 = test_value.quantize(quantizer, RoundingMode.ROUND_HALF_UP)
+    var result2 = test_value.quantize(quantizer, RoundingMode.half_up())
     var py_result2 = py_value.quantize(
         py_quantizer, rounding=pydecimal.ROUND_HALF_UP
     )
@@ -117,7 +117,7 @@ fn test_rounding_modes() raises:
         "ROUND_HALF_UP gave incorrect result: " + String(result2),
     )
 
-    var result3 = test_value.quantize(quantizer, RoundingMode.ROUND_DOWN)
+    var result3 = test_value.quantize(quantizer, RoundingMode.down())
     var py_result3 = py_value.quantize(
         py_quantizer, rounding=pydecimal.ROUND_DOWN
     )
@@ -127,7 +127,7 @@ fn test_rounding_modes() raises:
         "ROUND_DOWN gave incorrect result: " + String(result3),
     )
 
-    var result4 = test_value.quantize(quantizer, RoundingMode.ROUND_UP)
+    var result4 = test_value.quantize(quantizer, RoundingMode.up())
     var py_result4 = py_value.quantize(
         py_quantizer, rounding=pydecimal.ROUND_UP
     )
@@ -138,7 +138,7 @@ fn test_rounding_modes() raises:
     )
 
     var neg_test_value = Decimal128("-3.5")
-    var result5 = neg_test_value.quantize(quantizer, RoundingMode.ROUND_DOWN)
+    var result5 = neg_test_value.quantize(quantizer, RoundingMode.down())
     var py_neg_value = pydecimal.Decimal("-3.5")
     var py_result5 = py_neg_value.quantize(
         py_quantizer, rounding=pydecimal.ROUND_DOWN
@@ -149,7 +149,7 @@ fn test_rounding_modes() raises:
         "ROUND_DOWN with negative gave incorrect result: " + String(result5),
     )
 
-    var result6 = neg_test_value.quantize(quantizer, RoundingMode.ROUND_UP)
+    var result6 = neg_test_value.quantize(quantizer, RoundingMode.up())
     var py_result6 = py_neg_value.quantize(
         py_quantizer, rounding=pydecimal.ROUND_UP
     )
@@ -224,7 +224,7 @@ fn test_edge_cases() raises:
 
     var value5 = Decimal128("-1.5")
     var quant5 = Decimal128("1")
-    var result5 = value5.quantize(quant5, RoundingMode.ROUND_HALF_EVEN)
+    var result5 = value5.quantize(quant5, RoundingMode.half_even())
     var py_value5 = pydecimal.Decimal("-1.5")
     var py_quant5 = pydecimal.Decimal("1")
     var py_result5 = py_value5.quantize(
@@ -263,7 +263,7 @@ fn test_special_cases() raises:
 
     var value2 = Decimal128("2.5")
     var quant2 = Decimal128("1")
-    var result2 = value2.quantize(quant2, RoundingMode.ROUND_HALF_EVEN)
+    var result2 = value2.quantize(quant2, RoundingMode.half_even())
     var py_value2 = pydecimal.Decimal("2.5")
     var py_quant2 = pydecimal.Decimal("1")
     var py_result2 = py_value2.quantize(
@@ -364,10 +364,10 @@ fn test_comprehensive_comparison() raises:
     pydecimal.getcontext().prec = 28  # Match DeciMojo's precision
 
     # Define rounding modes to test
-    var mojo_round_half_even = RoundingMode.ROUND_HALF_EVEN
-    var mojo_round_half_up = RoundingMode.ROUND_HALF_UP
-    var mojo_round_down = RoundingMode.ROUND_DOWN
-    var mojo_round_up = RoundingMode.ROUND_UP
+    var mojo_round_half_even = RoundingMode.half_even()
+    var mojo_round_half_up = RoundingMode.half_up()
+    var mojo_round_down = RoundingMode.down()
+    var mojo_round_up = RoundingMode.up()
 
     var py_round_half_even = pydecimal.ROUND_HALF_EVEN
     var py_round_half_up = pydecimal.ROUND_HALF_UP

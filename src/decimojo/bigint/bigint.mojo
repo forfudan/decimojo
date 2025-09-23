@@ -81,7 +81,7 @@ struct BigInt(
     @implicit
     fn __init__(out self, magnitude: BigUInt):
         """Constructs a BigInt from a BigUInt object."""
-        self.magnitude = magnitude
+        self.magnitude = magnitude.copy()
         self.sign = False
 
     fn __init__(out self, magnitude: BigUInt, sign: Bool):
@@ -92,7 +92,7 @@ struct BigInt(
             sign: The sign of the BigInt.
         """
 
-        self.magnitude = magnitude
+        self.magnitude = magnitude.copy()
         self.sign = sign
 
     fn __init__(out self, words: List[UInt32], sign: Bool):
@@ -111,7 +111,7 @@ struct BigInt(
         (2) the words are smaller than `999_999_999`.
         """
 
-        self.magnitude = BigUInt(words)
+        self.magnitude = BigUInt(words.copy())
         self.sign = sign
 
     fn __init__(out self, var *words: UInt32, sign: Bool) raises:
@@ -200,7 +200,7 @@ struct BigInt(
         if len(words) == 0:
             return Self()
 
-        return Self(BigUInt(words), sign)
+        return Self(BigUInt(words^), sign)
 
     @staticmethod
     fn from_words(*words: UInt32, sign: Bool) raises -> Self:
@@ -306,9 +306,9 @@ struct BigInt(
         Returns:
             The BigInt representation of the string.
         """
-        var coef: List[UInt8]
-        var sign: Bool
-        coef, _scale, sign = decimojo.str.parse_numeric_string(value)
+        _res = decimojo.str.parse_numeric_string(value)
+        var coef: List[UInt8] = _res[0].copy()
+        var sign: Bool = _res[2]
 
         # Check if the number is zero
         if len(coef) == 1 and coef[0] == UInt8(0):

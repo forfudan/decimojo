@@ -65,7 +65,7 @@ struct SourcePosition:
         self.index += 1
 
 
-struct TokenType(Copyable, Movable):
+struct TokenType(Copyable, ImplicitlyCopyable, Movable):
     """
     TokenType mimics an enum for token types in TOML.
     """
@@ -316,7 +316,7 @@ struct Tokenizer:
                 )
                 self._advance()  # Skip \r
                 self._advance()  # Skip \n
-                return token
+                return token^
             else:
                 token = Token(
                     TokenType.NEWLINE,
@@ -325,7 +325,7 @@ struct Tokenizer:
                     self.position.column,
                 )
                 self._advance()
-                return token
+                return token^
         elif self.current_char == "\n":
             token = Token(
                 TokenType.NEWLINE,
@@ -334,28 +334,28 @@ struct Tokenizer:
                 self.position.column,
             )
             self._advance()
-            return token
+            return token^
 
         if self.current_char == "=":
             token = Token(
                 TokenType.EQUAL, "=", self.position.line, self.position.column
             )
             self._advance()
-            return token
+            return token^
 
         if self.current_char == ",":
             token = Token(
                 TokenType.COMMA, ",", self.position.line, self.position.column
             )
             self._advance()
-            return token
+            return token^
 
         if self.current_char == ".":
             token = Token(
                 TokenType.DOT, ".", self.position.line, self.position.column
             )
             self._advance()
-            return token
+            return token^
 
         if self.current_char == "[":
             # Check if next char is also [
@@ -369,7 +369,7 @@ struct Tokenizer:
                 )
                 self._advance()  # Skip first [
                 self._advance()  # Skip second [
-                return token
+                return token^
             else:
                 # Regular table start
                 token = Token(
@@ -379,7 +379,7 @@ struct Tokenizer:
                     self.position.column,
                 )
                 self._advance()
-                return token
+                return token^
 
         if self.current_char == "]":
             token = Token(
@@ -389,7 +389,7 @@ struct Tokenizer:
                 self.position.column,
             )
             self._advance()
-            return token
+            return token^
 
         if self.current_char == QUOTE or self.current_char == LITERAL_QUOTE:
             return self._read_string()
@@ -413,7 +413,7 @@ struct Tokenizer:
             self.position.column,
         )
         self._advance()
-        return token
+        return token^
 
     fn tokenize(mut self) -> List[Token]:
         """Tokenize the entire source text."""
@@ -421,11 +421,11 @@ struct Tokenizer:
         var token = self.next_token()
 
         while token.type != TokenType.EOF and token.type != TokenType.ERROR:
-            tokens.append(token)
+            tokens.append(token^)
             token = self.next_token()
 
         # Add EOF token
         if token.type == TokenType.EOF:
-            tokens.append(token)
+            tokens.append(token^)
 
-        return tokens
+        return tokens^

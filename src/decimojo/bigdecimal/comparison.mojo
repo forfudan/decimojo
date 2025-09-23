@@ -143,12 +143,12 @@ fn greater_than_or_equal(x1: BigDecimal, x2: BigDecimal) -> Bool:
 fn max(x1: BigDecimal, x2: BigDecimal) -> BigDecimal:
     """Returns the maximum of x1 and x2."""
     if compare(x1, x2) >= 0:
-        return x1
-    return x2
+        return x1.copy()
+    return x2.copy()
 
 
 fn min(x1: BigDecimal, x2: BigDecimal) -> BigDecimal:
     """Returns the minimum of x1 and x2."""
     if compare(x1, x2) <= 0:
-        return x1
-    return x2
+        return x1.copy()
+    return x2.copy()

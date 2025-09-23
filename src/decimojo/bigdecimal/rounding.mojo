@@ -53,7 +53,7 @@ fn round(
     """
     var ndigits_to_remove = number.scale - ndigits
     if ndigits_to_remove == 0:
-        return number
+        return number.copy()
     if ndigits_to_remove < 0:
         # Add trailing zeros to the number
         return number.extend_precision(precision_diff=-ndigits_to_remove)
@@ -63,7 +63,7 @@ fn round(
             # If the number of digits to remove is greater than
             # the number of digits in the coefficient, return 0.
             return BigDecimal(
-                coefficient=BigUInt.ZERO,
+                coefficient=BigUInt.zero(),
                 scale=ndigits,
                 sign=number.sign,
             )
@@ -132,7 +132,7 @@ fn round_to_precision(
         number.coefficient = (
             number.coefficient.remove_trailing_digits_with_rounding(
                 ndigits=1,
-                rounding_mode=RoundingMode.ROUND_DOWN,
+                rounding_mode=RoundingMode.down(),
                 remove_extra_digit_due_to_rounding=False,
             )
         )

@@ -213,7 +213,7 @@ fn test_mathematical_relationships() raises:
     var a2 = Decimal128("10.5")
     var b2 = Decimal128("2.5")
     var floor_div2 = a2 // b2
-    var div_floored = (a2 / b2).round(0, RoundingMode.ROUND_DOWN)
+    var div_floored = (a2 / b2).round(0, RoundingMode.down())
     testing.assert_equal(
         String(floor_div2),
         String(div_floored),

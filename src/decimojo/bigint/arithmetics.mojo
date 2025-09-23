@@ -40,13 +40,13 @@ fn add(x1: BigInt, x2: BigInt) -> BigInt:
             len(x1.magnitude.words) == 1,
             "decimojo.bigint.arithmetics.add(): leading zero words in x1",
         )
-        return x2
+        return x2.copy()
     if x2.is_zero():
         debug_assert[assert_mode="none"](
             len(x2.magnitude.words) == 1,
             "decimojo.bigint.arithmetics.add(): leading zero words in x2",
         )
-        return x1
+        return x1.copy()
 
     # If signs are different, delegate to `subtract`
     if x1.sign != x2.sign:
@@ -94,7 +94,7 @@ fn subtract(x1: BigInt, x2: BigInt) -> BigInt:
             len(x2.magnitude.words) == 1,
             "decimojo.bigint.arithmetics.add(): leading zero words in x2",
         )
-        return x1
+        return x1.copy()
     # If the minuend is zero, return the negated subtrahend
     if x1.is_zero():
         debug_assert[assert_mode="none"](
@@ -117,7 +117,7 @@ fn subtract(x1: BigInt, x2: BigInt) -> BigInt:
     var sign: Bool
     if comparison_result > 0:  # |x1| > |x2|
         # Subtract smaller from larger
-        magnitude = x1.magnitude
+        magnitude = x1.magnitude.copy()
         decimojo.biguint.arithmetics.subtract_inplace_no_check(
             magnitude, x2.magnitude
         )
@@ -125,7 +125,7 @@ fn subtract(x1: BigInt, x2: BigInt) -> BigInt:
 
     else:  # |x1| < |x2|
         # Subtract larger from smaller and negate the result
-        magnitude = x2.magnitude
+        magnitude = x2.magnitude.copy()
         decimojo.biguint.arithmetics.subtract_inplace_no_check(
             magnitude, x1.magnitude
         )
@@ -154,7 +154,7 @@ fn negative(x: BigInt) -> BigInt:
         )
         return BigInt()
 
-    var result = x
+    var result = x.copy()
     result.sign = not result.sign
     return result^
 
@@ -171,7 +171,7 @@ fn absolute(x: BigInt) -> BigInt:
     if x.sign:
         return -x
     else:
-        return x
+        return x.copy()
 
 
 fn multiply(x1: BigInt, x2: BigInt) -> BigInt:

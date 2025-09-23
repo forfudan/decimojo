@@ -588,7 +588,7 @@ struct BigUInt(
 
         else:
             if value == 0:
-                return BigUInt.ZERO
+                return materialize[BigUInt.ZERO]()
 
             var sign = True if value < 0 else False
 
@@ -633,10 +633,10 @@ struct BigUInt(
         Returns:
             The BigUInt representation of the string.
         """
-        var coef: List[UInt8]
-        var scale: Int
-        var sign: Bool
-        coef, scale, sign = decimojo.str.parse_numeric_string(value)
+        _res = decimojo.str.parse_numeric_string(value)
+        var coef: List[UInt8] = _res[0].copy()
+        var scale: Int = _res[1].copy()
+        var sign: Bool = _res[2].copy()
 
         if (not ignore_sign) and sign:
             raise Error(
@@ -1071,7 +1071,7 @@ struct BigUInt(
     fn __rshift__(self, shift_amount: Int) -> Self:
         """Returns the result of floored divison by 2 to the power of `shift_amount`.
         """
-        var result = self
+        var result = self.copy()
         for _ in range(shift_amount):
             decimojo.biguint.arithmetics.floor_divide_inplace_by_2(result)
         return result^
@@ -1457,7 +1457,7 @@ struct BigUInt(
             )
 
         var result = Self(1)
-        var base = self
+        var base = self.copy()
         var exp = exponent
         while exp > 0:
             if exp % 2 == 1:
@@ -1465,7 +1465,7 @@ struct BigUInt(
             base = base * base
             exp //= 2
 
-        return result
+        return result^
 
     fn power(self, exponent: Self) raises -> Self:
         """Returns the result of raising this number to the power of `exponent`.
@@ -1851,7 +1851,7 @@ struct BigUInt(
                 )
             )
         if ndigits == 0:
-            return self
+            return self.copy()
         if ndigits > self.number_of_digits():
             raise Error(
                 ValueError(
@@ -1874,15 +1874,15 @@ struct BigUInt(
         )
         var round_up: Bool = False
 
-        if rounding_mode == RoundingMode.ROUND_DOWN:
+        if rounding_mode == RoundingMode.down():
             pass
-        elif rounding_mode == RoundingMode.ROUND_UP:
+        elif rounding_mode == RoundingMode.up():
             if self.number_of_trailing_zeros() < ndigits:
                 round_up = True
-        elif rounding_mode == RoundingMode.ROUND_HALF_UP:
+        elif rounding_mode == RoundingMode.half_up():
             if self.ith_digit(ndigits - 1) >= 5:
                 round_up = True
-        elif rounding_mode == RoundingMode.ROUND_HALF_EVEN:
+        elif rounding_mode == RoundingMode.half_even():
             var cut_off_digit = self.ith_digit(ndigits - 1)
             if cut_off_digit > 5:
                 round_up = True

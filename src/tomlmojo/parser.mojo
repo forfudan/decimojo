@@ -24,7 +24,7 @@ from collections import Dict
 from .tokenizer import Token, TokenType, Tokenizer
 
 
-struct TOMLValue(Copyable, Movable):
+struct TOMLValue(Copyable, ImplicitlyCopyable, Movable):
     """Represents a value in the TOML document."""
 
     var type: TOMLValueType
@@ -85,6 +85,15 @@ struct TOMLValue(Copyable, Movable):
         self.array_values = List[TOMLValue]()
         self.table_values = Dict[String, TOMLValue]()
 
+    fn __copyinit__(out self, other: Self):
+        self.type = other.type
+        self.string_value = other.string_value
+        self.int_value = other.int_value
+        self.float_value = other.float_value
+        self.bool_value = other.bool_value
+        self.array_values = other.array_values.copy()
+        self.table_values = other.table_values.copy()
+
     fn as_string(self) -> String:
         """Get the value as a string."""
         if self.type == TOMLValueType.STRING:
@@ -122,7 +131,7 @@ struct TOMLValue(Copyable, Movable):
             return False
 
 
-struct TOMLValueType(Copyable, Movable):
+struct TOMLValueType(Copyable, ImplicitlyCopyable, Movable):
     """Types of values in TOML."""
 
     # Aliases to mimic enum constants
@@ -259,7 +268,7 @@ struct TOMLParser:
     fn current_token(self) -> Token:
         """Get the current token."""
         if self.current_index < len(self.tokens):
-            return self.tokens[self.current_index]
+            return self.tokens[self.current_index].copy()
         # Return EOF token if we're past the end
         return Token(TokenType.EOF, "", 0, 0)
 
@@ -280,7 +289,7 @@ struct TOMLParser:
         self.advance()
 
         var value = self.parse_value()
-        return (key, value)
+        return (key^, value^)
 
     fn parse_value(mut self) raises -> TOMLValue:
         """Parse a TOML value."""
@@ -320,8 +329,8 @@ struct TOMLParser:
 
             var result = TOMLValue()
             result.type = TOMLValueType.ARRAY
-            result.array_values = array
-            return result
+            result.array_values = array^
+            return result^
 
         # Default to NULL value
         return TOMLValue()
@@ -352,15 +361,15 @@ struct TOMLParser:
 
         # Parse key-value pairs until we reach a new table or EOF
         while self.current_token().type == TokenType.KEY:
-            key, value = self.parse_key_value()
+            key, value = self.parse_key_value().copy()
             if key:
-                table_values[key] = value
+                table_values[key] = value^
 
             # Skip newline
             if self.current_token().type == TokenType.NEWLINE:
                 self.advance()
 
-        return (table_name, table_values)
+        return (table_name^, table_values^)
 
     fn parse(mut self) raises -> TOMLDocument:
         """Parse the tokens into a TOMLDocument."""
@@ -412,7 +421,7 @@ struct TOMLParser:
                     var value: TOMLValue
                     key, value = self.parse_key_value()
                     if key:
-                        table_values[key] = value
+                        table_values[key] = value^
 
                     # Skip newline
                     if self.current_token().type == TokenType.NEWLINE:
@@ -443,7 +452,7 @@ struct TOMLParser:
                 var value: TOMLValue
                 key, value = self.parse_key_value()
                 if key:
-                    document.root[key] = value
+                    document.root[key] = value^
 
                 # Skip newline
                 if self.current_token().type == TokenType.NEWLINE:
@@ -452,16 +461,16 @@ struct TOMLParser:
             elif token.type == TokenType.ARRAY_START:
                 var table_name: String
                 var table_values: Dict[String, TOMLValue]
-                table_name, table_values = self.parse_table()
+                table_name, table_values = self.parse_table()^
                 if table_name:
                     var table_value = TOMLValue()
                     table_value.type = TOMLValueType.TABLE
-                    table_value.table_values = table_values
-                    document.root[table_name] = table_value
+                    table_value.table_values = table_values^
+                    document.root[table_name^] = table_value^
             else:
                 self.advance()
 
-        return document
+        return document^
 
 
 fn parse_string(input: String) raises -> TOMLDocument:
