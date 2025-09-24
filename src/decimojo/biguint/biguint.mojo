@@ -633,10 +633,10 @@ struct BigUInt(
         Returns:
             The BigUInt representation of the string.
         """
-        _res = decimojo.str.parse_numeric_string(value)
-        var coef: List[UInt8] = _res[0].copy()
-        var scale: Int = _res[1].copy()
-        var sign: Bool = _res[2].copy()
+        _tuple = decimojo.str.parse_numeric_string(value)
+        var coef: List[UInt8] = _tuple[0].copy()
+        var scale: Int = _tuple[1].copy()
+        var sign: Bool = _tuple[2].copy()
 
         if (not ignore_sign) and sign:
             raise Error(

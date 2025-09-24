@@ -225,13 +225,13 @@ struct TOMLDocument(Copyable, Movable):
             table_name in self.root
             and self.root[table_name].type == TOMLValueType.TABLE
         ):
-            return self.root[table_name].table_values
+            return self.root[table_name].table_values.copy()
         return Dict[String, TOMLValue]()
 
     fn get_array(self, key: String) raises -> List[TOMLValue]:
         """Get an array from the document."""
         if key in self.root and self.root[key].type == TOMLValueType.ARRAY:
-            return self.root[key].array_values
+            return self.root[key].array_values.copy()
         return List[TOMLValue]()
 
     fn get_array_of_tables(
@@ -245,9 +245,9 @@ struct TOMLDocument(Copyable, Movable):
             if value.type == TOMLValueType.ARRAY:
                 for table_value in value.array_values:
                     if table_value.type == TOMLValueType.TABLE:
-                        result.append(table_value.table_values)
+                        result.append(table_value.table_values.copy())
 
-        return result
+        return result^
 
 
 struct TOMLParser:
@@ -262,7 +262,7 @@ struct TOMLParser:
         self.current_index = 0
 
     fn __init__(out self, tokens: List[Token]):
-        self.tokens = tokens
+        self.tokens = tokens.copy()
         self.current_index = 0
 
     fn current_token(self) -> Token:
@@ -383,13 +383,13 @@ struct TOMLParser:
                 continue
 
             elif token.type == TokenType.TABLE_START:
-                var table_name: String
-                var table_values: Dict[String, TOMLValue]
-                table_name, table_values = self.parse_table()
+                _tuple = self.parse_table()
+                var table_name: String = _tuple[0].copy()
+                var table_values: Dict[String, TOMLValue] = _tuple[1].copy()
                 if table_name:
                     var table_value = TOMLValue()
                     table_value.type = TOMLValueType.TABLE
-                    table_value.table_values = table_values
+                    table_value.table_values = table_values^
                     document.root[table_name] = table_value
 
             elif token.type == TokenType.ARRAY_OF_TABLES_START:
@@ -430,7 +430,7 @@ struct TOMLParser:
                 # Create table value
                 var table_value = TOMLValue()
                 table_value.type = TOMLValueType.TABLE
-                table_value.table_values = table_values
+                table_value.table_values = table_values^
 
                 # Add to array of tables
                 if (
@@ -459,9 +459,9 @@ struct TOMLParser:
                     self.advance()
 
             elif token.type == TokenType.ARRAY_START:
-                var table_name: String
-                var table_values: Dict[String, TOMLValue]
-                table_name, table_values = self.parse_table()^
+                _tuple = self.parse_table()
+                var table_name: String = _tuple[0].copy()
+                var table_values: Dict[String, TOMLValue] = _tuple[1].copy()
                 if table_name:
                     var table_value = TOMLValue()
                     table_value.type = TOMLValueType.TABLE

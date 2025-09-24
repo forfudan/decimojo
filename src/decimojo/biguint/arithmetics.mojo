@@ -2343,7 +2343,7 @@ fn floor_divide_burnikel_ziegler(
             # The first iteration, we can use the slize of normalized_a
             # TODO: Optimize this when Mojo support move values of tuples
             # https://github.com/modular/modular/issues/5330
-            _res = floor_divide_slices_two_by_one(
+            _tuple = floor_divide_slices_two_by_one(
                 normalized_a,
                 normalized_b,
                 bounds_a=((t - 2) * n, len(normalized_a.words)),
@@ -2351,10 +2351,10 @@ fn floor_divide_burnikel_ziegler(
                 n=n,
                 cut_off=cut_off,
             )
-            q = _res[0].copy()
-            z = _res[1].copy()
+            q = _tuple[0].copy()
+            z = _tuple[1].copy()
         else:
-            _res = floor_divide_slices_two_by_one(
+            _tuple = floor_divide_slices_two_by_one(
                 z,
                 normalized_b,
                 bounds_a=(0, len(z.words)),
@@ -2362,8 +2362,8 @@ fn floor_divide_burnikel_ziegler(
                 n=n,
                 cut_off=cut_off,
             )
-            q_i = _res[0].copy()
-            z = _res[1].copy()
+            q_i = _tuple[0].copy()
+            z = _tuple[1].copy()
             decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
                 q, n
             )
@@ -2423,17 +2423,17 @@ fn floor_divide_two_by_one(
         var b0 = BigUInt.from_slice(b, bounds=(0, n // 2))
         var b1 = BigUInt.from_slice(b, bounds=(n // 2, n))
 
-        _res = floor_divide_three_by_two(
+        _tuple = floor_divide_three_by_two(
             a3, a2, a1, b1, b0, n // 2, cut_off
         )  # q is q1
-        var q = _res[0].copy()
-        var r = _res[1].copy()
+        var q = _tuple[0].copy()
+        var r = _tuple[1].copy()
 
         var r0 = BigUInt.from_slice(r, bounds=(0, n // 2))
         var r1 = BigUInt.from_slice(r, bounds=(n // 2, n))
-        _res = floor_divide_three_by_two(r1, r0, a0, b1, b0, n // 2, cut_off)
-        var q0 = _res[0].copy()  # q0
-        var s = _res[1].copy()  # s is the final remainder
+        _tuple = floor_divide_three_by_two(r1, r0, a0, b1, b0, n // 2, cut_off)
+        var q0 = _tuple[0].copy()  # q0
+        var s = _tuple[1].copy()  # s is the final remainder
 
         # q -> q1q0
         decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
@@ -2485,9 +2485,9 @@ fn floor_divide_three_by_two(
             a2a1, n
         )
         a2a1 += a1
-    _res = floor_divide_two_by_one(a2a1, b1, n, cut_off)
-    var q = _res[0].copy()
-    var c = _res[1].copy()  # c is the carry
+    _tuple = floor_divide_two_by_one(a2a1, b1, n, cut_off)
+    var q = _tuple[0].copy()
+    var c = _tuple[1].copy()  # c is the carry
     var d = q * b0
     decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(c, n)
     var r = c + a0
@@ -2578,11 +2578,11 @@ fn floor_divide_slices_two_by_one(
         # We just need to use three-by-two division once: a2a1a0 // b1b0
         # Note that the condition must be short-circuited to avoid slicing
         # an empty BigUInt.
-        _res = floor_divide_slices_three_by_two(
+        _tuple = floor_divide_slices_three_by_two(
             a, b, bounds_a, bounds_b, n // 2, cut_off
         )
-        var q = _res[0].copy()
-        var r = _res[1].copy()
+        var q = _tuple[0].copy()
+        var r = _tuple[1].copy()
         return (q^, r^)
 
     else:
@@ -2590,19 +2590,19 @@ fn floor_divide_slices_two_by_one(
 
         # We use the most significant three parts of the dividend
         # a3a2a1 // b1b0
-        _res = floor_divide_slices_three_by_two(
+        _tuple = floor_divide_slices_three_by_two(
             a, b, bounds_a1a3, bounds_b, n // 2, cut_off
         )
-        var q = _res[0].copy()  # q is q1
-        var r = _res[1].copy()  # r is the carry
+        var q = _tuple[0].copy()  # q is q1
+        var r = _tuple[1].copy()  # r is the carry
 
         multiply_inplace_by_power_of_billion(r, n // 2)
         add_inplace_by_slice(r, a, (bounds_a[0], bounds_a[0] + n // 2))
-        _res = floor_divide_slices_three_by_two(
+        _tuple = floor_divide_slices_three_by_two(
             r, b, (0, len(r.words)), bounds_b, n // 2, cut_off
         )
-        var q0 = _res[0].copy()  # q0
-        var s = _res[1].copy()  # s is the final remainder
+        var q0 = _tuple[0].copy()  # q0
+        var s = _tuple[1].copy()  # s is the final remainder
 
         # q -> q1q0
         decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
@@ -2670,11 +2670,11 @@ fn floor_divide_slices_three_by_two(
     var bounds_b1 = (bounds_b[0] + n, bounds_b[1])
     var bounds_b0 = (bounds_b[0], bounds_b[0] + n)
 
-    _res = floor_divide_slices_two_by_one(
+    _tuple = floor_divide_slices_two_by_one(
         a, b, bounds_a2a1, bounds_b1, n, cut_off
     )
-    q = _res[0].copy()
-    c = _res[1].copy()  # c is the carry
+    q = _tuple[0].copy()
+    c = _tuple[1].copy()  # c is the carry
 
     var d = multiply_slices(q, b, (0, len(q.words)), bounds_b0)
     decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(c, n)

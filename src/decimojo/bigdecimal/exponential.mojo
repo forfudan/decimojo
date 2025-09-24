@@ -231,9 +231,9 @@ fn root(x: BigDecimal, n: BigDecimal, precision: Int) raises -> BigDecimal:
     if not n.sign:
         if n.is_integer():
             return integer_root(x, n, precision)
-        _res = is_integer_reciprocal_and_return(n)
-        var is_integer_reciprocal: Bool = _res[0].copy()
-        var integer_reciprocal: BigDecimal = _res[1].copy()
+        _tuple = is_integer_reciprocal_and_return(n)
+        var is_integer_reciprocal: Bool = _tuple[0].copy()
+        var integer_reciprocal: BigDecimal = _tuple[1].copy()
         if is_integer_reciprocal:
             # If m = 1/n is an integer, use integer_root
             return integer_power(x, integer_reciprocal, precision)
