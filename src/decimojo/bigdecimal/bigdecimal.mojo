@@ -309,9 +309,9 @@ struct BigDecimal(
             The BigDecimal representation of the string.
         """
         _tuple = decimojo.str.parse_numeric_string(value)
-        var coef: List[UInt8] = _tuple[0].copy()
-        var scale: Int = _tuple[1].copy()
-        var sign: Bool = _tuple[2].copy()
+        var ref coef: List[UInt8] = _tuple[0]
+        var scale: Int = _tuple[1]
+        var sign: Bool = _tuple[2]
 
         var number_of_digits = len(coef)
         var number_of_words = number_of_digits // 9

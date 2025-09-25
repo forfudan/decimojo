@@ -3,7 +3,6 @@ Tests for the utility functions in the decimojo.utility module.
 """
 
 from testing import assert_equal, assert_true
-import max
 
 from decimojo.prelude import dm, Decimal128, RoundingMode
 from decimojo.decimal128.utility import (

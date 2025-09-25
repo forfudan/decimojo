@@ -307,7 +307,7 @@ struct BigInt(
             The BigInt representation of the string.
         """
         _tuple = decimojo.str.parse_numeric_string(value)
-        var coef: List[UInt8] = _tuple[0].copy()
+        var ref coef: List[UInt8] = _tuple[0]
         var sign: Bool = _tuple[2]
 
         # Check if the number is zero
