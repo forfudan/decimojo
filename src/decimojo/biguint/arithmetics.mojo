@@ -106,7 +106,7 @@ fn negative(x: BigUInt) raises -> BigUInt:
                 previous_error=None,
             )
         )
-    return BigUInt.ZERO  # Return zero
+    return BigUInt.zero()  # Return zero
 
 
 fn absolute(x: BigUInt) -> BigUInt:
@@ -118,7 +118,7 @@ fn absolute(x: BigUInt) -> BigUInt:
     Returns:
         A new BigUInt containing the absolute value of x.
     """
-    return x
+    return x.copy()
 
 
 # ===----------------------------------------------------------------------=== #
@@ -154,25 +154,25 @@ fn add(x: BigUInt, y: BigUInt) -> BigUInt:
         debug_assert[assert_mode="none"](
             len(x.words) == 1, "add(): leading zero words"
         )
-        return y
+        return y.copy()
     if y.is_zero():
         debug_assert[assert_mode="none"](
             len(y.words) == 1, "add(): leading zero words"
         )
-        return x
+        return x.copy()
 
     if len(x.words) == 1:
         if len(y.words) == 1:
             # If both numbers are single-word, we can handle them with UInt32
             return BigUInt.from_uint32(x.words[0] + y.words[0])
         else:  # If x is single-word, we can handle it with UInt32
-            var result = y
+            var result = y.copy()
             add_inplace_by_uint32(result, x.words[0])
             return result^
 
     if len(y.words) == 1:
         # If y is single-word, we can handle it with UInt32
-        var result = x
+        var result = x.copy()
         add_inplace_by_uint32(result, y.words[0])
         return result^
 
@@ -351,7 +351,7 @@ fn add_inplace(mut x: BigUInt, y: BigUInt) -> None:
         debug_assert[assert_mode="none"](
             len(x.words) == 1, "add_inplace(): leading zero words"
         )
-        x.words = y.words  # Copy the words from y
+        x.words = y.words.copy()  # Copy the words from y
         return
     if y.is_zero():
         debug_assert[assert_mode="none"](
@@ -504,13 +504,13 @@ fn subtract_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
         debug_assert[assert_mode="none"](
             len(y.words) == 1, "subtract_school(): leading zero words"
         )
-        return x
+        return x.copy()
 
     # We need to determine which number has the larger magnitude
     var comparison_result = x.compare(y)
     if comparison_result == 0:
         # |x| = |y|
-        return BigUInt.ZERO  # Return zero
+        return BigUInt.zero()  # Return zero
     if comparison_result < 0:
         raise Error(
             OverflowError(
@@ -600,13 +600,13 @@ fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
         debug_assert[assert_mode="none"](
             len(y.words) == 1, "subtract_simd(): leading zero words"
         )
-        return x
+        return x.copy()
 
     # We need to determine which number has the larger magnitude
     var comparison_result = x.compare(y)
     if comparison_result == 0:
         # |x| = |y|
-        return BigUInt.ZERO  # Return zero
+        return BigUInt.zero()  # Return zero
     if comparison_result < 0:
         raise Error(
             OverflowError(
@@ -829,22 +829,22 @@ fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
     if len(x.words) == 1:
         var x_word = x.words[0]
         if x_word == 0:
-            return BigUInt.ZERO
+            return BigUInt.zero()
         elif x_word == 1:
-            return y
+            return y.copy()
         else:
-            var result = y
+            var result = y.copy()
             multiply_inplace_by_uint32(result, x_word)
             return result^
 
     if len(y.words) == 1:
         var y_word = y.words[0]
         if y_word == 0:
-            return BigUInt.ZERO
+            return BigUInt.zero()
         if y_word == 1:
-            return x
+            return x.copy()
         else:
-            var result = x
+            var result = x.copy()
             multiply_inplace_by_uint32(result, y_word)
             return result^
 
@@ -933,7 +933,7 @@ fn multiply_slices_school(
     if n_words_x_slice == 1:
         var x_word = x.words[bounds_x[0]]
         if x_word == 0:
-            return BigUInt.ZERO
+            return BigUInt.zero()
         elif x_word == 1:
             return BigUInt.from_slice(y, (bounds_y[0], bounds_y[1]))
         else:
@@ -943,7 +943,7 @@ fn multiply_slices_school(
     if n_words_y_slice == 1:
         var y_word = y.words[bounds_y[0]]
         if y_word == 0:
-            return BigUInt.ZERO
+            return BigUInt.zero()
         elif y_word == 1:
             return BigUInt.from_slice(x, (bounds_x[0], bounds_x[1]))
         else:
@@ -1027,7 +1027,7 @@ fn multiply_slices_karatsuba(
     if x.is_zero_in_bounds(bounds=bounds_x) or y.is_zero_in_bounds(
         bounds=bounds_y
     ):
-        return BigUInt.ZERO
+        return BigUInt.zero()
 
     # Number of words in the slice 1: end_x - start_x
     # Number of words in the slice 2: end_y - start_y
@@ -1296,13 +1296,13 @@ fn multiply_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
     )
 
     if n <= 0:
-        return x
+        return x.copy()
 
     if x.is_zero():
         debug_assert[assert_mode="none"](
             len(x.words) == 1, "multiply_by_power_of_ten(): leading zero words"
         )
-        return BigUInt.ZERO  # Multiplying zero by anything is still zero
+        return BigUInt.zero()  # Multiplying zero by anything is still zero
 
     var number_of_zero_words = n // 9
     var number_of_remaining_digits = n % 9
@@ -1462,7 +1462,7 @@ fn multiply_by_power_of_billion(x: BigUInt, n: Int) -> BigUInt:
     )
 
     if n <= 0:
-        return x  # No change needed
+        return x.copy()  # No change needed
 
     if x.is_zero():
         debug_assert[assert_mode="none"](
@@ -1471,7 +1471,7 @@ fn multiply_by_power_of_billion(x: BigUInt, n: Int) -> BigUInt:
         )
         # If x is zero, we can just return
         # No need to add zeros, it will still be zero
-        return BigUInt.ZERO
+        return BigUInt.zero()
 
     var res = BigUInt(unsafe_uninit_length=len(x.words) + n)
     # Fill the first n words with zeros
@@ -1594,22 +1594,22 @@ fn floor_divide(x: BigUInt, y: BigUInt) raises -> BigUInt:
             len(x.words) == 1,
             "biguint.arithmetics.floor_divide(): x has leading zero words",
         )
-        return BigUInt.ZERO  # Return zero
+        return BigUInt.zero()  # Return zero
 
     # CASE: x is not greater than y
     var comparison_result: Int8 = x.compare(y)
     # SUB-CASE: dividend < divisor
     if comparison_result < 0:
-        return BigUInt.ZERO  # Return zero
+        return BigUInt.zero()  # Return zero
     # SUB-CASE: dividend == divisor
     if comparison_result == 0:
-        return BigUInt.ONE  # Return one
+        return BigUInt.one()  # Return one
 
     # CASE: y is single word
     if len(y.words) == 1:
         # SUB-CASE: Division by one
         if y.words[0] == 1:
-            return x
+            return x.copy()
         # SUB-CASE: Single word // single word
         if len(x.words) == 1:
             var result = BigUInt.from_uint32_unsafe(x.words[0] // y.words[0])
@@ -1690,22 +1690,22 @@ fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
             len(x.words) == 1,
             "biguint.arithmetics.floor_divide(): x has leading zero words",
         )
-        return BigUInt.ZERO  # Return zero
+        return BigUInt.zero()  # Return zero
 
     # CASE: x is not greater than y
     var comparison_result: Int8 = x.compare(y)
     # SUB-CASE: dividend < divisor
     if comparison_result < 0:
-        return BigUInt.ZERO  # Return zero
+        return BigUInt.zero()  # Return zero
     # SUB-CASE: dividend == divisor
     if comparison_result == 0:
-        return BigUInt.ONE
+        return BigUInt.one()
 
     # CASE: y is single word
     if len(y.words) == 1:
         # SUB-CASE: Division by one
         if y.words[0] == 1:
-            return x
+            return x.copy()
         # SUB-CASE: Single word // single word
         if len(x.words) == 1:
             var result = BigUInt.from_uint32_unsafe(x.words[0] // y.words[0])
@@ -1729,7 +1729,7 @@ fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
     # Use the schoolbook division algorithm
     # Initialize result and remainder
     var result = BigUInt(uninitialized_capacity=len(x.words))
-    var remainder = x
+    var remainder = x.copy()
 
     # Shift and initialize
     var n_words_diff = len(remainder.words) - len(y.words)
@@ -1746,7 +1746,7 @@ fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
         quotient = floor_divide_estimate_quotient(remainder, y, index_of_word)
 
         # Calculate trial product
-        trial_product = y
+        trial_product = y.copy()
         multiply_inplace_by_uint32(trial_product, quotient)
         multiply_inplace_by_power_of_billion(trial_product, index_of_word)
 
@@ -2124,17 +2124,17 @@ fn floor_divide_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
     )
 
     if n <= 0:
-        return x
+        return x.copy()
 
     # First remove the last words (10^9)
     var result: BigUInt
     if len(x.words) == 1:
-        result = x
+        result = x.copy()
     else:
         var word_shift = n // 9
         # If we need to drop more words than exists, result is zero
         if word_shift >= len(x.words):
-            return BigUInt.ZERO
+            return BigUInt.zero()
         # Create result with the remaining words
         result = BigUInt(uninitialized_capacity=len(x.words) - word_shift)
         for i in range(word_shift, len(x.words)):
@@ -2202,12 +2202,12 @@ fn floor_divide_by_power_of_billion(x: BigUInt, n: Int) -> BigUInt:
     )
 
     if n <= 0:
-        return x
+        return x.copy()
 
     var n_words_of_result = len(x.words) - n
     if n_words_of_result <= 0:
         # If we need to drop more words than exists, result is zero
-        return BigUInt.ZERO
+        return BigUInt.zero()
     else:
         var result = BigUInt(unsafe_uninit_length=n_words_of_result)
         memcpy(
@@ -2260,8 +2260,8 @@ fn floor_divide_burnikel_ziegler(
     # (1) it is of the form j*2^k and
     # (2) the most significant word is at least 500_000_000.
 
-    var normalized_b = b
-    var normalized_a = a
+    var normalized_b = b.copy()
+    var normalized_a = a.copy()
     var ndigits_to_shift: Int
 
     if normalized_b.words[-1] < 500_000_000:
@@ -2326,8 +2326,8 @@ fn floor_divide_burnikel_ziegler(
         if normalized_a.words[-1] >= 500_000_000:
             t += 1
 
-    var z = BigUInt.ZERO  # Remainder of the division
-    var q = BigUInt.ZERO
+    var z = BigUInt.zero()  # Remainder of the division
+    var q = BigUInt.zero()
     var q_i: BigUInt
 
     for i in range(t - 2, -1, -1):
@@ -2341,7 +2341,9 @@ fn floor_divide_burnikel_ziegler(
 
         if i == t - 2:
             # The first iteration, we can use the slize of normalized_a
-            q, z = floor_divide_slices_two_by_one(
+            # TODO: Refine this when Mojo support move values of unpacked tuples
+            # https://github.com/modular/modular/issues/5330
+            _tuple = floor_divide_slices_two_by_one(
                 normalized_a,
                 normalized_b,
                 bounds_a=((t - 2) * n, len(normalized_a.words)),
@@ -2349,8 +2351,10 @@ fn floor_divide_burnikel_ziegler(
                 n=n,
                 cut_off=cut_off,
             )
+            q = _tuple[0].copy()
+            z = _tuple[1].copy()
         else:
-            q_i, z = floor_divide_slices_two_by_one(
+            _tuple = floor_divide_slices_two_by_one(
                 z,
                 normalized_b,
                 bounds_a=(0, len(z.words)),
@@ -2358,6 +2362,8 @@ fn floor_divide_burnikel_ziegler(
                 n=n,
                 cut_off=cut_off,
             )
+            q_i = _tuple[0].copy()
+            z = _tuple[1].copy()
             decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
                 q, n
             )
@@ -2417,14 +2423,19 @@ fn floor_divide_two_by_one(
         var b0 = BigUInt.from_slice(b, bounds=(0, n // 2))
         var b1 = BigUInt.from_slice(b, bounds=(n // 2, n))
 
-        var q, r = floor_divide_three_by_two(
+        # TODO: Refine this when Mojo support move values of unpacked tuples
+        _tuple = floor_divide_three_by_two(
             a3, a2, a1, b1, b0, n // 2, cut_off
         )  # q is q1
+        var q = _tuple[0].copy()
+        var ref r = _tuple[1]
+
         var r0 = BigUInt.from_slice(r, bounds=(0, n // 2))
         var r1 = BigUInt.from_slice(r, bounds=(n // 2, n))
-        var q0, s = floor_divide_three_by_two(
-            r1, r0, a0, b1, b0, n // 2, cut_off
-        )
+        # TODO: Refine this when Mojo support move values of unpacked tuples
+        _tuple = floor_divide_three_by_two(r1, r0, a0, b1, b0, n // 2, cut_off)
+        var ref q0 = _tuple[0]  # q0
+        var s = _tuple[1].copy()  # s is the final remainder
 
         # q -> q1q0
         decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
@@ -2469,26 +2480,29 @@ fn floor_divide_three_by_two(
             len(a2.words) == 1,
             "floor_divide_three_by_two(): leading zero words",
         )
-        a2a1 = a1
+        a2a1 = a1.copy()
     else:
-        a2a1 = a2
+        a2a1 = a2.copy()
         decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
             a2a1, n
         )
         a2a1 += a1
-    var q, c = floor_divide_two_by_one(a2a1, b1, n, cut_off)
+    # TODO: Refine this when Mojo support move values of unpacked tuples
+    _tuple = floor_divide_two_by_one(a2a1, b1, n, cut_off)
+    var q = _tuple[0].copy()
+    var ref c = _tuple[1]  # c is the carry
     var d = q * b0
     decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(c, n)
     var r = c + a0
 
     if r < d:
-        var b = b1
+        var b = b1.copy()
         decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(b, n)
         b += b0
-        q -= BigUInt.ONE
+        q -= BigUInt.one()
         r += b
         if r < d:
-            q -= BigUInt.ONE
+            q -= BigUInt.one()
             r += b
 
     r -= d
@@ -2567,25 +2581,30 @@ fn floor_divide_slices_two_by_one(
         # We just need to use three-by-two division once: a2a1a0 // b1b0
         # Note that the condition must be short-circuited to avoid slicing
         # an empty BigUInt.
-        var q, r = floor_divide_slices_three_by_two(
+        _tuple = floor_divide_slices_three_by_two(
             a, b, bounds_a, bounds_b, n // 2, cut_off
         )
-        return (q^, r^)
+        # _tuple = (q, r)
+        return _tuple^
 
     else:
         var bounds_a1a3 = (bounds_a[0] + n // 2, bounds_a[1])
 
         # We use the most significant three parts of the dividend
         # a3a2a1 // b1b0
-        var q, r = floor_divide_slices_three_by_two(
+        _tuple = floor_divide_slices_three_by_two(
             a, b, bounds_a1a3, bounds_b, n // 2, cut_off
         )
+        var q = _tuple[0].copy()  # q is q1
+        var ref r = _tuple[1]  # r is the carry
 
         multiply_inplace_by_power_of_billion(r, n // 2)
         add_inplace_by_slice(r, a, (bounds_a[0], bounds_a[0] + n // 2))
-        var q0, s = floor_divide_slices_three_by_two(
+        _tuple = floor_divide_slices_three_by_two(
             r, b, (0, len(r.words)), bounds_b, n // 2, cut_off
         )
+        var ref q0 = _tuple[0]  # q0
+        var s = _tuple[1].copy()  # s is the final remainder
 
         # q -> q1q0
         decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(
@@ -2640,10 +2659,10 @@ fn floor_divide_slices_three_by_two(
         if a.words[bounds_a[1] - 1] >= b.words[bounds_b[1] - 1]:
             var r = BigUInt.from_slice(a, (bounds_a[0], bounds_a[1]))
             subtract_inplace(r, BigUInt.from_slice(b, bounds_b))
-            return (BigUInt.ONE, r^)
+            return (BigUInt.one(), r^)
         else:
             return (
-                BigUInt.ZERO,
+                BigUInt.zero(),
                 BigUInt.from_slice(a, bounds_a),
             )
 
@@ -2653,19 +2672,22 @@ fn floor_divide_slices_three_by_two(
     var bounds_b1 = (bounds_b[0] + n, bounds_b[1])
     var bounds_b0 = (bounds_b[0], bounds_b[0] + n)
 
-    q, c = floor_divide_slices_two_by_one(
+    _tuple = floor_divide_slices_two_by_one(
         a, b, bounds_a2a1, bounds_b1, n, cut_off
     )
+    var q = _tuple[0].copy()
+    var ref c = _tuple[1]  # c is the carry
+
     var d = multiply_slices(q, b, (0, len(q.words)), bounds_b0)
     decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(c, n)
     var r = add_slices(c, a, bounds_x=(0, len(c.words)), bounds_y=bounds_a0)
 
     if r < d:
-        q -= BigUInt.ONE
+        q -= BigUInt.one()
         # r = r + b
         add_inplace_by_slice(r, b, bounds_y=bounds_b)
         if r < d:
-            q -= BigUInt.ONE
+            q -= BigUInt.one()
             # r = r + b
             add_inplace_by_slice(r, b, bounds_y=bounds_b)
 
@@ -2855,15 +2877,15 @@ fn floor_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         debug_assert[assert_mode="none"](
             len(x1.words) == 1, "truncate_modulo(): leading zero words"
         )
-        return BigUInt.ZERO  # Return zero
+        return BigUInt.zero()  # Return zero
 
     # CASE: Divisor is one - no remainder
     if x2.is_one():
-        return BigUInt.ZERO  # Always divisible with no remainder
+        return BigUInt.zero()  # Always divisible with no remainder
 
     # CASE: |dividend| < |divisor| - the remainder is the dividend itself
     if x1.compare(x2) < 0:
-        return x1
+        return x1.copy()
 
     # Calculate quotient with truncation
     var quotient: BigUInt
@@ -2952,15 +2974,15 @@ fn ceil_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         debug_assert[assert_mode="none"](
             len(x1.words) == 1, "ceil_modulo(): leading zero words"
         )
-        return BigUInt.ZERO  # Return zero
+        return BigUInt.zero()  # Return zero
 
     # CASE: Divisor is one - no remainder
     if x2.is_one():
-        return BigUInt.ZERO  # Always divisible with no remainder
+        return BigUInt.zero()  # Always divisible with no remainder
 
     # CASE: |dividend| < |divisor| - the remainder is the dividend itself
     if x1.compare(x2) < 0:
-        return x1
+        return x1.copy()
 
     # Calculate quotient with truncation
     var quotient = floor_divide(x1, x2)
@@ -2971,7 +2993,7 @@ fn ceil_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         debug_assert[assert_mode="none"](
             len(remainder.words) == 1, "ceil_modulo(): leading zero words"
         )
-        return BigUInt.ZERO  # No remainder
+        return BigUInt.zero()  # No remainder
     else:
         return subtract(x2, remainder)
 
@@ -3189,7 +3211,7 @@ fn power_of_10(n: Int) raises -> BigUInt:
         )
 
     if n == 0:
-        return BigUInt.ONE
+        return BigUInt.one()
 
     # Handle small powers directly
     if n < 9:
@@ -3202,7 +3224,7 @@ fn power_of_10(n: Int) raises -> BigUInt:
     var words = n // 9
     var remainder = n % 9
 
-    var result = BigUInt.ZERO
+    var result = BigUInt.zero()
 
     # Add leading zeros for full power-of-billion words
     for _ in range(words):

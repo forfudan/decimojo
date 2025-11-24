@@ -109,7 +109,7 @@ fn compare_absolute(x: Decimal128, y: Decimal128) -> Int8:
     if x_scale == y_scale and x_coef == y_coef:
         return 0
     if x_scale == y_scale:
-        return (Int8(x_coef > y_coef)) - (Int8(x_coef < y_coef))
+        return Int8((Int(x_coef > y_coef)) - (Int(x_coef < y_coef)))
 
     # CASE: The scales are different
     # Compare the integral part first

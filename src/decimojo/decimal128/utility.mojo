@@ -208,7 +208,7 @@ fn sqrt(x: UInt128) -> UInt128:
 
     var r: UInt128 = 0
 
-    for p in range(sys.bitwidthof[UInt128]() // 2 - 1, -1, -1):
+    for p in range(sys.bit_width_of[UInt128]() // 2 - 1, -1, -1):
         var new_bit = UInt128(1) << p
         var would_be = r | new_bit
         var squared = would_be * would_be
@@ -333,17 +333,17 @@ fn round_to_keep_first_n_digits[
         var truncated_value = value // divisor
         var remainder = value % divisor
 
-        # If RoundingMode is ROUND_DOWN, just truncate the value
-        if rounding_mode == RoundingMode.ROUND_DOWN:
+        # If RoundingMode is down(), just truncate the value
+        if rounding_mode == RoundingMode.down():
             pass
 
-        # If RoundingMode is ROUND_UP, round up the value if remainder is greater than 0
-        elif rounding_mode == RoundingMode.ROUND_UP:
+        # If RoundingMode is up(), round up the value if remainder is greater than 0
+        elif rounding_mode == RoundingMode.up():
             if remainder > 0:
                 truncated_value += 1
 
-        # If RoundingMode is ROUND_HALF_UP, round up the value if remainder is greater than 5
-        elif rounding_mode == RoundingMode.ROUND_HALF_UP:
+        # If RoundingMode is half_up(), round up the value if remainder is greater than 5
+        elif rounding_mode == RoundingMode.half_up():
             var cutoff_value = 5 * power_of_10[dtype](ndigits_to_remove - 1)
             if remainder >= cutoff_value:
                 truncated_value += 1

@@ -81,20 +81,20 @@ fn power(
                 " base)"
             )
         else:
-            return BigDecimal(BigUInt.ZERO, 0, False)
+            return BigDecimal(BigUInt.zero(), 0, False)
 
     if exponent.coefficient.is_zero():
-        return BigDecimal(BigUInt.ONE, 0, False)  # x^0 = 1
+        return BigDecimal(BigUInt.one(), 0, False)  # x^0 = 1
 
-    if base == BigDecimal(BigUInt.ONE, 0, False):
-        return BigDecimal(BigUInt.ONE, 0, False)  # 1^y = 1
+    if base == BigDecimal(BigUInt.one(), 0, False):
+        return BigDecimal(BigUInt.one(), 0, False)  # 1^y = 1
 
-    if exponent == BigDecimal(BigUInt.ONE, 0, False):
+    if exponent == BigDecimal(BigUInt.one(), 0, False):
         # return base  # x^1 = x
-        var result = base
+        var result = base.copy()
         result.round_to_precision(
             precision,
-            rounding_mode=RoundingMode.ROUND_HALF_EVEN,
+            rounding_mode=RoundingMode.half_even(),
             remove_extra_digit_due_to_rounding=True,
             fill_zeros_to_precision=False,
         )
@@ -124,7 +124,7 @@ fn power(
 
     exp_result.round_to_precision(
         precision,
-        rounding_mode=RoundingMode.ROUND_HALF_EVEN,
+        rounding_mode=RoundingMode.half_even(),
         remove_extra_digit_due_to_rounding=True,
         fill_zeros_to_precision=False,
     )
@@ -152,25 +152,25 @@ fn integer_power(
             abs_exp.scale
         )
     elif abs_exp.scale == 0:
-        exp_value = abs_exp.coefficient
+        exp_value = abs_exp.coefficient.copy()
     else:
         exp_value = abs_exp.coefficient.multiply_by_power_of_ten(-abs_exp.scale)
 
-    var result = BigDecimal(BigUInt.ONE, 0, False)
-    var current_power = base
+    var result = BigDecimal(BigUInt.one(), 0, False)
+    var current_power = base.copy()
 
     # Handle negative exponent: result will be 1/positive_power
     var is_negative_exponent = exponent.sign
 
     # Binary exponentiation algorithm: x^n = (x^2)^(n/2) if n is even
-    while exp_value > BigUInt.ZERO:
+    while exp_value > BigUInt.zero():
         if exp_value.words[0] % 2 == 1:
             # If current bit is set, multiply result by current power
             result = result * current_power
             # Round to avoid coefficient explosion
             result.round_to_precision(
                 working_precision,
-                rounding_mode=RoundingMode.ROUND_DOWN,
+                rounding_mode=RoundingMode.down(),
                 remove_extra_digit_due_to_rounding=False,
                 fill_zeros_to_precision=False,
             )
@@ -179,7 +179,7 @@ fn integer_power(
         # Round to avoid coefficient explosion
         current_power.round_to_precision(
             working_precision,
-            rounding_mode=RoundingMode.ROUND_DOWN,
+            rounding_mode=RoundingMode.down(),
             remove_extra_digit_due_to_rounding=False,
             fill_zeros_to_precision=False,
         )
@@ -188,13 +188,13 @@ fn integer_power(
 
     # For negative exponents, compute reciprocal
     if is_negative_exponent:
-        result = BigDecimal(BigUInt.ONE, 0, False).true_divide(
+        result = BigDecimal(BigUInt.one(), 0, False).true_divide(
             result, working_precision
         )
 
     result.round_to_precision(
         precision,
-        rounding_mode=RoundingMode.ROUND_HALF_EVEN,
+        rounding_mode=RoundingMode.half_even(),
         remove_extra_digit_due_to_rounding=False,
         fill_zeros_to_precision=False,
     )
@@ -231,11 +231,9 @@ fn root(x: BigDecimal, n: BigDecimal, precision: Int) raises -> BigDecimal:
     if not n.sign:
         if n.is_integer():
             return integer_root(x, n, precision)
-        var is_integer_reciprocal: Bool
-        var integer_reciprocal: BigDecimal
-        is_integer_reciprocal, integer_reciprocal = (
-            is_integer_reciprocal_and_return(n)
-        )
+        _tuple = is_integer_reciprocal_and_return(n)
+        var is_integer_reciprocal: Bool = _tuple[0]
+        var ref integer_reciprocal: BigDecimal = _tuple[1]
         if is_integer_reciprocal:
             # If m = 1/n is an integer, use integer_root
             return integer_power(x, integer_reciprocal, precision)
@@ -243,17 +241,17 @@ fn root(x: BigDecimal, n: BigDecimal, precision: Int) raises -> BigDecimal:
     # Handle negative n as 1/(x^(1/|n|))
     if n.sign:
         var positive_root = root(x, -n, working_precision)
-        var result = BigDecimal(BigUInt.ONE, 0, False).true_divide(
+        var result = BigDecimal(BigUInt.one(), 0, False).true_divide(
             positive_root, precision
         )
         return result^
 
     # Handle special cases for x
     if x.coefficient.is_zero():
-        return BigDecimal(BigUInt.ZERO, 0, False)
+        return BigDecimal(BigUInt.zero(), 0, False)
 
     if x.is_one():
-        return BigDecimal(BigUInt.ONE, 0, False)
+        return BigDecimal(BigUInt.one(), 0, False)
 
     # Check if x is negative - only odd integer roots of negative numbers are defined
     if x.sign:
@@ -279,7 +277,7 @@ fn root(x: BigDecimal, n: BigDecimal, precision: Int) raises -> BigDecimal:
 
     result.round_to_precision(
         precision=precision,
-        rounding_mode=RoundingMode.ROUND_HALF_EVEN,
+        rounding_mode=RoundingMode.half_even(),
         remove_extra_digit_due_to_rounding=True,
         fill_zeros_to_precision=True,
     )
@@ -324,10 +322,10 @@ fn integer_root(
 
     # Special case: n = 1 (1st root is just the number itself)
     if n.is_one():
-        var result = x
+        var result = x.copy()
         result.round_to_precision(
             precision,
-            rounding_mode=RoundingMode.ROUND_HALF_EVEN,
+            rounding_mode=RoundingMode.half_even(),
             remove_extra_digit_due_to_rounding=True,
             fill_zeros_to_precision=False,
         )
@@ -339,11 +337,11 @@ fn integer_root(
 
     # Handle special cases for x
     if x.coefficient.is_zero():
-        return BigDecimal(BigUInt.ZERO, 0, False)
+        return BigDecimal(BigUInt.zero(), 0, False)
 
     # For x = 1, the result is always 1
     if x.is_one():
-        return BigDecimal(BigUInt.ONE, 0, False)
+        return BigDecimal(BigUInt.one(), 0, False)
 
     var result_sign = False
     # Check if x is negative
@@ -353,7 +351,7 @@ fn integer_root(
         if n.scale > 0:
             n_uint = n.coefficient.floor_divide_by_power_of_ten(n.scale)
         else:  # n.scale <= 0
-            n_uint = n.coefficient
+            n_uint = n.coefficient.copy()
 
         if n_uint.words[0] % 2 == 1:  # Odd root
             result_sign = True
@@ -371,7 +369,7 @@ fn integer_root(
 
     result.round_to_precision(
         precision=precision,
-        rounding_mode=RoundingMode.ROUND_HALF_EVEN,
+        rounding_mode=RoundingMode.half_even(),
         remove_extra_digit_due_to_rounding=True,
         fill_zeros_to_precision=False,
     )
@@ -391,11 +389,11 @@ fn is_integer_reciprocal_and_return(
         True if 1/n is an odd integer, False otherwise.
         The integer reciprocal of n.
     """
-    var m = BigDecimal(BigUInt.ONE, 0, False).true_divide(
+    var m = BigDecimal(BigUInt.one(), 0, False).true_divide(
         n, precision=n.coefficient.number_of_digits() + 9
     )
 
-    return Tuple(m.is_integer(), m)
+    return Tuple(m.is_integer(), m^)
 
 
 fn is_odd_reciprocal(n: BigDecimal) raises -> Bool:
@@ -416,7 +414,7 @@ fn is_odd_reciprocal(n: BigDecimal) raises -> Bool:
     # If n is of form 1/m where m is an odd integer, then 1/n = m is odd
     # This is true when n = 1/m for odd integer m
 
-    var m = BigDecimal(BigUInt.ONE, 0, False).true_divide(
+    var m = BigDecimal(BigUInt.one(), 0, False).true_divide(
         n, precision=n.coefficient.number_of_digits() + 9
     )
 
@@ -478,7 +476,7 @@ fn sqrt_decimal_approach(x: BigDecimal, precision: Int) raises -> BigDecimal:
         )
 
     if x.coefficient.is_zero():
-        return BigDecimal(BigUInt.ZERO, (x.scale + 1) // 2, False)
+        return BigDecimal(BigUInt.zero(), (x.scale + 1) // 2, False)
 
     # Initial guess
     # A decimal has coefficient and scale
@@ -545,11 +543,11 @@ fn sqrt_decimal_approach(x: BigDecimal, precision: Int) raises -> BigDecimal:
 
     # Newton's method iterations
     # x_{n+1} = (x_n + N/x_n) / 2
-    var prev_guess = BigDecimal(BigUInt.ZERO, 0, False)
+    var prev_guess = BigDecimal(BigUInt.zero(), 0, False)
     var iteration_count = 0
 
     while guess != prev_guess and iteration_count < 100:
-        prev_guess = guess
+        prev_guess = guess.copy()
         var quotient = x.true_divide_inexact(guess, working_precision)
         var sum = guess + quotient
         guess = sum.true_divide(BigDecimal(BigUInt(2), 0, 0), working_precision)
@@ -558,10 +556,10 @@ fn sqrt_decimal_approach(x: BigDecimal, precision: Int) raises -> BigDecimal:
     # Round to the desired precision
     var ndigits_to_remove = guess.coefficient.number_of_digits() - precision
     if ndigits_to_remove > 0:
-        var coefficient = guess.coefficient
+        var coefficient = guess.coefficient.copy()
         coefficient = coefficient.remove_trailing_digits_with_rounding(
             ndigits_to_remove,
-            rounding_mode=RoundingMode.ROUND_HALF_UP,
+            rounding_mode=RoundingMode.half_up(),
             remove_extra_digit_due_to_rounding=True,
         )
         guess.coefficient = coefficient^
@@ -574,14 +572,14 @@ fn sqrt_decimal_approach(x: BigDecimal, precision: Int) raises -> BigDecimal:
         var guess_coefficient_without_trailing_zeros = (
             guess.coefficient.remove_trailing_digits_with_rounding(
                 guess.coefficient.number_of_trailing_zeros(),
-                rounding_mode=RoundingMode.ROUND_DOWN,
+                rounding_mode=RoundingMode.down(),
                 remove_extra_digit_due_to_rounding=False,
             )
         )
         var x_coefficient_without_trailing_zeros = (
             x.coefficient.remove_trailing_digits_with_rounding(
                 x.coefficient.number_of_trailing_zeros(),
-                rounding_mode=RoundingMode.ROUND_DOWN,
+                rounding_mode=RoundingMode.down(),
                 remove_extra_digit_due_to_rounding=False,
             )
         )
@@ -594,7 +592,7 @@ fn sqrt_decimal_approach(x: BigDecimal, precision: Int) raises -> BigDecimal:
             ) // 2
             guess.round_to_precision(
                 precision=expected_ndigits_of_result,
-                rounding_mode=RoundingMode.ROUND_DOWN,
+                rounding_mode=RoundingMode.down(),
                 remove_extra_digit_due_to_rounding=False,
                 fill_zeros_to_precision=False,
             )
@@ -644,7 +642,7 @@ fn sqrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
         )
 
     if x.coefficient.is_zero():
-        return BigDecimal(BigUInt.ZERO, (x.scale + 1) // 2, False)
+        return BigDecimal(BigUInt.zero(), (x.scale + 1) // 2, False)
 
     # STEP 1: Extend the coefficient by 10^(2p-s)
     var working_precision = precision + 9  # p
@@ -660,7 +658,7 @@ fn sqrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
             )
         )
     elif n_digits_to_extend == 0:
-        extended_coefficient = x.coefficient
+        extended_coefficient = x.coefficient.copy()
     else:  # n_digits_to_extend < 0
         extended_coefficient = (
             decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
@@ -693,7 +691,7 @@ fn sqrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
     )
     result.round_to_precision(
         precision=precision,
-        rounding_mode=RoundingMode.ROUND_HALF_UP,
+        rounding_mode=RoundingMode.half_up(),
         remove_extra_digit_due_to_rounding=True,
         fill_zeros_to_precision=False,
     )
@@ -750,7 +748,7 @@ fn exp(x: BigDecimal, precision: Int) raises -> BigDecimal:
     # Handle special cases
     if x.coefficient.is_zero():
         return BigDecimal(
-            BigUInt.ONE, x.scale, x.sign
+            BigUInt.one(), x.scale, x.sign
         )  # e^0 = 1, return with same scale and sign
 
     # For very large positive values, result will overflow BigDecimal capacity
@@ -761,21 +759,21 @@ fn exp(x: BigDecimal, precision: Int) raises -> BigDecimal:
 
     # For very large negative values, result will be effectively zero
     if x.sign and x.exponent() >= 20:  # x < -10^20
-        return BigDecimal(BigUInt.ZERO, precision, False)
+        return BigDecimal(BigUInt.zero(), precision, False)
 
     # Handle negative x using identity: exp(-x) = 1/exp(x)
     if x.sign:
         var pos_result = exp(-x, precision + 2)
-        return BigDecimal(BigUInt.ONE, 0, False).true_divide(
+        return BigDecimal(BigUInt.one(), 0, False).true_divide(
             pos_result, precision
         )
 
     # Range reduction for faster convergence
     # If x >= 0.1, use exp(x) = exp(x/2)²
-    if x >= BigDecimal(BigUInt.ONE, 1, False):
+    if x >= BigDecimal(BigUInt.one(), 1, False):
         # var t_before_range_reduction = time.perf_counter_ns()
         var k = 0
-        var threshold = BigDecimal(BigUInt.ONE, 0, False)
+        var threshold = BigDecimal(BigUInt.one(), 0, False)
         while threshold.exponent() <= x.exponent() + 1:
             threshold.coefficient = (
                 threshold.coefficient + threshold.coefficient
@@ -796,14 +794,14 @@ fn exp(x: BigDecimal, precision: Int) raises -> BigDecimal:
             result = result * result
             result.round_to_precision(
                 precision=working_precision,
-                rounding_mode=RoundingMode.ROUND_HALF_UP,
+                rounding_mode=RoundingMode.half_up(),
                 remove_extra_digit_due_to_rounding=False,
                 fill_zeros_to_precision=False,
             )
 
         result.round_to_precision(
             precision=precision,
-            rounding_mode=RoundingMode.ROUND_HALF_EVEN,
+            rounding_mode=RoundingMode.half_even(),
             remove_extra_digit_due_to_rounding=False,
             fill_zeros_to_precision=False,
         )
@@ -833,7 +831,7 @@ fn exp(x: BigDecimal, precision: Int) raises -> BigDecimal:
 
     result.round_to_precision(
         precision=precision,
-        rounding_mode=RoundingMode.ROUND_HALF_EVEN,
+        rounding_mode=RoundingMode.half_even(),
         remove_extra_digit_due_to_rounding=True,
         fill_zeros_to_precision=False,
     )
@@ -867,9 +865,9 @@ fn exp_taylor_series(
     # print("DEBUG: x =", x)
 
     var max_number_of_terms = Int(minimum_precision * 2.5) + 1
-    var result = BigDecimal(BigUInt.ONE, 0, False)
-    var term = BigDecimal(BigUInt.ONE, 0, False)
-    var n = BigUInt.ONE
+    var result = BigDecimal(BigUInt.one(), 0, False)
+    var term = BigDecimal(BigUInt.one(), 0, False)
+    var n = BigUInt.one()
 
     # Calculate Taylor series: 1 + x + x²/2! + x³/3! + ...
     for _ in range(1, max_number_of_terms):
@@ -881,11 +879,11 @@ fn exp_taylor_series(
         term = term * add_on
         term.round_to_precision(
             precision=minimum_precision,
-            rounding_mode=RoundingMode.ROUND_HALF_UP,
+            rounding_mode=RoundingMode.half_up(),
             remove_extra_digit_due_to_rounding=False,
             fill_zeros_to_precision=False,
         )
-        n += BigUInt.ONE
+        n += BigUInt.one()
 
         # Add term to result
         result += term
@@ -898,7 +896,7 @@ fn exp_taylor_series(
 
     result.round_to_precision(
         precision=minimum_precision,
-        rounding_mode=RoundingMode.ROUND_HALF_UP,
+        rounding_mode=RoundingMode.half_up(),
         remove_extra_digit_due_to_rounding=False,
         fill_zeros_to_precision=False,
     )
@@ -935,8 +933,8 @@ fn ln(x: BigDecimal, precision: Int) raises -> BigDecimal:
         )
     if x.coefficient.is_zero():
         raise Error("Error in `ln`: Cannot compute logarithm of zero")
-    if x == BigDecimal(BigUInt.ONE, 0, False):
-        return BigDecimal(BigUInt.ZERO, 0, False)  # ln(1) = 0
+    if x == BigDecimal(BigUInt.one(), 0, False):
+        return BigDecimal(BigUInt.zero(), 0, False)  # ln(1) = 0
 
     # Range reduction to improve convergence
     # ln(x) = ln(m * 2^a * 5^b) =
@@ -946,7 +944,7 @@ fn ln(x: BigDecimal, precision: Int) raises -> BigDecimal:
     #   = ln(m) + (a+b*2)*ln(2) + b*ln(1.25)
     #   where 0.5 <= m < 1.5
     # Use Taylor series for ln(m) = ln(1+z)
-    var m = x
+    var m = x.copy()
     var power_of_2: Int = 0
     var power_of_5: Int = 0
     # First, scale down to [0.1, 1)
@@ -975,7 +973,7 @@ fn ln(x: BigDecimal, precision: Int) raises -> BigDecimal:
 
     # Use series expansion for ln(m) = ln(1+z) = z - z²/2 + z³/3 - ...
     var result = ln_series_expansion(
-        m - BigDecimal(BigUInt.ONE, 0, False), working_precision
+        m - BigDecimal(BigUInt.one(), 0, False), working_precision
     )
 
     # print("Result after series expansion:", result)
@@ -999,7 +997,7 @@ fn ln(x: BigDecimal, precision: Int) raises -> BigDecimal:
     # Round to final precision
     result.round_to_precision(
         precision=precision,
-        rounding_mode=RoundingMode.ROUND_HALF_EVEN,
+        rounding_mode=RoundingMode.half_even(),
         remove_extra_digit_due_to_rounding=True,
         fill_zeros_to_precision=False,
     )
@@ -1049,10 +1047,10 @@ fn log(x: BigDecimal, base: BigDecimal, precision: Int) raises -> BigDecimal:
         x.coefficient.number_of_digits() == x.scale + 1
         and x.coefficient.words[-1] == 1
     ):
-        return BigDecimal(BigUInt.ZERO, 0, False)  # log_base(1) = 0
+        return BigDecimal(BigUInt.zero(), 0, False)  # log_base(1) = 0
 
     if x == base:
-        return BigDecimal(BigUInt.ONE, 0, False)  # log_base(base) = 1
+        return BigDecimal(BigUInt.one(), 0, False)  # log_base(base) = 1
 
     # Optimization for base 10
     if (
@@ -1105,7 +1103,7 @@ fn log10(x: BigDecimal, precision: Int) raises -> BigDecimal:
         x.coefficient.number_of_digits() == x.scale + 1
         and x.coefficient.words[-1] == 1
     ):
-        return BigDecimal(BigUInt.ZERO, 0, False)  # log10(1) = 0
+        return BigDecimal(BigUInt.zero(), 0, False)  # log10(1) = 0
 
     # Use the identity: log10(x) = ln(x) / ln(10)
     var ln_result = ln(x, working_precision)
@@ -1140,12 +1138,12 @@ fn ln_series_expansion(
     # print("DEBUG: ln_series_expansion for z =", z)
 
     if z.is_zero():
-        return BigDecimal(BigUInt.ZERO, 0, False)
+        return BigDecimal(BigUInt.zero(), 0, False)
 
     var max_terms = Int(working_precision * 2.5) + 1
-    var result = BigDecimal(BigUInt.ZERO, working_precision, False)
-    var term = z
-    var k = BigUInt.ONE
+    var result = BigDecimal(BigUInt.zero(), working_precision, False)
+    var term = z.copy()
+    var k = BigUInt.one()
 
     # Use the series ln(1+z) = z - z²/2 + z³/3 - z⁴/4 + ...
     result += term  # First term is just x
@@ -1155,10 +1153,10 @@ fn ln_series_expansion(
     for _ in range(2, max_terms):
         # Update for next iteration - multiply by z and divide by k
         term = term * z  # z^k
-        k += BigUInt.ONE
+        k += BigUInt.one()
 
         # Alternate sign: -1^(k+1) = -1 when k is even, 1 when k is odd
-        var sign = k % BigUInt(2) == BigUInt.ZERO
+        var sign = k % BigUInt(2) == BigUInt.zero()
         var next_term = term.true_divide_inexact(
             BigDecimal(k, 0, False), working_precision
         )
@@ -1179,7 +1177,7 @@ fn ln_series_expansion(
     # print("DEBUG: ln_series_expansion result:", result)
     result.round_to_precision(
         precision=working_precision,
-        rounding_mode=RoundingMode.ROUND_DOWN,
+        rounding_mode=RoundingMode.down(),
         remove_extra_digit_due_to_rounding=False,
         fill_zeros_to_precision=False,
     )
@@ -1230,7 +1228,7 @@ fn compute_ln2(working_precision: Int) raises -> BigDecimal:
         )
         result.round_to_precision(
             precision=working_precision,
-            rounding_mode=RoundingMode.ROUND_DOWN,
+            rounding_mode=RoundingMode.down(),
             remove_extra_digit_due_to_rounding=False,
             fill_zeros_to_precision=False,
         )
@@ -1242,11 +1240,11 @@ fn compute_ln2(working_precision: Int) raises -> BigDecimal:
     var words = List[UInt32](capacity=number_of_words)
     for _ in range(number_of_words):
         words.append(UInt32(333_333_333))
-    var x = BigDecimal(BigUInt(words), number_of_words * 9, False)  # x = 1/3
+    var x = BigDecimal(BigUInt(words^), number_of_words * 9, False)  # x = 1/3
 
-    var result = BigDecimal(BigUInt.ZERO, 0, False)
+    var result = BigDecimal(BigUInt.zero(), 0, False)
     var term = x * BigDecimal(BigUInt(2), 0, False)  # First term: 2*(1/3)
-    var k = BigDecimal(BigUInt.ONE, 0, False)
+    var k = BigDecimal(BigUInt.one(), 0, False)
 
     # Add terms: 2*(x + x³/3 + x⁵/5 + ...)
     for _ in range(1, max_terms):
@@ -1259,7 +1257,7 @@ fn compute_ln2(working_precision: Int) raises -> BigDecimal:
 
     result.round_to_precision(
         precision=working_precision,
-        rounding_mode=RoundingMode.ROUND_DOWN,
+        rounding_mode=RoundingMode.down(),
         remove_extra_digit_due_to_rounding=False,
         fill_zeros_to_precision=False,
     )

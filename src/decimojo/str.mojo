@@ -212,4 +212,4 @@ fn parse_numeric_string(
             # 1.234e8 -> 1234e5 -> 1234 and scale = -5
             scale -= raw_exponent
 
-    return Tuple(coef, scale, mantissa_sign)
+    return Tuple(coef^, scale, mantissa_sign)

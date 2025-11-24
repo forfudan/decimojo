@@ -56,7 +56,7 @@ fn sin(x: BigDecimal, precision: Int) raises -> BigDecimal:
     var result: BigDecimal
 
     if x.is_zero():
-        return BigDecimal(BigUInt.ZERO)
+        return BigDecimal(BigUInt.zero())
 
     var bdec_2 = BigDecimal.from_raw_components(UInt32(2), scale=0, sign=False)
     var bdec_4 = BigDecimal.from_raw_components(UInt32(4), scale=0, sign=False)
@@ -76,7 +76,7 @@ fn sin(x: BigDecimal, precision: Int) raises -> BigDecimal:
         # x_reduced = x mod 2π
         x_reduced = x % bdec_2pi
     else:
-        x_reduced = x
+        x_reduced = x.copy()
 
     # Step 2: Reduce [-2π, -6] or [6, 2π] to [6-2π, 2π-6]
     # sin(x) = sin(x - 2π)
@@ -140,7 +140,7 @@ fn sin(x: BigDecimal, precision: Int) raises -> BigDecimal:
 
     result.round_to_precision(
         precision,
-        RoundingMode.ROUND_HALF_EVEN,
+        RoundingMode.half_even(),
         remove_extra_digit_due_to_rounding=True,
         fill_zeros_to_precision=False,
     )
@@ -171,16 +171,16 @@ fn sin_taylor_series(
     var working_precision = minimum_precision + BUFFER_DIGITS
 
     if x.is_zero():
-        return BigDecimal(BigUInt.ZERO)
+        return BigDecimal(BigUInt.zero())
 
-    var term = x  # x^n / n!
-    var result = x
+    var term = x.copy()  # x^n / n!
+    var result = x.copy()
     var x_squared = x * x
     var n = 1
     var sign = -1
 
     # Continue until term is smaller than desired precision
-    var epsilon = BigDecimal(BigUInt.ONE, scale=working_precision, sign=False)
+    var epsilon = BigDecimal(BigUInt.one(), scale=working_precision, sign=False)
 
     while term.compare_absolute(epsilon) > 0:
         # x^n = x^(n-2) * x^2 / ((n-1)(n))
@@ -198,7 +198,7 @@ fn sin_taylor_series(
         # Ensure that the result will not explode in size
         result.round_to_precision(
             working_precision,
-            rounding_mode=RoundingMode.ROUND_DOWN,
+            rounding_mode=RoundingMode.down(),
             remove_extra_digit_due_to_rounding=False,
             fill_zeros_to_precision=False,
         )
@@ -224,7 +224,7 @@ fn cos(x: BigDecimal, precision: Int) raises -> BigDecimal:
     var working_precision = precision + BUFFER_DIGITS
 
     if x.is_zero():
-        return BigDecimal(BigUInt.ONE)
+        return BigDecimal(BigUInt.one())
 
     # cos(x) = sin(π/2 - x)
     var pi = decimojo.bigdecimal.constants.pi(precision=working_precision)
@@ -261,13 +261,13 @@ fn cos_taylor_series(
         )
 
     var bdec_1 = BigDecimal.from_raw_components(UInt32(1), scale=0, sign=False)
-    var term = bdec_1  # Current term: x^n / n!
-    var result = bdec_1  # Start with 1
+    var term = bdec_1.copy()  # Current term: x^n / n!
+    var result = bdec_1.copy()  # Start with 1
     var x_squared = x * x
     var n = 0  # Current power (0, 2, 4, 6, ...)
     var sign = -1  # Alternating sign
 
-    var epsilon = BigDecimal(BigUInt.ONE, scale=working_precision, sign=False)
+    var epsilon = BigDecimal(BigUInt.one(), scale=working_precision, sign=False)
 
     while term.compare_absolute(epsilon) > 0:
         n += 2  # Next even power: 2, 4, 6, 8, ...
@@ -286,7 +286,7 @@ fn cos_taylor_series(
         # # Prevent size explosion
         result.round_to_precision(
             working_precision,
-            rounding_mode=RoundingMode.ROUND_DOWN,
+            rounding_mode=RoundingMode.down(),
             remove_extra_digit_due_to_rounding=False,
             fill_zeros_to_precision=False,
         )
@@ -351,7 +351,7 @@ fn tan_cot(x: BigDecimal, precision: Int, is_tan: Bool) raises -> BigDecimal:
 
     if x.is_zero():
         if is_tan:
-            return BigDecimal(BigUInt.ZERO)
+            return BigDecimal(BigUInt.zero())
         else:
             # cot(0) is undefined, but we return 0 for consistency
             # since tan(0) is defined as 0.
@@ -366,7 +366,7 @@ fn tan_cot(x: BigDecimal, precision: Int, is_tan: Bool) raises -> BigDecimal:
     var two_pi = bdec_2 * pi
     var pi_div_2 = pi.true_divide(bdec_2, precision=working_precision_pi)
 
-    var x_reduced = x
+    var x_reduced = x.copy()
     # First reduce to (-π, π) range
     if x_reduced.compare_absolute(pi) > 0:
         x_reduced = x_reduced % two_pi
@@ -400,7 +400,7 @@ fn tan_cot(x: BigDecimal, precision: Int, is_tan: Bool) raises -> BigDecimal:
 
     result.round_to_precision(
         precision,
-        RoundingMode.ROUND_HALF_EVEN,
+        RoundingMode.half_even(),
         remove_extra_digit_due_to_rounding=True,
         fill_zeros_to_precision=False,
     )
@@ -430,7 +430,7 @@ fn csc(x: BigDecimal, precision: Int) raises -> BigDecimal:
 
     var sin_x = sin(x, precision=working_precision)
 
-    return BigDecimal(BigUInt.ONE).true_divide(sin_x, precision=precision)
+    return BigDecimal(BigUInt.one()).true_divide(sin_x, precision=precision)
 
 
 fn sec(x: BigDecimal, precision: Int) raises -> BigDecimal:
@@ -448,14 +448,14 @@ fn sec(x: BigDecimal, precision: Int) raises -> BigDecimal:
     This function calculates sec(x) = 1 / cos(x).
     """
     if x.is_zero():
-        return BigDecimal(BigUInt.ONE)
+        return BigDecimal(BigUInt.one())
 
     alias BUFFER_DIGITS = 9
     var working_precision = precision + BUFFER_DIGITS
 
     var cos_x = cos(x, precision=working_precision)
 
-    return BigDecimal(BigUInt.ONE).true_divide(cos_x, precision=precision)
+    return BigDecimal(BigUInt.one()).true_divide(cos_x, precision=precision)
 
 
 # ===----------------------------------------------------------------------=== #
@@ -522,7 +522,7 @@ fn arctan(x: BigDecimal, precision: Int) raises -> BigDecimal:
 
     result.round_to_precision(
         precision,
-        RoundingMode.ROUND_HALF_EVEN,
+        RoundingMode.half_even(),
         remove_extra_digit_due_to_rounding=True,
         fill_zeros_to_precision=False,
     )
@@ -557,15 +557,15 @@ fn arctan_taylor_series(
             UInt32(0), scale=minimum_precision, sign=x.sign
         )
 
-    var term = x  # x^n
-    var term_divided = x  # x^n / n
-    var result = x
+    var term = x.copy()  # x^n
+    var term_divided = x.copy()  # x^n / n
+    var result = x.copy()
     var x_squared = x * x
     var n = 1
     var sign = -1
 
     # Continue until term is smaller than desired precision
-    var epsilon = BigDecimal(BigUInt.ONE, scale=working_precision, sign=False)
+    var epsilon = BigDecimal(BigUInt.one(), scale=working_precision, sign=False)
 
     while term_divided.compare_absolute(epsilon) > 0:
         n += 2
@@ -581,7 +581,7 @@ fn arctan_taylor_series(
         # Ensure that the result will not explode in size
         result.round_to_precision(
             working_precision,
-            rounding_mode=RoundingMode.ROUND_DOWN,
+            rounding_mode=RoundingMode.down(),
             remove_extra_digit_due_to_rounding=False,
             fill_zeros_to_precision=False,
         )

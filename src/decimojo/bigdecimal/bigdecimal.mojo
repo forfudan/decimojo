@@ -101,20 +101,20 @@ struct BigDecimal(
     @implicit
     fn __init__(out self, coefficient: BigUInt):
         """Constructs a BigDecimal from a BigUInt object."""
-        self.coefficient = coefficient
+        self.coefficient = coefficient.copy()
         self.scale = 0
         self.sign = False
 
     fn __init__(out self, coefficient: BigUInt, scale: Int, sign: Bool):
         """Constructs a BigDecimal from its components."""
-        self.coefficient = coefficient
+        self.coefficient = coefficient.copy()
         self.scale = scale
         self.sign = sign
 
     @implicit
     fn __init__(out self, value: BigInt):
         """Constructs a BigDecimal from a big interger."""
-        self.coefficient = value.magnitude
+        self.coefficient = value.magnitude.copy()
         self.scale = 0
         self.sign = value.sign
 
@@ -205,7 +205,7 @@ struct BigDecimal(
     fn from_int(value: Int) -> Self:
         """Creates a BigDecimal from an integer."""
         if value == 0:
-            return Self(coefficient=BigUInt.ZERO, scale=0, sign=False)
+            return Self(coefficient=BigUInt.zero(), scale=0, sign=False)
 
         var words = List[UInt32](capacity=2)
         var sign: Bool
@@ -255,7 +255,7 @@ struct BigDecimal(
         constrained[dtype.is_integral(), "dtype must be integral."]()
 
         if value == 0:
-            return Self(coefficient=BigUInt.ZERO, scale=0, sign=False)
+            return Self(coefficient=BigUInt.zero(), scale=0, sign=False)
 
         return Self(
             coefficient=BigUInt.from_absolute_integral_scalar(value),
@@ -284,7 +284,7 @@ struct BigDecimal(
         ]()
 
         if value == 0:
-            return Self(coefficient=BigUInt.ZERO, scale=0, sign=False)
+            return Self(coefficient=BigUInt.zero(), scale=0, sign=False)
 
         if value != value:  # Check for NaN
             raise Error("`from_scalar()`: Cannot convert NaN to BigUInt")
@@ -308,10 +308,10 @@ struct BigDecimal(
         Returns:
             The BigDecimal representation of the string.
         """
-        var coef: List[UInt8]
-        var scale: Int
-        var sign: Bool
-        coef, scale, sign = decimojo.str.parse_numeric_string(value)
+        _tuple = decimojo.str.parse_numeric_string(value)
+        var ref coef: List[UInt8] = _tuple[0]
+        var scale: Int = _tuple[1]
+        var sign: Bool = _tuple[2]
 
         var number_of_digits = len(coef)
         var number_of_words = number_of_digits // 9
@@ -664,10 +664,10 @@ struct BigDecimal(
             return decimojo.bigdecimal.rounding.round(
                 self,
                 ndigits=ndigits,
-                rounding_mode=RoundingMode.ROUND_HALF_EVEN,
+                rounding_mode=RoundingMode.half_even(),
             )
         except e:
-            return self
+            return self.copy()
 
     @always_inline
     fn __round__(self) -> Self:
@@ -677,10 +677,10 @@ struct BigDecimal(
         """
         try:
             return decimojo.bigdecimal.rounding.round(
-                self, ndigits=0, rounding_mode=RoundingMode.ROUND_HALF_EVEN
+                self, ndigits=0, rounding_mode=RoundingMode.half_even()
             )
         except e:
-            return self
+            return self.copy()
 
     # ===------------------------------------------------------------------=== #
     # Other dunders
@@ -731,7 +731,7 @@ struct BigDecimal(
     fn e(precision: Int) raises -> Self:
         """Returns the mathematical constant e to the specified precision."""
         return decimojo.bigdecimal.exponential.exp(
-            x=Self(BigUInt.ONE), precision=precision
+            x=Self(BigUInt.one()), precision=precision
         )
 
     # === Exponentional operations === #
@@ -951,7 +951,7 @@ struct BigDecimal(
         )
 
         if precision_diff <= 0:
-            return self
+            return self.copy()
 
         return Self(
             decimojo.biguint.arithmetics.multiply_by_power_of_ten(

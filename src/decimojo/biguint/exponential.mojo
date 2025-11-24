@@ -47,9 +47,9 @@ fn sqrt(x: BigUInt) -> BigUInt:
     # Use built-in methods for small numbers (up to 2 words)
     if len(x.words) == 1:
         if x.words[0] == 0:
-            return BigUInt.ZERO
+            return BigUInt.zero()
         elif x.words[0] == 1:
-            return BigUInt.ONE
+            return BigUInt.one()
         else:
             return BigUInt.from_uint32_unsafe(math.sqrt(x.words[0]))
 
@@ -71,13 +71,13 @@ fn sqrt(x: BigUInt) -> BigUInt:
                 len(x.words) == 1,
                 "biguint.exponential.sqrt(): 0 hould be a single word",
             )
-            return BigUInt.ZERO
+            return BigUInt.zero()
 
         # Start with a initial guess
         # The initial guess is smaller or equal to the actual square root
         var guess = sqrt_initial_guess(x)
         if guess.is_zero():
-            return BigUInt.ONE
+            return BigUInt.one()
 
         # Newton's iteration: x_{k+1} = (x_k + n/x_k) / 2
         # Continue until convergence
@@ -87,7 +87,7 @@ fn sqrt(x: BigUInt) -> BigUInt:
         var iterations = 0
         while True:
             iterations += 1
-            prev_guess = guess
+            prev_guess = guess.copy()
 
             # Calculate (x_k + n/x_k) // 2
             try:
@@ -95,16 +95,16 @@ fn sqrt(x: BigUInt) -> BigUInt:
                 quotient = x.floor_divide(guess)
             except:
                 # This should not happen
-                quotient = BigUInt.ONE
+                quotient = BigUInt.one()
 
             guess += quotient
             decimojo.biguint.arithmetics.floor_divide_inplace_by_2(guess)
 
             if guess == prev_guess:
                 break
-            if prev_guess == guess + BigUInt.ONE:
+            if prev_guess == guess + BigUInt.one():
                 break
-            if guess == prev_guess + BigUInt.ONE:
+            if guess == prev_guess + BigUInt.one():
                 return prev_guess^
 
         # # Ensure we return the floor of the square root

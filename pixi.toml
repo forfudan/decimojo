@@ -6,39 +6,39 @@ license = "Apache-2.0"
 name = "decimojo"
 platforms = ["osx-arm64", "linux-64"]
 readme = "README.md"
-version = "0.5.0"
+version = "0.6.0"
 
 [dependencies]
-mojo = "==25.5"
+mojo = "==0.25.6"
 
 [tasks]
 # format the code
 format = "pixi run mojo format ./src && pixi run mojo format ./benches && pixi run mojo format ./tests && pixi run mojo format ./docs"
 
 # compile the package
+p = "clear && pixi run package"
+package = "pixi run format && pixi run package_decimojo && pixi run package_tomlmojo"
 package_decimojo = "pixi run mojo package src/decimojo && cp decimojo.mojopkg tests/ && cp decimojo.mojopkg benches/ && rm decimojo.mojopkg"
 package_tomlmojo = "pixi run mojo package src/tomlmojo && mv tomlmojo.mojopkg tests/"
-package = "pixi run format && pixi run package_decimojo && pixi run package_tomlmojo"
-p = "clear && pixi run package"
 
 # clean the package files in tests folder
-clean = "rm tests/decimojo.mojopkg && rm benches/decimojo.mojopkg && rm tests/tomlmojo.mojopkg"
 c = "clear && pixi run clean"
+clean = "rm tests/decimojo.mojopkg && rm benches/decimojo.mojopkg && rm tests/tomlmojo.mojopkg"
 
 # tests (use the mojo testing tool)
-test = "pixi run package && pixi run mojo test tests -D ASSERT=all --filter"
-t = "clear && pixi run package && pixi run mojo test tests -D ASSERT=all --filter"
 b = "pixi run t big"
+t = "clear && pixi run package && pixi run mojo test tests -D ASSERT=all --filter"
+test = "pixi run package && pixi run mojo test tests -D ASSERT=all --filter"
 
 # benches
-dec = "clear && pixi run package && cd benches/decimal && pixi run mojo run -I ../ bench.mojo && cd ../.. && pixi run clean"
-bint = "clear && pixi run package && cd benches/bigint && pixi run mojo run -I ../ bench.mojo && cd ../.. && pixi run clean"
-buint = "clear && pixi run package && cd benches/biguint && pixi run mojo run -I ../ bench.mojo && cd ../.. && pixi run clean"
 bdec = "clear && pixi run package && cd benches/bigdecimal && pixi run mojo run -I ../ bench.mojo && cd ../.. && pixi run clean"
-dec_debug = "clear && pixi run package && cd benches/decimal && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
-bint_debug = "clear && pixi run package && cd benches/bigint && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
-buint_debug = "clear && pixi run package && cd benches/biguint && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
 bdec_debug = "clear && pixi run package && cd benches/bigdecimal && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
+bint = "clear && pixi run package && cd benches/bigint && pixi run mojo run -I ../ bench.mojo && cd ../.. && pixi run clean"
+bint_debug = "clear && pixi run package && cd benches/bigint && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
+buint = "clear && pixi run package && cd benches/biguint && pixi run mojo run -I ../ bench.mojo && cd ../.. && pixi run clean"
+buint_debug = "clear && pixi run package && cd benches/biguint && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
+dec = "clear && pixi run package && cd benches/decimal && pixi run mojo run -I ../ bench.mojo && cd ../.. && pixi run clean"
+dec_debug = "clear && pixi run package && cd benches/decimal && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
 
 # doc
 doc = "clear && pixi run mojo doc -o docs/doc.json --diagnose-missing-doc-strings --validate-doc-strings src/decimojo"

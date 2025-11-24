@@ -81,13 +81,13 @@ struct RoundingMode(Stringable):
         return String(self) == other
 
     fn __str__(self) -> String:
-        if self == Self.ROUND_DOWN:
+        if self == materialize[Self.ROUND_DOWN]():
             return "ROUND_DOWN"
-        elif self == Self.ROUND_HALF_UP:
+        elif self == materialize[Self.ROUND_HALF_UP]():
             return "ROUND_HALF_UP"
-        elif self == Self.ROUND_HALF_EVEN:
+        elif self == materialize[Self.ROUND_HALF_EVEN]():
             return "ROUND_HALF_EVEN"
-        elif self == Self.ROUND_UP:
+        elif self == materialize[Self.ROUND_UP]():
             return "ROUND_UP"
         else:
             return "UNKNOWN_ROUNDING_MODE"

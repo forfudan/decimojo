@@ -1202,7 +1202,7 @@ fn truncate_divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
         A new Decimal128 containing the integral part of x1 / x2.
     """
     try:
-        return divide(x1, x2).round(0, RoundingMode.ROUND_DOWN)
+        return divide(x1, x2).round(0, RoundingMode.down())
     except e:
         raise Error("Error in `divide()`: ", e)
 

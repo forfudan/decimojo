@@ -57,7 +57,7 @@ fn add(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
     if x1.coefficient.is_zero():
         if x2.coefficient.is_zero():
             return BigDecimal(
-                coefficient=BigUInt.ZERO,
+                coefficient=BigUInt.zero(),
                 scale=max_scale,
                 sign=False,
             )
@@ -86,7 +86,9 @@ fn add(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
         return BigDecimal(coefficient=coef2^, scale=max_scale, sign=x2.sign)
     else:
         # |x1| == |x2|, signs differ, result is 0
-        return BigDecimal(coefficient=BigUInt.ZERO, scale=max_scale, sign=False)
+        return BigDecimal(
+            coefficient=BigUInt.zero(), scale=max_scale, sign=False
+        )
 
 
 fn subtract(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
@@ -114,7 +116,7 @@ fn subtract(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
     if x2.coefficient.is_zero():
         if x1.coefficient.is_zero():
             return BigDecimal(
-                coefficient=BigUInt.ZERO,
+                coefficient=BigUInt.zero(),
                 scale=max_scale,
                 sign=False,
             )
@@ -146,7 +148,9 @@ fn subtract(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
         return BigDecimal(coefficient=coef2^, scale=max_scale, sign=not x1.sign)
     else:
         # |x1| == |x2|, result is 0
-        return BigDecimal(coefficient=BigUInt.ZERO, scale=max_scale, sign=False)
+        return BigDecimal(
+            coefficient=BigUInt.zero(), scale=max_scale, sign=False
+        )
 
 
 fn multiply(x1: BigDecimal, x2: BigDecimal) -> BigDecimal:
@@ -168,7 +172,7 @@ fn multiply(x1: BigDecimal, x2: BigDecimal) -> BigDecimal:
     # Handle zero operands as special cases for efficiency
     if x1.coefficient.is_zero() or x2.coefficient.is_zero():
         return BigDecimal(
-            coefficient=BigUInt.ZERO,
+            coefficient=BigUInt.zero(),
             scale=x1.scale + x2.scale,
             sign=x1.sign != x2.sign,
         )
@@ -211,7 +215,7 @@ fn true_divide(
     # Handle dividend of zero
     if x.coefficient.is_zero():
         return BigDecimal(
-            coefficient=BigUInt.ZERO,
+            coefficient=BigUInt.zero(),
             scale=x.scale - y.scale,
             sign=x.sign != y.sign,
         )
@@ -273,7 +277,7 @@ fn true_divide_fast(
             x.coefficient, -extra_words * 9
         )
     else:
-        coef_x = x.coefficient
+        coef_x = x.coefficient.copy()
 
     var coef = coef_x // y.coefficient
     var scale = x.scale + extra_digits - y.scale
@@ -334,7 +338,7 @@ fn true_divide_general(
             x.coefficient, extra_words
         )
     else:
-        coef_x = x.coefficient
+        coef_x = x.coefficient.copy()
 
     var coef = coef_x // y.coefficient
     if coef * y.coefficient == coef_x:
@@ -359,7 +363,7 @@ fn true_divide_general(
     )
     result.round_to_precision(
         precision,
-        RoundingMode.ROUND_HALF_EVEN,
+        RoundingMode.half_even(),
         remove_extra_digit_due_to_rounding=True,
         fill_zeros_to_precision=False,
     )
@@ -394,7 +398,7 @@ fn true_divide_inexact(
     # Handle dividend of zero
     if x1.coefficient.is_zero():
         return BigDecimal(
-            coefficient=BigUInt.ZERO,
+            coefficient=BigUInt.zero(),
             scale=number_of_significant_digits,
             sign=x1.sign != x2.sign,
         )
@@ -410,7 +414,7 @@ fn true_divide_inexact(
     buffer_digits = max(0, buffer_digits)
 
     # Scale up the dividend to ensure sufficient precision
-    var scaled_x1 = x1.coefficient
+    var scaled_x1 = x1.coefficient.copy()
     if buffer_digits > 0:
         scaled_x1.multiply_inplace_by_power_of_ten(buffer_digits)
 
@@ -423,7 +427,7 @@ fn true_divide_inexact(
         var digits_to_remove = result_digits - number_of_significant_digits
         quotient = quotient.remove_trailing_digits_with_rounding(
             digits_to_remove,
-            RoundingMode.ROUND_DOWN,
+            RoundingMode.down(),
             remove_extra_digit_due_to_rounding=False,
         )
         # Adjust the scale accordingly
@@ -459,7 +463,7 @@ fn truncate_divide(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
 
     # Handle dividend of zero
     if x1.coefficient.is_zero():
-        return BigDecimal(BigUInt.ZERO, 0, False)
+        return BigDecimal(BigUInt.zero(), 0, False)
 
     # Calculate adjusted scales to align decimal points
     var scale_diff = x1.scale - x2.scale

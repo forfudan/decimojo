@@ -13,7 +13,8 @@ magic.lock
 .helix
 # Temporary files
 tempCodeRunnerFile.mojo
-/temp*.mojo
+temp.md
+temp*.mojo
 kgen.trace.json*
 # macOS environments
 .DS_Store

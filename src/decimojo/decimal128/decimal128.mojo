@@ -1379,7 +1379,7 @@ struct Decimal128(
             return decimojo.decimal128.rounding.round(
                 self,
                 ndigits=ndigits,
-                rounding_mode=RoundingMode.ROUND_HALF_EVEN,
+                rounding_mode=RoundingMode.half_even(),
             )
         except e:
             return self
@@ -1389,7 +1389,7 @@ struct Decimal128(
         """**OVERLOAD**."""
         try:
             return decimojo.decimal128.rounding.round(
-                self, ndigits=0, rounding_mode=RoundingMode.ROUND_HALF_EVEN
+                self, ndigits=0, rounding_mode=RoundingMode.half_even()
             )
         except e:
             return self
