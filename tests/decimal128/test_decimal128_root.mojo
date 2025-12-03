@@ -282,17 +282,19 @@ fn main() raises:
     print("Running Root Function Tests")
     print("=========================================")
 
-    run_test_with_error_handling(
-        test_basic_root_calculations, "Basic root calculations test"
-    )
-    run_test_with_error_handling(
-        test_fractional_inputs, "Fractional inputs test"
-    )
-    run_test_with_error_handling(test_edge_cases, "Edge cases test")
-    run_test_with_error_handling(test_error_conditions, "Error conditions test")
-    run_test_with_error_handling(test_precision, "Precision test")
-    run_test_with_error_handling(
-        test_mathematical_identities, "Mathematical identities test"
-    )
+    # run_test_with_error_handling(
+    #     test_basic_root_calculations, "Basic root calculations test"
+    # )
+    # run_test_with_error_handling(
+    #     test_fractional_inputs, "Fractional inputs test"
+    # )
+    # run_test_with_error_handling(test_edge_cases, "Edge cases test")
+    # run_test_with_error_handling(test_error_conditions, "Error conditions test")
+    # run_test_with_error_handling(test_precision, "Precision test")
+    # run_test_with_error_handling(
+    #     test_mathematical_identities, "Mathematical identities test"
+    # )
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All root function tests passed!")

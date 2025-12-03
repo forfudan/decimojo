@@ -309,20 +309,22 @@ fn main() raises:
     print("Running log10() Function Tests")
     print("=========================================")
 
-    run_test_with_error_handling(
-        test_basic_log10, "Basic log10 calculations test"
-    )
-    run_test_with_error_handling(
-        test_non_powers_of_ten, "Non-powers of 10 test"
-    )
-    run_test_with_error_handling(test_edge_cases, "Edge cases test")
-    run_test_with_error_handling(test_precision, "Precision test")
-    run_test_with_error_handling(
-        test_mathematical_properties, "Mathematical properties test"
-    )
-    run_test_with_error_handling(
-        test_consistency_with_other_logarithms,
-        "Consistency with other logarithms test",
-    )
+    # run_test_with_error_handling(
+    #     test_basic_log10, "Basic log10 calculations test"
+    # )
+    # run_test_with_error_handling(
+    #     test_non_powers_of_ten, "Non-powers of 10 test"
+    # )
+    # run_test_with_error_handling(test_edge_cases, "Edge cases test")
+    # run_test_with_error_handling(test_precision, "Precision test")
+    # run_test_with_error_handling(
+    #     test_mathematical_properties, "Mathematical properties test"
+    # )
+    # run_test_with_error_handling(
+    #     test_consistency_with_other_logarithms,
+    #     "Consistency with other logarithms test",
+    # )
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All log10() function tests passed!")

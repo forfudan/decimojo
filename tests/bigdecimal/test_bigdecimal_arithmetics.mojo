@@ -27,6 +27,7 @@ fn test_bigdecimal_arithmetics() raises:
     print("------------------------------------------------------")
 
     test_cases = load_test_cases(toml, "addition_tests")
+    count_wrong = 0
     for test_case in test_cases:
         var result = BDec(test_case.a) + BDec(test_case.b)
         try:
@@ -47,13 +48,21 @@ fn test_bigdecimal_arithmetics() raises:
                     pydecimal.Decimal(test_case.a)
                     + pydecimal.Decimal(test_case.b)
                 ),
+                "\n",
             )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "Some test cases failed. See above for details.",
+    )
 
     print("------------------------------------------------------")
     print("Testing BigDecimal subtraction...")
     print("------------------------------------------------------")
 
     test_cases = load_test_cases(toml, "subtraction_tests")
+    count_wrong = 0
     for test_case in test_cases:
         var result = BDec(test_case.a) - BDec(test_case.b)
         try:
@@ -74,13 +83,21 @@ fn test_bigdecimal_arithmetics() raises:
                     pydecimal.Decimal(test_case.a)
                     - pydecimal.Decimal(test_case.b)
                 ),
+                "\n",
             )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "Some test cases failed. See above for details.",
+    )
 
     print("------------------------------------------------------")
     print("Testing BigDecimal multiplication...")
     print("------------------------------------------------------")
 
     test_cases = load_test_cases(toml, "multiplication_tests")
+    count_wrong = 0
     for test_case in test_cases:
         var result = BDec(test_case.a) * BDec(test_case.b)
         try:
@@ -101,15 +118,25 @@ fn test_bigdecimal_arithmetics() raises:
                     pydecimal.Decimal(test_case.a)
                     * pydecimal.Decimal(test_case.b)
                 ),
+                "\n",
             )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "Some test cases failed. See above for details.",
+    )
 
     print("------------------------------------------------------")
     print("Testing BigDecimal division...")
     print("------------------------------------------------------")
 
     test_cases = load_test_cases(toml, "division_tests")
+    count_wrong = 0
     for test_case in test_cases:
-        var result = BDec(test_case.a) / BDec(test_case.b)
+        var result = BDec(test_case.a).true_divide(
+            BDec(test_case.b), precision=28
+        )
         try:
             testing.assert_equal(
                 lhs=String(result),
@@ -128,12 +155,19 @@ fn test_bigdecimal_arithmetics() raises:
                     pydecimal.Decimal(test_case.a)
                     / pydecimal.Decimal(test_case.b)
                 ),
+                "\n",
             )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "Some test cases failed. See above for details.",
+    )
 
 
 fn main() raises:
     print("Running BigDecimal arithmetic tests")
 
-    test_bigdecimal_arithmetics()
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All BigDecimal arithmetic tests passed!")

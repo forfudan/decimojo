@@ -268,15 +268,17 @@ fn main() raises:
     print("Running Decimal128 Floor Division Tests")
     print("=========================================")
 
-    run_test_with_error_handling(
-        test_basic_floor_division, "Basic floor division test"
-    )
-    run_test_with_error_handling(
-        test_negative_floor_division, "Negative number floor division test"
-    )
-    run_test_with_error_handling(test_edge_cases, "Edge cases test")
-    run_test_with_error_handling(
-        test_mathematical_relationships, "Mathematical relationships test"
-    )
+    # run_test_with_error_handling(
+    #     test_basic_floor_division, "Basic floor division test"
+    # )
+    # run_test_with_error_handling(
+    #     test_negative_floor_division, "Negative number floor division test"
+    # )
+    # run_test_with_error_handling(test_edge_cases, "Edge cases test")
+    # run_test_with_error_handling(
+    #     test_mathematical_relationships, "Mathematical relationships test"
+    # )
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All floor division tests passed!")

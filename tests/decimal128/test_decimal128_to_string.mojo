@@ -46,6 +46,8 @@ fn test_str_conversion() raises:
 fn main() raises:
     print("Starting Decimal128 conversion __str__ tests...")
 
-    test_str_conversion()
+    # test_str_conversion()
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("\nAll tests completed!")

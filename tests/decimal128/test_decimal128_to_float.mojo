@@ -202,16 +202,18 @@ fn main() raises:
     print("Running 20 tests for Decimal128.__float__()")
     print("=========================================")
 
-    run_test_with_error_handling(
-        test_basic_integer_conversions, "Basic integer conversions"
-    )
-    run_test_with_error_handling(
-        test_decimal_conversions, "Decimal128 conversions"
-    )
-    run_test_with_error_handling(
-        test_negative_conversions, "Negative value conversions"
-    )
-    run_test_with_error_handling(test_edge_cases, "Edge cases")
-    run_test_with_error_handling(test_special_values, "Special values")
+    # run_test_with_error_handling(
+    #     test_basic_integer_conversions, "Basic integer conversions"
+    # )
+    # run_test_with_error_handling(
+    #     test_decimal_conversions, "Decimal128 conversions"
+    # )
+    # run_test_with_error_handling(
+    #     test_negative_conversions, "Negative value conversions"
+    # )
+    # run_test_with_error_handling(test_edge_cases, "Edge cases")
+    # run_test_with_error_handling(test_special_values, "Special values")
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All 20 Decimal128.__float__() tests passed!")

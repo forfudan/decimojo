@@ -105,8 +105,8 @@ fn test_error_cases() raises:
 fn main() raises:
     print("Starting BigInt to Int conversion tests...")
 
-    test_int_conversion()
-
-    test_error_cases()
+    # test_int_conversion()
+    # test_error_cases()
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("\nAll tests completed!")

@@ -339,22 +339,24 @@ fn main() raises:
     print("Running Exponential Function Tests")
     print("=========================================")
 
-    run_test_with_error_handling(
-        test_basic_exp_values, "Basic exponential values test"
-    )
-    run_test_with_error_handling(
-        test_negative_exponents, "Negative exponents test"
-    )
-    run_test_with_error_handling(
-        test_fractional_exponents, "Fractional exponents test"
-    )
-    run_test_with_error_handling(
-        test_high_precision_exponents, "High precision exponents test"
-    )
-    run_test_with_error_handling(
-        test_mathematical_identities, "Mathematical identities test"
-    )
-    run_test_with_error_handling(test_extreme_values, "Extreme values test")
-    run_test_with_error_handling(test_edge_cases, "Edge cases test")
+    # run_test_with_error_handling(
+    #     test_basic_exp_values, "Basic exponential values test"
+    # )
+    # run_test_with_error_handling(
+    #     test_negative_exponents, "Negative exponents test"
+    # )
+    # run_test_with_error_handling(
+    #     test_fractional_exponents, "Fractional exponents test"
+    # )
+    # run_test_with_error_handling(
+    #     test_high_precision_exponents, "High precision exponents test"
+    # )
+    # run_test_with_error_handling(
+    #     test_mathematical_identities, "Mathematical identities test"
+    # )
+    # run_test_with_error_handling(test_extreme_values, "Extreme values test")
+    # run_test_with_error_handling(test_edge_cases, "Edge cases test")
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All exponential function tests passed!")

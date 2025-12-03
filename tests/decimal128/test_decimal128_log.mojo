@@ -418,21 +418,23 @@ fn main() raises:
     print("Running log() Function Tests")
     print("=========================================")
 
-    run_test_with_error_handling(test_basic_log, "Basic logarithm test")
-    run_test_with_error_handling(
-        test_non_integer_results, "Non-integer results test"
-    )
-    run_test_with_error_handling(
-        test_fractional_inputs, "Fractional inputs test"
-    )
-    run_test_with_error_handling(test_edge_cases, "Edge cases test")
-    run_test_with_error_handling(test_precision, "Precision test")
-    run_test_with_error_handling(
-        test_mathematical_properties, "Mathematical properties test"
-    )
-    run_test_with_error_handling(
-        test_consistency_with_other_logarithms,
-        "Consistency with other logarithms test",
-    )
+    # run_test_with_error_handling(test_basic_log, "Basic logarithm test")
+    # run_test_with_error_handling(
+    #     test_non_integer_results, "Non-integer results test"
+    # )
+    # run_test_with_error_handling(
+    #     test_fractional_inputs, "Fractional inputs test"
+    # )
+    # run_test_with_error_handling(test_edge_cases, "Edge cases test")
+    # run_test_with_error_handling(test_precision, "Precision test")
+    # run_test_with_error_handling(
+    #     test_mathematical_properties, "Mathematical properties test"
+    # )
+    # run_test_with_error_handling(
+    #     test_consistency_with_other_logarithms,
+    #     "Consistency with other logarithms test",
+    # )
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All log() function tests passed!")

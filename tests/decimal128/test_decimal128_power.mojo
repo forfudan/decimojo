@@ -172,8 +172,10 @@ fn main() raises:
     print("Running Decimal128 Power Function Tests")
     print("=========================================")
 
-    run_test_with_error_handling(test_integer_powers, "Integer powers test")
-    run_test_with_error_handling(test_decimal_powers, "Decimal128 powers test")
-    run_test_with_error_handling(test_edge_cases, "Edge cases test")
+    # run_test_with_error_handling(test_integer_powers, "Integer powers test")
+    # run_test_with_error_handling(test_decimal_powers, "Decimal128 powers test")
+    # run_test_with_error_handling(test_edge_cases, "Edge cases test")
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All power function tests passed!")

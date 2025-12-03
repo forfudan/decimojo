@@ -931,18 +931,20 @@ fn main() raises:
     print("=========================================")
     print("Running comprehensive Decimal128 square root tests")
 
-    run_test_with_error_handling(test_perfect_squares, "Perfect squares test")
-    run_test_with_error_handling(
-        test_non_perfect_squares, "Non-perfect squares test"
-    )
-    run_test_with_error_handling(test_decimal_values, "Decimal128 values test")
-    run_test_with_error_handling(test_edge_cases, "Edge cases test")
-    run_test_with_error_handling(test_precision, "Precision test")
-    run_test_with_error_handling(
-        test_mathematical_identities, "Mathematical identities test"
-    )
-    run_test_with_error_handling(
-        test_sqrt_performance, "Performance and convergence test"
-    )
+    # run_test_with_error_handling(test_perfect_squares, "Perfect squares test")
+    # run_test_with_error_handling(
+    #     test_non_perfect_squares, "Non-perfect squares test"
+    # )
+    # run_test_with_error_handling(test_decimal_values, "Decimal128 values test")
+    # run_test_with_error_handling(test_edge_cases, "Edge cases test")
+    # run_test_with_error_handling(test_precision, "Precision test")
+    # run_test_with_error_handling(
+    #     test_mathematical_identities, "Mathematical identities test"
+    # )
+    # run_test_with_error_handling(
+    #     test_sqrt_performance, "Performance and convergence test"
+    # )
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All square root tests passed!")

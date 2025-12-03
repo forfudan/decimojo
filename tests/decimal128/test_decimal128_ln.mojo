@@ -263,16 +263,18 @@ fn main() raises:
     print("Running Natural Logarithm Function Tests")
     print("=========================================")
 
-    run_test_with_error_handling(test_basic_ln_values, "Basic ln values test")
-    run_test_with_error_handling(
-        test_fractional_ln_values, "Fractional ln values test"
-    )
-    run_test_with_error_handling(
-        test_mathematical_identities, "Mathematical identities test"
-    )
-    run_test_with_error_handling(test_edge_cases, "Edge cases test")
-    run_test_with_error_handling(test_precision, "Precision test")
-    run_test_with_error_handling(test_range_of_values, "Range of values test")
-    run_test_with_error_handling(test_special_cases, "Special cases test")
+    # run_test_with_error_handling(test_basic_ln_values, "Basic ln values test")
+    # run_test_with_error_handling(
+    #     test_fractional_ln_values, "Fractional ln values test"
+    # )
+    # run_test_with_error_handling(
+    #     test_mathematical_identities, "Mathematical identities test"
+    # )
+    # run_test_with_error_handling(test_edge_cases, "Edge cases test")
+    # run_test_with_error_handling(test_precision, "Precision test")
+    # run_test_with_error_handling(test_range_of_values, "Range of values test")
+    # run_test_with_error_handling(test_special_cases, "Special cases test")
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All natural logarithm function tests passed!")

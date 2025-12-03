@@ -2,6 +2,7 @@
 Tests for the utility functions in the decimojo.utility module.
 """
 
+import testing
 from testing import assert_equal, assert_true
 
 from decimojo.prelude import dm, Decimal128, RoundingMode
@@ -293,4 +294,5 @@ fn test_all() raises:
 
 
 fn main() raises:
-    test_all()
+    # test_all()
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()

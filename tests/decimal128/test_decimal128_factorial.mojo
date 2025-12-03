@@ -257,22 +257,24 @@ fn main() raises:
     print("Running Factorial Function Tests (0-27)")
     print("=========================================")
 
-    run_test_with_error_handling(test_basic_factorials, "Basic factorials test")
-    run_test_with_error_handling(
-        test_medium_factorials, "Medium factorials test"
-    )
-    run_test_with_error_handling(test_large_factorials, "Large factorials test")
-    run_test_with_error_handling(
-        test_factorial_properties, "Factorial properties test"
-    )
-    run_test_with_error_handling(
-        test_factorial_edge_cases, "Factorial edge cases test"
-    )
-    run_test_with_error_handling(
-        test_factorial_of_zero, "Factorial of zero test"
-    )
-    run_test_with_error_handling(
-        test_factorial_reciprocal, "Factorial reciprocal test"
-    )
+    # run_test_with_error_handling(test_basic_factorials, "Basic factorials test")
+    # run_test_with_error_handling(
+    #     test_medium_factorials, "Medium factorials test"
+    # )
+    # run_test_with_error_handling(test_large_factorials, "Large factorials test")
+    # run_test_with_error_handling(
+    #     test_factorial_properties, "Factorial properties test"
+    # )
+    # run_test_with_error_handling(
+    #     test_factorial_edge_cases, "Factorial edge cases test"
+    # )
+    # run_test_with_error_handling(
+    #     test_factorial_of_zero, "Factorial of zero test"
+    # )
+    # run_test_with_error_handling(
+    #     test_factorial_reciprocal, "Factorial reciprocal test"
+    # )
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All factorial function tests passed!")

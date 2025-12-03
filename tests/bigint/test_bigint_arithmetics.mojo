@@ -122,8 +122,11 @@ fn test_bigint_truncate_divide() raises:
 
 fn main() raises:
     print("Running BigInt arithmetic tests")
-    test_bigint_arithmetics()
-    test_bigint_multiply()
-    test_bigint_floor_divide()
-    test_bigint_truncate_divide()
+
+    # test_bigint_arithmetics()
+    # test_bigint_multiply()
+    # test_bigint_floor_divide()
+    # test_bigint_truncate_divide()
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
+
     print("All BigInt arithmetic tests passed!")

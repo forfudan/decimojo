@@ -458,25 +458,27 @@ fn main() raises:
     print("Running 50 tests for Decimal128.from_float()")
     print("=========================================")
 
-    run_test_with_error_handling(test_simple_integers, "Simple integers test")
-    run_test_with_error_handling(test_simple_decimals, "Simple decimals test")
-    run_test_with_error_handling(test_negative_numbers, "Negative numbers test")
-    run_test_with_error_handling(
-        test_very_large_numbers, "Very large numbers test"
-    )
-    run_test_with_error_handling(
-        test_very_small_numbers, "Very small numbers test"
-    )
-    run_test_with_error_handling(
-        test_binary_to_decimal_conversion, "Binary to decimal conversion test"
-    )
-    run_test_with_error_handling(
-        test_rounding_behavior, "Rounding behavior test"
-    )
-    run_test_with_error_handling(test_special_values, "Special values test")
-    run_test_with_error_handling(
-        test_scientific_notation, "Scientific notation test"
-    )
-    run_test_with_error_handling(test_boundary_cases, "Boundary cases test")
+    # run_test_with_error_handling(test_simple_integers, "Simple integers test")
+    # run_test_with_error_handling(test_simple_decimals, "Simple decimals test")
+    # run_test_with_error_handling(test_negative_numbers, "Negative numbers test")
+    # run_test_with_error_handling(
+    #     test_very_large_numbers, "Very large numbers test"
+    # )
+    # run_test_with_error_handling(
+    #     test_very_small_numbers, "Very small numbers test"
+    # )
+    # run_test_with_error_handling(
+    #     test_binary_to_decimal_conversion, "Binary to decimal conversion test"
+    # )
+    # run_test_with_error_handling(
+    #     test_rounding_behavior, "Rounding behavior test"
+    # )
+    # run_test_with_error_handling(test_special_values, "Special values test")
+    # run_test_with_error_handling(
+    #     test_scientific_notation, "Scientific notation test"
+    # )
+    # run_test_with_error_handling(test_boundary_cases, "Boundary cases test")
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All 50 Decimal128.from_float() tests passed!")

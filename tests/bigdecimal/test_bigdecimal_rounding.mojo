@@ -281,9 +281,9 @@ fn main() raises:
     print("Running BigDecimal rounding tests")
 
     # Test different rounding modes
-    test_bigdecimal_rounding()
-
+    # test_bigdecimal_rounding()
     # Test default rounding mode
-    test_default_rounding_mode()
+    # test_default_rounding_mode()
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All BigDecimal rounding tests passed!")

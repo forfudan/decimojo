@@ -829,35 +829,36 @@ fn test_error_cases() raises:
 fn main() raises:
     print("\n=== Running Comprehensive Decimal128 Division Tests ===\n")
 
-    # Run all test groups
-    test_basic_division()
-    print()
+    # test_basic_division()
+    # print()
 
-    test_repeating_decimals()
-    print()
+    # test_repeating_decimals()
+    # print()
 
-    test_precision_rounding()
-    print()
+    # test_precision_rounding()
+    # print()
 
-    test_scale_handling()
-    print()
+    # test_scale_handling()
+    # print()
 
-    test_edge_cases()
-    print()
+    # test_edge_cases()
+    # print()
 
-    test_large_numbers()
-    print()
+    # test_large_numbers()
+    # print()
 
-    test_special_cases()
-    print()
+    # test_special_cases()
+    # print()
 
-    test_mixed_precision()
-    print()
+    # test_mixed_precision()
+    # print()
 
-    test_rounding_behavior()
-    print()
+    # test_rounding_behavior()
+    # print()
 
-    test_error_cases()
-    print()
+    # test_error_cases()
+    # print()
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("✓✓✓ All 100 division tests passed! ✓✓✓")

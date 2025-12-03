@@ -274,18 +274,16 @@ fn main() raises:
     print("Running BigDecimal exponential tests")
 
     # Run all tests
-    test_bigdecimal_exponential()
-
+    # test_bigdecimal_exponential()
     # Test sqrt of negative number
-    test_negative_sqrt()
-
+    # test_negative_sqrt()
     # Test root with invalid inputs
-    test_root_invalid_inputs()
-
+    # test_root_invalid_inputs()
     # Test power with invalid inputs
-    test_power_invalid_inputs()
-
+    # test_power_invalid_inputs()
     # Test ln with invalid inputs
-    test_ln_invalid_inputs()
+    # test_ln_invalid_inputs()
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All BigDecimal exponential tests passed!")

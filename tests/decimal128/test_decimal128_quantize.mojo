@@ -631,17 +631,19 @@ fn main() raises:
     print("Running Decimal128.quantize() Tests")
     print("=========================================")
 
-    run_test_with_error_handling(
-        test_basic_quantization, "Basic quantization test"
-    )
-    run_test_with_error_handling(test_rounding_modes, "Rounding modes test")
-    run_test_with_error_handling(test_edge_cases, "Edge cases test")
-    run_test_with_error_handling(test_special_cases, "Special cases test")
-    run_test_with_error_handling(
-        test_quantize_exceptions, "Exception handling test"
-    )
-    run_test_with_error_handling(
-        test_comprehensive_comparison, "Comprehensive comparison test"
-    )
+    # run_test_with_error_handling(
+    #     test_basic_quantization, "Basic quantization test"
+    # )
+    # run_test_with_error_handling(test_rounding_modes, "Rounding modes test")
+    # run_test_with_error_handling(test_edge_cases, "Edge cases test")
+    # run_test_with_error_handling(test_special_cases, "Special cases test")
+    # run_test_with_error_handling(
+    #     test_quantize_exceptions, "Exception handling test"
+    # )
+    # run_test_with_error_handling(
+    #     test_comprehensive_comparison, "Comprehensive comparison test"
+    # )
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All Decimal128.quantize() tests passed!")

@@ -64,7 +64,6 @@ fn test_bigdecimal_trignometric() raises:
 fn main() raises:
     print("Running BigDecimal trigonometric tests")
 
-    # Run all tests
-    test_bigdecimal_trignometric()
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All BigDecimal trigonometric tests passed!")

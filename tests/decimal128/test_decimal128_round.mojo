@@ -185,16 +185,18 @@ fn test_rounding_consistency() raises:
 fn main() raises:
     print("Running decimal rounding tests")
 
-    # Run basic rounding tests
-    test_basic_rounding()
+    # # Run basic rounding tests
+    # test_basic_rounding()
 
-    # Run tests with different rounding modes
-    test_different_rounding_modes()
+    # # Run tests with different rounding modes
+    # test_different_rounding_modes()
 
-    # Run edge case tests
-    test_edge_cases()
+    # # Run edge case tests
+    # test_edge_cases()
 
-    # Run rounding consistency tests
-    test_rounding_consistency()
+    # # Run rounding consistency tests
+    # test_rounding_consistency()
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All decimal rounding tests passed!")

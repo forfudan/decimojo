@@ -106,6 +106,6 @@ fn main() raises:
     print("Running BigDecimal comparison tests")
 
     # Run compare_absolute tests
-    test_bigdecimal_compare()
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All BigDecimal comparison tests passed!")

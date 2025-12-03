@@ -5,312 +5,312 @@
 [[addition_tests]]
 a = "42"
 b = "58"
-expected = "100"
 description = "Simple integer addition"
+expected = "100"
 
 [[addition_tests]]
 a = "3.14"
 b = "2.71"
-expected = "5.85"
 description = "Simple decimal addition"
+expected = "5.85"
 
 [[addition_tests]]
 a = "0"
 b = "0"
-expected = "0"
 description = "Zero plus zero"
+expected = "0"
 
 [[addition_tests]]
 a = "1"
 b = "0"
-expected = "1"
 description = "Addition with zero"
+expected = "1"
 
 [[addition_tests]]
 a = "123.456"
 b = "0"
-expected = "123.456"
 description = "Decimal plus zero"
+expected = "123.456"
 
 # === DIFFERENT SCALE TESTS ===
 [[addition_tests]]
 a = "1.2345"
 b = "5.67"
-expected = "6.9045"
 description = "Addition with different scales"
+expected = "6.9045"
 
 [[addition_tests]]
 a = "1.23456789012345678901234567"
 b = "5.6"
-expected = "6.83456789012345678901234567"
 description = "Addition with very different scales"
+expected = "6.83456789012345678901234567"
 
 [[addition_tests]]
 a = "9.999"
 b = "0.001"
-expected = "10.000"
 description = "Addition with carry"
+expected = "10.000"
 
 [[addition_tests]]
 a = "999999.999999"
 b = "0.000001"
-expected = "1000000.000000"
 description = "Addition causing scale reduction"
+expected = "1000000.000000"
 
 [[addition_tests]]
 a = "1.000000000000000000000000001"
 b = "2.000000000000000000000000002"
-expected = "3.000000000000000000000000003"
 description = "Addition with high precision"
+expected = "3.000000000000000000000000003"
 
 # === SIGN COMBINATION TESTS ===
 [[addition_tests]]
 a = "-1"
 b = "-2"
-expected = "-3"
 description = "Negative plus negative"
+expected = "-3"
 
 [[addition_tests]]
 a = "-3.14"
 b = "10"
-expected = "6.86"
 description = "Negative plus positive (negative smaller)"
+expected = "6.86"
 
 [[addition_tests]]
 a = "-10"
 b = "3.14"
-expected = "-6.86"
 description = "Negative plus positive (negative larger)"
+expected = "-6.86"
 
 [[addition_tests]]
 a = "-5.75"
 b = "-10.25"
-expected = "-16.00"
 description = "Negative plus negative"
+expected = "-16.00"
 
 [[addition_tests]]
 a = "123.456"
 b = "-123.456"
-expected = "0.000"
 description = "Addition resulting in zero (pos + neg)"
+expected = "0.000"
 
 [[addition_tests]]
 a = "0.0000001"
 b = "-0.00000005"
-expected = "0.00000005"
 description = "Addition near zero (small difference)"
+expected = "5E-8"
 
 # === LARGE NUMBER TESTS ===
 [[addition_tests]]
 a = "9999999999999999999999999999"
 b = "1"
-expected = "10000000000000000000000000000"
 description = "Large integer addition"
+expected = "1.0000000000000000000000000000E+28"
 
 [[addition_tests]]
 a = "-9999999999999999999999999999"
 b = "9999999999999999999999999998"
-expected = "-1"
 description = "Large negative plus positive"
+expected = "-1"
 
 [[addition_tests]]
 a = "99999999999999999999.99999999"
 b = "0.00000001"
-expected = "100000000000000000000.00000000"
 description = "Very large decimal addition with carry"
+expected = "100000000000000000000.00000000"
 
 [[addition_tests]]
 a = "10000000000000000000000000000"
 b = "0.00000000000000000000000001"
-expected = "10000000000000000000000000000.00000000000000000000000001"
 description = "Very large plus very small"
+expected = "1.000000000000000000000000000000000000000000000000000001E+28"
 
 # === SMALL NUMBER TESTS ===
 [[addition_tests]]
 a = "0.0000000000000000000000001"
 b = "0.0000000000000000000000002"
-expected = "0.0000000000000000000000003"
 description = "Very small positive values"
+expected = "3E-25"
 
 [[addition_tests]]
 a = "-0.0000000000000000000000001"
 b = "-0.0000000000000000000000002"
-expected = "-0.0000000000000000000000003"
 description = "Very small negative values"
+expected = "-3E-25"
 
 [[addition_tests]]
 a = "0.0000000000000001"
 b = "0.00000000000000000000000001"
-expected = "0.00000000000000010000000001"
 description = "Small values with different scales"
+expected = "1.0000000001E-16"
 
 # === SCIENTIFIC NOTATION TESTS ===
 [[addition_tests]]
 a = "1.23e5"
 b = "4.56e4"
-expected = "1.686E+5"
 description = "Addition with scientific notation"
+expected = "1.686E+5"
 
 [[addition_tests]]
 a = "1.23e-10"
 b = "4.56e-11"
-expected = "0.0000000001686"
 description = "Addition with negative exponents"
+expected = "1.686E-10"
 
 [[addition_tests]]
 a = "1.23e-10"
 b = "4.56e10"
-expected = "45600000000.000000000123"
 description = "Addition with extreme exponent difference"
+expected = "45600000000.000000000123"
 
 # === SPECIAL CASES ===
 [[addition_tests]]
 a = "3.14159265358979323846"
 b = "2.71828182845904523536"
-expected = "5.85987448204883847382"
 description = "Addition of mathematical constants (PI + E)"
+expected = "5.85987448204883847382"
 
 [[addition_tests]]
 a = "0.33333333333333333333333333"
 b = "0.66666666666666666666666667"
-expected = "1.00000000000000000000000000"
 description = "Addition of repeating patterns"
+expected = "1.00000000000000000000000000"
 
 [[addition_tests]]
 a = "0.499999999999999999"
 b = "0.500000000000000001"
-expected = "1.000000000000000000"
 description = "Addition resulting in exact integer"
+expected = "1.000000000000000000"
 
 [[addition_tests]]
 a = "9.99999999999999999999999999"
 b = "0.00000000000000000000000001"
-expected = "10.00000000000000000000000000"
 description = "Addition at precision limit with carry"
+expected = "10.00000000000000000000000000"
 
 # === FINANCIAL SCENARIOS ===
 [[addition_tests]]
 a = "10542.75"
 b = "3621.50"
-expected = "14164.25"
 description = "Financial numbers (dollars and cents)"
+expected = "14164.25"
 
 [[addition_tests]]
 a = "0.09"
 b = "0.01"
-expected = "0.10"
 description = "Financial numbers (cents)"
+expected = "0.10"
 
 [[addition_tests]]
 a = "99.99"
 b = "0.01"
-expected = "100.00"
 description = "Financial addition with carry"
+expected = "100.00"
 
 # === PRECISION BOUNDARY TESTS ===
 [[addition_tests]]
 a = "999999999999999999.9999999"
 b = "0.0000001"
-expected = "1000000000000000000.0000000"
 description = "Addition with rounding at precision boundary"
+expected = "1000000000000000000.0000000"
 
 [[addition_tests]]
 a = "1.1000000000000000000000000"
 b = "2.2000000000000000000000000"
-expected = "3.3000000000000000000000000"
 description = "Addition with trailing zeros"
+expected = "3.3000000000000000000000000"
 
 [[addition_tests]]
 a = "0.125"
 b = "0.0625"
-expected = "0.1875"
 description = "Addition of binary-friendly values (1/8 + 1/16)"
+expected = "0.1875"
 
 [[addition_tests]]
 a = "0.1"
 b = "0.2"
-expected = "0.3"
 description = "Simple tenths addition"
+expected = "0.3"
 
 # === ADDITIONAL EDGE CASES ===
 [[addition_tests]]
 a = "0.000000000000000000000000009"
 b = "0.000000000000000000000000001"
-expected = "0.000000000000000000000000010"
 description = "Addition near zero with precision limit"
+expected = "1.0E-26"
 
 [[addition_tests]]
 a = "0.0"
 b = "0.0"
-expected = "0.0"
 description = "Zero plus zero with decimal point"
+expected = "0.0"
 
 [[addition_tests]]
 a = "0.142857142857142857142857"
 b = "0.076923076923076923076923"
-expected = "0.219780219780219780219780"
 description = "Addition of recurring decimals (1/7 + 1/13)"
+expected = "0.219780219780219780219780"
 
 [[addition_tests]]
 a = "-0"
 b = "0"
-expected = "0"
 description = "Addition of negative zero and zero"
+expected = "0"
 
 [[addition_tests]]
 a = "1E6"
 b = "2000000"
-expected = "3000000"
 description = "Addition with E notation"
+expected = "3000000"
 
 [[addition_tests]]
 a = "1.79769313486231570E+308"
 b = "10"
-expected = "179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010"
 description = "Addition near max double precision"
+expected = "1.79769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010E+308"
 
 [[addition_tests]]
 a = "-9.9999999999999999999999"
 b = "9.9999999999999999999999"
-expected = "0.0000000000000000000000"
 description = "Exact cancellation of large numbers"
+expected = "0E-22"
 
 [[addition_tests]]
 a = "123456789012345678.987654321012345678"
 b = "987654321098765432.123456789098765432"
-expected = "1111111110111111111.111111110111111110"
 description = "Addition with digit carryover throughout"
+expected = "1111111110111111111.111111110111111110"
 
 # === SPECIFIC APPLICATION DOMAINS ===
 [[addition_tests]]
 a = "37.7749"
 b = "0.0001"
-expected = "37.7750"
 description = "GPS coordinates (latitude + delta)"
+expected = "37.7750"
 
 [[addition_tests]]
 a = "98.6"
 b = "1.2"
-expected = "99.8"
 description = "Body temperature in Fahrenheit"
+expected = "99.8"
 
 [[addition_tests]]
 a = "273.15"
 b = "32.0"
-expected = "305.15"
 description = "Temperature conversion constants (K offset + F offset)"
+expected = "305.15"
 
 [[addition_tests]]
 a = "987654321987654321.987654321"
 b = "0.000000000000000000000000001"
-expected = "987654321987654321.987654321000000000000000001"
 description = "Addition with extreme scale difference"
+expected = "987654321987654321.987654321000000000000000001"
 
 [[addition_tests]]
 a = "0.0425"
 b = "0.0015"
-expected = "0.0440"
 description = "Interest rate calculation"
+expected = "0.0440"
 
 # ===----------------------------------------------------------------------=== #
 # Test cases for BigDecimal subtraction
@@ -319,318 +319,318 @@ description = "Interest rate calculation"
 [[subtraction_tests]]
 a = "100"
 b = "42"
-expected = "58"
 description = "Simple integer subtraction"
+expected = "58"
 
 [[subtraction_tests]]
 a = "5.85"
 b = "2.71"
-expected = "3.14"
 description = "Simple decimal subtraction"
+expected = "3.14"
 
 [[subtraction_tests]]
 a = "0"
 b = "0"
-expected = "0"
 description = "Zero minus zero"
+expected = "0"
 
 [[subtraction_tests]]
 a = "1"
 b = "0"
-expected = "1"
 description = "Subtraction with zero"
+expected = "1"
 
 [[subtraction_tests]]
 a = "123.456"
 b = "0"
-expected = "123.456"
 description = "Decimal minus zero"
+expected = "123.456"
 
 # === DIFFERENT SCALE TESTS ===
 [[subtraction_tests]]
 a = "10.2345"
 b = "5.67"
-expected = "4.5645"
 description = "Subtraction with different scales"
+expected = "4.5645"
 
 [[subtraction_tests]]
 a = "5.23456789012345678901234567"
 b = "1.6"
-expected = "3.63456789012345678901234567"
 description = "Subtraction with very different scales"
+expected = "3.63456789012345678901234567"
 
 [[subtraction_tests]]
 a = "10.000"
 b = "0.001"
-expected = "9.999"
 description = "Subtraction with borrowing"
+expected = "9.999"
 
 [[subtraction_tests]]
 a = "1000000.000000"
 b = "0.000001"
-expected = "999999.999999"
 description = "Subtraction causing scale reduction"
+expected = "999999.999999"
 
 [[subtraction_tests]]
 a = "3.000000000000000000000000003"
 b = "2.000000000000000000000000002"
-expected = "1.000000000000000000000000001"
 description = "Subtraction with high precision"
+expected = "1.000000000000000000000000001"
 
 # === SIGN COMBINATION TESTS ===
 [[subtraction_tests]]
 a = "-1"
 b = "-2"
-expected = "1"
 description = "Negative minus negative"
+expected = "1"
 
 [[subtraction_tests]]
 a = "10"
 b = "-3.14"
-expected = "13.14"
 description = "Positive minus negative (becomes addition)"
+expected = "13.14"
 
 [[subtraction_tests]]
 a = "-10"
 b = "3.14"
-expected = "-13.14"
 description = "Negative minus positive"
+expected = "-13.14"
 
 [[subtraction_tests]]
 a = "50"
 b = "60.5"
-expected = "-10.5"
 description = "Subtraction resulting in negative"
+expected = "-10.5"
 
 [[subtraction_tests]]
 a = "123.456"
 b = "123.456"
-expected = "0.000"
 description = "Subtraction resulting in zero"
+expected = "0.000"
 
 [[subtraction_tests]]
 a = "0.0000001"
 b = "0.00000005"
-expected = "0.00000005"
 description = "Subtraction near zero (small difference)"
+expected = "5E-8"
 
 # === LARGE NUMBER TESTS ===
 [[subtraction_tests]]
 a = "10000000000000000000000000000"
 b = "1"
-expected = "9999999999999999999999999999"
 description = "Large integer subtraction"
+expected = "9999999999999999999999999999"
 
 [[subtraction_tests]]
 a = "-9999999999999999999999999999"
 b = "1"
-expected = "-10000000000000000000000000000"
 description = "Large negative minus positive"
+expected = "-1.0000000000000000000000000000E+28"
 
 [[subtraction_tests]]
 a = "100000000000000000000.00000000"
 b = "0.00000001"
-expected = "99999999999999999999.99999999"
 description = "Very large decimal subtraction with borrowing"
+expected = "99999999999999999999.99999999"
 
 [[subtraction_tests]]
 a = "10000000000000000000000000"
 b = "0.00000000000000000000000001"
-expected = "9999999999999999999999999.99999999999999999999999999"
 description = "Very large minus very small"
+expected = "9999999999999999999999999.99999999999999999999999999"
 
 # === SMALL NUMBER TESTS ===
 [[subtraction_tests]]
 a = "0.0000000000000000000000003"
 b = "0.0000000000000000000000002"
-expected = "0.0000000000000000000000001"
 description = "Very small positive values"
+expected = "1E-25"
 
 [[subtraction_tests]]
 a = "-0.0000000000000000000000003"
 b = "-0.0000000000000000000000002"
-expected = "-0.0000000000000000000000001"
 description = "Very small negative values (negative minus negative)"
+expected = "-1E-25"
 
 [[subtraction_tests]]
 a = "-0.0000000000000000000000002"
 b = "-0.0000000000000000000000003"
-expected = "0.0000000000000000000000001"
 description = "Very small negative values (smaller negative minus larger negative)"
+expected = "1E-25"
 
 [[subtraction_tests]]
 a = "0.00000000003"
 b = "0.000000000000000000001"
-expected = "0.000000000029999999999"
 description = "Small values with different scales"
+expected = "2.9999999999E-11"
 
 # === SCIENTIFIC NOTATION TESTS ===
 [[subtraction_tests]]
 a = "1.23e5"
 b = "4.56e4"
-expected = "7.74E+4"
 description = "Subtraction with scientific notation"
+expected = "7.74E+4"
 
 [[subtraction_tests]]
 a = "1.23e-10"
 b = "4.56e-11"
-expected = "0.0000000000774"
 description = "Subtraction with negative exponents"
+expected = "7.74E-11"
 
 [[subtraction_tests]]
 a = "4.56e10"
 b = "1.23e-10"
-expected = "45599999999.999999999877"
 description = "Subtraction with extreme exponent difference"
+expected = "45599999999.999999999877"
 
 # === SPECIAL CASES ===
 [[subtraction_tests]]
 a = "3.14159265358979323846"
 b = "2.71828182845904523536"
-expected = "0.42331082513074800310"
 description = "Subtraction of mathematical constants (PI - E)"
+expected = "0.42331082513074800310"
 
 [[subtraction_tests]]
 a = "1.00000000000000000000000000"
 b = "0.33333333333333333333333333"
-expected = "0.66666666666666666666666667"
 description = "Subtraction with repeating pattern"
+expected = "0.66666666666666666666666667"
 
 [[subtraction_tests]]
 a = "1.000000000000000000"
 b = "0.500000000000000001"
-expected = "0.499999999999999999"
 description = "Subtraction resulting in almost half"
+expected = "0.499999999999999999"
 
 [[subtraction_tests]]
 a = "10.00000000000000000000000000"
 b = "9.99999999999999999999999999"
-expected = "0.00000000000000000000000001"
 description = "Subtraction with many borrows"
+expected = "1E-26"
 
 # === FINANCIAL SCENARIOS ===
 [[subtraction_tests]]
 a = "10542.75"
 b = "3621.50"
-expected = "6921.25"
 description = "Financial numbers (dollars and cents)"
+expected = "6921.25"
 
 [[subtraction_tests]]
 a = "0.10"
 b = "0.01"
-expected = "0.09"
 description = "Financial numbers (cents)"
+expected = "0.09"
 
 [[subtraction_tests]]
 a = "100.00"
 b = "0.01"
-expected = "99.99"
 description = "Financial subtraction with borrowing"
+expected = "99.99"
 
 # === PRECISION BOUNDARY TESTS ===
 [[subtraction_tests]]
 a = "1000000000000000000.0000000"
 b = "0.0000001"
-expected = "999999999999999999.9999999"
 description = "Subtraction with rounding at precision boundary"
+expected = "999999999999999999.9999999"
 
 [[subtraction_tests]]
 a = "3.3000000000000000000000000"
 b = "2.2000000000000000000000000"
-expected = "1.1000000000000000000000000"
 description = "Subtraction with trailing zeros"
+expected = "1.1000000000000000000000000"
 
 [[subtraction_tests]]
 a = "0.125"
 b = "0.0625"
-expected = "0.0625"
 description = "Subtraction of binary-friendly values (1/8 - 1/16)"
+expected = "0.0625"
 
 [[subtraction_tests]]
 a = "0.3"
 b = "0.2"
-expected = "0.1"
 description = "Simple tenths subtraction"
+expected = "0.1"
 
 # === ADDITIONAL EDGE CASES ===
 [[subtraction_tests]]
 a = "0.000000000000000000000000010"
 b = "0.000000000000000000000000001"
-expected = "0.000000000000000000000000009"
 description = "Subtraction near zero with precision limit"
+expected = "9E-27"
 
 [[subtraction_tests]]
 a = "0.0"
 b = "0.0"
-expected = "0.0"
 description = "Zero minus zero with decimal point"
+expected = "0.0"
 
 [[subtraction_tests]]
 a = "0.142857142857142857142857"
 b = "0.076923076923076923076923"
-expected = "0.065934065934065934065934"
 description = "Subtraction of recurring decimals (1/7 - 1/13)"
+expected = "0.065934065934065934065934"
 
 [[subtraction_tests]]
 a = "0"
 b = "-0"
-expected = "0"
 description = "Zero minus negative zero"
+expected = "0"
 
 [[subtraction_tests]]
 a = "3E6"
 b = "2000000"
-expected = "1000000"
 description = "Subtraction with E notation"
+expected = "1000000"
 
 [[subtraction_tests]]
 a = "1.79769313486231570E+308"
 b = "10"
-expected = "179769313486231569999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999990"
 description = "Subtraction near max double precision"
+expected = "1.79769313486231569999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999990E+308"
 
 [[subtraction_tests]]
 a = "9.9999999999999999999999"
 b = "9.9999999999999999999999"
-expected = "0.0000000000000000000000"
 description = "Exact cancellation of large numbers"
+expected = "0E-22"
 
 [[subtraction_tests]]
 a = "1111111110111111111.111111110111111110"
 b = "987654321098765432.123456789098765432"
-expected = "123456789012345678.987654321012345678"
 description = "Complex subtraction with different digit patterns"
+expected = "123456789012345678.987654321012345678"
 
 # === SPECIFIC APPLICATION DOMAINS ===
 [[subtraction_tests]]
 a = "37.7749"
 b = "37.7748"
-expected = "0.0001"
 description = "GPS coordinates (latitude difference)"
+expected = "0.0001"
 
 [[subtraction_tests]]
 a = "98.6"
 b = "37.0"
-expected = "61.6"
 description = "Temperature conversion (F - C)"
+expected = "61.6"
 
 [[subtraction_tests]]
 a = "1000.50"
 b = "243.22"
-expected = "757.28"
 description = "Bank balance calculation"
+expected = "757.28"
 
 [[subtraction_tests]]
 a = "987654321987654321.987654321"
 b = "0.000000000000000000000000001"
-expected = "987654321987654321.987654320999999999999999999"
 description = "Subtraction with extreme scale difference"
+expected = "987654321987654321.987654320999999999999999999"
 
 [[subtraction_tests]]
 a = "0.0440"
 b = "0.0015"
-expected = "0.0425"
 description = "Interest rate calculation"
+expected = "0.0425"
 
 # ===----------------------------------------------------------------------=== #
 # Test cases for BigDecimal multiplication
@@ -639,288 +639,288 @@ description = "Interest rate calculation"
 [[multiplication_tests]]
 a = "2"
 b = "3"
-expected = "6"
 description = "Simple integer multiplication"
+expected = "6"
 
 [[multiplication_tests]]
 a = "1.5"
 b = "2"
-expected = "3.0"
 description = "Simple decimal by integer"
+expected = "3.0"
 
 [[multiplication_tests]]
 a = "0.5"
 b = "0.5"
-expected = "0.25"
 description = "Decimal by decimal multiplication"
+expected = "0.25"
 
 [[multiplication_tests]]
 a = "0"
 b = "123.456"
-expected = "0.000"
 description = "Multiplication by zero"
+expected = "0.000"
 
 [[multiplication_tests]]
 a = "1"
 b = "123.456"
-expected = "123.456"
 description = "Multiplication by one"
+expected = "123.456"
 
 [[multiplication_tests]]
 a = "-1"
 b = "123.456"
-expected = "-123.456"
 description = "Multiplication by negative one"
+expected = "-123.456"
 
 # === DIFFERENT SCALE TESTS ===
 [[multiplication_tests]]
 a = "1.23"
 b = "4.56"
-expected = "5.6088"
 description = "Multiplication with scales addition"
+expected = "5.6088"
 
 [[multiplication_tests]]
 a = "1.2345"
 b = "6.789"
-expected = "8.3810205"
 description = "Multiplication with different scales"
+expected = "8.3810205"
 
 [[multiplication_tests]]
 a = "1.23456789"
 b = "9.87654321"
-expected = "12.1932631112635269"
 description = "Multiplication with high precision"
+expected = "12.1932631112635269"
 
 [[multiplication_tests]]
 a = "9.999"
 b = "9.999"
-expected = "99.980001"
 description = "Multiplication near power of 10"
+expected = "99.980001"
 
 [[multiplication_tests]]
 a = "0.1"
 b = "0.1"
-expected = "0.01"
 description = "Multiplication of tenths"
+expected = "0.01"
 
 # === SIGN COMBINATION TESTS ===
 [[multiplication_tests]]
 a = "-2"
 b = "-3"
-expected = "6"
 description = "Negative times negative"
+expected = "6"
 
 [[multiplication_tests]]
 a = "-3.14"
 b = "2"
-expected = "-6.28"
 description = "Negative times positive"
+expected = "-6.28"
 
 [[multiplication_tests]]
 a = "10"
 b = "-0.5"
-expected = "-5.0"
 description = "Positive times negative"
+expected = "-5.0"
 
 [[multiplication_tests]]
 a = "-5.75"
 b = "-10.25"
-expected = "58.9375"
 description = "Negative times negative decimal"
+expected = "58.9375"
 
 [[multiplication_tests]]
 a = "0"
 b = "-123.456"
-expected = "-0.000"
 description = "Zero times negative"
+expected = "-0.000"
 
 # === LARGE NUMBER TESTS ===
 [[multiplication_tests]]
 a = "9999999999"
 b = "9999999999"
-expected = "99999999980000000001"
 description = "Large integer multiplication"
+expected = "99999999980000000001"
 
 [[multiplication_tests]]
 a = "-9999999999"
 b = "9999999999"
-expected = "-99999999980000000001"
 description = "Large integer with negative"
+expected = "-99999999980000000001"
 
 [[multiplication_tests]]
 a = "12345678901234567890"
 b = "0.00000000001"
-expected = "123456789.01234567890"
 description = "Large integer times small decimal"
+expected = "123456789.01234567890"
 
 [[multiplication_tests]]
 a = "0.0000000001"
 b = "0.0000000001"
-expected = "0.00000000000000000001"
 description = "Small decimal multiplication"
+expected = "1E-20"
 
 # === SCIENTIFIC NOTATION TESTS ===
 [[multiplication_tests]]
 a = "1.23e5"
 b = "4.56e2"
-expected = "5.6088E+7"
 description = "Multiplication with scientific notation"
+expected = "5.6088E+7"
 
 [[multiplication_tests]]
 a = "1.23e-5"
 b = "4.56e-2"
-expected = "0.00000056088"
 description = "Multiplication with negative exponents"
+expected = "5.6088E-7"
 
 [[multiplication_tests]]
 a = "1.23e5"
 b = "4.56e-2"
-expected = "5608.8"
 description = "Multiplication with mixed exponents"
+expected = "5608.8"
 
 # === SPECIAL CASES ===
 [[multiplication_tests]]
 a = "3.14159265358979323846"
 b = "2.71828182845904523536"
-expected = "8.5397342226735670654554622909226073039456"
 description = "Multiplication of mathematical constants (PI * E)"
+expected = "8.5397342226735670654554622909226073039456"
 
 [[multiplication_tests]]
 a = "0.33333333333333333333333333"
 b = "3"
-expected = "0.99999999999999999999999999"
 description = "Multiplication resulting in almost one"
+expected = "0.99999999999999999999999999"
 
 [[multiplication_tests]]
 a = "0.5"
 b = "2"
-expected = "1.0"
 description = "Multiplication resulting in exact integer"
+expected = "1.0"
 
 [[multiplication_tests]]
 a = "0.1"
 b = "10"
-expected = "1.0"
 description = "Decimal shifted by multiplication"
+expected = "1.0"
 
 # === FINANCIAL SCENARIOS ===
 [[multiplication_tests]]
 a = "10.99"
 b = "3"
-expected = "32.97"
 description = "Financial multiplication (price * quantity)"
+expected = "32.97"
 
 [[multiplication_tests]]
 a = "100"
 b = "0.075"
-expected = "7.500"
 description = "Financial multiplication (principal * interest)"
+expected = "7.500"
 
 [[multiplication_tests]]
 a = "9.99"
 b = "1.08"
-expected = "10.7892"
 description = "Financial multiplication (price * tax)"
+expected = "10.7892"
 
 # === PRECISION BOUNDARY TESTS ===
 [[multiplication_tests]]
 a = "9.9999999999999999999999999"
 b = "9.9999999999999999999999999"
-expected = "99.99999999999999999999999800000000000000000000000001"
 description = "Multiplication at precision boundary"
+expected = "99.99999999999999999999999800000000000000000000000001"
 
 [[multiplication_tests]]
 a = "1.0000000000000000000000001"
 b = "1.0000000000000000000000001"
-expected = "1.00000000000000000000000020000000000000000000000001"
 description = "Multiplication slightly above one"
+expected = "1.00000000000000000000000020000000000000000000000001"
 
 [[multiplication_tests]]
 a = "0.125"
 b = "8"
-expected = "1.000"
 description = "Binary-friendly multiplication (1/8 * 8)"
+expected = "1.000"
 
 # === ADDITIONAL EDGE CASES ===
 [[multiplication_tests]]
 a = "0.000000000000000000000000001"
 b = "1000000000000000000000000000"
-expected = "1.000000000000000000000000000"
 description = "Multiplication of very small and very large"
+expected = "1.000000000000000000000000000"
 
 [[multiplication_tests]]
 a = "0.9"
 b = "0.9"
-expected = "0.81"
 description = "Multiplication less than one"
+expected = "0.81"
 
 [[multiplication_tests]]
 a = "1.11111111111111111111111111"
 b = "9"
-expected = "9.99999999999999999999999999"
 description = "Multiplication of repeating decimal"
+expected = "9.99999999999999999999999999"
 
 [[multiplication_tests]]
 a = "2.5"
 b = "0.4"
-expected = "1.00"
 description = "Multiplication resulting in exact one"
+expected = "1.00"
 
 [[multiplication_tests]]
 a = "0.000000000000000000000000009"
 b = "0.000000000000000000000000009"
-expected = "0.000000000000000000000000000000000000000000000000000081"
 description = "Multiplication of very small numbers"
+expected = "8.1E-53"
 
 # === APPLICATION SCENARIOS ===
 [[multiplication_tests]]
 a = "299792458"
 b = "0.000000001"
-expected = "0.299792458"
 description = "Physical unit conversion (m/s to km/μs)"
+expected = "0.299792458"
 
 [[multiplication_tests]]
 a = "6.022e23"
 b = "0.001"
-expected = "6.022e20"
 description = "Scientific calculation (Avogadro's number * milli-mole)"
+expected = "6.022E+20"
 
 [[multiplication_tests]]
 a = "29.92"
 b = "33.8639"
-expected = "1013.207888"
 description = "Weather calculation (inches of mercury to hPa)"
+expected = "1013.207888"
 
 [[multiplication_tests]]
 a = "42.195"
 b = "0.621371"
-expected = "26.218749345"
 description = "Distance conversion (km to miles)"
+expected = "26.218749345"
 
 [[multiplication_tests]]
 a = "180"
 b = "0.017453292519943295"
-expected = "3.141592653589793100"
 description = "Angle conversion (degrees to radians)"
+expected = "3.141592653589793100"
 
 # === ROUNDING AND PRECISION TESTS ===
 [[multiplication_tests]]
 a = "3.333333333333333333333333333"
 b = "3"
-expected = "9.999999999999999999999999999"
 description = "Multiplication preserving precision"
+expected = "9.999999999999999999999999999"
 
 [[multiplication_tests]]
 a = "1.000000000000000000000000001"
 b = "0.999999999999999999999999999"
-expected = "0.999999999999999999999999999999999999999999999999999999"
 description = "Multiplication with potential precision loss"
+expected = "0.999999999999999999999999999999999999999999999999999999"
 
 [[multiplication_tests]]
 a = "3.1415926535897932384626433832795"
 b = "1.0"
-expected = "3.14159265358979323846264338327950"
 description = "Multiplication preserving significant digits up to precision"
+expected = "3.14159265358979323846264338327950"
 
 # ===----------------------------------------------------------------------=== #
 # Test cases for BigDecimal division
@@ -929,322 +929,322 @@ description = "Multiplication preserving significant digits up to precision"
 [[division_tests]]
 a = "10"
 b = "2"
-expected = "5"
 description = "Simple integer division"
+expected = "5"
 
 [[division_tests]]
 a = "10"
 b = "4"
-expected = "2.5"
 description = "Integer division resulting in decimal"
+expected = "2.5"
 
 [[division_tests]]
 a = "1"
 b = "3"
-expected = "0.3333333333333333333333333333"
 description = "Division resulting in repeating decimal"
+expected = "0.3333333333333333333333333333"
 
 [[division_tests]]
 a = "10.5"
 b = "2.5"
-expected = "4.2"
 description = "Decimal division resulting in exact decimal"
+expected = "4.2"
 
 [[division_tests]]
 a = "0"
 b = "5"
-expected = "0"
 description = "Zero divided by something"
+expected = "0"
 
 # === DIVISION WITH DIFFERENT SCALES ===
 [[division_tests]]
 a = "1.23456789"
 b = "0.001"
-expected = "1234.56789"
 description = "Division by small decimal (scale increase)"
+expected = "1234.56789"
 
 [[division_tests]]
 a = "0.001"
 b = "100"
-expected = "0.00001"
 description = "Small number divided by large (scale increase)"
+expected = "0.00001"
 
 [[division_tests]]
 a = "1.234"
 b = "10"
-expected = "0.1234"
 description = "Division resulting in scale increase"
+expected = "0.1234"
 
 [[division_tests]]
 a = "5.75"
 b = "0.1"
-expected = "57.5"
 description = "Division by 0.1 (scale shift)"
+expected = "57.5"
 
 [[division_tests]]
 a = "5.75"
 b = "0.01"
-expected = "575"
 description = "Division by 0.01 (scale shift)"
+expected = "575"
 
 # === SIGN COMBINATION TESTS ===
 [[division_tests]]
 a = "-10"
 b = "2"
-expected = "-5"
 description = "Negative divided by positive"
+expected = "-5"
 
 [[division_tests]]
 a = "10"
 b = "-2"
-expected = "-5"
 description = "Positive divided by negative"
+expected = "-5"
 
 [[division_tests]]
 a = "-10"
 b = "-2"
-expected = "5"
 description = "Negative divided by negative"
+expected = "5"
 
 [[division_tests]]
 a = "-0"
 b = "5"
-expected = "-0"
 description = "Negative zero divided by positive"
+expected = "-0"
 
 [[division_tests]]
 a = "0"
 b = "-5"
-expected = "-0"
 description = "Zero divided by negative"
+expected = "-0"
 
 # === ROUNDING TESTS ===
 [[division_tests]]
 a = "1"
 b = "7"
-expected = "0.1428571428571428571428571429"
 description = "Division with repeating decimal (1/7)"
+expected = "0.1428571428571428571428571429"
 
 [[division_tests]]
 a = "2"
 b = "3"
-expected = "0.6666666666666666666666666667"
 description = "Division with repeating decimal (2/3)"
+expected = "0.6666666666666666666666666667"
 
 [[division_tests]]
 a = "10"
 b = "6"
-expected = "1.666666666666666666666666667"
 description = "Division with repeating decimal (10/6)"
+expected = "1.666666666666666666666666667"
 
 [[division_tests]]
 a = "1"
 b = "9"
-expected = "0.1111111111111111111111111111"
 description = "Division with repeating digit (1/9)"
+expected = "0.1111111111111111111111111111"
 
 [[division_tests]]
 a = "100"
 b = "3"
-expected = "33.33333333333333333333333333"
 description = "Large repeating division"
+expected = "33.33333333333333333333333333"
 
 # === LARGE AND SMALL NUMBER TESTS ===
 [[division_tests]]
 a = "9999999999999999999999999999"
 b = "3"
-expected = "3333333333333333333333333333"
 description = "Large number simple division"
+expected = "3333333333333333333333333333"
 
 [[division_tests]]
 a = "1"
 b = "9999999999999999999999999999"
-expected = "0.0000000000000000000000000001000000000000000000000000000"
 description = "One divided by large number"
+expected = "1.000000000000000000000000000E-28"
 
 [[division_tests]]
 a = "0.0000000000000000000000000001"
 b = "0.0000000000000000000000000003"
-expected = "0.3333333333333333333333333333"
 description = "Small number division"
+expected = "0.3333333333333333333333333333"
 
 [[division_tests]]
 a = "1000000000000000000000000000000"
 b = "0.0000000000000000000000000001"
-expected = "1.000000000000000000000000000E+58"
 description = "Large divided by small"
+expected = "1.000000000000000000000000000E+58"
 
 [[division_tests]]
 a = "0.0000000000000000000000000001"
 b = "1000000000000000000000000000000"
-expected = "0.0000000000000000000000000000000000000000000000000000000001"
 description = "Small divided by large"
+expected = "1E-58"
 
 # === SCIENTIFIC NOTATION TESTS ===
 [[division_tests]]
 a = "1.23e5"
 b = "4.56e2"
-expected = "269.7368421052631578947368421"
 description = "Division with scientific notation"
+expected = "269.7368421052631578947368421"
 
 [[division_tests]]
 a = "1.23e-5"
 b = "4.56e-2"
-expected = "0.0002697368421052631578947368421"
 description = "Division with negative exponents"
+expected = "0.0002697368421052631578947368421"
 
 [[division_tests]]
 a = "1.23e5"
 b = "4.56e-2"
-expected = "2697368.421052631578947368421"
 description = "Division with mixed exponents"
+expected = "2697368.421052631578947368421"
 
 # === SPECIAL CASES ===
 [[division_tests]]
 a = "3.14159265358979323846"
 b = "2.71828182845904523536"
-expected = "1.155727349790921717909242961"
 description = "Division of mathematical constants (PI / E)"
+expected = "1.155727349790921717909242961"
 
 [[division_tests]]
 a = "1"
 b = "1"
-expected = "1"
 description = "Division by one"
+expected = "1"
 
 [[division_tests]]
 a = "0.33333333333333333333333333"
 b = "3"
-expected = "0.11111111111111111111111111"
 description = "Repeating decimal divided by integer"
+expected = "0.11111111111111111111111111"
 
 [[division_tests]]
 a = "5"
 b = "10"
-expected = "0.5"
 description = "Division resulting in exact fraction"
+expected = "0.5"
 
 # === DECIMAL PLACE SHIFTS ===
 [[division_tests]]
 a = "123.456789"
 b = "10"
-expected = "12.3456789"
 description = "Division by 10 (decimal shift left)"
+expected = "12.3456789"
 
 [[division_tests]]
 a = "123.456789"
 b = "100"
-expected = "1.23456789"
 description = "Division by 100 (decimal shift left)"
+expected = "1.23456789"
 
 [[division_tests]]
 a = "123.456789"
 b = "1000"
-expected = "0.123456789"
 description = "Division by 1000 (decimal shift left)"
+expected = "0.123456789"
 
 [[division_tests]]
 a = "123.456789"
 b = "0.1"
-expected = "1234.56789"
 description = "Division by 0.1 (decimal shift right)"
+expected = "1234.56789"
 
 [[division_tests]]
 a = "123.456789"
 b = "0.01"
-expected = "12345.6789"
 description = "Division by 0.01 (decimal shift right)"
+expected = "12345.6789"
 
 # === PRECISION BOUNDARY TESTS ===
 [[division_tests]]
 a = "1"
 b = "3"
-expected = "0.3333333333333333333333333333"
 description = "Division at precision boundary (1/3)"
+expected = "0.3333333333333333333333333333"
 
 [[division_tests]]
 a = "2"
 b = "3"
-expected = "0.6666666666666666666666666667"
 description = "Division at precision boundary (2/3)"
+expected = "0.6666666666666666666666666667"
 
 [[division_tests]]
 a = "9.9999999999999999999999999"
 b = "9.9999999999999999999999999"
-expected = "1"
 description = "Division of equal values at precision limit"
+expected = "1"
 
 [[division_tests]]
 a = "0.0000000000000000000000001"
 b = "0.0000000000000000000000001"
-expected = "1"
 description = "Division of equal small values"
+expected = "1"
 
 # === FINANCIAL SCENARIOS ===
 [[division_tests]]
 a = "100.00"
 b = "4"
-expected = "25.00"
 description = "Financial division (dollars)"
+expected = "25.00"
 
 [[division_tests]]
 a = "100.00"
 b = "3"
-expected = "33.33333333333333333333333333"
 description = "Financial division with repeating result"
+expected = "33.33333333333333333333333333"
 
 [[division_tests]]
 a = "156.48"
 b = "12"
-expected = "13.04"
 description = "Financial calculation (price per item)"
+expected = "13.04"
 
 # === APPLICATION SCENARIOS ===
 [[division_tests]]
 a = "360"
 b = "12"
-expected = "30"
 description = "Circle division (degrees in a circle / months)"
+expected = "30"
 
 [[division_tests]]
 a = "1000"
 b = "3"
-expected = "333.3333333333333333333333333"
 description = "Division for equal distribution"
+expected = "333.3333333333333333333333333"
 
 [[division_tests]]
 a = "2.54"
 b = "0.01"
-expected = "254"
 description = "Unit conversion (cm to m)"
+expected = "254"
 
 [[division_tests]]
 a = "1234.56"
 b = "51.44"
-expected = "24"
 description = "Division resulting in exact integer"
+expected = "24"
 
 # === EDGE CASES ===
 [[division_tests]]
 a = "0.0000000000000000000000000009"
 b = "0.0000000000000000000000000003"
-expected = "3"
 description = "Division of very small numbers"
+expected = "3"
 
 [[division_tests]]
 a = "1"
 b = "0.000000000000000000000000001"
-expected = "1E+27"
 description = "One divided by very small number"
+expected = "1E+27"
 
 [[division_tests]]
 a = "9999999999999999999999999999.9999999999999999999999999999"
 b = "9999999999999999999999999999.9999999999999999999999999999"
-expected = "1"
 description = "Division of very large equal numbers"
+expected = "1"
 
 [[division_tests]]
 a = "0"
 b = "1"
-expected = "0"
 description = "Division of zero"
+expected = "0"

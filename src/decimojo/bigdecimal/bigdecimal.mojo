@@ -236,7 +236,7 @@ struct BigDecimal(
         return Self(coefficient=BigUInt(words^), scale=0, sign=sign)
 
     @staticmethod
-    fn from_uint(value: Int) -> Self:
+    fn from_uint(value: UInt) -> Self:
         """Creates a BigDecimal from an unsigned integer."""
         return Self(coefficient=BigUInt.from_uint(value), scale=0, sign=False)
 

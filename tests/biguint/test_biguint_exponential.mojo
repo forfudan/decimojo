@@ -5,6 +5,7 @@ Test BigUInt exponential functions.
 
 from python import Python
 from random import random_ui64
+import testing
 from testing import assert_equal, assert_true
 from decimojo.biguint.biguint import BigUInt
 from decimojo.tests import TestCase, parse_file, load_test_cases
@@ -62,7 +63,8 @@ fn test_biguint_sqrt_random_numbers_against_python() raises:
 
 
 fn main() raises:
-    test_biguint_sqrt()
-    test_biguint_sqrt_random_numbers_against_python()
+    # test_biguint_sqrt()
+    # test_biguint_sqrt_random_numbers_against_python()
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
     print("All BigUInt exponential tests passed!")
     print("------------------------------------------------------")

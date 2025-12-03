@@ -535,19 +535,21 @@ fn test_extreme_cases() raises:
 fn main() raises:
     print("Running decimal arithmetic tests")
 
-    # Run addition tests
-    test_add()
+    # # Run addition tests
+    # test_add()
 
-    # Run negation tests
-    test_negation()
+    # # Run negation tests
+    # test_negation()
 
-    # Run absolute value tests
-    test_abs()
+    # # Run absolute value tests
+    # test_abs()
 
-    # Run subtraction tests
-    test_subtract()
+    # # Run subtraction tests
+    # test_subtract()
 
-    # Run extreme cases tests
-    test_extreme_cases()
+    # # Run extreme cases tests
+    # test_extreme_cases()
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All decimal arithmetic tests passed!")

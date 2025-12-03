@@ -375,21 +375,23 @@ fn main() raises:
     print("Running 50 tests for Decimal128.from_string()")
     print("=========================================")
 
-    run_test_with_error_handling(test_basic_integers, "Basic integers test")
-    run_test_with_error_handling(test_basic_decimals, "Basic decimals test")
-    run_test_with_error_handling(test_negative_numbers, "Negative numbers test")
-    run_test_with_error_handling(test_zeros_variants, "Zero variants test")
-    run_test_with_error_handling(
-        test_scientific_notation, "Scientific notation test"
-    )
-    run_test_with_error_handling(
-        test_formatting_variants, "Formatting variants test"
-    )
-    run_test_with_error_handling(
-        test_special_characters, "Special characters test"
-    )
-    run_test_with_error_handling(test_invalid_inputs, "Invalid inputs test")
-    run_test_with_error_handling(test_boundary_cases, "Boundary cases test")
-    run_test_with_error_handling(test_special_cases, "Special cases test")
+    # run_test_with_error_handling(test_basic_integers, "Basic integers test")
+    # run_test_with_error_handling(test_basic_decimals, "Basic decimals test")
+    # run_test_with_error_handling(test_negative_numbers, "Negative numbers test")
+    # run_test_with_error_handling(test_zeros_variants, "Zero variants test")
+    # run_test_with_error_handling(
+    #     test_scientific_notation, "Scientific notation test"
+    # )
+    # run_test_with_error_handling(
+    #     test_formatting_variants, "Formatting variants test"
+    # )
+    # run_test_with_error_handling(
+    #     test_special_characters, "Special characters test"
+    # )
+    # run_test_with_error_handling(test_invalid_inputs, "Invalid inputs test")
+    # run_test_with_error_handling(test_boundary_cases, "Boundary cases test")
+    # run_test_with_error_handling(test_special_cases, "Special cases test")
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All 50 Decimal128.from_string() tests passed!")

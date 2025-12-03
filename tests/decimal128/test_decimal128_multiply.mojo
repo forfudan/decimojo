@@ -362,19 +362,21 @@ fn main() raises:
     print("Running Decimal128 Multiplication Tests")
     print("=========================================")
 
-    run_test_with_error_handling(
-        test_basic_multiplication, "Basic multiplication test"
-    )
-    run_test_with_error_handling(test_special_cases, "Special cases test")
-    run_test_with_error_handling(
-        test_negative_multiplication, "Negative number multiplication test"
-    )
-    run_test_with_error_handling(
-        test_precision_scale, "Precision and scale test"
-    )
-    run_test_with_error_handling(test_boundary_cases, "Boundary cases test")
-    run_test_with_error_handling(
-        test_commutative_property, "Commutative property test"
-    )
+    # run_test_with_error_handling(
+    #     test_basic_multiplication, "Basic multiplication test"
+    # )
+    # run_test_with_error_handling(test_special_cases, "Special cases test")
+    # run_test_with_error_handling(
+    #     test_negative_multiplication, "Negative number multiplication test"
+    # )
+    # run_test_with_error_handling(
+    #     test_precision_scale, "Precision and scale test"
+    # )
+    # run_test_with_error_handling(test_boundary_cases, "Boundary cases test")
+    # run_test_with_error_handling(
+    #     test_commutative_property, "Commutative property test"
+    # )
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All multiplication tests passed!")

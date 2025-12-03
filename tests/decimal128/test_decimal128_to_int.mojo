@@ -52,6 +52,8 @@ fn test_int_conversion() raises:
 fn main() raises:
     print("Starting Decimal128 conversion __int__ tests...")
 
-    test_int_conversion()
+    # test_int_conversion()
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("\nAll tests completed!")

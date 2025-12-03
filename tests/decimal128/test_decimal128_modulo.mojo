@@ -330,19 +330,21 @@ fn main() raises:
     print("Running Decimal128 Modulo Tests")
     print("=========================================")
 
-    run_test_with_error_handling(
-        test_basic_modulo, "Basic modulo operations test"
-    )
-    run_test_with_error_handling(
-        test_negative_modulo, "Negative number modulo test"
-    )
-    run_test_with_error_handling(test_edge_cases, "Edge cases test")
-    run_test_with_error_handling(
-        test_mathematical_relationships, "Mathematical relationships test"
-    )
-    run_test_with_error_handling(
-        test_consistency_with_floor_division,
-        "Consistency with floor division test",
-    )
+    # run_test_with_error_handling(
+    #     test_basic_modulo, "Basic modulo operations test"
+    # )
+    # run_test_with_error_handling(
+    #     test_negative_modulo, "Negative number modulo test"
+    # )
+    # run_test_with_error_handling(test_edge_cases, "Edge cases test")
+    # run_test_with_error_handling(
+    #     test_mathematical_relationships, "Mathematical relationships test"
+    # )
+    # run_test_with_error_handling(
+    #     test_consistency_with_floor_division,
+    #     "Consistency with floor division test",
+    # )
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All modulo tests passed!")

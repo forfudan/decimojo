@@ -504,22 +504,24 @@ fn test_comparison_operators() raises:
 fn main() raises:
     print("Running decimal logic tests")
 
-    # Basic equality tests
-    test_equality()
-    test_inequality()
+    # # Basic equality tests
+    # test_equality()
+    # test_inequality()
 
-    # Comparison tests
-    test_greater()
-    test_greater_equal()
-    test_less()
-    test_less_equal()
+    # # Comparison tests
+    # test_greater()
+    # test_greater_equal()
+    # test_less()
+    # test_less_equal()
 
-    # Zero handling and edge cases
-    test_zero_comparison()
-    test_edge_cases()
-    test_exact_comparison()
+    # # Zero handling and edge cases
+    # test_zero_comparison()
+    # test_edge_cases()
+    # test_exact_comparison()
 
-    # Test operator overloads
-    test_comparison_operators()
+    # # Test operator overloads
+    # test_comparison_operators()
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All decimal logic tests passed!")

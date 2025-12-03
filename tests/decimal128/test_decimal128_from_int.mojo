@@ -366,24 +366,26 @@ fn main() raises:
     print("Running Decimal128.from_int() Tests")
     print("=========================================")
 
-    run_test_with_error_handling(
-        test_basic_integers, "Basic integer conversion test"
-    )
-    run_test_with_error_handling(
-        test_large_integers, "Large integer conversion test"
-    )
-    run_test_with_error_handling(
-        test_operations_with_from_int, "Operations with from_int test"
-    )
-    run_test_with_error_handling(
-        test_comparison_with_from_int, "Comparison with from_int test"
-    )
-    run_test_with_error_handling(
-        test_properties, "Properties of from_int results test"
-    )
-    run_test_with_error_handling(test_edge_cases, "Edge cases test")
-    run_test_with_error_handling(
-        test_from_int_with_scale, "from_int with scale test"
-    )
+    # run_test_with_error_handling(
+    #     test_basic_integers, "Basic integer conversion test"
+    # )
+    # run_test_with_error_handling(
+    #     test_large_integers, "Large integer conversion test"
+    # )
+    # run_test_with_error_handling(
+    #     test_operations_with_from_int, "Operations with from_int test"
+    # )
+    # run_test_with_error_handling(
+    #     test_comparison_with_from_int, "Comparison with from_int test"
+    # )
+    # run_test_with_error_handling(
+    #     test_properties, "Properties of from_int results test"
+    # )
+    # run_test_with_error_handling(test_edge_cases, "Edge cases test")
+    # run_test_with_error_handling(
+    #     test_from_int_with_scale, "from_int with scale test"
+    # )
+
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
     print("All Decimal128.from_int() tests passed!")

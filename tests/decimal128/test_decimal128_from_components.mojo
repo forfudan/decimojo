@@ -91,4 +91,5 @@ fn test_decimal_from_components() raises:
 
 
 fn main() raises:
-    test_decimal_from_components()
+    # test_decimal_from_components()
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
