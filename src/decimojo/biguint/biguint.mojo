@@ -465,8 +465,8 @@ struct BigUInt(
             return Self()
 
         var list_of_words = List[UInt32]()
-        var remainder: Int = value
-        var quotient: Int
+        var remainder: UInt = value
+        var quotient: UInt
 
         while remainder != 0:
             quotient = remainder // 1_000_000_000
@@ -904,7 +904,7 @@ struct BigUInt(
         #         " of UInt128 (340282366920938463463374607431768211455)"
         #     )
 
-        var result: UInt128 = 0
+        var result: UInt128
 
         if len(self.words) == 1:
             result = self.words._data.load[width=1]().cast[DType.uint128]()
@@ -1295,11 +1295,11 @@ struct BigUInt(
     # Other dunders
     # ===------------------------------------------------------------------=== #
 
-    fn __merge_with__[other_type: __type_of(BigInt)](self) -> BigInt:
+    fn __merge_with__[other_type: type_of(BigInt)](self) -> BigInt:
         "Merges this BigUInt with a BigInt into a BigInt."
         return BigInt(self)
 
-    fn __merge_with__[other_type: __type_of(BigDecimal)](self) -> BigDecimal:
+    fn __merge_with__[other_type: type_of(BigDecimal)](self) -> BigDecimal:
         "Merges this BigUInt with a BigDecimal into a BigDecimal."
         return BigDecimal(self)
 

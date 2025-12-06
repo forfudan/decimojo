@@ -15,8 +15,8 @@ import testing
 
 
 fn test_equality() raises:
-    print("------------------------------------------------------")
-    print("Testing decimal equality...")
+    # print("------------------------------------------------------")
+    # print("Testing decimal equality...")
 
     # Test case 1: Equal decimals
     var a1 = Decimal128(12345, 2)
@@ -57,12 +57,12 @@ fn test_equality() raises:
         "Same absolute value but different signs should not be equal",
     )
 
-    print("Equality tests passed!")
+    # print("Equality tests passed!")
 
 
 fn test_inequality() raises:
-    print("------------------------------------------------------")
-    print("Testing decimal inequality...")
+    # print("------------------------------------------------------")
+    # print("Testing decimal inequality...")
 
     # Test case 1: Equal decimals
     var a1 = Decimal128(12345, 2)
@@ -94,11 +94,11 @@ fn test_inequality() raises:
         "Same absolute value but different signs should be unequal",
     )
 
-    print("Inequality tests passed!")
+    # print("Inequality tests passed!")
 
 
 fn test_greater() raises:
-    print("Testing greater than comparison...")
+    # print("Testing greater than comparison...")
 
     # Test case 1: Larger decimal
     var a1 = Decimal128(12346, 2)
@@ -149,11 +149,11 @@ fn test_greater() raises:
     var b7 = Decimal128(12345, 2)
     testing.assert_true(greater(a7, b7), "123.5 should be greater than 123.45")
 
-    print("Greater than tests passed!")
+    # print("Greater than tests passed!")
 
 
 fn test_greater_equal() raises:
-    print("Testing greater than or equal comparison...")
+    # print("Testing greater than or equal comparison...")
 
     # Test case 1: Larger decimal
     var a1 = Decimal128("123.46")
@@ -194,11 +194,11 @@ fn test_greater_equal() raises:
         "123.45 should not be greater than or equal to 123.46",
     )
 
-    print("Greater than or equal tests passed!")
+    # print("Greater than or equal tests passed!")
 
 
 fn test_less() raises:
-    print("Testing less than comparison...")
+    # print("Testing less than comparison...")
 
     # Test case 1: Smaller decimal
     var a1 = Decimal128(12345, 2)
@@ -225,11 +225,11 @@ fn test_less() raises:
     var b5 = Decimal128(12345, 2)
     testing.assert_true(less(a5, b5), "Zero should be less than positive")
 
-    print("Less than tests passed!")
+    # print("Less than tests passed!")
 
 
 fn test_less_equal() raises:
-    print("Testing less than or equal comparison...")
+    # print("Testing less than or equal comparison...")
 
     # Test case 1: Smaller decimal
     var a1 = Decimal128(12345, 2)
@@ -267,11 +267,11 @@ fn test_less_equal() raises:
         less_equal(a5, b5), "123.46 should not be less than or equal to 123.45"
     )
 
-    print("Less than or equal tests passed!")
+    # print("Less than or equal tests passed!")
 
 
 fn test_zero_comparison() raises:
-    print("Testing zero comparison cases...")
+    # print("Testing zero comparison cases...")
 
     var zero = Decimal128(0)
     var pos = Decimal128("0.0000000000000000001")  # Very small positive
@@ -346,11 +346,11 @@ fn test_zero_comparison() raises:
         less_equal(zero, neg_zero), "Zero should be <= negative zero"
     )
 
-    print("Zero comparison cases passed!")
+    # print("Zero comparison cases passed!")
 
 
 fn test_edge_cases() raises:
-    print("Testing comparison edge cases...")
+    # print("Testing comparison edge cases...")
 
     # Test case 1: Very close values
     var a1 = Decimal128("1.000000000000000000000000001")
@@ -388,11 +388,11 @@ fn test_edge_cases() raises:
         greater(pos_large, neg_large), "1000 > -1000 (transitivity)"
     )
 
-    print("Edge case tests passed!")
+    # print("Edge case tests passed!")
 
 
 fn test_exact_comparison() raises:
-    print("Testing exact comparison with precision handling...")
+    # print("Testing exact comparison with precision handling...")
 
     # Test case 1: Scale handling with zeros
     var zero1 = Decimal128(0)
@@ -419,11 +419,11 @@ fn test_exact_comparison() raises:
     testing.assert_false(equal(e1, e2), "1.2 != 1.20000001")
     testing.assert_true(less(e1, e2), "1.2 < 1.20000001")
 
-    print("Exact comparison tests passed!")
+    # print("Exact comparison tests passed!")
 
 
 fn test_comparison_operators() raises:
-    print("Testing comparison operators...")
+    # print("Testing comparison operators...")
 
     # Create test values
     var a = Decimal128(12345, 2)
@@ -498,28 +498,30 @@ fn test_comparison_operators() raises:
         f != g, "f != g: Zero and negative zero should not be unequal"
     )
 
-    print("Comparison operator tests passed!")
+    # print("Comparison operator tests passed!")
 
 
 fn main() raises:
-    print("Running decimal logic tests")
+    # print("Running decimal logic tests")
 
-    # Basic equality tests
-    test_equality()
-    test_inequality()
+    # # Basic equality tests
+    # test_equality()
+    # test_inequality()
 
-    # Comparison tests
-    test_greater()
-    test_greater_equal()
-    test_less()
-    test_less_equal()
+    # # Comparison tests
+    # test_greater()
+    # test_greater_equal()
+    # test_less()
+    # test_less_equal()
 
-    # Zero handling and edge cases
-    test_zero_comparison()
-    test_edge_cases()
-    test_exact_comparison()
+    # # Zero handling and edge cases
+    # test_zero_comparison()
+    # test_edge_cases()
+    # test_exact_comparison()
 
-    # Test operator overloads
-    test_comparison_operators()
+    # # Test operator overloads
+    # test_comparison_operators()
 
-    print("All decimal logic tests passed!")
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
+
+    # print("All decimal logic tests passed!")

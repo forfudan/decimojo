@@ -58,7 +58,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pixi run mojo test tests
+          bash ./tests/test_all.sh
 
       - name: Install pre-commit
         run: |

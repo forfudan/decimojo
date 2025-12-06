@@ -2,346 +2,346 @@
 [[sqrt_tests]]
 a = "0"
 b = ""
-expected = "0"
 description = "Square root of zero"
+expected = "0"
 
 [[sqrt_tests]]
 a = "1"
 b = ""
-expected = "1"
 description = "Square root of one"
+expected = "1"
 
 [[sqrt_tests]]
 a = "4"
 b = ""
-expected = "2"
 description = "Square root of perfect square (small)"
+expected = "2"
 
 [[sqrt_tests]]
 a = "9"
 b = ""
-expected = "3"
 description = "Square root of perfect square (single digit)"
+expected = "3"
 
 [[sqrt_tests]]
 a = "16"
 b = ""
-expected = "4"
 description = "Square root of perfect square (16)"
+expected = "4"
 
 [[sqrt_tests]]
 a = "25"
 b = ""
-expected = "5"
 description = "Square root of perfect square (25)"
+expected = "5"
 
 [[sqrt_tests]]
 a = "100"
 b = ""
-expected = "10"
 description = "Square root of perfect square (100)"
+expected = "10"
 
 # === NON-PERFECT SQUARES ===
 [[sqrt_tests]]
 a = "2"
 b = ""
-expected = "1.414213562373095048801688724"
 description = "Square root of 2 (irrational)"
+expected = "1.414213562373095048801688724"
 
 [[sqrt_tests]]
 a = "3"
 b = ""
-expected = "1.732050807568877293527446342"
 description = "Square root of 3 (irrational)"
+expected = "1.732050807568877293527446342"
 
 [[sqrt_tests]]
 a = "5"
 b = ""
-expected = "2.236067977499789696409173669"
 description = "Square root of 5 (irrational)"
+expected = "2.236067977499789696409173669"
 
 [[sqrt_tests]]
 a = "10"
 b = ""
-expected = "3.162277660168379331998893544"
 description = "Square root of 10 (irrational)"
+expected = "3.162277660168379331998893544"
 
 # === DECIMAL INPUTS ===
 [[sqrt_tests]]
 a = "0.25"
 b = ""
-expected = "0.5"
 description = "Square root of 0.25"
+expected = "0.5"
 
 [[sqrt_tests]]
 a = "0.01"
 b = ""
-expected = "0.1"
 description = "Square root of 0.01"
+expected = "0.1"
 
 [[sqrt_tests]]
 a = "0.0625"
 b = ""
-expected = "0.25"
 description = "Square root of 0.0625"
+expected = "0.25"
 
 [[sqrt_tests]]
 a = "2.25"
 b = ""
-expected = "1.5"
 description = "Square root of 2.25"
+expected = "1.5"
 
 [[sqrt_tests]]
 a = "12.25"
 b = ""
-expected = "3.5"
 description = "Square root of 12.25"
+expected = "3.5"
 
 # === LARGE NUMBERS ===
 [[sqrt_tests]]
 a = "1000000"
 b = ""
-expected = "1000"
 description = "Square root of large perfect square"
+expected = "1000"
 
 [[sqrt_tests]]
 a = "9999999999"
 b = ""
-expected = "99999.99999499999999987500000"
 description = "Square root of large near-perfect square"
+expected = "99999.99999499999999987500000"
 
 [[sqrt_tests]]
 a = "1000000000000000000000000000"
 b = ""
-expected = "31622776601683.79331998893544"
 description = "Square root of very large imperfect square"
+expected = "31622776601683.79331998893544"
 
 # === SMALL NUMBERS ===
 [[sqrt_tests]]
 a = "0.0001"
 b = ""
-expected = "0.01"
 description = "Square root of small number"
+expected = "0.01"
 
 [[sqrt_tests]]
 a = "0.000000000001"
 b = ""
-expected = "0.000001"
 description = "Square root of very small number"
+expected = "1E-6"
 
 [[sqrt_tests]]
 a = "0.0000000000000000000000000001"
 b = ""
-expected = "1E-14"
 description = "Square root of extremely small number"
+expected = "1E-14"
 
 # === SCIENTIFIC NOTATION ===
 [[sqrt_tests]]
 a = "1e10"
 b = ""
-expected = "1E+5"
 description = "Square root with scientific notation (positive exponent)"
+expected = "1E+5"
 
 [[sqrt_tests]]
 a = "1e-10"
 b = ""
-expected = "0.00001"
 description = "Square root with scientific notation (negative exponent)"
+expected = "0.00001"
 
 # === PRECISION TESTS ===
 [[sqrt_tests]]
 a = "2"
 b = ""
-expected = "1.414213562373095048801688724"
 description = "High precision square root of 2"
+expected = "1.414213562373095048801688724"
 
 [[sqrt_tests]]
 a = "0.9999999999999999"
 b = ""
-expected = "0.9999999999999999500000000000"
 description = "Square root slightly less than 1"
+expected = "0.9999999999999999500000000000"
 
 [[sqrt_tests]]
 a = "1.0000000000000001"
 b = ""
-expected = "1.000000000000000050000000000"
 description = "Square root slightly more than 1"
+expected = "1.000000000000000050000000000"
 
 # === APPLICATION SCENARIOS ===
 [[sqrt_tests]]
 a = "3.14159265358979323846"
 b = ""
-expected = "1.772453850905516027297421799"
 description = "Square root of π"
+expected = "1.772453850905516027297421799"
 
 [[sqrt_tests]]
 a = "2.71828182845904523536"
 b = ""
-expected = "1.648721270700128146848563608"
 description = "Square root of e"
+expected = "1.648721270700128146848563608"
 
 # === BASIC NATURAL LOGARITHM TESTS ===
 [[ln_tests]]
 a = "1"
 b = ""
-expected = "0"
 description = "Natural logarithm of 1 (exactly 0)"
+expected = "0"
 
 [[ln_tests]]
 a = "2.718281828459045235360287471"
 b = ""
-expected = "0.9999999999999999999999999999"
 description = "Natural logarithm of e (approximately 1)"
+expected = "0.9999999999999999999999999999"
 
 [[ln_tests]]
 a = "10"
 b = ""
-expected = "2.302585092994045684017991455"
 description = "Natural logarithm of 10"
+expected = "2.302585092994045684017991455"
 
 [[ln_tests]]
 a = "2"
 b = ""
-expected = "0.6931471805599453094172321215"
 description = "Natural logarithm of 2"
+expected = "0.6931471805599453094172321215"
 
 [[ln_tests]]
 a = "0.5"
 b = ""
-expected = "-0.6931471805599453094172321215"
 description = "Natural logarithm of 0.5 (negative result)"
+expected = "-0.6931471805599453094172321215"
 
 # === POWERS OF e ===
 [[ln_tests]]
 a = "7.389056098930650227230427461"
 b = ""
-expected = "2.000000000000000000000000000"
 description = "Natural logarithm of e^2 (exactly 2)"
+expected = "2.000000000000000000000000000"
 
 [[ln_tests]]
 a = "20.08553692318766774092852965"
 b = ""
-expected = "3.000000000000000000000000000"
 description = "Natural logarithm of e^3 (exactly 3)"
+expected = "3.000000000000000000000000000"
 
 [[ln_tests]]
 a = "0.3678794411714423215955237702"
 b = ""
-expected = "-0.9999999999999999999999999999"
 description = "Natural logarithm of 1/e (exactly -1)"
+expected = "-0.9999999999999999999999999999"
 
 [[ln_tests]]
 a = "0.1353352832366126918939994949"
 b = ""
-expected = "-2.000000000000000000000000001"
 description = "Natural logarithm of 1/e^2 (exactly -2)"
+expected = "-2.000000000000000000000000001"
 
 # === POWERS OF 10 ===
 [[ln_tests]]
 a = "100"
 b = ""
-expected = "4.605170185988091368035982909"
 description = "Natural logarithm of 10^2"
+expected = "4.605170185988091368035982909"
 
 [[ln_tests]]
 a = "0.01"
 b = ""
-expected = "-4.605170185988091368035982909"
 description = "Natural logarithm of 10^-2"
+expected = "-4.605170185988091368035982909"
 
 [[ln_tests]]
 a = "1000"
 b = ""
-expected = "6.907755278982137052053974364"
 description = "Natural logarithm of 10^3"
+expected = "6.907755278982137052053974364"
 
 [[ln_tests]]
 a = "0.001"
 b = ""
-expected = "-6.907755278982137052053974364"
 description = "Natural logarithm of 10^-3"
+expected = "-6.907755278982137052053974364"
 
 # === SMALL NUMBERS ===
 [[ln_tests]]
 a = "0.1"
 b = ""
-expected = "-2.302585092994045684017991455"
 description = "Natural logarithm of 0.1"
+expected = "-2.302585092994045684017991455"
 
 [[ln_tests]]
 a = "0.00001"
 b = ""
-expected = "-11.51292546497022842008995727"
 description = "Natural logarithm of 1e-5"
+expected = "-11.51292546497022842008995727"
 
 [[ln_tests]]
 a = "0.0000000001"
 b = ""
-expected = "-23.02585092994045684017991455"
 description = "Natural logarithm of 1e-10"
+expected = "-23.02585092994045684017991455"
 
 # === LARGE NUMBERS ===
 [[ln_tests]]
 a = "1000000"
 b = ""
-expected = "13.81551055796427410410794873"
 description = "Natural logarithm of 1e6"
+expected = "13.81551055796427410410794873"
 
 [[ln_tests]]
 a = "1000000000000"
 b = ""
-expected = "27.63102111592854820821589746"
 description = "Natural logarithm of 1e12"
+expected = "27.63102111592854820821589746"
 
 [[ln_tests]]
 a = "1e50"
 b = ""
-expected = "115.1292546497022842008995727"
 description = "Natural logarithm of 1e50"
+expected = "115.1292546497022842008995727"
 
 # === VALUES NEAR 1 ===
 [[ln_tests]]
 a = "0.9"
 b = ""
-expected = "-0.1053605156578263012275009808"
 description = "Natural logarithm of 0.9 (near 1)"
+expected = "-0.1053605156578263012275009808"
 
 [[ln_tests]]
 a = "1.1"
 b = ""
-expected = "0.09531017980432486004395212328"
 description = "Natural logarithm of 1.1 (near 1)"
+expected = "0.09531017980432486004395212328"
 
 [[ln_tests]]
 a = "0.999999"
 b = ""
-expected = "-0.000001000000500000333333583333533"
 description = "Natural logarithm very close to 0 (0.999999)"
+expected = "-1.000000500000333333583333533E-6"
 
 [[ln_tests]]
 a = "1.000001"
 b = ""
-expected = "9.999995000003333330833335333E-7"
 description = "Natural logarithm very close to 0 (1.000001)"
+expected = "9.999995000003333330833335333E-7"
 
 # === MATHEMATICAL CONSTANTS ===
 [[ln_tests]]
 a = "3.141592653589793238462643383"
 b = ""
-expected = "1.144729885849400174143427351"
 description = "Natural logarithm of π"
+expected = "1.144729885849400174143427351"
 
 [[ln_tests]]
 a = "1.618033988749894848204586834"
 b = ""
-expected = "0.4812118250596034474977589132"
 description = "Natural logarithm of φ (golden ratio)"
+expected = "0.4812118250596034474977589132"
 
 [[ln_tests]]
 a = "1.414213562373095048801688724"
 b = ""
-expected = "0.3465735902799726547086160606"
 description = "Natural logarithm of √2"
+expected = "0.3465735902799726547086160606"
 
 # === ROOT TESTS ===
 # Testing different roots (both integer and fractional)
@@ -349,168 +349,168 @@ description = "Natural logarithm of √2"
 [[root_tests]]
 a = "64"
 b = "2"
-expected = "8"
 description = "Square root of 64"
+expected = "8"
 
 [[root_tests]]
 a = "27"
 b = "3"
-expected = "3.000000000000000000000000000"
 description = "Cube root of 27"
+expected = "3.000000000000000000000000000"
 
 [[root_tests]]
 a = "-27"
 b = "3"
-expected = "-3.000000000000000000000000000"
 description = "Cube root of negative number"
+expected = "-3.000000000000000000000000000"
 
 [[root_tests]]
 a = "16"
 b = "4"
-expected = "2.000000000000000000000000000"
 description = "4th root of 16"
+expected = "2.000000000000000000000000000"
 
 [[root_tests]]
 a = "32"
 b = "5"
-expected = "2.000000000000000000000000000"
 description = "5th root of 32"
+expected = "2.000000000000000000000000000"
 
 [[root_tests]]
 a = "64"
 b = "6"
-expected = "2.000000000000000000000000000"
 description = "6th root of 64"
+expected = "2.000000000000000000000000000"
 
 [[root_tests]]
 a = "128"
 b = "7"
-expected = "2.000000000000000000000000000"
 description = "7th root of 128"
+expected = "2.000000000000000000000000000"
 
 [[root_tests]]
 a = "256"
 b = "8"
-expected = "2.000000000000000000000000000"
 description = "8th root of 256"
+expected = "2.000000000000000000000000000"
 
 [[root_tests]]
 a = "1024"
 b = "10"
-expected = "2.000000000000000000000000000"
 description = "10th root of 1024"
+expected = "2.000000000000000000000000000"
 
 [[root_tests]]
 a = "1000000"
 b = "6"
-expected = "10.00000000000000000000000000"
 description = "6th root of one million"
+expected = "10.00000000000000000000000000"
 
 [[root_tests]]
 a = "0"
 b = "3"
-expected = "0"
 description = "Root of zero"
+expected = "0"
 
 [[root_tests]]
 a = "1"
 b = "99"
-expected = "1"
 description = "Any root of 1"
+expected = "1"
 
 # Fractional roots
 [[root_tests]]
 a = "16"
 b = "0.5"
-expected = "256"
 description = "Fractional root (0.5 is power of 2)"
+expected = "256"
 
 [[root_tests]]
 a = "27"
 b = "1.5"
-expected = "9.000000000000000000000000000"
 description = "Fractional root (x^(3/2))"
+expected = "9.000000000000000000000000000"
 
 [[root_tests]]
 a = "16"
 b = "2.5"
-expected = "3.031433133020796164694519603"
 description = "Fractional root (nth root where n=2.5)"
+expected = "3.031433133020796164694519603"
 
 [[root_tests]]
 a = "100"
 b = "2.5"
-expected = "6.309573444801932494343601366"
 description = "Fractional root of perfect power"
+expected = "6.309573444801932494343601366"
 
 # Negative roots (reciprocal of positive roots)
 [[root_tests]]
 a = "16"
 b = "-2"
-expected = "0.25"
 description = "Negative root (reciprocal of square root)"
+expected = "0.25"
 
 [[root_tests]]
 a = "27"
 b = "-3"
-expected = "0.3333333333333333333333333333"
 description = "Negative root (reciprocal of cube root)"
+expected = "0.3333333333333333333333333333"
 
 # Special cases and edge cases
 [[root_tests]]
 a = "0.25"
 b = "2"
-expected = "0.5"
 description = "Root of number less than 1"
+expected = "0.5"
 
 [[root_tests]]
 a = "0.0625"
 b = "4"
-expected = "0.5000000000000000000000000000"
 description = "Higher root of number less than 1"
+expected = "0.5000000000000000000000000000"
 
 [[root_tests]]
 a = "0.000001"
 b = "3"
-expected = "0.01000000000000000000000000000"
 description = "Root of very small number"
+expected = "0.01000000000000000000000000000"
 
 [[root_tests]]
 a = "1000000000000000000000000"
 b = "6"
-expected = "10000.00000000000000000000000"
 description = "Root of very large number"
+expected = "10000.00000000000000000000000"
 
 [[root_tests]]
 a = "2"
 b = "1"
-expected = "2"
 description = "First root (identity)"
+expected = "2"
 
 [[root_tests]]
 a = "3.14159265358979323846264338328"
 b = "2"
-expected = "1.772453850905516027298167483"
 description = "Root of π"
+expected = "1.772453850905516027298167483"
 
 [[root_tests]]
 a = "2.71828182845904523536028747135"
 b = "3"
-expected = "1.395612425086089528628125320"
 description = "Root of e"
+expected = "1.395612425086089528628125320"
 
 # Extreme precision tests
 [[root_tests]]
 a = "12345.6789"
 b = "2"
-expected = "111.1111106055555544054166614"
 description = "High precision square root"
+expected = "111.1111106055555544054166614"
 
 [[root_tests]]
 a = "1.0001"
 b = "10000"
-expected = "1.000000009999500083325834158"
 description = "Very high root close to 1"
+expected = "1.000000009999500083325834158"
 
 # === POWER TESTS ===
 # Testing power function with various base and exponent combinations
@@ -518,119 +518,119 @@ description = "Very high root close to 1"
 [[power_tests]]
 a = "2"
 b = "3"
-expected = "8"
 description = "Integer base, integer exponent (2^3)"
+expected = "8"
 
 [[power_tests]]
 a = "10"
 b = "2"
-expected = "100"
 description = "Power of 10 (10^2)"
+expected = "100"
 
 [[power_tests]]
 a = "2.5"
 b = "2"
-expected = "6.25"
 description = "Decimal base, integer exponent (2.5^2)"
+expected = "6.25"
 
 [[power_tests]]
 a = "4"
 b = "0.5"
-expected = "2.000000000000000000000000000"
 description = "Integer base, fractional exponent (4^0.5 = sqrt(4))"
+expected = "2.000000000000000000000000000"
 
 [[power_tests]]
 a = "9"
 b = "0.5"
-expected = "3.000000000000000000000000000"
 description = "Integer base, fractional exponent (9^0.5 = sqrt(9))"
+expected = "3.000000000000000000000000000"
 
 [[power_tests]]
 a = "27"
 b = "0.3333333333333333333333333333"
-expected = "3.000000000000000000000000000"
 description = "Integer base, fractional exponent (27^(1/3) = cube root of 27)"
+expected = "3.000000000000000000000000000"
 
 [[power_tests]]
 a = "2"
 b = "10"
-expected = "1024"
 description = "Small base, large exponent (2^10)"
+expected = "1024"
 
 [[power_tests]]
 a = "1.5"
 b = "3"
-expected = "3.375"
 description = "Decimal base, integer exponent (1.5^3)"
+expected = "3.375"
 
 [[power_tests]]
 a = "0"
 b = "5"
-expected = "0"
 description = "Zero base, positive exponent"
+expected = "0"
 
 [[power_tests]]
 a = "1"
 b = "1000"
-expected = "1"
 description = "Base of 1, any exponent"
+expected = "1"
 
 [[power_tests]]
 a = "-2"
 b = "3"
-expected = "-8"
 description = "Negative base, odd exponent"
+expected = "-8"
 
 [[power_tests]]
 a = "-2"
 b = "2"
-expected = "4"
 description = "Negative base, even exponent"
+expected = "4"
 
 [[power_tests]]
 a = "0.1"
 b = "2"
-expected = "0.01"
 description = "Decimal less than 1, integer exponent"
+expected = "0.01"
 
 [[power_tests]]
 a = "2"
 b = "-2"
-expected = "0.25"
 description = "Positive base, negative exponent"
+expected = "0.25"
 
 [[power_tests]]
 a = "4"
 b = "-0.5"
-expected = "0.5000000000000000000000000000"
 description = "Integer base, negative fractional exponent"
+expected = "0.5000000000000000000000000000"
 
 [[power_tests]]
 a = "10"
 b = "-1"
-expected = "0.1"
 description = "Base 10, negative exponent"
+expected = "0.1"
 
 [[power_tests]]
 a = "3.14159"
 b = "2"
-expected = "9.8695877281"
 description = "Pi approximation squared"
+expected = "9.8695877281"
 
 [[power_tests]]
 a = "2.71828"
 b = "3"
-expected = "20.085496391455552"
 description = "E approximation cubed"
+expected = "20.085496391455552"
 
 [[power_tests]]
 a = "1.5"
 b = "2.5"
-expected = "2.755675960631075360471944584"
 description = "Decimal base, decimal exponent"
+expected = "2.755675960631075360471944584"
 
 [[power_tests]]
 a = "1.5"
 b = "0"
-expected = "1"
 description = "Any base, zero exponent"
+expected = "1"

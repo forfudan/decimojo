@@ -5,6 +5,7 @@ Test BigUInt exponential functions.
 
 from python import Python
 from random import random_ui64
+import testing
 from testing import assert_equal, assert_true
 from decimojo.biguint.biguint import BigUInt
 from decimojo.tests import TestCase, parse_file, load_test_cases
@@ -17,8 +18,8 @@ fn test_biguint_sqrt() raises:
     var toml = parse_file(file_path_sqrt)
     var test_cases: List[TestCase]
 
-    print("------------------------------------------------------")
-    print("Testing BigUInt sqrt...")
+    # print("------------------------------------------------------")
+    # print("Testing BigUInt sqrt...")
     test_cases = load_test_cases[unary=True](toml, "sqrt_tests")
     assert_true(len(test_cases) > 0, "No sqrt test cases found")
     for test_case in test_cases:
@@ -28,12 +29,12 @@ fn test_biguint_sqrt() raises:
             rhs=test_case.expected,
             msg=test_case.description,
         )
-    print("BigUInt sqrt tests passed!")
+    # print("BigUInt sqrt tests passed!")
 
 
 fn test_biguint_sqrt_random_numbers_against_python() raises:
-    print("------------------------------------------------------")
-    print("Testing BigUInt sqrt on random numbers with python...")
+    # print("------------------------------------------------------")
+    # print("Testing BigUInt sqrt on random numbers with python...")
 
     var pysys = Python.import_module("sys")
     var pymath = Python.import_module("math")
@@ -58,11 +59,12 @@ fn test_biguint_sqrt_random_numbers_against_python() raises:
             + "\n\nPython int sqrt: \n"
             + python_result,
         )
-    print("BigUInt sqrt tests passed!")
+    # print("BigUInt sqrt tests passed!")
 
 
 fn main() raises:
-    test_biguint_sqrt()
-    test_biguint_sqrt_random_numbers_against_python()
-    print("All BigUInt exponential tests passed!")
-    print("------------------------------------------------------")
+    # test_biguint_sqrt()
+    # test_biguint_sqrt_random_numbers_against_python()
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
+    # print("All BigUInt exponential tests passed!")
+    # print("------------------------------------------------------")

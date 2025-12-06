@@ -2,6 +2,7 @@
 Tests for the utility functions in the decimojo.utility module.
 """
 
+import testing
 from testing import assert_equal, assert_true
 
 from decimojo.prelude import dm, Decimal128, RoundingMode
@@ -15,7 +16,7 @@ from decimojo.decimal128.utility import (
 
 fn test_number_of_digits() raises:
     """Tests for number_of_digits function."""
-    print("Testing number_of_digits...")
+    # print("Testing number_of_digits...")
 
     # Test with simple UInt128 values
     assert_equal(number_of_digits(UInt128(0)), 0)
@@ -42,12 +43,12 @@ fn test_number_of_digits() raises:
     var very_large = UInt256(Decimal128.MAX_AS_UINT128) * UInt256(10)
     assert_equal(number_of_digits(very_large), 30)
 
-    print("✓ All number_of_digits tests passed!")
+    # print("✓ All number_of_digits tests passed!")
 
 
 fn test_truncate_to_max_below_max() raises:
     """Test truncate_to_max with values below MAX_AS_UINT128."""
-    print("Testing truncate_to_max with values below MAX...")
+    # print("Testing truncate_to_max with values below MAX...")
 
     # Test with values that should remain unchanged
     var small_value = UInt128(123456)
@@ -65,12 +66,12 @@ fn test_truncate_to_max_below_max() raises:
     var max_value_256 = UInt256(Decimal128.MAX_AS_UINT128)
     assert_equal(truncate_to_max(max_value_256), max_value_256)
 
-    print("✓ All truncate_to_max tests with values below MAX passed!")
+    # print("✓ All truncate_to_max tests with values below MAX passed!")
 
 
 fn test_truncate_to_max_above_max() raises:
     """Test truncate_to_max with values above MAX_AS_UINT128."""
-    print("Testing truncate_to_max with values above MAX...")
+    # print("Testing truncate_to_max with values above MAX...")
 
     # Test with value MAX + 1 (should round appropriately)
     var max_plus_1 = UInt256(Decimal128.MAX_AS_UINT128) + UInt256(1)
@@ -120,13 +121,13 @@ fn test_truncate_to_max_above_max() raises:
         truncate_to_max(much_larger) <= UInt256(Decimal128.MAX_AS_UINT128)
     )
 
-    print("✓ All truncate_to_max tests with values above MAX passed!")
+    # print("✓ All truncate_to_max tests with values above MAX passed!")
 
 
 fn test_truncate_to_max_banker_rounding() raises:
     """Test the banker's rounding aspect of truncate_to_max particularly carefully.
     """
-    print("Testing truncate_to_max banker's rounding...")
+    # print("Testing truncate_to_max banker's rounding...")
 
     # For testing larger numbers, we'll use direct numeric literals where possible
 
@@ -164,7 +165,7 @@ fn test_truncate_to_max_banker_rounding() raises:
     var case4_expected = UInt256(79228162514264337593543950332)
     assert_equal(truncate_to_max(case4), case4_expected)
 
-    print("✓ All truncate_to_max banker's rounding tests passed!")
+    # print("✓ All truncate_to_max banker's rounding tests passed!")
 
 
 fn test_round_to_keep_first_n_digits() raises:
@@ -221,12 +222,12 @@ fn test_round_to_keep_first_n_digits() raises:
     var case9_expected = UInt256(987654321098765432)
     assert_equal(round_to_keep_first_n_digits(case9, 18), case9_expected)
 
-    print("✓ All round_to_keep_first_n_digits tests passed!")
+    # print("✓ All round_to_keep_first_n_digits tests passed!")
 
 
 fn test_bitcast() raises:
     """Test the bitcast utility function for direct memory bit conversion."""
-    print("Testing utility.bitcast...")
+    # print("Testing utility.bitcast...")
 
     # Test case 1: Basic decimal with fractional part
     var original = Decimal128("123.456")
@@ -264,33 +265,11 @@ fn test_bitcast() raises:
     var test_bits = bitcast[DType.uint128](test_decimal)
     assert_equal(test_coef, test_bits)
 
-    print("✓ All bitcast tests passed!")
-
-
-fn test_all() raises:
-    """Run all tests for the utility module."""
-    print("\n=== Running Utility Module Tests ===\n")
-
-    test_number_of_digits()
-    print()
-
-    test_truncate_to_max_below_max()
-    print()
-
-    test_truncate_to_max_above_max()
-    print()
-
-    test_truncate_to_max_banker_rounding()
-    print()
-
-    test_bitcast()
-    print()
-
-    test_round_to_keep_first_n_digits()
-    print()
-
-    print("✓✓✓ All utility module tests passed! ✓✓✓")
+    # print("✓ All bitcast tests passed!")
 
 
 fn main() raises:
-    test_all()
+    """Run all tests for the utility module."""
+    # test_all()
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
+    # print("✓✓✓ All utility module tests passed! ✓✓✓")

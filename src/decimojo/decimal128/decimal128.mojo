@@ -316,7 +316,7 @@ struct Decimal128(
 
         var flags: UInt32 = 0
         flags |= (scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
-        flags |= sign << 31
+        flags |= UInt32(sign) << 31
 
         return Self(low, mid, high, flags)
 
@@ -489,7 +489,7 @@ struct Decimal128(
 
         var result = UnsafePointer(to=value).bitcast[Decimal128]()[]
         result.flags |= (scale << Self.SCALE_SHIFT) & Self.SCALE_MASK
-        result.flags |= sign << 31
+        result.flags |= UInt32(sign) << 31
 
         return result
 
@@ -528,7 +528,7 @@ struct Decimal128(
         if value_bytes_len == 0:
             return Decimal128.ZERO()
 
-        if value_bytes_len != value_string_slice.char_length():
+        if value_bytes_len != Int(value_string_slice.char_length()):
             raise Error(
                 String(
                     "There are invalid characters in decimal128 string: {}"

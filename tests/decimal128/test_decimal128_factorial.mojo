@@ -12,7 +12,7 @@ from decimojo.decimal128.special import factorial, factorial_reciprocal
 
 fn test_basic_factorials() raises:
     """Test basic factorial calculations."""
-    print("Testing basic factorial calculations...")
+    # print("Testing basic factorial calculations...")
 
     # Test case 1: 0! = 1
     var result0 = factorial(0)
@@ -50,12 +50,12 @@ fn test_basic_factorials() raises:
         String(result5), "120", "5! should be 120, got " + String(result5)
     )
 
-    print("✓ Basic factorial tests passed!")
+    # print("✓ Basic factorial tests passed!")
 
 
 fn test_medium_factorials() raises:
     """Test medium-sized factorial calculations."""
-    print("Testing medium-sized factorial calculations...")
+    # print("Testing medium-sized factorial calculations...")
 
     # Test case 7: 6! = 720
     var result6 = factorial(6)
@@ -91,12 +91,12 @@ fn test_medium_factorials() raises:
         "10! should be 3628800, got " + String(result10),
     )
 
-    print("✓ Medium factorial tests passed!")
+    # print("✓ Medium factorial tests passed!")
 
 
 fn test_large_factorials() raises:
     """Test large factorial calculations."""
-    print("Testing large factorial calculations...")
+    # print("Testing large factorial calculations...")
 
     # Test case 12: 12! = 479001600
     var result12 = factorial(12)
@@ -140,12 +140,12 @@ fn test_large_factorials() raises:
         "27! should be " + expected27 + ", got " + String(result27),
     )
 
-    print("✓ Large factorial tests passed!")
+    # print("✓ Large factorial tests passed!")
 
 
 fn test_factorial_properties() raises:
     """Test mathematical properties of factorials."""
-    print("Testing factorial mathematical properties...")
+    # print("Testing factorial mathematical properties...")
 
     # Test case: (n+1)! = (n+1) * n!
     # Only test up to 26 because 27 is our maximum supported value
@@ -162,12 +162,12 @@ fn test_factorial_properties() raises:
             + String(n + 1),
         )
 
-    print("✓ Factorial properties tests passed!")
+    # print("✓ Factorial properties tests passed!")
 
 
 fn test_factorial_edge_cases() raises:
     """Test edge cases for factorial function."""
-    print("Testing factorial edge cases...")
+    # print("Testing factorial edge cases...")
 
     # Test case: Error for negative input
     var exception_caught = False
@@ -193,18 +193,18 @@ fn test_factorial_edge_cases() raises:
         exception_caught = True
     testing.assert_equal(exception_caught, True)
 
-    print("✓ Factorial edge case tests passed!")
+    # print("✓ Factorial edge case tests passed!")
 
 
 fn test_factorial_of_zero() raises:
     """Special test for factorial of zero."""
-    print("Testing special case: 0!...")
+    # print("Testing special case: 0!...")
 
     # Test case: Verify 0! = 1 (mathematical definition)
     var result = factorial(0)
     testing.assert_equal(String(result), "1", "0! should equal 1")
 
-    print("✓ Special case test for 0! passed!")
+    # print("✓ Special case test for 0! passed!")
 
 
 fn run_test_with_error_handling(
@@ -226,7 +226,7 @@ fn run_test_with_error_handling(
 
 fn test_factorial_reciprocal() raises:
     """Test that factorial_reciprocal equals 1 divided by factorial."""
-    print("Testing factorial_reciprocal function...")
+    # print("Testing factorial_reciprocal function...")
 
     # Test for all values in the supported range (0-27)
     var all_equal = True
@@ -249,30 +249,32 @@ fn test_factorial_reciprocal() raises:
         ),
     )
 
-    print("✓ Factorial reciprocal tests passed!")
+    # print("✓ Factorial reciprocal tests passed!")
 
 
 fn main() raises:
-    print("=========================================")
-    print("Running Factorial Function Tests (0-27)")
-    print("=========================================")
+    # print("=========================================")
+    # print("Running Factorial Function Tests (0-27)")
+    # print("=========================================")
 
-    run_test_with_error_handling(test_basic_factorials, "Basic factorials test")
-    run_test_with_error_handling(
-        test_medium_factorials, "Medium factorials test"
-    )
-    run_test_with_error_handling(test_large_factorials, "Large factorials test")
-    run_test_with_error_handling(
-        test_factorial_properties, "Factorial properties test"
-    )
-    run_test_with_error_handling(
-        test_factorial_edge_cases, "Factorial edge cases test"
-    )
-    run_test_with_error_handling(
-        test_factorial_of_zero, "Factorial of zero test"
-    )
-    run_test_with_error_handling(
-        test_factorial_reciprocal, "Factorial reciprocal test"
-    )
+    # run_test_with_error_handling(test_basic_factorials, "Basic factorials test")
+    # run_test_with_error_handling(
+    #     test_medium_factorials, "Medium factorials test"
+    # )
+    # run_test_with_error_handling(test_large_factorials, "Large factorials test")
+    # run_test_with_error_handling(
+    #     test_factorial_properties, "Factorial properties test"
+    # )
+    # run_test_with_error_handling(
+    #     test_factorial_edge_cases, "Factorial edge cases test"
+    # )
+    # run_test_with_error_handling(
+    #     test_factorial_of_zero, "Factorial of zero test"
+    # )
+    # run_test_with_error_handling(
+    #     test_factorial_reciprocal, "Factorial reciprocal test"
+    # )
 
-    print("All factorial function tests passed!")
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
+
+    # print("All factorial function tests passed!")

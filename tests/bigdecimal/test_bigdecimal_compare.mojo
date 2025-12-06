@@ -16,9 +16,9 @@ fn test_bigdecimal_compare() raises:
     var toml = parse_file(file_path)
     var test_cases: List[TestCase]
 
-    print("------------------------------------------------------")
-    print("Testing BigDecimal compare_absolute...")
-    print("------------------------------------------------------")
+    # print("------------------------------------------------------")
+    # print("Testing BigDecimal compare_absolute...")
+    # print("------------------------------------------------------")
 
     test_cases = load_test_cases(toml, "compare_absolute_tests")
     for test_case in test_cases:
@@ -29,9 +29,9 @@ fn test_bigdecimal_compare() raises:
             msg=test_case.description,
         )
 
-    print("------------------------------------------------------")
-    print("Testing BigDecimal > operator...")
-    print("------------------------------------------------------")
+    # print("------------------------------------------------------")
+    # print("Testing BigDecimal > operator...")
+    # print("------------------------------------------------------")
     test_cases = load_test_cases(toml, "greater_than_tests")
     for test_case in test_cases:
         var result = BDec(test_case.a) > BDec(test_case.b)
@@ -41,9 +41,9 @@ fn test_bigdecimal_compare() raises:
             msg=test_case.description,
         )
 
-    print("------------------------------------------------------")
-    print("Testing BigDecimal < operator...")
-    print("------------------------------------------------------")
+    # print("------------------------------------------------------")
+    # print("Testing BigDecimal < operator...")
+    # print("------------------------------------------------------")
     test_cases = load_test_cases(toml, "less_than_tests")
     for test_case in test_cases:
         var result = BDec(test_case.a) < BDec(test_case.b)
@@ -53,9 +53,9 @@ fn test_bigdecimal_compare() raises:
             msg=test_case.description,
         )
 
-    print("------------------------------------------------------")
-    print("Testing BigDecimal >= operator...")
-    print("------------------------------------------------------")
+    # print("------------------------------------------------------")
+    # print("Testing BigDecimal >= operator...")
+    # print("------------------------------------------------------")
     test_cases = load_test_cases(toml, "greater_than_or_equal_tests")
     for test_case in test_cases:
         var result = BDec(test_case.a) >= BDec(test_case.b)
@@ -65,9 +65,9 @@ fn test_bigdecimal_compare() raises:
             msg=test_case.description,
         )
 
-    print("------------------------------------------------------")
-    print("Testing BigDecimal <= operator...")
-    print("------------------------------------------------------")
+    # print("------------------------------------------------------")
+    # print("Testing BigDecimal <= operator...")
+    # print("------------------------------------------------------")
     test_cases = load_test_cases(toml, "less_than_or_equal_tests")
     for test_case in test_cases:
         var result = BDec(test_case.a) <= BDec(test_case.b)
@@ -77,9 +77,9 @@ fn test_bigdecimal_compare() raises:
             msg=test_case.description,
         )
 
-    print("------------------------------------------------------")
-    print("Testing BigDecimal == operator...")
-    print("------------------------------------------------------")
+    # print("------------------------------------------------------")
+    # print("Testing BigDecimal == operator...")
+    # print("------------------------------------------------------")
     test_cases = load_test_cases(toml, "equal_tests")
     for test_case in test_cases:
         var result = BDec(test_case.a) == BDec(test_case.b)
@@ -89,9 +89,9 @@ fn test_bigdecimal_compare() raises:
             msg=test_case.description,
         )
 
-    print("------------------------------------------------------")
-    print("Testing BigDecimal != operator...")
-    print("------------------------------------------------------")
+    # print("------------------------------------------------------")
+    # print("Testing BigDecimal != operator...")
+    # print("------------------------------------------------------")
     test_cases = load_test_cases(toml, "not_equal_tests")
     for test_case in test_cases:
         var result = BDec(test_case.a) != BDec(test_case.b)
@@ -103,9 +103,9 @@ fn test_bigdecimal_compare() raises:
 
 
 fn main() raises:
-    print("Running BigDecimal comparison tests")
+    # print("Running BigDecimal comparison tests")
 
     # Run compare_absolute tests
-    test_bigdecimal_compare()
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
-    print("All BigDecimal comparison tests passed!")
+    # print("All BigDecimal comparison tests passed!")

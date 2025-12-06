@@ -11,7 +11,7 @@ from decimojo.prelude import dm, Decimal128, RoundingMode
 
 fn test_basic_quantization() raises:
     """Test basic quantization with different scales."""
-    print("Testing basic quantization...")
+    # print("Testing basic quantization...")
 
     var pydecimal = Python.import_module("decimal")
     pydecimal.getcontext().prec = 28  # Match DeciMojo's precision
@@ -82,12 +82,12 @@ fn test_basic_quantization() raises:
         "Quantizing 9.876 to 1.00 gave incorrect result: " + String(result5),
     )
 
-    print("✓ Basic quantization tests passed!")
+    # print("✓ Basic quantization tests passed!")
 
 
 fn test_rounding_modes() raises:
     """Test quantization with different rounding modes."""
-    print("Testing quantization with different rounding modes...")
+    # print("Testing quantization with different rounding modes...")
 
     var pydecimal = Python.import_module("decimal")
     pydecimal.getcontext().prec = 28
@@ -159,12 +159,12 @@ fn test_rounding_modes() raises:
         "ROUND_UP with negative gave incorrect result: " + String(result6),
     )
 
-    print("✓ Rounding mode tests passed!")
+    # print("✓ Rounding mode tests passed!")
 
 
 fn test_edge_cases() raises:
     """Test edge cases for quantization."""
-    print("Testing quantization edge cases...")
+    # print("Testing quantization edge cases...")
 
     var pydecimal = Python.import_module("decimal")
     pydecimal.getcontext().prec = 28
@@ -238,12 +238,12 @@ fn test_edge_cases() raises:
         + String(result5),
     )
 
-    print("✓ Edge cases tests passed!")
+    # print("✓ Edge cases tests passed!")
 
 
 fn test_special_cases() raises:
     """Test special cases for quantization."""
-    print("Testing special quantization cases...")
+    # print("Testing special quantization cases...")
 
     var pydecimal = Python.import_module("decimal")
     pydecimal.getcontext().prec = 28
@@ -316,12 +316,12 @@ fn test_special_cases() raises:
         "Quantizing to integer gave incorrect result: " + String(result5),
     )
 
-    print("✓ Special cases tests passed!")
+    # print("✓ Special cases tests passed!")
 
 
 fn test_quantize_exceptions() raises:
     """Test exception conditions for quantize()."""
-    print("Testing quantize exceptions...")
+    # print("Testing quantize exceptions...")
 
     var pydecimal = Python.import_module("decimal")
     pydecimal.getcontext().prec = 28
@@ -351,13 +351,13 @@ fn test_quantize_exceptions() raises:
         ),
     )
 
-    print("✓ Exception tests passed!")
+    # print("✓ Exception tests passed!")
 
 
 fn test_comprehensive_comparison() raises:
     """Test a wide range of values to ensure compatibility with Python's decimal.
     """
-    print("Testing comprehensive comparison with Python's decimal...")
+    # print("Testing comprehensive comparison with Python's decimal...")
 
     # Set up Python decimal
     var pydecimal = Python.import_module("decimal")
@@ -376,171 +376,169 @@ fn test_comprehensive_comparison() raises:
 
     # Instead of looping through lists, test each case explicitly
     # Test case 1: Zero with integer quantizer
-    test_single_quantize_case(
+    run_single_quantize_case(
         "0", "1", mojo_round_half_even, py_round_half_even, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "0", "1", mojo_round_half_up, py_round_half_up, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "0", "1", mojo_round_down, py_round_down, pydecimal
     )
-    test_single_quantize_case("0", "1", mojo_round_up, py_round_up, pydecimal)
+    run_single_quantize_case("0", "1", mojo_round_up, py_round_up, pydecimal)
 
     # Test case 2: Decimal128 with 2 decimal places quantizer
-    test_single_quantize_case(
+    run_single_quantize_case(
         "1.23456", "0.01", mojo_round_half_even, py_round_half_even, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "1.23456", "0.01", mojo_round_half_up, py_round_half_up, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "1.23456", "0.01", mojo_round_down, py_round_down, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "1.23456", "0.01", mojo_round_up, py_round_up, pydecimal
     )
 
     # Test case 3: Decimal128 with 1 decimal place quantizer
-    test_single_quantize_case(
+    run_single_quantize_case(
         "9.999", "0.1", mojo_round_half_even, py_round_half_even, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "9.999", "0.1", mojo_round_half_up, py_round_half_up, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "9.999", "0.1", mojo_round_down, py_round_down, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "9.999", "0.1", mojo_round_up, py_round_up, pydecimal
     )
 
     # Test case 4: Negative value with integer quantizer
-    test_single_quantize_case(
+    run_single_quantize_case(
         "-0.5", "1", mojo_round_half_even, py_round_half_even, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "-0.5", "1", mojo_round_half_up, py_round_half_up, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "-0.5", "1", mojo_round_down, py_round_down, pydecimal
     )
-    test_single_quantize_case(
-        "-0.5", "1", mojo_round_up, py_round_up, pydecimal
-    )
+    run_single_quantize_case("-0.5", "1", mojo_round_up, py_round_up, pydecimal)
 
     # Test case 5: Small value with larger precision
-    test_single_quantize_case(
+    run_single_quantize_case(
         "0.0001", "0.01", mojo_round_half_even, py_round_half_even, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "0.0001", "0.01", mojo_round_half_up, py_round_half_up, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "0.0001", "0.01", mojo_round_down, py_round_down, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "0.0001", "0.01", mojo_round_up, py_round_up, pydecimal
     )
 
     # Test case 6: Large value with integer quantizer
-    test_single_quantize_case(
+    run_single_quantize_case(
         "1234.5678", "1", mojo_round_half_even, py_round_half_even, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "1234.5678", "1", mojo_round_half_up, py_round_half_up, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "1234.5678", "1", mojo_round_down, py_round_down, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "1234.5678", "1", mojo_round_up, py_round_up, pydecimal
     )
 
     # Test case 7: Rounding to larger precision
-    test_single_quantize_case(
+    run_single_quantize_case(
         "99.99", "100", mojo_round_half_even, py_round_half_even, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "99.99", "100", mojo_round_half_up, py_round_half_up, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "99.99", "100", mojo_round_down, py_round_down, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "99.99", "100", mojo_round_up, py_round_up, pydecimal
     )
 
     # Test case 8: Very small value with small precision
-    test_single_quantize_case(
+    run_single_quantize_case(
         "0.0000001",
         "0.00001",
         mojo_round_half_even,
         py_round_half_even,
         pydecimal,
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "0.0000001", "0.00001", mojo_round_half_up, py_round_half_up, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "0.0000001", "0.00001", mojo_round_down, py_round_down, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "0.0000001", "0.00001", mojo_round_up, py_round_up, pydecimal
     )
 
     # Test case 9: Large value with 1 decimal place
-    test_single_quantize_case(
+    run_single_quantize_case(
         "987654.321", "0.1", mojo_round_half_even, py_round_half_even, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "987654.321", "0.1", mojo_round_half_up, py_round_half_up, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "987654.321", "0.1", mojo_round_down, py_round_down, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "987654.321", "0.1", mojo_round_up, py_round_up, pydecimal
     )
 
     # Test case 10: Testing banker's rounding
-    test_single_quantize_case(
+    run_single_quantize_case(
         "1.5", "1", mojo_round_half_even, py_round_half_even, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "2.5", "1", mojo_round_half_even, py_round_half_even, pydecimal
     )
 
     # Test case 11: Testing rounding to thousands
-    test_single_quantize_case(
+    run_single_quantize_case(
         "10000", "1000", mojo_round_half_even, py_round_half_even, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "10000", "1000", mojo_round_half_up, py_round_half_up, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "10000", "1000", mojo_round_down, py_round_down, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "10000", "1000", mojo_round_up, py_round_up, pydecimal
     )
 
     # Test case 12: Rounding up very close value
-    test_single_quantize_case(
+    run_single_quantize_case(
         "0.999999", "1", mojo_round_half_even, py_round_half_even, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "0.999999", "1", mojo_round_half_up, py_round_half_up, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "0.999999", "1", mojo_round_down, py_round_down, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "0.999999", "1", mojo_round_up, py_round_up, pydecimal
     )
 
     # Test case 13: Pi with very high precision
-    test_single_quantize_case(
+    run_single_quantize_case(
         "3.14159265358979323",
         "0.00000000001",
         mojo_round_half_even,
@@ -549,33 +547,33 @@ fn test_comprehensive_comparison() raises:
     )
 
     # Test case 14: Negative value rounding
-    test_single_quantize_case(
+    run_single_quantize_case(
         "-999.9", "1", mojo_round_half_even, py_round_half_even, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "-999.9", "1", mojo_round_half_up, py_round_half_up, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "-999.9", "1", mojo_round_down, py_round_down, pydecimal
     )
-    test_single_quantize_case(
+    run_single_quantize_case(
         "-999.9", "1", mojo_round_up, py_round_up, pydecimal
     )
 
     # Test case 15: Zero with trailing zeros
-    test_single_quantize_case(
+    run_single_quantize_case(
         "0.0", "0.0000", mojo_round_half_even, py_round_half_even, pydecimal
     )
 
     # Test case 16: Integer to integer
-    test_single_quantize_case(
+    run_single_quantize_case(
         "123", "1", mojo_round_half_even, py_round_half_even, pydecimal
     )
 
-    print("✓ Comprehensive comparison tests passed!")
+    # print("✓ Comprehensive comparison tests passed!")
 
 
-fn test_single_quantize_case(
+fn run_single_quantize_case(
     value_str: String,
     quant_str: String,
     mojo_mode: RoundingMode,
@@ -627,21 +625,23 @@ fn run_test_with_error_handling(
 
 
 fn main() raises:
-    print("=========================================")
-    print("Running Decimal128.quantize() Tests")
-    print("=========================================")
+    # print("=========================================")
+    # print("Running Decimal128.quantize() Tests")
+    # print("=========================================")
 
-    run_test_with_error_handling(
-        test_basic_quantization, "Basic quantization test"
-    )
-    run_test_with_error_handling(test_rounding_modes, "Rounding modes test")
-    run_test_with_error_handling(test_edge_cases, "Edge cases test")
-    run_test_with_error_handling(test_special_cases, "Special cases test")
-    run_test_with_error_handling(
-        test_quantize_exceptions, "Exception handling test"
-    )
-    run_test_with_error_handling(
-        test_comprehensive_comparison, "Comprehensive comparison test"
-    )
+    # run_test_with_error_handling(
+    #     test_basic_quantization, "Basic quantization test"
+    # )
+    # run_test_with_error_handling(test_rounding_modes, "Rounding modes test")
+    # run_test_with_error_handling(test_edge_cases, "Edge cases test")
+    # run_test_with_error_handling(test_special_cases, "Special cases test")
+    # run_test_with_error_handling(
+    #     test_quantize_exceptions, "Exception handling test"
+    # )
+    # run_test_with_error_handling(
+    #     test_comprehensive_comparison, "Comprehensive comparison test"
+    # )
 
-    print("All Decimal128.quantize() tests passed!")
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
+
+    # print("All Decimal128.quantize() tests passed!")

@@ -6,7 +6,7 @@ import testing
 
 
 fn test_basic_rounding() raises:
-    print("Testing basic decimal rounding...")
+    # print("Testing basic decimal rounding...")
 
     # Test case 1: Round to 2 decimal places (banker's rounding)
     var d1 = Decimal128("123.456")
@@ -34,11 +34,11 @@ fn test_basic_rounding() raises:
         String(result4), "123.45", "Rounding to same precision"
     )
 
-    print("Basic decimal rounding tests passed!")
+    # print("Basic decimal rounding tests passed!")
 
 
 fn test_different_rounding_modes() raises:
-    print("Testing different rounding modes...")
+    # print("Testing different rounding modes...")
 
     var test_value = Decimal128("123.456")
 
@@ -58,11 +58,11 @@ fn test_different_rounding_modes() raises:
     var result4 = test_value.round(2, RoundingMode.half_even())
     testing.assert_equal(String(result4), "123.46", "Rounding half even")
 
-    print("Rounding mode tests passed!")
+    # print("Rounding mode tests passed!")
 
 
 fn test_edge_cases() raises:
-    print("Testing edge cases for rounding...")
+    # print("Testing edge cases for rounding...")
 
     # Test case 1: Rounding exactly 0.5 with different modes
     var half_value = Decimal128("123.5")
@@ -147,11 +147,11 @@ fn test_edge_cases() raises:
         "Rounding from maximum precision",
     )
 
-    print("Edge case tests passed!")
+    # print("Edge case tests passed!")
 
 
 fn test_rounding_consistency() raises:
-    print("Testing rounding consistency...")
+    # print("Testing rounding consistency...")
 
     # Test case: Verify that rounding is consistent across different ways of
     # constructing the same value
@@ -179,22 +179,24 @@ fn test_rounding_consistency() raises:
         "Consistency with sequential rounding",
     )
 
-    print("Rounding consistency tests passed!")
+    # print("Rounding consistency tests passed!")
 
 
 fn main() raises:
-    print("Running decimal rounding tests")
+    # print("Running decimal rounding tests")
 
-    # Run basic rounding tests
-    test_basic_rounding()
+    # # Run basic rounding tests
+    # test_basic_rounding()
 
-    # Run tests with different rounding modes
-    test_different_rounding_modes()
+    # # Run tests with different rounding modes
+    # test_different_rounding_modes()
 
-    # Run edge case tests
-    test_edge_cases()
+    # # Run edge case tests
+    # test_edge_cases()
 
-    # Run rounding consistency tests
-    test_rounding_consistency()
+    # # Run rounding consistency tests
+    # test_rounding_consistency()
 
-    print("All decimal rounding tests passed!")
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
+
+    # print("All decimal rounding tests passed!")

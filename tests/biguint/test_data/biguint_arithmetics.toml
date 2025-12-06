@@ -13,50 +13,50 @@
 [[addition_tests]]
 a = "123"
 b = "456"
-expected = "579"
 description = "Simple addition of positive numbers"
+expected = "579"
 
 [[addition_tests]]
 a = "123"
 b = "0"
-expected = "123"
 description = "Addition with zero"
+expected = "123"
 
 [[addition_tests]]
 a = "99999999999999999999"
 b = "1"
-expected = "100000000000000000000"
 description = "Addition with large numbers"
+expected = "100000000000000000000"
 
 [[addition_tests]]
 a = "9999999999"
 b = "1"
-expected = "10000000000"
 description = "Addition causing multiple carries"
+expected = "10000000000"
 
 [[addition_tests]]
 a = "12345"
 b = "9876543210"
-expected = "9876555555"
 description = "Addition with numbers of different sizes"
+expected = "9876555555"
 
 [[addition_tests]]
 a = "12345678901234567890123456789"
 b = "98765432109876543210987654321"
-expected = "111111111011111111101111111110"
 description = "Addition with very large numbers"
+expected = "111111111011111111101111111110"
 
 [[addition_tests]]
 a = "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
 b = "1"
-expected = "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 description = "Addition with extensive carry propagation"
+expected = "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 
 [[addition_tests]]
 a = "1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 b = "5000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-expected = "1005000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 description = "Addition of very large numbers"
+expected = "1005000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 
 # ===----------------------------------------------------------------------=== #
 # Test cases for BigUInt subtraction
@@ -64,44 +64,44 @@ description = "Addition of very large numbers"
 [[subtraction_tests]]
 a = "456"
 b = "123"
-expected = "333"
 description = "Simple subtraction"
+expected = "333"
 
 [[subtraction_tests]]
 a = "123"
 b = "0"
-expected = "123"
 description = "Subtraction with zero"
+expected = "123"
 
 [[subtraction_tests]]
 a = "123"
 b = "123"
-expected = "0"
 description = "Subtraction resulting in zero"
+expected = "0"
 
 [[subtraction_tests]]
 a = "10000"
 b = "1"
-expected = "9999"
 description = "Subtraction with borrow"
+expected = "9999"
 
 [[subtraction_tests]]
 a = "10000"
 b = "9999"
-expected = "1"
 description = "Subtraction with multiple borrows"
+expected = "1"
 
 [[subtraction_tests]]
 a = "12345678901234567890"
 b = "12345678901234567890"
-expected = "0"
 description = "Self subtraction should yield zero"
+expected = "0"
 
 [[extreme_subtraction_tests]]
 a = "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 b = "1"
-expected = "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
 description = "Very large subtraction within range"
+expected = "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
 
 # ===----------------------------------------------------------------------=== #
 # Special test for subtraction underflow
@@ -109,8 +109,8 @@ description = "Very large subtraction within range"
 [[subtraction_underflow]]
 a = "123"
 b = "456"
-expected = ""
 description = "Underflow handling (smaller - larger)"
+expected = ""
 
 # ===----------------------------------------------------------------------=== #
 # Test cases for BigUInt multiplication
@@ -118,35 +118,35 @@ description = "Underflow handling (smaller - larger)"
 [[multiplication_tests]]
 a = "123"
 b = "456"
-expected = "56088"
 description = "Simple multiplication"
+expected = "56088"
 
 [[multiplication_tests]]
 a = "123456789"
 b = "0"
-expected = "0"
 description = "Multiplication by zero"
+expected = "0"
 
 [[multiplication_tests]]
 a = "123456789"
 b = "1"
-expected = "123456789"
 description = "Multiplication by one"
+expected = "123456789"
 
 [[multiplication_tests]]
 a = "12345"
 b = "67890"
-expected = "838102050"
 description = "Multiplication of large numbers"
+expected = "838102050"
 
 [[multiplication_tests]]
 a = "9999999999"
 b = "9999999999"
-expected = "99999999980000000001"
 description = "Multiplication of very large numbers"
+expected = "99999999980000000001"
 
 [[multiplication_tests]]
 a = "10000000000"
 b = "10000000000"
-expected = "100000000000000000000"
 description = "Very large multiplication"
+expected = "100000000000000000000"

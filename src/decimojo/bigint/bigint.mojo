@@ -645,7 +645,7 @@ struct BigInt(
     # Other dunders
     # ===------------------------------------------------------------------=== #
 
-    fn __merge_with__[other_type: __type_of(BigDecimal)](self) -> BigDecimal:
+    fn __merge_with__[other_type: type_of(BigDecimal)](self) -> BigDecimal:
         "Merges this BigInt with a BigDecimal into a BigDecimal."
         return BigDecimal(self)
 

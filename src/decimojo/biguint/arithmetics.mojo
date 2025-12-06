@@ -300,18 +300,18 @@ fn add_slices_simd(
         min(n_words_x_slice, n_words_y_slice)
     )
 
-    var longer: Pointer[BigUInt, __origin_of(x, y)]
+    var longer: Pointer[BigUInt, origin_of(x, y)]
     var n_words_longer_slice: Int
     var n_words_shorter_slice: Int
     var longer_start: Int
 
     if n_words_x_slice >= n_words_y_slice:
-        longer = Pointer[BigUInt, __origin_of(x, y)](to=x)
+        longer = Pointer[BigUInt, origin_of(x, y)](to=x)
         n_words_longer_slice = n_words_x_slice
         n_words_shorter_slice = n_words_y_slice
         longer_start = bounds_x[0]
     else:
-        longer = Pointer[BigUInt, __origin_of(x, y)](to=y)
+        longer = Pointer[BigUInt, origin_of(x, y)](to=y)
         n_words_longer_slice = n_words_y_slice
         n_words_shorter_slice = n_words_x_slice
         longer_start = bounds_y[0]

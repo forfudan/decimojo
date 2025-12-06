@@ -2,348 +2,348 @@
 [[round_down_tests]]
 a = "12.345"
 b = "0"
-expected = "12"
 description = "Round down to integer"
+expected = "12"
 
 [[round_down_tests]]
 a = "12.345"
 b = "1"
-expected = "12.3"
 description = "Round down to 1 decimal place"
+expected = "12.3"
 
 [[round_down_tests]]
 a = "12.345"
 b = "2"
-expected = "12.34"
 description = "Round down to 2 decimal places"
+expected = "12.34"
 
 [[round_down_tests]]
 a = "12.345"
 b = "3"
-expected = "12.345"
 description = "Round to same precision"
+expected = "12.345"
 
 [[round_down_tests]]
 a = "12.345"
 b = "4"
-expected = "12.3450"
 description = "Round to higher precision"
+expected = "12.3450"
 
 [[round_down_tests]]
 a = "-12.345"
 b = "0"
-expected = "-12"
 description = "Round down negative to integer"
+expected = "-12"
 
 [[round_down_tests]]
 a = "-12.345"
 b = "1"
-expected = "-12.3"
 description = "Round down negative to 1 decimal place"
+expected = "-12.3"
 
 [[round_down_tests]]
 a = "-12.345"
 b = "2"
-expected = "-12.34"
 description = "Round down negative to 2 decimal places"
+expected = "-12.34"
 
 [[round_down_tests]]
 a = "0.9999"
 b = "0"
-expected = "0"
 description = "Round down near-1 value to integer"
+expected = "0"
 
 [[round_down_tests]]
 a = "9.9999"
 b = "0"
-expected = "9"
 description = "Round down near-10 value to integer"
+expected = "9"
 
 # === ROUND UP TESTS ===
 [[round_up_tests]]
 a = "12.345"
 b = "0"
-expected = "13"
 description = "Round up to integer"
+expected = "13"
 
 [[round_up_tests]]
 a = "12.345"
 b = "1"
-expected = "12.4"
 description = "Round up to 1 decimal place"
+expected = "12.4"
 
 [[round_up_tests]]
 a = "12.345"
 b = "2"
-expected = "12.35"
 description = "Round up to 2 decimal places"
+expected = "12.35"
 
 [[round_up_tests]]
 a = "12.345"
 b = "3"
-expected = "12.345"
 description = "Round to same precision"
+expected = "12.345"
 
 [[round_up_tests]]
 a = "-12.345"
 b = "0"
-expected = "-13"
 description = "Round up negative to integer"
+expected = "-13"
 
 [[round_up_tests]]
 a = "-12.345"
 b = "1"
-expected = "-12.4"
 description = "Round up negative to 1 decimal place"
+expected = "-12.4"
 
 [[round_up_tests]]
 a = "0.001"
 b = "0"
-expected = "0"
 description = "Round up small positive value to integer"
+expected = "0"
 
 [[round_up_tests]]
 a = "-0.001"
 b = "0"
-expected = "-0"
 description = "Round up small negative value to integer"
+expected = "-0"
 
 # === ROUND HALF UP TESTS ===
 [[round_half_up_tests]]
 a = "12.5"
 b = "0"
-expected = "13"
 description = "Round half up to integer"
+expected = "13"
 
 [[round_half_up_tests]]
 a = "12.4"
 b = "0"
-expected = "12"
 description = "Round half up where less than .5"
+expected = "12"
 
 [[round_half_up_tests]]
 a = "12.25"
 b = "1"
-expected = "12.3"
 description = "Round half up to 1 decimal place"
+expected = "12.3"
 
 [[round_half_up_tests]]
 a = "12.35"
 b = "1"
-expected = "12.4"
 description = "Round half up exactly .5 to 1 decimal place"
+expected = "12.4"
 
 [[round_half_up_tests]]
 a = "-12.5"
 b = "0"
-expected = "-13"
 description = "Round half up negative to integer"
+expected = "-13"
 
 [[round_half_up_tests]]
 a = "-12.45"
 b = "1"
-expected = "-12.5"
 description = "Round half up negative to 1 decimal place"
+expected = "-12.5"
 
 [[round_half_up_tests]]
 a = "0.5"
 b = "0"
-expected = "1"
 description = "Round half up exactly 0.5 to integer"
+expected = "1"
 
 [[round_half_up_tests]]
 a = "-0.5"
 b = "0"
-expected = "-1"
 description = "Round half up exactly -0.5 to integer"
+expected = "-1"
 
 # === ROUND HALF EVEN TESTS (BANKER'S ROUNDING) ===
 [[round_half_even_tests]]
 a = "12.5"
 b = "0"
-expected = "12"
 description = "Round half even to integer (toward even digit)"
+expected = "12"
 
 [[round_half_even_tests]]
 a = "13.5"
 b = "0"
-expected = "14"
 description = "Round half even to integer (toward even digit)"
+expected = "14"
 
 [[round_half_even_tests]]
 a = "12.25"
 b = "1"
-expected = "12.2"
 description = "Round half even to 1 decimal place (toward even digit)"
+expected = "12.2"
 
 [[round_half_even_tests]]
 a = "12.35"
 b = "1"
-expected = "12.4"
 description = "Round half even to 1 decimal place (toward even digit)"
+expected = "12.4"
 
 [[round_half_even_tests]]
 a = "12.65"
 b = "1"
-expected = "12.6"
 description = "Round half even to 1 decimal place (toward even digit)"
+expected = "12.6"
 
 [[round_half_even_tests]]
 a = "12.75"
 b = "1"
-expected = "12.8"
 description = "Round half even to 1 decimal place (toward even digit)"
+expected = "12.8"
 
 [[round_half_even_tests]]
 a = "-12.5"
 b = "0"
-expected = "-12"
 description = "Round half even negative to integer (toward even digit)"
+expected = "-12"
 
 [[round_half_even_tests]]
 a = "-13.5"
 b = "0"
-expected = "-14"
 description = "Round half even negative to integer (toward even digit)"
+expected = "-14"
 
 [[round_half_even_tests]]
 a = "0.5"
 b = "0"
-expected = "0"
 description = "Round half even exactly 0.5 to integer (0 is even)"
+expected = "0"
 
 [[round_half_even_tests]]
 a = "-0.5"
 b = "0"
-expected = "-0"
 description = "Round half even exactly -0.5 to integer (0 is even)"
+expected = "-0"
 
 # === EXTREME VALUES TESTS ===
 [[extreme_value_tests]]
 a = "0.00000000000000000000000001"
 b = "10"
-expected = "0.0000000000"
 description = "Rounding very small number"
+expected = "0E-10"
 
 [[extreme_value_tests]]
 a = "9999999999999999999999999999.99999"
 b = "2"
-expected = "1.000000000000000000000000000000E+28"
 description = "Rounding very large number"
+expected = "1.000000000000000000000000000000E+28"
 
 [[extreme_value_tests]]
 a = "0.5555555555555555555555555"
 b = "10"
-expected = "0.5555555556"
 description = "Rounding repeated digits"
+expected = "0.5555555556"
 
 [[extreme_value_tests]]
 a = "1.000000000000000000000000001"
 b = "10"
-expected = "1.0000000000"
 description = "Rounding number very close to whole"
+expected = "1.0000000000"
 
 [[extreme_value_tests]]
 a = "-0.000000000000000000000000001"
 b = "10"
-expected = "-0E-10"
 description = "Rounding very small negative number (becomes zero)"
+expected = "-0E-10"
 
 # === SPECIAL EDGE CASES ===
 [[edge_case_tests]]
 a = "9.9999999999999999999999999"
 b = "2"
-expected = "10.00"
 description = "Rounding causes carrying over to next digit"
+expected = "10.00"
 
 [[edge_case_tests]]
 a = "999.9999999999999999999999999"
 b = "0"
-expected = "1000"
 description = "Rounding causes carrying over to next 10s place"
+expected = "1000"
 
 [[edge_case_tests]]
 a = "0.00000000000000000000000005"
 b = "28"
-expected = "5.00E-26"
 description = "Rounding at maximum precision boundary"
+expected = "5.00E-26"
 
 [[edge_case_tests]]
 a = "0"
 b = "10"
-expected = "0.0000000000"
 description = "Rounding zero"
+expected = "0E-10"
 
 [[edge_case_tests]]
 a = "-0"
 b = "10"
-expected = "-0.0000000000"
 description = "Rounding negative zero"
+expected = "-0E-10"
 
 [[edge_case_tests]]
 a = "0.499999999999999999999999999"
 b = "0"
-expected = "0"
 description = "Rounding just under half"
+expected = "0"
 
 [[edge_case_tests]]
 a = "0.500000000000000000000000001"
 b = "0"
-expected = "1"
 description = "Rounding just over half"
+expected = "1"
 
 # === PRECISION CONVERSIONS ===
 [[precision_tests]]
 a = "123.456"
 b = "-2"
-expected = "1E+2"
 description = "Rounding to negative precision (hundreds)"
+expected = "1E+2"
 
 [[precision_tests]]
 a = "1234.56"
 b = "-1"
-expected = "1.23E+3"
 description = "Rounding to negative precision (tens)"
+expected = "1.23E+3"
 
 [[precision_tests]]
 a = "1234.56"
 b = "-3"
-expected = "1E+3"
 description = "Rounding to negative precision (thousands)"
+expected = "1E+3"
 
 [[precision_tests]]
 a = "9999.99"
 b = "-3"
-expected = "1.0E+4"
 description = "Rounding to negative precision with carry"
+expected = "1.0E+4"
 
 [[precision_tests]]
 a = "0.000123456"
 b = "5"
-expected = "0.00012"
 description = "Rounding where leading zeros matter"
+expected = "0.00012"
 
 # === SCIENTIFIC NOTATION INPUTS ===
 [[scientific_tests]]
 a = "1.2345e5"
 b = "2"
-expected = "123450.00"
 description = "Rounding scientific notation value"
+expected = "123450.00"
 
 [[scientific_tests]]
 a = "1.2345e-5"
 b = "8"
-expected = "0.00001234"
 description = "Rounding small scientific notation value"
+expected = "0.00001234"
 
 [[scientific_tests]]
 a = "9.9999e20"
 b = "0"
-expected = "999990000000000000000"
 description = "Rounding large scientific notation value"
+expected = "999990000000000000000"
 
 [[scientific_tests]]
 a = "-1.2345e-10"
 b = "12"
-expected = "-0.000000000123"
 description = "Rounding negative scientific notation value"
+expected = "-1.23E-10"
