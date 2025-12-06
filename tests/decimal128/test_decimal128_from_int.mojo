@@ -9,7 +9,7 @@ from decimojo.prelude import dm, Decimal128, RoundingMode
 
 fn test_basic_integers() raises:
     """Test conversion of basic integers."""
-    print("Testing basic integer conversions...")
+    # print("Testing basic integer conversions...")
 
     # Test case 1: Zero
     var result1 = Decimal128.from_int(0)
@@ -45,12 +45,12 @@ fn test_basic_integers() raises:
         "10 + 5 should be 15, got " + String(sum_result),
     )
 
-    print("✓ Basic integer conversion tests passed!")
+    # print("✓ Basic integer conversion tests passed!")
 
 
 fn test_large_integers() raises:
     """Test conversion of large integers."""
-    print("Testing large integer conversions...")
+    # print("Testing large integer conversions...")
 
     # Test case 1: Large positive integer
     var large_pos = Decimal128.from_int(1000000000)  # 1 billion
@@ -92,12 +92,12 @@ fn test_large_integers() raises:
         "from_int(INT64_MAX) conversion failed",
     )
 
-    print("✓ Large integer conversion tests passed!")
+    # print("✓ Large integer conversion tests passed!")
 
 
 fn test_operations_with_from_int() raises:
     """Test arithmetic operations using from_int results."""
-    print("Testing operations with from_int results...")
+    # print("Testing operations with from_int results...")
 
     # Test case 1: Addition
     var a1 = Decimal128.from_int(100)
@@ -141,12 +141,12 @@ fn test_operations_with_from_int() raises:
         "10 * 3.5 should be 35.0, got " + String(result5),
     )
 
-    print("✓ Operations with from_int results tests passed!")
+    # print("✓ Operations with from_int results tests passed!")
 
 
 fn test_comparison_with_from_int() raises:
     """Test comparison operations using from_int results."""
-    print("Testing comparisons with from_int results...")
+    # print("Testing comparisons with from_int results...")
 
     # Test case 1: Equality with same value
     var a1 = Decimal128.from_int(100)
@@ -181,12 +181,12 @@ fn test_comparison_with_from_int() raises:
         a5 == b5, "from_int(-500) should equal Decimal128('-500')"
     )
 
-    print("✓ Comparison with from_int results tests passed!")
+    # print("✓ Comparison with from_int results tests passed!")
 
 
 fn test_properties() raises:
     """Test properties of from_int results."""
-    print("Testing properties of from_int results...")
+    # print("Testing properties of from_int results...")
 
     # Test case 1: Sign of positive
     var pos = Decimal128.from_int(100)
@@ -220,12 +220,12 @@ fn test_properties() raises:
         "Coefficient should match the input integer value",
     )
 
-    print("✓ Properties of from_int results tests passed!")
+    # print("✓ Properties of from_int results tests passed!")
 
 
 fn test_edge_cases() raises:
     """Test edge cases for from_int."""
-    print("Testing edge cases for from_int...")
+    # print("Testing edge cases for from_int...")
 
     # Test case 1: Zero remains zero
     var zero = Decimal128.from_int(0)
@@ -265,12 +265,12 @@ fn test_edge_cases() raises:
     var power10 = Decimal128.from_int(10**9)  # 1 billion
     testing.assert_equal(String(power10), "1000000000", "from_int(10^9) failed")
 
-    print("✓ Edge cases for from_int tests passed!")
+    # print("✓ Edge cases for from_int tests passed!")
 
 
 fn test_from_int_with_scale() raises:
     """Test from_int with scale argument."""
-    print("Testing from_int with scale argument...")
+    # print("Testing from_int with scale argument...")
 
     # Test case 1: Positive integer with positive scale
     var result1 = Decimal128.from_int(123, 2)
@@ -341,7 +341,7 @@ fn test_from_int_with_scale() raises:
         a8 != b8, "from_int(123, 0) should not equal from_int(123, 2)"
     )
 
-    print("✓ from_int with scale tests passed!")
+    # print("✓ from_int with scale tests passed!")
 
 
 fn run_test_with_error_handling(
@@ -362,9 +362,9 @@ fn run_test_with_error_handling(
 
 
 fn main() raises:
-    print("=========================================")
-    print("Running Decimal128.from_int() Tests")
-    print("=========================================")
+    # print("=========================================")
+    # print("Running Decimal128.from_int() Tests")
+    # print("=========================================")
 
     # run_test_with_error_handling(
     #     test_basic_integers, "Basic integer conversion test"
@@ -388,4 +388,4 @@ fn main() raises:
 
     testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
-    print("All Decimal128.from_int() tests passed!")
+    # print("All Decimal128.from_int() tests passed!")

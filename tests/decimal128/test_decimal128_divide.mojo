@@ -8,8 +8,8 @@ import testing
 
 
 fn test_basic_division() raises:
-    print("------------------------------------------------------")
-    print("Testing basic division cases...")
+    # print("------------------------------------------------------")
+    # print("Testing basic division cases...")
 
     # 1. Simple integer division
     testing.assert_equal(
@@ -77,12 +77,12 @@ fn test_basic_division() raises:
         "Division with decimals, different scales",
     )
 
-    print("✓ Basic division tests passed!")
+    # print("✓ Basic division tests passed!")
 
 
 fn test_repeating_decimals() raises:
-    print("------------------------------------------------------")
-    print("Testing division with repeating decimals...")
+    # print("------------------------------------------------------")
+    # print("Testing division with repeating decimals...")
 
     # 11. Division resulting in 1/3
     var third = Decimal128(1) / Decimal128(3)
@@ -154,12 +154,12 @@ fn test_repeating_decimals() raises:
         "Case 20: Division of 10 by 3 failed",
     )
 
-    print("✓ Repeating decimal tests passed!")
+    # print("✓ Repeating decimal tests passed!")
 
 
 fn test_precision_rounding() raises:
-    print("------------------------------------------------------")
-    print("Testing division precision and rounding...")
+    # print("------------------------------------------------------")
+    # print("Testing division precision and rounding...")
 
     # 21. Rounding half even (banker's rounding) at precision limit
     var a21 = Decimal128(2) / Decimal128(3)  # Should be ~0.6666...67
@@ -233,12 +233,12 @@ fn test_precision_rounding() raises:
         "Scale should not exceed MAX_SCALE",
     )
 
-    print("✓ Precision and rounding tests passed!")
+    # print("✓ Precision and rounding tests passed!")
 
 
 fn test_scale_handling() raises:
-    print("------------------------------------------------------")
-    print("Testing scale handling in division...")
+    # print("------------------------------------------------------")
+    # print("Testing scale handling in division...")
 
     # 31. Division by power of 10
     testing.assert_equal(
@@ -310,12 +310,12 @@ fn test_scale_handling() raises:
         "Division where both have high scale and result needs more",
     )
 
-    print("✓ Scale handling tests passed!")
+    # print("✓ Scale handling tests passed!")
 
 
 fn test_edge_cases() raises:
-    print("------------------------------------------------------")
-    print("Testing division edge cases...")
+    # print("------------------------------------------------------")
+    # print("Testing division edge cases...")
 
     # 41. Division by very small number close to zero
     var a41 = Decimal128(1) / Decimal128(
@@ -392,12 +392,12 @@ fn test_edge_cases() raises:
         "Case 50: Division with value at maximum supported scale failed",
     )
 
-    print("✓ Edge case tests passed!")
+    # print("✓ Edge case tests passed!")
 
 
 fn test_large_numbers() raises:
-    print("------------------------------------------------------")
-    print("Testing division with large numbers...")
+    # print("------------------------------------------------------")
+    # print("Testing division with large numbers...")
 
     # 51. Division of large number that results in small number
     testing.assert_equal(
@@ -474,11 +474,11 @@ fn test_large_numbers() raises:
     except:
         print("Division overflows")
 
-    print("✓ Large number division tests passed!")
+    # print("✓ Large number division tests passed!")
 
 
 fn test_special_cases() raises:
-    print("Testing special division cases...")
+    # print("Testing special division cases...")
 
     # 61. Identical numbers should give 1
     testing.assert_equal(
@@ -554,11 +554,11 @@ fn test_special_cases() raises:
         "Case 70: Dividing number very close to zero by one failed",
     )
 
-    print("✓ Special case tests passed!")
+    # print("✓ Special case tests passed!")
 
 
 fn test_mixed_precision() raises:
-    print("Testing mixed precision division cases...")
+    # print("Testing mixed precision division cases...")
 
     # 71. High precision / low precision
     testing.assert_equal(
@@ -638,12 +638,12 @@ fn test_mixed_precision() raises:
         "Many trailing zeros in result",
     )
 
-    print("✓ Mixed precision tests passed!")
+    # print("✓ Mixed precision tests passed!")
 
 
 fn test_rounding_behavior() raises:
-    print("------------------------------------------------------")
-    print("Testing division rounding behavior...")
+    # print("------------------------------------------------------")
+    # print("Testing division rounding behavior...")
 
     # 81. Banker's rounding at boundary (round to even)
     var a81 = Decimal128(1) / Decimal128(
@@ -730,12 +730,12 @@ fn test_rounding_behavior() raises:
         "Case 90: Division with exactly MAX_SCALE digits failed",
     )
 
-    print("✓ Rounding behavior tests passed!")
+    # print("✓ Rounding behavior tests passed!")
 
 
 fn test_error_cases() raises:
-    print("------------------------------------------------------")
-    print("Testing division error cases...")
+    # print("------------------------------------------------------")
+    # print("Testing division error cases...")
 
     # 91. Division by zero
     try:
@@ -823,11 +823,11 @@ fn test_error_cases() raises:
         "Case 100: Division at the exact boundary of precision limit failed",
     )
 
-    print("✓ Error case tests passed!")
+    # print("✓ Error case tests passed!")
 
 
 fn main() raises:
-    print("\n=== Running Comprehensive Decimal128 Division Tests ===\n")
+    # print("\n=== Running Comprehensive Decimal128 Division Tests ===\n")
 
     # test_basic_division()
     # print()
@@ -861,4 +861,4 @@ fn main() raises:
 
     testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
-    print("✓✓✓ All 100 division tests passed! ✓✓✓")
+    # print("✓✓✓ All 100 division tests passed! ✓✓✓")

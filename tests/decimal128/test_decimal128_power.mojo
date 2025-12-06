@@ -9,7 +9,7 @@ from decimojo.decimal128.exponential import power
 
 fn test_integer_powers() raises:
     """Test raising a Decimal128 to an integer power."""
-    print("Testing integer powers...")
+    # print("Testing integer powers...")
 
     # Test case 1: Positive base, positive exponent
     var base1 = Decimal128(2)
@@ -51,12 +51,12 @@ fn test_integer_powers() raises:
         String(result5), "2", "0.5^-1 should be 2, got " + String(result5)
     )
 
-    print("✓ Integer powers tests passed!")
+    # print("✓ Integer powers tests passed!")
 
 
 fn test_decimal_powers() raises:
     """Test raising a Decimal128 to a Decimal128 power."""
-    print("Testing decimal powers...")
+    # print("Testing decimal powers...")
 
     # Test case 1: Positive base, simple fractional exponent (0.5)
     var base1 = Decimal128(9)
@@ -94,12 +94,12 @@ fn test_decimal_powers() raises:
         String(result4), "0.5", "4^-0.5 should be 0.5, got " + String(result4)
     )
 
-    print("✓ Decimal128 powers tests passed!")
+    # print("✓ Decimal128 powers tests passed!")
 
 
 fn test_edge_cases() raises:
     """Test edge cases for the power function."""
-    print("Testing power edge cases...")
+    # print("Testing power edge cases...")
 
     # Test case 1: Zero base, positive exponent
     var base1 = Decimal128(0)
@@ -147,7 +147,7 @@ fn test_edge_cases() raises:
         exception_caught, True, "(-2)^0.5 should raise an exception"
     )
 
-    print("✓ Edge cases tests passed!")
+    # print("✓ Edge cases tests passed!")
 
 
 fn run_test_with_error_handling(
@@ -168,9 +168,9 @@ fn run_test_with_error_handling(
 
 
 fn main() raises:
-    print("=========================================")
-    print("Running Decimal128 Power Function Tests")
-    print("=========================================")
+    # print("=========================================")
+    # print("Running Decimal128 Power Function Tests")
+    # print("=========================================")
 
     # run_test_with_error_handling(test_integer_powers, "Integer powers test")
     # run_test_with_error_handling(test_decimal_powers, "Decimal128 powers test")
@@ -178,4 +178,4 @@ fn main() raises:
 
     testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
-    print("All power function tests passed!")
+    # print("All power function tests passed!")

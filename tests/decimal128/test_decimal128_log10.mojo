@@ -9,7 +9,7 @@ from decimojo.prelude import dm, Decimal128, RoundingMode
 
 fn test_basic_log10() raises:
     """Test basic logarithm base 10 calculations."""
-    print("Testing basic log10 calculations...")
+    # print("Testing basic log10 calculations...")
 
     # Test case 1: log10(1) = 0
     var val1 = Decimal128(1)
@@ -55,12 +55,12 @@ fn test_basic_log10() raises:
         "log10(0.01) should be -2, got " + String(result6),
     )
 
-    print("✓ Basic log10 calculations tests passed!")
+    # print("✓ Basic log10 calculations tests passed!")
 
 
 fn test_non_powers_of_ten() raises:
     """Test logarithm base 10 of numbers that are not exact powers of 10."""
-    print("Testing log10 of non-powers of 10...")
+    # print("Testing log10 of non-powers of 10...")
 
     # Test case 1: log10(2)
     var val1 = Decimal128(2)
@@ -107,12 +107,12 @@ fn test_non_powers_of_ten() raises:
         + String(result5),
     )
 
-    print("✓ Non-powers of 10 log10 calculations tests passed!")
+    # print("✓ Non-powers of 10 log10 calculations tests passed!")
 
 
 fn test_edge_cases() raises:
     """Test edge cases for logarithm base 10."""
-    print("Testing log10 edge cases...")
+    # print("Testing log10 edge cases...")
 
     # Test case 1: log10 of a negative number (should raise error)
     var val1 = Decimal128(-10)
@@ -166,12 +166,12 @@ fn test_edge_cases() raises:
         "log10(10^-20) should be -20, got " + String(result5),
     )
 
-    print("✓ Edge cases tests passed!")
+    # print("✓ Edge cases tests passed!")
 
 
 fn test_precision() raises:
     """Test precision of logarithm base 10 calculations."""
-    print("Testing log10 precision...")
+    # print("Testing log10 precision...")
 
     # Test case 1: High precision decimal
     var val1 = Decimal128("3.14159265358979323846")
@@ -207,12 +207,12 @@ fn test_precision() raises:
         "log10(9.999999999) should be precise, got " + String(result4),
     )
 
-    print("✓ Precision tests passed!")
+    # print("✓ Precision tests passed!")
 
 
 fn test_mathematical_properties() raises:
     """Test mathematical properties of logarithm base 10."""
-    print("Testing mathematical properties of log10...")
+    # print("Testing mathematical properties of log10...")
 
     # Test case 1: log10(a*b) = log10(a) + log10(b)
     var a1 = Decimal128(2)
@@ -257,12 +257,12 @@ fn test_mathematical_properties() raises:
         "log10(1/a) should equal -log10(a)",
     )
 
-    print("✓ Mathematical properties tests passed!")
+    # print("✓ Mathematical properties tests passed!")
 
 
 fn test_consistency_with_other_logarithms() raises:
     """Test consistency between log10 and other logarithm functions."""
-    print("Testing consistency with other logarithm functions...")
+    # print("Testing consistency with other logarithm functions...")
 
     # Test case 1: log10(x) = ln(x) / ln(10)
     var val1 = Decimal128(7)
@@ -284,7 +284,7 @@ fn test_consistency_with_other_logarithms() raises:
         "log10(x) should equal log(x, 10)",
     )
 
-    print("✓ Consistency with other logarithms tests passed!")
+    # print("✓ Consistency with other logarithms tests passed!")
 
 
 fn run_test_with_error_handling(
@@ -305,9 +305,9 @@ fn run_test_with_error_handling(
 
 
 fn main() raises:
-    print("=========================================")
-    print("Running log10() Function Tests")
-    print("=========================================")
+    # print("=========================================")
+    # print("Running log10() Function Tests")
+    # print("=========================================")
 
     # run_test_with_error_handling(
     #     test_basic_log10, "Basic log10 calculations test"
@@ -327,4 +327,4 @@ fn main() raises:
 
     testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
-    print("All log10() function tests passed!")
+    # print("All log10() function tests passed!")

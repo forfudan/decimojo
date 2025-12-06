@@ -22,9 +22,9 @@ fn test_bigdecimal_arithmetics() raises:
     var toml = parse_file(file_path)
     var test_cases: List[TestCase]
 
-    print("------------------------------------------------------")
-    print("Testing BigDecimal addition...")
-    print("------------------------------------------------------")
+    # print("------------------------------------------------------")
+    # print("Testing BigDecimal addition...")
+    # print("------------------------------------------------------")
 
     test_cases = load_test_cases(toml, "addition_tests")
     count_wrong = 0
@@ -57,9 +57,9 @@ fn test_bigdecimal_arithmetics() raises:
         "Some test cases failed. See above for details.",
     )
 
-    print("------------------------------------------------------")
-    print("Testing BigDecimal subtraction...")
-    print("------------------------------------------------------")
+    # print("------------------------------------------------------")
+    # print("Testing BigDecimal subtraction...")
+    # print("------------------------------------------------------")
 
     test_cases = load_test_cases(toml, "subtraction_tests")
     count_wrong = 0
@@ -92,9 +92,9 @@ fn test_bigdecimal_arithmetics() raises:
         "Some test cases failed. See above for details.",
     )
 
-    print("------------------------------------------------------")
-    print("Testing BigDecimal multiplication...")
-    print("------------------------------------------------------")
+    # print("------------------------------------------------------")
+    # print("Testing BigDecimal multiplication...")
+    # print("------------------------------------------------------")
 
     test_cases = load_test_cases(toml, "multiplication_tests")
     count_wrong = 0
@@ -127,9 +127,9 @@ fn test_bigdecimal_arithmetics() raises:
         "Some test cases failed. See above for details.",
     )
 
-    print("------------------------------------------------------")
-    print("Testing BigDecimal division...")
-    print("------------------------------------------------------")
+    # print("------------------------------------------------------")
+    # print("Testing BigDecimal division...")
+    # print("------------------------------------------------------")
 
     test_cases = load_test_cases(toml, "division_tests")
     count_wrong = 0
@@ -166,8 +166,8 @@ fn test_bigdecimal_arithmetics() raises:
 
 
 fn main() raises:
-    print("Running BigDecimal arithmetic tests")
+    # print("Running BigDecimal arithmetic tests")
 
     testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
-    print("All BigDecimal arithmetic tests passed!")
+    # print("All BigDecimal arithmetic tests passed!")

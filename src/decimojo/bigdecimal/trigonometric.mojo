@@ -492,7 +492,7 @@ fn arctan(x: BigDecimal, precision: Int) raises -> BigDecimal:
         # arctan(x) = 2 * arctan(x / (1 + sqrt(1 + x²)))
         # This is to ensure convergence of the Taylor series.
         # print("Using identity for arctan with |x| <= 2")
-        print(bdec_1 + x * x)
+        # print(bdec_1 + x * x)
         var sqrt_term = (bdec_1 + x * x).sqrt(precision=working_precision)
         var x_divided = x.true_divide(
             bdec_1 + sqrt_term, precision=working_precision

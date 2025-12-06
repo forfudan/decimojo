@@ -7,8 +7,8 @@ import testing
 
 
 fn test_add() raises:
-    print("------------------------------------------------------")
-    print("Testing decimal addition...")
+    # print("------------------------------------------------------")
+    # print("Testing decimal addition...")
 
     # Test case 1: Simple addition with same scale
     var a1 = Decimal128(12345, scale=2)  # 123.45
@@ -167,7 +167,7 @@ fn test_add() raises:
         "Addition with large and small values",
     )
 
-    print("Decimal128 addition tests passed!")
+    # print("Decimal128 addition tests passed!")
 
     # Test case 18: Edge case with one equals 0
     var a18 = Decimal128.from_uint128(
@@ -182,12 +182,12 @@ fn test_add() raises:
         "Addition with zeros",
     )
 
-    print("Decimal128 addition tests passed!")
+    # print("Decimal128 addition tests passed!")
 
 
 fn test_negation() raises:
-    print("------------------------------------------------------")
-    print("Testing decimal negation...")
+    # print("------------------------------------------------------")
+    # print("Testing decimal negation...")
 
     # Test case 1: Negate positive number
     var a1 = Decimal128(12345, 2)
@@ -259,12 +259,12 @@ fn test_negation() raises:
         "Negating number with maximum precision",
     )
 
-    print("Decimal128 negation tests passed!")
+    # print("Decimal128 negation tests passed!")
 
 
 fn test_abs() raises:
-    print("------------------------------------------------------")
-    print("Testing decimal absolute value...")
+    # print("------------------------------------------------------")
+    # print("Testing decimal absolute value...")
 
     # Test case 1: Absolute value of positive number
     var a1 = Decimal128(12345, 2)
@@ -343,12 +343,12 @@ fn test_abs() raises:
     except:
         print("Maximum value test not applicable")
 
-    print("Decimal128 absolute value tests passed!")
+    # print("Decimal128 absolute value tests passed!")
 
 
 fn test_subtract() raises:
-    print("------------------------------------------------------")
-    print("Testing decimal subtraction...")
+    # print("------------------------------------------------------")
+    # print("Testing decimal subtraction...")
 
     # Test case 1: Simple subtraction with same scale
     var a1 = Decimal128(12345, 2)
@@ -476,12 +476,12 @@ fn test_subtract() raises:
         String(result12a), String(result12b), "a - b should equal -(b - a)"
     )
 
-    print("Decimal128 subtraction tests passed!")
+    # print("Decimal128 subtraction tests passed!")
 
 
 fn test_extreme_cases() raises:
-    print("------------------------------------------------------")
-    print("Testing extreme cases...")
+    # print("------------------------------------------------------")
+    # print("Testing extreme cases...")
 
     # Test case 1: Addition that results in exactly zero with high precision
     var a1 = Decimal128("0." + "1" * 28)  # 0.1111...1 (28 digits)
@@ -529,11 +529,11 @@ fn test_extreme_cases() raises:
         "Addition with extensive carry propagation",
     )
 
-    print("Extreme case tests passed!")
+    # print("Extreme case tests passed!")
 
 
 fn main() raises:
-    print("Running decimal arithmetic tests")
+    # print("Running decimal arithmetic tests")
 
     # # Run addition tests
     # test_add()
@@ -552,4 +552,4 @@ fn main() raises:
 
     testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
-    print("All decimal arithmetic tests passed!")
+    # print("All decimal arithmetic tests passed!")

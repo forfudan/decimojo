@@ -9,7 +9,7 @@ from decimojo.prelude import dm, Decimal128, RoundingMode
 
 fn test_basic_floor_division() raises:
     """Test basic integer floor division."""
-    print("Testing basic floor division...")
+    # print("Testing basic floor division...")
 
     # Test case 1: Simple integer division with no remainder
     var a1 = Decimal128(10)
@@ -55,12 +55,12 @@ fn test_basic_floor_division() raises:
         "10.75 // 1.5 should equal 7, got " + String(result5),
     )
 
-    print("✓ Basic floor division tests passed!")
+    # print("✓ Basic floor division tests passed!")
 
 
 fn test_negative_floor_division() raises:
     """Test floor division involving negative numbers."""
-    print("Testing floor division with negative numbers...")
+    # print("Testing floor division with negative numbers...")
 
     # Test case 1: Negative // Positive
     var a1 = Decimal128(-10)
@@ -120,12 +120,12 @@ fn test_negative_floor_division() raises:
         "-10.5 // -3.5 should equal 3, got " + String(result6),
     )
 
-    print("✓ Negative number floor division tests passed!")
+    # print("✓ Negative number floor division tests passed!")
 
 
 fn test_edge_cases() raises:
     """Test edge cases for floor division."""
-    print("Testing floor division edge cases...")
+    # print("Testing floor division edge cases...")
 
     # Test case 1: Division by 1
     var a1 = Decimal128(10)
@@ -190,12 +190,12 @@ fn test_edge_cases() raises:
         String(result7), "0", "0.0000001 // 0.0000002 should equal 0"
     )
 
-    print("✓ Edge cases tests passed!")
+    # print("✓ Edge cases tests passed!")
 
 
 fn test_mathematical_relationships() raises:
     """Test mathematical relationships involving floor division."""
-    print("Testing mathematical relationships...")
+    # print("Testing mathematical relationships...")
 
     # Test case 1: a = (a // b) * b + (a % b)
     var a1 = Decimal128(10)
@@ -243,7 +243,7 @@ fn test_mathematical_relationships() raises:
         "Relationship (a // b) * b ≤ a < (a // b + 1) * b should hold",
     )
 
-    print("✓ Mathematical relationships tests passed!")
+    # print("✓ Mathematical relationships tests passed!")
 
 
 fn run_test_with_error_handling(
@@ -264,9 +264,9 @@ fn run_test_with_error_handling(
 
 
 fn main() raises:
-    print("=========================================")
-    print("Running Decimal128 Floor Division Tests")
-    print("=========================================")
+    # print("=========================================")
+    # print("Running Decimal128 Floor Division Tests")
+    # print("=========================================")
 
     # run_test_with_error_handling(
     #     test_basic_floor_division, "Basic floor division test"
@@ -281,4 +281,4 @@ fn main() raises:
 
     testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
-    print("All floor division tests passed!")
+    # print("All floor division tests passed!")

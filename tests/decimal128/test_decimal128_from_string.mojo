@@ -9,7 +9,7 @@ from decimojo.prelude import dm, Decimal128, RoundingMode
 
 fn test_basic_integers() raises:
     """Test conversion of basic integer strings."""
-    print("Testing basic integer string conversions...")
+    # print("Testing basic integer string conversions...")
 
     # Test case 1: Zero
     var zero = Decimal128.from_string("0")
@@ -44,12 +44,12 @@ fn test_basic_integers() raises:
         exception_caught = True
     testing.assert_equal(exception_caught, True)
 
-    print("✓ Basic integer tests passed")
+    # print("✓ Basic integer tests passed")
 
 
 fn test_basic_decimals() raises:
     """Test conversion of basic decimal strings."""
-    print("Testing basic decimal string conversions...")
+    # print("Testing basic decimal string conversions...")
 
     # Test case 6: Simple decimal
     var simple_dec = Decimal128.from_string("123.45")
@@ -75,12 +75,12 @@ fn test_basic_decimals() raises:
         String(high_precision), "0.1234567890123456789012345679"
     )
 
-    print("✓ Basic decimal tests passed")
+    # print("✓ Basic decimal tests passed")
 
 
 fn test_negative_numbers() raises:
     """Test conversion of negative number strings."""
-    print("Testing negative number string conversions...")
+    # print("Testing negative number string conversions...")
 
     # Test case 11: Negative integer
     var neg_int = Decimal128.from_string("-123")
@@ -108,12 +108,12 @@ fn test_negative_numbers() raises:
     var neg_small = Decimal128.from_string("-0.001")
     testing.assert_equal(String(neg_small), "-0.001")
 
-    print("✓ Negative number tests passed")
+    # print("✓ Negative number tests passed")
 
 
 fn test_zeros_variants() raises:
     """Test conversion of various zero representations."""
-    print("Testing zero variants string conversions...")
+    # print("Testing zero variants string conversions...")
 
     # Test case 16: Single zero
     var single_zero = Decimal128.from_string("0")
@@ -141,12 +141,12 @@ fn test_zeros_variants() raises:
     var leading_zeros_decimal = Decimal128.from_string("000.000")
     testing.assert_equal(String(leading_zeros_decimal), "0.000")
 
-    print("✓ Zero variants tests passed")
+    # print("✓ Zero variants tests passed")
 
 
 fn test_scientific_notation() raises:
     """Test conversion of strings with scientific notation."""
-    print("Testing scientific notation string conversions...")
+    # print("Testing scientific notation string conversions...")
 
     # Test case 21: Simple positive exponent
     var simple_pos_exp = Decimal128.from_string("1.23e2")
@@ -168,12 +168,12 @@ fn test_scientific_notation() raises:
     var large_exp = Decimal128.from_string("1.23e20")
     testing.assert_equal(String(large_exp), "123000000000000000000")
 
-    print("✓ Scientific notation tests passed")
+    # print("✓ Scientific notation tests passed")
 
 
 fn test_formatting_variants() raises:
     """Test conversion of strings with various formatting variations."""
-    print("Testing string formatting variants...")
+    # print("Testing string formatting variants...")
 
     # Test case 26: Leading zeros with integer
     var leading_zeros_int = Decimal128.from_string("00123")
@@ -203,12 +203,12 @@ fn test_formatting_variants() raises:
         "Decimal128 point with no preceding digits should add leading 0",
     )
 
-    print("✓ Formatting variants tests passed")
+    # print("✓ Formatting variants tests passed")
 
 
 fn test_special_characters() raises:
     """Test conversion of strings with special characters."""
-    print("Testing strings with special characters...")
+    # print("Testing strings with special characters...")
 
     # Test case 31: Positive sign
     var positive_sign = Decimal128.from_string("+123.45")
@@ -230,12 +230,12 @@ fn test_special_characters() raises:
     var multi_digit_exp = Decimal128.from_string("1.23e+12")
     testing.assert_equal(String(multi_digit_exp), "1230000000000")
 
-    print("✓ Special character tests passed")
+    # print("✓ Special character tests passed")
 
 
 fn test_invalid_inputs() raises:
     """Test handling of invalid input strings."""
-    print("Testing invalid input strings...")
+    # print("Testing invalid input strings...")
 
     # Test case 36: Empty string
     var exception_caught = False
@@ -290,12 +290,12 @@ fn test_invalid_inputs() raises:
         exception_caught = True
     testing.assert_equal(exception_caught, True)
 
-    print("✓ Invalid input tests passed")
+    # print("✓ Invalid input tests passed")
 
 
 fn test_boundary_cases() raises:
     """Test boundary cases for string conversion."""
-    print("Testing boundary cases...")
+    # print("Testing boundary cases...")
 
     # Test case 41: Value at maximum precision
     var max_precision = Decimal128.from_string("0." + "1" * 28)
@@ -318,12 +318,12 @@ fn test_boundary_cases() raises:
     var max_value = Decimal128.from_string(max_value_str)
     testing.assert_equal(String(max_value), max_value_str)
 
-    print("✓ Boundary case tests passed")
+    # print("✓ Boundary case tests passed")
 
 
 fn test_special_cases() raises:
     """Test special cases for string conversion."""
-    print("Testing special cases...")
+    # print("Testing special cases...")
 
     # Test case 46: Very long decimal
     var long_decimal = Decimal128.from_string(
@@ -350,7 +350,7 @@ fn test_special_cases() raises:
     var pattern = Decimal128.from_string("123.456789012345678901234567")
     testing.assert_equal(String(pattern), "123.456789012345678901234567")
 
-    print("✓ Special case tests passed")
+    # print("✓ Special case tests passed")
 
 
 fn run_test_with_error_handling(
@@ -371,9 +371,9 @@ fn run_test_with_error_handling(
 
 
 fn main() raises:
-    print("=========================================")
-    print("Running 50 tests for Decimal128.from_string()")
-    print("=========================================")
+    # print("=========================================")
+    # print("Running 50 tests for Decimal128.from_string()")
+    # print("=========================================")
 
     # run_test_with_error_handling(test_basic_integers, "Basic integers test")
     # run_test_with_error_handling(test_basic_decimals, "Basic decimals test")
@@ -394,4 +394,4 @@ fn main() raises:
 
     testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
-    print("All 50 Decimal128.from_string() tests passed!")
+    # print("All 50 Decimal128.from_string() tests passed!")

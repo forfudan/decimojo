@@ -9,7 +9,7 @@ from decimojo.prelude import dm, Decimal128, RoundingMode
 
 fn test_basic_modulo() raises:
     """Test basic modulo operations with positive integers."""
-    print("Testing basic modulo operations...")
+    # print("Testing basic modulo operations...")
 
     # Test case 1: Simple modulo with remainder
     var a1 = Decimal128(10)
@@ -55,12 +55,12 @@ fn test_basic_modulo() raises:
         String(result5), "3", "3 % 10 should equal 3, got " + String(result5)
     )
 
-    print("✓ Basic modulo operations tests passed!")
+    # print("✓ Basic modulo operations tests passed!")
 
 
 fn test_negative_modulo() raises:
     """Test modulo operations involving negative numbers."""
-    print("Testing modulo with negative numbers...")
+    # print("Testing modulo with negative numbers...")
 
     # Test case 1: Negative dividend, positive divisor
     var a1 = Decimal128(-10)
@@ -118,12 +118,12 @@ fn test_negative_modulo() raises:
         "10.5 % -3 should equal 1.5, got " + String(result6),
     )
 
-    print("✓ Negative number modulo tests passed!")
+    # print("✓ Negative number modulo tests passed!")
 
 
 fn test_edge_cases() raises:
     """Test edge cases for modulo operation."""
-    print("Testing modulo edge cases...")
+    # print("Testing modulo edge cases...")
 
     # Test case 1: Modulo by 1
     var a1 = Decimal128(10)
@@ -192,12 +192,12 @@ fn test_edge_cases() raises:
         "7.5 % 7.5 should equal 0.0, got " + String(result7),
     )
 
-    print("✓ Edge cases tests passed!")
+    # print("✓ Edge cases tests passed!")
 
 
 fn test_mathematical_relationships() raises:
     """Test mathematical relationships involving modulo."""
-    print("Testing mathematical relationships...")
+    # print("Testing mathematical relationships...")
 
     # Test case 1: a = (a // b) * b + (a % b)
     var a1 = Decimal128(10)
@@ -250,12 +250,12 @@ fn test_mathematical_relationships() raises:
         String(mod_once), String(mod_twice), "(a % b) % b should equal a % b"
     )
 
-    print("✓ Mathematical relationships tests passed!")
+    # print("✓ Mathematical relationships tests passed!")
 
 
 fn test_consistency_with_floor_division() raises:
     """Test consistency between modulo and floor division operations."""
-    print("Testing consistency with floor division...")
+    # print("Testing consistency with floor division...")
 
     # Test case 1: a % b and a - (a // b) * b
     var a1 = Decimal128(10)
@@ -305,7 +305,7 @@ fn test_consistency_with_floor_division() raises:
         "a % b should equal a - (a // b) * b with mixed signs",
     )
 
-    print("✓ Consistency with floor division tests passed!")
+    # print("✓ Consistency with floor division tests passed!")
 
 
 fn run_test_with_error_handling(
@@ -326,9 +326,9 @@ fn run_test_with_error_handling(
 
 
 fn main() raises:
-    print("=========================================")
-    print("Running Decimal128 Modulo Tests")
-    print("=========================================")
+    # print("=========================================")
+    # print("Running Decimal128 Modulo Tests")
+    # print("=========================================")
 
     # run_test_with_error_handling(
     #     test_basic_modulo, "Basic modulo operations test"
@@ -347,4 +347,4 @@ fn main() raises:
 
     testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
-    print("All modulo tests passed!")
+    # print("All modulo tests passed!")

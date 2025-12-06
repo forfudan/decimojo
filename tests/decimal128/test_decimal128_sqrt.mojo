@@ -6,7 +6,7 @@ import testing
 
 
 fn test_perfect_squares() raises:
-    print("Testing square root of perfect squares...")
+    # print("Testing square root of perfect squares...")
 
     # Test case 1: sqrt(1) = 1
     try:
@@ -212,11 +212,11 @@ fn test_perfect_squares() raises:
         print("Exception: " + String(e))
         raise e
 
-    print("Perfect square tests passed!")
+    # print("Perfect square tests passed!")
 
 
 fn test_non_perfect_squares() raises:
-    print("Testing square root of non-perfect squares...")
+    # print("Testing square root of non-perfect squares...")
 
     # Test case 1
     try:
@@ -327,11 +327,11 @@ fn test_non_perfect_squares() raises:
         + result_str7,
     )
 
-    print("Non-perfect square tests passed!")
+    # print("Non-perfect square tests passed!")
 
 
 fn test_decimal_values() raises:
-    print("Testing square root of decimal values...")
+    # print("Testing square root of decimal values...")
 
     # Test case 1
     try:
@@ -407,11 +407,11 @@ fn test_decimal_values() raises:
         "sqrt(" + String(d7) + ") should be " + expected7,
     )
 
-    print("Decimal128 value tests passed!")
+    # print("Decimal128 value tests passed!")
 
 
 fn test_edge_cases() raises:
-    print("Testing edge cases...")
+    # print("Testing edge cases...")
 
     # Test sqrt(0) = 0
     try:
@@ -485,11 +485,11 @@ fn test_edge_cases() raises:
         )
         raise e
 
-    print("Edge cases tests passed!")
+    # print("Edge cases tests passed!")
 
 
 fn test_precision() raises:
-    print("Testing precision of square root calculations...")
+    # print("Testing precision of square root calculations...")
     var expected_sqrt2 = (
         "1.414213562373095048801688724"  # First 10 decimal places of sqrt(2)
     )
@@ -526,11 +526,11 @@ fn test_precision() raises:
         ),
     )
 
-    print("Precision tests passed!")
+    # print("Precision tests passed!")
 
 
 fn test_mathematical_identities() raises:
-    print("Testing mathematical identities...")
+    # print("Testing mathematical identities...")
 
     # Test that sqrt(x)² = x - Expanded for each test number
     # Test number 1
@@ -724,11 +724,11 @@ fn test_mathematical_identities() raises:
         + ")",
     )
 
-    print("Mathematical identity tests passed!")
+    # print("Mathematical identity tests passed!")
 
 
 fn test_sqrt_performance() raises:
-    print("Testing square root performance and convergence...")
+    # print("Testing square root performance and convergence...")
 
     # Test case 1
     try:
@@ -907,7 +907,7 @@ fn test_sqrt_performance() raises:
         )
         raise e
 
-    print("Performance and convergence tests passed!")
+    # print("Performance and convergence tests passed!")
 
 
 fn run_test_with_error_handling(
@@ -928,8 +928,8 @@ fn run_test_with_error_handling(
 
 
 fn main() raises:
-    print("=========================================")
-    print("Running comprehensive Decimal128 square root tests")
+    # print("=========================================")
+    # print("Running comprehensive Decimal128 square root tests")
 
     # run_test_with_error_handling(test_perfect_squares, "Perfect squares test")
     # run_test_with_error_handling(
@@ -947,4 +947,4 @@ fn main() raises:
 
     testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
-    print("All square root tests passed!")
+    # print("All square root tests passed!")
