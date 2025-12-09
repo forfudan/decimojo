@@ -11,7 +11,7 @@ from decimojo.decimal128.exponential import ln
 
 fn test_basic_ln_values() raises:
     """Test basic natural logarithm values."""
-    print("Testing basic natural logarithm values...")
+    # print("Testing basic natural logarithm values...")
 
     # Test case 1: ln(1) = 0
     var one = Decimal128(1)
@@ -47,12 +47,12 @@ fn test_basic_ln_values() raises:
         + String(result_tenth),
     )
 
-    print("✓ Basic natural logarithm values tests passed!")
+    # print("✓ Basic natural logarithm values tests passed!")
 
 
 fn test_fractional_ln_values() raises:
     """Test natural logarithm values with fractional inputs."""
-    print("Testing natural logarithm values with fractional inputs...")
+    # print("Testing natural logarithm values with fractional inputs...")
 
     # Test case 5: ln(0.5)
     var half = Decimal128("0.5")
@@ -82,12 +82,12 @@ fn test_fractional_ln_values() raises:
         + String(result_five),
     )
 
-    print("✓ Fractional natural logarithm values tests passed!")
+    # print("✓ Fractional natural logarithm values tests passed!")
 
 
 fn test_mathematical_identities() raises:
     """Test mathematical identities related to the natural logarithm."""
-    print("Testing mathematical identities for natural logarithm...")
+    # print("Testing mathematical identities for natural logarithm...")
 
     # Test case 8: ln(a * b) = ln(a) + ln(b)
     var a = Decimal128(2)
@@ -115,12 +115,12 @@ fn test_mathematical_identities() raises:
         "ln(e^x) should equal x within tolerance",
     )
 
-    print("✓ Mathematical identities tests passed!")
+    # print("✓ Mathematical identities tests passed!")
 
 
 fn test_edge_cases() raises:
     """Test edge cases for natural logarithm function."""
-    print("Testing edge cases for natural logarithm function...")
+    # print("Testing edge cases for natural logarithm function...")
 
     # Test case 11: ln(0) should raise an exception
     var zero = Decimal128(0)
@@ -165,12 +165,12 @@ fn test_edge_cases() raises:
         ).format(result_large),
     )
 
-    print("✓ Edge cases tests passed!")
+    # print("✓ Edge cases tests passed!")
 
 
 fn test_precision() raises:
     """Test precision of natural logarithm calculations."""
-    print("Testing precision of natural logarithm calculations...")
+    # print("Testing precision of natural logarithm calculations...")
 
     # Test case 15: ln(2) with high precision
     var two = Decimal128(2)
@@ -191,12 +191,12 @@ fn test_precision() raises:
         ).format(result_ten),
     )
 
-    print("✓ Precision tests passed!")
+    # print("✓ Precision tests passed!")
 
 
 fn test_range_of_values() raises:
     """Test natural logarithm function across a range of values."""
-    print("Testing natural logarithm function across a range of values...")
+    # print("Testing natural logarithm function across a range of values...")
 
     # Test case 17: ln(x) for x in range (3, 10)
     testing.assert_true(
@@ -218,12 +218,12 @@ fn test_range_of_values() raises:
         "ln(x) should be negative for x < 1",
     )
 
-    print("✓ Range of values tests passed!")
+    # print("✓ Range of values tests passed!")
 
 
 fn test_special_cases() raises:
     """Test special cases for natural logarithm function."""
-    print("Testing special cases for natural logarithm function...")
+    # print("Testing special cases for natural logarithm function...")
 
     # Test case 19: ln(1) = 0 (revisited)
     var one = Decimal128(1)
@@ -238,7 +238,7 @@ fn test_special_cases() raises:
         "ln(e) should be very close to 1",
     )
 
-    print("✓ Special cases tests passed!")
+    # print("✓ Special cases tests passed!")
 
 
 fn run_test_with_error_handling(
@@ -259,20 +259,22 @@ fn run_test_with_error_handling(
 
 
 fn main() raises:
-    print("=========================================")
-    print("Running Natural Logarithm Function Tests")
-    print("=========================================")
+    # print("=========================================")
+    # print("Running Natural Logarithm Function Tests")
+    # print("=========================================")
 
-    run_test_with_error_handling(test_basic_ln_values, "Basic ln values test")
-    run_test_with_error_handling(
-        test_fractional_ln_values, "Fractional ln values test"
-    )
-    run_test_with_error_handling(
-        test_mathematical_identities, "Mathematical identities test"
-    )
-    run_test_with_error_handling(test_edge_cases, "Edge cases test")
-    run_test_with_error_handling(test_precision, "Precision test")
-    run_test_with_error_handling(test_range_of_values, "Range of values test")
-    run_test_with_error_handling(test_special_cases, "Special cases test")
+    # run_test_with_error_handling(test_basic_ln_values, "Basic ln values test")
+    # run_test_with_error_handling(
+    #     test_fractional_ln_values, "Fractional ln values test"
+    # )
+    # run_test_with_error_handling(
+    #     test_mathematical_identities, "Mathematical identities test"
+    # )
+    # run_test_with_error_handling(test_edge_cases, "Edge cases test")
+    # run_test_with_error_handling(test_precision, "Precision test")
+    # run_test_with_error_handling(test_range_of_values, "Range of values test")
+    # run_test_with_error_handling(test_special_cases, "Special cases test")
 
-    print("All natural logarithm function tests passed!")
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
+
+    # print("All natural logarithm function tests passed!")

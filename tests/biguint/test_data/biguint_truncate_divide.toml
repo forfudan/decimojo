@@ -4,38 +4,38 @@
 [[truncate_divide_tests]]
 a = "10"
 b = "2"
-expected = "5"
 description = "Division with no remainder"
+expected = "5"
 
 [[truncate_divide_tests]]
 a = "10"
 b = "3"
-expected = "3"
 description = "Division with remainder (truncate toward zero)"
+expected = "3"
 
 [[truncate_divide_tests]]
 a = "3"
 b = "10"
-expected = "0"
 description = "Division results in zero (smaller / larger)"
+expected = "0"
 
 [[truncate_divide_tests]]
 a = "42"
 b = "1"
-expected = "42"
 description = "Division by 1"
+expected = "42"
 
 [[truncate_divide_tests]]
 a = "1000000000000"
 b = "1000000"
-expected = "1000000"
 description = "Large number division"
+expected = "1000000"
 
 [[truncate_divide_tests]]
 a = "0"
 b = "5"
-expected = "0"
 description = "Zero dividend"
+expected = "0"
 
 # ===----------------------------------------------------------------------=== #
 # Large number division tests
@@ -43,32 +43,32 @@ description = "Zero dividend"
 [[truncate_divide_tests]]
 a = "10000000000000000000000000000000000000000000000000000"
 b = "7"
-expected = "1428571428571428571428571428571428571428571428571428"
 description = "Large number divided by small number"
+expected = "1428571428571428571428571428571428571428571428571428"
 
 [[truncate_divide_tests]]
 a = "999999999999999999999999999999"
 b = "999999999999999"
-expected = "1000000000000001"
 description = "Large number divided by large number"
+expected = "1000000000000001"
 
 [[truncate_divide_tests]]
 a = "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 b = "10000000000000000000000000000000000000000000"
-expected = "1000000000000000000000000000000000000000000000000000000000"
 description = "Very large number divisible by power of 10"
+expected = "1000000000000000000000000000000000000000000000000000000000"
 
 [[truncate_divide_tests]]
 a = "999999999999999999999999999999999999999999999999999999"
 b = "334999999999999999999999999999999999999994"
-expected = "2985074626865"
 description = "Large number with large divisor resulting in small quotient"
+expected = "2985074626865"
 
 [[truncate_divide_tests]]
 a = "123456789123456789123456789123456789123456789123456789123456789123456789123456789"
 b = "987654321987654321987654321987654321"
-expected = "124999998860937500014238281249822021609377223"
 description = "Large number with very large divisor"
+expected = "124999998860937500014238281249822021609377223"
 
 # ===----------------------------------------------------------------------=== #
 # Division rounding tests
@@ -76,38 +76,38 @@ description = "Large number with very large divisor"
 [[truncate_divide_tests]]
 a = "7"
 b = "2"
-expected = "3"
 description = "7/2 = 3.5 -> 3"
+expected = "3"
 
 [[truncate_divide_tests]]
 a = "1"
 b = "3"
-expected = "0"
 description = "1/3 = 0.333... -> 0"
+expected = "0"
 
 [[truncate_divide_tests]]
 a = "5"
 b = "4"
+description = "5/4 = 1.25 -> 1"
 expected = "1"
-description = "5/4 = 1.25 -> 1" 
 
 [[truncate_divide_tests]]
 a = "99"
 b = "100"
-expected = "0"
 description = "99/100 = 0.99 -> 0"
+expected = "0"
 
 [[truncate_divide_tests]]
 a = "17"
 b = "5"
-expected = "3"
 description = "17/5 = 3.4 -> 3"
+expected = "3"
 
 [[truncate_divide_tests]]
 a = "12345678901234567890"
 b = "987654321"
-expected = "12499999887"
 description = "12345678901234567890/987654321 = 12499999887.34375 -> 12499999887"
+expected = "12499999887"
 
 # ===----------------------------------------------------------------------=== #
 # Edge cases
@@ -116,29 +116,29 @@ description = "12345678901234567890/987654321 = 12499999887.34375 -> 12499999887
 [[truncate_divide_tests]]
 a = "1000"
 b = "999"
-expected = "1"
 description = "Consecutive numbers"
+expected = "1"
 
 [[truncate_divide_tests]]
 a = "101"
 b = "100"
-expected = "1"
 description = "Consecutive numbers"
+expected = "1"
 
 [[truncate_divide_tests]]
 a = "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
 b = "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
-expected = "1"
 description = "Equal large numbers"
+expected = "1"
 
 [[truncate_divide_tests]]
 a = "100000000000000000000"
 b = "10000000000"
-expected = "10000000000"
 description = "Powers of 10"
+expected = "10000000000"
 
 [[truncate_divide_tests]]
 a = "20000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 b = "2"
-expected = "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 description = "Division resulting in large quotient"
+expected = "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"

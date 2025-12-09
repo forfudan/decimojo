@@ -65,7 +65,7 @@ fn parse_numeric_string(
     if value_bytes_len == 0:
         raise Error("Error in `parse_numeric_string`: Empty string.")
 
-    if value_bytes_len != value_string_slice.char_length():
+    if value_bytes_len != Int(value_string_slice.char_length()):
         raise Error(
             String(
                 "There are invalid characters in the string of the number: {}"

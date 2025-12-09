@@ -6,6 +6,7 @@ BigUInt is an unsigned integer type, so it doesn't support negative values.
 
 from python import Python
 from random import random_ui64
+import testing
 from testing import assert_equal, assert_true
 from decimojo.biguint.biguint import BigUInt
 from decimojo.tests import TestCase, parse_file, load_test_cases
@@ -19,8 +20,8 @@ fn test_biguint_arithmetics() raises:
     var toml = parse_file(file_path_arithmetics)
     var test_cases: List[TestCase]
 
-    print("------------------------------------------------------")
-    print("Testing BigUInt addition...")
+    # print("------------------------------------------------------")
+    # print("Testing BigUInt addition...")
     test_cases = load_test_cases(toml, "addition_tests")
     assert_true(len(test_cases) > 0, "No addition test cases found")
     for test_case in test_cases:
@@ -30,10 +31,10 @@ fn test_biguint_arithmetics() raises:
             rhs=test_case.expected,
             msg=test_case.description,
         )
-    print("BigUInt addition tests passed!")
+    # print("BigUInt addition tests passed!")
 
-    print("------------------------------------------------------")
-    print("Testing BigUInt inplace addition...")
+    # print("------------------------------------------------------")
+    # print("Testing BigUInt inplace addition...")
     test_cases = load_test_cases(toml, "addition_tests")
     assert_true(len(test_cases) > 0, "No inplace addition test cases found")
     for test_case in test_cases:
@@ -44,10 +45,10 @@ fn test_biguint_arithmetics() raises:
             rhs=test_case.expected,
             msg=test_case.description,
         )
-    print("BigUInt addition tests passed!")
+    # print("BigUInt addition tests passed!")
 
-    print("------------------------------------------------------")
-    print("Testing BigUInt subtraction...")
+    # print("------------------------------------------------------")
+    # print("Testing BigUInt subtraction...")
     test_cases = load_test_cases(toml, "subtraction_tests")
     assert_true(len(test_cases) > 0, "No subtraction test cases found")
     for test_case in test_cases:
@@ -57,10 +58,10 @@ fn test_biguint_arithmetics() raises:
             rhs=test_case.expected,
             msg=test_case.description,
         )
-    print("BigUInt subtraction tests passed!")
+    # print("BigUInt subtraction tests passed!")
 
-    print("------------------------------------------------------")
-    print("Testing BigUInt multiplication...")
+    # print("------------------------------------------------------")
+    # print("Testing BigUInt multiplication...")
 
     # Load test cases from TOML file
     test_cases = load_test_cases(toml, "multiplication_tests")
@@ -72,10 +73,10 @@ fn test_biguint_arithmetics() raises:
             rhs=test_case.expected,
             msg=test_case.description,
         )
-    print("BigUInt multiplication tests passed!")
+    # print("BigUInt multiplication tests passed!")
 
     # Special case: Test underflow handling
-    print("Testing underflow behavior (smaller - larger)...")
+    # print("Testing underflow behavior (smaller - larger)...")
     test_cases = load_test_cases(toml, "subtraction_underflow")
     assert_true(len(test_cases) > 0, "No underflow test cases found")
     for test_case in test_cases:
@@ -86,7 +87,7 @@ fn test_biguint_arithmetics() raises:
             )
         except:
             print("Implementation correctly throws error on underflow")
-    print("BigUInt multiplication tests passed!")
+    # print("BigUInt multiplication tests passed!")
 
 
 fn test_biguint_truncate_divide() raises:
@@ -94,8 +95,8 @@ fn test_biguint_truncate_divide() raises:
     var toml = parse_file(file_path_truncate_divide)
     var test_cases: List[TestCase]
 
-    print("------------------------------------------------------")
-    print("Testing BigUInt truncate division...")
+    # print("------------------------------------------------------")
+    # print("Testing BigUInt truncate division...")
     test_cases = load_test_cases(toml, "truncate_divide_tests")
     assert_true(len(test_cases) > 0, "No truncate division test cases found")
     for test_case in test_cases:
@@ -105,12 +106,12 @@ fn test_biguint_truncate_divide() raises:
             rhs=test_case.expected,
             msg=test_case.description,
         )
-    print("BigUInt truncate division tests passed!")
+    # print("BigUInt truncate division tests passed!")
 
 
 fn test_biguint_truncate_divide_random_numbers_against_python() raises:
-    print("------------------------------------------------------")
-    print("Testing BigUInt truncate division on random numbers with python...")
+    # print("------------------------------------------------------")
+    # print("Testing BigUInt truncate division on random numbers with python...")
 
     var pysys = Python.import_module("sys")
     pysys.set_int_max_str_digits(500000)
@@ -140,12 +141,13 @@ fn test_biguint_truncate_divide_random_numbers_against_python() raises:
             + "\n\nPython int division: \n"
             + python_result,
         )
-    print("BigUInt truncate division tests passed!")
+    # print("BigUInt truncate division tests passed!")
 
 
 fn main() raises:
-    test_biguint_arithmetics()
-    test_biguint_truncate_divide()
-    test_biguint_truncate_divide_random_numbers_against_python()
-    print("All BigUInt arithmetic tests passed!")
-    print("------------------------------------------------------")
+    # test_biguint_arithmetics()
+    # test_biguint_truncate_divide()
+    # test_biguint_truncate_divide_random_numbers_against_python()
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
+    # print("All BigUInt arithmetic tests passed!")
+    # print("------------------------------------------------------")

@@ -9,7 +9,7 @@ from decimojo.prelude import dm, Decimal128, RoundingMode
 
 fn test_basic_log() raises:
     """Test basic logarithm calculations with common bases."""
-    print("Testing basic logarithm calculations...")
+    # print("Testing basic logarithm calculations...")
 
     # Test case 1: log_2(8) = 3
     var val1 = Decimal128(8)
@@ -55,12 +55,12 @@ fn test_basic_log() raises:
         String(result5), "1", "log_e(e) should be 1, got " + String(result5)
     )
 
-    print("✓ Basic logarithm calculations tests passed!")
+    # print("✓ Basic logarithm calculations tests passed!")
 
 
 fn test_non_integer_results() raises:
     """Test logarithm calculations that result in non-integer values."""
-    print("Testing logarithm calculations with non-integer results...")
+    # print("Testing logarithm calculations with non-integer results...")
 
     # Test case 1: log_2(10)
     var val1 = Decimal128(10)
@@ -109,12 +109,12 @@ fn test_non_integer_results() raises:
         + String(result5),
     )
 
-    print("✓ Non-integer result logarithm tests passed!")
+    # print("✓ Non-integer result logarithm tests passed!")
 
 
 fn test_fractional_inputs() raises:
     """Test logarithm calculations with fractional inputs."""
-    print("Testing logarithm calculations with fractional inputs...")
+    # print("Testing logarithm calculations with fractional inputs...")
 
     # Test case 1: log_2(0.5) = -1
     var val1 = Decimal128("0.5")
@@ -162,12 +162,12 @@ fn test_fractional_inputs() raises:
         + String(result5),
     )
 
-    print("✓ Fractional input logarithm tests passed!")
+    # print("✓ Fractional input logarithm tests passed!")
 
 
 fn test_edge_cases() raises:
     """Test edge cases for the logarithm function."""
-    print("Testing logarithm edge cases...")
+    # print("Testing logarithm edge cases...")
 
     # Test case 1: log of a negative number (should raise error)
     var val1 = Decimal128(-10)
@@ -258,12 +258,12 @@ fn test_edge_cases() raises:
         "log_b(b) should be 1 for any base, got " + String(result7),
     )
 
-    print("✓ Edge cases tests passed!")
+    # print("✓ Edge cases tests passed!")
 
 
 fn test_precision() raises:
     """Test precision of logarithm calculations."""
-    print("Testing logarithm precision...")
+    # print("Testing logarithm precision...")
 
     # Test case 1: High precision logarithm
     var val1 = Decimal128(
@@ -307,12 +307,12 @@ fn test_precision() raises:
         + String(result4),
     )
 
-    print("✓ Precision tests passed!")
+    # print("✓ Precision tests passed!")
 
 
 fn test_mathematical_properties() raises:
     """Test mathematical properties of logarithms."""
-    print("Testing mathematical properties of logarithms...")
+    # print("Testing mathematical properties of logarithms...")
 
     # Test case 1: log_a(x*y) = log_a(x) + log_a(y)
     var x1 = Decimal128(3)
@@ -368,12 +368,12 @@ fn test_mathematical_properties() raises:
         "log_a(b) should equal log_c(b) / log_c(a)",
     )
 
-    print("✓ Mathematical properties tests passed!")
+    # print("✓ Mathematical properties tests passed!")
 
 
 fn test_consistency_with_other_logarithms() raises:
     """Test consistency between log(base) and other logarithm functions."""
-    print("Testing consistency with other logarithm functions...")
+    # print("Testing consistency with other logarithm functions...")
 
     # Test case 1: log_10(x) == log10(x)
     var val1 = Decimal128(7)
@@ -393,7 +393,7 @@ fn test_consistency_with_other_logarithms() raises:
         "log(x, e) should equal ln(x)",
     )
 
-    print("✓ Consistency with other logarithms tests passed!")
+    # print("✓ Consistency with other logarithms tests passed!")
 
 
 fn run_test_with_error_handling(
@@ -414,25 +414,27 @@ fn run_test_with_error_handling(
 
 
 fn main() raises:
-    print("=========================================")
-    print("Running log() Function Tests")
-    print("=========================================")
+    # print("=========================================")
+    # print("Running log() Function Tests")
+    # print("=========================================")
 
-    run_test_with_error_handling(test_basic_log, "Basic logarithm test")
-    run_test_with_error_handling(
-        test_non_integer_results, "Non-integer results test"
-    )
-    run_test_with_error_handling(
-        test_fractional_inputs, "Fractional inputs test"
-    )
-    run_test_with_error_handling(test_edge_cases, "Edge cases test")
-    run_test_with_error_handling(test_precision, "Precision test")
-    run_test_with_error_handling(
-        test_mathematical_properties, "Mathematical properties test"
-    )
-    run_test_with_error_handling(
-        test_consistency_with_other_logarithms,
-        "Consistency with other logarithms test",
-    )
+    # run_test_with_error_handling(test_basic_log, "Basic logarithm test")
+    # run_test_with_error_handling(
+    #     test_non_integer_results, "Non-integer results test"
+    # )
+    # run_test_with_error_handling(
+    #     test_fractional_inputs, "Fractional inputs test"
+    # )
+    # run_test_with_error_handling(test_edge_cases, "Edge cases test")
+    # run_test_with_error_handling(test_precision, "Precision test")
+    # run_test_with_error_handling(
+    #     test_mathematical_properties, "Mathematical properties test"
+    # )
+    # run_test_with_error_handling(
+    #     test_consistency_with_other_logarithms,
+    #     "Consistency with other logarithms test",
+    # )
 
-    print("All log() function tests passed!")
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
+
+    # print("All log() function tests passed!")

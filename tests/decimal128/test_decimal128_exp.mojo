@@ -11,7 +11,7 @@ from decimojo.decimal128.exponential import exp
 
 fn test_basic_exp_values() raises:
     """Test basic exponential function values."""
-    print("Testing basic exponential values...")
+    # print("Testing basic exponential values...")
 
     # Test case 1: e^0 = 1
     var zero = Decimal128(String("0"))
@@ -76,12 +76,12 @@ fn test_basic_exp_values() raises:
         + String(result5),
     )
 
-    print("✓ Basic exponential values tests passed!")
+    # print("✓ Basic exponential values tests passed!")
 
 
 fn test_negative_exponents() raises:
     """Test exponential function with negative exponents."""
-    print("Testing exponential function with negative exponents...")
+    # print("Testing exponential function with negative exponents...")
 
     # Test case 1: e^(-1) = 1/e
     var neg_one = Decimal128(String("-1"))
@@ -125,12 +125,12 @@ fn test_negative_exponents() raises:
         + String(result3),
     )
 
-    print("✓ Negative exponents tests passed!")
+    # print("✓ Negative exponents tests passed!")
 
 
 fn test_fractional_exponents() raises:
     """Test exponential function with fractional exponents."""
-    print("Testing exponential function with fractional exponents...")
+    # print("Testing exponential function with fractional exponents...")
 
     # Test case 1: e^0.5
     var half = Decimal128(String("0.5"))
@@ -188,12 +188,12 @@ fn test_fractional_exponents() raises:
         + String(result4),
     )
 
-    print("✓ Fractional exponents tests passed!")
+    # print("✓ Fractional exponents tests passed!")
 
 
 fn test_high_precision_exponents() raises:
     """Test exponential function with high precision inputs."""
-    print("Testing exponential function with high precision inputs...")
+    # print("Testing exponential function with high precision inputs...")
 
     # Test case 1: e^π (approximate)
     var pi = Decimal128(String("3.14159265358979323846264338327950288"))
@@ -223,12 +223,12 @@ fn test_high_precision_exponents() raises:
         + String(result2),
     )
 
-    print("✓ High precision exponents tests passed!")
+    # print("✓ High precision exponents tests passed!")
 
 
 fn test_mathematical_identities() raises:
     """Test mathematical identities related to the exponential function."""
-    print("Testing mathematical identities for exponential function...")
+    # print("Testing mathematical identities for exponential function...")
 
     # Test case 1: e^(a+b) = e^a * e^b
     var a = Decimal128(String("2"))
@@ -264,12 +264,12 @@ fn test_mathematical_identities() raises:
     var exp_zero = exp(zero)
     testing.assert_equal(String(exp_zero), String("1"), "e^0 should equal 1")
 
-    print("✓ Mathematical identities tests passed!")
+    # print("✓ Mathematical identities tests passed!")
 
 
 fn test_extreme_values() raises:
     """Test exponential function with extreme values."""
-    print("Testing exponential function with extreme values...")
+    # print("Testing exponential function with extreme values...")
 
     # Test case 1: Very small positive input
     var small_input = Decimal128(String("0.0000001"))
@@ -299,12 +299,12 @@ fn test_extreme_values() raises:
         + String(result3),
     )
 
-    print("✓ Extreme values tests passed!")
+    # print("✓ Extreme values tests passed!")
 
 
 fn test_edge_cases() raises:
     """Test edge cases for exponential function."""
-    print("Testing edge cases for exponential function...")
+    # print("Testing edge cases for exponential function...")
 
     # Test with very high precision input
     var high_precision = Decimal128(String("1.23456789012345678901234567"))
@@ -314,7 +314,7 @@ fn test_edge_cases() raises:
         "Exp with high precision input should produce high precision output",
     )
 
-    print("✓ Edge cases tests passed!")
+    # print("✓ Edge cases tests passed!")
 
 
 fn run_test_with_error_handling(
@@ -335,26 +335,28 @@ fn run_test_with_error_handling(
 
 
 fn main() raises:
-    print("=========================================")
-    print("Running Exponential Function Tests")
-    print("=========================================")
+    # print("=========================================")
+    # print("Running Exponential Function Tests")
+    # print("=========================================")
 
-    run_test_with_error_handling(
-        test_basic_exp_values, "Basic exponential values test"
-    )
-    run_test_with_error_handling(
-        test_negative_exponents, "Negative exponents test"
-    )
-    run_test_with_error_handling(
-        test_fractional_exponents, "Fractional exponents test"
-    )
-    run_test_with_error_handling(
-        test_high_precision_exponents, "High precision exponents test"
-    )
-    run_test_with_error_handling(
-        test_mathematical_identities, "Mathematical identities test"
-    )
-    run_test_with_error_handling(test_extreme_values, "Extreme values test")
-    run_test_with_error_handling(test_edge_cases, "Edge cases test")
+    # run_test_with_error_handling(
+    #     test_basic_exp_values, "Basic exponential values test"
+    # )
+    # run_test_with_error_handling(
+    #     test_negative_exponents, "Negative exponents test"
+    # )
+    # run_test_with_error_handling(
+    #     test_fractional_exponents, "Fractional exponents test"
+    # )
+    # run_test_with_error_handling(
+    #     test_high_precision_exponents, "High precision exponents test"
+    # )
+    # run_test_with_error_handling(
+    #     test_mathematical_identities, "Mathematical identities test"
+    # )
+    # run_test_with_error_handling(test_extreme_values, "Extreme values test")
+    # run_test_with_error_handling(test_edge_cases, "Edge cases test")
 
-    print("All exponential function tests passed!")
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
+
+    # print("All exponential function tests passed!")

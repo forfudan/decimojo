@@ -8,7 +8,7 @@ from decimojo.prelude import dm, Decimal128, RoundingMode
 
 fn test_basic_multiplication() raises:
     """Test basic integer and decimal multiplication."""
-    print("Testing basic multiplication...")
+    # print("Testing basic multiplication...")
 
     # Test case 1: Simple integer multiplication
     var a1 = Decimal128(5)
@@ -58,12 +58,12 @@ fn test_basic_multiplication() raises:
         "0.125 * 0.4 should equal 0.0500, got " + String(result5),
     )
 
-    print("✓ Basic multiplication tests passed!")
+    # print("✓ Basic multiplication tests passed!")
 
 
 fn test_special_cases() raises:
     """Test multiplication with special cases like zero and one."""
-    print("Testing multiplication with special cases...")
+    # print("Testing multiplication with special cases...")
 
     # Test case 1: Multiplication by zero
     var a1 = Decimal128("123.45")
@@ -114,12 +114,12 @@ fn test_special_cases() raises:
         "small * 1 should equal small, got " + String(result5),
     )
 
-    print("✓ Special cases multiplication tests passed!")
+    # print("✓ Special cases multiplication tests passed!")
 
 
 fn test_negative_multiplication() raises:
     """Test multiplication involving negative numbers."""
-    print("Testing multiplication with negative numbers...")
+    # print("Testing multiplication with negative numbers...")
 
     # Test case 1: Negative * positive
     var a1 = Decimal128(-5)
@@ -169,12 +169,12 @@ fn test_negative_multiplication() raises:
         "-0 * 123.45 should equal -0.00, got " + String(result5),
     )
 
-    print("✓ Negative number multiplication tests passed!")
+    # print("✓ Negative number multiplication tests passed!")
 
 
 fn test_precision_scale() raises:
     """Test multiplication precision and scale handling."""
-    print("Testing multiplication precision and scale...")
+    # print("Testing multiplication precision and scale...")
 
     # Test case 1: Addition of scales
     var a1 = Decimal128("0.5")  # scale 1
@@ -220,12 +220,12 @@ fn test_precision_scale() raises:
         result5.scale(), 28, "Scale should be correctly adjusted with rounding"
     )
 
-    print("✓ Precision and scale tests passed!")
+    # print("✓ Precision and scale tests passed!")
 
 
 fn test_boundary_cases() raises:
     """Test multiplication with boundary values."""
-    print("Testing multiplication with boundary values...")
+    # print("Testing multiplication with boundary values...")
 
     # Test case 1: Multiplication near max value
     var near_max = Decimal128("38614081257132168796771975168")  # ~half max
@@ -275,12 +275,12 @@ fn test_boundary_cases() raises:
         + String(result5),
     )
 
-    print("✓ Boundary cases tests passed!")
+    # print("✓ Boundary cases tests passed!")
 
 
 fn test_commutative_property() raises:
     """Test the commutative property of multiplication (a*b = b*a)."""
-    print("Testing commutative property of multiplication...")
+    # print("Testing commutative property of multiplication...")
 
     # Test pair 1: Integers
     var a1 = Decimal128(10)
@@ -337,7 +337,7 @@ fn test_commutative_property() raises:
         "Commutative property failed for " + String(a5) + " and " + String(b5),
     )
 
-    print("✓ Commutative property tests passed!")
+    # print("✓ Commutative property tests passed!")
 
 
 fn run_test_with_error_handling(
@@ -358,23 +358,25 @@ fn run_test_with_error_handling(
 
 
 fn main() raises:
-    print("=========================================")
-    print("Running Decimal128 Multiplication Tests")
-    print("=========================================")
+    # print("=========================================")
+    # print("Running Decimal128 Multiplication Tests")
+    # print("=========================================")
 
-    run_test_with_error_handling(
-        test_basic_multiplication, "Basic multiplication test"
-    )
-    run_test_with_error_handling(test_special_cases, "Special cases test")
-    run_test_with_error_handling(
-        test_negative_multiplication, "Negative number multiplication test"
-    )
-    run_test_with_error_handling(
-        test_precision_scale, "Precision and scale test"
-    )
-    run_test_with_error_handling(test_boundary_cases, "Boundary cases test")
-    run_test_with_error_handling(
-        test_commutative_property, "Commutative property test"
-    )
+    # run_test_with_error_handling(
+    #     test_basic_multiplication, "Basic multiplication test"
+    # )
+    # run_test_with_error_handling(test_special_cases, "Special cases test")
+    # run_test_with_error_handling(
+    #     test_negative_multiplication, "Negative number multiplication test"
+    # )
+    # run_test_with_error_handling(
+    #     test_precision_scale, "Precision and scale test"
+    # )
+    # run_test_with_error_handling(test_boundary_cases, "Boundary cases test")
+    # run_test_with_error_handling(
+    #     test_commutative_property, "Commutative property test"
+    # )
 
-    print("All multiplication tests passed!")
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
+
+    # print("All multiplication tests passed!")

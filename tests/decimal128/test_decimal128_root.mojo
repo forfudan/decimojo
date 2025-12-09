@@ -11,7 +11,7 @@ from decimojo.decimal128.exponential import root
 
 fn test_basic_root_calculations() raises:
     """Test basic root calculations for common values."""
-    print("Testing basic root calculations...")
+    # print("Testing basic root calculations...")
 
     # Test case 1: Square root (n=2)
     var num1 = Decimal128(9)
@@ -50,12 +50,12 @@ fn test_basic_root_calculations() raises:
         "∛10 should be approximately 2.154..., got " + String(result5),
     )
 
-    print("✓ Basic root calculations tests passed!")
+    # print("✓ Basic root calculations tests passed!")
 
 
 fn test_fractional_inputs() raises:
     """Test root calculations with fractional inputs."""
-    print("Testing root calculations with fractional inputs...")
+    # print("Testing root calculations with fractional inputs...")
 
     # Test case 1: Square root of decimal
     var num1 = Decimal128("0.25")
@@ -87,12 +87,12 @@ fn test_fractional_inputs() raises:
         "√0.5 should be approximately 0.7071..., got " + String(result4),
     )
 
-    print("✓ Fractional input tests passed!")
+    # print("✓ Fractional input tests passed!")
 
 
 fn test_edge_cases() raises:
     """Test edge cases for the root function."""
-    print("Testing root edge cases...")
+    # print("Testing root edge cases...")
 
     # Test case 1: Root of 0
     var zero = Decimal128(0)
@@ -129,12 +129,12 @@ fn test_edge_cases() raises:
         + String(result4),
     )
 
-    print("✓ Edge cases tests passed!")
+    # print("✓ Edge cases tests passed!")
 
 
 fn test_error_conditions() raises:
     """Test error conditions for the root function."""
-    print("Testing root error conditions...")
+    # print("Testing root error conditions...")
 
     # Test case 1: 0th root (should raise error)
     var num1 = Decimal128(10)
@@ -181,12 +181,12 @@ fn test_error_conditions() raises:
         String(result4), "-2", "∛-8 should be -2, got " + String(result4)
     )
 
-    print("✓ Error conditions tests passed!")
+    # print("✓ Error conditions tests passed!")
 
 
 fn test_precision() raises:
     """Test precision of root calculations."""
-    print("Testing precision of root calculations...")
+    # print("Testing precision of root calculations...")
 
     # Test case 1: High precision square root
     var num1 = Decimal128(2)
@@ -212,12 +212,12 @@ fn test_precision() raises:
         "√5 should match known value starting with 2.236067977499789696...",
     )
 
-    print("✓ Precision tests passed!")
+    # print("✓ Precision tests passed!")
 
 
 fn test_mathematical_identities() raises:
     """Test mathematical identities involving roots."""
-    print("Testing mathematical identities involving roots...")
+    # print("Testing mathematical identities involving roots...")
 
     # Test case 1: (√x)^2 = x
     var x1 = Decimal128(7)
@@ -257,7 +257,7 @@ fn test_mathematical_identities() raises:
         "x^(1/n) should equal nth root of x within tolerance",
     )
 
-    print("✓ Mathematical identities tests passed!")
+    # print("✓ Mathematical identities tests passed!")
 
 
 fn run_test_with_error_handling(
@@ -278,21 +278,23 @@ fn run_test_with_error_handling(
 
 
 fn main() raises:
-    print("=========================================")
-    print("Running Root Function Tests")
-    print("=========================================")
+    # print("=========================================")
+    # print("Running Root Function Tests")
+    # print("=========================================")
 
-    run_test_with_error_handling(
-        test_basic_root_calculations, "Basic root calculations test"
-    )
-    run_test_with_error_handling(
-        test_fractional_inputs, "Fractional inputs test"
-    )
-    run_test_with_error_handling(test_edge_cases, "Edge cases test")
-    run_test_with_error_handling(test_error_conditions, "Error conditions test")
-    run_test_with_error_handling(test_precision, "Precision test")
-    run_test_with_error_handling(
-        test_mathematical_identities, "Mathematical identities test"
-    )
+    # run_test_with_error_handling(
+    #     test_basic_root_calculations, "Basic root calculations test"
+    # )
+    # run_test_with_error_handling(
+    #     test_fractional_inputs, "Fractional inputs test"
+    # )
+    # run_test_with_error_handling(test_edge_cases, "Edge cases test")
+    # run_test_with_error_handling(test_error_conditions, "Error conditions test")
+    # run_test_with_error_handling(test_precision, "Precision test")
+    # run_test_with_error_handling(
+    #     test_mathematical_identities, "Mathematical identities test"
+    # )
 
-    print("All root function tests passed!")
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
+
+    # print("All root function tests passed!")

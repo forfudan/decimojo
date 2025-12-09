@@ -9,7 +9,7 @@ from decimojo.prelude import dm, Decimal128, RoundingMode
 
 fn test_basic_integer_conversions() raises:
     """Test conversion of basic integers to float."""
-    print("Testing basic integer conversions to float...")
+    # print("Testing basic integer conversions to float...")
 
     # Test case 1: Zero
     var zero = Decimal128(0)
@@ -37,12 +37,12 @@ fn test_basic_integer_conversions() raises:
     var large_int_float = Float64(large_int)
     testing.assert_equal(large_int_float, 123456.0)
 
-    print("✓ Basic integer conversions to float passed!")
+    # print("✓ Basic integer conversions to float passed!")
 
 
 fn test_decimal_conversions() raises:
     """Test conversion of decimal values to float."""
-    print("Testing decimal conversions to float...")
+    # print("Testing decimal conversions to float...")
 
     # Test case 5: Simple decimal
     var simple_dec = Decimal128("3.14")
@@ -69,12 +69,12 @@ fn test_decimal_conversions() raises:
     var repeating_float = Float64(repeating)
     testing.assert_true(abs(repeating_float - 0.33333333333333) < 1e-14)
 
-    print("✓ Decimal128 conversions to float passed!")
+    # print("✓ Decimal128 conversions to float passed!")
 
 
 fn test_negative_conversions() raises:
     """Test conversion of negative values to float."""
-    print("Testing negative value conversions to float...")
+    # print("Testing negative value conversions to float...")
 
     # Test case 9: Negative integer
     var neg_int = Decimal128("-123")
@@ -93,12 +93,12 @@ fn test_negative_conversions() raises:
         neg_zero_float, 0.0
     )  # Note: -0.0 equals 0.0 in most comparisons
 
-    print("✓ Negative value conversions to float passed!")
+    # print("✓ Negative value conversions to float passed!")
 
 
 fn test_edge_cases() raises:
     """Test edge cases for conversion to float."""
-    print("Testing edge cases for float conversion...")
+    # print("Testing edge cases for float conversion...")
 
     # Test case 12: Very small positive number
     var very_small = Decimal128("0." + "0" * 20 + "1")  # 0.00000000000000000001
@@ -131,12 +131,12 @@ fn test_edge_cases() raises:
         "Large number should be converted with expected float precision loss",
     )
 
-    print("✓ Edge case conversions to float passed!")
+    # print("✓ Edge case conversions to float passed!")
 
 
 fn test_special_values() raises:
     """Test special values for conversion to float."""
-    print("Testing special values for float conversion...")
+    # print("Testing special values for float conversion...")
 
     # Test case 16: Decimal128 with trailing zeros
     var trailing_zeros = Decimal128("5.0000")
@@ -177,7 +177,7 @@ fn test_special_values() raises:
         "Binary float approximation of decimal 0.1 should be very close",
     )
 
-    print("✓ Special value conversions to float passed!")
+    # print("✓ Special value conversions to float passed!")
 
 
 fn run_test_with_error_handling(
@@ -198,20 +198,22 @@ fn run_test_with_error_handling(
 
 
 fn main() raises:
-    print("=========================================")
-    print("Running 20 tests for Decimal128.__float__()")
-    print("=========================================")
+    # print("=========================================")
+    # print("Running 20 tests for Decimal128.__float__()")
+    # print("=========================================")
 
-    run_test_with_error_handling(
-        test_basic_integer_conversions, "Basic integer conversions"
-    )
-    run_test_with_error_handling(
-        test_decimal_conversions, "Decimal128 conversions"
-    )
-    run_test_with_error_handling(
-        test_negative_conversions, "Negative value conversions"
-    )
-    run_test_with_error_handling(test_edge_cases, "Edge cases")
-    run_test_with_error_handling(test_special_values, "Special values")
+    # run_test_with_error_handling(
+    #     test_basic_integer_conversions, "Basic integer conversions"
+    # )
+    # run_test_with_error_handling(
+    #     test_decimal_conversions, "Decimal128 conversions"
+    # )
+    # run_test_with_error_handling(
+    #     test_negative_conversions, "Negative value conversions"
+    # )
+    # run_test_with_error_handling(test_edge_cases, "Edge cases")
+    # run_test_with_error_handling(test_special_values, "Special values")
 
-    print("All 20 Decimal128.__float__() tests passed!")
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
+
+    # print("All 20 Decimal128.__float__() tests passed!")

@@ -14,7 +14,7 @@ from decimojo.prelude import dm, Decimal128, RoundingMode
 
 fn test_simple_integers() raises:
     """Test conversion of simple integer float values."""
-    print("Testing simple integer float conversions...")
+    # print("Testing simple integer float conversions...")
 
     # Test case 1: Zero
     var zero = Decimal128.from_float(0.0)
@@ -48,12 +48,12 @@ fn test_simple_integers() raises:
         "Float 1000.0 should convert to Decimal128 1000",
     )
 
-    print("✓ Simple integer tests passed")
+    # print("✓ Simple integer tests passed")
 
 
 fn test_simple_decimals() raises:
     """Test conversion of simple decimal float values."""
-    print("Testing simple decimal float conversions...")
+    # print("Testing simple decimal float conversions...")
 
     # Test case 6: 0.5 (exact representation)
     var half = Decimal128.from_float(0.5)
@@ -87,12 +87,12 @@ fn test_simple_decimals() raises:
         "Float 2.71828 should convert to a Decimal128 starting with 2.7182",
     )
 
-    print("✓ Simple decimal tests passed")
+    # print("✓ Simple decimal tests passed")
 
 
 fn test_negative_numbers() raises:
     """Test conversion of negative float values."""
-    print("Testing negative float conversions...")
+    # print("Testing negative float conversions...")
 
     # Test case 11: -1.0
     var neg_one = Decimal128.from_float(-1.0)
@@ -126,12 +126,12 @@ fn test_negative_numbers() raises:
         "Float -999.999 should convert to a Decimal128 starting with -999.99",
     )
 
-    print("✓ Negative number tests passed")
+    # print("✓ Negative number tests passed")
 
 
 fn test_very_large_numbers() raises:
     """Test conversion of very large float values."""
-    print("Testing very large float conversions...")
+    # print("Testing very large float conversions...")
 
     # Test case 16: 1e10
     var ten_billion = Decimal128.from_float(1e10)
@@ -172,12 +172,12 @@ fn test_very_large_numbers() raises:
         "Large float should convert with appropriate precision",
     )
 
-    print("✓ Very large number tests passed")
+    # print("✓ Very large number tests passed")
 
 
 fn test_very_small_numbers() raises:
     """Test conversion of very small float values."""
-    print("Testing very small float conversions...")
+    # print("Testing very small float conversions...")
 
     # Test case 21: 1e-10
     var tiny = Decimal128.from_float(1e-10)
@@ -215,13 +215,13 @@ fn test_very_small_numbers() raises:
         "Denormalized float should convert to small Decimal128",
     )
 
-    print("✓ Very small number tests passed")
+    # print("✓ Very small number tests passed")
 
 
 fn test_binary_to_decimal_conversion() raises:
     """Test conversion of float values that require binary to decimal conversion.
     """
-    print("Testing binary to decimal conversion edge cases...")
+    # print("Testing binary to decimal conversion edge cases...")
 
     # Test case 26: 0.1 (known inexact in binary)
     var point_one = Decimal128.from_float(0.1)
@@ -258,12 +258,12 @@ fn test_binary_to_decimal_conversion() raises:
         "Float with repeating binary fraction should convert properly",
     )
 
-    print("✓ Binary to decimal conversion tests passed")
+    # print("✓ Binary to decimal conversion tests passed")
 
 
 fn test_rounding_behavior() raises:
     """Test rounding behavior during float to Decimal128 conversion."""
-    print("Testing rounding behavior in float to Decimal128 conversion...")
+    # print("Testing rounding behavior in float to Decimal128 conversion...")
 
     # Test case 31: Pi with limited precision
     var pi = Decimal128.from_float(3.141592653589793)
@@ -301,12 +301,12 @@ fn test_rounding_behavior() raises:
         "Float near precision boundary should convert appropriately",
     )
 
-    print("✓ Rounding behavior tests passed")
+    # print("✓ Rounding behavior tests passed")
 
 
 fn test_special_values() raises:
     """Test handling of special float values."""
-    print("Testing special float values...")
+    # print("Testing special float values...")
 
     # Test case 36: 0.0 (already covered but included for completeness)
     var zero = Decimal128.from_float(0.0)
@@ -340,12 +340,12 @@ fn test_special_values() raises:
         "Float with many 9s should preserve precision appropriately",
     )
 
-    print("✓ Special value tests passed")
+    # print("✓ Special value tests passed")
 
 
 fn test_scientific_notation() raises:
     """Test handling of scientific notation values."""
-    print("Testing scientific notation float values...")
+    # print("Testing scientific notation float values...")
 
     # Test case 41: Simple scientific notation
     var sci1 = Decimal128.from_float(1.23e5)
@@ -387,12 +387,12 @@ fn test_scientific_notation() raises:
         "Float with low precision but high exponent should convert properly",
     )
 
-    print("✓ Scientific notation tests passed")
+    # print("✓ Scientific notation tests passed")
 
 
 fn test_boundary_cases() raises:
     """Test boundary cases for float to Decimal128 conversion."""
-    print("Testing boundary cases...")
+    # print("Testing boundary cases...")
 
     # Test case 46: Exact power of 10
     var pow10 = Decimal128.from_float(1000.0)
@@ -433,7 +433,7 @@ fn test_boundary_cases() raises:
         ),
     )
 
-    print("✓ Boundary case tests passed")
+    # print("✓ Boundary case tests passed")
 
 
 fn run_test_with_error_handling(
@@ -454,29 +454,31 @@ fn run_test_with_error_handling(
 
 
 fn main() raises:
-    print("=========================================")
-    print("Running 50 tests for Decimal128.from_float()")
-    print("=========================================")
+    # print("=========================================")
+    # print("Running 50 tests for Decimal128.from_float()")
+    # print("=========================================")
 
-    run_test_with_error_handling(test_simple_integers, "Simple integers test")
-    run_test_with_error_handling(test_simple_decimals, "Simple decimals test")
-    run_test_with_error_handling(test_negative_numbers, "Negative numbers test")
-    run_test_with_error_handling(
-        test_very_large_numbers, "Very large numbers test"
-    )
-    run_test_with_error_handling(
-        test_very_small_numbers, "Very small numbers test"
-    )
-    run_test_with_error_handling(
-        test_binary_to_decimal_conversion, "Binary to decimal conversion test"
-    )
-    run_test_with_error_handling(
-        test_rounding_behavior, "Rounding behavior test"
-    )
-    run_test_with_error_handling(test_special_values, "Special values test")
-    run_test_with_error_handling(
-        test_scientific_notation, "Scientific notation test"
-    )
-    run_test_with_error_handling(test_boundary_cases, "Boundary cases test")
+    # run_test_with_error_handling(test_simple_integers, "Simple integers test")
+    # run_test_with_error_handling(test_simple_decimals, "Simple decimals test")
+    # run_test_with_error_handling(test_negative_numbers, "Negative numbers test")
+    # run_test_with_error_handling(
+    #     test_very_large_numbers, "Very large numbers test"
+    # )
+    # run_test_with_error_handling(
+    #     test_very_small_numbers, "Very small numbers test"
+    # )
+    # run_test_with_error_handling(
+    #     test_binary_to_decimal_conversion, "Binary to decimal conversion test"
+    # )
+    # run_test_with_error_handling(
+    #     test_rounding_behavior, "Rounding behavior test"
+    # )
+    # run_test_with_error_handling(test_special_values, "Special values test")
+    # run_test_with_error_handling(
+    #     test_scientific_notation, "Scientific notation test"
+    # )
+    # run_test_with_error_handling(test_boundary_cases, "Boundary cases test")
 
-    print("All 50 Decimal128.from_float() tests passed!")
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
+
+    # print("All 50 Decimal128.from_float() tests passed!")

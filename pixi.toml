@@ -1,4 +1,4 @@
-[project]
+[workspace]
 authors = ["ZHU Yuhao 朱宇浩 <dr.yuhao.zhu@outlook.com>"]
 channels = ["https://conda.modular.com/max-nightly", "https://conda.modular.com/max", "https://repo.prefix.dev/modular-community", "conda-forge"]
 description = "An arbitrary-precision decimal and integer mathematics library for Mojo"
@@ -9,7 +9,7 @@ readme = "README.md"
 version = "0.6.0"
 
 [dependencies]
-mojo = "==0.25.6"
+mojo = "==0.25.7.0"
 
 [tasks]
 # format the code
@@ -26,9 +26,9 @@ c = "clear && pixi run clean"
 clean = "rm tests/decimojo.mojopkg && rm benches/decimojo.mojopkg && rm tests/tomlmojo.mojopkg"
 
 # tests (use the mojo testing tool)
-b = "pixi run t big"
-t = "clear && pixi run package && pixi run mojo test tests -D ASSERT=all --filter"
-test = "pixi run package && pixi run mojo test tests -D ASSERT=all --filter"
+b = "clear && pixi run package && bash ./tests/test_big.sh"
+t = "clear && pixi run package && bash ./tests/test_all.sh"
+test = "pixi run package && bash ./tests/test_all.sh"
 
 # benches
 bdec = "clear && pixi run package && cd benches/bigdecimal && pixi run mojo run -I ../ bench.mojo && cd ../.. && pixi run clean"
