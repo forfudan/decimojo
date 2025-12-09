@@ -42,7 +42,7 @@ DeciMojo is available in the [modular-community](https://repo.prefix.dev/modular
 1. In the `mojoproject.toml` file of your project, add the following dependency:
 
     ```toml
-    decimojo = "==0.5.0"
+    decimojo = "==0.6.0"
     ```
 
     Then run `pixi install` to download and install the package.
@@ -59,6 +59,7 @@ The following table summarizes the package versions and their corresponding Mojo
 | v0.3.1     | >=25.2, <25.4 | pixi            |
 | v0.4.x     | ==25.4        | pixi            |
 | v0.5.0     | ==25.5        | pixi            |
+| v0.6.0     | ==0.25.7      | pixi            |
 
 ## Quick start
 
@@ -304,7 +305,7 @@ If you find DeciMojo useful for your research, consider listing it in your citat
     year         = {2025},
     title        = {An arbitrary-precision decimal and integer mathematics library for Mojo},
     url          = {https://github.com/forfudan/decimojo},
-    version      = {0.5.0},
+    version      = {0.6.0},
     note         = {Computer Software}
 }
 ```

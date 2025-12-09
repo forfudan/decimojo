@@ -42,7 +42,7 @@ DeciMojo 可在 [modular-community](https://repo.prefix.dev/modular-community) �
 1. 在您項目的 `mojoproject.toml` 文件中，添加以下依賴：
 
     ```toml
-    decimojo = "==0.5.0"
+    decimojo = "==0.6.0"
     ```
 
     然後運行 `pixi install` 來下載並安裝包。
@@ -59,6 +59,7 @@ DeciMojo 可在 [modular-community](https://repo.prefix.dev/modular-community) �
 | v0.3.1     | >=25.2, <25.4 | pixi     |
 | v0.4.x     | ==25.4        | pixi     |
 | v0.5.0     | ==25.5        | pixi     |
+| v0.6.0     | ==0.25.7      | pixi     |
 
 ## 快速開始
 
@@ -306,7 +307,7 @@ DeciMojo 結合了 "Deci" 和 "Mojo" 兩詞，反映了其目的和實現語言�
     year         = {2025},
     title        = {An arbitrary-precision decimal and integer mathematics library for Mojo},
     url          = {https://github.com/forfudan/decimojo},
-    version      = {0.5.0},
+    version      = {0.6.0},
     note         = {Computer Software}
 }
 ```
