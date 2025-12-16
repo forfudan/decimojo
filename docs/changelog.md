@@ -2,7 +2,7 @@
 
 This is a list of RELEASED changes for the DeciMojo Package.
 
-## 20251210 (v0.6.0)
+## 20251216 (v0.6.0)
 
 DeciMojo v0.6.0 updates the codebase to Mojo v25.7, adopting the new `TestSuite` type for improved test organization. All tests have been refactored to use the native Mojo testing framework instead of the deprecated `pixi test` command.
 
