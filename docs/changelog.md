@@ -2,6 +2,10 @@
 
 This is a list of RELEASED changes for the DeciMojo Package.
 
+## 20251216 (v0.6.0)
+
+DeciMojo v0.6.0 updates the codebase to Mojo v25.7, adopting the new `TestSuite` type for improved test organization. All tests have been refactored to use the native Mojo testing framework instead of the deprecated `pixi test` command.
+
 ## 20250806 (v0.5.0)
 
 DeciMojo v0.5.0 introduces significant enhancements to the `BigDecimal` and `BigUInt` types, including new mathematical functions and performance optimizations. The release adds **trigonometric functions** for `BigDecimal`, implements the **Chudnovsky algorithm** for computing π, and implements the **Karatsuba multiplication algorithm** and **Burnikel-Ziegler division algorithm** for `BigUInt`. In-place operations, slice operations, and SIMD operations are now supported for `BigUInt` arithmetic. The `Decimal` type is renamed to `Decimal128` to reflect its 128-bit fixed precision. The release also includes improved error handling, optimized type conversions, refactored testing suites, and documentation updates.
