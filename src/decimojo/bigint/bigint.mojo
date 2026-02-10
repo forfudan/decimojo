@@ -374,11 +374,15 @@ struct BigInt(
 
         value = -value if self.sign else value
 
-        if value < Int128(Int.MIN) or value > Int128(Int.MAX):
+        # Intermediate variables made due to a bug in Mojo compiler, see:
+        # https://github.com/modular/modular/issues/5931
+        var int_min = Int.MIN
+        var int_max = Int.MAX
+        if value < Int128(int_min) or value > Int128(int_max):
             raise Error(
                 "Error in `BigInt.to_int()`: The number exceeds the size of Int"
             )
-
+        print("value", value)
         return Int(value)
 
     fn to_string(self, line_width: Int = 0) -> String:
