@@ -22,7 +22,7 @@ import math as builtin_math
 from decimojo.bigdecimal.bigdecimal import BigDecimal
 from decimojo.rounding_mode import RoundingMode
 
-alias PI_1024 = BigDecimal(
+comptime PI_1024 = BigDecimal(
     coefficient=BigUInt(
         words=[
             UInt32(858632789),

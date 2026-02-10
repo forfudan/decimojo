@@ -68,7 +68,7 @@ fn power(
     identity x^y = e^(y * ln(x)) for the general case, with optimizations
     for integer exponents.
     """
-    alias BUFFER_DIGITS = 9
+    comptime BUFFER_DIGITS = 9
     var working_precision = precision + BUFFER_DIGITS
 
     # Special cases
@@ -220,7 +220,7 @@ fn root(x: BigDecimal, n: BigDecimal, precision: Int) raises -> BigDecimal:
         Uses the identity x^(1/n) = exp(ln(|x|)/n) for calculation.
         For integer roots, calls the specialized integer_root function.
     """
-    alias BUFFER_DIGITS = 9
+    comptime BUFFER_DIGITS = 9
     var working_precision = precision + BUFFER_DIGITS
 
     # Check for n = 0
@@ -307,7 +307,7 @@ fn integer_root(
         Uses the identity x^(1/n) = exp(ln(|x|)/n) for calculation.
         Optimizes for special cases including n=1 and n=2.
     """
-    alias BUFFER_DIGITS = 9
+    comptime BUFFER_DIGITS = 9
     var working_precision = precision + BUFFER_DIGITS
 
     # Handle special case: n must be a positive integer
@@ -467,7 +467,7 @@ fn sqrt_decimal_approach(x: BigDecimal, precision: Int) raises -> BigDecimal:
     square root of the coefficient of x, and then adjust the scale based on the
     input scale.
     """
-    alias BUFFER_DIGITS = 9
+    comptime BUFFER_DIGITS = 9
 
     # Handle special cases
     if x.sign:
@@ -744,7 +744,7 @@ fn exp(x: BigDecimal, precision: Int) raises -> BigDecimal:
         - Precision tracking.
     """
     # Extra working precision to ensure final result accuracy
-    alias BUFFER_DIGITS = 9
+    comptime BUFFER_DIGITS = 9
     var working_precision = precision + BUFFER_DIGITS
 
     # Handle special cases
@@ -925,7 +925,7 @@ fn ln(x: BigDecimal, precision: Int) raises -> BigDecimal:
     Raises:
         Error: If x is negative or zero.
     """
-    alias BUFFER_DIGITS = 9  # word-length, easy to append and trim
+    comptime BUFFER_DIGITS = 9  # word-length, easy to append and trim
     var working_precision = precision + BUFFER_DIGITS
 
     # Handle special cases
@@ -1022,7 +1022,7 @@ fn log(x: BigDecimal, base: BigDecimal, precision: Int) raises -> BigDecimal:
         Error: If x is negative or zero.
         Error: If base is negative, zero, or one.
     """
-    alias BUFFER_DIGITS = 9  # word-length, easy to append and trim
+    comptime BUFFER_DIGITS = 9  # word-length, easy to append and trim
     var working_precision = precision + BUFFER_DIGITS
 
     # Special cases
@@ -1083,7 +1083,7 @@ fn log10(x: BigDecimal, precision: Int) raises -> BigDecimal:
     Raises:
         Error: If x is negative or zero.
     """
-    alias BUFFER_DIGITS = 9  # word-length, easy to append and trim
+    comptime BUFFER_DIGITS = 9  # word-length, easy to append and trim
     var working_precision = precision + BUFFER_DIGITS
 
     # Special cases

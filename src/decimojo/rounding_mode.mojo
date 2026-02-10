@@ -17,11 +17,11 @@
 """Implements the RoundingMode for different rounding modes.
 """
 
-alias RM = RoundingMode
-alias ROUND_DOWN = RoundingMode.ROUND_DOWN
-alias ROUND_HALF_UP = RoundingMode.ROUND_HALF_UP
-alias ROUND_HALF_EVEN = RoundingMode.ROUND_HALF_EVEN
-alias ROUND_UP = RoundingMode.ROUND_UP
+comptime RM = RoundingMode
+comptime ROUND_DOWN = RoundingMode.ROUND_DOWN
+comptime ROUND_HALF_UP = RoundingMode.ROUND_HALF_UP
+comptime ROUND_HALF_EVEN = RoundingMode.ROUND_HALF_EVEN
+comptime ROUND_UP = RoundingMode.ROUND_UP
 
 
 struct RoundingMode(Stringable):
@@ -41,10 +41,10 @@ struct RoundingMode(Stringable):
     """
 
     # alias
-    alias ROUND_DOWN = Self.down()
-    alias ROUND_HALF_UP = Self.half_up()
-    alias ROUND_HALF_EVEN = Self.half_even()
-    alias ROUND_UP = Self.up()
+    comptime ROUND_DOWN = Self.down()
+    comptime ROUND_HALF_UP = Self.half_up()
+    comptime ROUND_HALF_EVEN = Self.half_even()
+    comptime ROUND_UP = Self.up()
 
     # Internal value
     var value: Int

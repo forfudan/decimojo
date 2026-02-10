@@ -27,9 +27,9 @@ import decimojo.biguint.comparison
 from decimojo.errors import DeciMojoError, OverflowError, ZeroDivisionError
 from decimojo.rounding_mode import RoundingMode
 
-alias CUTOFF_KARATSUBA = 64
+comptime CUTOFF_KARATSUBA = 64
 """The cutoff number of words for using Karatsuba multiplication."""
-alias CUTOFF_BURNIKEL_ZIEGLER = 32
+comptime CUTOFF_BURNIKEL_ZIEGLER = 32
 """The cutoff number of words for using Burnikel-Ziegler division."""
 
 # ===----------------------------------------------------------------------=== #
@@ -2443,13 +2443,13 @@ fn floor_divide_two_by_one(
             a3, a2, a1, b1, b0, n // 2, cut_off
         )  # q is q1
         var q = _tuple[0].copy()
-        var ref r = _tuple[1]
+        ref r = _tuple[1]
 
         var r0 = BigUInt.from_slice(r, bounds=(0, n // 2))
         var r1 = BigUInt.from_slice(r, bounds=(n // 2, n))
         # TODO: Refine this when Mojo support move values of unpacked tuples
         _tuple = floor_divide_three_by_two(r1, r0, a0, b1, b0, n // 2, cut_off)
-        var ref q0 = _tuple[0]  # q0
+        ref q0 = _tuple[0]  # q0
         var s = _tuple[1].copy()  # s is the final remainder
 
         # q -> q1q0
@@ -2505,7 +2505,7 @@ fn floor_divide_three_by_two(
     # TODO: Refine this when Mojo support move values of unpacked tuples
     _tuple = floor_divide_two_by_one(a2a1, b1, n, cut_off)
     var q = _tuple[0].copy()
-    var ref c = _tuple[1]  # c is the carry
+    ref c = _tuple[1]  # c is the carry
     var d = q * b0
     decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(c, n)
     var r = c + a0
@@ -2611,14 +2611,14 @@ fn floor_divide_slices_two_by_one(
             a, b, bounds_a1a3, bounds_b, n // 2, cut_off
         )
         var q = _tuple[0].copy()  # q is q1
-        var ref r = _tuple[1]  # r is the carry
+        ref r = _tuple[1]  # r is the carry
 
         multiply_inplace_by_power_of_billion(r, n // 2)
         add_inplace_by_slice(r, a, (bounds_a[0], bounds_a[0] + n // 2))
         _tuple = floor_divide_slices_three_by_two(
             r, b, (0, len(r.words)), bounds_b, n // 2, cut_off
         )
-        var ref q0 = _tuple[0]  # q0
+        ref q0 = _tuple[0]  # q0
         var s = _tuple[1].copy()  # s is the final remainder
 
         # q -> q1q0
@@ -2691,7 +2691,7 @@ fn floor_divide_slices_three_by_two(
         a, b, bounds_a2a1, bounds_b1, n, cut_off
     )
     var q = _tuple[0].copy()
-    var ref c = _tuple[1]  # c is the carry
+    ref c = _tuple[1]  # c is the carry
 
     var d = multiply_slices(q, b, (0, len(q.words)), bounds_b0)
     decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(c, n)
@@ -3178,7 +3178,7 @@ fn normalize_borrows(mut x: BigUInt):
     ensuring that all words are within the valid range.
     """
 
-    alias NEG_BASE_MAX = UInt32(3294967297)  # UInt32(0) - BigUInt.BASE_MAX
+    comptime NEG_BASE_MAX = UInt32(3294967297)  # UInt32(0) - BigUInt.BASE_MAX
 
     # Yuhao ZHU:
     # By construction, the words of x are in the range [-BASE_MAX, BASE_MAX].

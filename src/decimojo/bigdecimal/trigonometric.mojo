@@ -50,7 +50,7 @@ fn sin(x: BigDecimal, precision: Int) raises -> BigDecimal:
     # reduction accurately.
     # Otherwise, the result will be inaccurate when x is close to π-related
     # values, e.g., π/2, π, 3π/2, 2π, etc.
-    alias BUFFER_DIGITS = 99
+    comptime BUFFER_DIGITS = 99
     var working_precision = precision + BUFFER_DIGITS
 
     var result: BigDecimal
@@ -167,7 +167,7 @@ fn sin_taylor_series(
     sin(x) = x - x³/3! + x⁵/5! - x⁷/7! + ...
     """
 
-    alias BUFFER_DIGITS = 9  # word-length, easy to append and trim
+    comptime BUFFER_DIGITS = 9  # word-length, easy to append and trim
     var working_precision = minimum_precision + BUFFER_DIGITS
 
     if x.is_zero():
@@ -220,7 +220,7 @@ fn cos(x: BigDecimal, precision: Int) raises -> BigDecimal:
     This function adopts range reduction for optimal convergence.
     """
 
-    alias BUFFER_DIGITS = 99
+    comptime BUFFER_DIGITS = 99
     var working_precision = precision + BUFFER_DIGITS
 
     if x.is_zero():
@@ -252,7 +252,7 @@ fn cos_taylor_series(
     cos(x) = 1 - x²/2! + x⁴/4! - x⁶/6! + ...
     """
 
-    alias BUFFER_DIGITS = 9
+    comptime BUFFER_DIGITS = 9
     var working_precision = minimum_precision + BUFFER_DIGITS
 
     if x.is_zero():
@@ -345,7 +345,7 @@ fn tan_cot(x: BigDecimal, precision: Int, is_tan: Bool) raises -> BigDecimal:
     cot(x) = sin(x) / cos(x) depending on the is_tan flag.
     """
 
-    alias BUFFER_DIGITS = 99
+    comptime BUFFER_DIGITS = 99
     var working_precision_pi = precision + 2 * BUFFER_DIGITS
     var working_precision = precision + BUFFER_DIGITS
 
@@ -425,7 +425,7 @@ fn csc(x: BigDecimal, precision: Int) raises -> BigDecimal:
     if x.is_zero():
         raise Error("bigdecimal.trigonometric.csc: csc(nπ) is undefined.")
 
-    alias BUFFER_DIGITS = 9
+    comptime BUFFER_DIGITS = 9
     var working_precision = precision + BUFFER_DIGITS
 
     var sin_x = sin(x, precision=working_precision)
@@ -450,7 +450,7 @@ fn sec(x: BigDecimal, precision: Int) raises -> BigDecimal:
     if x.is_zero():
         return BigDecimal(BigUInt.one())
 
-    alias BUFFER_DIGITS = 9
+    comptime BUFFER_DIGITS = 9
     var working_precision = precision + BUFFER_DIGITS
 
     var cos_x = cos(x, precision=working_precision)
@@ -473,7 +473,7 @@ fn arctan(x: BigDecimal, precision: Int) raises -> BigDecimal:
     and y is in the range (-π/2, π/2).
     """
 
-    alias BUFFER_DIGITS = 9  # word-length, easy to append and trim
+    comptime BUFFER_DIGITS = 9  # word-length, easy to append and trim
     var working_precision = precision + BUFFER_DIGITS
 
     bdec_1 = BigDecimal.from_raw_components(UInt32(1), scale=0, sign=False)
@@ -549,7 +549,7 @@ fn arctan_taylor_series(
     The input x must be in the range (-0.5, 0.5) for convergence.
     """
 
-    alias BUFFER_DIGITS = 9  # word-length, easy to append and trim
+    comptime BUFFER_DIGITS = 9  # word-length, easy to append and trim
     var working_precision = minimum_precision + BUFFER_DIGITS
 
     if x.is_zero():

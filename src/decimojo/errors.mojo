@@ -20,7 +20,7 @@ Implements error handling for DeciMojo.
 
 from pathlib.path import cwd
 
-alias OverflowError = DeciMojoError[error_type="OverflowError"]
+comptime OverflowError = DeciMojoError[error_type="OverflowError"]
 """Type for overflow errors in DeciMojo.
 
 Fields:
@@ -31,7 +31,7 @@ message: An optional message describing the error.\\
 previous_error: An optional previous error that caused this error.
 """
 
-alias IndexError = DeciMojoError[error_type="IndexError"]
+comptime IndexError = DeciMojoError[error_type="IndexError"]
 """Type for index errors in DeciMojo.
 
 Fields:
@@ -42,7 +42,7 @@ message: An optional message describing the error.\\
 previous_error: An optional previous error that caused this error.
 """
 
-alias KeyError = DeciMojoError[error_type="KeyError"]
+comptime KeyError = DeciMojoError[error_type="KeyError"]
 """Type for key errors in DeciMojo.
 
 Fields:
@@ -53,7 +53,7 @@ message: An optional message describing the error.\\
 previous_error: An optional previous error that caused this error.
 """
 
-alias ValueError = DeciMojoError[error_type="ValueError"]
+comptime ValueError = DeciMojoError[error_type="ValueError"]
 """Type for value errors in DeciMojo.
 
 Fields:
@@ -65,7 +65,7 @@ previous_error: An optional previous error that caused this error.
 """
 
 
-alias ZeroDivisionError = DeciMojoError[error_type="ZeroDivisionError"]
+comptime ZeroDivisionError = DeciMojoError[error_type="ZeroDivisionError"]
 
 """Type for divided-by-zero errors in DeciMojo.
 
@@ -77,7 +77,7 @@ message: An optional message describing the error.\\
 previous_error: An optional previous error that caused this error.
 """
 
-alias ConversionError = DeciMojoError[error_type="ConversionError"]
+comptime ConversionError = DeciMojoError[error_type="ConversionError"]
 
 """Type for conversion errors in DeciMojo.
 
@@ -89,7 +89,7 @@ message: An optional message describing the error.\\
 previous_error: An optional previous error that caused this error.
 """
 
-alias HEADER_OF_ERROR_MESSAGE = """
+comptime HEADER_OF_ERROR_MESSAGE = """
 ---------------------------------------------------------------------------
 DeciMojoError                             Traceback (most recent call last)
 """

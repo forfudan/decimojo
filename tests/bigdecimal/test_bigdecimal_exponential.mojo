@@ -8,7 +8,7 @@ import testing
 from decimojo import BDec
 from decimojo.tests import TestCase, parse_file, load_test_cases
 
-alias file_path = "tests/bigdecimal/test_data/bigdecimal_exponential.toml"
+comptime file_path = "tests/bigdecimal/test_data/bigdecimal_exponential.toml"
 
 
 fn test_bigdecimal_exponential() raises:

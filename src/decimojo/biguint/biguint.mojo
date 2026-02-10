@@ -37,8 +37,8 @@ from decimojo.errors import (
 import decimojo.str
 
 # Type aliases
-alias BUInt = BigUInt
-alias BigUInt10 = BigUInt
+comptime BUInt = BigUInt
+comptime BigUInt10 = BigUInt
 
 
 struct BigUInt(
@@ -76,19 +76,19 @@ struct BigUInt(
     # ===------------------------------------------------------------------=== #
 
     # TODO: Make these constants global, e.g., decimojo.BASE
-    alias BASE = 1_000_000_000
+    comptime BASE = 1_000_000_000
     """The base used for the BigUInt representation."""
-    alias BASE_MAX = 999_999_999
+    comptime BASE_MAX = 999_999_999
     """The maximum value of a single word in the BigUInt representation."""
-    alias BASE_HALF = 500_000_000
+    comptime BASE_HALF = 500_000_000
     """Half of the base used for the BigUInt representation."""
-    alias VECTOR_WIDTH = 4
+    comptime VECTOR_WIDTH = 4
     """The width of the SIMD vector used for arithmetic operations (128-bit)."""
 
-    alias ZERO = Self.zero()
-    alias ONE = Self.one()
-    alias MAX_UINT64 = Self(709551615, 446744073, 18)
-    alias MAX_UINT128 = Self(768211455, 374607431, 938463463, 282366920, 340)
+    comptime ZERO = Self.zero()
+    comptime ONE = Self.one()
+    comptime MAX_UINT64 = Self(709551615, 446744073, 18)
+    comptime MAX_UINT128 = Self(768211455, 374607431, 938463463, 282366920, 340)
 
     @always_inline
     @staticmethod

@@ -33,7 +33,7 @@ from decimojo.errors import DeciMojoError
 import decimojo.str
 
 # Type aliases
-alias BInt = BigInt
+comptime BInt = BigInt
 
 
 struct BigInt(

@@ -10,7 +10,7 @@ import time
 import os
 from collections import List
 
-alias PRECISION = 5000
+comptime PRECISION = 5000
 
 
 fn open_log_file() raises -> PythonObject:

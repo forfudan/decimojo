@@ -8,7 +8,7 @@ import testing
 from decimojo.prelude import *
 from decimojo.tests import TestCase, parse_file, load_test_cases
 
-alias file_path = "tests/bigdecimal/test_data/bigdecimal_rounding.toml"
+comptime file_path = "tests/bigdecimal/test_data/bigdecimal_rounding.toml"
 
 
 fn test_bigdecimal_rounding() raises:

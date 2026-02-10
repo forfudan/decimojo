@@ -29,12 +29,12 @@ import testing
 from decimojo.rounding_mode import RoundingMode
 from decimojo.bigdecimal.rounding import round_to_precision
 
-alias BDec = BigDecimal
+comptime BDec = BigDecimal
 """Short alias for `BigDecimal`."""
-alias Decimal = BigDecimal
+comptime Decimal = BigDecimal
 """Python-like alias for `BigDecimal`."""
 
-alias PRECISION = 36
+comptime PRECISION = 36
 """Default precision for BigDecimal operations.
 This will be configurable in future when Mojo supports global variables.
 """

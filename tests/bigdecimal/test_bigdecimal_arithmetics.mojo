@@ -13,7 +13,7 @@ import testing
 from decimojo import BDec, RM
 from decimojo.tests import TestCase, parse_file, load_test_cases
 
-alias file_path = "tests/bigdecimal/test_data/bigdecimal_arithmetics.toml"
+comptime file_path = "tests/bigdecimal/test_data/bigdecimal_arithmetics.toml"
 
 
 fn test_bigdecimal_arithmetics() raises:

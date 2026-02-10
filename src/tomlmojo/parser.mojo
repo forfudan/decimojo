@@ -135,13 +135,13 @@ struct TOMLValueType(Copyable, ImplicitlyCopyable, Movable):
     """Types of values in TOML."""
 
     # Aliases to mimic enum constants
-    alias NULL = TOMLValueType.null()
-    alias STRING = TOMLValueType.string()
-    alias INTEGER = TOMLValueType.integer()
-    alias FLOAT = TOMLValueType.float()
-    alias BOOLEAN = TOMLValueType.boolean()
-    alias ARRAY = TOMLValueType.array()
-    alias TABLE = TOMLValueType.table()
+    comptime NULL = TOMLValueType.null()
+    comptime STRING = TOMLValueType.string()
+    comptime INTEGER = TOMLValueType.integer()
+    comptime FLOAT = TOMLValueType.float()
+    comptime BOOLEAN = TOMLValueType.boolean()
+    comptime ARRAY = TOMLValueType.array()
+    comptime TABLE = TOMLValueType.table()
 
     var value: Int
 

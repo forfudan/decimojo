@@ -83,7 +83,7 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
         The truncated UInt256 value, guaranteed to fit within 96 bits.
     """
 
-    alias ValueType = Scalar[dtype]
+    comptime ValueType = Scalar[dtype]
 
     constrained[
         dtype == DType.uint128 or dtype == DType.uint256,
@@ -292,7 +292,7 @@ fn round_to_keep_first_n_digits[
     The output is `1235`.
     """
 
-    alias ValueType = Scalar[dtype]
+    comptime ValueType = Scalar[dtype]
 
     constrained[
         dtype == DType.uint128 or dtype == DType.uint256,
@@ -389,7 +389,7 @@ fn number_of_digits[dtype: DType, //](value: Scalar[dtype]) -> Int:
         "must be uint128 or uint256",
     ]()
 
-    alias ValueType = Scalar[dtype]
+    comptime ValueType = Scalar[dtype]
 
     # Handle edge cases
     if value == 0:
@@ -666,7 +666,7 @@ fn power_of_10[dtype: DType](n: Int) -> Scalar[dtype]:
         power of 10 using the built-in `**` operator.
     """
 
-    alias ValueType = Scalar[dtype]
+    comptime ValueType = Scalar[dtype]
 
     constrained[
         dtype == DType.uint128 or dtype == DType.uint256,
