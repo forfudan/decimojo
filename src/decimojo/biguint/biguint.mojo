@@ -100,7 +100,7 @@ struct BigUInt(
     @staticmethod
     fn one() -> Self:
         """Returns a BigUInt with value 1."""
-        return Self(words=List[UInt32](UInt32(1)))
+        return Self(words=[UInt32(1)])
 
     @staticmethod
     @always_inline
@@ -121,7 +121,7 @@ struct BigUInt(
 
     fn __init__(out self):
         """Initializes a BigUInt with value 0."""
-        self.words = List[UInt32](UInt32(0))
+        self.words = [UInt32(0)]
 
     fn __init__(out self, *, uninitialized_capacity: Int):
         """Creates an uninitialized BigUInt with a given capacity.
@@ -169,7 +169,7 @@ struct BigUInt(
         use `BigUInt.from_list()`.
         """
         if len(words) == 0:
-            self.words = List[UInt32](UInt32(0))
+            self.words = [UInt32(0)]
         else:
             self.words = words^
 
@@ -486,22 +486,22 @@ struct BigUInt(
         """
         # One word is enough
         if value <= 999_999_999:
-            return Self(words=List[UInt32](value))
+            return Self(words=[value])
 
         # Two words are needed
         else:
             return Self(
-                words=List[UInt32](
+                words=[
                     value % UInt32(1_000_000_000),
                     value // UInt32(1_000_000_000),
-                )
+                ]
             )
 
     @staticmethod
     fn from_uint32_unsafe(unsafe_value: UInt32) -> Self:
         """Creates a BigUInt from an `UInt32` object without checking the value.
         """
-        return Self(words=List[UInt32](unsafe_value))
+        return Self(words=[unsafe_value])
 
     @staticmethod
     fn from_unsigned_integral_scalar[
@@ -528,7 +528,7 @@ struct BigUInt(
 
         @parameter
         if (dtype == DType.uint8) or (dtype == DType.uint16):
-            return Self(words=List[UInt32](UInt32(value)))
+            return Self(words=[UInt32(value)])
 
         if value == 0:
             return Self()
@@ -573,7 +573,7 @@ struct BigUInt(
         ):
             # For types that are smaller than word size
             # We can directly convert them to UInt32
-            return Self(words=List[UInt32](UInt32(value)))
+            return Self(words=[UInt32(value)])
 
         elif (dtype == DType.int8) or (dtype == DType.int16):
             # For signed types that are smaller than 1_000_000_000,
@@ -582,9 +582,9 @@ struct BigUInt(
                 # Because -Int16.MIN == Int16.MAX + 1,
                 # we need to handle the case by converting it to Int32
                 # before taking the absolute value.
-                return Self(List[UInt32](UInt32(-Int32(value))))
+                return Self([UInt32(-Int32(value))])
             else:
-                return Self(List[UInt32](UInt32(value)))
+                return Self([UInt32(value)])
 
         else:
             if value == 0:
@@ -1012,10 +1012,10 @@ struct BigUInt(
             var end = line_width
             var lines = List[String](capacity=len(result) // line_width + 1)
             while end < len(result):
-                lines.append(result[start:end])
+                lines.append(String(result[start:end]))
                 start = end
                 end += line_width
-            lines.append(result[start:])
+            lines.append(String(result[start:]))
             result = String("\n").join(lines^)
 
         return result^
@@ -1035,10 +1035,10 @@ struct BigUInt(
         var start = end - 3
         var blocks = List[String](capacity=len(result) // 3 + 1)
         while start > 0:
-            blocks.append(result[start:end])
+            blocks.append(String(result[start:end]))
             end = start
             start = end - 3
-        blocks.append(result[0:end])
+        blocks.append(String(result[0:end]))
         blocks.reverse()
         result = separator.join(blocks)
 

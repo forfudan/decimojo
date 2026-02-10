@@ -289,15 +289,15 @@ fn add_slices_simd(
     )
 
     @parameter
-    fn vector_add[simd_width: Int](i: Int):
+    fn vector_add[simd_width: Int](i: Int) unified {mut}:
         result.words._data.store[width=simd_width](
             i,
             x.words._data.load[width=simd_width](i + bounds_x[0])
             + y.words._data.load[width=simd_width](i + bounds_y[0]),
         )
 
-    vectorize[vector_add, BigUInt.VECTOR_WIDTH](
-        min(n_words_x_slice, n_words_y_slice)
+    vectorize[BigUInt.VECTOR_WIDTH](
+        min(n_words_x_slice, n_words_y_slice), vector_add
     )
 
     var longer: Pointer[BigUInt, origin_of(x, y)]
@@ -317,7 +317,7 @@ fn add_slices_simd(
         longer_start = bounds_y[0]
 
     @parameter
-    fn vector_copy_rest_from_longer[simd_width: Int](i: Int):
+    fn vector_copy_rest_from_longer[simd_width: Int](i: Int) unified {mut}:
         result.words._data.store[width=simd_width](
             n_words_shorter_slice + i,
             longer[].words._data.load[width=simd_width](
@@ -325,8 +325,9 @@ fn add_slices_simd(
             ),
         )
 
-    vectorize[vector_copy_rest_from_longer, BigUInt.VECTOR_WIDTH](
-        n_words_longer_slice - n_words_shorter_slice
+    vectorize[BigUInt.VECTOR_WIDTH](
+        n_words_longer_slice - n_words_shorter_slice,
+        vector_copy_rest_from_longer,
     )
 
     normalize_carries_lt_2_bases(result)
@@ -368,14 +369,14 @@ fn add_inplace(mut x: BigUInt, y: BigUInt) -> None:
         x.words.resize(new_size=len(y.words), value=UInt32(0))
 
     @parameter
-    fn vector_add[simd_width: Int](i: Int):
+    fn vector_add[simd_width: Int](i: Int) unified {mut}:
         x.words._data.store[width=simd_width](
             i,
             x.words._data.load[width=simd_width](i)
             + y.words._data.load[width=simd_width](i),
         )
 
-    vectorize[vector_add, BigUInt.VECTOR_WIDTH](len(y.words))
+    vectorize[BigUInt.VECTOR_WIDTH](len(y.words), vector_add)
 
     # Normalize carries after addition
     normalize_carries_lt_2_bases(x)
@@ -419,14 +420,14 @@ fn add_inplace_by_slice(
         x.words.resize(new_size=n_words_y_slice, value=UInt32(0))
 
     @parameter
-    fn vector_add[simd_width: Int](i: Int):
+    fn vector_add[simd_width: Int](i: Int) unified {mut}:
         x.words._data.store[width=simd_width](
             i,
             x.words._data.load[width=simd_width](i)
             + y.words._data.load[width=simd_width](i + bounds_y[0]),
         )
 
-    vectorize[vector_add, BigUInt.VECTOR_WIDTH](n_words_y_slice)
+    vectorize[BigUInt.VECTOR_WIDTH](n_words_y_slice, vector_add)
 
     # Normalize carries after addition
     normalize_carries_lt_2_bases(x)
@@ -630,24 +631,24 @@ fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
     # Note that there will be potential overflow in the subtraction,
     # but we will take advantage of that.
     @parameter
-    fn vector_subtract[simd_width: Int](i: Int):
+    fn vector_subtract[simd_width: Int](i: Int) unified {mut}:
         result.words._data.store[width=simd_width](
             i,
             x.words._data.load[width=simd_width](i)
             - y.words._data.load[width=simd_width](i),
         )
 
-    vectorize[vector_subtract, BigUInt.VECTOR_WIDTH](len(y.words))
+    vectorize[BigUInt.VECTOR_WIDTH](len(y.words), vector_subtract)
 
     @parameter
-    fn vector_copy_rest[simd_width: Int](i: Int):
+    fn vector_copy_rest[simd_width: Int](i: Int) unified {mut}:
         result.words._data.store[width=simd_width](
             len(y.words) + i,
             x.words._data.load[width=simd_width](len(y.words) + i),
         )
 
-    vectorize[vector_copy_rest, BigUInt.VECTOR_WIDTH](
-        len(x.words) - len(y.words)
+    vectorize[BigUInt.VECTOR_WIDTH](
+        len(x.words) - len(y.words), vector_copy_rest
     )
 
     normalize_borrows(result)
@@ -694,14 +695,14 @@ fn subtract_inplace(mut x: BigUInt, y: BigUInt) raises -> None:
     # Note that len(x.words) >= len(y.words) here
     # Use SIMD operations to subtract the words in parallel.
     @parameter
-    fn vector_subtract[simd_width: Int](i: Int):
+    fn vector_subtract[simd_width: Int](i: Int) unified {mut}:
         x.words._data.store[width=simd_width](
             i,
             x.words._data.load[width=simd_width](i)
             - y.words._data.load[width=simd_width](i),
         )
 
-    vectorize[vector_subtract, BigUInt.VECTOR_WIDTH](len(y.words))
+    vectorize[BigUInt.VECTOR_WIDTH](len(y.words), vector_subtract)
 
     # Normalize borrows after subtraction
     normalize_borrows(x)
@@ -731,14 +732,14 @@ fn subtract_inplace_no_check(mut x: BigUInt, y: BigUInt) -> None:
     # Note that len(x.words) >= len(y.words) under this assumption
 
     @parameter
-    fn vector_subtract[simd_width: Int](i: Int):
+    fn vector_subtract[simd_width: Int](i: Int) unified {mut}:
         x.words._data.store[width=simd_width](
             i,
             x.words._data.load[width=simd_width](i)
             - y.words._data.load[width=simd_width](i),
         )
 
-    vectorize[vector_subtract, BigUInt.VECTOR_WIDTH](len(y.words))
+    vectorize[BigUInt.VECTOR_WIDTH](len(y.words), vector_subtract)
 
     # Normalize borrows after subtraction
     normalize_borrows(x)
@@ -1229,7 +1230,7 @@ fn multiply_inplace_by_uint32_le_4(mut x: BigUInt, y: UInt32):
 
     # y is 0, x becomes 1
     if y == 0:
-        x.words = List[UInt32](0)
+        x.words = [UInt32(0)]
         return
 
     # y is 1, x stays the same
@@ -1238,40 +1239,40 @@ fn multiply_inplace_by_uint32_le_4(mut x: BigUInt, y: UInt32):
 
     # y is 2, we can just shift the digits of each word to the left by 1
     @parameter
-    fn vector_multiply_by_2[simd_width: Int](i: Int):
+    fn vector_multiply_by_2[simd_width: Int](i: Int) unified {mut}:
         """Shifts the digits of each word to the left by 1."""
         x.words._data.store[width=simd_width](
             i, x.words._data.load[width=simd_width](i) << 1
         )
 
     if y == 2:
-        vectorize[vector_multiply_by_2, BigUInt.VECTOR_WIDTH](len(x.words))
+        vectorize[BigUInt.VECTOR_WIDTH](len(x.words), vector_multiply_by_2)
         normalize_carries_lt_2_bases(x)
         return
 
     # y is 3, we can just multiply the digits of each word by 3
     @parameter
-    fn vector_multiply_by_3[simd_width: Int](i: Int):
+    fn vector_multiply_by_3[simd_width: Int](i: Int) unified {mut}:
         """Multiplies the digits of each word by 3."""
         x.words._data.store[width=simd_width](
             i, x.words._data.load[width=simd_width](i) * 3
         )
 
     if y == 3:
-        vectorize[vector_multiply_by_3, BigUInt.VECTOR_WIDTH](len(x.words))
+        vectorize[BigUInt.VECTOR_WIDTH](len(x.words), vector_multiply_by_3)
         normalize_carries_lt_4_bases(x)
         return
 
     # y is 4, we can just shift the digits of each word to the left by 2
     @parameter
-    fn vector_multiply_by_4[simd_width: Int](i: Int):
+    fn vector_multiply_by_4[simd_width: Int](i: Int) unified {mut}:
         """Shifts the digits of each word to the left by 2."""
         x.words._data.store[width=simd_width](
             i, x.words._data.load[width=simd_width](i) << 2
         )
 
     if y == 4:
-        vectorize[vector_multiply_by_4, BigUInt.VECTOR_WIDTH](len(x.words))
+        vectorize[BigUInt.VECTOR_WIDTH](len(x.words), vector_multiply_by_4)
         normalize_carries_lt_4_bases(x)
         return
 

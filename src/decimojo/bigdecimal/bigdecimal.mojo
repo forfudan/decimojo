@@ -199,7 +199,7 @@ struct BigDecimal(
         """**UNSAFE** Creates a BigDecimal from its raw components.
         The raw components are a single word, scale, and sign.
         """
-        return Self(BigUInt(words=List[UInt32](word)), scale, sign)
+        return Self(BigUInt(words=[word]), scale, sign)
 
     @staticmethod
     fn from_int(value: Int) -> Self:
@@ -420,7 +420,7 @@ struct BigDecimal(
         ):
             # Use scientific notation
             var exponent_string = String(exponent)
-            result += coefficient_string[0]
+            result += coefficient_string[byte=0]
             if len(coefficient_string) > 1:
                 result += "."
                 result += coefficient_string[1:]
@@ -463,10 +463,10 @@ struct BigDecimal(
             var end = line_width
             var lines = List[String](capacity=len(result) // line_width + 1)
             while end < len(result):
-                lines.append(result[start:end])
+                lines.append(String(result[start:end]))
                 start = end
                 end += line_width
-            lines.append(result[start:])
+            lines.append(String(result[start:]))
             result = String("\n").join(lines^)
 
         return result^
@@ -1128,7 +1128,7 @@ struct BigDecimal(
             number_of_digits_to_remove % 9
         )
 
-        words = self.coefficient.words[number_of_words_to_remove:]
+        words = List[UInt32](self.coefficient.words[number_of_words_to_remove:])
         var coefficient = BigUInt(words^)
 
         if number_of_remaining_digits_to_remove == 0:

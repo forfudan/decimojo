@@ -406,10 +406,10 @@ struct BigInt(
             var end = line_width
             var lines = List[String](capacity=len(result) // line_width + 1)
             while end < len(result):
-                lines.append(result[start:end])
+                lines.append(String(result[start:end]))
                 start = end
                 end += line_width
-            lines.append(result[start:])
+            lines.append(String(result[start:]))
             result = String("\n").join(lines^)
 
         return result^
@@ -429,10 +429,10 @@ struct BigInt(
         var start = end - 3
         var blocks = List[String](capacity=len(result) // 3 + 1)
         while start > 0:
-            blocks.append(result[start:end])
+            blocks.append(String(result[start:end]))
             end = start
             start = end - 3
-        blocks.append(result[0:end])
+        blocks.append(String(result[0:end]))
         blocks.reverse()
         result = separator.join(blocks)
 
