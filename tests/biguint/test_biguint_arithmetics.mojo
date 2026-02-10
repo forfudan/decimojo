@@ -11,8 +11,8 @@ from testing import assert_equal, assert_true
 from decimojo.biguint.biguint import BigUInt
 from decimojo.tests import TestCase, parse_file, load_test_cases
 
-alias file_path_arithmetics = "tests/biguint/test_data/biguint_arithmetics.toml"
-alias file_path_truncate_divide = "tests/biguint/test_data/biguint_truncate_divide.toml"
+comptime file_path_arithmetics = "tests/biguint/test_data/biguint_arithmetics.toml"
+comptime file_path_truncate_divide = "tests/biguint/test_data/biguint_truncate_divide.toml"
 
 
 fn test_biguint_arithmetics() raises:

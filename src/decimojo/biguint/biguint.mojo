@@ -37,8 +37,8 @@ from decimojo.errors import (
 import decimojo.str
 
 # Type aliases
-alias BUInt = BigUInt
-alias BigUInt10 = BigUInt
+comptime BUInt = BigUInt
+comptime BigUInt10 = BigUInt
 
 
 struct BigUInt(
@@ -76,19 +76,19 @@ struct BigUInt(
     # ===------------------------------------------------------------------=== #
 
     # TODO: Make these constants global, e.g., decimojo.BASE
-    alias BASE = 1_000_000_000
+    comptime BASE = 1_000_000_000
     """The base used for the BigUInt representation."""
-    alias BASE_MAX = 999_999_999
+    comptime BASE_MAX = 999_999_999
     """The maximum value of a single word in the BigUInt representation."""
-    alias BASE_HALF = 500_000_000
+    comptime BASE_HALF = 500_000_000
     """Half of the base used for the BigUInt representation."""
-    alias VECTOR_WIDTH = 4
+    comptime VECTOR_WIDTH = 4
     """The width of the SIMD vector used for arithmetic operations (128-bit)."""
 
-    alias ZERO = Self.zero()
-    alias ONE = Self.one()
-    alias MAX_UINT64 = Self(709551615, 446744073, 18)
-    alias MAX_UINT128 = Self(768211455, 374607431, 938463463, 282366920, 340)
+    comptime ZERO = Self.zero()
+    comptime ONE = Self.one()
+    comptime MAX_UINT64 = Self(709551615, 446744073, 18)
+    comptime MAX_UINT128 = Self(768211455, 374607431, 938463463, 282366920, 340)
 
     @always_inline
     @staticmethod
@@ -100,7 +100,7 @@ struct BigUInt(
     @staticmethod
     fn one() -> Self:
         """Returns a BigUInt with value 1."""
-        return Self(words=List[UInt32](UInt32(1)))
+        return Self(words=[UInt32(1)])
 
     @staticmethod
     @always_inline
@@ -121,7 +121,7 @@ struct BigUInt(
 
     fn __init__(out self):
         """Initializes a BigUInt with value 0."""
-        self.words = List[UInt32](UInt32(0))
+        self.words = [UInt32(0)]
 
     fn __init__(out self, *, uninitialized_capacity: Int):
         """Creates an uninitialized BigUInt with a given capacity.
@@ -169,7 +169,7 @@ struct BigUInt(
         use `BigUInt.from_list()`.
         """
         if len(words) == 0:
-            self.words = List[UInt32](UInt32(0))
+            self.words = [UInt32(0)]
         else:
             self.words = words^
 
@@ -211,7 +211,7 @@ struct BigUInt(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.__init__(value: Int)",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 
@@ -256,7 +256,7 @@ struct BigUInt(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.__init__(value: String)",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 
@@ -486,22 +486,22 @@ struct BigUInt(
         """
         # One word is enough
         if value <= 999_999_999:
-            return Self(words=List[UInt32](value))
+            return Self(words=[value])
 
         # Two words are needed
         else:
             return Self(
-                words=List[UInt32](
+                words=[
                     value % UInt32(1_000_000_000),
                     value // UInt32(1_000_000_000),
-                )
+                ]
             )
 
     @staticmethod
     fn from_uint32_unsafe(unsafe_value: UInt32) -> Self:
         """Creates a BigUInt from an `UInt32` object without checking the value.
         """
-        return Self(words=List[UInt32](unsafe_value))
+        return Self(words=[unsafe_value])
 
     @staticmethod
     fn from_unsigned_integral_scalar[
@@ -528,7 +528,7 @@ struct BigUInt(
 
         @parameter
         if (dtype == DType.uint8) or (dtype == DType.uint16):
-            return Self(words=List[UInt32](UInt32(value)))
+            return Self(words=[UInt32(value)])
 
         if value == 0:
             return Self()
@@ -573,7 +573,7 @@ struct BigUInt(
         ):
             # For types that are smaller than word size
             # We can directly convert them to UInt32
-            return Self(words=List[UInt32](UInt32(value)))
+            return Self(words=[UInt32(value)])
 
         elif (dtype == DType.int8) or (dtype == DType.int16):
             # For signed types that are smaller than 1_000_000_000,
@@ -582,9 +582,9 @@ struct BigUInt(
                 # Because -Int16.MIN == Int16.MAX + 1,
                 # we need to handle the case by converting it to Int32
                 # before taking the absolute value.
-                return Self(List[UInt32](UInt32(-Int32(value))))
+                return Self([UInt32(-Int32(value))])
             else:
-                return Self(List[UInt32](UInt32(value)))
+                return Self([UInt32(value)])
 
         else:
             if value == 0:
@@ -771,7 +771,7 @@ struct BigUInt(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.__int__()",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 
@@ -819,14 +819,14 @@ struct BigUInt(
             )
         )
         if len(self.words) > 3:
-            raise overflow_error
+            raise overflow_error^
 
         var value: Int128 = 0
         for i in range(len(self.words)):
             value += Int128(self.words[i]) * Int128(1_000_000_000) ** i
 
         if value > Int128(Int.MAX):
-            raise overflow_error
+            raise overflow_error^
 
         return Int(value)
 
@@ -1012,10 +1012,10 @@ struct BigUInt(
             var end = line_width
             var lines = List[String](capacity=len(result) // line_width + 1)
             while end < len(result):
-                lines.append(result[start:end])
+                lines.append(String(result[start:end]))
                 start = end
                 end += line_width
-            lines.append(result[start:])
+            lines.append(String(result[start:]))
             result = String("\n").join(lines^)
 
         return result^
@@ -1035,10 +1035,10 @@ struct BigUInt(
         var start = end - 3
         var blocks = List[String](capacity=len(result) // 3 + 1)
         while start > 0:
-            blocks.append(result[start:end])
+            blocks.append(String(result[start:end]))
             end = start
             start = end - 3
-        blocks.append(result[0:end])
+        blocks.append(String(result[0:end]))
         blocks.reverse()
         result = separator.join(blocks)
 
@@ -1096,7 +1096,7 @@ struct BigUInt(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.__sub__(other: Self)",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 
@@ -1114,7 +1114,7 @@ struct BigUInt(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.__floordiv__(other: Self)",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 
@@ -1129,7 +1129,7 @@ struct BigUInt(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.__ceildiv__(other: Self)",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 
@@ -1143,7 +1143,7 @@ struct BigUInt(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.__mod__(other: Self)",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 
@@ -1157,7 +1157,7 @@ struct BigUInt(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.__divmod__(other: Self)",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 
@@ -1171,7 +1171,7 @@ struct BigUInt(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.__pow__(exponent: Self)",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 
@@ -1185,7 +1185,7 @@ struct BigUInt(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.__pow__(exponent: Int)",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 

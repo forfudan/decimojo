@@ -8,7 +8,7 @@ import testing
 from decimojo import BDec
 from decimojo.tests import TestCase, parse_file, load_test_cases
 
-alias file_path = "tests/bigdecimal/test_data/bigdecimal_trigonometric.toml"
+comptime file_path = "tests/bigdecimal/test_data/bigdecimal_trigonometric.toml"
 
 
 fn run_test[

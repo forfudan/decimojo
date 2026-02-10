@@ -27,9 +27,9 @@ import decimojo.biguint.comparison
 from decimojo.errors import DeciMojoError, OverflowError, ZeroDivisionError
 from decimojo.rounding_mode import RoundingMode
 
-alias CUTOFF_KARATSUBA = 64
+comptime CUTOFF_KARATSUBA = 64
 """The cutoff number of words for using Karatsuba multiplication."""
-alias CUTOFF_BURNIKEL_ZIEGLER = 32
+comptime CUTOFF_BURNIKEL_ZIEGLER = 32
 """The cutoff number of words for using Burnikel-Ziegler division."""
 
 # ===----------------------------------------------------------------------=== #
@@ -289,15 +289,19 @@ fn add_slices_simd(
     )
 
     @parameter
-    fn vector_add[simd_width: Int](i: Int):
+    fn vector_add[
+        simd_width: Int
+    ](i: Int) unified {
+        mut result, read x, read y, read bounds_x, read bounds_y
+    }:
         result.words._data.store[width=simd_width](
             i,
             x.words._data.load[width=simd_width](i + bounds_x[0])
             + y.words._data.load[width=simd_width](i + bounds_y[0]),
         )
 
-    vectorize[vector_add, BigUInt.VECTOR_WIDTH](
-        min(n_words_x_slice, n_words_y_slice)
+    vectorize[BigUInt.VECTOR_WIDTH](
+        min(n_words_x_slice, n_words_y_slice), vector_add
     )
 
     var longer: Pointer[BigUInt, origin_of(x, y)]
@@ -317,7 +321,11 @@ fn add_slices_simd(
         longer_start = bounds_y[0]
 
     @parameter
-    fn vector_copy_rest_from_longer[simd_width: Int](i: Int):
+    fn vector_copy_rest_from_longer[
+        simd_width: Int
+    ](i: Int) unified {
+        mut result, read longer, read n_words_shorter_slice, read longer_start
+    }:
         result.words._data.store[width=simd_width](
             n_words_shorter_slice + i,
             longer[].words._data.load[width=simd_width](
@@ -325,8 +333,9 @@ fn add_slices_simd(
             ),
         )
 
-    vectorize[vector_copy_rest_from_longer, BigUInt.VECTOR_WIDTH](
-        n_words_longer_slice - n_words_shorter_slice
+    vectorize[BigUInt.VECTOR_WIDTH](
+        n_words_longer_slice - n_words_shorter_slice,
+        vector_copy_rest_from_longer,
     )
 
     normalize_carries_lt_2_bases(result)
@@ -368,14 +377,14 @@ fn add_inplace(mut x: BigUInt, y: BigUInt) -> None:
         x.words.resize(new_size=len(y.words), value=UInt32(0))
 
     @parameter
-    fn vector_add[simd_width: Int](i: Int):
+    fn vector_add[simd_width: Int](i: Int) unified {mut x, read y}:
         x.words._data.store[width=simd_width](
             i,
             x.words._data.load[width=simd_width](i)
             + y.words._data.load[width=simd_width](i),
         )
 
-    vectorize[vector_add, BigUInt.VECTOR_WIDTH](len(y.words))
+    vectorize[BigUInt.VECTOR_WIDTH](len(y.words), vector_add)
 
     # Normalize carries after addition
     normalize_carries_lt_2_bases(x)
@@ -419,14 +428,16 @@ fn add_inplace_by_slice(
         x.words.resize(new_size=n_words_y_slice, value=UInt32(0))
 
     @parameter
-    fn vector_add[simd_width: Int](i: Int):
+    fn vector_add[
+        simd_width: Int
+    ](i: Int) unified {mut x, read y, read bounds_y}:
         x.words._data.store[width=simd_width](
             i,
             x.words._data.load[width=simd_width](i)
             + y.words._data.load[width=simd_width](i + bounds_y[0]),
         )
 
-    vectorize[vector_add, BigUInt.VECTOR_WIDTH](n_words_y_slice)
+    vectorize[BigUInt.VECTOR_WIDTH](n_words_y_slice, vector_add)
 
     # Normalize carries after addition
     normalize_carries_lt_2_bases(x)
@@ -630,24 +641,28 @@ fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
     # Note that there will be potential overflow in the subtraction,
     # but we will take advantage of that.
     @parameter
-    fn vector_subtract[simd_width: Int](i: Int):
+    fn vector_subtract[
+        simd_width: Int
+    ](i: Int) unified {mut result, read x, read y}:
         result.words._data.store[width=simd_width](
             i,
             x.words._data.load[width=simd_width](i)
             - y.words._data.load[width=simd_width](i),
         )
 
-    vectorize[vector_subtract, BigUInt.VECTOR_WIDTH](len(y.words))
+    vectorize[BigUInt.VECTOR_WIDTH](len(y.words), vector_subtract)
 
     @parameter
-    fn vector_copy_rest[simd_width: Int](i: Int):
+    fn vector_copy_rest[
+        simd_width: Int
+    ](i: Int) unified {mut result, read x, read y}:
         result.words._data.store[width=simd_width](
             len(y.words) + i,
             x.words._data.load[width=simd_width](len(y.words) + i),
         )
 
-    vectorize[vector_copy_rest, BigUInt.VECTOR_WIDTH](
-        len(x.words) - len(y.words)
+    vectorize[BigUInt.VECTOR_WIDTH](
+        len(x.words) - len(y.words), vector_copy_rest
     )
 
     normalize_borrows(result)
@@ -694,14 +709,14 @@ fn subtract_inplace(mut x: BigUInt, y: BigUInt) raises -> None:
     # Note that len(x.words) >= len(y.words) here
     # Use SIMD operations to subtract the words in parallel.
     @parameter
-    fn vector_subtract[simd_width: Int](i: Int):
+    fn vector_subtract[simd_width: Int](i: Int) unified {mut x, read y}:
         x.words._data.store[width=simd_width](
             i,
             x.words._data.load[width=simd_width](i)
             - y.words._data.load[width=simd_width](i),
         )
 
-    vectorize[vector_subtract, BigUInt.VECTOR_WIDTH](len(y.words))
+    vectorize[BigUInt.VECTOR_WIDTH](len(y.words), vector_subtract)
 
     # Normalize borrows after subtraction
     normalize_borrows(x)
@@ -731,14 +746,14 @@ fn subtract_inplace_no_check(mut x: BigUInt, y: BigUInt) -> None:
     # Note that len(x.words) >= len(y.words) under this assumption
 
     @parameter
-    fn vector_subtract[simd_width: Int](i: Int):
+    fn vector_subtract[simd_width: Int](i: Int) unified {mut x, read y}:
         x.words._data.store[width=simd_width](
             i,
             x.words._data.load[width=simd_width](i)
             - y.words._data.load[width=simd_width](i),
         )
 
-    vectorize[vector_subtract, BigUInt.VECTOR_WIDTH](len(y.words))
+    vectorize[BigUInt.VECTOR_WIDTH](len(y.words), vector_subtract)
 
     # Normalize borrows after subtraction
     normalize_borrows(x)
@@ -1229,7 +1244,7 @@ fn multiply_inplace_by_uint32_le_4(mut x: BigUInt, y: UInt32):
 
     # y is 0, x becomes 1
     if y == 0:
-        x.words = List[UInt32](0)
+        x.words = [UInt32(0)]
         return
 
     # y is 1, x stays the same
@@ -1238,40 +1253,40 @@ fn multiply_inplace_by_uint32_le_4(mut x: BigUInt, y: UInt32):
 
     # y is 2, we can just shift the digits of each word to the left by 1
     @parameter
-    fn vector_multiply_by_2[simd_width: Int](i: Int):
+    fn vector_multiply_by_2[simd_width: Int](i: Int) unified {mut x}:
         """Shifts the digits of each word to the left by 1."""
         x.words._data.store[width=simd_width](
             i, x.words._data.load[width=simd_width](i) << 1
         )
 
     if y == 2:
-        vectorize[vector_multiply_by_2, BigUInt.VECTOR_WIDTH](len(x.words))
+        vectorize[BigUInt.VECTOR_WIDTH](len(x.words), vector_multiply_by_2)
         normalize_carries_lt_2_bases(x)
         return
 
     # y is 3, we can just multiply the digits of each word by 3
     @parameter
-    fn vector_multiply_by_3[simd_width: Int](i: Int):
+    fn vector_multiply_by_3[simd_width: Int](i: Int) unified {mut x}:
         """Multiplies the digits of each word by 3."""
         x.words._data.store[width=simd_width](
             i, x.words._data.load[width=simd_width](i) * 3
         )
 
     if y == 3:
-        vectorize[vector_multiply_by_3, BigUInt.VECTOR_WIDTH](len(x.words))
+        vectorize[BigUInt.VECTOR_WIDTH](len(x.words), vector_multiply_by_3)
         normalize_carries_lt_4_bases(x)
         return
 
     # y is 4, we can just shift the digits of each word to the left by 2
     @parameter
-    fn vector_multiply_by_4[simd_width: Int](i: Int):
+    fn vector_multiply_by_4[simd_width: Int](i: Int) unified {mut x}:
         """Shifts the digits of each word to the left by 2."""
         x.words._data.store[width=simd_width](
             i, x.words._data.load[width=simd_width](i) << 2
         )
 
     if y == 4:
-        vectorize[vector_multiply_by_4, BigUInt.VECTOR_WIDTH](len(x.words))
+        vectorize[BigUInt.VECTOR_WIDTH](len(x.words), vector_multiply_by_4)
         normalize_carries_lt_4_bases(x)
         return
 
@@ -2428,13 +2443,13 @@ fn floor_divide_two_by_one(
             a3, a2, a1, b1, b0, n // 2, cut_off
         )  # q is q1
         var q = _tuple[0].copy()
-        var ref r = _tuple[1]
+        ref r = _tuple[1]
 
         var r0 = BigUInt.from_slice(r, bounds=(0, n // 2))
         var r1 = BigUInt.from_slice(r, bounds=(n // 2, n))
         # TODO: Refine this when Mojo support move values of unpacked tuples
         _tuple = floor_divide_three_by_two(r1, r0, a0, b1, b0, n // 2, cut_off)
-        var ref q0 = _tuple[0]  # q0
+        ref q0 = _tuple[0]  # q0
         var s = _tuple[1].copy()  # s is the final remainder
 
         # q -> q1q0
@@ -2490,7 +2505,7 @@ fn floor_divide_three_by_two(
     # TODO: Refine this when Mojo support move values of unpacked tuples
     _tuple = floor_divide_two_by_one(a2a1, b1, n, cut_off)
     var q = _tuple[0].copy()
-    var ref c = _tuple[1]  # c is the carry
+    ref c = _tuple[1]  # c is the carry
     var d = q * b0
     decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(c, n)
     var r = c + a0
@@ -2596,14 +2611,14 @@ fn floor_divide_slices_two_by_one(
             a, b, bounds_a1a3, bounds_b, n // 2, cut_off
         )
         var q = _tuple[0].copy()  # q is q1
-        var ref r = _tuple[1]  # r is the carry
+        ref r = _tuple[1]  # r is the carry
 
         multiply_inplace_by_power_of_billion(r, n // 2)
         add_inplace_by_slice(r, a, (bounds_a[0], bounds_a[0] + n // 2))
         _tuple = floor_divide_slices_three_by_two(
             r, b, (0, len(r.words)), bounds_b, n // 2, cut_off
         )
-        var ref q0 = _tuple[0]  # q0
+        ref q0 = _tuple[0]  # q0
         var s = _tuple[1].copy()  # s is the final remainder
 
         # q -> q1q0
@@ -2676,7 +2691,7 @@ fn floor_divide_slices_three_by_two(
         a, b, bounds_a2a1, bounds_b1, n, cut_off
     )
     var q = _tuple[0].copy()
-    var ref c = _tuple[1]  # c is the carry
+    ref c = _tuple[1]  # c is the carry
 
     var d = multiply_slices(q, b, (0, len(q.words)), bounds_b0)
     decimojo.biguint.arithmetics.multiply_inplace_by_power_of_billion(c, n)
@@ -2897,7 +2912,7 @@ fn floor_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
                 file="src/decimojo/biguint/arithmetics.py",
                 function="floor_modulo()",
                 message=None,
-                previous_error=e,
+                previous_error=e.copy(),
             )
         )
 
@@ -2911,7 +2926,7 @@ fn floor_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
                 file="src/decimojo/biguint/arithmetics.py",
                 function="floor_modulo()",
                 message=None,
-                previous_error=e,
+                previous_error=e.copy(),
             )
         )
 
@@ -2942,7 +2957,7 @@ fn truncate_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
                 file="src/decimojo/biguint/arithmetics.py",
                 function="truncate_modulo()",
                 message=None,
-                previous_error=e,
+                previous_error=e.copy(),
             )
         )
 
@@ -3028,7 +3043,7 @@ fn floor_divide_modulo(
                 file="src/decimojo/biguint/arithmetics.py",
                 function="floor_divide_modulo()",
                 message=None,
-                previous_error=e,
+                previous_error=e.copy(),
             )
         )
 
@@ -3163,7 +3178,7 @@ fn normalize_borrows(mut x: BigUInt):
     ensuring that all words are within the valid range.
     """
 
-    alias NEG_BASE_MAX = UInt32(3294967297)  # UInt32(0) - BigUInt.BASE_MAX
+    comptime NEG_BASE_MAX = UInt32(3294967297)  # UInt32(0) - BigUInt.BASE_MAX
 
     # Yuhao ZHU:
     # By construction, the words of x are in the range [-BASE_MAX, BASE_MAX].

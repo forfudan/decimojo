@@ -34,7 +34,7 @@ import decimojo.decimal128.rounding
 from decimojo.rounding_mode import RoundingMode
 import decimojo.decimal128.utility
 
-alias Dec128 = Decimal128
+comptime Dec128 = Decimal128
 
 
 @register_passable("trivial")
@@ -102,26 +102,26 @@ struct Decimal128(
     """Scale information and the sign."""
 
     # Constants
-    alias MAX_SCALE: Int = 28
-    alias MAX_AS_UINT128 = UInt128(79228162514264337593543950335)
-    alias MAX_AS_INT128 = Int128(79228162514264337593543950335)
-    alias MAX_AS_UINT256 = UInt256(79228162514264337593543950335)
-    alias MAX_AS_INT256 = Int256(79228162514264337593543950335)
-    alias MAX_AS_STRING = String("79228162514264337593543950335")
+    comptime MAX_SCALE: Int = 28
+    comptime MAX_AS_UINT128 = UInt128(79228162514264337593543950335)
+    comptime MAX_AS_INT128 = Int128(79228162514264337593543950335)
+    comptime MAX_AS_UINT256 = UInt256(79228162514264337593543950335)
+    comptime MAX_AS_INT256 = Int256(79228162514264337593543950335)
+    comptime MAX_AS_STRING = String("79228162514264337593543950335")
     """Maximum value as a string."""
-    alias MAX_NUM_DIGITS = 29
+    comptime MAX_NUM_DIGITS = 29
     """Number of digits of the max value 79228162514264337593543950335."""
-    alias SIGN_MASK = UInt32(0x80000000)
+    comptime SIGN_MASK = UInt32(0x80000000)
     """Sign mask. `0b1000_0000_0000_0000_0000_0000_0000_0000`.
     1 bit for sign (0 is positive and 1 is negative)."""
-    alias SCALE_MASK = UInt32(0x00FF0000)
+    comptime SCALE_MASK = UInt32(0x00FF0000)
     """Scale mask. `0b0000_0000_1111_1111_0000_0000_0000_0000`.
     Bits 16 to 23 must contain an scale between 0 and 28."""
-    alias SCALE_SHIFT = UInt32(16)
+    comptime SCALE_SHIFT = UInt32(16)
     """Bits 16 to 23 must contain an scale between 0 and 28."""
-    alias INFINITY_MASK = UInt32(0x00000001)
+    comptime INFINITY_MASK = UInt32(0x00000001)
     """Infinity mask. `0b0000_0000_0000_0000_0000_0000_0000_0001`."""
-    alias NAN_MASK = UInt32(0x00000002)
+    comptime NAN_MASK = UInt32(0x00000002)
     """Not a Number mask. `0b0000_0000_0000_0000_0000_0000_0000_0010`."""
 
     # TODO: Move these special values to top of the module
@@ -528,12 +528,14 @@ struct Decimal128(
         if value_bytes_len == 0:
             return Decimal128.ZERO()
 
-        if value_bytes_len != Int(value_string_slice.char_length()):
-            raise Error(
-                String(
-                    "There are invalid characters in decimal128 string: {}"
-                ).format(value)
-            )
+        # Check for non-ASCII characters (each non-ASCII char is multi-byte)
+        for byte in value_bytes:
+            if byte > 127:
+                raise Error(
+                    String(
+                        "There are invalid characters in decimal128 string: {}"
+                    ).format(value)
+                )
 
         # Yuhao's notes:
         # We scan each char in the string input.
@@ -1115,7 +1117,7 @@ struct Decimal128(
         if len(coef_str) == 1:
             result = result + coef_str + String(".0")
         else:
-            result = result + coef_str[0] + String(".") + coef_str[1:]
+            result = result + coef_str[byte=0] + String(".") + coef_str[1:]
 
         # Add exponent (E+XX or E-XX)
         if exponent >= 0:

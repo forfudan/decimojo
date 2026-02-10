@@ -10,7 +10,7 @@ from testing import assert_equal, assert_true
 from decimojo.biguint.biguint import BigUInt
 from decimojo.tests import TestCase, parse_file, load_test_cases
 
-alias file_path_sqrt = "tests/biguint/test_data/biguint_sqrt.toml"
+comptime file_path_sqrt = "tests/biguint/test_data/biguint_sqrt.toml"
 
 
 fn test_biguint_sqrt() raises:

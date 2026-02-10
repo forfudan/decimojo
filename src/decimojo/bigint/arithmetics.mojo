@@ -230,7 +230,7 @@ fn floor_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
                     file="src/decimojo/bigint/arithmetics",
                     function="floor_divide()",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 ),
             )
         return BigInt(magnitude^, sign=False)
@@ -247,7 +247,7 @@ fn floor_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
                     file="src/decimojo/bigint/arithmetics",
                     function="floor_divide()",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 ),
             )
         return BigInt(magnitude^, sign=True)
@@ -279,7 +279,7 @@ fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
                 file="src/decimojo/bigint/arithmetics",
                 function="truncate_divide()",
                 message=None,
-                previous_error=e,
+                previous_error=e.copy(),
             ),
         )
     return BigInt(magnitude^, sign=x1.sign != x2.sign)
@@ -316,7 +316,7 @@ fn floor_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
                     file="src/decimojo/bigint/arithmetics",
                     function="floor_modulo()",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 ),
             )
         return BigInt(magnitude^, sign=x2.sign)
@@ -333,7 +333,7 @@ fn floor_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
                     file="src/decimojo/bigint/arithmetics",
                     function="floor_modulo()",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 ),
             )
         return BigInt(magnitude^, sign=x2.sign)
@@ -365,7 +365,7 @@ fn truncate_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
                 file="src/decimojo/bigint/arithmetics",
                 function="truncate_modulo()",
                 message=None,
-                previous_error=e,
+                previous_error=e.copy(),
             ),
         )
     return BigInt(magnitude^, sign=x1.sign)

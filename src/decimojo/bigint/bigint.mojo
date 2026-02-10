@@ -33,7 +33,7 @@ from decimojo.errors import DeciMojoError
 import decimojo.str
 
 # Type aliases
-alias BInt = BigInt
+comptime BInt = BigInt
 
 
 struct BigInt(
@@ -374,11 +374,15 @@ struct BigInt(
 
         value = -value if self.sign else value
 
-        if value < Int128(Int.MIN) or value > Int128(Int.MAX):
+        # Intermediate variables made due to a bug in Mojo compiler, see:
+        # https://github.com/modular/modular/issues/5931
+        var int_min = Int.MIN
+        var int_max = Int.MAX
+        if value < Int128(int_min) or value > Int128(int_max):
             raise Error(
                 "Error in `BigInt.to_int()`: The number exceeds the size of Int"
             )
-
+        print("value", value)
         return Int(value)
 
     fn to_string(self, line_width: Int = 0) -> String:
@@ -406,10 +410,10 @@ struct BigInt(
             var end = line_width
             var lines = List[String](capacity=len(result) // line_width + 1)
             while end < len(result):
-                lines.append(result[start:end])
+                lines.append(String(result[start:end]))
                 start = end
                 end += line_width
-            lines.append(result[start:])
+            lines.append(String(result[start:]))
             result = String("\n").join(lines^)
 
         return result^
@@ -429,10 +433,10 @@ struct BigInt(
         var start = end - 3
         var blocks = List[String](capacity=len(result) // 3 + 1)
         while start > 0:
-            blocks.append(result[start:end])
+            blocks.append(String(result[start:end]))
             end = start
             start = end - 3
-        blocks.append(result[0:end])
+        blocks.append(String(result[0:end]))
         blocks.reverse()
         result = separator.join(blocks)
 
@@ -485,7 +489,7 @@ struct BigInt(
                     message=None,
                     function="BigInt.__floordiv__()",
                     file="src/decimojo/bigint/bigint.mojo",
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 
@@ -499,7 +503,7 @@ struct BigInt(
                     message=None,
                     function="BigInt.__mod__()",
                     file="src/decimojo/bigint/bigint.mojo",
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 

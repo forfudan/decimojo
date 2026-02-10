@@ -8,7 +8,7 @@ from decimojo import BDec
 from decimojo.bigdecimal.comparison import compare_absolute, compare
 from decimojo.tests import TestCase, parse_file, load_test_cases
 
-alias file_path = "tests/bigdecimal/test_data/bigdecimal_compare.toml"
+comptime file_path = "tests/bigdecimal/test_data/bigdecimal_compare.toml"
 
 
 fn test_bigdecimal_compare() raises:

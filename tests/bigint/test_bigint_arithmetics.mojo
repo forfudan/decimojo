@@ -6,10 +6,10 @@ import testing
 from decimojo.bigint.bigint import BigInt
 from decimojo.tests import TestCase, parse_file, load_test_cases
 
-alias file_path_arithmetics = "tests/bigint/test_data/bigint_arithmetics.toml"
-alias file_path_multiply = "tests/bigint/test_data/bigint_multiply.toml"
-alias file_path_floor_divide = "tests/bigint/test_data/bigint_floor_divide.toml"
-alias file_path_truncate_divide = "tests/bigint/test_data/bigint_truncate_divide.toml"
+comptime file_path_arithmetics = "tests/bigint/test_data/bigint_arithmetics.toml"
+comptime file_path_multiply = "tests/bigint/test_data/bigint_multiply.toml"
+comptime file_path_floor_divide = "tests/bigint/test_data/bigint_floor_divide.toml"
+comptime file_path_truncate_divide = "tests/bigint/test_data/bigint_truncate_divide.toml"
 
 
 fn test_bigint_arithmetics() raises:

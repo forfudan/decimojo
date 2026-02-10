@@ -10,9 +10,9 @@ import time
 import os
 from collections import List
 
-alias PRECISION = 4096
-alias ITERATIONS = 100
-alias ITERATIONS_LARGE_NUMBERS = 3
+comptime PRECISION = 4096
+comptime ITERATIONS = 100
+comptime ITERATIONS_LARGE_NUMBERS = 3
 
 
 fn open_log_file() raises -> PythonObject:

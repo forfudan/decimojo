@@ -20,10 +20,10 @@ This provides basic tokenization for TOML files, focusing on the core elements
 needed for test case parsing.
 """
 
-alias WHITESPACE = " \t"
-alias COMMENT_START = "#"
-alias QUOTE = '"'
-alias LITERAL_QUOTE = "'"
+comptime WHITESPACE = " \t"
+comptime COMMENT_START = "#"
+comptime QUOTE = '"'
+comptime LITERAL_QUOTE = "'"
 
 
 struct Token(Copyable, Movable):
@@ -71,23 +71,23 @@ struct TokenType(Copyable, ImplicitlyCopyable, Movable):
     """
 
     # Aliases for TokenType static methods to mimic enum constants
-    alias KEY = TokenType.key()
-    alias STRING = TokenType.string()
-    alias INTEGER = TokenType.integer()
-    alias FLOAT = TokenType.float()
-    alias BOOLEAN = TokenType.boolean()
-    alias DATETIME = TokenType.datetime()
-    alias ARRAY_START = TokenType.array_start()
-    alias ARRAY_END = TokenType.array_end()
-    alias TABLE_START = TokenType.table_start()
-    alias TABLE_END = TokenType.table_end()
-    alias ARRAY_OF_TABLES_START = TokenType.array_of_tables_start()
-    alias EQUAL = TokenType.equal()
-    alias COMMA = TokenType.comma()
-    alias NEWLINE = TokenType.newline()
-    alias DOT = TokenType.dot()
-    alias EOF = TokenType.eof()
-    alias ERROR = TokenType.error()
+    comptime KEY = TokenType.key()
+    comptime STRING = TokenType.string()
+    comptime INTEGER = TokenType.integer()
+    comptime FLOAT = TokenType.float()
+    comptime BOOLEAN = TokenType.boolean()
+    comptime DATETIME = TokenType.datetime()
+    comptime ARRAY_START = TokenType.array_start()
+    comptime ARRAY_END = TokenType.array_end()
+    comptime TABLE_START = TokenType.table_start()
+    comptime TABLE_END = TokenType.table_end()
+    comptime ARRAY_OF_TABLES_START = TokenType.array_of_tables_start()
+    comptime EQUAL = TokenType.equal()
+    comptime COMMA = TokenType.comma()
+    comptime NEWLINE = TokenType.newline()
+    comptime DOT = TokenType.dot()
+    comptime EOF = TokenType.eof()
+    comptime ERROR = TokenType.error()
 
     # Attributes
     var value: Int
@@ -184,7 +184,7 @@ struct Tokenizer:
         self.source = source
         self.position = SourcePosition()
         if len(source) > 0:
-            self.current_char = String(source[0])
+            self.current_char = String(source[byte=0])
         else:
             self.current_char = ""
 
@@ -192,7 +192,7 @@ struct Tokenizer:
         """Get character at given index or empty string if out of bounds."""
         if index >= len(self.source):
             return ""
-        return String(self.source[index])
+        return String(self.source[byte=index])
 
     fn _advance(mut self):
         """Move to the next character."""
@@ -261,7 +261,7 @@ struct Tokenizer:
         is_float = False
 
         while self.current_char and (
-            self.current_char.isdigit() or self.current_char == "."
+            self.current_char.is_ascii_digit() or self.current_char == "."
         ):
             if self.current_char == ".":
                 is_float = True
@@ -280,7 +280,7 @@ struct Tokenizer:
         result = String("")
 
         while self.current_char and (
-            self.current_char.isdigit()
+            self.current_char.is_ascii_digit()
             or self.current_char.isupper()
             or self.current_char.islower()
             or self.current_char == "_"
@@ -394,11 +394,11 @@ struct Tokenizer:
         if self.current_char == QUOTE or self.current_char == LITERAL_QUOTE:
             return self._read_string()
 
-        if self.current_char.isdigit():
+        if self.current_char.is_ascii_digit():
             return self._read_number()
 
         if (
-            self.current_char.isdigit()
+            self.current_char.is_ascii_digit()
             or self.current_char.isupper()
             or self.current_char.islower()
             or self.current_char == "_"
