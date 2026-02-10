@@ -289,7 +289,11 @@ fn add_slices_simd(
     )
 
     @parameter
-    fn vector_add[simd_width: Int](i: Int) unified {mut}:
+    fn vector_add[
+        simd_width: Int
+    ](i: Int) unified {
+        mut result, read x, read y, read bounds_x, read bounds_y
+    }:
         result.words._data.store[width=simd_width](
             i,
             x.words._data.load[width=simd_width](i + bounds_x[0])
@@ -317,7 +321,11 @@ fn add_slices_simd(
         longer_start = bounds_y[0]
 
     @parameter
-    fn vector_copy_rest_from_longer[simd_width: Int](i: Int) unified {mut}:
+    fn vector_copy_rest_from_longer[
+        simd_width: Int
+    ](i: Int) unified {
+        mut result, read longer, read n_words_shorter_slice, read longer_start
+    }:
         result.words._data.store[width=simd_width](
             n_words_shorter_slice + i,
             longer[].words._data.load[width=simd_width](
@@ -369,7 +377,7 @@ fn add_inplace(mut x: BigUInt, y: BigUInt) -> None:
         x.words.resize(new_size=len(y.words), value=UInt32(0))
 
     @parameter
-    fn vector_add[simd_width: Int](i: Int) unified {mut}:
+    fn vector_add[simd_width: Int](i: Int) unified {mut x, read y}:
         x.words._data.store[width=simd_width](
             i,
             x.words._data.load[width=simd_width](i)
@@ -420,7 +428,9 @@ fn add_inplace_by_slice(
         x.words.resize(new_size=n_words_y_slice, value=UInt32(0))
 
     @parameter
-    fn vector_add[simd_width: Int](i: Int) unified {mut}:
+    fn vector_add[
+        simd_width: Int
+    ](i: Int) unified {mut x, read y, read bounds_y}:
         x.words._data.store[width=simd_width](
             i,
             x.words._data.load[width=simd_width](i)
@@ -631,7 +641,9 @@ fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
     # Note that there will be potential overflow in the subtraction,
     # but we will take advantage of that.
     @parameter
-    fn vector_subtract[simd_width: Int](i: Int) unified {mut}:
+    fn vector_subtract[
+        simd_width: Int
+    ](i: Int) unified {mut result, read x, read y}:
         result.words._data.store[width=simd_width](
             i,
             x.words._data.load[width=simd_width](i)
@@ -641,7 +653,9 @@ fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
     vectorize[BigUInt.VECTOR_WIDTH](len(y.words), vector_subtract)
 
     @parameter
-    fn vector_copy_rest[simd_width: Int](i: Int) unified {mut}:
+    fn vector_copy_rest[
+        simd_width: Int
+    ](i: Int) unified {mut result, read x, read y}:
         result.words._data.store[width=simd_width](
             len(y.words) + i,
             x.words._data.load[width=simd_width](len(y.words) + i),
@@ -695,7 +709,7 @@ fn subtract_inplace(mut x: BigUInt, y: BigUInt) raises -> None:
     # Note that len(x.words) >= len(y.words) here
     # Use SIMD operations to subtract the words in parallel.
     @parameter
-    fn vector_subtract[simd_width: Int](i: Int) unified {mut}:
+    fn vector_subtract[simd_width: Int](i: Int) unified {mut x, read y}:
         x.words._data.store[width=simd_width](
             i,
             x.words._data.load[width=simd_width](i)
@@ -732,7 +746,7 @@ fn subtract_inplace_no_check(mut x: BigUInt, y: BigUInt) -> None:
     # Note that len(x.words) >= len(y.words) under this assumption
 
     @parameter
-    fn vector_subtract[simd_width: Int](i: Int) unified {mut}:
+    fn vector_subtract[simd_width: Int](i: Int) unified {mut x, read y}:
         x.words._data.store[width=simd_width](
             i,
             x.words._data.load[width=simd_width](i)
@@ -1239,7 +1253,7 @@ fn multiply_inplace_by_uint32_le_4(mut x: BigUInt, y: UInt32):
 
     # y is 2, we can just shift the digits of each word to the left by 1
     @parameter
-    fn vector_multiply_by_2[simd_width: Int](i: Int) unified {mut}:
+    fn vector_multiply_by_2[simd_width: Int](i: Int) unified {mut x}:
         """Shifts the digits of each word to the left by 1."""
         x.words._data.store[width=simd_width](
             i, x.words._data.load[width=simd_width](i) << 1
@@ -1252,7 +1266,7 @@ fn multiply_inplace_by_uint32_le_4(mut x: BigUInt, y: UInt32):
 
     # y is 3, we can just multiply the digits of each word by 3
     @parameter
-    fn vector_multiply_by_3[simd_width: Int](i: Int) unified {mut}:
+    fn vector_multiply_by_3[simd_width: Int](i: Int) unified {mut x}:
         """Multiplies the digits of each word by 3."""
         x.words._data.store[width=simd_width](
             i, x.words._data.load[width=simd_width](i) * 3
@@ -1265,7 +1279,7 @@ fn multiply_inplace_by_uint32_le_4(mut x: BigUInt, y: UInt32):
 
     # y is 4, we can just shift the digits of each word to the left by 2
     @parameter
-    fn vector_multiply_by_4[simd_width: Int](i: Int) unified {mut}:
+    fn vector_multiply_by_4[simd_width: Int](i: Int) unified {mut x}:
         """Shifts the digits of each word to the left by 2."""
         x.words._data.store[width=simd_width](
             i, x.words._data.load[width=simd_width](i) << 2

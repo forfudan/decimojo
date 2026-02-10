@@ -1115,7 +1115,7 @@ struct Decimal128(
         if len(coef_str) == 1:
             result = result + coef_str + String(".0")
         else:
-            result = result + coef_str[0] + String(".") + coef_str[1:]
+            result = result + coef_str[byte=0] + String(".") + coef_str[1:]
 
         # Add exponent (E+XX or E-XX)
         if exponent >= 0:
