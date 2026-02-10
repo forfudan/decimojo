@@ -211,7 +211,7 @@ struct BigUInt(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.__init__(value: Int)",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 
@@ -256,7 +256,7 @@ struct BigUInt(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.__init__(value: String)",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 
@@ -771,7 +771,7 @@ struct BigUInt(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.__int__()",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 
@@ -819,14 +819,14 @@ struct BigUInt(
             )
         )
         if len(self.words) > 3:
-            raise overflow_error
+            raise overflow_error^
 
         var value: Int128 = 0
         for i in range(len(self.words)):
             value += Int128(self.words[i]) * Int128(1_000_000_000) ** i
 
         if value > Int128(Int.MAX):
-            raise overflow_error
+            raise overflow_error^
 
         return Int(value)
 
@@ -1096,7 +1096,7 @@ struct BigUInt(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.__sub__(other: Self)",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 
@@ -1114,7 +1114,7 @@ struct BigUInt(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.__floordiv__(other: Self)",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 
@@ -1129,7 +1129,7 @@ struct BigUInt(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.__ceildiv__(other: Self)",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 
@@ -1143,7 +1143,7 @@ struct BigUInt(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.__mod__(other: Self)",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 
@@ -1157,7 +1157,7 @@ struct BigUInt(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.__divmod__(other: Self)",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 
@@ -1171,7 +1171,7 @@ struct BigUInt(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.__pow__(exponent: Self)",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 
@@ -1185,7 +1185,7 @@ struct BigUInt(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.__pow__(exponent: Int)",
                     message=None,
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 

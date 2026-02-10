@@ -184,7 +184,7 @@ struct Tokenizer:
         self.source = source
         self.position = SourcePosition()
         if len(source) > 0:
-            self.current_char = String(source[0])
+            self.current_char = String(source[byte=0])
         else:
             self.current_char = ""
 
@@ -192,7 +192,7 @@ struct Tokenizer:
         """Get character at given index or empty string if out of bounds."""
         if index >= len(self.source):
             return ""
-        return String(self.source[index])
+        return String(self.source[byte=index])
 
     fn _advance(mut self):
         """Move to the next character."""
@@ -261,7 +261,7 @@ struct Tokenizer:
         is_float = False
 
         while self.current_char and (
-            self.current_char.isdigit() or self.current_char == "."
+            self.current_char.is_ascii_digit() or self.current_char == "."
         ):
             if self.current_char == ".":
                 is_float = True
@@ -280,7 +280,7 @@ struct Tokenizer:
         result = String("")
 
         while self.current_char and (
-            self.current_char.isdigit()
+            self.current_char.is_ascii_digit()
             or self.current_char.isupper()
             or self.current_char.islower()
             or self.current_char == "_"
@@ -394,11 +394,11 @@ struct Tokenizer:
         if self.current_char == QUOTE or self.current_char == LITERAL_QUOTE:
             return self._read_string()
 
-        if self.current_char.isdigit():
+        if self.current_char.is_ascii_digit():
             return self._read_number()
 
         if (
-            self.current_char.isdigit()
+            self.current_char.is_ascii_digit()
             or self.current_char.isupper()
             or self.current_char.islower()
             or self.current_char == "_"

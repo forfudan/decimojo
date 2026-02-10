@@ -485,7 +485,7 @@ struct BigInt(
                     message=None,
                     function="BigInt.__floordiv__()",
                     file="src/decimojo/bigint/bigint.mojo",
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 
@@ -499,7 +499,7 @@ struct BigInt(
                     message=None,
                     function="BigInt.__mod__()",
                     file="src/decimojo/bigint/bigint.mojo",
-                    previous_error=e,
+                    previous_error=e.copy(),
                 )
             )
 
