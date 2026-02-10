@@ -550,7 +550,9 @@ fn sqrt_decimal_approach(x: BigDecimal, precision: Int) raises -> BigDecimal:
         prev_guess = guess.copy()
         var quotient = x.true_divide_inexact(guess, working_precision)
         var sum = guess + quotient
-        guess = sum.true_divide(BigDecimal(BigUInt(2), 0, 0), working_precision)
+        guess = sum.true_divide(
+            BigDecimal(BigUInt(2), 0, False), working_precision
+        )
         iteration_count += 1
 
     # Round to the desired precision
@@ -714,7 +716,7 @@ fn cbrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
 
     result = integer_root(
         x,
-        BigDecimal(coefficient=BigUInt(List[UInt32](3)), scale=0, sign=False),
+        BigDecimal(coefficient=BigUInt([UInt32(3)]), scale=0, sign=False),
         precision,
     )
     return result^
@@ -951,18 +953,18 @@ fn ln(x: BigDecimal, precision: Int) raises -> BigDecimal:
     var power_of_10 = m.exponent() + 1
     m.scale += power_of_10
     # Second, scale to [0.5, 1.5)
-    if m < BigDecimal(BigUInt(List[UInt32](135)), 3, False):
+    if m < BigDecimal(BigUInt([UInt32(135)]), 3, False):
         # [0.1, 0.135) * 10 -> [1, 1.35)
         power_of_10 -= 1
         m.scale -= 1
-    elif m < BigDecimal(BigUInt(List[UInt32](275)), 3, False):
+    elif m < BigDecimal(BigUInt([UInt32(275)]), 3, False):
         # [0.135, 0.275) * 5 -> [0.675, 1.375)]
         power_of_5 -= 1
-        m = m * BigDecimal(BigUInt(List[UInt32](5)), 0, False)
-    elif m < BigDecimal(BigUInt(List[UInt32](65)), 2, False):
+        m = m * BigDecimal(BigUInt([UInt32(5)]), 0, False)
+    elif m < BigDecimal(BigUInt([UInt32(65)]), 2, False):
         # [0.275, 0.65) * 2 -> [0.55, 1.3)]
         power_of_2 -= 1
-        m = m * BigDecimal(BigUInt(List[UInt32](2)), 0, False)
+        m = m * BigDecimal(BigUInt([UInt32(2)]), 0, False)
     else:  # [0.65, 1) -> no change
         pass
     # Replace 10 with 5 and 2
@@ -1108,7 +1110,7 @@ fn log10(x: BigDecimal, precision: Int) raises -> BigDecimal:
     # Use the identity: log10(x) = ln(x) / ln(10)
     var ln_result = ln(x, working_precision)
     var result = ln_result.true_divide(
-        ln(BigDecimal(BigUInt(List[UInt32](10)), 0, False), working_precision),
+        ln(BigDecimal(BigUInt([UInt32(10)]), 0, False), working_precision),
         precision,
     )
 
@@ -1210,18 +1212,18 @@ fn compute_ln2(working_precision: Int) raises -> BigDecimal:
         # Use precomputed value for ln(2) for lower precision
         var result = BigDecimal(
             BigUInt(
-                List[UInt32](
-                    605863326,
-                    969694715,
-                    493393621,
-                    120680009,
-                    360255254,
-                    75500134,
-                    458176568,
-                    417232121,
-                    559945309,
-                    693147180,
-                )
+                [
+                    UInt32(605863326),
+                    UInt32(969694715),
+                    UInt32(493393621),
+                    UInt32(120680009),
+                    UInt32(360255254),
+                    UInt32(75500134),
+                    UInt32(458176568),
+                    UInt32(417232121),
+                    UInt32(559945309),
+                    UInt32(693147180),
+                ]
             ),
             90,
             False,
@@ -1249,7 +1251,7 @@ fn compute_ln2(working_precision: Int) raises -> BigDecimal:
     # Add terms: 2*(x + x³/3 + x⁵/5 + ...)
     for _ in range(1, max_terms):
         result += term
-        var new_k = k + BigDecimal(BigUInt(List[UInt32](2)), 0, False)
+        var new_k = k + BigDecimal(BigUInt([UInt32(2)]), 0, False)
         term = (term * x * x * k).true_divide_inexact(new_k, working_precision)
         k = new_k^
         if term.exponent() < -working_precision:
@@ -1273,6 +1275,6 @@ fn compute_ln1d25(precision: Int) raises -> BigDecimal:
     Returns:
         The ln(1.25) computed to the specified precision.
     """
-    var z = BigDecimal(BigUInt(List[UInt32](25)), 2, False)
+    var z = BigDecimal(BigUInt([UInt32(25)]), 2, False)
     var result = ln_series_expansion(z^, precision)
     return result^

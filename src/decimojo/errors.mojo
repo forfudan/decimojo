@@ -130,7 +130,7 @@ struct DeciMojoError[error_type: String = "DeciMojoError"](
             self.previous_error = None
         else:
             self.previous_error = "\n".join(
-                previous_error.value().as_string_slice().split("\n")[3:]
+                String(previous_error.value()).split("\n")[3:]
             )
 
     fn __str__(self) -> String:
@@ -154,7 +154,7 @@ struct DeciMojoError[error_type: String = "DeciMojoError"](
                 + " in "
                 + self.function
                 + "\n\n"
-                + String(error_type)
+                + String(Self.error_type)
                 + ": "
                 + self.message.value()
                 + "\n"
@@ -164,7 +164,7 @@ struct DeciMojoError[error_type: String = "DeciMojoError"](
         writer.write("\n")
         writer.write(("-" * 80))
         writer.write("\n")
-        writer.write(error_type.ljust(47, " "))
+        writer.write(Self.error_type.ljust(47, " "))
         writer.write("Traceback (most recent call last)\n")
         writer.write('File "')
         try:
@@ -181,7 +181,7 @@ struct DeciMojoError[error_type: String = "DeciMojoError"](
             writer.write("\n")
         else:
             writer.write("\n\n")
-            writer.write(error_type)
+            writer.write(Self.error_type)
             writer.write(": ")
             writer.write(self.message.value())
             writer.write("\n")

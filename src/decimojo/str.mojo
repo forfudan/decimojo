@@ -65,12 +65,15 @@ fn parse_numeric_string(
     if value_bytes_len == 0:
         raise Error("Error in `parse_numeric_string`: Empty string.")
 
-    if value_bytes_len != Int(value_string_slice.char_length()):
-        raise Error(
-            String(
-                "There are invalid characters in the string of the number: {}"
-            ).format(value)
-        )
+    # Check for non-ASCII characters (each non-ASCII char is multi-byte)
+    for byte in value_bytes:
+        if byte > 127:
+            raise Error(
+                String(
+                    "There are invalid characters in the string of the"
+                    " number: {}"
+                ).format(value)
+            )
 
     # Yuhao's notes:
     # We scan each char in the string input.

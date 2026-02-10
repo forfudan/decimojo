@@ -528,12 +528,14 @@ struct Decimal128(
         if value_bytes_len == 0:
             return Decimal128.ZERO()
 
-        if value_bytes_len != Int(value_string_slice.char_length()):
-            raise Error(
-                String(
-                    "There are invalid characters in decimal128 string: {}"
-                ).format(value)
-            )
+        # Check for non-ASCII characters (each non-ASCII char is multi-byte)
+        for byte in value_bytes:
+            if byte > 127:
+                raise Error(
+                    String(
+                        "There are invalid characters in decimal128 string: {}"
+                    ).format(value)
+                )
 
         # Yuhao's notes:
         # We scan each char in the string input.
