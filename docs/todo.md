@@ -2,7 +2,9 @@
 
 This is a to-do list for DeciMojo.
 
-- [ ] When Mojo supports global variables, implement a global variable for the `BigDecimal` class to store the precision of the decimal number. This will allow users to set the precision globally, rather than having to set it for each function of the `BigDecimal` class.
+- [ ] When Mojo supports **global variables**, implement a global variable for the `BigDecimal` class to store the precision of the decimal number. This will allow users to set the precision globally, rather than having to set it for each function of the `BigDecimal` class.
+- [ ] When Mojo supports **enum types**, implement an enum type for the rounding mode.
+- [ ] Implement a complex number class `BigComplex` that uses `BigDecimal` for the real and imaginary parts. This will allow users to perform high-precision complex number arithmetic.
 - [ ] Implement different methods for adding decimojo types with `Int` types so that an implicit conversion is not required.
 - [ ] Use debug mode to check for unnecessary zero words before all arithmetic operations. This will help ensure that there are no zero words, which can simplify the speed of checking for zero because we only need to check the first word.
 - [ ] Check the `floor_divide()` function of `BigUInt`. Currently, the speed of division between imilar-sized numbers are okay, but the speed of 2n-by-n, 4n-by-n, and 8n-by-n divisions decreases unproportionally. This is likely due to the segmentation of the dividend in the Burnikel-Ziegler algorithm.

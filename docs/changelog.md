@@ -2,11 +2,19 @@
 
 This is a list of RELEASED changes for the DeciMojo Package.
 
-## 2026xxxx (v0.7.0)
+## 20260212 (v0.7.0)
+
+DeciMojo v0.7.0 updates the codebase to Mojo v0.26.1.
+
+- Replaces all `alias` declarations with `comptime` in all files. `alias` is deprecated.
+- Updates list and constant construction syntax throughout the codebase, e.g., replaced `List[UInt32](...)` with `[UInt32(...), ...]`, used `[word]` instead of `List[UInt32](word)`, etc. The old syntax is deprecated.
+- Updates list slicing syntax to use the new syntax. Now `lst[1:]` returns a `Span` instead of a `List`, so it needs to be converted to a list using the constructor `List(...)`.
+- Updates some methods of the `String` type and the indexing and slicing syntax for `String` objects to match the latest Mojo syntax. The old syntax is deprecated.
+- Fixes the closure capture when using `vectorize`. The new syntax requires something like `unified {read x, mut y}` to capture variables `x` and `y` in the closure. The old syntax is deprecated.
 
 ## 20251216 (v0.6.0)
 
-DeciMojo v0.6.0 updates the codebase to Mojo v25.7, adopting the new `TestSuite` type for improved test organization. All tests have been refactored to use the native Mojo testing framework instead of the deprecated `pixi test` command.
+DeciMojo v0.6.0 updates the codebase to Mojo v0.25.7, adopting the new `TestSuite` type for improved test organization. All tests have been refactored to use the native Mojo testing framework instead of the deprecated `pixi test` command.
 
 ## 20250806 (v0.5.0)
 

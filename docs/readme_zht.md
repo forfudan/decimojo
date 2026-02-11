@@ -11,7 +11,6 @@
 - [命名](#命名)
 - [狀態](#狀態)
 - [測試與基準](#測試與基準)
-- [引用](#引用)
 - [許可證](#許可證)
 
 ## 概述
@@ -35,14 +34,20 @@ DeciMojo 爲 Mojo 提供任意精度小數和整數運算庫，爲金融建模�
 
 ## 安裝
 
-DeciMojo 可在 [modular-community](https://repo.prefix.dev/modular-community) 包倉庫中獲取。您可以使用以下任一方法進行安裝：
+DeciMojo 可在 modular-community `https://repo.prefix.dev/modular-community` 包倉庫中獲取。爲了訪問此倉庫，請將其添加到您的 `pixi.toml` 文件中的 `channels` 列表：
+
+```toml
+channels = ["https://conda.modular.com/max", "https://repo.prefix.dev/modular-community", "conda-forge"]
+```
+
+接下來，您可以使用以下任一方法進行安裝：
 
 1. 從 `pixi` CLI，運行命令 ```pixi add decimojo```。這會獲取最新版本並使其立即可用於導入。
 
 1. 在您項目的 `mojoproject.toml` 文件中，添加以下依賴：
 
     ```toml
-    decimojo = "==0.6.0"
+    decimojo = "==0.7.0"
     ```
 
     然後運行 `pixi install` 來下載並安裝包。
@@ -60,6 +65,7 @@ DeciMojo 可在 [modular-community](https://repo.prefix.dev/modular-community) �
 | v0.4.x     | ==25.4        | pixi     |
 | v0.5.0     | ==25.5        | pixi     |
 | v0.6.0     | ==0.25.7      | pixi     |
+| v0.7.0     | ==0.26.1      | pixi     |
 
 ## 快速開始
 
@@ -135,6 +141,7 @@ fn main() raises:
     # === 數字的內部表示 === #
     (
         Decimal(
+            "3.141592653589793238462643383279502884197169399375105820974944"
         ).power(2, precision=60)
     ).print_internal_representation()
     # Internal Representation Details of BigDecimal
@@ -297,6 +304,7 @@ DeciMojo 結合了 "Deci" 和 "Mojo" 兩詞，反映了其目的和實現語言�
 - 使用 `pixi run test` 運行測試。
 - 使用 `pixi run bdec` 生成對比 `python.decimal` 模塊的基準測試日誌。日誌文件保存在 `benches/bigdecimal/logs/` 中。
 
+<!-- 
 ## 引用
 
 如果您發現 DeciMojo 對您的研究有用，請考慮將它加入您的引用中。
@@ -310,7 +318,8 @@ DeciMojo 結合了 "Deci" 和 "Mojo" 兩詞，反映了其目的和實現語言�
     version      = {0.6.0},
     note         = {Computer Software}
 }
-```
+``` 
+-->
 
 ## 許可證
 
