@@ -28,16 +28,15 @@ from memory import UnsafePointer, memcpy
 from decimojo.biguint.biguint import BigUInt
 
 # Type aliases
-alias BBUInt = BigBinaryUInt
-"""A shorter alias for BigBinaryUInt, an arbitrary-precision binary unsigned 
+comptime BBUInt = BigBinaryUInt
+"""A shorter comptime for BigBinaryUInt, an arbitrary-precision binary unsigned 
 integer."""
-alias bbuint = BigBinaryUInt
+comptime bbuint = BigBinaryUInt
 """A shortcut constructor for BigBinaryUInt, an arbitrary-precision binary 
 unsigned integer."""
 
 
-@value
-struct BigBinaryUInt:
+struct BigBinaryUInt(Copyable, Movable, Stringable, Writable):
     """Represents an arbitrary-precision binary unsigned integer.
 
     Notes:
@@ -45,16 +44,16 @@ struct BigBinaryUInt:
     Internal Representation:
 
     Use base-2^30 representation for the unsigned integer.
-    BigBinaryInt uses a dynamic structure in memory, which contains:
+    BigBinaryUInt uses a dynamic structure in memory, which contains:
     An pointer to an array of UInt32 words for the coefficient on the heap,
     which can be of arbitrary length stored in little-endian order.
     Each UInt32 word represents values ranging from 0 to 2^30 - 1.
 
-    The value of the BigBinaryInt is calculated as follows:
+    The value of the BigBinaryUInt is calculated as follows:
 
     (x[0] + x[1] * (2^30)^1 + x[2] * (2^30)^2 + ... x[n] * (2^30)^n)
 
-    You can think of the BigBinaryInt as a list of base-2^30 digits, where each
+    You can think of the BigBinaryUInt as a list of base-2^30 digits, where each
     digit is ranging from 0 to 1073741823. Depending on the context, the
     following terms are used interchangeably:
     (1) words,
@@ -69,20 +68,20 @@ struct BigBinaryUInt:
     # Constants
     # ===------------------------------------------------------------------=== #
 
-    alias BASE = 1 << 30  # 2^30 = 1073741824
+    comptime BASE = 1 << 30  # 2^30 = 1073741824
     """The base used for the BigBinaryInt representation."""
-    alias BASE_MAX = (1 << 30) - 1  # 2^30 - 1 = 1073741823
+    comptime BASE_MAX = (1 << 30) - 1  # 2^30 - 1 = 1073741823
     """The maximum value of a single word in the BigBinaryInt representation."""
-    alias BASE_HALF = 1 << 29  # 2^29 = 536870912
+    comptime BASE_HALF = 1 << 29  # 2^29 = 536870912
     """Half of the base used for the BigBinaryInt representation."""
-    alias VECTOR_WIDTH = 4
+    comptime VECTOR_WIDTH = 4
     """The width of the SIMD vector used for arithmetic operations (128-bit)."""
 
-    alias ZERO = Self.zero()
-    alias ONE = Self.one()
-    alias MAX_UINT64 = (1 << 64) - 1
-    alias MAX_UINT128 = (1 << 128) - 1
-    alias MASK = (1 << 30) - 1
+    comptime ZERO = Self.zero()
+    comptime ONE = Self.one()
+    comptime MAX_UINT64 = (1 << 64) - 1
+    comptime MAX_UINT128 = (1 << 128) - 1
+    comptime MASK = (1 << 30) - 1
     """The mask used to extract the lower 30 bits of a word."""
 
     @always_inline
@@ -95,7 +94,7 @@ struct BigBinaryUInt:
     @staticmethod
     fn one() -> Self:
         """Returns a BigUInt with value 1."""
-        return Self(words=List[UInt32](UInt32(1)))
+        return Self(words=[UInt32(1)])
 
     # ===------------------------------------------------------------------=== #
     # Constructors and life time dunder methods
@@ -103,13 +102,13 @@ struct BigBinaryUInt:
 
     fn __init__(out self):
         """Initializes a BigBinaryInt with value 0."""
-        self.words = List[UInt32](UInt32(0))
+        self.words = [UInt32(0)]
 
     fn __init__(out self, *, uninitialized_capacity: Int):
         """Creates an uninitialized BigBinaryInt with a given capacity."""
         self.words = List[UInt32](capacity=uninitialized_capacity)
 
-    fn __init__(out self, owned words: List[UInt32]):
+    fn __init__(out self, var words: List[UInt32]):
         """Initializes a BigBinaryInt from a list of UInt32 words.
         It does not verify whether the words are within the valid range.
         See `from_list()` for safer initialization.
@@ -123,11 +122,11 @@ struct BigBinaryUInt:
             This method does not check whether the words are smaller than 2^30 - 1.
         """
         if len(words) == 0:
-            self.words = List[UInt32](UInt32(0))
+            self.words = [UInt32(0)]
         else:
             self.words = words^
 
-    fn __init__(out self, owned *words: UInt32):
+    fn __init__(out self, var *words: UInt32):
         """Initializes a BigBinaryInt from raw words without validating the words.
         See `from_words()` for safer initialization.
 
@@ -146,7 +145,7 @@ struct BigBinaryUInt:
     # ===------------------------------------------------------------------=== #
 
     @staticmethod
-    fn from_list(owned words: List[UInt32]) raises -> Self:
+    fn from_list(var words: List[UInt32]) raises -> Self:
         """Initializes a BigBinaryInt from a list of UInt32 words safely.
         If the list is empty, the BigBinaryInt is initialized with value 0.
         The words are validated to ensure they are smaller than 2^30.
@@ -179,7 +178,7 @@ struct BigBinaryUInt:
         """
         # Convert from base 10^9 to base 20^30 using repeated division
         # No extra words are needed, as the maximum number of words is N.
-        var dividend = value
+        var dividend = value.copy()
         var result = Self(uninitialized_capacity=len(value.words))
         var remainder: UInt64
 
@@ -229,7 +228,7 @@ struct BigBinaryUInt:
         # log2(10^9) = 29.897
         # Max words in base 10^9 is ⌈(30 × N) / 29.897⌉ ≈ ⌈1.00345 × N⌉
         # 1 extra word is okay for most cases
-        var dividend = self
+        var dividend = self.copy()
         var result = BigUInt(uninitialized_capacity=len(self.words) + 1)
         var remainder: UInt64
 

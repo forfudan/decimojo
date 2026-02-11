@@ -25,9 +25,9 @@ from memory import memcpy, memset_zero
 from decimojo.bigbinaryuint.bigbinaryuint import BigBinaryUInt
 from decimojo.rounding_mode import RoundingMode
 
-alias CUTOFF_KARATSUBA: Int = 64
+comptime CUTOFF_KARATSUBA: Int = 64
 """The cutoff number of words for using Karatsuba multiplication."""
-alias CUTOFF_BURNIKEL_ZIEGLER = 32
+comptime CUTOFF_BURNIKEL_ZIEGLER: Int = 32
 """The cutoff number of words for using Burnikel-Ziegler division."""
 
 # ===----------------------------------------------------------------------=== #
@@ -65,7 +65,7 @@ fn absolute(x: BigBinaryUInt) -> BigBinaryUInt:
     Returns:
         A new BigBinaryUInt containing the absolute value of x.
     """
-    return x
+    return x.copy()
 
 
 # ===----------------------------------------------------------------------=== #
@@ -120,44 +120,53 @@ fn add_slices_simd(
     )
 
     @parameter
-    fn vector_add[simd_width: Int](i: Int):
-        words.data.store[width=simd_width](
+    fn vector_add[
+        simd_width: Int
+    ](i: Int) unified {
+        read x, read y, read bounds_x, read bounds_y, read words
+    }:
+        words._data.store[width=simd_width](
             i,
-            x.words.data.load[width=simd_width](i + bounds_x[0])
-            + y.words.data.load[width=simd_width](i + bounds_y[0]),
+            x.words._data.load[width=simd_width](i + bounds_x[0])
+            + y.words._data.load[width=simd_width](i + bounds_y[0]),
         )
 
-    vectorize[vector_add, BigBinaryUInt.VECTOR_WIDTH](
-        min(n_words_x_slice, n_words_y_slice)
+    vectorize[BigBinaryUInt.VECTOR_WIDTH](
+        min(n_words_x_slice, n_words_y_slice), closure=vector_add
     )
 
-    var longer: Pointer[BigBinaryUInt, __origin_of(x, y)]
+    var longer: Pointer[BigBinaryUInt, origin_of(x, y)]
     var n_words_longer_slice: Int
     var n_words_shorter_slice: Int
     var longer_start: Int
 
     if n_words_x_slice >= n_words_y_slice:
-        longer = Pointer[BigBinaryUInt, __origin_of(x, y)](to=x)
+        longer = Pointer[BigBinaryUInt, origin_of(x, y)](to=x)
         n_words_longer_slice = n_words_x_slice
         n_words_shorter_slice = n_words_y_slice
         longer_start = bounds_x[0]
     else:
-        longer = Pointer[BigBinaryUInt, __origin_of(x, y)](to=y)
+        longer = Pointer[BigBinaryUInt, origin_of(x, y)](to=y)
         n_words_longer_slice = n_words_y_slice
         n_words_shorter_slice = n_words_x_slice
         longer_start = bounds_y[0]
 
     @parameter
-    fn vector_copy_rest_from_longer[simd_width: Int](i: Int):
-        words.data.store[width=simd_width](
+    fn vector_copy_rest_from_longer[
+        simd_width: Int
+    ](i: Int) unified {
+        read longer, read longer_start, read n_words_shorter_slice, read words
+    }:
+        words._data.store[width=simd_width](
             n_words_shorter_slice + i,
-            longer[].words.data.load[width=simd_width](
+            longer[].words._data.load[width=simd_width](
                 longer_start + n_words_shorter_slice + i
             ),
         )
 
-    vectorize[vector_copy_rest_from_longer, BigBinaryUInt.VECTOR_WIDTH](
-        n_words_longer_slice - n_words_shorter_slice
+    vectorize[BigBinaryUInt.VECTOR_WIDTH](
+        n_words_longer_slice - n_words_shorter_slice,
+        closure=vector_copy_rest_from_longer,
     )
 
     var result = BigBinaryUInt(words=words^)
@@ -186,8 +195,8 @@ fn multiply_inplace_by_power_of_two(mut x: BigBinaryUInt, n: Int):
     if n <= 0:
         return
 
-    var number_of_zero_words = n // 30
-    var number_of_remaining_bits = n % 30
+    # var number_of_zero_words = n // 30
+    # var number_of_remaining_bits = n % 30
 
 
 # ===----------------------------------------------------------------------=== #
