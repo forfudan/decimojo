@@ -11,7 +11,6 @@ An arbitrary-precision decimal and integer mathematics library for [Mojo](https:
 - [Nomenclature](#nomenclature)
 - [Status](#status)
 - [Tests and benches](#tests-and-benches)
-- [Citation](#citation)
 - [License](#license)
 
 ## Overview
@@ -35,14 +34,20 @@ This repository includes [TOMLMojo](https://github.com/forfudan/decimojo/tree/ma
 
 ## Installation
 
-DeciMojo is available in the [modular-community](https://repo.prefix.dev/modular-community) package repository. You can install it using any of these methods:
+DeciMojo is available in the modular-community `https://repo.prefix.dev/modular-community` package repository. To access this repository, add it to your `channels` list in your `pixi.toml` file:
+
+```toml
+channels = ["https://conda.modular.com/max", "https://repo.prefix.dev/modular-community", "conda-forge"]
+```
+
+Then, you can install DeciMojo using any of these methods:
 
 1. From the `pixi` CLI, run the command ```pixi add decimojo```. This fetches the latest version and makes it immediately available for import.
 
 1. In the `mojoproject.toml` file of your project, add the following dependency:
 
     ```toml
-    decimojo = "==0.6.0"
+    decimojo = "==0.7.0"
     ```
 
     Then run `pixi install` to download and install the package.
@@ -60,6 +65,7 @@ The following table summarizes the package versions and their corresponding Mojo
 | v0.4.x     | ==25.4        | pixi            |
 | v0.5.0     | ==25.5        | pixi            |
 | v0.6.0     | ==0.25.7      | pixi            |
+| v0.7.0     | ==0.26.1      | pixi            |
 
 ## Quick start
 
@@ -295,6 +301,7 @@ After cloning the repo onto your local disk, you can:
 - Use `pixi run test` to run tests.
 - Use `pixi run bdec` to generate logs for benchmarking tests against `python.decimal` module. The log files are saved in `benches/bigdecimal/logs/`.
 
+<!-- 
 ## Citation
 
 If you find DeciMojo useful for your research, consider listing it in your citations.
@@ -309,6 +316,7 @@ If you find DeciMojo useful for your research, consider listing it in your citat
     note         = {Computer Software}
 }
 ```
+-->
 
 ## License
 

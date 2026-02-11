@@ -23,7 +23,7 @@ fn test_perfect_squares() raises:
     except e:
         print("ERROR in test case 1: sqrt(1) = 1")
         print("Exception: " + String(e))
-        raise e
+        raise e^
 
     # Test case 2: sqrt(4) = 2
     try:
@@ -40,7 +40,7 @@ fn test_perfect_squares() raises:
     except e:
         print("ERROR in test case 2: sqrt(4) = 2")
         print("Exception: " + String(e))
-        raise e
+        raise e^
 
     # Test case 3: sqrt(9) = 3
     try:
@@ -57,7 +57,7 @@ fn test_perfect_squares() raises:
     except e:
         print("ERROR in test case 3: sqrt(9) = 3")
         print("Exception: " + String(e))
-        raise e
+        raise e^
 
     # Test case 4: sqrt(16) = 4
     try:
@@ -74,7 +74,7 @@ fn test_perfect_squares() raises:
     except e:
         print("ERROR in test case 4: sqrt(16) = 4")
         print("Exception: " + String(e))
-        raise e
+        raise e^
 
     # Test case 5: sqrt(25) = 5
     try:
@@ -91,7 +91,7 @@ fn test_perfect_squares() raises:
     except e:
         print("ERROR in test case 5: sqrt(25) = 5")
         print("Exception: " + String(e))
-        raise e
+        raise e^
 
     # Test case 6: sqrt(36) = 6
     try:
@@ -108,7 +108,7 @@ fn test_perfect_squares() raises:
     except e:
         print("ERROR in test case 6: sqrt(36) = 6")
         print("Exception: " + String(e))
-        raise e
+        raise e^
 
     # Test case 7: sqrt(49) = 7
     try:
@@ -125,7 +125,7 @@ fn test_perfect_squares() raises:
     except e:
         print("ERROR in test case 7: sqrt(49) = 7")
         print("Exception: " + String(e))
-        raise e
+        raise e^
 
     # Test case 8: sqrt(64) = 8
     try:
@@ -142,7 +142,7 @@ fn test_perfect_squares() raises:
     except e:
         print("ERROR in test case 8: sqrt(64) = 8")
         print("Exception: " + String(e))
-        raise e
+        raise e^
 
     # Test case 9: sqrt(81) = 9
     try:
@@ -159,7 +159,7 @@ fn test_perfect_squares() raises:
     except e:
         print("ERROR in test case 9: sqrt(81) = 9")
         print("Exception: " + String(e))
-        raise e
+        raise e^
 
     # Test case 10: sqrt(100) = 10
     try:
@@ -176,7 +176,7 @@ fn test_perfect_squares() raises:
     except e:
         print("ERROR in test case 10: sqrt(100) = 10")
         print("Exception: " + String(e))
-        raise e
+        raise e^
 
     # Test case 11: sqrt(10000) = 100
     try:
@@ -193,7 +193,7 @@ fn test_perfect_squares() raises:
     except e:
         print("ERROR in test case 11: sqrt(10000) = 100")
         print("Exception: " + String(e))
-        raise e
+        raise e^
 
     # Test case 12: sqrt(1000000) = 1000
     try:
@@ -210,7 +210,7 @@ fn test_perfect_squares() raises:
     except e:
         print("ERROR in test case 12: sqrt(1000000) = 1000")
         print("Exception: " + String(e))
-        raise e
+        raise e^
 
     # print("Perfect square tests passed!")
 
@@ -235,7 +235,7 @@ fn test_non_perfect_squares() raises:
         )
     except e:
         print("ERROR in test_non_perfect_squares case 1: sqrt(2) ≈ 1.414...")
-        raise e
+        raise e^
 
     # Test case 2
     var d2 = Decimal128(3)
@@ -345,7 +345,7 @@ fn test_decimal_values() raises:
         )
     except e:
         print("ERROR in test_decimal_values case 1: sqrt(0.25) = 0.5")
-        raise e
+        raise e^
 
     # Test case 2
     var d2 = Decimal128("0.09")
@@ -420,7 +420,7 @@ fn test_edge_cases() raises:
         testing.assert_equal(String(result_zero), "0", "sqrt(0) should be 0")
     except e:
         print("ERROR in test_edge_cases: sqrt(0) = 0")
-        raise e
+        raise e^
 
     # Test sqrt(1) = 1
     try:
@@ -429,7 +429,7 @@ fn test_edge_cases() raises:
         testing.assert_equal(String(result_one), "1", "sqrt(1) should be 1")
     except e:
         print("ERROR in test_edge_cases: sqrt(1) = 1")
-        raise e
+        raise e^
 
     # Test very small positive number
     try:
@@ -445,7 +445,7 @@ fn test_edge_cases() raises:
         )
     except e:
         print("ERROR in test_edge_cases: sqrt of very small number")
-        raise e
+        raise e^
 
     # Test very large number
     try:
@@ -459,7 +459,7 @@ fn test_edge_cases() raises:
         )
     except e:
         print("ERROR in test_edge_cases: sqrt of very large number (10^27)")
-        raise e
+        raise e^
 
     # Test negative number exception
     var negative_exception_caught = False
@@ -483,7 +483,7 @@ fn test_edge_cases() raises:
             "ERROR in test_edge_cases: sqrt of negative number didn't raise"
             " exception properly"
         )
-        raise e
+        raise e^
 
     # print("Edge cases tests passed!")
 
@@ -676,7 +676,7 @@ fn test_mathematical_identities() raises:
             "ERROR in test_mathematical_identities: sqrt(4*9) = sqrt(4) *"
             " sqrt(9)"
         )
-        raise e
+        raise e^
 
     # Pair 2: 16 and 25
     var x2 = Decimal128(16)
@@ -747,7 +747,7 @@ fn test_sqrt_performance() raises:
         )
     except e:
         print("ERROR in test_sqrt_performance case 1: small number 0.0001")
-        raise e
+        raise e^
 
     # Test case 2
     try:
@@ -766,7 +766,7 @@ fn test_sqrt_performance() raises:
         )
     except e:
         print("ERROR in test_sqrt_performance case 2: small number 0.01")
-        raise e
+        raise e^
 
     # Test case 3
     try:
@@ -785,7 +785,7 @@ fn test_sqrt_performance() raises:
         )
     except e:
         print("ERROR in test_sqrt_performance case 3: small number 1")
-        raise e
+        raise e^
 
     # Test case 4
     try:
@@ -803,7 +803,7 @@ fn test_sqrt_performance() raises:
         )
     except e:
         print("ERROR in test_sqrt_performance case 4: small number 10")
-        raise e
+        raise e^
 
     # Test case 5
     try:
@@ -822,7 +822,7 @@ fn test_sqrt_performance() raises:
         )
     except e:
         print("ERROR in test_sqrt_performance case 5: small number 10000")
-        raise e
+        raise e^
 
     # Test case 6
     try:
@@ -841,7 +841,7 @@ fn test_sqrt_performance() raises:
         )
     except e:
         print("ERROR in test_sqrt_performance case 6: small number 10000000000")
-        raise e
+        raise e^
 
     # Test case 7
     try:
@@ -853,7 +853,7 @@ fn test_sqrt_performance() raises:
         )
     except e:
         print("ERROR in test_sqrt_performance case 7: sqrt(0.9999999999)")
-        raise e
+        raise e^
 
     # Test case 8
     try:
@@ -865,7 +865,7 @@ fn test_sqrt_performance() raises:
         )
     except e:
         print("ERROR in test_sqrt_performance case 8: sqrt(1.000000001)")
-        raise e
+        raise e^
 
     # Test case 9
     try:
@@ -884,7 +884,7 @@ fn test_sqrt_performance() raises:
         )
     except e:
         print("ERROR in test_sqrt_performance case 9: small number 3.999999999")
-        raise e
+        raise e^
 
     # Test case 10
     try:
@@ -905,7 +905,7 @@ fn test_sqrt_performance() raises:
         print(
             "ERROR in test_sqrt_performance case 10: small number 4.000000001"
         )
-        raise e
+        raise e^
 
     # print("Performance and convergence tests passed!")
 
@@ -924,7 +924,7 @@ fn run_test_with_error_handling(
     except e:
         print("\n✗ " + test_name + " FAILED!")
         print("Error message: " + String(e))
-        raise e
+        raise e^
 
 
 fn main() raises:

@@ -9,7 +9,7 @@ readme = "README.md"
 version = "0.7.0"
 
 [dependencies]
-mojo = "==0.26.1.0"
+mojo = "==0.26.1"
 
 [tasks]
 # format the code

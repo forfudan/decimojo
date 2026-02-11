@@ -194,7 +194,7 @@ fn run_test_with_error_handling(
     except e:
         print("\n✗ " + test_name + " FAILED!")
         print("Error message: " + String(e))
-        raise e
+        raise e^
 
 
 fn main() raises:

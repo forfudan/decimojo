@@ -149,6 +149,9 @@ struct BigUInt(
         """
         self.words = List[UInt32](unsafe_uninit_length=unsafe_uninit_length)
 
+    # TODO: Make this default constructor checked (normalized and verified).
+    #   Rename this constructor with the signature
+    #   `__init__(out self, *, var raw_words: List[UInt32])` to avoid checks.
     fn __init__(out self, var words: List[UInt32]):
         """Initializes a BigUInt from a list of UInt32 words.
         If the list is empty, the BigUInt is initialized with value 0.
