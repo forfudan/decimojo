@@ -91,7 +91,7 @@ fn run_benchmark(
     var python_time = (perf_counter_ns() - t0) / iterations
 
     # Calculate speedup factor
-    var speedup = python_time / mojo_time
+    var speedup = Float64(python_time) / Float64(mojo_time)
     speedup_factors.append(Float64(speedup))
 
     # Print results with speedup comparison
