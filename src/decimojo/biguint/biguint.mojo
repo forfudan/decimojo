@@ -87,8 +87,10 @@ struct BigUInt(
 
     comptime ZERO = Self.zero()
     comptime ONE = Self.one()
-    comptime MAX_UINT64 = Self(709551615, 446744073, 18)
-    comptime MAX_UINT128 = Self(768211455, 374607431, 938463463, 282366920, 340)
+    comptime MAX_UINT64 = Self(raw_words=[709551615, 446744073, 18])
+    comptime MAX_UINT128 = Self(
+        raw_words=[768211455, 374607431, 938463463, 282366920, 340]
+    )
 
     @always_inline
     @staticmethod
@@ -100,7 +102,7 @@ struct BigUInt(
     @staticmethod
     fn one() -> Self:
         """Returns a BigUInt with value 1."""
-        return Self(words=[UInt32(1)])
+        return Self(raw_words=[UInt32(1)])
 
     @staticmethod
     @always_inline
@@ -133,7 +135,14 @@ struct BigUInt(
 
         Notes:
 
-        The length of the BigUInt is zero.
+        **UNSAFE**
+
+        The words of the BigUInt is an empty list with the specified capacity.
+        This allows us to create an uninitialized BigUInt and append the words
+        later without worrying about memory allocation.
+
+        The length of the words list is 0. So you cannot access the words using
+        indexing until you append the words to the list.
         """
         self.words = List[UInt32](capacity=uninitialized_capacity)
 
@@ -145,19 +154,24 @@ struct BigUInt(
 
         Notes:
 
-        The length of the BigUInt is `unsafe_uninit_length`.
+        **UNSAFE**
+
+        The words of the BigUInt is an uninitialized list with the specified
+        length. This allows to create an uninitialized BigUInt and set the words
+        later without worrying about memory allocation.
+
+        The length of the BigUInt is `unsafe_uninit_length`, so as the capacity.
+        Because the list is uninitialized, the elements may be any value at the
+        time of initialization. You can access the words using indexing.
         """
         self.words = List[UInt32](unsafe_uninit_length=unsafe_uninit_length)
 
-    # TODO: Make this default constructor checked (normalized and verified).
-    #   Rename this constructor with the signature
-    #   `__init__(out self, *, var raw_words: List[UInt32])` to avoid checks.
-    fn __init__(out self, var words: List[UInt32]):
+    fn __init__(out self, var words: List[UInt32]) raises:
         """Initializes a BigUInt from a list of UInt32 words.
+        The BigUInt constructed in this way is guaranteed to be valid.
         If the list is empty, the BigUInt is initialized with value 0.
-        If there are trailing empty words, they are NOT removed.
-        This method does NOT check whether the words are smaller than
-        `999_999_999`.
+        If there are trailing empty words, they are removed.
+        If there are words smaller than `999_999_999`, there is an error.
 
         Args:
             words: A list of UInt32 words representing the coefficient.
@@ -166,38 +180,38 @@ struct BigUInt(
 
         Notes:
 
-        If you want to remove trailing empty words and validate the words,
-        use `BigUInt.from_list_unsafe()`.
-        If you also want to validate the words and remove trailing empty words,
-        use `BigUInt.from_list()`.
+        This is equal to `BigUInt.from_list()`.
         """
-        if len(words) == 0:
-            self.words = [UInt32(0)]
-        else:
-            self.words = words^
+        try:
+            self = Self.from_list(words^)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/biguint/biguint.mojo",
+                    function="BigUInt.__init__(var words: List[UInt32])",
+                    message=None,
+                    previous_error=e^,
+                )
+            )
 
-    fn __init__(out self, var *words: UInt32):
-        """Initializes a BigUInt from raw words without validating the words.
-        See `from_words()` for safer initialization.
+    fn __init__(out self, *, var raw_words: List[UInt32]):
+        """Initializes a BigUInt from a list of raw words.
 
         Args:
-            words: The UInt32 words representing the coefficient.
-                Each UInt32 word represents digits ranging from 0 to 10^9 - 1.
+            raw_words: A list of UInt32 words representing the coefficient.
                 The words are stored in little-endian order.
 
         Notes:
 
-        This method does not check whether the words are smaller than
-        `999_999_999`.
+        **UNSAFE**
 
-        Example:
-
-        ```console
-        BigUInt(123456789, 987654321) # 987654321_123456789
-        ```
-        End of examples.
+        This way of initialization does not check whether the words are smaller
+        than `999_999_999`, nor does it remove leading empty words.
         """
-        self.words = List[UInt32](elements=words^)
+        if len(raw_words) == 0:
+            self.words = [UInt32(0)]
+        else:
+            self.words = raw_words^
 
     fn __init__(out self, value: Int) raises:
         """Initializes a BigUInt from an Int.
@@ -214,7 +228,7 @@ struct BigUInt(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.__init__(value: Int)",
                     message=None,
-                    previous_error=e.copy(),
+                    previous_error=e^,
                 )
             )
 
@@ -239,7 +253,7 @@ struct BigUInt(
         """
         self = Self.from_unsigned_integral_scalar(value)
 
-    fn __init__(out self, value: String, ignore_sign: Bool = False) raises:
+    fn __init__(out self, value: String, *, ignore_sign: Bool = False) raises:
         """Initializes a BigUInt from a string representation.
 
         Args:
@@ -250,6 +264,9 @@ struct BigUInt(
 
         Raises:
             Error: If an error occurs in `from_string()`.
+
+        Notes:
+            This is equal to `BigUInt.from_string()`.
         """
         try:
             self = Self.from_string(value, ignore_sign=ignore_sign)
@@ -259,7 +276,7 @@ struct BigUInt(
                     file="src/decimojo/biguint/biguint.mojo",
                     function="BigUInt.__init__(value: String)",
                     message=None,
-                    previous_error=e.copy(),
+                    previous_error=e^,
                 )
             )
 
@@ -311,7 +328,7 @@ struct BigUInt(
                     )
                 )
 
-        var res = Self(words^)
+        var res = Self(raw_words=words^)
         res.remove_leading_empty_words()
         return res^
 
@@ -319,7 +336,7 @@ struct BigUInt(
     fn from_list_unsafe(var words: List[UInt32]) -> Self:
         """Initializes a BigUInt from a list of UInt32 words without checks.
         If the list is empty, the BigUInt is initialized with value 0.
-        If there are trailing empty words, they are removed.
+        If there are leading empty words, they are removed.
         The words are not validated to ensure they are smaller than a billion.
 
         Args:
@@ -330,7 +347,7 @@ struct BigUInt(
         Returns:
             The BigUInt representation of the list of UInt32 words.
         """
-        var result = Self(words=words^)
+        var result = Self(raw_words=words^)
         result.remove_leading_empty_words()
         return result^
 
@@ -378,7 +395,7 @@ struct BigUInt(
             else:
                 list_of_words.append(word)
 
-        return Self(list_of_words^)
+        return Self(raw_words=list_of_words^)
 
     @staticmethod
     fn from_slice(value: Self, bounds: Tuple[Int, Int]) -> Self:
@@ -459,7 +476,7 @@ struct BigUInt(
             list_of_words.append(UInt32(remainder))
             remainder = quotient
 
-        return Self(list_of_words^)
+        return Self(raw_words=list_of_words^)
 
     @staticmethod
     fn from_uint(value: UInt) -> Self:
@@ -477,7 +494,7 @@ struct BigUInt(
             list_of_words.append(UInt32(remainder))
             remainder = quotient
 
-        return Self(list_of_words^)
+        return Self(raw_words=list_of_words^)
 
     @staticmethod
     fn from_uint32(value: UInt32) -> Self:
@@ -489,12 +506,12 @@ struct BigUInt(
         """
         # One word is enough
         if value <= 999_999_999:
-            return Self(words=[value])
+            return Self(raw_words=[value])
 
         # Two words are needed
         else:
             return Self(
-                words=[
+                raw_words=[
                     value % UInt32(1_000_000_000),
                     value // UInt32(1_000_000_000),
                 ]
@@ -504,7 +521,7 @@ struct BigUInt(
     fn from_uint32_unsafe(unsafe_value: UInt32) -> Self:
         """Creates a BigUInt from an `UInt32` object without checking the value.
         """
-        return Self(words=[unsafe_value])
+        return Self(raw_words=[unsafe_value])
 
     @staticmethod
     fn from_unsigned_integral_scalar[
@@ -531,7 +548,7 @@ struct BigUInt(
 
         @parameter
         if (dtype == DType.uint8) or (dtype == DType.uint16):
-            return Self(words=[UInt32(value)])
+            return Self(raw_words=[UInt32(value)])
 
         if value == 0:
             return Self()
@@ -546,7 +563,7 @@ struct BigUInt(
             list_of_words.append(UInt32(remainder))
             remainder = quotient
 
-        return Self(words=list_of_words^)
+        return Self(raw_words=list_of_words^)
 
     @staticmethod
     fn from_absolute_integral_scalar[
@@ -576,7 +593,7 @@ struct BigUInt(
         ):
             # For types that are smaller than word size
             # We can directly convert them to UInt32
-            return Self(words=[UInt32(value)])
+            return Self(raw_words=[UInt32(value)])
 
         elif (dtype == DType.int8) or (dtype == DType.int16):
             # For signed types that are smaller than 1_000_000_000,
@@ -585,9 +602,9 @@ struct BigUInt(
                 # Because -Int16.MIN == Int16.MAX + 1,
                 # we need to handle the case by converting it to Int32
                 # before taking the absolute value.
-                return Self([UInt32(-Int32(value))])
+                return Self(raw_words=[UInt32(-Int32(value))])
             else:
-                return Self([UInt32(value)])
+                return Self(raw_words=[UInt32(value)])
 
         else:
             if value == 0:
@@ -612,7 +629,7 @@ struct BigUInt(
                     list_of_words.append(UInt32(remainder))
                     remainder = quotient
 
-            return Self(list_of_words^)
+            return Self(raw_words=list_of_words^)
 
     @staticmethod
     fn from_string(value: String, ignore_sign: Bool = False) raises -> BigUInt:
@@ -721,7 +738,7 @@ struct BigUInt(
                     word = word * 10 + UInt32(digit)
                 result_words.append(word)
 
-            return Self(result_words^)
+            return Self(raw_words=result_words^)
 
         else:  # scale < 0
             # This is a true integer with postive exponent
@@ -751,7 +768,7 @@ struct BigUInt(
                     word = word * 10 + UInt32(digit)
                 result_words.append(word)
 
-            return Self(result_words^)
+            return Self(raw_words=result_words^)
 
     # ===------------------------------------------------------------------=== #
     # Output dunders, type-transfer dunders
@@ -1442,7 +1459,7 @@ struct BigUInt(
             )
 
         if exponent == 0:
-            return Self(1)
+            return Self(raw_words=[1])
 
         if exponent >= 1_000_000_000:
             raise Error(
@@ -1459,7 +1476,7 @@ struct BigUInt(
                 )
             )
 
-        var result = Self(1)
+        var result = Self(raw_words=[1])
         var base = self.copy()
         var exp = exponent
         while exp > 0:
@@ -1797,6 +1814,7 @@ struct BigUInt(
         equal to zero and are at the end of the list.
 
         If the least significant word is zero, we do not remove it.
+        Otherwise, the embedded list will be empty.
         """
         if self.words[len(self.words) - 1] != 0:
             # The least significant word is not zero, so we do not remove it

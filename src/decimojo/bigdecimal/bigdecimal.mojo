@@ -189,8 +189,8 @@ struct BigDecimal(
         words. It is the caller's responsibility to ensure that the words
         represent a valid BigUInt.
         """
-        var coefficient = BigUInt(words=words^)
-        return Self(coefficient^, scale, sign)
+        var coefficient = BigUInt(raw_words=words^)
+        return Self(coefficient=coefficient^, scale=scale, sign=sign)
 
     @staticmethod
     fn from_raw_components(
@@ -199,7 +199,7 @@ struct BigDecimal(
         """**UNSAFE** Creates a BigDecimal from its raw components.
         The raw components are a single word, scale, and sign.
         """
-        return Self(BigUInt(words=[word]), scale, sign)
+        return Self(BigUInt(raw_words=[word]), scale, sign)
 
     @staticmethod
     fn from_int(value: Int) -> Self:
@@ -233,7 +233,7 @@ struct BigDecimal(
         if is_min:
             words[0] += 1
 
-        return Self(coefficient=BigUInt(words^), scale=0, sign=sign)
+        return Self(coefficient=BigUInt(raw_words=words^), scale=0, sign=sign)
 
     @staticmethod
     fn from_uint(value: UInt) -> Self:
@@ -335,9 +335,9 @@ struct BigDecimal(
                 word = word * 10 + UInt32(digit)
             coefficient_words.append(word)
 
-        coefficient = BigUInt(coefficient_words^)
+        coefficient = BigUInt(raw_words=coefficient_words^)
 
-        return Self(coefficient^, scale, sign)
+        return Self(coefficient=coefficient^, scale=scale, sign=sign)
 
     # ===------------------------------------------------------------------=== #
     # Output dunders, type-transfer dunders
@@ -1157,12 +1157,19 @@ struct BigDecimal(
     fn normalize(self) raises -> Self:
         """Removes trailing zeros from coefficient while adjusting scale.
 
+        For example,
+        1.2345000 (coefficient = 123450000, scale = 7) is normalized to
+        1.2345 (coefficient = 12345, scale = 4).
+
         Notes:
 
         Only call it when necessary. Do not normalize after every operation.
+        The information conveyed by trailing zeros in the coefficient may be
+        useful for some applications , as it indicates the precision of the
+        number. Normalization may cause loss of this information.
         """
         if self.coefficient.is_zero():
-            return Self(BigUInt(UInt32(0)), 0, False)
+            return Self(BigUInt(raw_words=[0]), 0, False)
 
         var number_of_digits_to_remove = self.number_of_trailing_zeros()
 
@@ -1172,26 +1179,28 @@ struct BigDecimal(
         )
 
         words = List[UInt32](self.coefficient.words[number_of_words_to_remove:])
-        var coefficient = BigUInt(words^)
+        var coefficient = BigUInt(raw_words=words^)
 
         if number_of_remaining_digits_to_remove == 0:
             pass
         elif number_of_remaining_digits_to_remove == 1:
-            coefficient = coefficient // BigUInt(UInt32(10))
+            coefficient = coefficient // BigUInt(raw_words=[UInt32(10)])
         elif number_of_remaining_digits_to_remove == 2:
-            coefficient = coefficient // BigUInt(UInt32(100))
+            coefficient = coefficient // BigUInt(raw_words=[UInt32(100)])
         elif number_of_remaining_digits_to_remove == 3:
-            coefficient = coefficient // BigUInt(UInt32(1_000))
+            coefficient = coefficient // BigUInt(raw_words=[UInt32(1_000)])
         elif number_of_remaining_digits_to_remove == 4:
-            coefficient = coefficient // BigUInt(UInt32(10_000))
+            coefficient = coefficient // BigUInt(raw_words=[UInt32(10_000)])
         elif number_of_remaining_digits_to_remove == 5:
-            coefficient = coefficient // BigUInt(UInt32(100_000))
+            coefficient = coefficient // BigUInt(raw_words=[UInt32(100_000)])
         elif number_of_remaining_digits_to_remove == 6:
-            coefficient = coefficient // BigUInt(UInt32(1_000_000))
+            coefficient = coefficient // BigUInt(raw_words=[UInt32(1_000_000)])
         elif number_of_remaining_digits_to_remove == 7:
-            coefficient = coefficient // BigUInt(UInt32(10_000_000))
+            coefficient = coefficient // BigUInt(raw_words=[UInt32(10_000_000)])
         else:  # number_of_remaining_digits_to_remove == 8
-            coefficient = coefficient // BigUInt(UInt32(100_000_000))
+            coefficient = coefficient // BigUInt(
+                raw_words=[UInt32(100_000_000)]
+            )
 
         return Self(
             coefficient,
