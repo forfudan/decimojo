@@ -170,7 +170,7 @@ struct BigUInt(
         """Initializes a BigUInt from a list of UInt32 words.
         The BigUInt constructed in this way is guaranteed to be valid.
         If the list is empty, the BigUInt is initialized with value 0.
-        If there are trailing empty words, they are removed.
+        If there are leading zero words, they are removed.
         If there are words smaller than `999_999_999`, there is an error.
 
         Args:
@@ -294,7 +294,7 @@ struct BigUInt(
     fn from_list(var words: List[UInt32]) raises -> Self:
         """Initializes a BigUInt from a list of UInt32 words safely.
         If the list is empty, the BigUInt is initialized with value 0.
-        If there are trailing empty words, they are removed.
+        If there are leading zero words, they are removed.
         The words are validated to ensure they are smaller than `999_999_999`.
 
         Args:
@@ -1014,9 +1014,7 @@ struct BigUInt(
             return String("Unitilialized BigUInt")
 
         if self.is_zero():
-            debug_assert(
-                len(self.words) == 1, "There are trailing empty words."
-            )
+            debug_assert(len(self.words) == 1, "There are leading zero words.")
             return String("0")
 
         var result = String("")
@@ -1773,9 +1771,7 @@ struct BigUInt(
         Zero has 1 digit.
         """
         if self.is_zero():
-            debug_assert(
-                len(self.words) == 1, "There are trailing empty words."
-            )
+            debug_assert(len(self.words) == 1, "There are leading zero words.")
             return 1
 
         var result: Int = (len(self.words) - 1) * 9
@@ -1810,10 +1806,17 @@ struct BigUInt(
         Notes:
 
         The internal representation of a BigUInt is a list of words.
-        The most significant empty words are the words that are
+        The most significant zero words are the words that are
         equal to zero and are at the end of the list.
 
-        If the least significant word is zero, we do not remove it.
+        Note that, because we are using little-endian representation,
+        the least significant word is at index 0 and the most significant word
+        is at index len(words) - 1. The leading / trailing is based on the
+        order of the **number**, instead of the memory layout (the list).
+        Thus, the leading zero words are at the end of the list, and are zeros
+        at the left side of the number.
+
+        If there is only one word and it is zero, we do not remove it.
         Otherwise, the embedded list will be empty.
         """
         if self.words[len(self.words) - 1] != 0:
