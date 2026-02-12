@@ -19,6 +19,7 @@ Implements functions for mathematical operations on Decimal objects.
 """
 
 from decimojo.bigdecimal.bigdecimal import BigDecimal
+from decimojo.rounding_mode import RoundingMode
 
 # ===------------------------------------------------------------------------===#
 # Rounding
@@ -137,3 +138,98 @@ fn round_to_precision(
             )
         )
         number.scale -= 1
+
+
+fn quantize(
+    value: BigDecimal,
+    exp: BigDecimal,
+    rounding_mode: RoundingMode = RoundingMode.ROUND_HALF_EVEN,
+) raises -> BigDecimal:
+    """Rounds the value according to the scale (exponent) of the second operand.
+
+    Unlike `round()`, the scale is determined by the scale of the second
+    operand, not a number of digits. `quantize()` returns a value with the
+    same scale as `exp`, adjusting `value` through rounding if necessary.
+
+    Args:
+        value: The BigDecimal value to quantize.
+        exp: A BigDecimal whose scale (exponent) will be used for the result.
+            The actual value of `exp` is ignored; only its scale matters.
+        rounding_mode: The rounding mode to use.
+            Defaults to ROUND_HALF_EVEN (banker's rounding).
+
+    Returns:
+        A new BigDecimal with the same value as the first operand (except for
+        rounding) and the same scale (exponent) as the second operand.
+
+    Notes:
+        Scale (exponent) represents the power of 10 to divide the coefficient by.
+        The value = coefficient * 10^(-scale)
+
+        Examples of scale:
+        - BigDecimal("0.01") → coefficient=1, scale=2 (1 * 10^-2 = 0.01)
+        - BigDecimal("1.23") → coefficient=123, scale=2 (123 * 10^-2 = 1.23)
+        - BigDecimal("100") → coefficient=100, scale=0 (100 * 10^0 = 100)
+        - BigDecimal("1E+2") → coefficient=1, scale=-2 (1 * 10^2 = 100)
+
+        Note: "100" and "1E+2" have the same value but different scales!
+
+    Examples:
+
+    ```mojo
+    from decimojo import BigDecimal, ROUND_HALF_EVEN
+
+    var x = BigDecimal("1.2345")
+
+    # Quantize to different scales
+    _ = x.quantize(BigDecimal("0.001"))  # -> "1.234"  (3 decimal places)
+    _ = x.quantize(BigDecimal("0.01"))   # -> "1.23"   (2 decimal places)
+    _ = x.quantize(BigDecimal("0.1"))    # -> "1.2"    (1 decimal place)
+    _ = x.quantize(BigDecimal("1"))      # -> "1"      (scale=0, integer)
+    _ = x.quantize(BigDecimal("1E+1"))   # -> "0"      (scale=-1, tens place)
+
+    # Financial calculations: align currency precision
+    var price1 = BigDecimal("19.999")
+    var price2 = BigDecimal("20.1")
+    var cent = BigDecimal("0.01")  # 2 decimal places template
+    var total = price1.quantize(cent) + price2.quantize(cent)
+    # -> "40.10" (both prices rounded to cents)
+
+    # Scientific: align significant figures
+    var measurement = BigDecimal("123.456789")
+    _ = measurement.quantize(BigDecimal("0.001"))  # -> "123.457" (scale=3)
+    _ = measurement.quantize(BigDecimal("1E-6"))   # -> "123.456789" (scale=6)
+
+    # Compare with round()
+    var y = BigDecimal("123.456")
+    _ = y.quantize(BigDecimal("0.01"))  # -> "123.46" (scale=2)
+    _ = round(y, 2)                      # -> "123.46" (ndigits=2)
+    _ = y.quantize(BigDecimal("1E+2"))  # -> "1E+2" (scale=-2, rounds to hundreds)
+    _ = y.quantize(BigDecimal("100"))   # -> "123" (scale=0, rounds to integer)
+    _ = round(y, -2)                     # -> "1E+2" (ndigits=-2)
+    ```
+    End of examples.
+    """
+
+    # Determine the target scale from the exp parameter
+    var target_scale = exp.scale
+
+    # Determine the current scale of the value
+    var current_scale = value.scale
+
+    # If scales are already the same, no quantization needed - return a copy
+    if target_scale == current_scale:
+        return value.copy()
+
+    # Calculate the difference in scales
+    var scale_diff = current_scale - target_scale
+
+    if scale_diff > 0:
+        # Need to remove digits (increase scale means more precision)
+        # Example: value has scale=5, target has scale=2, remove 3 digits
+        return round(value, ndigits=target_scale, rounding_mode=rounding_mode)
+    else:
+        # scale_diff < 0
+        # Need to add trailing zeros (decrease scale means less precision)
+        # Example: value has scale=2, target has scale=5, add 3 zeros
+        return value.extend_precision(precision_diff=-scale_diff)

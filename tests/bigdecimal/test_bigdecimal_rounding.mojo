@@ -333,6 +333,369 @@ fn test_default_rounding_mode() raises:
     # print("✓ Default rounding mode tests passed")
 
 
+fn test_quantize_basic() raises:
+    """Test basic quantize() functionality."""
+    var pydecimal = Python.import_module("decimal")
+    var toml = parse_file(file_path)
+
+    pydecimal.getcontext().rounding = pydecimal.ROUND_HALF_EVEN
+    var test_cases = load_test_cases(toml, "quantize_basic_tests")
+    var count_wrong = 0
+
+    for test_case in test_cases:
+        var value = BDec(test_case.a)
+        var template = BDec(test_case.b)
+        var result = value.quantize(template)
+
+        try:
+            testing.assert_equal(
+                lhs=String(result),
+                rhs=test_case.expected,
+                msg=test_case.description,
+            )
+        except e:
+            print(
+                test_case.description,
+                "\n  Expected:",
+                test_case.expected,
+                "\n  Got:",
+                String(result),
+                "\n  Python decimal result (for reference):",
+                String(
+                    pydecimal.Decimal(test_case.a).quantize(
+                        pydecimal.Decimal(test_case.b)
+                    )
+                ),
+            )
+            count_wrong += 1
+
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "Some test cases failed. See above for details.",
+    )
+
+
+fn test_quantize_financial() raises:
+    """Test quantize() for financial calculations."""
+    var pydecimal = Python.import_module("decimal")
+    var toml = parse_file(file_path)
+
+    pydecimal.getcontext().rounding = pydecimal.ROUND_HALF_EVEN
+    var test_cases = load_test_cases(toml, "quantize_financial_tests")
+    var count_wrong = 0
+
+    for test_case in test_cases:
+        var value = BDec(test_case.a)
+        var template = BDec(test_case.b)
+        var result = value.quantize(template)
+
+        try:
+            testing.assert_equal(
+                lhs=String(result),
+                rhs=test_case.expected,
+                msg=test_case.description,
+            )
+        except e:
+            print(
+                test_case.description,
+                "\n  Expected:",
+                test_case.expected,
+                "\n  Got:",
+                String(result),
+            )
+            count_wrong += 1
+
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "Some test cases failed. See above for details.",
+    )
+
+
+fn test_quantize_scientific() raises:
+    """Test quantize() for scientific measurements."""
+    var pydecimal = Python.import_module("decimal")
+    var toml = parse_file(file_path)
+
+    pydecimal.getcontext().rounding = pydecimal.ROUND_HALF_EVEN
+    var test_cases = load_test_cases(toml, "quantize_scientific_tests")
+    var count_wrong = 0
+
+    for test_case in test_cases:
+        var value = BDec(test_case.a)
+        var template = BDec(test_case.b)
+        var result = value.quantize(template)
+
+        try:
+            testing.assert_equal(
+                lhs=String(result),
+                rhs=test_case.expected,
+                msg=test_case.description,
+            )
+        except e:
+            print(
+                test_case.description,
+                "\n  Expected:",
+                test_case.expected,
+                "\n  Got:",
+                String(result),
+            )
+            count_wrong += 1
+
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "Some test cases failed. See above for details.",
+    )
+
+
+fn test_quantize_negative_scale() raises:
+    """Test quantize() with negative scale (scientific notation)."""
+    var pydecimal = Python.import_module("decimal")
+    var toml = parse_file(file_path)
+
+    pydecimal.getcontext().rounding = pydecimal.ROUND_HALF_EVEN
+    var test_cases = load_test_cases(toml, "quantize_negative_scale_tests")
+    var count_wrong = 0
+
+    for test_case in test_cases:
+        var value = BDec(test_case.a)
+        var template = BDec(test_case.b)
+        var result = value.quantize(template)
+
+        try:
+            testing.assert_equal(
+                lhs=String(result),
+                rhs=test_case.expected,
+                msg=test_case.description,
+            )
+        except e:
+            print(
+                test_case.description,
+                "\n  Expected:",
+                test_case.expected,
+                "\n  Got:",
+                String(result),
+            )
+            count_wrong += 1
+
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "Some test cases failed. See above for details.",
+    )
+
+
+fn test_quantize_add_zeros() raises:
+    """Test quantize() adding trailing zeros."""
+    var pydecimal = Python.import_module("decimal")
+    var toml = parse_file(file_path)
+
+    pydecimal.getcontext().rounding = pydecimal.ROUND_HALF_EVEN
+    var test_cases = load_test_cases(toml, "quantize_add_zeros_tests")
+    var count_wrong = 0
+
+    for test_case in test_cases:
+        var value = BDec(test_case.a)
+        var template = BDec(test_case.b)
+        var result = value.quantize(template)
+
+        try:
+            testing.assert_equal(
+                lhs=String(result),
+                rhs=test_case.expected,
+                msg=test_case.description,
+            )
+        except e:
+            print(
+                test_case.description,
+                "\n  Expected:",
+                test_case.expected,
+                "\n  Got:",
+                String(result),
+            )
+            count_wrong += 1
+
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "Some test cases failed. See above for details.",
+    )
+
+
+fn test_quantize_same_scale() raises:
+    """Test quantize() when scales are already the same."""
+    var pydecimal = Python.import_module("decimal")
+    var toml = parse_file(file_path)
+
+    pydecimal.getcontext().rounding = pydecimal.ROUND_HALF_EVEN
+    var test_cases = load_test_cases(toml, "quantize_same_scale_tests")
+    var count_wrong = 0
+
+    for test_case in test_cases:
+        var value = BDec(test_case.a)
+        var template = BDec(test_case.b)
+        var result = value.quantize(template)
+
+        try:
+            testing.assert_equal(
+                lhs=String(result),
+                rhs=test_case.expected,
+                msg=test_case.description,
+            )
+        except e:
+            print(
+                test_case.description,
+                "\n  Expected:",
+                test_case.expected,
+                "\n  Got:",
+                String(result),
+            )
+            count_wrong += 1
+
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "Some test cases failed. See above for details.",
+    )
+
+
+fn test_quantize_normalization() raises:
+    """Test quantize() with normalized templates ('3.1E+2' vs '31E1')."""
+    var pydecimal = Python.import_module("decimal")
+    var toml = parse_file(file_path)
+
+    pydecimal.getcontext().rounding = pydecimal.ROUND_HALF_EVEN
+    var test_cases = load_test_cases(toml, "quantize_normalization_tests")
+    var count_wrong = 0
+
+    for test_case in test_cases:
+        var value = BDec(test_case.a)
+        var template = BDec(test_case.b)
+        var result = value.quantize(template)
+
+        try:
+            testing.assert_equal(
+                lhs=String(result),
+                rhs=test_case.expected,
+                msg=test_case.description,
+            )
+        except e:
+            print(
+                test_case.description,
+                "\n  Expected:",
+                test_case.expected,
+                "\n  Got:",
+                String(result),
+            )
+            count_wrong += 1
+
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "Some test cases failed. See above for details.",
+    )
+
+
+fn test_quantize_edge_cases() raises:
+    """Test quantize() edge cases with banker's rounding."""
+    var pydecimal = Python.import_module("decimal")
+    var toml = parse_file(file_path)
+
+    pydecimal.getcontext().rounding = pydecimal.ROUND_HALF_EVEN
+    var test_cases = load_test_cases(toml, "quantize_edge_cases_tests")
+    var count_wrong = 0
+
+    for test_case in test_cases:
+        var value = BDec(test_case.a)
+        var template = BDec(test_case.b)
+        var result = value.quantize(template)
+
+        try:
+            testing.assert_equal(
+                lhs=String(result),
+                rhs=test_case.expected,
+                msg=test_case.description,
+            )
+        except e:
+            print(
+                test_case.description,
+                "\n  Expected:",
+                test_case.expected,
+                "\n  Got:",
+                String(result),
+            )
+            count_wrong += 1
+
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "Some test cases failed. See above for details.",
+    )
+
+
+fn test_quantize_rounding_modes() raises:
+    """Test quantize() with different rounding modes."""
+    var pydecimal = Python.import_module("decimal")
+    var toml = parse_file(file_path)
+
+    var test_cases = load_test_cases(toml, "quantize_rounding_mode_tests")
+    var count_wrong = 0
+
+    # Set up rounding modes based on test order
+    var rounding_modes = List[RoundingMode]()
+    rounding_modes.append(RoundingMode.half_even())
+    rounding_modes.append(RoundingMode.half_up())
+    rounding_modes.append(RoundingMode.down())
+    rounding_modes.append(RoundingMode.up())
+
+    var py_rounding_modes = [
+        pydecimal.ROUND_HALF_EVEN,
+        pydecimal.ROUND_HALF_UP,
+        pydecimal.ROUND_DOWN,
+        pydecimal.ROUND_UP,
+    ]
+
+    for i in range(len(test_cases)):
+        ref test_case = test_cases[i]
+        var value = BDec(test_case.a)
+        var template = BDec(test_case.b)
+
+        var rounding_mode = rounding_modes[i % 4]
+        pydecimal.getcontext().rounding = py_rounding_modes[i % 4]
+
+        var result = value.quantize(template, rounding_mode)
+
+        try:
+            testing.assert_equal(
+                lhs=String(result),
+                rhs=test_case.expected,
+                msg=test_case.description,
+            )
+        except e:
+            print(
+                test_case.description,
+                "\n  Expected:",
+                test_case.expected,
+                "\n  Got:",
+                String(result),
+                "\n  Python decimal result (for reference):",
+                String(
+                    pydecimal.Decimal(test_case.a).quantize(
+                        pydecimal.Decimal(test_case.b)
+                    )
+                ),
+            )
+            count_wrong += 1
+
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "Some test cases failed. See above for details.",
+    )
+
+
 fn main() raises:
     # print("Running BigDecimal rounding tests")
 

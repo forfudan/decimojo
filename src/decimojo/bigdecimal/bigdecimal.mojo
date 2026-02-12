@@ -654,7 +654,6 @@ struct BigDecimal(
     # round
     # ===------------------------------------------------------------------=== #
 
-    @always_inline
     fn __round__(self, ndigits: Int) -> Self:
         """Rounds the number to the specified number of decimal places.
         If `ndigits` is not given, rounds to 0 decimal places.
@@ -669,7 +668,6 @@ struct BigDecimal(
         except e:
             return self.copy()
 
-    @always_inline
     fn __round__(self) -> Self:
         """Rounds the number to the specified number of decimal places.
         If `ndigits` is not given, rounds to 0 decimal places.
@@ -902,6 +900,56 @@ struct BigDecimal(
             fill_zeros_to_precision,
         )
 
+    @always_inline
+    fn quantize(
+        self,
+        exp: Self,
+        rounding_mode: RoundingMode = RoundingMode.ROUND_HALF_EVEN,
+    ) raises -> Self:
+        """Rounds this BigDecimal according to the scale of another BigDecimal.
+
+        This method adjusts the scale (exponent) of this number to match the
+        scale of `exp`, performing rounding if necessary. Unlike `round()`,
+        which specifies the number of decimal places, `quantize()` uses the
+        scale of another decimal as a template.
+
+        Args:
+            exp: A BigDecimal whose scale will be used as the target scale.
+                The actual value of `exp` is ignored; only its scale matters.
+            rounding_mode: The rounding mode to use. Default is ROUND_HALF_EVEN.
+
+        Returns:
+            A new BigDecimal with the same value (subject to rounding) and
+            the same scale as `exp`.
+
+        Examples:
+
+        ```mojo
+        from decimojo import BigDecimal
+
+        var x = BigDecimal("1.2345")
+
+        # Use different scale templates
+        print(x.quantize(BigDecimal("0.01")))   # "1.23" (scale=2)
+        print(x.quantize(BigDecimal("0.1")))    # "1.2"  (scale=1)
+        print(x.quantize(BigDecimal("1")))      # "1"    (scale=0)
+
+        # Important: \"100\" and \"1E+2\" have different scales!
+        print(x.quantize(BigDecimal("100")))    # "1"    (scale=0, same as above)
+        print(x.quantize(BigDecimal("1E+2")))   # "0"    (scale=-2, rounds to hundreds)
+
+        # Align currency amounts
+        var price = BigDecimal("19.999")
+        var cent = BigDecimal("0.01")
+        print(price.quantize(cent))  # "20.00" (rounded to cents)
+        ```
+
+        Notes:
+            See `decimojo.bigdecimal.rounding.quantize()` for detailed examples
+            and technical information.
+        """
+        return decimojo.bigdecimal.rounding.quantize(self, exp, rounding_mode)
+
     # ===------------------------------------------------------------------=== #
     # Other methods
     # ===------------------------------------------------------------------=== #
@@ -998,7 +1046,6 @@ struct BigDecimal(
         )
         self.scale += precision_diff
 
-    @always_inline
     fn print_internal_representation(self):
         """Prints the internal representation of the BigDecimal."""
         var line_width = 30
@@ -1039,7 +1086,6 @@ struct BigDecimal(
             )
         print("----------------------------------------------")
 
-    @always_inline
     fn print_representation_as_components(self):
         """Prints the representation of the BigDecimal as components."""
         print(
@@ -1064,7 +1110,6 @@ struct BigDecimal(
             sep="",
         )
 
-    @always_inline
     fn is_integer(self) -> Bool:
         """Returns True if this number represents an integer value."""
         var number_of_trailing_zeros = self.number_of_trailing_zeros()
@@ -1078,7 +1123,6 @@ struct BigDecimal(
         """Returns True if this number represents a negative value."""
         return self.sign
 
-    @always_inline
     fn is_odd(self) raises -> Bool:
         """Returns True if this number represents an odd value."""
         if self.scale < 0:
@@ -1090,7 +1134,6 @@ struct BigDecimal(
         else:
             return True
 
-    @always_inline
     fn is_one(self) raises -> Bool:
         """Returns True if this number represents one."""
         if self.sign:

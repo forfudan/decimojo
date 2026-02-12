@@ -347,3 +347,204 @@ a = "-1.2345e-10"
 b = "12"
 description = "Rounding negative scientific notation value"
 expected = "-1.23E-10"
+
+# === QUANTIZE TESTS ===
+# Test quantize() function with different templates
+
+[[quantize_basic_tests]]
+a = "1.2345"
+b = "0.001"
+description = "Quantize to 3 decimal places"
+expected = "1.234"
+
+[[quantize_basic_tests]]
+a = "1.2345"
+b = "0.01"
+description = "Quantize to 2 decimal places"
+expected = "1.23"
+
+[[quantize_basic_tests]]
+a = "1.2345"
+b = "0.1"
+description = "Quantize to 1 decimal place"
+expected = "1.2"
+
+[[quantize_basic_tests]]
+a = "1.2345"
+b = "1"
+description = "Quantize to integer (scale=0)"
+expected = "1"
+
+[[quantize_basic_tests]]
+a = "1.2345"
+b = "100"
+description = "Quantize to integer using 100 (scale=0)"
+expected = "1"
+
+[[quantize_basic_tests]]
+a = "1.2345"
+b = "1E+2"
+description = "Quantize to hundreds place (scale=-2)"
+expected = "0E+2"
+
+[[quantize_financial_tests]]
+a = "19.999"
+b = "0.01"
+description = "Round price to cents"
+expected = "20.00"
+
+[[quantize_financial_tests]]
+a = "20.1"
+b = "0.01"
+description = "Align price to cents precision"
+expected = "20.10"
+
+[[quantize_scientific_tests]]
+a = "123.456789"
+b = "0.001"
+description = "Quantize to 3 decimals"
+expected = "123.457"
+
+[[quantize_scientific_tests]]
+a = "123.456789"
+b = "1E-6"
+description = "Quantize to 6 decimals"
+expected = "123.456789"
+
+[[quantize_scientific_tests]]
+a = "123.456789"
+b = "100"
+description = "Quantize with scale=0 (not scale=-2)"
+expected = "123"
+
+[[quantize_scientific_tests]]
+a = "123.456789"
+b = "1E+2"
+description = "Quantize to hundreds (scale=-2)"
+expected = "1E+2"
+
+[[quantize_negative_scale_tests]]
+a = "123.456"
+b = "1E+1"
+description = "Quantize to tens place (scale=-1)"
+expected = "1.2E+2"
+
+[[quantize_negative_scale_tests]]
+a = "123.456"
+b = "1E+2"
+description = "Quantize to hundreds place (scale=-2)"
+expected = "1E+2"
+
+[[quantize_negative_scale_tests]]
+a = "123.456"
+b = "1E+3"
+description = "Quantize to thousands place (scale=-3)"
+expected = "0E+3"
+
+[[quantize_negative_scale_tests]]
+a = "123.456"
+b = "10"
+description = "Quantize with template '10' (scale=0, not -1)"
+expected = "123"
+
+[[quantize_negative_scale_tests]]
+a = "123.456"
+b = "100"
+description = "Quantize with template '100' (scale=0, not -2)"
+expected = "123"
+
+[[quantize_add_zeros_tests]]
+a = "1.2"
+b = "0.0001"
+description = "Add trailing zeros to 4 decimals"
+expected = "1.2000"
+
+[[quantize_add_zeros_tests]]
+a = "1.2"
+b = "0.000001"
+description = "Add trailing zeros to 6 decimals"
+expected = "1.200000"
+
+[[quantize_same_scale_tests]]
+a = "1.23"
+b = "0.01"
+description = "Quantize when scales already match"
+expected = "1.23"
+
+[[quantize_normalization_tests]]
+a = "311.14159"
+b = "3.1E+2"
+description = "Template '3.1E+2' normalized to scale=-1"
+expected = "3.1E+2"
+
+[[quantize_normalization_tests]]
+a = "311.14159"
+b = "31E1"
+description = "Template '31E1' normalized to scale=-1 (same as 3.1E+2)"
+expected = "3.1E+2"
+
+[[quantize_normalization_tests]]
+a = "311.14159"
+b = "310E0"
+description = "Template '310E0' has scale=0 (integer precision)"
+expected = "311"
+
+[[quantize_normalization_tests]]
+a = "311.14159"
+b = "1000E1"
+description = "Template '1000E1' has scale=-1 (tens place)"
+expected = "3.1E+2"
+
+[[quantize_edge_cases_tests]]
+a = "0.5"
+b = "1"
+description = "Quantize 0.5 to integer (rounds to 0 with HALF_EVEN)"
+expected = "0"
+
+[[quantize_edge_cases_tests]]
+a = "1.5"
+b = "1"
+description = "Quantize 1.5 to integer (rounds to 2 with HALF_EVEN)"
+expected = "2"
+
+[[quantize_edge_cases_tests]]
+a = "2.5"
+b = "1"
+description = "Quantize 2.5 to integer (rounds to 2 with HALF_EVEN)"
+expected = "2"
+
+[[quantize_edge_cases_tests]]
+a = "3.5"
+b = "1"
+description = "Quantize 3.5 to integer (rounds to 4 with HALF_EVEN)"
+expected = "4"
+
+[[quantize_edge_cases_tests]]
+a = "-1.5"
+b = "1"
+description = "Quantize -1.5 to integer (rounds to -2 with HALF_EVEN)"
+expected = "-2"
+
+[[quantize_rounding_mode_tests]]
+a = "1.235"
+b = "0.01"
+description = "Quantize with HALF_EVEN rounding"
+expected = "1.24"
+
+[[quantize_rounding_mode_tests]]
+a = "1.235"
+b = "0.01"
+description = "Quantize with HALF_UP rounding"
+expected = "1.24"
+
+[[quantize_rounding_mode_tests]]
+a = "1.235"
+b = "0.01"
+description = "Quantize with DOWN rounding"
+expected = "1.23"
+
+[[quantize_rounding_mode_tests]]
+a = "1.235"
+b = "0.01"
+description = "Quantize with UP rounding"
+expected = "1.24"
