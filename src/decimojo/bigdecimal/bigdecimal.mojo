@@ -1165,7 +1165,7 @@ struct BigDecimal(
 
         Only call it when necessary. Do not normalize after every operation.
         The information conveyed by trailing zeros in the coefficient may be
-        useful for some applications , as it indicates the precision of the
+        useful for some applications, as it indicates the precision of the
         number. Normalization may cause loss of this information.
         """
         if self.coefficient.is_zero():
