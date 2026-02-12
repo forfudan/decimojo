@@ -182,6 +182,12 @@ struct BigInt(
     # from_string(value: String) -> Self
     # ===------------------------------------------------------------------=== #
 
+    # TODO:
+    # Initializes a BigInt from a list of UInt32 words safely" but uses
+    # BigUInt(raw_words=words^) which does not validate that words are
+    # <= 999_999_999 or remove leading empty words. This is inconsistent with
+    # the "safe" claim in the documentation.
+    # The method should validate the words by using BigUInt.from_list(words^)
     @staticmethod
     fn from_list(var words: List[UInt32], sign: Bool) raises -> Self:
         """Initializes a BigInt from a list of UInt32 words safely.
