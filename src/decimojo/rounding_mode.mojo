@@ -24,7 +24,7 @@ comptime ROUND_HALF_EVEN = RoundingMode.ROUND_HALF_EVEN
 comptime ROUND_UP = RoundingMode.ROUND_UP
 
 
-struct RoundingMode(Stringable):
+struct RoundingMode(Copyable, ImplicitlyCopyable, Movable, Stringable):
     """
     Represents different rounding modes for decimal operations.
 
