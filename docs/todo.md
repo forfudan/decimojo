@@ -2,7 +2,7 @@
 
 This is a to-do list for DeciMojo.
 
-- [ ] When Mojo supports **global variables**, implement a global variable for the `BigDecimal` class to store the precision of the decimal number. This will allow users to set the precision globally, rather than having to set it for each function of the `BigDecimal` class.
+- [ ] When Mojo supports **global variables**, implement a type `Context` and a global variable `context` for the `BigDecimal` class to store the precision of the decimal number and other configurations. This will allow users to set the precision globally, rather than having to set it for each function of the `BigDecimal` class.
 - [ ] When Mojo supports **enum types**, implement an enum type for the rounding mode.
 - [ ] Implement a complex number class `BigComplex` that uses `BigDecimal` for the real and imaginary parts. This will allow users to perform high-precision complex number arithmetic.
 - [ ] Implement different methods for adding decimojo types with `Int` types so that an implicit conversion is not required.
