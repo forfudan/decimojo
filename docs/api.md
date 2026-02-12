@@ -12,9 +12,9 @@ To make sure that the users construct `BigUInt` safely by default, the default c
 
 Note: Mojo now supports keyword-only arguments of the same data type.
 
-| Method                             | non-empty | no leading zero words | all words valid | notes                                 |
-| ---------------------------------- | --------- | --------------------- | --------------- | ------------------------------------- |
-| `BigUInt()`                        | ✓         | ✓                     | ✓               | The default constructor of `BigUInt`. |
-| `BigUInt(uninitialized_capacity=)` | ✗         | ?                     | ?               | Length of words list is 0             |
-| `BigUInt(unsafe_uninit_length=)`   | ✗         | ?                     | ?               | Length of words list not 0            |
-| `BigUInt(raw_words=)`              | ✓         | ✗                     | ✗               |                                       |
+| Method                             | non-empty | no leading zero words | all words valid | notes                                  |
+| ---------------------------------- | --------- | --------------------- | --------------- | -------------------------------------- |
+| `BigUInt(var words: List[UInt32])` | ✓         | ✓                     | ✓               | Validating constructor for word lists. |
+| `BigUInt(uninitialized_capacity=)` | ✗         | ?                     | ?               | Length of words list is 0              |
+| `BigUInt(unsafe_uninit_length=)`   | ✗         | ?                     | ?               | Length of words list not 0             |
+| `BigUInt(raw_words=)`              | ✓         | ✗                     | ✗               |                                        |
