@@ -171,7 +171,7 @@ struct BigUInt(
         The BigUInt constructed in this way is guaranteed to be valid.
         If the list is empty, the BigUInt is initialized with value 0.
         If there are leading zero words, they are removed.
-        If there are words smaller than `999_999_999`, there is an error.
+        If there are words greater than `999_999_999`, there is an error.
 
         Args:
             words: A list of UInt32 words representing the coefficient.
