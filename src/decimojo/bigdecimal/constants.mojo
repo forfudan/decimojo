@@ -24,7 +24,7 @@ from decimojo.rounding_mode import RoundingMode
 
 comptime PI_1024 = BigDecimal(
     coefficient=BigUInt(
-        words=[
+        raw_words=[
             UInt32(858632789),
             UInt32(572010654),
             UInt32(989380952),

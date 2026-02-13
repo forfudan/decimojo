@@ -14,3 +14,9 @@ This is a to-do list for DeciMojo.
 - [x] Implement different methods for augmented arithmetic assignments to improve memeory-efficiency and performance.
 - [x] Implement a method `remove_leading_zeros` for `BigUInt`, which removes the zero words from the most significant end of the number.
 - [x] Use debug mode to check for uninitialized `BigUInt` before all arithmetic operations. This will help ensure that there are no uninitialized `BigUInt`.
+
+## Roadmap for Decimojo
+
+- [ ] Re-implement some methods of `BigUInt` to improve the performance, since it is the building block of `BigDecimal` and `BigInt`.
+- [ ] Refine the methods of `BigDecimal` to improve the performance.
+- [ ] Implement the big **binary** (signed and unsigned) integer type (`BigBinaryUInt`) when users do not need the full precision of BigDecimal. When it is finished, the current BigUInt will be renamed to `BigDecimalUInt`. The alias `BUInt` may be rebound to `BigBinaryUInt`.

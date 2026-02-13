@@ -15,12 +15,6 @@
     - WolframAlpha: 4.4.0994231605661201249788358050110815384367187427582 x 10-29
     - mpmath:       4.0994231605661201249789078578417210843506987202039e-29
 
-## Roadmap for Decimojo
-
-- [ ] Re-implement some methods of `BigUInt` to improve the performance, since it is the building block of `BigDecimal` and `BigInt`.
-- [ ] Refine the methods of `BigDecimal` to improve the performance.
-- [ ] Implement the big **binary** (signed and unsigned) integer type (`BigBinaryUInt`) when users do not need the full precision of BigDecimal. When it is finished, the current BigUInt will be renamed to `BigDecimalUInt`. The alias `BUInt` may be rebound to `BigBinaryUInt`.
-
 ## Time complexity for pi() implementations
 
 - #94. Implementing pi() with Machin's formula. Time taken for precision 2048: 33.580649 seconds.

@@ -111,7 +111,7 @@ struct BigInt(
         (2) the words are smaller than `999_999_999`.
         """
 
-        self.magnitude = BigUInt(words.copy())
+        self.magnitude = BigUInt(raw_words=words.copy())
         self.sign = sign
 
     fn __init__(out self, var *words: UInt32, sign: Bool) raises:
@@ -138,7 +138,7 @@ struct BigInt(
 
         End of examples.
         """
-        self.magnitude = BigUInt(List[UInt32](elements=words^))
+        self.magnitude = BigUInt(raw_words=List[UInt32](elements=words^))
         self.sign = sign
 
     fn __init__(out self, value: String) raises:
@@ -182,6 +182,12 @@ struct BigInt(
     # from_string(value: String) -> Self
     # ===------------------------------------------------------------------=== #
 
+    # TODO:
+    # Initializes a BigInt from a list of UInt32 words safely" but uses
+    # BigUInt(raw_words=words^) which does not validate that words are
+    # <= 999_999_999 or remove leading empty words. This is inconsistent with
+    # the "safe" claim in the documentation.
+    # The method should validate the words by using BigUInt.from_list(words^)
     @staticmethod
     fn from_list(var words: List[UInt32], sign: Bool) raises -> Self:
         """Initializes a BigInt from a list of UInt32 words safely.
@@ -200,7 +206,7 @@ struct BigInt(
         if len(words) == 0:
             return Self()
 
-        return Self(BigUInt(words^), sign)
+        return Self(BigUInt(raw_words=words^), sign)
 
     @staticmethod
     fn from_words(*words: UInt32, sign: Bool) raises -> Self:
@@ -229,7 +235,7 @@ struct BigInt(
             else:
                 list_of_words.append(word)
 
-        return Self(BigUInt(list_of_words^), sign)
+        return Self(BigUInt(raw_words=list_of_words^), sign)
 
     @staticmethod
     fn from_int(value: Int) -> Self:
@@ -263,7 +269,7 @@ struct BigInt(
         if is_min:
             words[0] += 1
 
-        return Self(BigUInt(words^), sign)
+        return Self(BigUInt(raw_words=words^), sign)
 
     @staticmethod
     fn from_uint(value: UInt) -> Self:
@@ -316,7 +322,7 @@ struct BigInt(
 
         magnitude = BigUInt.from_string(value, ignore_sign=True)
 
-        return Self(magnitude^, sign)
+        return Self(magnitude=magnitude^, sign=sign)
 
     # ===------------------------------------------------------------------=== #
     # Output dunders, type-transfer dunders
@@ -560,7 +566,7 @@ struct BigInt(
                 self.magnitude, UInt32(other)
             )
         else:
-            decimojo.bigint.arithmetics.add_inplace(self, other)
+            decimojo.bigint.arithmetics.add_inplace(self, Self(other))
 
     @always_inline
     fn __isub__(mut self, other: Self):
@@ -699,7 +705,7 @@ struct BigInt(
         """Raises the BigInt to the power of another BigInt.
         See `power()` for more information.
         """
-        if exponent > Self(BigUInt(UInt32(0), UInt32(1)), sign=False):
+        if exponent > Self(BigUInt(raw_words=[0, 1]), sign=False):
             raise Error("Error in `BigUInt.power()`: The exponent is too large")
         var exponent_as_int = exponent.to_int()
         return self.power(exponent_as_int)
