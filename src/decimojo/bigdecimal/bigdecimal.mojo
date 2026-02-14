@@ -27,6 +27,7 @@ from memory import UnsafePointer
 from python import PythonObject
 import testing
 
+from decimojo.errors import DeciMojoError
 from decimojo.rounding_mode import RoundingMode
 from decimojo.bigdecimal.rounding import round_to_precision
 
@@ -472,10 +473,13 @@ struct BigDecimal(
 
         except e:
             raise Error(
-                "Failed to convert Python Decimal to BigDecimal: "
-                + "as_tuple() returned invalid data or conversion failed.\n"
-                + "Error: "
-                + String(e)
+                DeciMojoError(
+                    file="src/decimojo/bigdecimal/bigdecimal.mojo",
+                    function="from_python_decimal()",
+                    message="Failed to convert Python Decimal to BigDecimal: "
+                    + "as_tuple() returned invalid data or conversion failed.",
+                    previous_error=e^,
+                ),
             )
 
     # ===------------------------------------------------------------------=== #
