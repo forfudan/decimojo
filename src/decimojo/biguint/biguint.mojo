@@ -529,8 +529,8 @@ struct BigUInt(
                 # Two words are needed
                 return Self(
                     raw_words=[
-                        UInt32(value) % Self.BASE,
-                        UInt32(value) // Self.BASE,
+                        UInt32(value) % UInt32(Self.BASE),
+                        UInt32(value) // UInt32(Self.BASE),
                     ]
                 )
 
