@@ -1,6 +1,6 @@
 # API Reference
 
-## Initialization of BigUInt and safety
+## Initialization of BigUInt
 
 There are three issues associated with the initialization of `BigUInt`:
 
@@ -12,9 +12,11 @@ To make sure that the users construct `BigUInt` safely by default, the default c
 
 Note: Mojo now supports keyword-only arguments of the same data type.
 
-| Method                             | non-empty | no leading zero words | all words valid | notes                                  |
-| ---------------------------------- | --------- | --------------------- | --------------- | -------------------------------------- |
-| `BigUInt(var words: List[UInt32])` | ✓         | ✓                     | ✓               | Validating constructor for word lists. |
-| `BigUInt(uninitialized_capacity=)` | ✗         | ?                     | ?               | Length of words list is 0              |
-| `BigUInt(unsafe_uninit_length=)`   | ✗         | ?                     | ?               | Length of words list not 0             |
-| `BigUInt(raw_words=)`              | ✓         | ✗                     | ✗               |                                        |
+| Method                                   | non-empty | no leading zero words | all words valid | notes                                  |
+| ---------------------------------------- | --------- | --------------------- | --------------- | -------------------------------------- |
+| `BigUInt(var words: List[UInt32])`       | ✓         | ✓                     | ✓               | Validating constructor for word lists. |
+| `BigUInt(*, uninitialized_capacity=Int)` | ✗         | ?                     | ?               | Length of words list is 0              |
+| `BigUInt(*, unsafe_uninit_length=Int)`   | ✗         | ?                     | ?               | Length of words list not 0             |
+| `BigUInt(*, raw_words: List[UInt32])`    | ✓         | ✗                     | ✗               |                                        |
+| `BigUInt(value: Int)`                    | ✓         | ✓                     | ✓               |                                        |
+| `BigUInt(value: Scalar)`                 | ✓         | ✓                     | ✓               | Only unsigned scalars are supported.   |

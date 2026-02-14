@@ -235,10 +235,15 @@ struct BigDecimal(
 
         return Self(coefficient=BigUInt(raw_words=words^), scale=0, sign=sign)
 
+    # TODO: This method is no longer needed as UInt is now an alias for SIMD.
     @staticmethod
     fn from_uint(value: UInt) -> Self:
         """Creates a BigDecimal from an unsigned integer."""
-        return Self(coefficient=BigUInt.from_uint(value), scale=0, sign=False)
+        return Self(
+            coefficient=BigUInt.from_unsigned_integral_scalar(value),
+            scale=0,
+            sign=False,
+        )
 
     @staticmethod
     fn from_integral_scalar[dtype: DType, //](value: SIMD[dtype, 1]) -> Self:
