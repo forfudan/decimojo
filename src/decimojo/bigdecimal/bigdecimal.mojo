@@ -24,6 +24,7 @@ mathematical methods that do not implement a trait.
 """
 
 from memory import UnsafePointer
+from python import PythonObject
 import testing
 
 from decimojo.rounding_mode import RoundingMode
@@ -160,6 +161,10 @@ struct BigDecimal(
         ]()
 
         self = Self.from_integral_scalar(value)
+
+    fn __init__(out self, *, py: PythonObject) raises:
+        """Constructs a BigDecimal from a Python Decimal object."""
+        self = Self.from_python_decimal(py)
 
     # ===------------------------------------------------------------------=== #
     # Constructing methods that are not dunders
@@ -343,6 +348,130 @@ struct BigDecimal(
         coefficient = BigUInt(raw_words=coefficient_words^)
 
         return Self(coefficient=coefficient^, scale=scale, sign=sign)
+
+    @staticmethod
+    fn from_python_decimal(value: PythonObject) raises -> Self:
+        """Initializes a BigDecimal from a Python Decimal object.
+
+        Args:
+            value: A Python Decimal object (from decimal module).
+
+        Returns:
+            The BigDecimal representation of the Python Decimal.
+
+        Raises:
+            Error: If the conversion from Python Decimal fails, or if
+                the as_tuple() method returns invalid data.
+
+        Examples:
+        ```mojo
+        from python import Python
+        from decimojo.prelude import *
+
+        fn main() raises:
+            var decimal = Python.import_module("decimal")
+            var py_dec = decimal.Decimal("123.456")
+            var mojo_dec = BigDecimal.from_python_decimal(py_dec)
+            print(mojo_dec)  # 123.456
+        ```
+        End of examples.
+
+        Notes:
+
+        This method uses Python's `as_tuple()` API to extract the decimal's
+        components: (sign, digits, exponent). The digits are individual
+        base-10 digits (0-9), not the internal limb representation.
+
+        Why use as_tuple() instead of direct memory copy?
+
+        Python's decimal module (libmpdec) uses a base-10^9 representation
+        on 64-bit systems (base 10^4 on 32-bit), which matches BigDecimal's
+        internal representation. Theoretically, we could directly memcpy the
+        internal limbs for better performance.
+
+        However, this approach is NOT used because:
+
+        1. No API for direct access: Python's PythonObject doesn't expose
+           the internal mpd_t pointer. Accessing it would require unsafe
+           pointer manipulation, breaking abstraction boundaries.
+        2. Platform dependency: 32-bit systems use base 10^4, requiring
+           platform-specific code paths and runtime detection.
+        3. Maintenance burden: Direct memory access depends on CPython
+           internal implementation details that may change between versions.
+        4. Safety concerns: Unsafe pointer operations risk memory safety
+           violations, GC issues, and data races.
+        5. Marginal performance gain: The time compexity of as_tuple() is still
+           O(n) compared to O(n) for direct memory copy.
+
+        The as_tuple() API provides:
+        - Safe, stable interface across Python versions.
+        - Portable across all platforms (32/64-bit, CPython/PyPy).
+        - Clean, maintainable code.
+        - Adequate performance for real-world use cases.
+        """
+        try:
+            # Get DecimalTuple: (sign, digits, exponent)
+            var tuple_repr = value.as_tuple()
+
+            # Extract components
+            # Convert PythonObject to Int via String
+            var sign_int = Int(py=tuple_repr[0])
+            var sign = True if sign_int == 1 else False
+            var digits_tuple = tuple_repr[1]
+            var exponent = Int(py=tuple_repr[2])
+
+            # Convert digits tuple to coefficient string
+            # digits are individual base-10 digits (0-9)
+            var num_digits = len(digits_tuple)
+
+            # Handle special case: zero
+            if num_digits == 1 and Int(py=digits_tuple[0]) == 0:
+                return Self(coefficient=BigUInt.zero(), scale=0, sign=False)
+
+            # Build coefficient from digits
+            var number_of_words = num_digits // 9
+            if num_digits % 9 != 0:
+                number_of_words += 1
+
+            var coefficient_words = List[UInt32](capacity=number_of_words)
+
+            # Process digits from right to left, grouping into 9-digit words
+            var end = num_digits
+            var start: Int
+            while end >= 9:
+                start = end - 9
+                var word: UInt32 = 0
+                for i in range(start, end):
+                    var digit = Int(py=digits_tuple[i])
+                    word = word * 10 + UInt32(digit)
+                coefficient_words.append(word)
+                end = start
+
+            # Handle remaining digits
+            if end > 0:
+                var word: UInt32 = 0
+                for i in range(0, end):
+                    var digit = Int(py=digits_tuple[i])
+                    word = word * 10 + UInt32(digit)
+                coefficient_words.append(word)
+
+            var coefficient = BigUInt(raw_words=coefficient_words^)
+
+            # In Python's Decimal.as_tuple():
+            # - exponent is the power of 10 to multiply by
+            # - In BigDecimal, scale is the number of decimal places
+            # - So scale = -exponent
+            var scale = -exponent
+
+            return Self(coefficient=coefficient^, scale=scale, sign=sign)
+
+        except e:
+            raise Error(
+                "Failed to convert Python Decimal to BigDecimal: "
+                + "as_tuple() returned invalid data or conversion failed.\n"
+                + "Error: "
+                + String(e)
+            )
 
     # ===------------------------------------------------------------------=== #
     # Output dunders, type-transfer dunders

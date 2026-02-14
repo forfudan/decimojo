@@ -175,6 +175,10 @@ struct BigInt(
         """
         self = Self.from_integral_scalar(value)
 
+    fn __init__(out self, *, py: PythonObject) raises:
+        """Constructs a BigInt from a Python int object."""
+        self = Self.from_python_int(py)
+
     # ===------------------------------------------------------------------=== #
     # Constructing methods that are not dunders
     #
