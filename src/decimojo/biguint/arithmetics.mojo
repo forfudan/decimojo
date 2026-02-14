@@ -2914,7 +2914,7 @@ fn floor_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
                 file="src/decimojo/biguint/arithmetics.py",
                 function="floor_modulo()",
                 message=None,
-                previous_error=e.copy(),
+                previous_error=e^,
             )
         )
 
@@ -2928,7 +2928,7 @@ fn floor_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
                 file="src/decimojo/biguint/arithmetics.py",
                 function="floor_modulo()",
                 message=None,
-                previous_error=e.copy(),
+                previous_error=e^,
             )
         )
 
@@ -2959,7 +2959,7 @@ fn truncate_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
                 file="src/decimojo/biguint/arithmetics.py",
                 function="truncate_modulo()",
                 message=None,
-                previous_error=e.copy(),
+                previous_error=e^,
             )
         )
 
@@ -3045,7 +3045,7 @@ fn floor_divide_modulo(
                 file="src/decimojo/biguint/arithmetics.py",
                 function="floor_divide_modulo()",
                 message=None,
-                previous_error=e.copy(),
+                previous_error=e^,
             )
         )
 

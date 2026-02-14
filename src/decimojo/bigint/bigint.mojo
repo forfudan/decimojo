@@ -92,54 +92,58 @@ struct BigInt(
             magnitude: The magnitude of the BigInt.
             sign: The sign of the BigInt.
         """
-
         self.magnitude = magnitude.copy()
         self.sign = sign
 
-    fn __init__(out self, words: List[UInt32], sign: Bool):
-        """***UNSAFE!*** Initializes a BigInt from a List of UInt32 and a sign.
-        It does not check whether the list is empty or the words are invalid.
-        See `from_list()` for safer initialization.
+    fn __init__(out self, var words: List[UInt32], sign: Bool) raises:
+        """Initializes a BigInt from a list of UInt32 words and a sign.
+        The BigInt constructed in this way is guaranteed to be valid.
+        If the list is empty, the BigInt is initialized with value 0.
+        If there are leading zero words, they are removed.
+        If there are words greater than `999_999_999`, there is an error.
 
         Args:
-            words: The magnitude of the BigInt.
+            words: A list of UInt32 words representing the coefficient.
+                Each UInt32 word represents digits ranging from 0 to 10^9 - 1.
+                The words are stored in little-endian order.
             sign: The sign of the BigInt.
 
-        Notes:
-
-        This method does not check whether
-        (1) the list is empty.
-        (2) the words are smaller than `999_999_999`.
+        This is equal to `BigInt.from_list()`.
         """
+        try:
+            self = Self.from_list(words^, sign=sign)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/bigint/bigint.mojo",
+                    function=(
+                        "BigInt.__init__(var words: List[UInt32], sign: Bool)"
+                    ),
+                    message=None,
+                    previous_error=e^,
+                )
+            )
 
-        self.magnitude = BigUInt(raw_words=words.copy())
-        self.sign = sign
-
-    fn __init__(out self, var *words: UInt32, sign: Bool) raises:
-        """***UNSAFE!*** Initializes a BigInt from raw components.
-        It does not check whether the words are invalid.
-        See `from_words()` for safer initialization.
+    fn __init__(out self, *, var raw_words: List[UInt32], sign: Bool):
+        """Initializes a BigInt from a list of raw words.
 
         Args:
-            words: The UInt32 words representing the coefficient.
-                Each UInt32 word represents digits ranging from 0 to 10^9 - 1.
+            raw_words: A list of UInt32 words representing the coefficient.
                 The words are stored in little-endian order.
             sign: The sign of the BigInt.
 
         Notes:
 
-        This method does not check whether the words are smaller than
-        `999_999_999`.
+        **UNSAFE**
 
-        Example:
-        ```console
-        BigInt(123456789, 987654321, sign=False) # 987654321_123456789
-        BigInt(123456789, 987654321, sign=True)  # -987654321_123456789
-        ```
+        This way of initialization does not check whether the words are smaller
+        than `999_999_999`, nor does it remove leading empty words.
 
-        End of examples.
+        However, it always initializes a BigInt and makes sure that the words
+        list is not empty.
         """
-        self.magnitude = BigUInt(raw_words=List[UInt32](elements=words^))
+
+        self.magnitude = BigUInt(raw_words=raw_words^)
         self.sign = sign
 
     fn __init__(out self, value: String) raises:
@@ -187,16 +191,12 @@ struct BigInt(
     # from_string(value: String) -> Self
     # ===------------------------------------------------------------------=== #
 
-    # TODO:
-    # Initializes a BigInt from a list of UInt32 words safely" but uses
-    # BigUInt(raw_words=words^) which does not validate that words are
-    # <= 999_999_999 or remove leading empty words. This is inconsistent with
-    # the "safe" claim in the documentation.
-    # The method should validate the words by using BigUInt.from_list(words^)
     @staticmethod
     fn from_list(var words: List[UInt32], sign: Bool) raises -> Self:
         """Initializes a BigInt from a list of UInt32 words safely.
         If the list is empty, the BigInt is initialized with value 0.
+        If there are leading zero words, they are removed.
+        The words are validated to ensure they are smaller than `999_999_999`.
 
         Args:
             words: A list of UInt32 words representing the coefficient.
@@ -204,14 +204,25 @@ struct BigInt(
                 The words are stored in little-endian order.
             sign: The sign of the BigInt.
 
+        Raises:
+            Error: If any word is larger than `999_999_999`.
+
         Returns:
             The BigInt representation of the list of UInt32 words.
         """
-        # Return 0 if the list is empty
-        if len(words) == 0:
-            return Self()
-
-        return Self(BigUInt(raw_words=words^), sign)
+        try:
+            return Self(BigUInt.from_list(words^), sign)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/bigint/bigint.mojo",
+                    function=(
+                        "BigInt.from_list(var words: List[UInt32], sign: Bool)"
+                    ),
+                    message=None,
+                    previous_error=e^,
+                )
+            )
 
     @staticmethod
     fn from_words(*words: UInt32, sign: Bool) raises -> Self:
@@ -551,7 +562,7 @@ struct BigInt(
                     message=None,
                     function="BigInt.__floordiv__()",
                     file="src/decimojo/bigint/bigint.mojo",
-                    previous_error=e.copy(),
+                    previous_error=e^,
                 )
             )
 
@@ -565,7 +576,7 @@ struct BigInt(
                     message=None,
                     function="BigInt.__mod__()",
                     file="src/decimojo/bigint/bigint.mojo",
-                    previous_error=e.copy(),
+                    previous_error=e^,
                 )
             )
 
