@@ -400,7 +400,7 @@ struct BigDecimal(
            internal implementation details that may change between versions.
         4. Safety concerns: Unsafe pointer operations risk memory safety
            violations, GC issues, and data races.
-        5. Marginal performance gain: The time compexity of as_tuple() is still
+        5. Marginal performance gain: The time complexity of as_tuple() is still
            O(n) compared to O(n) for direct memory copy.
 
         The as_tuple() API provides:
