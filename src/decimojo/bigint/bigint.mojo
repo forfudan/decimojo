@@ -24,6 +24,7 @@ mathematical methods that do not implement a trait.
 """
 
 from memory import UnsafePointer
+from python import PythonObject
 
 import decimojo.bigint.arithmetics
 import decimojo.bigint.comparison
@@ -173,6 +174,10 @@ struct BigInt(
             The dtype of the scalar must be integral.
         """
         self = Self.from_integral_scalar(value)
+
+    fn __init__(out self, *, py: PythonObject) raises:
+        """Constructs a BigInt from a Python int object."""
+        self = Self.from_python_int(py)
 
     # ===------------------------------------------------------------------=== #
     # Constructing methods that are not dunders
@@ -325,6 +330,54 @@ struct BigInt(
         magnitude = BigUInt.from_string(value, ignore_sign=True)
 
         return Self(magnitude=magnitude^, sign=sign)
+
+    @staticmethod
+    fn from_python_int(value: PythonObject) raises -> Self:
+        """Initializes a BigInt from a Python integer object.
+
+        Args:
+            value: A Python integer object (PythonObject).
+
+        Returns:
+            The BigInt representation of the Python integer.
+
+        Raises:
+            Error: If the conversion from Python int to string fails, or if
+                the string cannot be parsed as a valid integer.
+
+        Examples:
+        ```mojo
+        from python import Python
+        from decimojo.prelude import *
+
+        fn main() raises:
+            var py = Python.import_module("builtins")
+            var py_int = py.int("123456789012345678901234567890")
+            var mojo_bigint = BigInt.from_python_int(py_int)
+            print(mojo_bigint)  # 123456789012345678901234567890
+        ```
+        End of examples.
+
+        Notes:
+        This method converts the Python integer to a string representation
+        using Python's `str()` function, then uses `BigInt.from_string()`
+        to parse it. This approach handles arbitrarily large Python integers
+        since Python's int type is already arbitrary-precision.
+        """
+        try:
+            # Convert Python int to string using Python's str() function
+            var py_str = String(value)
+            # Use the existing from_string() method to parse the string
+            return Self.from_string(py_str)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    file="src/decimojo/bigint/bigint.mojo",
+                    function="BigInt.from_python_int(value: PythonObject)",
+                    message="Failed to convert Python int to BigInt.",
+                    previous_error=e^,
+                )
+            )
 
     # ===------------------------------------------------------------------=== #
     # Output dunders, type-transfer dunders

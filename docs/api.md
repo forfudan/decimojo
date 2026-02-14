@@ -20,3 +20,62 @@ Note: Mojo now supports keyword-only arguments of the same data type.
 | `BigUInt(*, raw_words: List[UInt32])`    | ✓         | ✗                     | ✗               |                                        |
 | `BigUInt(value: Int)`                    | ✓         | ✓                     | ✓               |                                        |
 | `BigUInt(value: Scalar)`                 | ✓         | ✓                     | ✓               | Only unsigned scalars are supported.   |
+
+## Initialization of BigDecimal
+
+### Python Interoperability: `from_python_decimal()`
+
+Method Signature is
+
+```mojo
+@staticmethod
+fn from_python_decimal(value: PythonObject) raises -> BigDecimal
+```
+
+---
+
+Why use `as_tuple()` instead of direct memory copy (memcpy)?
+
+Python's `decimal` module (libmpdec) internally uses a base-10^9 representation on 64-bit systems (base 10^4 on 32-bit), which happens to match BigDecimal's internal representation. This raises the question: why not directly memcpy the internal limbs for better performance?
+
+Direct memcpy is theoretically possible because:
+
+- On 64-bit systems: libmpdec uses base 10^9, same as BigDecimal
+- Both use `uint32_t` limbs for storage
+- Direct memory mapping would avoid digit decomposition overhead
+
+However, this approach is **NOT** used due to significant practical issues:
+
+1. No mature API for direct access.
+1. Using direct memory access would require unsafe pointer manipulation, breaking DeciMojo's current design principles of using safe Mojo as much as possible.
+1. Platform dependency. 32-bit systems use base 10^4 (incompatible with BigDecimal's 10^9). This would require runtime platform detection.
+1. Maintenance burden. CPython internal structure (`mpd_t`) may change between versions.
+1. Marginal performance gain. `as_tuple()` overhead: O(n) where n = number of digits. Direct memcpy: O(m) where m = number of limbs. Theoretical speedup: ~10x. But how often are users really converting Python decimals to BigDecimal?
+
+---
+
+The `as_tuple()` API returns a tuple of `(sign, digits, exponent)`:
+
+- `sign`: 0 for positive, 1 for negative
+- `digits`: Tuple of individual decimal digits (0-9)
+- `exponent`: Power of 10 to multiply by
+
+`as_tuple()` performs limb → digits decomposition internally. The digits returned are individual base-10 digits, not the base-10^9 limbs stored internally.
+
+Example:
+
+```python
+# Python
+from decimal import Decimal
+d = Decimal("123456789012345678")
+print(d.as_tuple())
+# DecimalTuple(sign=0, digits=(1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8), exponent=0)
+```
+
+The `as_tuple()` approach provides:
+
+- Safe: No unsafe pointer manipulation
+- Stable: Public API guaranteed across Python versions
+- Portable: Works on all platforms (32/64-bit, CPython/PyPy/etc.)
+- Clean: Maintainable, readable code
+- Adequate performance: O(n) is acceptable for typical use cases
