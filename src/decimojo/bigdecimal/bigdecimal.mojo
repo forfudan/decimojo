@@ -352,6 +352,7 @@ struct BigDecimal(
     @staticmethod
     fn from_python_decimal(value: PythonObject) raises -> Self:
         """Initializes a BigDecimal from a Python Decimal object.
+        Only finite Decimal values are supported for conversion.
 
         Args:
             value: A Python Decimal object (from decimal module).
@@ -418,6 +419,10 @@ struct BigDecimal(
             var sign_int = Int(py=tuple_repr[0])
             var sign = True if sign_int == 1 else False
             var digits_tuple = tuple_repr[1]
+            # When Python's Decimal.as_tuple() is called on these special
+            # values, the exponent field is a string ('F' for infinity,
+            # 'n' for NaN) rather than an integer.
+            # Thus, only finite decimal values are supported for conversion.
             var exponent = Int(py=tuple_repr[2])
 
             # Convert digits tuple to coefficient string
