@@ -164,7 +164,9 @@ fn add(x: BigUInt, y: BigUInt) -> BigUInt:
     if len(x.words) == 1:
         if len(y.words) == 1:
             # If both numbers are single-word, we can handle them with UInt32
-            return BigUInt.from_uint32(x.words[0] + y.words[0])
+            return BigUInt.from_unsigned_integral_scalar(
+                x.words[0] + y.words[0]
+            )
         else:  # If x is single-word, we can handle it with UInt32
             var result = y.copy()
             add_inplace_by_uint32(result, x.words[0])
@@ -224,7 +226,7 @@ fn add_slices(
             return BigUInt.from_slice(y, bounds_y)
         elif n_words_y_slice == 1:
             # If both numbers are single-word, we can handle them with UInt32
-            return BigUInt.from_uint32(
+            return BigUInt.from_unsigned_integral_scalar(
                 x.words[bounds_x[0]] + y.words[bounds_y[0]]
             )
         else:

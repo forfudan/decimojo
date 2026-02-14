@@ -75,7 +75,7 @@ struct BigUInt(
     # Constants
     # ===------------------------------------------------------------------=== #
 
-    # TODO: Make these constants global, e.g., decimojo.BASE
+    # TODO: Make these constants global, e.g., decimojo.biguint.BASE
     comptime BASE = 1_000_000_000
     """The base used for the BigUInt representation."""
     comptime BASE_MAX = 999_999_999
@@ -207,12 +207,18 @@ struct BigUInt(
 
         This way of initialization does not check whether the words are smaller
         than `999_999_999`, nor does it remove leading empty words.
+
+        However, it always initializes a BigUInt and makes sure that the words
+        list is not empty. If you want to initialize a BigUInt with an empty
+        list of words, you can use `BigUInt(*, uninitialized_capacity=0)`.
         """
         if len(raw_words) == 0:
             self.words = [UInt32(0)]
         else:
             self.words = raw_words^
 
+    # TODO: If Mojo makes Int type an alias of SIMD[DType.index, 1],
+    # we can remove this method.
     fn __init__(out self, value: Int) raises:
         """Initializes a BigUInt from an Int.
         See `from_int()` for more information.
@@ -231,20 +237,6 @@ struct BigUInt(
                     previous_error=e^,
                 )
             )
-
-    @implicit
-    fn __init__(out self, value: UInt):
-        """Initializes a BigUInt from an UInt.
-        See `from_uint()` for more information.
-        """
-        self = Self.from_uint(value)
-
-    @implicit
-    fn __init__(out self, value: UInt32):
-        """Initializes a BigUInt from an UInt32.
-        See `from_uint32()` for more information.
-        """
-        self = Self.from_uint32(value)
 
     @implicit
     fn __init__(out self, value: Scalar):
@@ -479,45 +471,6 @@ struct BigUInt(
         return Self(raw_words=list_of_words^)
 
     @staticmethod
-    fn from_uint(value: UInt) -> Self:
-        """Creates a BigUInt from an `UInt` object."""
-        if value == 0:
-            return Self()
-
-        var list_of_words = List[UInt32]()
-        var remainder: UInt = value
-        var quotient: UInt
-
-        while remainder != 0:
-            quotient = remainder // 1_000_000_000
-            remainder = remainder % 1_000_000_000
-            list_of_words.append(UInt32(remainder))
-            remainder = quotient
-
-        return Self(raw_words=list_of_words^)
-
-    @staticmethod
-    fn from_uint32(value: UInt32) -> Self:
-        """Creates a BigUInt from an `UInt32` object.
-
-        Notes:
-
-        UInt32 is special, so we have a separate method for it.
-        """
-        # One word is enough
-        if value <= 999_999_999:
-            return Self(raw_words=[value])
-
-        # Two words are needed
-        else:
-            return Self(
-                raw_words=[
-                    value % UInt32(1_000_000_000),
-                    value // UInt32(1_000_000_000),
-                ]
-            )
-
-    @staticmethod
     fn from_uint32_unsafe(unsafe_value: UInt32) -> Self:
         """Creates a BigUInt from an `UInt32` object without checking the value.
         """
@@ -539,16 +492,47 @@ struct BigUInt(
 
         Returns:
             The BigUInt representation of the Scalar value.
+
+        Notes:
+            This method can handle generic unsigned integral scalar types. For
+            scalars whose width is smaller than 32 bits, we can directly convert
+            them to UInt32 and initialize the BigUInt with one word. For scalars
+            whose width is larger than and equal to 32 bits, we can repeatedly
+            divide the value by 1_000_000_000 and take the remainder as the
+            words of the BigUInt. Because the dtype is unsigned, we don't need
+            to worry about negative values.
+            - UInt8, UInt16: directly convert to UInt32.
+            - UInt32: Check whether one word or two words are needed.
+            - UInt64, UInt128, etc: repeatedly divide by 1_000_000_000.
+            - UIndex (UInt): repeatedly divide by 1_000_000_000.
         """
 
+        # Only allow unsigned integral types
         constrained[
             dtype.is_integral() and dtype.is_unsigned(),
             "dtype must be unsigned integral.",
         ]()
 
+        # Evaluate the conditions at compile time.
+        # UInt8 and UInt16 can be directly converted to UInt32.
         @parameter
         if (dtype == DType.uint8) or (dtype == DType.uint16):
             return Self(raw_words=[UInt32(value)])
+
+        # UInt32 is special, so we have a separate method for it.
+        @parameter
+        if dtype == DType.uint32:
+            if value <= 999_999_999:
+                # One word is enough
+                return Self(raw_words=[UInt32(value)])
+            else:
+                # Two words are needed
+                return Self(
+                    raw_words=[
+                        UInt32(value) % Self.BASE,
+                        UInt32(value) // Self.BASE,
+                    ]
+                )
 
         if value == 0:
             return Self()
@@ -558,8 +542,8 @@ struct BigUInt(
         var quotient: Scalar[dtype]
 
         while remainder != 0:
-            quotient = remainder // 1_000_000_000
-            remainder = remainder % 1_000_000_000
+            quotient = remainder // Self.BASE
+            remainder = remainder % Self.BASE
             list_of_words.append(UInt32(remainder))
             remainder = quotient
 
@@ -586,11 +570,7 @@ struct BigUInt(
         constrained[dtype.is_integral(), "dtype must be integral."]()
 
         @parameter
-        if (
-            (dtype == DType.uint8)
-            or (dtype == DType.uint16)
-            or (dtype == DType.uint32)
-        ):
+        if (dtype == DType.uint8) or (dtype == DType.uint16):
             # For types that are smaller than word size
             # We can directly convert them to UInt32
             return Self(raw_words=[UInt32(value)])
@@ -618,14 +598,14 @@ struct BigUInt(
 
             if sign:
                 while remainder != 0:
-                    quotient = remainder // (-1_000_000_000)
-                    remainder = remainder % (-1_000_000_000)
+                    quotient = remainder // (-Self.BASE)
+                    remainder = remainder % (-Self.BASE)
                     list_of_words.append(UInt32(-remainder))
                     remainder = -quotient
             else:
                 while remainder != 0:
-                    quotient = remainder // 1_000_000_000
-                    remainder = remainder % 1_000_000_000
+                    quotient = remainder // Self.BASE
+                    remainder = remainder % Self.BASE
                     list_of_words.append(UInt32(remainder))
                     remainder = quotient
 
