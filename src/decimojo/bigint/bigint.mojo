@@ -273,8 +273,10 @@ struct BigInt(
 
     @staticmethod
     fn from_uint(value: UInt) -> Self:
-        """Creates a BigInt from an unsignd integer."""
-        return Self(magnitude=BigUInt.from_uint(value), sign=False)
+        """Creates a BigInt from an unsigned integer."""
+        return Self(
+            magnitude=BigUInt.from_unsigned_integral_scalar(value), sign=False
+        )
 
     @staticmethod
     fn from_integral_scalar[dtype: DType, //](value: SIMD[dtype, 1]) -> Self:
@@ -382,6 +384,7 @@ struct BigInt(
 
         # Intermediate variables made due to a bug in Mojo compiler, see:
         # https://github.com/modular/modular/issues/5931
+        # TODO: Remove these intermediate variables after the bug is fixed.
         var int_min = Int.MIN
         var int_max = Int.MAX
         if value < Int128(int_min) or value > Int128(int_max):
