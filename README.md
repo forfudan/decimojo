@@ -2,7 +2,7 @@
 
 An arbitrary-precision decimal and integer mathematics library for [Mojo](https://www.modular.com/mojo).
 
-**[中文·漢字](https://zhuyuhao.com/decimojo/docs/readme_zht.html)**　|　**[Changelog](https://zhuyuhao.com/decimojo/docs/changelog.html)**　|　**[Repository on GitHub»](https://github.com/forfudan/decimojo)**　|　**[Discord channel»](https://discord.gg/3rGH87uZTk)**
+**[中文·漢字](https://github.com/mojomath/decimojo/blob/main/docs/readme_zht.md)**　|　**[Changelog](https://github.com/mojomath/decimojo/blob/main/docs/changelog.md)**　|　**[Repository on GitHub»](https://github.com/mojomath/decimojo)**　|　**[Discord channel»](https://discord.gg/3rGH87uZTk)**
 
 - [Overview](#overview)
 - [Installation](#installation)
@@ -23,7 +23,7 @@ The core types are:
 - An arbitrary-precision decimal implementation (`BigDecimal`) allowing for calculations with unlimited digits and decimal places[^arbitrary]. It provides a complete set of arithmetic operations, comparisons, and mathematical functions like logarithms, exponentiation, roots, trigonometric functions, etc. It also supports rounding modes and conversions to/from built-in types.
 - A 128-bit fixed-point decimal implementation (`Decimal128`) supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed]. It features a complete set of mathematical functions including logarithms, exponentiation, roots, etc.
 
-This repository includes [TOMLMojo](https://github.com/forfudan/decimojo/tree/main/src/tomlmojo), a lightweight TOML parser in pure Mojo. It parses configuration files and test data, supporting basic types, arrays, and nested tables. While created for DeciMojo's testing framework, it offers general-purpose structured data parsing with a clean, simple API.
+This repository includes [TOMLMojo](https://github.com/mojomath/decimojo/tree/main/src/tomlmojo), a lightweight TOML parser in pure Mojo. It parses configuration files and test data, supporting basic types, arrays, and nested tables. While created for DeciMojo's testing framework, it offers general-purpose structured data parsing with a clean, simple API.
 
 | type         | alias             | information                          | internal representation             |
 | ------------ | ----------------- | ------------------------------------ | ----------------------------------- |
@@ -52,7 +52,7 @@ Then, you can install DeciMojo using any of these methods:
 
     Then run `pixi install` to download and install the package.
 
-1. For the latest development version in the `main` branch, clone [this GitHub repository](https://github.com/forfudan/decimojo) and build the package locally using the command `pixi run package`.
+1. For the latest development version in the `main` branch, clone [this GitHub repository](https://github.com/mojomath/decimojo) and build the package locally using the command `pixi run package`.
 
 The following table summarizes the package versions and their corresponding Mojo versions:
 
@@ -290,7 +290,7 @@ The name ultimately emphasizes our mission: bringing precise, reliable decimal c
 
 ## Status
 
-Rome wasn't built in a day. DeciMojo is currently under active development. It has successfully progressed through the **"make it work"** phase and is now well into the **"make it right"** phase with many optimizations already in place. Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/forfudan/decimojo/issues).
+Rome wasn't built in a day. DeciMojo is currently under active development. It has successfully progressed through the **"make it work"** phase and is now well into the **"make it right"** phase with many optimizations already in place. Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/mojomath/decimojo/issues).
 
 Regular benchmarks against Python's `decimal` module are available in the `bench/` folder, documenting both the performance advantages and the few specific operations where different approaches are needed.
 
@@ -311,7 +311,7 @@ If you find DeciMojo useful for your research, consider listing it in your citat
     author       = {Zhu, Yuhao},
     year         = {2025},
     title        = {An arbitrary-precision decimal and integer mathematics library for Mojo},
-    url          = {https://github.com/forfudan/decimojo},
+    url          = {https://github.com/mojomath/decimojo},
     version      = {0.6.0},
     note         = {Computer Software}
 }
