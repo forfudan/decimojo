@@ -2,6 +2,7 @@
 # Test BigBinaryInt basic functionality
 # ===----------------------------------------------------------------------=== #
 
+import testing
 from decimojo.bigbinaryint.bigbinaryint import BigBinaryInt
 
 
@@ -201,14 +202,4 @@ fn assert_true(cond: Bool, msg: String) raises:
 
 
 fn main() raises:
-    print("Testing BigBinaryInt...")
-    test_default_constructor()
-    test_from_int()
-    test_from_string()
-    test_negation_and_abs()
-    test_hex_and_binary_string()
-    test_bit_length()
-    test_copy()
-    test_normalize()
-    test_print_internal()
-    print("\nAll BigBinaryInt tests passed!")
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
