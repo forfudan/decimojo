@@ -1,0 +1,107 @@
+# ─── Perfect squares ─────────────────────────────────────────────────────────
+[[sqrt_perfect]]
+a = "1"
+description = "sqrt(1) = 1"
+expected = "1"
+
+[[sqrt_perfect]]
+a = "4"
+description = "sqrt(4) = 2"
+expected = "2"
+
+[[sqrt_perfect]]
+a = "9"
+description = "sqrt(9) = 3"
+expected = "3"
+
+[[sqrt_perfect]]
+a = "16"
+description = "sqrt(16) = 4"
+expected = "4"
+
+[[sqrt_perfect]]
+a = "25"
+description = "sqrt(25) = 5"
+expected = "5"
+
+[[sqrt_perfect]]
+a = "36"
+description = "sqrt(36) = 6"
+expected = "6"
+
+[[sqrt_perfect]]
+a = "49"
+description = "sqrt(49) = 7"
+expected = "7"
+
+[[sqrt_perfect]]
+a = "64"
+description = "sqrt(64) = 8"
+expected = "8"
+
+[[sqrt_perfect]]
+a = "81"
+description = "sqrt(81) = 9"
+expected = "9"
+
+[[sqrt_perfect]]
+a = "100"
+description = "sqrt(100) = 10"
+expected = "10"
+
+[[sqrt_perfect]]
+a = "10000"
+description = "sqrt(10000) = 100"
+expected = "100"
+
+[[sqrt_perfect]]
+a = "1000000"
+description = "sqrt(1000000) = 1000"
+expected = "1000"
+
+# ─── Decimal values with exact results ───────────────────────────────────────
+[[sqrt_decimal]]
+a = "0.25"
+description = "sqrt(0.25) = 0.5"
+expected = "0.5"
+
+[[sqrt_decimal]]
+a = "0.09"
+description = "sqrt(0.09) = 0.3"
+expected = "0.3"
+
+[[sqrt_decimal]]
+a = "0.04"
+description = "sqrt(0.04) = 0.2"
+expected = "0.2"
+
+[[sqrt_decimal]]
+a = "0.01"
+description = "sqrt(0.01) = 0.1"
+expected = "0.1"
+
+[[sqrt_decimal]]
+a = "1.44"
+description = "sqrt(1.44) = 1.2"
+expected = "1.2"
+
+[[sqrt_decimal]]
+a = "2.25"
+description = "sqrt(2.25) = 1.5"
+expected = "1.5"
+
+[[sqrt_decimal]]
+a = "6.25"
+description = "sqrt(6.25) = 2.5"
+expected = "2.5"
+
+# ─── Edge cases with exact results ──────────────────────────────────────────
+[[sqrt_edge]]
+a = "0"
+description = "sqrt(0) = 0"
+expected = "0"
+
+[[sqrt_edge]]
+a = "1"
+description = "sqrt(1) = 1"
+expected = "1"

@@ -1,0 +1,79 @@
+# ===----------------------------------------------------------------------=== #
+# Test cases for Decimal128.from_int() constructor
+# ===----------------------------------------------------------------------=== #
+
+# ===----------------------------------------------------------------------=== #
+# Basic integer conversions (unary: a -> expected)
+# ===----------------------------------------------------------------------=== #
+
+[[basic_integer_tests]]
+a = "0"
+description = "from_int(0)"
+expected = "0"
+
+[[basic_integer_tests]]
+a = "123"
+description = "from_int(123)"
+expected = "123"
+
+[[basic_integer_tests]]
+a = "-456"
+description = "from_int(-456)"
+expected = "-456"
+
+# ===----------------------------------------------------------------------=== #
+# Large integer conversions (unary)
+# ===----------------------------------------------------------------------=== #
+
+[[large_integer_tests]]
+a = "1000000000"
+description = "from_int(1 billion)"
+expected = "1000000000"
+
+[[large_integer_tests]]
+a = "-2000000000"
+description = "from_int(-2 billion)"
+expected = "-2000000000"
+
+[[large_integer_tests]]
+a = "2147483647"
+description = "from_int(INT32_MAX)"
+expected = "2147483647"
+
+[[large_integer_tests]]
+a = "-2147483648"
+description = "from_int(INT32_MIN)"
+expected = "-2147483648"
+
+[[large_integer_tests]]
+a = "9223372036854775807"
+description = "from_int(INT64_MAX)"
+expected = "9223372036854775807"
+
+# ===----------------------------------------------------------------------=== #
+# from_int with scale (binary: a=integer, b=scale -> expected)
+# ===----------------------------------------------------------------------=== #
+
+[[from_int_with_scale_tests]]
+a = "123"
+b = "2"
+description = "from_int(123, 2)"
+expected = "1.23"
+
+[[from_int_with_scale_tests]]
+a = "-456"
+b = "3"
+description = "from_int(-456, 3)"
+expected = "-0.456"
+
+[[from_int_with_scale_tests]]
+a = "0"
+b = "4"
+description = "from_int(0, 4)"
+expected = "0.0000"
+
+[[from_int_with_scale_tests]]
+a = "1"
+b = "25"
+description = "from_int(1, 25)"
+expected = "0.0000000000000000000000001"

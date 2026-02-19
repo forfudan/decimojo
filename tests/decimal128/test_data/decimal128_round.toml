@@ -1,0 +1,121 @@
+# Test data for Decimal128 round operations
+# Used by test_decimal128_round.mojo
+# Field b = number of decimal places (as string)
+
+# Default rounding (banker's rounding / half_even via round() builtin)
+
+[[round_default]]
+a = "123.456"
+b = "2"
+description = "Basic rounding to 2 decimal places"
+expected = "123.46"
+
+[[round_default]]
+a = "123.456"
+b = "0"
+description = "Rounding to 0 decimal places"
+expected = "123"
+
+[[round_default]]
+a = "123.45"
+b = "4"
+description = "Rounding to more decimal places (pads zeros)"
+expected = "123.4500"
+
+[[round_default]]
+a = "123.45"
+b = "2"
+description = "Rounding to same precision (no change)"
+expected = "123.45"
+
+[[round_default]]
+a = "9.999"
+b = "2"
+description = "Rounding with carry propagation"
+expected = "10.00"
+
+[[round_default]]
+a = "0.1111111111111111111111111111"
+b = "14"
+description = "Rounding from maximum precision"
+expected = "0.11111111111111"
+
+# Rounding mode: down (truncate toward zero)
+
+[[round_down]]
+a = "123.456"
+b = "2"
+description = "Round down 123.456 to 2 places"
+expected = "123.45"
+
+[[round_down]]
+a = "123.5"
+b = "0"
+description = "Round down 123.5 to 0 places"
+expected = "123"
+
+[[round_down]]
+a = "-123.456"
+b = "2"
+description = "Round down negative to 2 places"
+expected = "-123.45"
+
+# Rounding mode: up (away from zero)
+
+[[round_up]]
+a = "123.456"
+b = "2"
+description = "Round up 123.456 to 2 places"
+expected = "123.46"
+
+[[round_up]]
+a = "123.5"
+b = "0"
+description = "Round up 123.5 to 0 places"
+expected = "124"
+
+[[round_up]]
+a = "-123.456"
+b = "2"
+description = "Round up negative to 2 places"
+expected = "-123.46"
+
+# Rounding mode: half_up
+
+[[round_half_up]]
+a = "123.456"
+b = "2"
+description = "Round half_up 123.456 to 2 places"
+expected = "123.46"
+
+[[round_half_up]]
+a = "123.5"
+b = "0"
+description = "Round half_up 123.5 to 0 places"
+expected = "124"
+
+# Rounding mode: half_even (banker's rounding)
+
+[[round_half_even]]
+a = "123.456"
+b = "2"
+description = "Round half_even 123.456 to 2 places"
+expected = "123.46"
+
+[[round_half_even]]
+a = "123.5"
+b = "0"
+description = "Round half_even 123.5 to 0 (even is 124)"
+expected = "124"
+
+[[round_half_even]]
+a = "124.5"
+b = "0"
+description = "Round half_even 124.5 to 0 (even is 124)"
+expected = "124"
+
+[[round_half_even]]
+a = "-123.456"
+b = "2"
+description = "Round half_even negative to 2 places"
+expected = "-123.46"

@@ -444,7 +444,6 @@ struct BigInt(
             raise Error(
                 "Error in `BigInt.to_int()`: The number exceeds the size of Int"
             )
-        print("value", value)
         return Int(value)
 
     fn to_string(self, line_width: Int = 0) -> String:

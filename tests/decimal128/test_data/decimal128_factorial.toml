@@ -1,0 +1,81 @@
+# Factorial values: n! for n = 0..27
+# Uses unary format: a = input (as string), expected = result
+[[factorial]]
+a = "0"
+description = "0! = 1"
+expected = "1"
+
+[[factorial]]
+a = "1"
+description = "1! = 1"
+expected = "1"
+
+[[factorial]]
+a = "2"
+description = "2! = 2"
+expected = "2"
+
+[[factorial]]
+a = "3"
+description = "3! = 6"
+expected = "6"
+
+[[factorial]]
+a = "4"
+description = "4! = 24"
+expected = "24"
+
+[[factorial]]
+a = "5"
+description = "5! = 120"
+expected = "120"
+
+[[factorial]]
+a = "6"
+description = "6! = 720"
+expected = "720"
+
+[[factorial]]
+a = "7"
+description = "7! = 5040"
+expected = "5040"
+
+[[factorial]]
+a = "8"
+description = "8! = 40320"
+expected = "40320"
+
+[[factorial]]
+a = "9"
+description = "9! = 362880"
+expected = "362880"
+
+[[factorial]]
+a = "10"
+description = "10! = 3628800"
+expected = "3628800"
+
+[[factorial]]
+a = "12"
+description = "12! = 479001600"
+expected = "479001600"
+
+[[factorial]]
+a = "15"
+description = "15! = 1307674368000"
+expected = "1307674368000"
+
+[[factorial]]
+a = "20"
+description = "20! = 2432902008176640000"
+expected = "2432902008176640000"
+
+[[factorial]]
+a = "25"
+description = "25! = 15511210043330985984000000"
+expected = "15511210043330985984000000"
+
+[[factorial]]
+a = "27"
+description = "27! = 10888869450418352160768000000"
+expected = "10888869450418352160768000000"

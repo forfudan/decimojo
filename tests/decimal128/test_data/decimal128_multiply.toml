@@ -1,0 +1,165 @@
+# ===----------------------------------------------------------------------=== #
+# Test cases for Decimal128 multiplication
+# ===----------------------------------------------------------------------=== #
+
+# ===----------------------------------------------------------------------=== #
+# Basic multiplication
+# ===----------------------------------------------------------------------=== #
+
+[[basic_tests]]
+a = "5"
+b = "3"
+description = "Simple integer multiplication"
+expected = "15"
+
+[[basic_tests]]
+a = "2.5"
+b = "4"
+description = "Decimal times integer"
+expected = "10.0"
+
+[[basic_tests]]
+a = "1.5"
+b = "2.5"
+description = "Decimal times decimal"
+expected = "3.75"
+
+[[basic_tests]]
+a = "3.14"
+b = "2.0"
+description = "Multiplication with more decimal places"
+expected = "6.280"
+
+[[basic_tests]]
+a = "0.125"
+b = "0.4"
+description = "Small decimal multiplication"
+expected = "0.0500"
+
+# ===----------------------------------------------------------------------=== #
+# Special cases (zero, one)
+# ===----------------------------------------------------------------------=== #
+
+[[special_tests]]
+a = "123.45"
+b = "0"
+description = "Multiplication by zero"
+expected = "0.00"
+
+[[special_tests]]
+a = "123.45"
+b = "1"
+description = "Multiplication by one"
+expected = "123.45"
+
+[[special_tests]]
+a = "0"
+b = "987.654"
+description = "Zero times any number"
+expected = "0.000"
+
+[[special_tests]]
+a = "123.45"
+b = "-1"
+description = "Multiplication by negative one"
+expected = "-123.45"
+
+# ===----------------------------------------------------------------------=== #
+# Negative multiplication
+# ===----------------------------------------------------------------------=== #
+
+[[negative_tests]]
+a = "-5"
+b = "3"
+description = "Negative times positive"
+expected = "-15"
+
+[[negative_tests]]
+a = "5"
+b = "-3"
+description = "Positive times negative"
+expected = "-15"
+
+[[negative_tests]]
+a = "-5"
+b = "-3"
+description = "Negative times negative"
+expected = "15"
+
+[[negative_tests]]
+a = "-2.5"
+b = "4.2"
+description = "Negative decimal multiplication"
+expected = "-10.50"
+
+[[negative_tests]]
+a = "-0"
+b = "123.45"
+description = "Negative zero times positive"
+expected = "-0.00"
+
+# ===----------------------------------------------------------------------=== #
+# Precision and scale
+# ===----------------------------------------------------------------------=== #
+
+[[precision_tests]]
+a = "0.5"
+b = "0.25"
+description = "Scale addition (1+2=3)"
+expected = "0.125"
+
+[[precision_tests]]
+a = "0.1234567890"
+b = "0.9876543210"
+description = "High precision multiplication"
+expected = "0.12193263111263526900"
+
+# ===----------------------------------------------------------------------=== #
+# Boundary cases
+# ===----------------------------------------------------------------------=== #
+
+[[boundary_tests]]
+a = "0.5"
+b = "2.0"
+description = "Result becomes integer"
+expected = "1.00"
+
+[[boundary_tests]]
+a = "1.25"
+b = "4"
+description = "Result with trailing zeros"
+expected = "5.00"
+
+# ===----------------------------------------------------------------------=== #
+# Commutative property (a*b and b*a both tested)
+# ===----------------------------------------------------------------------=== #
+
+[[commutative_tests]]
+a = "10"
+b = "20"
+description = "Commutative: integers"
+expected = "200"
+
+[[commutative_tests]]
+a = "3.5"
+b = "2"
+description = "Commutative: mixed decimal and integer"
+expected = "7.0"
+
+[[commutative_tests]]
+a = "-5"
+b = "7"
+description = "Commutative: negative and positive"
+expected = "-35"
+
+[[commutative_tests]]
+a = "0.123"
+b = "9.87"
+description = "Commutative: small and large decimal"
+expected = "1.21401"
+
+[[commutative_tests]]
+a = "0.0001"
+b = "10000"
+description = "Commutative: very small and very large"
+expected = "1.0000"

@@ -1,864 +1,427 @@
 """
-Comprehensive test suite for Decimal128 division operations.
-Includes 100 test cases covering edge cases, precision limits, and various scenarios.
+Tests for Decimal128 division (/) and truncate division (//) operations.
+Merges the original test_decimal128_divide.mojo (100 cases) and
+test_decimal128_truncate_divide.mojo (22 cases) into a single file.
+TOML-driven tests handle exact-equality cases; inline tests cover
+startswith checks, scale properties, overflow/error handling, and
+mathematical relationship verification.
 """
 
-from decimojo.prelude import dm, Decimal128, RoundingMode
 import testing
+import tomlmojo
+
+from decimojo.prelude import dm, Decimal128, Dec128, RoundingMode
+from decimojo.tests import parse_file, load_test_cases
+
+comptime data_path = "tests/decimal128/test_data/decimal128_divide.toml"
 
 
-fn test_basic_division() raises:
-    # print("------------------------------------------------------")
-    # print("Testing basic division cases...")
+# ─── TOML-driven helpers ────────────────────────────────────────────────────
 
-    # 1. Simple integer division
-    testing.assert_equal(
-        String(Decimal128(10) / Decimal128(2)), "5", "Simple integer division"
-    )
 
-    # 2. Division with no remainder
-    testing.assert_equal(
-        String(Decimal128(100) / Decimal128(4)),
-        "25",
-        "Division with no remainder",
-    )
+fn _run_division_section(
+    doc: tomlmojo.parser.TOMLDocument, section: String
+) raises:
+    """Run division (/) test cases from a TOML section."""
+    var cases = load_test_cases(doc, section)
+    for tc in cases:
+        var result = Dec128(tc.a) / Dec128(tc.b)
+        testing.assert_equal(String(result), tc.expected, tc.description)
 
-    # 3. Division resulting in non-integer
-    testing.assert_equal(
-        String(Decimal128(10) / Decimal128(4)),
-        "2.5",
-        "Division resulting in non-integer",
-    )
 
-    # 4. Division by one
-    testing.assert_equal(
-        String(Decimal128("123.45") / Decimal128(1)),
-        "123.45",
-        "Division by one",
-    )
+fn _run_truncate_section(
+    doc: tomlmojo.parser.TOMLDocument, section: String
+) raises:
+    """Run truncate division (//) test cases from a TOML section."""
+    var cases = load_test_cases(doc, section)
+    for tc in cases:
+        var result = Dec128(tc.a) // Dec128(tc.b)
+        testing.assert_equal(String(result), tc.expected, tc.description)
 
-    # 5. Division of zero
-    testing.assert_equal(
-        String(Decimal128(0) / Decimal128(42)), "0", "Division of zero"
-    )
 
-    # 6. Division with both negative numbers
-    testing.assert_equal(
-        String(Decimal128("-10") / Decimal128(-5)),
-        "2",
-        "Division with both negative numbers",
-    )
+# ─── TOML-driven test functions ─────────────────────────────────────────────
 
-    # 7. Division with negative dividend
-    testing.assert_equal(
-        String(Decimal128("-10") / Decimal128(5)),
-        "-2",
-        "Division with negative dividend",
-    )
 
-    # 8. Division with negative divisor
-    testing.assert_equal(
-        String(Decimal128(10) / Decimal128(-5)),
-        "-2",
-        "Division with negative divisor",
-    )
+fn test_division_basic() raises:
+    """10 basic division cases: integer, decimal, signed."""
+    var doc = parse_file(data_path)
+    _run_division_section(doc, "division_basic")
 
-    # 9. Division with decimals, same scale
-    testing.assert_equal(
-        String(Decimal128("10.5") / Decimal128("2.1")),
-        "5",
-        "Division with decimals, same scale",
-    )
 
-    # 10. Division with decimals, different scales
-    testing.assert_equal(
-        String(Decimal128("10.5") / Decimal128("0.5")),
-        "21",
-        "Division with decimals, different scales",
-    )
+fn test_division_precision() raises:
+    """6 precision/rounding cases at the 28-digit limit."""
+    var doc = parse_file(data_path)
+    _run_division_section(doc, "division_precision")
 
-    # print("✓ Basic division tests passed!")
+
+fn test_division_scale() raises:
+    """10 scale handling cases: powers of 10, trailing zeros."""
+    var doc = parse_file(data_path)
+    _run_division_section(doc, "division_scale")
+
+
+fn test_division_special() raises:
+    """30 special cases: exact results, large numbers, rounding."""
+    var doc = parse_file(data_path)
+    _run_division_section(doc, "division_special")
+
+
+fn test_truncate_basic() raises:
+    """11 basic truncate division cases: positive and negative."""
+    var doc = parse_file(data_path)
+    _run_truncate_section(doc, "truncate_basic")
+
+
+fn test_truncate_edge() raises:
+    """6 truncate edge cases: div by 1, zero dividend, small numbers."""
+    var doc = parse_file(data_path)
+    _run_truncate_section(doc, "truncate_edge")
+
+
+# ─── Inline tests: repeating decimals (startswith checks) ───────────────────
 
 
 fn test_repeating_decimals() raises:
-    # print("------------------------------------------------------")
-    # print("Testing division with repeating decimals...")
-
-    # 11. Division resulting in 1/3
-    var third = Decimal128(1) / Decimal128(3)
+    """10 cases testing repeating decimal results (cases 11-20)."""
     testing.assert_true(
-        String(third).startswith("0.33333333333333"),
-        "Case 11: Division resulting in 1/3 failed",
+        String(Decimal128(1) / Decimal128(3)).startswith("0.33333333333333"),
+        "1/3 repeating failed",
     )
-
-    # 12. Division resulting in 1/6
-    var sixth = Decimal128(1) / Decimal128(6)
     testing.assert_true(
-        String(sixth).startswith("0.16666666666666"),
-        "Case 12: Division resulting in 1/6 failed",
+        String(Decimal128(1) / Decimal128(6)).startswith("0.16666666666666"),
+        "1/6 repeating failed",
     )
-
-    # 13. Division resulting in 1/7
-    var seventh = Decimal128(1) / Decimal128(7)
     testing.assert_true(
-        String(seventh).startswith("0.142857142857142857"),
-        "Case 13: Division resulting in 1/7 failed",
+        String(Decimal128(1) / Decimal128(7)).startswith(
+            "0.142857142857142857"
+        ),
+        "1/7 repeating failed",
     )
-
-    # 14. Division resulting in 2/3
-    var two_thirds = Decimal128(2) / Decimal128(3)
     testing.assert_true(
-        String(two_thirds).startswith("0.66666666666666"),
-        "Case 14: Division resulting in 2/3 failed",
+        String(Decimal128(2) / Decimal128(3)).startswith("0.66666666666666"),
+        "2/3 repeating failed",
     )
-
-    # 15. Division resulting in 5/6
-    var five_sixths = Decimal128(5) / Decimal128(6)
     testing.assert_true(
-        String(five_sixths).startswith("0.83333333333333"),
-        "Case 15: Division resulting in 5/6 failed",
+        String(Decimal128(5) / Decimal128(6)).startswith("0.83333333333333"),
+        "5/6 repeating failed",
     )
-
-    # 16. Division of 1 by 9
-    var one_ninth = Decimal128(1) / Decimal128(9)
     testing.assert_true(
-        String(one_ninth).startswith("0.11111111111111"),
-        "Case 16: Division of 1 by 9 failed",
+        String(Decimal128(1) / Decimal128(9)).startswith("0.11111111111111"),
+        "1/9 repeating failed",
     )
-
-    # 17. Division of 1 by 11
-    var one_eleventh = Decimal128(1) / Decimal128(11)
     testing.assert_true(
-        String(one_eleventh).startswith("0.0909090909090"),
-        "Case 17: Division of 1 by 11 failed",
+        String(Decimal128(1) / Decimal128(11)).startswith("0.0909090909090"),
+        "1/11 repeating failed",
     )
-
-    # 18. Division of 1 by 12
-    var one_twelfth = Decimal128(1) / Decimal128(12)
     testing.assert_true(
-        String(one_twelfth).startswith("0.08333333333333"),
-        "Case 18: Division of 1 by 12 failed",
+        String(Decimal128(1) / Decimal128(12)).startswith("0.08333333333333"),
+        "1/12 repeating failed",
     )
-
-    # 19. Division of 5 by 11
-    var five_elevenths = Decimal128(5) / Decimal128(11)
     testing.assert_true(
-        String(five_elevenths).startswith("0.4545454545454"),
-        "Case 19: Division of 5 by 11 failed",
+        String(Decimal128(5) / Decimal128(11)).startswith("0.4545454545454"),
+        "5/11 repeating failed",
     )
-
-    # 20. Division of 10 by 3
-    var ten_thirds = Decimal128(10) / Decimal128(3)
     testing.assert_true(
-        String(ten_thirds).startswith("3.33333333333333"),
-        "Case 20: Division of 10 by 3 failed",
+        String(Decimal128(10) / Decimal128(3)).startswith("3.33333333333333"),
+        "10/3 repeating failed",
     )
 
-    # print("✓ Repeating decimal tests passed!")
+
+# ─── Inline tests: scale/precision properties and edge cases ────────────────
 
 
-fn test_precision_rounding() raises:
-    # print("------------------------------------------------------")
-    # print("Testing division precision and rounding...")
-
-    # 21. Rounding half even (banker's rounding) at precision limit
-    var a21 = Decimal128(2) / Decimal128(3)  # Should be ~0.6666...67
-    var b21 = Decimal128("0." + "6" * 27 + "7")  # 0.6666...67
-    testing.assert_equal(
-        String(a21), String(b21), "Rounding half even at precision limit"
+fn test_properties_and_edge() raises:
+    """Scale property checks, edge cases with comparisons and overflow."""
+    # Scale property checks
+    var a25 = Decimal128(1) / Decimal128(81)
+    testing.assert_true(
+        a25.scale() <= Decimal128.MAX_SCALE,
+        "1/81 scale should not exceed MAX_SCALE",
     )
 
-    # 22. Another case of rounding half even
-    var a22 = Decimal128(1) / Decimal128(9)  # Should be ~0.1111...11
-    var b22 = Decimal128("0." + "1" * 28)  # 0.1111...11
-    testing.assert_equal(
-        String(a22), String(b22), "Another case of rounding half even"
-    )
-
-    # 23. Rounding up at precision limit
-    var a23 = Decimal128(10) / Decimal128(3)  # Should be ~3.3333...33
-    var b23 = Decimal128("3." + "3" * 28)  # 3.3333...33
-    testing.assert_equal(
-        String(a23), String(b23), "Rounding up at precision limit"
-    )
-
-    # 24. Division requiring rounding to precision limit
-    var a24 = Decimal128(1) / Decimal128(7)  # ~0.142857...
-    var manually_calculated = Decimal128("0.1428571428571428571428571429")
-    testing.assert_equal(
-        String(a24),
-        String(manually_calculated),
-        "Division requiring rounding to precision limit",
-    )
-
-    # 25. Precision limit with repeating 9s
-    var a25 = Decimal128(1) / Decimal128(81)  # ~0.01234...
-    var precision_reached = a25.scale() <= Decimal128.MAX_SCALE
-    testing.assert_true(precision_reached, "Scale should not exceed MAX_SCALE")
-
-    # 26. Test precision with negative numbers
-    var a26 = Decimal128(-1) / Decimal128(3)
-    var b26 = Decimal128("-0." + "3" * 28)  # -0.3333...33
-    testing.assert_equal(
-        String(a26), String(b26), "Test precision with negative numbers"
-    )
-
-    # 27. Division with result at exactly precision limit
-    var a27 = Decimal128(1) / Decimal128(String("1" + "0" * 28))  # 1/10^28
-    testing.assert_equal(
-        String(a27),
-        String(Decimal128("0." + "0" * 27 + "1")),
-        "Division with result at exactly precision limit",
-    )
-
-    # 28. Division with result needing one more than precision limit
-    var a28 = Decimal128(1) / Decimal128(String("1" + "0" * 28))  # 1/10^29
-    testing.assert_equal(
-        String(a28),
-        String(Decimal128("0." + "0" * 27 + "1")),
-        "Division with result needing one more than precision limit",
-    )
-
-    # 29. Division where quotient has more digits than precision allows
     var a29 = Decimal128("12345678901234567890123456789") / Decimal128(7)
     testing.assert_true(
         a29.scale() <= Decimal128.MAX_SCALE,
-        "Scale should not exceed MAX_SCALE",
+        "Large / 7 scale should not exceed MAX_SCALE",
     )
 
-    # 30. Division where both operands have maximum precision
     var a30 = Decimal128("0." + "1" * 28) / Decimal128("0." + "9" * 28)
     testing.assert_true(
         a30.scale() <= Decimal128.MAX_SCALE,
-        "Scale should not exceed MAX_SCALE",
+        "Max precision / max precision scale check",
     )
 
-    # print("✓ Precision and rounding tests passed!")
-
-
-fn test_scale_handling() raises:
-    # print("------------------------------------------------------")
-    # print("Testing scale handling in division...")
-
-    # 31. Division by power of 10
-    testing.assert_equal(
-        String(Decimal128("123.456") / Decimal128(10)),
-        "12.3456",
-        "Division by power of 10",
-    )
-
-    # 32. Division by 0.1 (multiply by 10)
-    testing.assert_equal(
-        String(Decimal128("123.456") / Decimal128("0.1")),
-        "1234.56",
-        "Division by 0.1",
-    )
-
-    # 33. Division by 0.01 (multiply by 100)
-    testing.assert_equal(
-        String(Decimal128("123.456") / Decimal128("0.01")),
-        "12345.6",
-        "Division by 0.01",
-    )
-
-    # 34. Division by 100 (divide by 100)
-    testing.assert_equal(
-        String(Decimal128("123.456") / Decimal128(100)),
-        "1.23456",
-        "Division by 100",
-    )
-
-    # 35. Division resulting in loss of trailing zeros
-    testing.assert_equal(
-        String(Decimal128("10.000") / Decimal128(2)),
-        "5.000",
-        "Division resulting in loss of trailing zeros",
-    )
-
-    # 36. Division where quotient needs more decimal places
-    testing.assert_equal(
-        String(Decimal128(1) / Decimal128(8)),
-        "0.125",
-        "Division where quotient needs more decimal places",
-    )
-
-    # 37. Division where dividend has more scale than divisor
-    testing.assert_equal(
-        String(Decimal128("0.01") / Decimal128(2)),
-        "0.005",
-        "Division where dividend has more scale than divisor",
-    )
-
-    # 38. Division where divisor has more scale than dividend
-    testing.assert_equal(
-        String(Decimal128(2) / Decimal128("0.01")),
-        "200",
-        "Division where divisor has more scale than dividend",
-    )
-
-    # 39. Division where both have high scale and result needs less
-    testing.assert_equal(
-        String(Decimal128("0.0001") / Decimal128("0.0001")),
-        "1",
-        "Division where both have high scale and result needs less",
-    )
-
-    # 40. Division where both have high scale and result needs more
-    testing.assert_equal(
-        String(Decimal128("0.0001") / Decimal128("0.0003")),
-        "0.3333333333333333333333333333",
-        "Division where both have high scale and result needs more",
-    )
-
-    # print("✓ Scale handling tests passed!")
-
-
-fn test_edge_cases() raises:
-    # print("------------------------------------------------------")
-    # print("Testing division edge cases...")
-
-    # 41. Division by very small number close to zero
-    var a41 = Decimal128(1) / Decimal128(
-        "0." + "0" * 27 + "1"
-    )  # Dividing by 10^-28
+    # Division by very small number close to zero
+    var a41 = Decimal128(1) / Decimal128("0." + "0" * 27 + "1")
     testing.assert_true(
         a41 > Decimal128(String("1" + "0" * 27)),
-        "Case 41: Division by very small number failed",
+        "Division by very small number failed",
     )
 
-    # 42. Division resulting in a number close to zero
-    var a42 = Decimal128("0." + "0" * 27 + "1") / Decimal128(
-        10
-    )  # Very small / 10
+    # Division resulting in number close to zero
+    var a42 = Decimal128("0." + "0" * 27 + "1") / Decimal128(10)
     testing.assert_equal(
         a42,
         Decimal128("0." + "0" * 28),
-        "Case 42: Division resulting in number close to zero failed",
+        "Division resulting in number close to zero failed",
     )
 
-    # 43. Division of very large number by very small number
-    var max_decimal = Decimal128.MAX()
-    var small_divisor = Decimal128("0.0001")
+    # Division of very large by very small (may overflow)
     try:
-        var _a43 = max_decimal / small_divisor
+        var _a43 = Decimal128.MAX() / Decimal128("0.0001")
     except:
-        print(
-            "Division of very large number by very small number raised"
-            " exception"
-        )
+        pass  # Overflow acceptable
 
-    # 44. Division of minimum representable positive number
-    var min_positive = Decimal128(
-        "0." + "0" * 27 + "1"
-    )  # Smallest positive decimal
+    # Minimum representable positive divided by 2
+    var min_positive = Decimal128("0." + "0" * 27 + "1")
     var a44 = min_positive / Decimal128(2)
     testing.assert_true(a44.scale() <= Decimal128.MAX_SCALE)
 
-    # 45. Division by power of 2 (binary divisions)
-    testing.assert_equal(
-        String(Decimal128(1) / Decimal128(4)), "0.25", "Division by power of 2"
-    )
-
-    # 46. Division by 9's
-    testing.assert_equal(
-        String(Decimal128(100) / Decimal128("9.9")),
-        "10.101010101010101010101010101",
-        "Division by 9's",
-    )
-
-    # 47. Division resulting in exactly MAX_SCALE digits
+    # 1/3 should have exactly MAX_SCALE digits
     var a47 = Decimal128(1) / Decimal128(3)
     testing.assert_true(
         a47.scale() == Decimal128.MAX_SCALE,
-        "Case 47: Division resulting in exactly MAX_SCALE digits failed",
+        "1/3 should have exactly MAX_SCALE digits",
     )
 
-    # 48. Division of large integers resulting in max precision
-    testing.assert_equal(
-        String(Decimal128(9876543210) / Decimal128(123456789)),
-        "80.00000072900000663390006037",
-        "Division of large integers resulting in max precision",
-    )
-
-    # 49. Division of zero by one (edge case)
-    testing.assert_equal(
-        String(Decimal128(0) / Decimal128(1)), "0", "Division of zero by one"
-    )
-
-    # 50. Division with value at maximum supported scale
+    # Value at maximum supported scale divided by 1
     var a50 = Decimal128("0." + "0" * 27 + "5") / Decimal128(1)
     testing.assert_true(
         a50.scale() <= Decimal128.MAX_SCALE,
-        "Case 50: Division with value at maximum supported scale failed",
+        "Division with max supported scale failed",
     )
 
-    # print("✓ Edge case tests passed!")
-
-
-fn test_large_numbers() raises:
-    # print("------------------------------------------------------")
-    # print("Testing division with large numbers...")
-
-    # 51. Division of large number that results in small number
-    testing.assert_equal(
-        String(Decimal128("1" + "0" * 20) / Decimal128("1" + "0" * 20)),
-        "1",
-        "Division of large number that results in small number",
-    )
-
-    # 52. Division where dividend is at max capacity
+    # MAX / 1 should equal MAX
     var max_value = Decimal128.MAX()
-    var a52 = max_value / Decimal128(1)
     testing.assert_equal(
-        a52,
+        max_value / Decimal128(1),
         max_value,
-        "Case 52: Division where dividend is at max capacity failed",
+        "MAX / 1 should equal MAX",
     )
 
-    # 53. Division where dividend is slightly below max
+    # Near-MAX divided by 10
     var near_max = Decimal128.MAX() - Decimal128(1)
-    var a53 = near_max / Decimal128(10)
-    testing.assert_equal(a53, Decimal128("7922816251426433759354395033.4"))
+    testing.assert_equal(
+        near_max / Decimal128(10),
+        Decimal128("7922816251426433759354395033.4"),
+        "Near-MAX / 10 failed",
+    )
 
-    # 54. Division where result approaches max
+    # (MAX/3)*3 should not exceed MAX
     var large_num = Decimal128.MAX() / Decimal128(3)
-    var a54 = large_num * Decimal128(3)
     testing.assert_true(
-        a54 <= Decimal128.MAX(),
-        "Case 54: Division where result approaches max failed",
+        large_num * Decimal128(3) <= Decimal128.MAX(),
+        "(MAX/3)*3 should not exceed MAX",
     )
 
-    # 55. Large negative divided by large positive
-    var large_neg = -Decimal128(String("1" + "0" * 15))
-    var a55 = large_neg / Decimal128(10000)
-    testing.assert_equal(
-        a55,
-        -Decimal128(String("1" + "0" * 11)),
-        "Case 55: Large negative divided by large positive failed",
-    )
-
-    # 56. Large integer division with remainder
-    testing.assert_equal(
-        String(Decimal128("12345678901234567890") / Decimal128(9876543210)),
-        "1249999988.7343749990033203125",
-        "Large integer division with many digits",
-    )
-
-    # 57. Large numbers with exact division
-    testing.assert_equal(
-        String(Decimal128("9" * 28) / Decimal128("9" * 14)),
-        String(Decimal128("100000000000001")),
-        "Large numbers with exact division",
-    )
-
-    # 58. Division of large numbers with same leading digits
-    var a58 = Decimal128("123" + "0" * 25) / Decimal128("123" + "0" * 15)
-    testing.assert_equal(
-        a58,
-        Decimal128("1" + "0" * 10),
-        "Case 58: Division of large numbers with same leading digits failed",
-    )
-
-    # 59. Large numbers with different signs
-    var a59 = Decimal128("9" * 28) / Decimal128("-" + "9" * 14)
-    testing.assert_equal(
-        a59,
-        -Decimal128("100000000000001"),
-        "Case 59: Large numbers with different signs failed",
-    )
-
-    # 60. Division near maximum representable value
+    # MAX / 0.5 should overflow
     try:
-        var a60 = Decimal128.MAX() / Decimal128("0.5")
-        testing.assert_true(a60 <= Decimal128.MAX())
+        var _a60 = Decimal128.MAX() / Decimal128("0.5")
     except:
-        print("Division overflows")
-
-    # print("✓ Large number division tests passed!")
+        pass  # Overflow acceptable
 
 
-fn test_special_cases() raises:
-    # print("Testing special division cases...")
+# ─── Inline tests: special equality and precision cases ──────────────────────
 
-    # 61. Identical numbers should give 1
-    testing.assert_equal(
-        String(Decimal128("123.456") / Decimal128("123.456")),
-        "1",
-        "Identical numbers should give 1",
-    )
 
-    # 62. Division by 0.1 power for decimal shift
-    testing.assert_equal(
-        String(Decimal128("1.234") / Decimal128("0.001")),
-        "1234",
-        "Division by 0.1 power for decimal shift",
-    )
-
-    # 63. Division that normalizes out trailing zeros
+fn test_special_and_precision() raises:
+    """Decimal128 equality, mixed precision, and rounding edge cases."""
+    # 1.000 / 1.000 should equal 1 (Decimal128 value equality)
     testing.assert_equal(
         Decimal128("1.000") / Decimal128("1.000"),
         Decimal128(1),
-        "Case 63: Division that normalizes out trailing zeros failed",
+        "1.000/1.000 should equal Decimal128(1)",
     )
 
-    # 64. Division by 1 should leave number unchanged
+    # Division by 1 preserves value
     var special_value = Decimal128("123.456789012345678901234567")
     testing.assert_equal(
         special_value / Decimal128(1),
         special_value,
-        "Case 64: Division by 1 should leave number unchanged failed",
+        "Division by 1 should preserve value",
     )
 
-    # 65. Division by self should be 1 for non-zero
+    # Self-division for non-zero
     testing.assert_equal(
         Decimal128("0.000123") / Decimal128("0.000123"),
         Decimal128(1),
-        "Case 65: Division by self should be 1 for non-zero failed",
+        "Self-division should give 1",
     )
 
-    # 66. Division of 1 by numbers close to 1
+    # Division by number close to 1
     testing.assert_equal(
         Decimal128(1) / Decimal128("0.999999"),
         Decimal128("1.000001000001000001000001000"),
-        "Case 66: Division of 1 by numbers close to 1 failed",
+        "1 / 0.999999 precision test",
     )
 
-    # 67. Series of divisions that should cancel out
+    # Division then multiplication should approximately cancel
     var value = Decimal128("123.456")
     var divided = value / Decimal128(7)
     var result = divided * Decimal128(7)
     testing.assert_true(
         abs(value - result) / value < Decimal128("0.0001"),
-        "Case 67: Series of divisions that should cancel out failed",
+        "Divide then multiply should approximately cancel",
     )
 
-    # 68. Division by fractional power of 10
-    testing.assert_equal(
-        String(Decimal128("5.5") / Decimal128("0.055")),
-        "100",
-        "Division by fractional power of 10",
-    )
-
-    # 69. Division causing exact shift in magnitude
-    testing.assert_equal(
-        String(Decimal128(1) / Decimal128(1000)),
-        "0.001",
-        "Division causing exact shift in magnitude",
-    )
-
-    # 70. Dividing number very close to zero by one
-    var very_small = Decimal128("0." + "0" * 27 + "1")
-    testing.assert_equal(
-        very_small / Decimal128(1),
-        very_small,
-        "Case 70: Dividing number very close to zero by one failed",
-    )
-
-    # print("✓ Special case tests passed!")
-
-
-fn test_mixed_precision() raises:
-    # print("Testing mixed precision division cases...")
-
-    # 71. High precision / low precision
-    testing.assert_equal(
-        String(Decimal128("123.456789012345678901234567") / Decimal128(2)),
-        "61.7283945061728394506172835",
-        "High precision / low precision",
-    )
-
-    # 72. Low precision / high precision
-    var a72 = Decimal128(1234) / Decimal128("0.0000000000000000000000011")
-    testing.assert_equal(
-        a72,
-        Decimal128("1121818181818181818181818181.8"),
-        "Low precision / high precision",
-    )
-
-    # 73. Mixing high precision with power of 10
-    var a73 = Decimal128("0.123456789012345678901234567") / Decimal128("0.1")
-    testing.assert_equal(
-        a73,
-        Decimal128("1.23456789012345678901234567"),
-        "Case 73: Mixing high precision with power of 10 failed",
-    )
-
-    # 74. Precision of result higher than either operand
+    # startswith checks for mixed precision
     var a74 = Decimal128("0.1") / Decimal128(3)
     testing.assert_true(
         String(a74).startswith("0.0333333333333333"),
-        "Case 74: Precision of result higher than either operand failed",
+        "0.1/3 precision failed",
     )
 
-    # 75. Division where divisor has higher precision than dividend
     var a75 = Decimal128(1) / Decimal128("0.0001234567890123456789")
     testing.assert_true(
-        a75 > Decimal128(8000),
-        (
-            "Case 75: Division where divisor has higher precision than dividend"
-            " failed"
-        ),
+        a75 > Decimal128(8000), "1/0.000123... should be > 8000"
     )
 
-    # 76. Division where precision shifts dramatically
-    var a76 = Decimal128("0.000000001") / Decimal128("0.000000000001")
-    testing.assert_equal(
-        a76,
-        Decimal128(1000),
-        "Case 76: Division where precision shifts dramatically failed",
-    )
-
-    # 77. Mixing different but high precision values
     var a77 = Decimal128("0.12345678901234567") / Decimal128(
         "0.98765432109876543"
     )
     testing.assert_true(
-        a77 < Decimal128("0.13"),
-        "Case 77: Mixing different but high precision values failed",
+        a77 < Decimal128("0.13"), "Small/large should be < 0.13"
     )
 
-    # 78. Very different scales that result in exact division
-    testing.assert_equal(
-        String(Decimal128("0.0000004") / Decimal128("0.0002")),
-        "0.002",
-        "Very different scales that result in exact division",
-    )
-
-    # 79. Maximum precision divided by maximum precision
-    testing.assert_equal(
-        String(Decimal128("0." + "9" * 28) / Decimal128("0." + "3" * 28)),
-        "3",
-        "Maximum precision divided by maximum precision",
-    )
-
-    # 80. Many trailing zeros in result
-    testing.assert_equal(
-        String(Decimal128("2.000") / Decimal128("0.001")),
-        "2000",
-        "Many trailing zeros in result",
-    )
-
-    # print("✓ Mixed precision tests passed!")
-
-
-fn test_rounding_behavior() raises:
-    # print("------------------------------------------------------")
-    # print("Testing division rounding behavior...")
-
-    # 81. Banker's rounding at boundary (round to even)
-    var a81 = Decimal128(1) / Decimal128(
-        String("3" + "0" * (Decimal128.MAX_SCALE - 1))
-    )
-    var expected = "0." + "0" * (Decimal128.MAX_SCALE - 1) + "3"
-    testing.assert_equal(
-        String(a81), expected, "Case 81: Banker's rounding at boundary failed"
-    )
-
-    # 82. Banker's rounding up at precision limit
-    var a82 = Decimal128(5) / Decimal128(9)  # ~0.55555...
-    var b82 = Decimal128("0." + "5" * 27 + "6")  # 0.5555...6
-    testing.assert_equal(
-        a82, b82, "Case 82: Banker's rounding up at precision limit failed"
-    )
-
-    # 83. Rounding that requires carry propagation
+    # Rounding with carry propagation
     var a83 = Decimal128(1) / Decimal128("1.9999999999999999999999999")
     var expected83 = Decimal128("0.5000000000000000000000000250")
-    testing.assert_equal(
-        a83,
-        expected83,
-        "Case 83: Rounding that requires carry propagation failed",
-    )
+    testing.assert_equal(a83, expected83, "Rounding with carry propagation")
 
-    # 84. Division that results in exactly half a unit in last place
+    # Division at exactly half a unit in last place
     var a84 = Decimal128(1) / Decimal128("4" + "0" * Decimal128.MAX_SCALE)
-    var expected84 = Decimal128("0." + "0" * (Decimal128.MAX_SCALE))
+    var expected84 = Decimal128("0." + "0" * Decimal128.MAX_SCALE)
+    testing.assert_equal(a84, expected84, "Half unit in last place test")
+
+    # Large numbers with same leading digits (Decimal128 equality, not string)
+    var a58 = Decimal128("123" + "0" * 25) / Decimal128("123" + "0" * 15)
     testing.assert_equal(
-        a84,
-        expected84,
-        (
-            "Case 84: Division that results in exactly half a unit in last"
-            " place failed"
-        ),
+        a58,
+        Decimal128("1" + "0" * 10),
+        "Large numbers with same leading digits",
     )
 
-    # 85. Rounding stress test: 1/7 at different precisions
-    var a85 = Decimal128(1) / Decimal128(7)
-    var expected85 = Decimal128(
-        "0.1428571428571428571428571429"
-    )  # 28 decimal places
-    testing.assert_equal(
-        a85,
-        expected85,
-        "Case 85: Rounding stress test: 1/7 at different precisions failed",
-    )
 
-    # 86. Division at the edge
-    testing.assert_equal(
-        String(Decimal128("9.999999999999999999999999999") / Decimal128(10)),
-        "0.9999999999999999999999999999",
-        "Division at the edge",
-    )
-
-    # 87. Division requiring rounding to even at last digit
-    testing.assert_equal(
-        String(Decimal128("1.25") / Decimal128("0.5")),
-        "2.5",
-        "Division requiring rounding to even at last digit",
-    )
-
-    # 88. Half-even rounding with even digit before
-    testing.assert_equal(
-        String(Decimal128("24.5") / Decimal128(10)),
-        "2.45",
-        "Testing half-even rounding with even digit before",
-    )
-
-    # 89. Half-even rounding with odd digit before
-    testing.assert_equal(
-        String(Decimal128("25.5") / Decimal128(10)),
-        "2.55",
-        "Testing half-even rounding with odd digit before",
-    )
-
-    # 90. Division with MAX_SCALE-3 digits
-    # 1 / 300000000000000000000000000 (26 zeros)
-    var a90 = Decimal128(1) / Decimal128(String("300000000000000000000000000"))
-    testing.assert_equal(
-        String(a90),
-        "0.0000000000000000000000000033",
-        "Case 90: Division with exactly MAX_SCALE digits failed",
-    )
-
-    # print("✓ Rounding behavior tests passed!")
+# ─── Inline tests: error handling ────────────────────────────────────────────
 
 
-fn test_error_cases() raises:
-    # print("------------------------------------------------------")
-    # print("Testing division error cases...")
-
-    # 91. Division by zero
+fn test_error_handling() raises:
+    """Division by zero, overflow, and boundary conditions."""
+    # Division by zero
     try:
         var _result = Decimal128(123) / Decimal128(0)
-        testing.assert_true(
-            False, "Case 91: Expected division by zero to raise exception"
-        )
+        testing.assert_true(False, "Expected division by zero to raise")
     except:
-        testing.assert_true(
-            True, "Case 91: Division by zero correctly raised exception"
-        )
+        pass
 
-    # 92. Division with overflow potential
-    # This is intended to test if the implementation can avoid overflow
-    # by handling the operation algebraically before doing actual division
-    var large1 = Decimal128.MAX()
-    var large2 = Decimal128("0.5")
+    # Overflow: MAX / 0.5
     try:
-        var result92 = large1 / large2
-        testing.assert_true(result92 > large1)
+        var result92 = Decimal128.MAX() / Decimal128("0.5")
+        testing.assert_true(result92 > Decimal128.MAX())
     except:
-        print("Overflow detected (acceptable)")
+        pass  # Overflow acceptable
 
-    # 93. Division of maximum possible value
+    # Overflow: MAX / 0.1
     try:
-        var result93 = Decimal128.MAX() / Decimal128("0.1")
-        testing.assert_true(result93 > Decimal128.MAX())
+        var _result93 = Decimal128.MAX() / Decimal128("0.1")
     except:
-        print("Overflow detected (acceptable)")
+        pass  # Overflow acceptable
 
-    # 94. Division of minimum possible value
+    # MIN / positive
     var result94 = Decimal128.MIN() / Decimal128("10.12345")
     testing.assert_equal(
         result94,
         Decimal128("-7826201790324873199704048554.1"),
-        "Case 94: Division of minimum possible value failed",
+        "MIN / positive value failed",
     )
 
-    # 95. Division of very small by very large (approaching underflow)
+    # Very small / MAX approaches zero
     var result95 = Decimal128("0." + "0" * 27 + "1") / Decimal128.MAX()
     testing.assert_equal(
         String(result95),
         "0.0000000000000000000000000000",
-        "Case 95: Division of very small by very large failed",
+        "Very small / MAX failed",
     )
 
-    # 96. Division of maximum by minimum value
+    # MAX / MIN should be -1
     testing.assert_equal(
         String(Decimal128.MAX() / Decimal128.MIN()),
         "-1",
-        "Division of maximum by minimum value",
+        "MAX / MIN should be -1",
     )
 
-    # 97. Division with potential for intermediate overflow
-    testing.assert_equal(
-        String(Decimal128("1" + "0" * 20) / Decimal128("1" + "0" * 20)),
-        "1",
-        "Division with potential for intermediate overflow",
-    )
-
-    # 98. Division resulting in value greater than representable max
+    # Overflow: MAX / 0.00001
     try:
-        # This may either return MAX or raise an error depending on implementation
         var result = Decimal128.MAX() / Decimal128("0.00001")
         testing.assert_true(result >= Decimal128.MAX())
     except:
-        testing.assert_true(True, "Overflow detected (acceptable)")
+        pass  # Overflow acceptable
 
-    # 99. Multiple operations that could cause cumulative error
+    # Cumulative error from divide then multiply
     var calc = (Decimal128(1) / Decimal128(3)) * Decimal128(3)
     testing.assert_equal(
         String(calc),
         "0.9999999999999999999999999999",
-        "Case 99: Multiple operations that could cause cumulative error failed",
+        "Cumulative error test failed",
     )
 
-    # 100. Division at the exact boundary of precision limit
-    # 1 / 70000000000000000000000000000 (28 zeros)
-    var a100 = Decimal128(1) / Decimal128(
-        String("7" + "0" * Decimal128.MAX_SCALE)
-    )
+    # Truncate division by zero
+    try:
+        var _result = Decimal128(10) // Decimal128(0)
+        testing.assert_true(False, "Truncate divide by zero should raise")
+    except:
+        pass
+
+
+# ─── Inline tests: truncate division mathematical relationships ──────────────
+
+
+fn test_truncate_math_relationships() raises:
+    """Mathematical properties of truncate division."""
+    # a = (a // b) * b + (a % b) for positive
+    var a1 = Decimal128(10)
+    var b1 = Decimal128(3)
+    var floor_div = a1 // b1
+    var mod_result = a1 % b1
     testing.assert_equal(
-        String(a100),
-        "0.0000000000000000000000000000",
-        "Case 100: Division at the exact boundary of precision limit failed",
+        String(floor_div * b1 + mod_result),
+        String(a1),
+        "a should equal (a // b) * b + (a % b)",
     )
 
-    # print("✓ Error case tests passed!")
+    # a // b = floor(a / b)
+    var a2 = Decimal128("10.5")
+    var b2 = Decimal128("2.5")
+    var floor_div2 = a2 // b2
+    var div_floored = (a2 / b2).round(0, RoundingMode.down())
+    testing.assert_equal(
+        String(floor_div2),
+        String(div_floored),
+        "a // b should equal floor(a / b)",
+    )
+
+    # Relationship with negative values
+    var a3 = Decimal128(-10)
+    var b3 = Decimal128(3)
+    var floor_div3 = a3 // b3
+    var mod_result3 = a3 % b3
+    testing.assert_equal(
+        String(floor_div3 * b3 + mod_result3),
+        String(a3),
+        "a = (a // b) * b + (a % b) with negatives",
+    )
+
+    # (a // b) * b <= a < (a // b + 1) * b
+    var a4 = Decimal128("10.5")
+    var b4 = Decimal128("3.2")
+    var floor_div4 = a4 // b4
+    var lower_bound = floor_div4 * b4
+    var upper_bound = (floor_div4 + Decimal128(1)) * b4
+    testing.assert_true(
+        (lower_bound <= a4) and (a4 < upper_bound),
+        "(a // b) * b <= a < (a // b + 1) * b should hold",
+    )
 
 
 fn main() raises:
-    # print("\n=== Running Comprehensive Decimal128 Division Tests ===\n")
-
-    # test_basic_division()
-    # print()
-
-    # test_repeating_decimals()
-    # print()
-
-    # test_precision_rounding()
-    # print()
-
-    # test_scale_handling()
-    # print()
-
-    # test_edge_cases()
-    # print()
-
-    # test_large_numbers()
-    # print()
-
-    # test_special_cases()
-    # print()
-
-    # test_mixed_precision()
-    # print()
-
-    # test_rounding_behavior()
-    # print()
-
-    # test_error_cases()
-    # print()
-
     testing.TestSuite.discover_tests[__functions_in_module()]().run()
-
-    # print("✓✓✓ All 100 division tests passed! ✓✓✓")

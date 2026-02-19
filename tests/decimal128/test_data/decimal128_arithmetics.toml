@@ -1,0 +1,352 @@
+# ===----------------------------------------------------------------------=== #
+# Test cases for Decimal128 arithmetic operations
+# ===----------------------------------------------------------------------=== #
+
+# ===----------------------------------------------------------------------=== #
+# Addition tests
+# ===----------------------------------------------------------------------=== #
+
+# === BASIC ADDITION TESTS ===
+
+[[addition_tests]]
+a = "123.45"
+b = "67.89"
+description = "Simple addition with same scale"
+expected = "191.34"
+
+[[addition_tests]]
+a = "123.4"
+b = "67.89"
+description = "Addition with different scales"
+expected = "191.29"
+
+# === SIGN COMBINATION TESTS ===
+
+[[addition_tests]]
+a = "123.45"
+b = "-67.89"
+description = "Addition with negative number"
+expected = "55.56"
+
+[[addition_tests]]
+a = "-123.45"
+b = "67.89"
+description = "Addition resulting in negative"
+expected = "-55.56"
+
+# === ZERO TESTS ===
+
+[[addition_tests]]
+a = "123.45"
+b = "0.00"
+description = "Addition with zero"
+expected = "123.45"
+
+[[addition_tests]]
+a = "123.45"
+b = "-123.45"
+description = "Addition resulting in zero"
+expected = "0.00"
+
+# === SMALL VALUE / LARGE SCALE TESTS ===
+
+[[addition_tests]]
+a = "0.0000001"
+b = "0.0000002"
+description = "Addition with large scales"
+expected = "0.0000003"
+
+[[addition_tests]]
+a = "0.000001"
+b = "0.0000002"
+description = "Addition with different large scales"
+expected = "0.0000012"
+
+# === HIGH PRECISION TESTS ===
+
+[[addition_tests]]
+a = "0.123456789012345678901234567"
+b = "0.987654321098765432109876543"
+description = "Addition with many decimal places"
+expected = "1.111111110111111111011111110"
+
+[[addition_tests]]
+a = "123456789"
+b = "0.000000000123456789"
+description = "Addition with extreme scale difference"
+expected = "123456789.000000000123456789"
+
+[[addition_tests]]
+a = "0.1111111111111111111111111111"
+b = "0.9999999999999999999999999999"
+description = "Addition near maximum precision"
+expected = "1.1111111111111111111111111110"
+
+[[addition_tests]]
+a = "0.1111111111111111111111111111"
+b = "0.0999999999999999999999999999"
+description = "Addition causing scale truncation"
+expected = "0.2111111111111111111111111110"
+
+[[addition_tests]]
+a = "0.0000000000000000000000000001"
+b = "0.0000000000000000000000000002"
+description = "Addition of very small numbers"
+expected = "0.0000000000000000000000000003"
+
+# === MIXED SIGN AND SCALE TESTS ===
+
+[[addition_tests]]
+a = "1.01"
+b = "-0.101"
+description = "Addition with alternating signs and scales"
+expected = "0.909"
+
+# === BOUNDARY / LARGE VALUE TESTS ===
+
+[[addition_tests]]
+a = "79228162514264337593543950334"
+b = "1"
+description = "Addition approaching maximum value"
+expected = "79228162514264337593543950335"
+
+[[addition_tests]]
+a = "1234567890123456789.0123456789"
+b = "0.0000000000000000009876543211"
+description = "Addition with large and small values"
+expected = "1234567890123456789.0123456789"
+
+[[addition_tests]]
+a = "4563117171088016.3026696499898"
+b = "0.0000000000000000000000000000"
+description = "Addition with zero (high scale)"
+expected = "4563117171088016.3026696499898"
+
+# ===----------------------------------------------------------------------=== #
+# Subtraction tests
+# ===----------------------------------------------------------------------=== #
+
+# === BASIC SUBTRACTION TESTS ===
+
+[[subtraction_tests]]
+a = "123.45"
+b = "67.89"
+description = "Simple subtraction with same scale"
+expected = "55.56"
+
+[[subtraction_tests]]
+a = "123.4"
+b = "67.89"
+description = "Subtraction with different scales"
+expected = "55.51"
+
+[[subtraction_tests]]
+a = "67.89"
+b = "123.45"
+description = "Subtraction resulting in negative"
+expected = "-55.56"
+
+# === SIGN COMBINATION TESTS ===
+
+[[subtraction_tests]]
+a = "123.45"
+b = "-67.89"
+description = "Subtraction of negative number"
+expected = "191.34"
+
+# === ZERO TESTS ===
+
+[[subtraction_tests]]
+a = "123.45"
+b = "0.00"
+description = "Subtraction with zero"
+expected = "123.45"
+
+[[subtraction_tests]]
+a = "123.45"
+b = "123.45"
+description = "Subtraction resulting in zero"
+expected = "0.00"
+
+# === SMALL VALUE / LARGE SCALE TESTS ===
+
+[[subtraction_tests]]
+a = "0.0000003"
+b = "0.0000002"
+description = "Subtraction with large scales"
+expected = "0.0000001"
+
+[[subtraction_tests]]
+a = "0.000005"
+b = "0.0000002"
+description = "Subtraction with different large scales"
+expected = "0.0000048"
+
+[[subtraction_tests]]
+a = "1.0000001"
+b = "1.0000000"
+description = "Subtraction with small difference"
+expected = "0.0000001"
+
+# === HIGH PRECISION TESTS ===
+
+[[subtraction_tests]]
+a = "9999999999.9999999"
+b = "0.0000001"
+description = "Subtraction of very small from very large"
+expected = "9999999999.9999998"
+
+# === SELF SUBTRACTION TESTS ===
+
+[[subtraction_tests]]
+a = "123.45"
+b = "123.45"
+description = "Self subtraction (123.45)"
+expected = "0.00"
+
+[[subtraction_tests]]
+a = "-987.654"
+b = "-987.654"
+description = "Self subtraction (-987.654)"
+expected = "0.000"
+
+[[subtraction_tests]]
+a = "0.0001"
+b = "0.0001"
+description = "Self subtraction (0.0001)"
+expected = "0.0000"
+
+[[subtraction_tests]]
+a = "-99999.99999"
+b = "-99999.99999"
+description = "Self subtraction (-99999.99999)"
+expected = "0.00000"
+
+# === COMMUTATIVITY TEST ===
+
+[[subtraction_tests]]
+a = "123.456"
+b = "789.012"
+description = "Verify a - b gives correct result (for commutativity test)"
+expected = "-665.556"
+
+# ===----------------------------------------------------------------------=== #
+# Negation tests (unary)
+# ===----------------------------------------------------------------------=== #
+
+[[negation_tests]]
+a = "123.45"
+description = "Negating positive number"
+expected = "-123.45"
+
+[[negation_tests]]
+a = "-67.89"
+description = "Negating negative number"
+expected = "67.89"
+
+[[negation_tests]]
+a = "0"
+description = "Negating zero"
+expected = "0"
+
+[[negation_tests]]
+a = "123.4500"
+description = "Negating with trailing zeros"
+expected = "-123.4500"
+
+[[negation_tests]]
+a = "0.0000000000000000000000000001"
+description = "Negating very small number"
+expected = "-0.0000000000000000000000000001"
+
+[[negation_tests]]
+a = "79228162514264337593543950335"
+description = "Negating maximum value"
+expected = "-79228162514264337593543950335"
+
+[[negation_tests]]
+a = "123000"
+description = "Negating number from scientific notation (1.23e5)"
+expected = "-123000"
+
+[[negation_tests]]
+a = "0.1111111111111111111111111111"
+description = "Negating number with maximum precision"
+expected = "-0.1111111111111111111111111111"
+
+# ===----------------------------------------------------------------------=== #
+# Absolute value tests (unary)
+# ===----------------------------------------------------------------------=== #
+
+[[abs_tests]]
+a = "123.45"
+description = "Absolute value of positive number"
+expected = "123.45"
+
+[[abs_tests]]
+a = "-67.89"
+description = "Absolute value of negative number"
+expected = "67.89"
+
+[[abs_tests]]
+a = "0"
+description = "Absolute value of zero"
+expected = "0"
+
+[[abs_tests]]
+a = "0.00"
+description = "Absolute value of negative zero"
+expected = "0.00"
+
+[[abs_tests]]
+a = "-0.0000000001"
+description = "Absolute value of small negative number"
+expected = "0.0000000001"
+
+[[abs_tests]]
+a = "-9999999999.9999999999"
+description = "Absolute value of large negative number"
+expected = "9999999999.9999999999"
+
+[[abs_tests]]
+a = "-0.123456789012345678901234567"
+description = "Absolute value of high precision negative number"
+expected = "0.123456789012345678901234567"
+
+[[abs_tests]]
+a = "79228162514264337593543950335"
+description = "Absolute value of maximum value"
+expected = "79228162514264337593543950335"
+
+[[abs_tests]]
+a = "-79228162514264337593543950335"
+description = "Absolute value of negative maximum value"
+expected = "79228162514264337593543950335"
+
+# ===----------------------------------------------------------------------=== #
+# Extreme / edge case tests
+# ===----------------------------------------------------------------------=== #
+
+[[extreme_addition_tests]]
+a = "0.1111111111111111111111111111"
+b = "-0.1111111111111111111111111111"
+description = "High precision addition resulting in zero"
+expected = "0.0000000000000000000000000000"
+
+[[extreme_addition_tests]]
+a = "0.00"
+b = "0.000000"
+description = "Addition of different precision zeros"
+expected = "0.000000"
+
+[[extreme_addition_tests]]
+a = "0.0"
+b = "-0.00"
+description = "Addition of positive and negative zero"
+expected = "0.00"
+
+[[extreme_addition_tests]]
+a = "99999999999999999999.9999999999999999999999999999"
+b = "0.0000000000000000000000000001"
+description = "Addition with extensive carry propagation"
+expected = "100000000000000000000.00000000"

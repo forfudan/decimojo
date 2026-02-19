@@ -607,41 +607,5 @@ fn run_single_quantize_case(
         # Both implementations should either both succeed or both fail
 
 
-fn run_test_with_error_handling(
-    test_fn: fn () raises -> None, test_name: String
-) raises:
-    """Helper function to run a test function with error handling and reporting.
-    """
-    try:
-        print("\n" + "=" * 50)
-        print("RUNNING: " + test_name)
-        print("=" * 50)
-        test_fn()
-        print("\n✓ " + test_name + " passed\n")
-    except e:
-        print("\n✗ " + test_name + " FAILED!")
-        print("Error message: " + String(e))
-        raise e^
-
-
 fn main() raises:
-    # print("=========================================")
-    # print("Running Decimal128.quantize() Tests")
-    # print("=========================================")
-
-    # run_test_with_error_handling(
-    #     test_basic_quantization, "Basic quantization test"
-    # )
-    # run_test_with_error_handling(test_rounding_modes, "Rounding modes test")
-    # run_test_with_error_handling(test_edge_cases, "Edge cases test")
-    # run_test_with_error_handling(test_special_cases, "Special cases test")
-    # run_test_with_error_handling(
-    #     test_quantize_exceptions, "Exception handling test"
-    # )
-    # run_test_with_error_handling(
-    #     test_comprehensive_comparison, "Comprehensive comparison test"
-    # )
-
     testing.TestSuite.discover_tests[__functions_in_module()]().run()
-
-    # print("All Decimal128.quantize() tests passed!")

@@ -1,0 +1,110 @@
+# Test data for Decimal128 modulo (%) operations
+# Used by test_decimal128_modulo.mojo
+
+# Basic modulo operations with positive integers
+
+[[modulo_basic]]
+a = "10"
+b = "3"
+description = "Simple modulo with remainder"
+expected = "1"
+
+[[modulo_basic]]
+a = "10"
+b = "5"
+description = "Modulo with no remainder"
+expected = "0"
+
+[[modulo_basic]]
+a = "10.5"
+b = "3.5"
+description = "Modulo with decimal values"
+expected = "0.0"
+
+[[modulo_basic]]
+a = "10.75"
+b = "2.5"
+description = "Modulo with different decimal places"
+expected = "0.75"
+
+[[modulo_basic]]
+a = "3"
+b = "10"
+description = "Modulo with modulus > dividend"
+expected = "3"
+
+# Modulo with negative numbers
+
+[[modulo_negative]]
+a = "-10"
+b = "3"
+description = "-10 % 3"
+expected = "-1"
+
+[[modulo_negative]]
+a = "10"
+b = "-3"
+description = "10 % -3"
+expected = "1"
+
+[[modulo_negative]]
+a = "-10"
+b = "-3"
+description = "-10 % -3"
+expected = "-1"
+
+[[modulo_negative]]
+a = "-10.5"
+b = "3.5"
+description = "-10.5 % 3.5"
+expected = "0.0"
+
+[[modulo_negative]]
+a = "-10.5"
+b = "3"
+description = "-10.5 % 3"
+expected = "-1.5"
+
+[[modulo_negative]]
+a = "10.5"
+b = "-3"
+description = "10.5 % -3"
+expected = "1.5"
+
+# Edge cases
+
+[[modulo_edge]]
+a = "10"
+b = "1"
+description = "Modulo by 1"
+expected = "0"
+
+[[modulo_edge]]
+a = "0"
+b = "5"
+description = "Zero dividend"
+expected = "0"
+
+[[modulo_edge]]
+a = "10"
+b = "0.3"
+description = "Modulo with decimal < 1"
+expected = "0.1"
+
+[[modulo_edge]]
+a = "1000000007"
+b = "13"
+description = "Large number modulo"
+expected = "6"
+
+[[modulo_edge]]
+a = "0.0000023"
+b = "0.0000007"
+description = "Small number modulo"
+expected = "0.0000002"
+
+[[modulo_edge]]
+a = "7.5"
+b = "7.5"
+description = "Equal values modulo"
+expected = "0.0"

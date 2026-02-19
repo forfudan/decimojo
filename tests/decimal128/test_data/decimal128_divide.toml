@@ -1,0 +1,457 @@
+# Test data for Decimal128 division (/) and truncate division (//) operations
+# Used by test_decimal128_divide.mojo
+
+# =============================================================================
+# DIVISION (/) TESTS
+# =============================================================================
+
+# Basic division operations (cases 1-10)
+
+[[division_basic]]
+a = "10"
+b = "2"
+description = "Simple integer division"
+expected = "5"
+
+[[division_basic]]
+a = "100"
+b = "4"
+description = "Division with no remainder"
+expected = "25"
+
+[[division_basic]]
+a = "10"
+b = "4"
+description = "Division resulting in non-integer"
+expected = "2.5"
+
+[[division_basic]]
+a = "123.45"
+b = "1"
+description = "Division by one"
+expected = "123.45"
+
+[[division_basic]]
+a = "0"
+b = "42"
+description = "Division of zero"
+expected = "0"
+
+[[division_basic]]
+a = "-10"
+b = "-5"
+description = "Division with both negative numbers"
+expected = "2"
+
+[[division_basic]]
+a = "-10"
+b = "5"
+description = "Division with negative dividend"
+expected = "-2"
+
+[[division_basic]]
+a = "10"
+b = "-5"
+description = "Division with negative divisor"
+expected = "-2"
+
+[[division_basic]]
+a = "10.5"
+b = "2.1"
+description = "Division with decimals same scale"
+expected = "5"
+
+[[division_basic]]
+a = "10.5"
+b = "0.5"
+description = "Division with decimals different scales"
+expected = "21"
+
+# Precision and rounding at limits (cases 21-24, 26, 27)
+
+[[division_precision]]
+a = "2"
+b = "3"
+description = "2/3 rounding half even at precision limit"
+expected = "0.6666666666666666666666666667"
+
+[[division_precision]]
+a = "1"
+b = "9"
+description = "1/9 repeating at precision limit"
+expected = "0.1111111111111111111111111111"
+
+[[division_precision]]
+a = "10"
+b = "3"
+description = "10/3 at precision limit"
+expected = "3.3333333333333333333333333333"
+
+[[division_precision]]
+a = "1"
+b = "7"
+description = "1/7 rounding to precision limit"
+expected = "0.1428571428571428571428571429"
+
+[[division_precision]]
+a = "-1"
+b = "3"
+description = "Precision with negative numbers"
+expected = "-0.3333333333333333333333333333"
+
+[[division_precision]]
+a = "1"
+b = "10000000000000000000000000000"
+description = "Result at exactly precision limit (1 / 10^28)"
+expected = "0.0000000000000000000000000001"
+
+# Scale handling in division (cases 31-40)
+
+[[division_scale]]
+a = "123.456"
+b = "10"
+description = "Division by power of 10"
+expected = "12.3456"
+
+[[division_scale]]
+a = "123.456"
+b = "0.1"
+description = "Division by 0.1 (multiply by 10)"
+expected = "1234.56"
+
+[[division_scale]]
+a = "123.456"
+b = "0.01"
+description = "Division by 0.01 (multiply by 100)"
+expected = "12345.6"
+
+[[division_scale]]
+a = "123.456"
+b = "100"
+description = "Division by 100"
+expected = "1.23456"
+
+[[division_scale]]
+a = "10.000"
+b = "2"
+description = "Division preserving trailing zeros"
+expected = "5.000"
+
+[[division_scale]]
+a = "1"
+b = "8"
+description = "Quotient needs more decimal places"
+expected = "0.125"
+
+[[division_scale]]
+a = "0.01"
+b = "2"
+description = "Dividend has more scale than divisor"
+expected = "0.005"
+
+[[division_scale]]
+a = "2"
+b = "0.01"
+description = "Divisor has more scale than dividend"
+expected = "200"
+
+[[division_scale]]
+a = "0.0001"
+b = "0.0001"
+description = "Both high scale, result needs less"
+expected = "1"
+
+[[division_scale]]
+a = "0.0001"
+b = "0.0003"
+description = "Both high scale, result needs more"
+expected = "0.3333333333333333333333333333"
+
+# Special and mixed division cases
+
+# Exact results
+[[division_special]]
+a = "1"
+b = "4"
+description = "Division by power of 2"
+expected = "0.25"
+
+[[division_special]]
+a = "0"
+b = "1"
+description = "Division of zero by one"
+expected = "0"
+
+[[division_special]]
+a = "100000000000000000000"
+b = "100000000000000000000"
+description = "Large number division resulting in 1"
+expected = "1"
+
+[[division_special]]
+a = "9999999999999999999999999999"
+b = "99999999999999"
+description = "Large numbers with exact division"
+expected = "100000000000001"
+
+[[division_special]]
+a = "9999999999999999999999999999"
+b = "-99999999999999"
+description = "Large numbers with different signs"
+expected = "-100000000000001"
+
+[[division_special]]
+a = "123.456"
+b = "123.456"
+description = "Identical numbers should give 1"
+expected = "1"
+
+[[division_special]]
+a = "1.234"
+b = "0.001"
+description = "Division by 0.001 for decimal shift"
+expected = "1234"
+
+[[division_special]]
+a = "5.5"
+b = "0.055"
+description = "Division by fractional power of 10"
+expected = "100"
+
+[[division_special]]
+a = "1"
+b = "1000"
+description = "Division causing exact shift in magnitude"
+expected = "0.001"
+
+[[division_special]]
+a = "0.0000000000000000000000000001"
+b = "1"
+description = "Dividing very small number by one"
+expected = "0.0000000000000000000000000001"
+
+[[division_special]]
+a = "0.000000001"
+b = "0.000000000001"
+description = "Division with dramatic precision shift"
+expected = "1000"
+
+[[division_special]]
+a = "0.9999999999999999999999999999"
+b = "0.3333333333333333333333333333"
+description = "Maximum precision divided by maximum precision"
+expected = "3"
+
+# Large numbers and mixed precision
+[[division_special]]
+a = "100"
+b = "9.9"
+description = "Division by 9's"
+expected = "10.101010101010101010101010101"
+
+[[division_special]]
+a = "9876543210"
+b = "123456789"
+description = "Large integers resulting in max precision"
+expected = "80.00000072900000663390006037"
+
+[[division_special]]
+a = "-1000000000000000"
+b = "10000"
+description = "Large negative divided by large positive"
+expected = "-100000000000"
+
+[[division_special]]
+a = "12345678901234567890"
+b = "9876543210"
+description = "Large integer division with many digits"
+expected = "1249999988.7343749990033203125"
+
+[[division_special]]
+a = "123.456789012345678901234567"
+b = "2"
+description = "High precision / low precision"
+expected = "61.7283945061728394506172835"
+
+[[division_special]]
+a = "1234"
+b = "0.0000000000000000000000011"
+description = "Low precision / high precision"
+expected = "1121818181818181818181818181.8"
+
+[[division_special]]
+a = "0.123456789012345678901234567"
+b = "0.1"
+description = "Mixing high precision with power of 10"
+expected = "1.23456789012345678901234567"
+
+[[division_special]]
+a = "0.0000004"
+b = "0.0002"
+description = "Very different scales with exact result"
+expected = "0.002"
+
+[[division_special]]
+a = "2.000"
+b = "0.001"
+description = "Many trailing zeros in result"
+expected = "2000"
+
+# Rounding behavior
+[[division_special]]
+a = "1"
+b = "3000000000000000000000000000"
+description = "Banker's rounding at boundary"
+expected = "0.0000000000000000000000000003"
+
+[[division_special]]
+a = "5"
+b = "9"
+description = "Banker's rounding half even (5/9)"
+expected = "0.5555555555555555555555555556"
+
+[[division_special]]
+a = "9.999999999999999999999999999"
+b = "10"
+description = "Division at the edge"
+expected = "0.9999999999999999999999999999"
+
+[[division_special]]
+a = "1.25"
+b = "0.5"
+description = "Rounding to even at last digit"
+expected = "2.5"
+
+[[division_special]]
+a = "24.5"
+b = "10"
+description = "Half-even rounding with even digit before"
+expected = "2.45"
+
+[[division_special]]
+a = "25.5"
+b = "10"
+description = "Half-even rounding with odd digit before"
+expected = "2.55"
+
+[[division_special]]
+a = "1"
+b = "300000000000000000000000000"
+description = "Division with MAX_SCALE-3 digits"
+expected = "0.0000000000000000000000000033"
+
+[[division_special]]
+a = "1"
+b = "70000000000000000000000000000"
+description = "Division at exact precision limit boundary"
+expected = "0.0000000000000000000000000000"
+
+# =============================================================================
+# TRUNCATE DIVISION (//) TESTS
+# =============================================================================
+
+# Basic and negative truncate division
+
+[[truncate_basic]]
+a = "10"
+b = "2"
+description = "10 // 2 = 5"
+expected = "5"
+
+[[truncate_basic]]
+a = "10"
+b = "3"
+description = "10 // 3 = 3"
+expected = "3"
+
+[[truncate_basic]]
+a = "10.5"
+b = "2.5"
+description = "10.5 // 2.5 = 4"
+expected = "4"
+
+[[truncate_basic]]
+a = "5"
+b = "2"
+description = "5 // 2 = 2"
+expected = "2"
+
+[[truncate_basic]]
+a = "10.75"
+b = "1.5"
+description = "10.75 // 1.5 = 7"
+expected = "7"
+
+[[truncate_basic]]
+a = "-10"
+b = "3"
+description = "-10 // 3 = -3"
+expected = "-3"
+
+[[truncate_basic]]
+a = "10"
+b = "-3"
+description = "10 // -3 = -3"
+expected = "-3"
+
+[[truncate_basic]]
+a = "-10"
+b = "-3"
+description = "-10 // -3 = 3"
+expected = "3"
+
+[[truncate_basic]]
+a = "-10.5"
+b = "3.5"
+description = "-10.5 // 3.5 = -3"
+expected = "-3"
+
+[[truncate_basic]]
+a = "10.5"
+b = "-3.5"
+description = "10.5 // -3.5 = -3"
+expected = "-3"
+
+[[truncate_basic]]
+a = "-10.5"
+b = "-3.5"
+description = "-10.5 // -3.5 = 3"
+expected = "3"
+
+# Truncate division edge cases
+
+[[truncate_edge]]
+a = "10"
+b = "1"
+description = "10 // 1 = 10"
+expected = "10"
+
+[[truncate_edge]]
+a = "0"
+b = "5"
+description = "0 // 5 = 0"
+expected = "0"
+
+[[truncate_edge]]
+a = "10"
+b = "0.5"
+description = "10 // 0.5 = 20"
+expected = "20"
+
+[[truncate_edge]]
+a = "0"
+b = "-5"
+description = "0 // -5 = 0 (no negative zero)"
+expected = "0"
+
+[[truncate_edge]]
+a = "1000000000"
+b = "7"
+description = "1000000000 // 7 (large number)"
+expected = "142857142"
+
+[[truncate_edge]]
+a = "0.0000001"
+b = "0.0000002"
+description = "0.0000001 // 0.0000002 = 0 (small numbers)"
+expected = "0"

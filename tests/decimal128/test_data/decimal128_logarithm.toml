@@ -1,0 +1,78 @@
+# Test data for Decimal128 log() and log10() functions
+# Used by test_decimal128_logarithm.mojo
+
+# Exact log(value, base) results
+# a = value, b = base
+
+[[log_exact]]
+a = "8"
+b = "2"
+description = "log_2(8) = 3"
+expected = "3"
+
+[[log_exact]]
+a = "1000"
+b = "10"
+description = "log_10(1000) = 3"
+expected = "3"
+
+[[log_exact]]
+a = "0.5"
+b = "2"
+description = "log_2(0.5) = -1"
+expected = "-1"
+
+[[log_exact]]
+a = "2"
+b = "0.5"
+description = "log_0.5(2) = -1"
+expected = "-1"
+
+[[log_exact]]
+a = "1"
+b = "7.5"
+description = "log_b(1) = 0 for any base"
+expected = "0"
+
+# Exact log10(value) results
+# a = value, b is unused (unary operation)
+
+[[log10_exact]]
+a = "1"
+description = "log10(1) = 0"
+expected = "0"
+
+[[log10_exact]]
+a = "10"
+description = "log10(10) = 1"
+expected = "1"
+
+[[log10_exact]]
+a = "100"
+description = "log10(100) = 2"
+expected = "2"
+
+[[log10_exact]]
+a = "1000"
+description = "log10(1000) = 3"
+expected = "3"
+
+[[log10_exact]]
+a = "0.1"
+description = "log10(0.1) = -1"
+expected = "-1"
+
+[[log10_exact]]
+a = "0.01"
+description = "log10(0.01) = -2"
+expected = "-2"
+
+[[log10_exact]]
+a = "100000000000000000000"
+description = "log10(10^20) = 20"
+expected = "20"
+
+[[log10_exact]]
+a = "0.00000000000000000001"
+description = "log10(10^-20) = -20"
+expected = "-20"

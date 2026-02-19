@@ -1,0 +1,113 @@
+# ─── Root exact results ──────────────────────────────────────────────────────
+# b = nth root (as string, will be converted to Int)
+[[root_exact]]
+a = "9"
+b = "2"
+description = "√9 = 3"
+expected = "3"
+
+[[root_exact]]
+a = "8"
+b = "3"
+description = "∛8 = 2"
+expected = "2"
+
+[[root_exact]]
+a = "16"
+b = "4"
+description = "∜16 = 2"
+expected = "2"
+
+[[root_exact]]
+a = "0.25"
+b = "2"
+description = "√0.25 = 0.5"
+expected = "0.5"
+
+[[root_exact]]
+a = "0.125"
+b = "3"
+description = "∛0.125 = 0.5"
+expected = "0.5"
+
+[[root_exact]]
+a = "0"
+b = "2"
+description = "√0 = 0"
+expected = "0"
+
+[[root_exact]]
+a = "1"
+b = "100"
+description = "100th root of 1 = 1"
+expected = "1"
+
+[[root_exact]]
+a = "123.456"
+b = "1"
+description = "1st root of 123.456 = 123.456"
+expected = "123.456"
+
+[[root_exact]]
+a = "-8"
+b = "3"
+description = "∛-8 = -2"
+expected = "-2"
+
+# ─── Power with integer exponents ────────────────────────────────────────────
+# b = exponent (as string; runner uses power(base, Int))
+[[power_int]]
+a = "2"
+b = "3"
+description = "2^3 = 8"
+expected = "8"
+
+[[power_int]]
+a = "5"
+b = "0"
+description = "5^0 = 1"
+expected = "1"
+
+[[power_int]]
+a = "2"
+b = "-2"
+description = "2^-2 = 0.25"
+expected = "0.25"
+
+[[power_int]]
+a = "2.5"
+b = "2"
+description = "2.5^2 = 6.25"
+expected = "6.25"
+
+[[power_int]]
+a = "0.5"
+b = "-1"
+description = "0.5^-1 = 2"
+expected = "2"
+
+# ─── Power with decimal exponents ────────────────────────────────────────────
+# b = exponent (Decimal128); runner uses power(base, Decimal128)
+[[power_decimal]]
+a = "9"
+b = "0.5"
+description = "9^0.5 = 3"
+expected = "3"
+
+[[power_decimal]]
+a = "4"
+b = "-0.5"
+description = "4^-0.5 = 0.5"
+expected = "0.5"
+
+[[power_decimal]]
+a = "0"
+b = "2"
+description = "0^2 = 0"
+expected = "0"
+
+[[power_decimal]]
+a = "-2"
+b = "3"
+description = "(-2)^3 = -8"
+expected = "-8"
