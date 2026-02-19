@@ -155,19 +155,14 @@ struct BigInt(
         except e:
             raise Error("Error in `BigInt.__init__()` with String: ", e)
 
+    # TODO: If Mojo makes Int type an alias of SIMD[DType.index, 1],
+    # we can remove this method.
     @implicit
     fn __init__(out self, value: Int):
         """Initializes a BigInt from an `Int` object.
         See `from_int()` for more information.
         """
         self = Self.from_int(value)
-
-    @implicit
-    fn __init__(out self, value: UInt):
-        """Initializes a BigInt from an `UInt` object.
-        See `from_uint()` for more information.
-        """
-        self = Self.from_uint(value)
 
     @implicit
     fn __init__(out self, value: Scalar):
@@ -277,8 +272,8 @@ struct BigInt(
             remainder = value
 
         while remainder != 0:
-            quotient = remainder // 1_000_000_000
-            remainder = remainder % 1_000_000_000
+            quotient = remainder // BigUInt.BASE
+            remainder = remainder % BigUInt.BASE
             words.append(UInt32(remainder))
             remainder = quotient
 
@@ -286,13 +281,6 @@ struct BigInt(
             words[0] += 1
 
         return Self(BigUInt(raw_words=words^), sign)
-
-    @staticmethod
-    fn from_uint(value: UInt) -> Self:
-        """Creates a BigInt from an unsigned integer."""
-        return Self(
-            magnitude=BigUInt.from_unsigned_integral_scalar(value), sign=False
-        )
 
     @staticmethod
     fn from_integral_scalar[dtype: DType, //](value: SIMD[dtype, 1]) -> Self:
