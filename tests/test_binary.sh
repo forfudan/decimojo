@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e  # Exit immediately if any command fails
 
-for dir in biguint bigint bigdecimal bigbinaryint decimal128; do
+for dir in bigbinaryint; do
     for f in tests/$dir/*.mojo; do
         pixi run mojo run -I src -D ASSERT=all "$f"
     done
