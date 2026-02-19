@@ -28,6 +28,7 @@ clean = "rm tests/decimojo.mojopkg && rm benches/decimojo.mojopkg && rm tests/to
 
 # tests (use the mojo testing tool)
 b = "clear && pixi run package && bash ./tests/test_big.sh"
+bin = "clear && pixi run package && bash ./tests/test_binary.sh"
 t = "clear && pixi run package && bash ./tests/test_all.sh"
 test = "pixi run package && bash ./tests/test_all.sh"
 
