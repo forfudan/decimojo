@@ -108,7 +108,8 @@ struct BigInt(
                 The words are stored in little-endian order.
             sign: The sign of the BigInt.
 
-        This is equal to `BigInt.from_list()`.
+        Notes:
+            This is equal to `BigInt.from_list()`.
         """
         try:
             self = Self.from_list(words^, sign=sign)
