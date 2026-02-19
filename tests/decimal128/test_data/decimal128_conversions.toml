@@ -1,0 +1,32 @@
+# ===----------------------------------------------------------------------=== #
+# Test cases for Decimal128 conversion methods: __str__, __int__
+# ===----------------------------------------------------------------------=== #
+
+# ===----------------------------------------------------------------------=== #
+# String conversion tests (unary: a -> expected)
+# ===----------------------------------------------------------------------=== #
+
+[[str_conversion_tests]]
+a = "123.456"
+description = "Positive number to string"
+expected = "123.456"
+
+[[str_conversion_tests]]
+a = "-789.012"
+description = "Negative number to string"
+expected = "-789.012"
+
+[[str_conversion_tests]]
+a = "0"
+description = "Zero to string"
+expected = "0"
+
+[[str_conversion_tests]]
+a = "9876543210.0123456789"
+description = "Large number with precision"
+expected = "9876543210.0123456789"
+
+[[str_conversion_tests]]
+a = "0.0000000001"
+description = "Small number to string"
+expected = "0.0000000001"

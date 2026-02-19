@@ -1,0 +1,249 @@
+# ===----------------------------------------------------------------------=== #
+# Test cases for Decimal128.from_string() constructor
+# ===----------------------------------------------------------------------=== #
+
+# ===----------------------------------------------------------------------=== #
+# Basic integer string conversions
+# ===----------------------------------------------------------------------=== #
+
+[[basic_integer_tests]]
+a = "0"
+description = "Zero string"
+expected = "0"
+
+[[basic_integer_tests]]
+a = "1"
+description = "One string"
+expected = "1"
+
+[[basic_integer_tests]]
+a = "123"
+description = "Simple integer string"
+expected = "123"
+
+[[basic_integer_tests]]
+a = "123456789"
+description = "Large integer string"
+expected = "123456789"
+
+# ===----------------------------------------------------------------------=== #
+# Basic decimal string conversions
+# ===----------------------------------------------------------------------=== #
+
+[[basic_decimal_tests]]
+a = "123.45"
+description = "Simple decimal"
+expected = "123.45"
+
+[[basic_decimal_tests]]
+a = "0.0"
+description = "Zero decimal point"
+expected = "0.0"
+
+[[basic_decimal_tests]]
+a = "1.23"
+description = "Single digit with decimal"
+expected = "1.23"
+
+[[basic_decimal_tests]]
+a = "9.9"
+description = "One-level precision"
+expected = "9.9"
+
+[[basic_decimal_tests]]
+a = "0.12345678901234567890123456789"
+description = "High precision decimal"
+expected = "0.1234567890123456789012345679"
+
+# ===----------------------------------------------------------------------=== #
+# Negative number string conversions
+# ===----------------------------------------------------------------------=== #
+
+[[negative_tests]]
+a = "-123"
+description = "Negative integer"
+expected = "-123"
+
+[[negative_tests]]
+a = "-123.45"
+description = "Negative decimal"
+expected = "-123.45"
+
+[[negative_tests]]
+a = "-0"
+description = "Negative zero"
+expected = "-0"
+
+[[negative_tests]]
+a = "-0.0"
+description = "Negative decimal zero"
+expected = "-0.0"
+
+[[negative_tests]]
+a = "-0.001"
+description = "Negative small value"
+expected = "-0.001"
+
+# ===----------------------------------------------------------------------=== #
+# Zero variant conversions
+# ===----------------------------------------------------------------------=== #
+
+[[zero_variant_tests]]
+a = "0"
+description = "Single zero"
+expected = "0"
+
+[[zero_variant_tests]]
+a = "0.0"
+description = "Zero with decimal"
+expected = "0.0"
+
+[[zero_variant_tests]]
+a = "0.00000000000000000000000000"
+description = "Zero with high precision"
+expected = "0.00000000000000000000000000"
+
+[[zero_variant_tests]]
+a = "000000"
+description = "Multiple leading zeros"
+expected = "0"
+
+[[zero_variant_tests]]
+a = "000.000"
+description = "Multiple leading zeros with decimal"
+expected = "0.000"
+
+# ===----------------------------------------------------------------------=== #
+# Scientific notation conversions
+# ===----------------------------------------------------------------------=== #
+
+[[scientific_notation_tests]]
+a = "1.23e2"
+description = "Simple positive exponent"
+expected = "123"
+
+[[scientific_notation_tests]]
+a = "1.23e-2"
+description = "Simple negative exponent"
+expected = "0.0123"
+
+[[scientific_notation_tests]]
+a = "0e10"
+description = "Zero with exponent"
+expected = "0"
+
+[[scientific_notation_tests]]
+a = "1.23E+2"
+description = "Explicit positive exponent"
+expected = "123"
+
+[[scientific_notation_tests]]
+a = "1.23e20"
+description = "Large exponent value"
+expected = "123000000000000000000"
+
+# ===----------------------------------------------------------------------=== #
+# Formatting variant conversions
+# ===----------------------------------------------------------------------=== #
+
+[[formatting_variant_tests]]
+a = "00123"
+description = "Leading zeros with integer"
+expected = "123"
+
+[[formatting_variant_tests]]
+a = "123.4500"
+description = "Trailing zeros after decimal point"
+expected = "123.4500"
+
+[[formatting_variant_tests]]
+a = "00123.4500"
+description = "Both leading and trailing zeros"
+expected = "123.4500"
+
+[[formatting_variant_tests]]
+a = "123."
+description = "Decimal point with no following digits"
+expected = "123"
+
+[[formatting_variant_tests]]
+a = ".123"
+description = "Decimal point with no preceding digits"
+expected = "0.123"
+
+# ===----------------------------------------------------------------------=== #
+# Special character conversions
+# ===----------------------------------------------------------------------=== #
+
+[[special_character_tests]]
+a = "+123.45"
+description = "Positive sign"
+expected = "123.45"
+
+[[special_character_tests]]
+a = "+1.23e+2"
+description = "Positive sign with scientific notation"
+expected = "123"
+
+[[special_character_tests]]
+a = "-1.23e+2"
+description = "Negative sign with scientific notation"
+expected = "-123"
+
+[[special_character_tests]]
+a = "1.23e+2"
+description = "Decimal with positive exponent"
+expected = "123"
+
+[[special_character_tests]]
+a = "1.23e+12"
+description = "Scientific notation with multiple digits in exponent"
+expected = "1230000000000"
+
+# ===----------------------------------------------------------------------=== #
+# Boundary case conversions
+# ===----------------------------------------------------------------------=== #
+
+[[boundary_tests]]
+a = "0.1111111111111111111111111111"
+description = "Value at maximum precision"
+expected = "0.1111111111111111111111111111"
+
+[[boundary_tests]]
+a = "9"
+description = "Single digit maximum"
+expected = "9"
+
+[[boundary_tests]]
+a = "0.0000000000000000000000000001"
+description = "Smallest non-zero positive value"
+expected = "0.0000000000000000000000000001"
+
+[[boundary_tests]]
+a = "79228162514264337593543950335"
+description = "String representing maximum possible value"
+expected = "79228162514264337593543950335"
+
+# ===----------------------------------------------------------------------=== #
+# Special case conversions
+# ===----------------------------------------------------------------------=== #
+
+[[special_case_tests]]
+a = "1230.00"
+description = "Trailing zeros should be preserved"
+expected = "1230.00"
+
+[[special_case_tests]]
+a = "9.999999999999999999999999999"
+description = "Value with all 9s"
+expected = "9.999999999999999999999999999"
+
+[[special_case_tests]]
+a = "1.010101010101010101010101010"
+description = "Value with alternating digits"
+expected = "1.010101010101010101010101010"
+
+[[special_case_tests]]
+a = "123.456789012345678901234567"
+description = "Value with specific pattern"
+expected = "123.456789012345678901234567"

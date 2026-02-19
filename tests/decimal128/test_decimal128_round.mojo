@@ -1,202 +1,100 @@
 """
-Test Decimal128 round methods with different rounding modes and precision levels.
+Tests for Decimal128 round operations with different rounding modes.
+TOML-driven tests for standard cases; inline for dynamic/consistency tests.
 """
-from decimojo.prelude import dm, Decimal128, RoundingMode
+
 import testing
+import tomlmojo
+
+from decimojo.prelude import dm, Decimal128, Dec128, RoundingMode
+from decimojo.tests import parse_file, load_test_cases
+
+comptime data_path = "tests/decimal128/test_data/decimal128_round.toml"
 
 
-fn test_basic_rounding() raises:
-    # print("Testing basic decimal rounding...")
-
-    # Test case 1: Round to 2 decimal places (banker's rounding)
-    var d1 = Decimal128("123.456")
-    var result1 = round(d1, 2)
-    testing.assert_equal(
-        String(result1), "123.46", "Basic rounding to 2 decimal places"
-    )
-
-    # Test case 2: Round to 0 decimal places
-    var d2 = Decimal128("123.456")
-    var result2 = round(d2, 0)
-    testing.assert_equal(String(result2), "123", "Rounding to 0 decimal places")
-
-    # Test case 3: Round to more decimal places than original (should pad with zeros)
-    var d3 = Decimal128("123.45")
-    var result3 = round(d3, 4)
-    testing.assert_equal(
-        String(result3), "123.4500", "Rounding to more decimal places"
-    )
-
-    # Test case 4: Round number that's already at target precision
-    var d4 = Decimal128("123.45")
-    var result4 = round(d4, 2)
-    testing.assert_equal(
-        String(result4), "123.45", "Rounding to same precision"
-    )
-
-    # print("Basic decimal rounding tests passed!")
+fn _run_round_section(
+    doc: tomlmojo.parser.TOMLDocument,
+    section: String,
+    mode: RoundingMode,
+) raises:
+    """Run round test cases. Field b = number of decimal places."""
+    var cases = load_test_cases(doc, section)
+    for tc in cases:
+        var result = Dec128(tc.a).round(Int(tc.b), mode)
+        testing.assert_equal(String(result), tc.expected, tc.description)
 
 
-fn test_different_rounding_modes() raises:
-    # print("Testing different rounding modes...")
-
-    var test_value = Decimal128("123.456")
-
-    # Test case 1: Round down (truncate)
-    var result1 = test_value.round(2, RoundingMode.down())
-    testing.assert_equal(String(result1), "123.45", "Rounding down")
-
-    # Test case 2: Round up (away from zero)
-    var result2 = test_value.round(2, RoundingMode.up())
-    testing.assert_equal(String(result2), "123.46", "Rounding up")
-
-    # Test case 3: Round half up
-    var result3 = test_value.round(2, RoundingMode.half_up())
-    testing.assert_equal(String(result3), "123.46", "Rounding half up")
-
-    # Test case 4: Round half even (banker's rounding)
-    var result4 = test_value.round(2, RoundingMode.half_even())
-    testing.assert_equal(String(result4), "123.46", "Rounding half even")
-
-    # print("Rounding mode tests passed!")
+fn _run_round_default_section(
+    doc: tomlmojo.parser.TOMLDocument, section: String
+) raises:
+    """Run round test cases using builtin round() (banker's rounding)."""
+    var cases = load_test_cases(doc, section)
+    for tc in cases:
+        var result = round(Dec128(tc.a), Int(tc.b))
+        testing.assert_equal(String(result), tc.expected, tc.description)
 
 
-fn test_edge_cases() raises:
-    # print("Testing edge cases for rounding...")
+fn test_round_default() raises:
+    """6 cases using builtin round() with banker's rounding."""
+    var doc = parse_file(data_path)
+    _run_round_default_section(doc, "round_default")
 
-    # Test case 1: Rounding exactly 0.5 with different modes
-    var half_value = Decimal128("123.5")
 
-    testing.assert_equal(
-        String(half_value.round(0, RoundingMode.down())),
-        "123",
-        "Rounding 0.5 down",
-    )
+fn test_round_down() raises:
+    """3 cases rounding toward zero."""
+    var doc = parse_file(data_path)
+    _run_round_section(doc, "round_down", RoundingMode.down())
 
-    testing.assert_equal(
-        String(half_value.round(0, RoundingMode.up())),
-        "124",
-        "Rounding 0.5 up",
-    )
 
-    testing.assert_equal(
-        String(half_value.round(0, RoundingMode.half_up())),
-        "124",
-        "Rounding 0.5 half up",
-    )
+fn test_round_up() raises:
+    """3 cases rounding away from zero."""
+    var doc = parse_file(data_path)
+    _run_round_section(doc, "round_up", RoundingMode.up())
 
-    testing.assert_equal(
-        String(half_value.round(0, RoundingMode.half_even())),
-        "124",
-        "Rounding 0.5 half even (even is 124)",
-    )
 
-    # Another test with half to even value
-    var half_even_value = Decimal128("124.5")
-    testing.assert_equal(
-        String(half_even_value.round(0, RoundingMode.half_even())),
-        "124",
-        "Rounding 124.5 half even (even is 124)",
-    )
+fn test_round_half_up() raises:
+    """2 cases rounding half up."""
+    var doc = parse_file(data_path)
+    _run_round_section(doc, "round_half_up", RoundingMode.half_up())
 
-    # Test case 2: Rounding very small numbers
-    var small_value = Decimal128(
-        "0." + "0" * 27 + "1"
-    )  # 0.0000...01 (1 at 28th place)
+
+fn test_round_half_even() raises:
+    """4 cases with banker's rounding via method."""
+    var doc = parse_file(data_path)
+    _run_round_section(doc, "round_half_even", RoundingMode.half_even())
+
+
+fn test_round_small_value() raises:
+    """Round a dynamically-constructed very small number."""
+    var small_value = Decimal128("0." + "0" * 27 + "1")
     testing.assert_equal(
         String(round(small_value, 27)),
         "0." + "0" * 27,
         "Rounding tiny number to 27 places",
     )
 
-    # Test case 3: Rounding negative numbers
-    var negative_value = Decimal128("-123.456")
-
-    testing.assert_equal(
-        String(negative_value.round(2, RoundingMode.down())),
-        "-123.45",
-        "Rounding negative number down",
-    )
-
-    testing.assert_equal(
-        String(negative_value.round(2, RoundingMode.up())),
-        "-123.46",
-        "Rounding negative number up",
-    )
-
-    testing.assert_equal(
-        String(negative_value.round(2, RoundingMode.half_even())),
-        "-123.46",
-        "Rounding negative number half even",
-    )
-
-    # Test case 4: Rounding that causes carry propagation
-    var carry_value = Decimal128("9.999")
-
-    testing.assert_equal(
-        String(round(carry_value, 2)),
-        "10.00",
-        "Rounding with carry propagation",
-    )
-
-    # Test case 5: Rounding to maximum precision
-    var MAX_SCALE = Decimal128("0." + "1" * 28)  # 0.1111...1 (28 digits)
-    testing.assert_equal(
-        String(round(MAX_SCALE, 14)),
-        "0.11111111111111",
-        "Rounding from maximum precision",
-    )
-
-    # print("Edge case tests passed!")
-
 
 fn test_rounding_consistency() raises:
-    # print("Testing rounding consistency...")
-
-    # Test case: Verify that rounding is consistent across different ways of
-    # constructing the same value
-
+    """Consistency across constructors and sequential rounding."""
     # Two ways to create 123.45
     var d1 = Decimal128("123.45")
     var d2 = Decimal128(123.45)
-
-    # Both should round the same way
     testing.assert_equal(
         String(round(d1, 1))[:3],
         String(round(d2, 1))[:3],
         "Rounding consistency across different constructors",
     )
 
-    # Test that repeated rounding is consistent
+    # Repeated rounding should match direct rounding
     var start = Decimal128("123.456789")
-    var round_once = round(start, 4)  # 123.4568
-    var round_twice = round(round_once, 2)  # 123.46
-    var direct = round(start, 2)  # 123.46
-
+    var round_twice = round(round(start, 4), 2)
+    var direct = round(start, 2)
     testing.assert_equal(
         String(round_twice),
         String(direct),
         "Consistency with sequential rounding",
     )
 
-    # print("Rounding consistency tests passed!")
-
 
 fn main() raises:
-    # print("Running decimal rounding tests")
-
-    # # Run basic rounding tests
-    # test_basic_rounding()
-
-    # # Run tests with different rounding modes
-    # test_different_rounding_modes()
-
-    # # Run edge case tests
-    # test_edge_cases()
-
-    # # Run rounding consistency tests
-    # test_rounding_consistency()
-
     testing.TestSuite.discover_tests[__functions_in_module()]().run()
-
-    # print("All decimal rounding tests passed!")
