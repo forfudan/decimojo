@@ -16,10 +16,10 @@
 
 """Sub-package for binary base-2^32 big integer type.
 
-BigBinaryInt is a signed arbitrary-precision integer that uses base-2^32
+BigInt2 is a signed arbitrary-precision integer that uses base-2^32
 representation internally. This is the binary counterpart to BigInt (base-10^9).
 
-Once BigBinaryInt is stable and performant, the naming plan is:
-- BigBinaryInt → BigInt (the primary big integer type)
+Once BigInt2 is stable and performant, the naming plan is:
+- BigInt2 → BigInt (the primary big integer type)
 - Current BigInt → BigDecimalInt (kept for decimal-friendly use cases)
 """

@@ -14,34 +14,35 @@
 # limitations under the License.
 # ===----------------------------------------------------------------------=== #
 
-"""Implements basic object methods for the BigBinaryInt type.
+"""Implements basic object methods for the BigInt2 type.
 
-This module contains the basic object methods for the BigBinaryInt type.
+This module contains the basic object methods for the BigInt2 type.
 These methods include constructors, life time methods, output dunders,
 type-transfer dunders, basic arithmetic operation dunders, comparison
 operation dunders, and other dunders that implement traits, as well as
 mathematical methods that do not implement a trait.
 
-BigBinaryInt is the core binary-represented arbitrary-precision signed integer
+BigInt2 is the core binary-represented arbitrary-precision signed integer
 for the DeciMojo library. It uses base-2^32 representation with UInt32 words
 in little-endian order, and a separate sign bit.
 
-Once BigBinaryInt is stable and performant, the current BigInt (base-10^9)
-will be renamed to BigDecimalInt, and BigBinaryInt will be renamed to BigInt.
+Once BigInt2 is stable and performant, the current BigInt (base-10^9)
+will be renamed to BigDecimalInt, and BigInt2 will be renamed to BigInt.
 """
 
 from memory import UnsafePointer, memcpy
 
+from decimojo.bigint.bigint import BigInt
 from decimojo.biguint.biguint import BigUInt
 
 # Type aliases
-comptime BBInt = BigBinaryInt
-"""A shorter comptime for BigBinaryInt."""
-comptime bbint = BigBinaryInt
-"""A shortcut constructor for BigBinaryInt."""
+comptime BInt2 = BigInt2
+"""A shorter comptime for BigInt2."""
+comptime bint2 = BigInt2
+"""A shortcut constructor for BigInt2."""
 
 
-struct BigBinaryInt(
+struct BigInt2(
     Absable,
     Copyable,
     Movable,
@@ -55,7 +56,7 @@ struct BigBinaryInt(
     Internal Representation:
 
     Uses base-2^32 representation for the integer magnitude.
-    BigBinaryInt uses a dynamic structure in memory, which contains:
+    BigInt2 uses a dynamic structure in memory, which contains:
     - A List[UInt32] of words for the magnitude stored in little-endian order.
       Each UInt32 word uses the full 32-bit range [0, 2^32 - 1].
     - A Bool for the sign (True = negative, False = non-negative).
@@ -88,7 +89,7 @@ struct BigBinaryInt(
     comptime BITS_PER_WORD = 32
     """Number of bits per word."""
     comptime BASE: UInt64 = 1 << 32  # 4294967296
-    """The base used for the BigBinaryInt representation (2^32)."""
+    """The base used for the BigInt2 representation (2^32)."""
     comptime WORD_MAX: UInt32 = ~UInt32(0)  # 0xFFFF_FFFF = 4294967295
     """The maximum value of a single word (2^32 - 1)."""
     comptime WORD_MASK: UInt64 = (1 << 32) - 1
@@ -102,19 +103,19 @@ struct BigBinaryInt(
     @always_inline
     @staticmethod
     fn zero() -> Self:
-        """Returns a BigBinaryInt with value 0."""
+        """Returns a BigInt2 with value 0."""
         return Self()
 
     @always_inline
     @staticmethod
     fn one() -> Self:
-        """Returns a BigBinaryInt with value 1."""
+        """Returns a BigInt2 with value 1."""
         return Self(raw_words=[UInt32(1)], sign=False)
 
     @always_inline
     @staticmethod
     fn negative_one() -> Self:
-        """Returns a BigBinaryInt with value -1."""
+        """Returns a BigInt2 with value -1."""
         return Self(raw_words=[UInt32(1)], sign=True)
 
     # ===------------------------------------------------------------------=== #
@@ -122,12 +123,12 @@ struct BigBinaryInt(
     # ===------------------------------------------------------------------=== #
 
     fn __init__(out self):
-        """Initializes a BigBinaryInt with value 0."""
+        """Initializes a BigInt2 with value 0."""
         self.words = [UInt32(0)]
         self.sign = False
 
     fn __init__(out self, *, uninitialized_capacity: Int):
-        """Creates an uninitialized BigBinaryInt with a given word capacity.
+        """Creates an uninitialized BigInt2 with a given word capacity.
         The words list is empty; caller must append words before use.
 
         Args:
@@ -137,7 +138,7 @@ struct BigBinaryInt(
         self.sign = False
 
     fn __init__(out self, *, var raw_words: List[UInt32], sign: Bool):
-        """Initializes a BigBinaryInt from a list of raw words without
+        """Initializes a BigInt2 from a list of raw words without
         validation. The caller must ensure words are in valid little-endian
         form with no unnecessary leading zeros.
 
@@ -158,7 +159,7 @@ struct BigBinaryInt(
 
     @implicit
     fn __init__(out self, value: Int):
-        """Initializes a BigBinaryInt from an Int.
+        """Initializes a BigInt2 from an Int.
 
         Args:
             value: The integer value.
@@ -166,7 +167,7 @@ struct BigBinaryInt(
         self = Self.from_int(value)
 
     fn __init__(out self, value: String) raises:
-        """Initializes a BigBinaryInt from a decimal string representation.
+        """Initializes a BigInt2 from a decimal string representation.
 
         Args:
             value: The string representation of the integer.
@@ -179,13 +180,13 @@ struct BigBinaryInt(
 
     @staticmethod
     fn from_int(value: Int) -> Self:
-        """Creates a BigBinaryInt from a Mojo Int.
+        """Creates a BigInt2 from a Mojo Int.
 
         Args:
             value: The integer value.
 
         Returns:
-            The BigBinaryInt representation.
+            The BigInt2 representation.
         """
         if value == 0:
             return Self()
@@ -216,13 +217,13 @@ struct BigBinaryInt(
 
     @staticmethod
     fn from_uint64(value: UInt64) -> Self:
-        """Creates a BigBinaryInt from a UInt64.
+        """Creates a BigInt2 from a UInt64.
 
         Args:
             value: The unsigned 64-bit integer value.
 
         Returns:
-            The BigBinaryInt representation.
+            The BigInt2 representation.
         """
         if value == 0:
             return Self()
@@ -238,13 +239,13 @@ struct BigBinaryInt(
 
     @staticmethod
     fn from_uint128(value: UInt128) -> Self:
-        """Creates a BigBinaryInt from a UInt128.
+        """Creates a BigInt2 from a UInt128.
 
         Args:
             value: The unsigned 128-bit integer value.
 
         Returns:
-            The BigBinaryInt representation.
+            The BigInt2 representation.
         """
         if value == 0:
             return Self()
@@ -259,14 +260,14 @@ struct BigBinaryInt(
 
     @staticmethod
     fn from_string(value: String) raises -> Self:
-        """Creates a BigBinaryInt from a decimal string representation.
+        """Creates a BigInt2 from a decimal string representation.
         Supports optional leading '-' or '+' sign.
 
         Args:
             value: The decimal string (e.g. "12345", "-98765").
 
         Returns:
-            The BigBinaryInt representation.
+            The BigInt2 representation.
 
         Raises:
             Error: If the string is empty or contains non-digit characters.
@@ -276,7 +277,7 @@ struct BigBinaryInt(
         var n = len(bytes)
 
         if n == 0:
-            raise Error("BigBinaryInt.from_string(): Empty string")
+            raise Error("BigInt2.from_string(): Empty string")
 
         var sign = False
         var start = 0
@@ -288,7 +289,7 @@ struct BigBinaryInt(
             start = 1
 
         if start >= n:
-            raise Error("BigBinaryInt.from_string(): No digits after sign")
+            raise Error("BigInt2.from_string(): No digits after sign")
 
         # Skip leading zeros (48 = '0')
         while start < n - 1 and bytes[start] == 48:
@@ -315,7 +316,7 @@ struct BigBinaryInt(
             for j in range(chunk_size):
                 var code = bytes[i + j]
                 if code < 48 or code > 57:  # '0' = 48, '9' = 57
-                    raise Error("BigBinaryInt.from_string(): Invalid character")
+                    raise Error("BigInt2.from_string(): Invalid character")
                 chunk_val = chunk_val * 10 + UInt32(code - 48)
 
             # Compute the multiplier: 10^chunk_size
@@ -333,26 +334,28 @@ struct BigBinaryInt(
         return result^
 
     @staticmethod
-    fn from_biguint(value: BigUInt) -> Self:
-        """Converts a base-10^9 BigUInt to a base-2^32 BigBinaryInt.
+    fn from_bigint(value: BigInt) -> Self:
+        """Converts a base-10^9 BigInt to a base-2^32 BigInt2.
 
         Args:
-            value: The BigUInt (base-10^9) to convert.
+            value: The BigInt (base-10^9) to convert.
 
         Returns:
-            The BigBinaryInt (base-2^32) representation.
+            The BigInt2 (base-2^32) representation.
         """
-        # Convert from base 10^9 to base 2^32 using repeated division
-        # Make a mutable copy of the BigUInt words to use as dividend
-        var div_words = List[UInt32](capacity=len(value.words))
-        for word in value.words:
-            div_words.append(word)
-        var result = Self(uninitialized_capacity=len(value.words))
-        var remainder: UInt64
+        if value.is_zero():
+            return Self()
 
-        var is_zero = False
-        while not is_zero:
-            remainder = 0
+        # Convert from base 10^9 to base 2^32 using repeated division
+        # Work on the magnitude words (base-10^9)
+        var div_words = List[UInt32](capacity=len(value.magnitude.words))
+        for word in value.magnitude.words:
+            div_words.append(word)
+        var result = Self(uninitialized_capacity=len(value.magnitude.words))
+
+        var all_zero = False
+        while not all_zero:
+            var remainder: UInt64 = 0
             for i in range(len(div_words) - 1, -1, -1):
                 var temp = remainder * UInt64(BigUInt.BASE) + UInt64(
                     div_words[i]
@@ -367,12 +370,13 @@ struct BigBinaryInt(
             result.words.append(UInt32(remainder))
 
             # Check if dividend is zero
-            is_zero = True
+            all_zero = True
             for word in div_words:
                 if word != 0:
-                    is_zero = False
+                    all_zero = False
                     break
 
+        result.sign = value.sign
         return result^
 
     # ===------------------------------------------------------------------=== #
@@ -380,12 +384,12 @@ struct BigBinaryInt(
     # ===------------------------------------------------------------------=== #
 
     fn __str__(self) -> String:
-        """Returns a decimal string representation of the BigBinaryInt."""
+        """Returns a decimal string representation of the BigInt2."""
         return self.to_decimal_string()
 
     fn __repr__(self) -> String:
-        """Returns a debug representation of the BigBinaryInt."""
-        return 'BigBinaryInt("' + self.to_decimal_string() + '")'
+        """Returns a debug representation of the BigInt2."""
+        return 'BigInt2("' + self.to_decimal_string() + '")'
 
     fn write_to[W: Writer](self, mut writer: W):
         """Writes the decimal string representation to a writer."""
@@ -395,29 +399,21 @@ struct BigBinaryInt(
     # Type-transfer or output methods that are not dunders
     # ===------------------------------------------------------------------=== #
 
-    fn to_biguint(self) raises -> BigUInt:
-        """Converts the BigBinaryInt to a base-10^9 BigUInt.
-        Only valid for non-negative values.
+    fn to_bigint(self) -> BigInt:
+        """Converts the BigInt2 to a base-10^9 BigInt.
 
         Returns:
-            The BigUInt representation.
-
-        Raises:
-            Error: If the value is negative.
+            The BigInt (base-10^9) representation with the same value.
         """
-        if self.sign and not self.is_zero():
-            raise Error(
-                "BigBinaryInt.to_biguint(): Cannot convert negative value"
-                " to unsigned type"
-            )
+        if self.is_zero():
+            return BigInt()
 
         # Convert from base 2^32 to base 10^9 using repeated division
         var dividend = self.copy()
-        var result = BigUInt(uninitialized_capacity=len(self.words) + 1)
-        var remainder: UInt64
+        var decimal_words = List[UInt32]()
 
         while not dividend.is_zero():
-            remainder = 0
+            var remainder: UInt64 = 0
             for i in range(len(dividend.words) - 1, -1, -1):
                 var temp = (remainder << 32) + UInt64(dividend.words[i])
                 dividend.words[i] = UInt32(temp // BigUInt.BASE)
@@ -427,57 +423,22 @@ struct BigBinaryInt(
             while len(dividend.words) > 1 and dividend.words[-1] == 0:
                 dividend.words.shrink(len(dividend.words) - 1)
 
-            result.words.append(UInt32(remainder))
+            decimal_words.append(UInt32(remainder))
 
-        return result^
+        return BigInt(raw_words=decimal_words^, sign=self.sign)
 
     fn to_decimal_string(self) -> String:
-        """Returns the decimal string representation of the BigBinaryInt.
+        """Returns the decimal string representation of the BigInt2.
+
+        Converts to BigInt (base-10^9) and leverages its string formatting.
 
         Returns:
             The decimal string (e.g. "-12345").
         """
-        if self.is_zero():
-            return "0"
-
-        # Convert to base-10^9 and use BigUInt's string conversion
-        # We do it in-place here to avoid the raises requirement of to_biguint
-        var dividend = self.copy()
-        var decimal_words = List[UInt32]()
-        var remainder: UInt64
-
-        while not dividend.is_zero():
-            remainder = 0
-            for i in range(len(dividend.words) - 1, -1, -1):
-                var temp = (remainder << 32) + UInt64(dividend.words[i])
-                dividend.words[i] = UInt32(temp // 1_000_000_000)
-                remainder = temp % 1_000_000_000
-
-            while len(dividend.words) > 1 and dividend.words[-1] == 0:
-                dividend.words.shrink(len(dividend.words) - 1)
-
-            decimal_words.append(UInt32(remainder))
-
-        # Build the decimal string from the base-10^9 words
-        var result = String()
-        if self.sign:
-            result += "-"
-
-        # Most significant group (no leading zeros)
-        result += String(decimal_words[-1])
-
-        # Remaining groups (zero-padded to 9 digits)
-        for i in range(len(decimal_words) - 2, -1, -1):
-            var group = String(decimal_words[i])
-            # Zero-pad to 9 digits
-            for _ in range(9 - len(group)):
-                result += "0"
-            result += group
-
-        return result
+        return String(self.to_bigint())
 
     fn to_hex_string(self) -> String:
-        """Returns a hexadecimal string representation of the BigBinaryInt.
+        """Returns a hexadecimal string representation of the BigInt2.
 
         Returns:
             The hexadecimal string (e.g. "0x1A2B3C").
@@ -509,7 +470,7 @@ struct BigBinaryInt(
         return result
 
     fn to_binary_string(self) -> String:
-        """Returns a binary string representation of the BigBinaryInt.
+        """Returns a binary string representation of the BigInt2.
 
         Returns:
             The binary string (e.g. "0b110101").
@@ -545,13 +506,13 @@ struct BigBinaryInt(
     # ===------------------------------------------------------------------=== #
 
     fn __neg__(self) -> Self:
-        """Returns the negation of the BigBinaryInt."""
+        """Returns the negation of the BigInt2."""
         if self.is_zero():
             return Self()
         return Self(raw_words=self.words.copy(), sign=not self.sign)
 
     fn __abs__(self) -> Self:
-        """Returns the absolute value of the BigBinaryInt."""
+        """Returns the absolute value of the BigInt2."""
         return Self(raw_words=self.words.copy(), sign=False)
 
     # ===------------------------------------------------------------------=== #
@@ -652,7 +613,7 @@ struct BigBinaryInt(
     # ===------------------------------------------------------------------=== #
 
     fn copy(self) -> Self:
-        """Returns a deep copy of this BigBinaryInt."""
+        """Returns a deep copy of this BigInt2."""
         var new_words = List[UInt32](capacity=len(self.words))
         for word in self.words:
             new_words.append(word)
@@ -669,7 +630,7 @@ struct BigBinaryInt(
 
     fn print_internal_representation(self):
         """Prints the internal representation details."""
-        print("\nInternal Representation Details of BigBinaryInt")
+        print("\nInternal Representation Details of BigInt2")
         print("------------------------------------------------")
         print("decimal:        " + self.to_decimal_string())
         print("hex:            " + self.to_hex_string())
@@ -705,13 +666,13 @@ struct BigBinaryInt(
 # ===----------------------------------------------------------------------=== #
 
 
-fn _multiply_inplace_by_uint32(mut x: BigBinaryInt, y: UInt32):
-    """Multiplies a BigBinaryInt magnitude by a UInt32 scalar in-place.
+fn _multiply_inplace_by_uint32(mut x: BigInt2, y: UInt32):
+    """Multiplies a BigInt2 magnitude by a UInt32 scalar in-place.
 
     This is used internally by from_string() during base conversion.
 
     Args:
-        x: The BigBinaryInt to multiply (modified in-place).
+        x: The BigInt2 to multiply (modified in-place).
         y: The UInt32 scalar multiplier.
     """
     if y == 0:
@@ -731,13 +692,13 @@ fn _multiply_inplace_by_uint32(mut x: BigBinaryInt, y: UInt32):
         x.words.append(UInt32(carry))
 
 
-fn _add_inplace_by_uint32(mut x: BigBinaryInt, y: UInt32):
-    """Adds a UInt32 value to a BigBinaryInt magnitude in-place.
+fn _add_inplace_by_uint32(mut x: BigInt2, y: UInt32):
+    """Adds a UInt32 value to a BigInt2 magnitude in-place.
 
     This is used internally by from_string() during base conversion.
 
     Args:
-        x: The BigBinaryInt to add to (modified in-place).
+        x: The BigInt2 to add to (modified in-place).
         y: The UInt32 value to add.
     """
     if y == 0:
