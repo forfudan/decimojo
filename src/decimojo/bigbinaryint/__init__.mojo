@@ -14,4 +14,12 @@
 # limitations under the License.
 # ===----------------------------------------------------------------------=== #
 
-"""Sub-package for base-2^30 big unsigned integer type."""
+"""Sub-package for binary base-2^32 big integer type.
+
+BigBinaryInt is a signed arbitrary-precision integer that uses base-2^32
+representation internally. This is the binary counterpart to BigInt (base-10^9).
+
+Once BigBinaryInt is stable and performant, the naming plan is:
+- BigBinaryInt → BigInt (the primary big integer type)
+- Current BigInt → BigDecimalInt (kept for decimal-friendly use cases)
+"""
