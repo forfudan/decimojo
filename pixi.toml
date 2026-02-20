@@ -31,6 +31,8 @@ b = "clear && pixi run package && bash ./tests/test_big.sh"
 b2 = "clear && pixi run package && bash ./tests/test_binary.sh"
 t = "clear && pixi run package && bash ./tests/test_all.sh"
 test = "pixi run package && bash ./tests/test_all.sh"
+test_toml = "pixi run package && bash ./tests/test_toml.sh"
+ttoml = "clear && pixi run package && bash ./tests/test_toml.sh"
 
 # benches
 bdec = "clear && pixi run package && cd benches/bigdecimal && pixi run mojo run -I ../ bench.mojo && cd ../.. && pixi run clean"

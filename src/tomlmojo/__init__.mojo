@@ -15,17 +15,22 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-A TOML parser for Mojo, implementing the core TOML v1.0 specification.
+tomlmojo — A native TOML v1.0 parser for Mojo.
 
 Supports:
 - Basic and literal strings (single-line and multi-line)
-- String escape sequences (\\n, \\t, \\r, \\\\, \\", etc.)
+- String escape sequences (\\n, \\t, \\r, \\\\, \\", \\uXXXX, \\UXXXXXXXX)
 - Integers (decimal, hex 0x, octal 0o, binary 0b, underscores)
 - Floats (decimal, scientific notation, inf, nan, underscores)
 - Signed numbers (+42, -3.14, +inf, -inf)
 - Booleans (true, false)
-- Arrays ([...])
-- Tables ([name]) and arrays of tables ([[name]])
+- Arrays with multiline support and trailing commas
+- Tables [name] and dotted table headers [a.b.c]
+- Inline tables {key = "value"}
+- Dotted keys: a.b.c = "value"
+- Quoted keys: "my key" = "value"
+- Array of tables [[name]]
+- Duplicate key detection
 - Comments (#)
 """
 
