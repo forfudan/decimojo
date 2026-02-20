@@ -6,7 +6,8 @@ TOML-driven tests for standard cases; inline for dynamic/consistency tests.
 import testing
 import tomlmojo
 
-from decimojo.prelude import Decimal128, Dec128, RoundingMode
+from decimojo.decimal128.decimal128 import Decimal128, Dec128
+from decimojo.rounding_mode import RoundingMode
 from decimojo.tests import parse_file, load_test_cases
 
 comptime data_path = "tests/decimal128/test_data/decimal128_round.toml"

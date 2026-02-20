@@ -28,8 +28,9 @@ Algorithms:
 - Multiplication: Karatsuba O(n^1.585) for large operands, with schoolbook
   O(n*m) fallback for small operands (< CUTOFF_KARATSUBA words).
   All operations use zero-copy slice bounds to avoid intermediate allocations.
-- Division: Knuth's Algorithm D (long division) for multi-word divisors,
-  single-word fast path for UInt32 divisors.
+- Division: Burnikel-Ziegler O(n^1.585) for large operands, with Knuth's
+  Algorithm D (schoolbook O(n^2)) fallback for small operands
+  (< CUTOFF_BURNIKEL_ZIEGLER words). Single-word fast path for UInt32 divisors.
 """
 
 from memory import memcpy, memset_zero
@@ -45,6 +46,10 @@ comptime CUTOFF_KARATSUBA: Int = 48
 
 # SIMD vector width: 4 x UInt32 = 128-bit, supported natively on arm64 NEON.
 comptime VECTOR_WIDTH: Int = 4
+
+# Burnikel-Ziegler cutoff: divisors with this many words or fewer use
+# Knuth D (schoolbook). Must be even for the recursive halving to work.
+comptime CUTOFF_BURNIKEL_ZIEGLER: Int = 32
 
 
 # ===----------------------------------------------------------------------=== #
@@ -65,16 +70,16 @@ fn _add_magnitudes(a: List[UInt32], b: List[UInt32]) -> List[UInt32]:
     Returns:
         The sum magnitude as a new word list.
     """
-    var na = len(a)
-    var nb = len(b)
-    var n_max = max(na, nb)
-    var result = List[UInt32](capacity=n_max + 1)
-    result.resize(unsafe_uninit_length=n_max)
+    var len_a = len(a)
+    var len_b = len(b)
+    var len_max = max(len_a, len_b)
+    var result = List[UInt32](capacity=len_max + 1)
+    result.resize(unsafe_uninit_length=len_max)
 
     var carry: UInt64 = 0
-    for i in range(n_max):
-        var ai: UInt64 = UInt64(a[i]) if i < na else 0
-        var bi: UInt64 = UInt64(b[i]) if i < nb else 0
+    for i in range(len_max):
+        var ai: UInt64 = UInt64(a[i]) if i < len_a else 0
+        var bi: UInt64 = UInt64(b[i]) if i < len_b else 0
         var s = ai + bi + carry
         result[i] = UInt32(s & 0xFFFF_FFFF)
         carry = s >> 32
@@ -108,20 +113,20 @@ fn _add_magnitudes_into(
         b_start: Start index in b (inclusive).
         b_end: End index in b (exclusive).
     """
-    var na = a_end - a_start
-    var nb = b_end - b_start
-    var n_max = max(na, nb)
+    var len_a = a_end - a_start
+    var len_b = b_end - b_start
+    var len_max = max(len_a, len_b)
 
     var carry: UInt64 = 0
-    for i in range(n_max):
-        var ai: UInt64 = UInt64(a[a_start + i]) if i < na else 0
-        var bi: UInt64 = UInt64(b[b_start + i]) if i < nb else 0
+    for i in range(len_max):
+        var ai: UInt64 = UInt64(a[a_start + i]) if i < len_a else 0
+        var bi: UInt64 = UInt64(b[b_start + i]) if i < len_b else 0
         var s = ai + bi + carry
         result[i] = UInt32(s & 0xFFFF_FFFF)
         carry = s >> 32
 
     if carry > 0:
-        result[n_max] = UInt32(carry)
+        result[len_max] = UInt32(carry)
 
 
 fn _subtract_magnitudes(a: List[UInt32], b: List[UInt32]) -> List[UInt32]:
@@ -136,14 +141,14 @@ fn _subtract_magnitudes(a: List[UInt32], b: List[UInt32]) -> List[UInt32]:
     Returns:
         The difference magnitude (a - b), normalized (no leading zeros).
     """
-    var na = len(a)
-    var nb = len(b)
-    var result = List[UInt32](capacity=na)
+    var len_a = len(a)
+    var len_b = len(b)
+    var result = List[UInt32](capacity=len_a)
 
     var borrow: UInt64 = 0
-    for i in range(na):
+    for i in range(len_a):
         var ai: UInt64 = UInt64(a[i])
-        var bi: UInt64 = UInt64(b[i]) if i < nb else 0
+        var bi: UInt64 = UInt64(b[i]) if i < len_b else 0
         var diff = ai - bi - borrow
         if ai < bi + borrow:
             # Underflow — add 2^32 and set borrow
@@ -173,33 +178,33 @@ fn _multiply_magnitudes(a: List[UInt32], b: List[UInt32]) -> List[UInt32]:
     Returns:
         The product magnitude as a new word list.
     """
-    var na = len(a)
-    var nb = len(b)
+    var len_a = len(a)
+    var len_b = len(b)
 
     # Zero check
-    if na == 0 or nb == 0:
+    if len_a == 0 or len_b == 0:
         var zero: List[UInt32] = [UInt32(0)]
         return zero^
 
     # Single-word fast paths
-    if na == 1 and a[0] == 0:
+    if len_a == 1 and a[0] == 0:
         var zero: List[UInt32] = [UInt32(0)]
         return zero^
-    if nb == 1 and b[0] == 0:
+    if len_b == 1 and b[0] == 0:
         var zero: List[UInt32] = [UInt32(0)]
         return zero^
 
-    if na == 1:
-        return _multiply_magnitude_by_word(b, 0, nb, a[0])
-    if nb == 1:
-        return _multiply_magnitude_by_word(a, 0, na, b[0])
+    if len_a == 1:
+        return _multiply_magnitude_by_word(b, 0, len_b, a[0])
+    if len_b == 1:
+        return _multiply_magnitude_by_word(a, 0, len_a, b[0])
 
     # Dispatch based on size
-    var n_max = max(na, nb)
-    if n_max <= CUTOFF_KARATSUBA:
-        return _multiply_magnitudes_school(a, 0, na, b, 0, nb)
+    var len_max = max(len_a, len_b)
+    if len_max <= CUTOFF_KARATSUBA:
+        return _multiply_magnitudes_school(a, 0, len_a, b, 0, len_b)
     else:
-        return _multiply_magnitudes_karatsuba(a, 0, na, b, 0, nb)
+        return _multiply_magnitudes_karatsuba(a, 0, len_a, b, 0, len_b)
 
 
 fn _multiply_magnitude_by_word(
@@ -225,22 +230,22 @@ fn _multiply_magnitude_by_word(
             result.append(a[i])
         return result^
 
-    var na = a_end - a_start
-    var result = List[UInt32](capacity=na + 1)
-    result.resize(unsafe_uninit_length=na + 1)
+    var len_a = a_end - a_start
+    var result = List[UInt32](capacity=len_a + 1)
+    result.resize(unsafe_uninit_length=len_a + 1)
 
     var carry: UInt64 = 0
     var w64 = UInt64(w)
     var ap = a._data + a_start
     var rp = result._data
-    for i in range(na):
+    for i in range(len_a):
         var product = UInt64(ap[i]) * w64 + carry
         rp[i] = UInt32(product & 0xFFFF_FFFF)
         carry = product >> 32
-    rp[na] = UInt32(carry)
+    rp[len_a] = UInt32(carry)
 
     # Strip leading zeros
-    var rlen = na + 1
+    var rlen = len_a + 1
     while rlen > 1 and result[rlen - 1] == 0:
         rlen -= 1
     while len(result) > rlen:
@@ -273,32 +278,32 @@ fn _multiply_magnitudes_school(
     Returns:
         The product magnitude as a new word list.
     """
-    var na = a_end - a_start
-    var nb = b_end - b_start
+    var len_a = a_end - a_start
+    var len_b = b_end - b_start
 
-    if na == 0 or nb == 0:
+    if len_a == 0 or len_b == 0:
         var zero: List[UInt32] = [UInt32(0)]
         return zero^
 
     # Allocate and zero-initialize result
-    var result_len = na + nb
+    var result_len = len_a + len_b
     var result = List[UInt32](capacity=result_len)
     result.resize(unsafe_uninit_length=result_len)
     memset_zero(ptr=result._data, count=result_len)
 
-    for i in range(na):
+    for i in range(len_a):
         var ai = UInt64(a[a_start + i])
         if ai == 0:
             continue
         var carry: UInt64 = 0
         var rp = result._data + i
         var bp = b._data + b_start
-        for j in range(nb):
+        for j in range(len_b):
             var product = ai * UInt64(bp[j]) + UInt64(rp[j]) + carry
             rp[j] = UInt32(product & 0xFFFF_FFFF)
             carry = product >> 32
         if carry > 0:
-            rp[nb] = UInt32(carry)
+            rp[len_b] = UInt32(carry)
 
     # Strip leading zeros
     while result_len > 1 and result[result_len - 1] == 0:
@@ -343,27 +348,27 @@ fn _multiply_magnitudes_karatsuba(
     Returns:
         The product magnitude as a new word list.
     """
-    var na = a_end - a_start
-    var nb = b_end - b_start
+    var len_a = a_end - a_start
+    var len_b = b_end - b_start
 
     # Base case: fall back to schoolbook
-    if na == 0 or nb == 0:
+    if len_a == 0 or len_b == 0:
         var zero: List[UInt32] = [UInt32(0)]
         return zero^
-    if na == 1:
+    if len_a == 1:
         return _multiply_magnitude_by_word(b, b_start, b_end, a[a_start])
-    if nb == 1:
+    if len_b == 1:
         return _multiply_magnitude_by_word(a, a_start, a_end, b[b_start])
 
-    var n_max = max(na, nb)
-    if n_max <= CUTOFF_KARATSUBA:
+    var len_max = max(len_a, len_b)
+    if len_max <= CUTOFF_KARATSUBA:
         return _multiply_magnitudes_school(a, a_start, a_end, b, b_start, b_end)
 
     # Split point: half of the larger operand
-    var m = n_max // 2
+    var m = len_max // 2
 
     # Case 1: a is shorter than m — split only b
-    if na <= m:
+    if len_a <= m:
         # a × b = a × b_low + (a × b_high) * B^m
         var z0 = _multiply_magnitudes_karatsuba(
             a, a_start, a_end, b, b_start, b_start + m
@@ -372,7 +377,7 @@ fn _multiply_magnitudes_karatsuba(
             a, a_start, a_end, b, b_start + m, b_end
         )
         # Allocate result, add z0 at offset 0, z1 at offset m
-        var rlen = na + nb
+        var rlen = len_a + len_b
         var result = List[UInt32](capacity=rlen)
         result.resize(unsafe_uninit_length=rlen)
         memset_zero(ptr=result._data, count=rlen)
@@ -385,14 +390,14 @@ fn _multiply_magnitudes_karatsuba(
         return result^
 
     # Case 2: b is shorter than m — split only a
-    if nb <= m:
+    if len_b <= m:
         var z0 = _multiply_magnitudes_karatsuba(
             a, a_start, a_start + m, b, b_start, b_end
         )
         var z1 = _multiply_magnitudes_karatsuba(
             a, a_start + m, a_end, b, b_start, b_end
         )
-        var rlen = na + nb
+        var rlen = len_a + len_b
         var result = List[UInt32](capacity=rlen)
         result.resize(unsafe_uninit_length=rlen)
         memset_zero(ptr=result._data, count=rlen)
@@ -435,7 +440,7 @@ fn _multiply_magnitudes_karatsuba(
 
     # result = z2 * B^(2m) + z1 * B^m + z0
     # Instead of shifting then adding, allocate result and add at offsets.
-    var result_len = na + nb
+    var result_len = len_a + len_b
     var result = List[UInt32](capacity=result_len)
     result.resize(unsafe_uninit_length=result_len)
     memset_zero(ptr=result._data, count=result_len)
@@ -485,28 +490,28 @@ fn _add_slices(
     Returns:
         The sum as a new word list.
     """
-    var na = a_end - a_start
-    var nb = b_end - b_start
-    var n_max = max(na, nb)
-    var result = List[UInt32](capacity=n_max + 1)
-    result.resize(unsafe_uninit_length=n_max + 1)
-    result[n_max] = UInt32(0)
+    var len_a = a_end - a_start
+    var len_b = b_end - b_start
+    var len_max = max(len_a, len_b)
+    var result = List[UInt32](capacity=len_max + 1)
+    result.resize(unsafe_uninit_length=len_max + 1)
+    result[len_max] = UInt32(0)
 
     var carry: UInt64 = 0
     var ap = a._data + a_start
     var bp = b._data + b_start
     var rp = result._data
-    for i in range(n_max):
-        var ai: UInt64 = UInt64(ap[i]) if i < na else 0
-        var bi: UInt64 = UInt64(bp[i]) if i < nb else 0
+    for i in range(len_max):
+        var ai: UInt64 = UInt64(ap[i]) if i < len_a else 0
+        var bi: UInt64 = UInt64(bp[i]) if i < len_b else 0
         var s = ai + bi + carry
         rp[i] = UInt32(s & 0xFFFF_FFFF)
         carry = s >> 32
 
     if carry > 0:
-        rp[n_max] = UInt32(carry)
+        rp[len_max] = UInt32(carry)
     else:
-        while len(result) > n_max:
+        while len(result) > len_max:
             result.shrink(len(result) - 1)
 
     return result^
@@ -521,28 +526,28 @@ fn _add_magnitudes_inplace(mut a: List[UInt32], read b: List[UInt32]):
         a: The accumulator magnitude (modified in-place).
         b: The magnitude to add.
     """
-    var na = len(a)
-    var nb = len(b)
-    var n_max = max(na, nb)
+    var len_a = len(a)
+    var len_b = len(b)
+    var len_max = max(len_a, len_b)
 
     # Ensure a has enough space
-    if na < n_max + 1:
-        a.resize(unsafe_uninit_length=n_max + 1)
+    if len_a < len_max + 1:
+        a.resize(unsafe_uninit_length=len_max + 1)
         # Zero the newly added words
-        for i in range(na, n_max + 1):
+        for i in range(len_a, len_max + 1):
             a[i] = UInt32(0)
 
     var carry: UInt64 = 0
-    for i in range(n_max):
-        var ai: UInt64 = UInt64(a[i]) if i < na else 0
-        var bi: UInt64 = UInt64(b[i]) if i < nb else 0
+    for i in range(len_max):
+        var ai: UInt64 = UInt64(a[i]) if i < len_a else 0
+        var bi: UInt64 = UInt64(b[i]) if i < len_b else 0
         var s = ai + bi + carry
         a[i] = UInt32(s & 0xFFFF_FFFF)
         carry = s >> 32
 
     if carry > 0:
-        if n_max < len(a):
-            a[n_max] = UInt32(UInt64(a[n_max]) + carry)
+        if len_max < len(a):
+            a[len_max] = UInt32(UInt64(a[len_max]) + carry)
         else:
             a.append(UInt32(carry))
     else:
@@ -567,16 +572,16 @@ fn _add_at_offset_inplace(
         b: The magnitude to add.
         offset: Word offset at which to start adding b into a.
     """
-    var nb = len(b)
+    var len_b = len(b)
     var carry: UInt64 = 0
     var ap = a._data + offset
     var bp = b._data
-    for i in range(nb):
+    for i in range(len_b):
         var s = UInt64(ap[i]) + UInt64(bp[i]) + carry
         ap[i] = UInt32(s & 0xFFFF_FFFF)
         carry = s >> 32
     # Propagate remaining carry
-    var j = nb
+    var j = len_b
     while carry > 0 and (offset + j) < len(a):
         var s = UInt64(a[offset + j]) + carry
         a[offset + j] = UInt32(s & 0xFFFF_FFFF)
@@ -593,15 +598,15 @@ fn _subtract_magnitudes_inplace(mut a: List[UInt32], read b: List[UInt32]):
         a: The accumulator magnitude (modified in-place). Must be >= b.
         b: The magnitude to subtract.
     """
-    var na = len(a)
-    var nb = len(b)
+    var len_a = len(a)
+    var len_b = len(b)
 
     var borrow: UInt64 = 0
     var ap = a._data
     var bp = b._data
-    for i in range(na):
+    for i in range(len_a):
         var ai = UInt64(ap[i])
-        var bi: UInt64 = UInt64(bp[i]) if i < nb else 0
+        var bi: UInt64 = UInt64(bp[i]) if i < len_b else 0
         var diff = ai - bi - borrow
         if ai < bi + borrow:
             diff += BigInt2.BASE
@@ -699,8 +704,8 @@ fn _divmod_magnitudes(
     Raises:
         Error: If divisor is zero.
     """
-    var na = len(a)
-    var nb = len(b)
+    var len_a = len(a)
+    var len_b = len(b)
 
     # Check for zero divisor
     var divisor_is_zero = True
@@ -722,7 +727,7 @@ fn _divmod_magnitudes(
     # If |a| < |b|, quotient = 0, remainder = a
     var cmp = _compare_word_lists(a, b)
     if cmp < 0:
-        var rem_copy = List[UInt32](capacity=na)
+        var rem_copy = List[UInt32](capacity=len_a)
         for word in a:
             rem_copy.append(word)
         return ([UInt32(0)], rem_copy^)
@@ -730,18 +735,22 @@ fn _divmod_magnitudes(
         return ([UInt32(1)], [UInt32(0)])
 
     # Single-word divisor: use fast path
-    if nb == 1:
+    if len_b == 1:
         var result = _divmod_single_word(a, b[0])
         var q = result[0].copy()
         var r_word = result[1]
         var r_words: List[UInt32] = [r_word]
         return (q^, r_words^)
 
+    # Large divisor: use Burnikel-Ziegler divide-and-conquer
+    if len_b > CUTOFF_BURNIKEL_ZIEGLER:
+        return _divmod_burnikel_ziegler(a, b)
+
     # ===--- Knuth's Algorithm D ---=== #
     # Step D1: Normalize
     # Shift so that the leading bit of the divisor's MSW is set.
     # This ensures the trial quotient estimate is accurate.
-    var shift = _count_leading_zeros(b[nb - 1])
+    var shift = _count_leading_zeros(b[len_b - 1])
 
     # Create normalized copies
     var u = _shift_left_words(a, shift)
@@ -844,11 +853,11 @@ fn _compare_word_lists(a: List[UInt32], b: List[UInt32]) -> Int8:
     Returns:
         1 if a > b, 0 if a == b, -1 if a < b.
     """
-    var na = len(a)
-    var nb = len(b)
-    if na != nb:
-        return 1 if na > nb else -1
-    for i in range(na - 1, -1, -1):
+    var len_a = len(a)
+    var len_b = len(b)
+    if len_a != len_b:
+        return 1 if len_a > len_b else -1
+    for i in range(len_a - 1, -1, -1):
         if a[i] != b[i]:
             return 1 if a[i] > b[i] else -1
     return 0
@@ -954,6 +963,329 @@ fn _shift_right_words(
         result.append(UInt32(0))
 
     return result^
+
+
+# ===----------------------------------------------------------------------=== #
+# Burnikel-Ziegler division
+# Recursive divide-and-conquer for large operands.
+# ===----------------------------------------------------------------------=== #
+
+
+fn _get_words_slice(a: List[UInt32], start: Int, end: Int) -> List[UInt32]:
+    """Extracts a sub-range of words from a magnitude as a new list.
+
+    Returns words[start:end], stripping leading zeros. If the range is
+    empty or fully out of bounds, returns [0].
+
+    Args:
+        a: The source magnitude (little-endian UInt32 words).
+        start: Start index (inclusive).
+        end: End index (exclusive).
+
+    Returns:
+        A new word list containing the specified range, normalized.
+    """
+    var actual_end = min(end, len(a))
+    if start >= actual_end:
+        var zero: List[UInt32] = [UInt32(0)]
+        return zero^
+    var len_slice = actual_end - start
+    var result = List[UInt32](capacity=len_slice)
+    result.resize(unsafe_uninit_length=len_slice)
+    memcpy(dest=result._data, src=a._data + start, count=len_slice)
+    # Strip leading zeros
+    while len(result) > 1 and result[-1] == 0:
+        result.shrink(len(result) - 1)
+    return result^
+
+
+fn _is_zero_words(a: List[UInt32]) -> Bool:
+    """Checks if a magnitude word list represents zero.
+
+    Args:
+        a: The magnitude to check.
+
+    Returns:
+        True if all words are zero.
+    """
+    for word in a:
+        if word != 0:
+            return False
+    return True
+
+
+fn _divmod_burnikel_ziegler(
+    a: List[UInt32], b: List[UInt32]
+) raises -> Tuple[List[UInt32], List[UInt32]]:
+    """Divides magnitude a by magnitude b using Burnikel-Ziegler algorithm.
+
+    A divide-and-conquer algorithm that reduces 2n-by-n division into a
+    sequence of 3n/2-by-n sub-problems, achieving sub-quadratic complexity
+    by leveraging fast (Karatsuba) multiplication.
+
+    In base-2^32, normalization is a simple bit-shift (unlike base-10^9
+    where multiplication by a normalization factor is needed).
+
+    Args:
+        a: The dividend magnitude (little-endian UInt32 words).
+        b: The divisor magnitude (little-endian UInt32 words, non-zero).
+
+    Returns:
+        A tuple of (quotient_words, remainder_words), both normalized.
+
+    Raises:
+        Error: If divisor is zero (should not happen; caller checks).
+    """
+    var block_size = CUTOFF_BURNIKEL_ZIEGLER
+
+    # STEP 1: Normalize the divisor so the MSB of its top word is set.
+    # For base-2^32, this is a left bit-shift by the number of leading zeros.
+    var len_b = len(b)
+    var bit_shift = _count_leading_zeros(b[len_b - 1])
+    var norm_b = _shift_left_words(b, bit_shift)
+    var norm_a = _shift_left_words(a, bit_shift)
+
+    # STEP 2: Pad norm_b to n words, where n is the smallest value of
+    # the form 2^k * block_size that is >= len(norm_b).
+    # This ensures the recursive halving always produces even block sizes
+    # until the base case is reached.
+    var len_norm_b = len(norm_b)
+    var n_blocks = (len_norm_b + block_size - 1) // block_size  # ceildiv
+    # Round n_blocks up to the next power of 2
+    var p = 1
+    while p < n_blocks:
+        p <<= 1
+    n_blocks = p
+    var n = n_blocks * block_size
+
+    # Pad both a and b by prepending zero words (multiply by B^word_pad).
+    # Since both are multiplied by the same factor, quotient is preserved.
+    var word_pad = n - len_norm_b
+    if word_pad > 0:
+        _shift_left_words_inplace(norm_b, word_pad)
+        _shift_left_words_inplace(norm_a, word_pad)
+
+    # norm_b now has exactly n words with MSB of its top word set.
+
+    # STEP 3: Determine the number of n-word blocks in the dividend.
+    var len_norm_a = len(norm_a)
+    var t = (len_norm_a + n - 1) // n  # ceildiv
+    if t < 2:
+        t = 2  # Need at least 2 blocks for 2n-by-n division
+
+    # If the top word of norm_a has its MSB set and norm_a fills exactly
+    # t*n words, the first quotient block could overflow n words.
+    # Add an extra zero block to prevent this.
+    if len_norm_a == t * n:
+        if len_norm_a > 0 and (norm_a[len_norm_a - 1] & 0x80000000) != 0:
+            t += 1
+
+    # Pad norm_a with zeros to exactly t * n words.
+    var target_len_a = t * n
+    if len_norm_a < target_len_a:
+        norm_a.resize(unsafe_uninit_length=target_len_a)
+        for i in range(len_norm_a, target_len_a):
+            norm_a[i] = UInt32(0)
+
+    # STEP 4: Long division with n-word blocks, from most significant down.
+    # For each iteration, combine the carry (previous remainder) with the
+    # next block, then perform 2n-by-n division.
+
+    # First iteration (i = t-2): divide the top 2n words by norm_b.
+    var top_start = (t - 2) * n
+    var top_end = t * n
+    var dividend = _get_words_slice(norm_a, top_start, top_end)
+
+    var result_pair = _bz_div_two_by_one(dividend, norm_b, n, block_size)
+    var quotient = result_pair[0].copy()
+    var z = result_pair[1].copy()  # carry (remainder)
+
+    # Process remaining blocks from high to low.
+    for i in range(t - 3, -1, -1):
+        # Extend carry: z = z * B^n + next block
+        _shift_left_words_inplace(z, n)
+        var block = _get_words_slice(norm_a, i * n, (i + 1) * n)
+        _add_magnitudes_inplace(z, block)
+
+        # Divide z by norm_b
+        result_pair = _bz_div_two_by_one(z, norm_b, n, block_size)
+        var q_i = result_pair[0].copy()
+        z = result_pair[1].copy()
+
+        # Accumulate quotient: quotient = quotient * B^n + q_i
+        _shift_left_words_inplace(quotient, n)
+        _add_magnitudes_inplace(quotient, q_i)
+
+    # STEP 5: Un-normalize the remainder.
+    # The total scaling was: multiply by 2^bit_shift * B^word_pad.
+    # Undo by: (1) remove the bottom word_pad words, (2) right-shift
+    # by bit_shift.
+    var remainder: List[UInt32]
+    if word_pad > 0:
+        var r_stripped = _get_words_slice(z, word_pad, len(z))
+        remainder = _shift_right_words(r_stripped, bit_shift, len(r_stripped))
+    else:
+        remainder = _shift_right_words(z, bit_shift, len(z))
+
+    # Normalize results (strip leading zeros)
+    while len(quotient) > 1 and quotient[-1] == 0:
+        quotient.shrink(len(quotient) - 1)
+    while len(remainder) > 1 and remainder[-1] == 0:
+        remainder.shrink(len(remainder) - 1)
+
+    return (quotient^, remainder^)
+
+
+fn _bz_div_two_by_one(
+    a: List[UInt32], b: List[UInt32], n: Int, cutoff: Int
+) raises -> Tuple[List[UInt32], List[UInt32]]:
+    """Divides a <=2n-word magnitude by an n-word magnitude.
+
+    Recursively splits the problem: two 3n/2-by-n sub-divisions plus one
+    multiply and subtract, analogous to how Karatsuba splits multiplication.
+
+    Falls back to Knuth's Algorithm D for small operands (n <= cutoff or
+    n is odd).
+
+    Args:
+        a: The dividend magnitude (at most 2n words, little-endian).
+        b: The divisor magnitude (n words, MSB of top word must be set).
+        n: Block size (number of words in the divisor).
+        cutoff: Threshold for fallback to schoolbook division.
+
+    Returns:
+        A tuple of (quotient_words, remainder_words).
+
+    Raises:
+        Error: Propagated from base-case division.
+    """
+    # Base case: use Knuth D for small or odd-sized blocks.
+    if (n & 1 == 1) or (n <= cutoff):
+        return _divmod_magnitudes(a, b)
+
+    var half = n // 2
+
+    # Split a into 4 parts of half words each (little-endian order):
+    # a = a3 * B^(3*half) + a2 * B^(2*half) + a1 * B^half + a0
+    var a0 = _get_words_slice(a, 0, half)
+    var a1 = _get_words_slice(a, half, n)
+    var a2 = _get_words_slice(a, n, n + half)
+    var a3 = _get_words_slice(a, n + half, 2 * n)
+
+    # Split b into 2 parts of half words each:
+    # b = b1 * B^half + b0
+    var b0 = _get_words_slice(b, 0, half)
+    var b1 = _get_words_slice(b, half, n)
+
+    # First 3-by-2 division: divmod(a3a2a1, b1b0) with block size half
+    var result1 = _bz_div_three_by_two(a3, a2, a1, b1, b0, half, cutoff)
+    var q1 = result1[0].copy()
+    var r = result1[1].copy()
+
+    # Split remainder r into 2 parts of half words
+    var r0 = _get_words_slice(r, 0, half)
+    var r1 = _get_words_slice(r, half, len(r))
+
+    # Second 3-by-2 division: divmod(r1r0a0, b1b0) with block size half
+    var result2 = _bz_div_three_by_two(r1, r0, a0, b1, b0, half, cutoff)
+    var q0 = result2[0].copy()
+    var s = result2[1].copy()
+
+    # Combine: q = q1 * B^half + q0
+    _shift_left_words_inplace(q1, half)
+    _add_magnitudes_inplace(q1, q0)
+
+    return (q1^, s^)
+
+
+fn _bz_div_three_by_two(
+    a2: List[UInt32],
+    a1: List[UInt32],
+    a0: List[UInt32],
+    b1: List[UInt32],
+    b0: List[UInt32],
+    n: Int,
+    cutoff: Int,
+) raises -> Tuple[List[UInt32], List[UInt32]]:
+    """Divides a 3n-word magnitude by a 2n-word magnitude.
+
+    Computes (a2 * B^(2n) + a1 * B^n + a0) / (b1 * B^n + b0) using one
+    2n-by-n division and one n-by-n multiplication.
+
+    The correction loop (at most 2 iterations) ensures the remainder is
+    non-negative.
+
+    Args:
+        a2: Most significant n-word part of dividend.
+        a1: Middle n-word part of dividend.
+        a0: Least significant n-word part of dividend.
+        b1: Most significant n-word part of divisor (MSB of top word set).
+        b0: Least significant n-word part of divisor.
+        n: Block size (number of words in each part).
+        cutoff: Threshold for fallback to schoolbook division.
+
+    Returns:
+        A tuple of (quotient_words, remainder_words).
+
+    Raises:
+        Error: Propagated from recursive division.
+    """
+    # Construct a2a1 = a2 * B^n + a1
+    var a2a1: List[UInt32]
+    if _is_zero_words(a2):
+        # a2 is zero: a2a1 = a1 (avoid unnecessary shift)
+        a2a1 = List[UInt32](capacity=len(a1))
+        for word in a1:
+            a2a1.append(word)
+    else:
+        a2a1 = List[UInt32](capacity=len(a2) + n)
+        for word in a2:
+            a2a1.append(word)
+        _shift_left_words_inplace(a2a1, n)
+        _add_magnitudes_inplace(a2a1, a1)
+
+    # (q, c) = divmod(a2a1, b1)
+    var result = _bz_div_two_by_one(a2a1, b1, n, cutoff)
+    var q = result[0].copy()
+    var c = result[1].copy()
+
+    # d = q * b0
+    var d = _multiply_magnitudes(q, b0)
+
+    # r = c * B^n + a0
+    _shift_left_words_inplace(c, n)
+    _add_magnitudes_inplace(c, a0)
+    # c is now r (reuse variable)
+
+    # Correction: if r < d, the quotient was overestimated (at most by 2).
+    if _compare_word_lists(c, d) < 0:
+        # Reconstruct full divisor: b_full = b1 * B^n + b0
+        var b_full = List[UInt32](capacity=len(b1) + n)
+        for word in b1:
+            b_full.append(word)
+        _shift_left_words_inplace(b_full, n)
+        _add_magnitudes_inplace(b_full, b0)
+
+        # First correction: q -= 1, r += b
+        var one_word: List[UInt32] = [UInt32(1)]
+        _subtract_magnitudes_inplace(q, one_word)
+        _add_magnitudes_inplace(c, b_full)
+
+        # Second correction if still r < d
+        if _compare_word_lists(c, d) < 0:
+            _subtract_magnitudes_inplace(q, one_word)
+            _add_magnitudes_inplace(c, b_full)
+
+    # r -= d (now guaranteed r >= d)
+    _subtract_magnitudes_inplace(c, d)
+
+    # Strip leading zeros
+    while len(q) > 1 and q[-1] == 0:
+        q.shrink(len(q) - 1)
+    while len(c) > 1 and c[-1] == 0:
+        c.shrink(len(c) - 1)
+
+    return (q^, c^)
 
 
 # ===----------------------------------------------------------------------=== #

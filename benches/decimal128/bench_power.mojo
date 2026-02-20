@@ -1,6 +1,6 @@
 """Benchmarks for Decimal128 power function. Compares against Python decimal."""
 
-from decimojo.prelude import Decimal128
+from decimojo.decimal128.decimal128 import Decimal128
 from decimojo.tests import (
     BenchCase,
     load_bench_cases,
