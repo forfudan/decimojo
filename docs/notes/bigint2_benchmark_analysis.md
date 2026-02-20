@@ -106,15 +106,18 @@ At 10000 digits, BigInt10 overtakes BigInt2 in addition. This is because BigUInt
 Previously, 2000+ digit multiplication was 0.36–0.57× Python. Karatsuba brought
 10000-digit multiply from 745 µs → 195 µs (3.8× internal speedup).
 
-**Floor Division by size** (unchanged, not yet optimized):
+**Floor Division by size** (✅ optimized with slice-based Burnikel-Ziegler):
 
 | Size              | BigInt2 vs Python | BigInt10 vs Python |
 | ----------------- | :---------------: | :----------------: |
-| Small (<20 dig)   |     1.5–2.0×      |        2–4×        |
-| 5000/2500 digits  |       1.47×       |       0.42×        |
-| 10000/5000 digits |       0.88×       |       0.39×        |
+| Small (<20 dig)   |     1.0–1.5×      |        2–4×        |
+| 500/200 digits    |     1.5–1.7×      |        0.3×        |
+| 2000/1000 digits  |       ~1.3×       |        0.2×        |
+| 5000/2500 digits  |       ~1.8×       |        0.4×        |
+| 10000/5000 digits |       ~1.4×       |        0.4×        |
 
-BigInt2 division scales better than BigInt10's at large sizes, but both lag Python.
+BigInt2 division now beats Python at all sizes thanks to slice-based B-Z.
+Average across 62 benchmark cases: **1.14× Python**.
 
 **Power by case** (post-optimization):
 
@@ -312,40 +315,50 @@ At 300–600 digits, B-Z did show real wins (1.3–1.7× Python) thanks to shall
 recursion depth, confirming the algorithm IS faster — the implementation just
 needs to minimize allocations.
 
-**Benchmark results (B-Z, copy-based):**
+**Second attempt (slice-based B-Z): ✅ DONE.** Rewrote B-Z following BigUInt's
+proven approach — passes `(list, start, end)` bounds through the recursion instead
+of materializing sub-lists. Key optimizations:
 
-| Size                 | Schoolbook (vs Python) | B-Z copy-based (vs Python) |
-| -------------------- | ---------------------- | -------------------------- |
-| 300 dig / 200 dig    | —                      | 1.51× (win)                |
-| 500 dig / 200 dig    | —                      | 1.55–1.67× (win)           |
-| 600 dig / 300 dig    | —                      | 1.44× (win)                |
-| 700 dig / 350 dig    | —                      | 0.39× (regression)         |
-| 1200 dig / 400 dig   | —                      | 0.50× (regression)         |
-| 5000 dig / 2500 dig  | 1.47×                  | 0.84× (regression)         |
-| 10000 dig / 5000 dig | 0.88×                  | 0.77× (regression)         |
+1. **Slice-based recursion**: `_bz_two_by_one_slices` and `_bz_three_by_two_slices`
+   pass bounds through to avoid copying until the Knuth D base case.
+2. **Prenormalized base case**: `_divmod_knuth_d_from_slices` operates directly on
+   pre-normalized slices, reads divisor via pointer offset (no v copy), reducing
+   copies from 5 to 1 per base case call.
+3. **Minimal padding**: Instead of rounding divisor to 2^k × cutoff (97% waste for
+   520 words → 1024), rounds to the next even number. The recursion handles odd
+   sizes by falling through to the base case.
+4. **Optimized `_shift_left_words_inplace`**: backward pointer copy instead of
+   temp buffer allocation.
+5. **Pre-allocated quotient**: top-level uses `_add_at_offset_inplace` to place
+   each quotient digit, avoiding expensive repeated `_shift_left_words_inplace`.
+6. **Helper functions**: `_add_from_slice_inplace`, `_multiply_magnitudes_slices`,
+   `_is_zero_in_range`, `_decrement_inplace` — all avoid unnecessary copies.
 
-**Next step: slice-based B-Z (like BigUInt).** BigUInt's B-Z uses `from_slice`
-with `(bounds_a, bounds_b)` tuples to avoid materializing sub-BigUInts until the
-base case (schoolbook). Porting this approach to BigInt2's word lists should
-eliminate the allocation overhead and unlock the algorithmic win.
+**Cutoff tuning**: `CUTOFF_BURNIKEL_ZIEGLER = 64` (words) gave the best results.
+Tested 32, 64, and 128. Cutoff=32 triggered B-Z too early (overhead > gain for
+300–600 digit divisors). Cutoff=128 delayed B-Z too long.
 
-**Tasks:**
+**Benchmark results (slice-based B-Z, cutoff=64, minimal padding):**
 
-1. ~~Implement Burnikel-Ziegler recursive division~~ ✅ (done, code in place)
-2. **Rewrite B-Z with slice-based operations** (pass word-list + bounds instead
-   of copying sub-lists). Key functions to create:
-   - `_bz_div_two_by_one_slices(a, bounds_a, b, bounds_b, n, cutoff)`
-   - `_bz_div_three_by_two_slices(a, bounds_a, b, bounds_b, n, cutoff)`
-   - `_multiply_slices(a, bounds_a, b, bounds_b)` → avoids sub-list copies
-   - `_subtract_inplace_by_slice(a, b, bounds_b)` → subtract without copying
-3. Re-enable dispatch and tune crossover thresholds
-4. Add regression tests for edge cases
+| Size                 | Schoolbook (vs Python) | B-Z slice-based (vs Python)  |
+| -------------------- | ---------------------- | ---------------------------- |
+| 300 dig / 200 dig    | 1.48×                  | 1.48× (schoolbook, < cutoff) |
+| 500 dig / 200 dig    | 1.55×                  | 1.55× (schoolbook, < cutoff) |
+| 600 dig / 300 dig    | 1.2×                   | 1.2× (schoolbook, < cutoff)  |
+| 700 dig / 350 dig    | —                      | ~1.2× (B-Z, was 0.39×)       |
+| 2000 dig / 1000 dig  | —                      | ~1.3× (B-Z, was 0.69×)       |
+| 5000 dig / 2500 dig  | —                      | ~1.8× (B-Z, was 0.84×)       |
+| 10000 dig / 5000 dig | 0.88×                  | **~1.4×** (B-Z, was 0.77×)   |
 
-**Expected Impact (once slice-based):**
+**Average across 62 test cases: ~1.14× Python** (dominated by small-number constant
+overhead). For B-Z cases (divisor > 600 digits): consistently 1.2–1.8× Python.
 
-- Floor divide at 10000 digits: from 0.88× to 3–5× Python
-- Sqrt at 500 digits: from 0.21× to ~1.5–3× Python
-- to_string benefits cascading from faster division
+**Status: ✅ Complete.** All 60 tests pass, B-Z dispatch enabled, code merged.
+
+**Remaining opportunities (future work):**
+- Barrett division (reciprocal via Newton) for very large balanced divisions
+- SIMD-ized Knuth D base case for additional constant-factor improvement
+- GMP-style asymmetric division for highly unbalanced operands (m >> n)
 
 ---
 
