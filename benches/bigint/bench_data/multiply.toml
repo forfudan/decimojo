@@ -1,0 +1,302 @@
+[config]
+iterations = 100
+
+[[cases]]
+a = "123"
+b = "456"
+name = "Simple small positive multiplication"
+
+[[cases]]
+a = "-123"
+b = "456"
+name = "Simple small multiplication (negative × positive)"
+
+[[cases]]
+a = "123"
+b = "-456"
+name = "Simple small multiplication (positive × negative)"
+
+[[cases]]
+a = "-123"
+b = "-456"
+name = "Simple small multiplication (negative × negative)"
+
+[[cases]]
+a = "12345678"
+b = "0"
+name = "Multiplication by zero (positive)"
+
+[[cases]]
+a = "-12345678"
+b = "0"
+name = "Multiplication by zero (negative)"
+
+[[cases]]
+a = "9876543210"
+b = "1"
+name = "Multiplication by one (positive)"
+
+[[cases]]
+a = "-9876543210"
+b = "1"
+name = "Multiplication by one (negative)"
+
+[[cases]]
+a = "9876543210"
+b = "-1"
+name = "Multiplication by negative one (positive)"
+
+[[cases]]
+a = "-9876543210"
+b = "-1"
+name = "Multiplication by negative one (negative)"
+
+[[cases]]
+a = "123456789"
+b = "987654321"
+name = "Medium number multiplication (positive × positive)"
+
+[[cases]]
+a = "-123456789"
+b = "987654321"
+name = "Medium number multiplication (negative × positive)"
+
+[[cases]]
+a = "123456789"
+b = "-987654321"
+name = "Medium number multiplication (positive × negative)"
+
+[[cases]]
+a = "-123456789"
+b = "-987654321"
+name = "Medium number multiplication (negative × negative)"
+
+[[cases]]
+a = "12345"
+b = "1000"
+name = "Multiplication by power of 10 (positive)"
+
+[[cases]]
+a = "-12345"
+b = "1000"
+name = "Multiplication by power of 10 (negative × positive)"
+
+[[cases]]
+a = "12345"
+b = "-1000"
+name = "Multiplication by power of 10 (positive × negative)"
+
+[[cases]]
+a = "12345678901234567890"
+b = "10000000000"
+name = "Multiplication by power of 10 (large)"
+
+[[cases]]
+a = "{9,100}"
+b = "42"
+name = "Asymmetric multiplication (very large × small)"
+
+[[cases]]
+a = "42"
+b = "{9,100}"
+name = "Asymmetric multiplication (small × very large)"
+
+[[cases]]
+a = "123456789"
+b = "{9,50}"
+name = "Asymmetric multiplication (medium × very large)"
+
+[[cases]]
+a = "{9,50}"
+b = "123456789"
+name = "Asymmetric multiplication (very large × medium)"
+
+[[cases]]
+a = "1{2,49}"
+b = "9{8,49}"
+name = "Large number multiplication (50 digits × 50 digits)"
+
+[[cases]]
+a = "-1{2,49}"
+b = "9{8,49}"
+name = "Large number multiplication (negative 50 digits × 50 digits)"
+
+[[cases]]
+a = "1{2,49}"
+b = "-9{8,49}"
+name = "Large number multiplication (50 digits × negative 50 digits)"
+
+[[cases]]
+a = "-1{2,49}"
+b = "-9{8,49}"
+name = "Large number multiplication (negative 50 digits × negative 50 digits)"
+
+[[cases]]
+a = "1{2,99}"
+b = "9{8,99}"
+name = "Very large number multiplication (100 digits × 100 digits)"
+
+[[cases]]
+a = "-1{2,99}"
+b = "9{8,99}"
+name = "Very large number multiplication (negative 100 digits × 100 digits)"
+
+[[cases]]
+a = "1{2,99}"
+b = "-9{8,99}"
+name = "Very large number multiplication (100 digits × negative 100 digits)"
+
+[[cases]]
+a = "-1{2,99}"
+b = "-9{8,99}"
+name = "Very large number multiplication (negative 100 digits × negative 100 digits)"
+
+[[cases]]
+a = "1{2,199}"
+b = "9{8,199}"
+name = "Extreme large number multiplication (200 digits × 200 digits)"
+
+[[cases]]
+a = "1{2,399}"
+b = "9{8,399}"
+name = "Extreme large number multiplication (400 digits × 400 digits)"
+
+[[cases]]
+a = "7{3,499}"
+b = "5{2,499}"
+name = "Extreme large number multiplication (500 digits × 500 digits)"
+
+[[cases]]
+a = "6765"
+b = "4181"
+name = "Fibonacci number multiplication (medium)"
+
+[[cases]]
+a = "1597"
+b = "10946"
+name = "Fibonacci number multiplication (larger)"
+
+[[cases]]
+a = "-6765"
+b = "4181"
+name = "Fibonacci number multiplication (negative)"
+
+[[cases]]
+a = "2147483647"
+b = "997"
+name = "Prime number multiplication"
+
+[[cases]]
+a = "2147483647"
+b = "2305843009213693951"
+name = "Large prime number multiplication"
+
+[[cases]]
+a = "9223372036854775807"
+b = "2"
+name = "Near Int64 limit multiplication"
+
+[[cases]]
+a = "-9223372036854775807"
+b = "2"
+name = "Near negative Int64 limit multiplication"
+
+[[cases]]
+a = "{9,30}"
+b = "{9,30}"
+name = "Multiplication of repeated digits"
+
+[[cases]]
+a = "{1010101010,8}"
+b = "{9090909090,8}"
+name = "Multiplication of alternating digits"
+
+[[cases]]
+a = "{9,50}1"
+b = "{9,40}1"
+name = "Multiplication of number near power of 10"
+
+[[cases]]
+a = "256"
+b = "128"
+name = "Powers of 2 multiplication (small)"
+
+[[cases]]
+a = "1{0,20}"
+b = "256"
+name = "Powers of 2 multiplication (medium)"
+
+[[cases]]
+a = "{2,100}"
+b = "{2,100}"
+name = "Powers of 2 multiplication (large)"
+
+[[cases]]
+a = "1{0,30}"
+b = "1{0,20}"
+name = "Decimal notation multiplication"
+
+[[cases]]
+a = "42{0,50}"
+b = "17{0,30}"
+name = "Scientific notation-like multiplication"
+
+[[cases]]
+a = "8675309123456789"
+b = "9876543210123456"
+name = "Random-like pattern multiplication (medium)"
+
+[[cases]]
+a = "3141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067"
+b = "2718281828459045235360287471352662497757247093699959574966967627724076630353547594571382178525166427"
+name = "Random-like pattern multiplication (large - 100 digits × 100 digits)"
+
+[[cases]]
+a = "{2357111317,10}"
+b = "{1931374143,10}"
+name = "Prime factor pattern multiplication"
+
+[[cases]]
+a = "3{1,299}"
+b = "7{9,299}"
+name = "Very large multiplication (300 digits × 300 digits)"
+
+[[cases]]
+a = "3{1,299}"
+b = "-7{9,299}"
+name = "Very large multiplication with negative (300 digits × negative 300 digits)"
+
+[[cases]]
+a = "{123456789,67}"
+b = "{987654321,67}"
+name = "Extreme large multiplication (600 digits × 600 digits)"
+
+[[cases]]
+a = "{123456789,67}"
+b = "{987654321,34}"
+name = "Extreme large asymmetric multiplication (600 digits × 300 digits)"
+
+[[cases]]
+a = "3628800"
+b = "39916800"
+name = "Factorial-like multiplication"
+
+[[cases]]
+a = "51090942171709440000"
+b = "1124000727777607680000"
+name = "Large factorial-like multiplication"
+
+[[cases]]
+a = "12345678901234567890"
+b = "12345678901234567890"
+name = "Square number calculation"
+
+[[cases]]
+a = "-12345678901234567890"
+b = "-12345678901234567890"
+name = "Negative square calculation"
+
+[[cases]]
+a = "{7,700}"
+b = "{7,700}"
+name = "Extreme large square calculation (700 digits × 700 digits)"

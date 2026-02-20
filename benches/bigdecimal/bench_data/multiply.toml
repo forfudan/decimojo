@@ -1,0 +1,272 @@
+[config]
+iterations = 500
+
+# === BASIC DECIMAL MULTIPLICATION TESTS ===
+
+[[cases]]
+a = "7"
+b = "6"
+name = "Simple integer multiplication"
+
+[[cases]]
+a = "3.5"
+b = "2.5"
+name = "Simple decimal multiplication"
+
+[[cases]]
+a = "1.5"
+b = "0.25"
+name = "Multiplication with different scales"
+
+[[cases]]
+a = "1.23456789"
+b = "0.01"
+name = "Multiplication with very different scales"
+
+[[cases]]
+a = "123.456"
+b = "0"
+name = "Multiplication by zero"
+
+[[cases]]
+a = "123.456"
+b = "1"
+name = "Multiplication by one"
+
+[[cases]]
+a = "123.456"
+b = "-1"
+name = "Multiplication by negative one"
+
+# === SCALE AND PRECISION TESTS ===
+
+[[cases]]
+a = "1.2345678901234567890123456789"
+b = "9.8765432109876543210987654321"
+name = "Precision at decimal limit"
+
+[[cases]]
+a = "123.456789"
+b = "987.654321"
+name = "Multiplication resulting in scale increase"
+
+[[cases]]
+a = "0.33333333333333333333333333"
+b = "3"
+name = "Multiplication with high precision"
+
+[[cases]]
+a = "0.5"
+b = "2"
+name = "Multiplication resulting in exact integer"
+
+[[cases]]
+a = "1.23e5"
+b = "4.56e2"
+name = "Multiplication with scientific notation"
+
+# === SIGN COMBINATION TESTS ===
+
+[[cases]]
+a = "-3.14"
+b = "10"
+name = "Negative * Positive"
+
+[[cases]]
+a = "10"
+b = "-3.14"
+name = "Positive * Negative"
+
+[[cases]]
+a = "-5.75"
+b = "-10.25"
+name = "Negative * Negative"
+
+[[cases]]
+a = "0"
+b = "-123.456"
+name = "Zero * Negative"
+
+[[cases]]
+a = "-123.456"
+b = "0"
+name = "Negative * Zero"
+
+# === LARGE NUMBER TESTS ===
+
+[[cases]]
+a = "9999999"
+b = "9999999"
+name = "Large integer multiplication"
+
+[[cases]]
+a = "-9999999999"
+b = "1234567890"
+name = "Large negative * positive"
+
+[[cases]]
+a = "12345.6789"
+b = "98765.4321"
+name = "Large decimal multiplication"
+
+[[cases]]
+a = "1{0,20}"
+b = "0.{0,20}1"
+name = "Very large * very small"
+
+[[cases]]
+a = "1.23e10"
+b = "4.56e10"
+name = "Extreme scales (large positive exponents)"
+
+# === SMALL NUMBER TESTS ===
+
+[[cases]]
+a = "0.{0,15}1"
+b = "0.{0,15}2"
+name = "Very small positive values"
+
+[[cases]]
+a = "-0.{0,15}1"
+b = "-0.{0,15}2"
+name = "Very small negative values"
+
+[[cases]]
+a = "0.{0,10}1"
+b = "0.{0,5}1"
+name = "Small values with different scales"
+
+[[cases]]
+a = "1.23e-10"
+b = "4.56e-10"
+name = "Extreme scales (large negative exponents)"
+
+[[cases]]
+a = "1.23e-10"
+b = "4.56e10"
+name = "Multiplication with extreme exponent difference"
+
+# === SPECIAL VALUE TESTS ===
+
+[[cases]]
+a = "3.14159265358979323846264338328"
+b = "2.71828182845904523536028747135"
+name = "Multiplication of exact mathematical constants (PI * E)"
+
+[[cases]]
+a = "42.5"
+b = "0.1"
+name = "Multiply by 0.1 (recurring binary)"
+
+[[cases]]
+a = "42.5"
+b = "0.01"
+name = "Multiply by 0.01 (recurring binary)"
+
+[[cases]]
+a = "0.333333333333333333333333333"
+b = "0.666666666666666666666666667"
+name = "Multiplication with repeating decimals"
+
+[[cases]]
+a = "123.456"
+b = "10"
+name = "Multiplication by 10 (shift operation)"
+
+# === PRECISION BOUNDARY TESTS ===
+
+[[cases]]
+a = "9.9999999999999999999999999"
+b = "9.9999999999999999999999999"
+name = "Multiplication requiring rounding"
+
+[[cases]]
+a = "1.5000000000000000000000000"
+b = "2.0000000000000000000000000"
+name = "Multiplication with trailing zeros"
+
+[[cases]]
+a = "0.125"
+b = "8"
+name = "Binary-friendly multiplication"
+
+[[cases]]
+a = "0.2"
+b = "5"
+name = "Decimal-friendly multiplication"
+
+[[cases]]
+a = "1{0,14}"
+b = "1{0,14}"
+name = "Multiplication at precision boundary"
+
+# === APPLICATION-SPECIFIC TESTS ===
+
+[[cases]]
+a = "19.99"
+b = "12"
+name = "Financial calculation (price * quantity)"
+
+[[cases]]
+a = "299792458"
+b = "0.000000001"
+name = "Scientific measurement (unit conversion)"
+
+[[cases]]
+a = "14.75"
+b = "8.25"
+name = "Area calculation (length * width)"
+
+[[cases]]
+a = "10000.00"
+b = "0.0425"
+name = "Financial percentage (principal * rate)"
+
+[[cases]]
+a = "1.5"
+b = "8.98755178736817e16"
+name = "Physics calculation (E = mc2)"
+
+# === EDGE CASES AND EXTREME VALUES ===
+
+[[cases]]
+a = "1.{1,27}"
+b = "1.{9,27}"
+name = "Multiplication with maximum precision"
+
+[[cases]]
+a = "1e+20"
+b = "1e-20"
+name = "Multiplication with extreme scale separation"
+
+[[cases]]
+a = "123456789.987654321"
+b = "123456789.987654321"
+name = "Square operation"
+
+[[cases]]
+a = "0.333333333333333333333333333"
+b = "3.333333333333333333333333333"
+name = "Multiplication requiring significant rounding"
+
+[[cases]]
+a = "0.{0,25}1"
+b = "0.{0,25}1"
+name = "Multiplication of near-zero values"
+
+# === REAL-WORLD APPLICATION TESTS ===
+
+[[cases]]
+a = "1250.75"
+b = "0.92"
+name = "Currency conversion"
+
+[[cases]]
+a = "25.75"
+b = "10.5"
+name = "Volume calculation (partial - length * width)"
+
+[[cases]]
+a = "123.456789"
+b = "1000"
+name = "Scale calculation (multiplying by factor)"

@@ -1,0 +1,177 @@
+[config]
+iterations = 1000
+
+[[cases]]
+a = "42"
+b = "58"
+name = "Small integer addition"
+
+[[cases]]
+a = "12345"
+b = "67890"
+name = "Medium integer addition"
+
+[[cases]]
+a = "9999999999"
+b = "1234567890"
+name = "Large integer addition"
+
+[[cases]]
+a = "{9,50}"
+b = "1{0,49}"
+name = "Very large integer addition"
+
+[[cases]]
+a = "123456789"
+b = "0"
+name = "Addition with zero"
+
+[[cases]]
+a = "0"
+b = "987654321"
+name = "Zero with addition"
+
+[[cases]]
+a = "1{0,20}"
+b = "1{0,15}"
+name = "Power-of-10 addition"
+
+[[cases]]
+a = "10946"
+b = "17711"
+name = "Fibonacci numbers addition"
+
+[[cases]]
+a = "{9,100}"
+b = "1{0,99}"
+name = "Extreme large integer addition"
+
+[[cases]]
+a = "1{0,30}"
+b = "{9,10}"
+name = "Addition with uneven length numbers"
+
+[[cases]]
+a = "{9,10}"
+b = "1{0,30}"
+name = "Addition with uneven length numbers (reversed)"
+
+[[cases]]
+a = "{9,25}"
+b = "1"
+name = "Addition with many carries"
+
+[[cases]]
+a = "2147483647"
+b = "2305843009213693951"
+name = "Prime number addition"
+
+[[cases]]
+a = "4294967295"
+b = "4294967295"
+name = "Addition near UInt32 limit"
+
+[[cases]]
+a = "18446744073709551615"
+b = "1"
+name = "Addition near UInt64 limit"
+
+[[cases]]
+a = "{1,40}"
+b = "{9,40}"
+name = "Addition of repeated digits"
+
+[[cases]]
+a = "340282366920938463463374607431768211456"
+b = "115792089237316195423570985008687907853269984665640564039457584007913129639936"
+name = "Addition of powers of two"
+
+[[cases]]
+a = "999999999"
+b = "1"
+name = "Addition at base-10^9 boundary"
+
+[[cases]]
+a = "{9,200}"
+b = "1"
+name = "Addition with consecutive 9's"
+
+[[cases]]
+a = "{8,50}"
+b = "{8,50}"
+name = "Addition of numbers with all digits the same"
+
+[[cases]]
+a = "{123456789,10}"
+b = "{987654321,10}"
+name = "Addition of complementary patterns"
+
+[[cases]]
+a = "1{0,500}"
+b = "1"
+name = "Addition of very different magnitudes"
+
+[[cases]]
+a = "{9,1000}"
+b = "{9,1000}"
+name = "Addition of two very large numbers"
+
+[[cases]]
+a = "1{0,100}1{0,100}1"
+b = "1{0,200}1"
+name = "Addition of sparse numbers"
+
+[[cases]]
+a = "999999999{0,18}"
+b = "1"
+name = "Addition at word boundaries"
+
+[[cases]]
+a = "{123456789,30}"
+b = "{123456789,30}"
+name = "Addition of repeating number patterns"
+
+[[cases]]
+a = "2432902008176640000"
+b = "6402373705728000"
+name = "Addition of factorial numbers"
+
+[[cases]]
+a = "{2,100}"
+b = "{3,120}"
+name = "Addition of exponential growth numbers"
+
+[[cases]]
+a = "10000000000000000000000000000000000000000"
+b = "8589934592"
+name = "Addition of perfect powers"
+
+[[cases]]
+a = "115792089237316195423570985008687907853269984665640564039457584007908834671663"
+b = "115792089237316195423570985008687907852837564279074904382605163141518161494337"
+name = "Addition with cryptographic numbers"
+
+[[cases]]
+a = "{123456789,64}"
+b = "{987654321,32}"
+name = "Addition with 64 words + 32 words"
+
+[[cases]]
+a = "{123456789,256}"
+b = "{987654321,128}"
+name = "Addition with 256 words + 128 words"
+
+[[cases]]
+a = "{123456789,1024}"
+b = "{987654321,512}"
+name = "Addition with 1024 words + 512 words"
+
+[[cases]]
+a = "{123456789,4096}"
+b = "{987654321,2048}"
+name = "Addition with 4096 words + 2048 words"
+
+[[cases]]
+a = "{123456789,16384}"
+b = "{987654321,8192}"
+name = "Addition with 16384 words + 8192 words"

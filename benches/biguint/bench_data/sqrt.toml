@@ -1,0 +1,142 @@
+[config]
+iterations = 1000
+
+[[cases]]
+a = "16"
+name = "Perfect square - small"
+
+[[cases]]
+a = "10000"
+name = "Perfect square - medium"
+
+[[cases]]
+a = "15"
+name = "Non-perfect square - small"
+
+[[cases]]
+a = "9999"
+name = "Non-perfect square - medium"
+
+[[cases]]
+a = "7"
+name = "Single digit"
+
+[[cases]]
+a = "0"
+name = "Zero"
+
+[[cases]]
+a = "1"
+name = "One"
+
+[[cases]]
+a = "1{0,30}"
+name = "Large perfect square"
+
+[[cases]]
+a = "{9,30}"
+name = "Large non-perfect square"
+
+[[cases]]
+a = "2147483647"
+name = "Mersenne-like number"
+
+[[cases]]
+a = "1048576"
+name = "Power of 2"
+
+[[cases]]
+a = "1307674368000"
+name = "Factorial-like large number"
+
+[[cases]]
+a = "18446744073709551615"
+name = "Near UInt64 MAX"
+
+[[cases]]
+a = "1134903170"
+name = "Fibonacci number"
+
+[[cases]]
+a = "{7,30}"
+name = "Repeated digits"
+
+[[cases]]
+a = "1{0,50}"
+name = "Power of 10"
+
+[[cases]]
+a = "{9,100}"
+name = "Almost perfect square"
+
+[[cases]]
+a = "1000000000000000000000000000057"
+name = "Prime-like large number"
+
+[[cases]]
+a = "123456789123456789123456789123456789123456789123456789"
+name = "Number with pattern"
+
+[[cases]]
+a = "{1,100}"
+name = "Very large number - 100 digits"
+
+[[cases]]
+a = "{314159265358979323846264338327950288419716939937510,4}"
+name = "Very large number - 200 digits"
+
+[[cases]]
+a = "{9,500}"
+name = "Very large number - 500 digits"
+
+[[cases]]
+a = "{123456789,111}123456"
+name = "Extremely large number - 1000 digits"
+
+[[cases]]
+a = "{987654321,222}9876543"
+name = "Huge number - 2000 digits"
+
+[[cases]]
+a = "{1234567890,500}"
+name = "Massive number - 5000 digits"
+
+[[cases]]
+a = "{9876543210,1000}"
+name = "Gigantic number - 10000 digits"
+
+[[cases]]
+a = "314159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196"
+name = "Mathematical constant - Pi approximation"
+
+[[cases]]
+a = "271828182845904523536028747135266249775724709369995957496696762772407663035354759457138217852516642742746639193200305992181741359662904357290033429526059563073813232862794349076323382988075319525101901"
+name = "Mathematical constant - e approximation"
+
+[[cases]]
+a = "3{0,100}"
+name = "Power of small prime"
+
+[[cases]]
+a = "8675309192837465019283746501928374650192837465019283746501928374650192837465019283746501928374650192837465019283746501928374650192837465019283746501928374650192837465019283746501928374650"
+name = "Random large number"
+
+[[cases]]
+a = "{123456789,1024}"
+name = "Very large number (1024 words)"
+
+[[cases]]
+a = "{123456789,2048}"
+name = "Very large number (2048 words)"
+
+[[cases]]
+a = "{123456789,4096}"
+name = "Very large number (4096 words)"
+
+[[cases]]
+a = "{123456789,8192}"
+name = "Very large number (8192 words)"
+
+[[cases]]
+a = "{123456789,16384}"
+name = "Very large number (16384 words)"

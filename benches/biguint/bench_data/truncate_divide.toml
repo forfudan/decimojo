@@ -1,0 +1,172 @@
+[config]
+iterations = 100
+
+[[cases]]
+a = "100"
+b = "10"
+name = "Simple division, no remainder"
+
+[[cases]]
+a = "10"
+b = "3"
+name = "Division with remainder"
+
+[[cases]]
+a = "7"
+b = "2"
+name = "Division of small numbers"
+
+[[cases]]
+a = "5"
+b = "10"
+name = "Division resulting in zero"
+
+[[cases]]
+a = "12345"
+b = "1"
+name = "Division by one"
+
+[[cases]]
+a = "0"
+b = "5"
+name = "Zero dividend"
+
+[[cases]]
+a = "9999999999"
+b = "333"
+name = "Large number division"
+
+[[cases]]
+a = "1{0,50}"
+b = "7"
+name = "Very large number division"
+
+[[cases]]
+a = "1{0,30}"
+b = "1{0,10}"
+name = "Division of large numbers with exact result"
+
+[[cases]]
+a = "12345"
+b = "{9,20}"
+name = "Division by large number"
+
+[[cases]]
+a = "6765"
+b = "4181"
+name = "Fibonacci number division"
+
+[[cases]]
+a = "2147483647"
+b = "997"
+name = "Prime number division"
+
+[[cases]]
+a = "18446744073709551615"
+b = "2"
+name = "Division near UInt64 limit"
+
+[[cases]]
+a = "1000"
+b = "999"
+name = "Division with divisor just below dividend"
+
+[[cases]]
+a = "1{0,20}"
+b = "1{0,5}"
+name = "Division with exact powers of 10"
+
+[[cases]]
+a = "{9,30}"
+b = "{9,15}"
+name = "Division of repeated digits"
+
+[[cases]]
+a = "{9,100}"
+b = "3"
+name = "Extreme large dividend and small divisor"
+
+[[cases]]
+a = "1{0,50}"
+b = "256"
+name = "Division with powers of 2"
+
+[[cases]]
+a = "123456789"
+b = "123456780"
+name = "Division yielding a single-digit result"
+
+[[cases]]
+a = "8675309123456789098765432112345678909876543211234567"
+b = "12345678901234567890"
+name = "Division with random large numbers"
+
+[[cases]]
+a = "{12345,10}"
+b = "{6789,12}"
+name = "Division with around 50 digits divisor just below dividend"
+
+[[cases]]
+a = "{990132857498314692374162398217,10}"
+b = "{85172390413429847239,10}"
+name = "Division of repeated digits (300 vs 200 digits)"
+
+[[cases]]
+a = "{123456789,30}"
+b = "{987654321,15}"
+name = "Division of large numbers (270 digits vs 135 digits)"
+
+[[cases]]
+a = "{123456789,250}"
+b = "{987654321,100}"
+name = "Division of very large numbers (250 words vs 100 words)"
+
+[[cases]]
+a = "{123456789,400}"
+b = "{987654321,200}"
+name = "Division of very, very large numbers (3600 digits vs 1800 digits)"
+
+[[cases]]
+a = "1234567890193287491287508917213097405916874098123705160923812345678901932874912875089172130974059168740981237051609238749875089170984701759832708497029875019837409871085709813749870897510749875089170984701759832708497029875019837409871085709813749870897510"
+b = "68740981237051609238123456789019328749128750891721309740591687409812370516092387498750879548759387959978279541709847017598327084"
+name = "Division of very large numbers (256 digits vs 128 digits)"
+
+[[cases]]
+a = "31415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446095505822317253594081284811174502841027019385211055596446229489549303819600000000"
+b = "27182818284590452353602874713526624977572470936999595749669676277240766303535475945713821785251664274"
+name = "Division of large numbers (200 digits vs 100 digits) A"
+
+[[cases]]
+a = "31415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446095505822317253594081284811174502841027019385211055596446229489549303819600000000"
+b = "14142135623730950488016887242096980785696718753769480731766797379907324784621070388503875343276400719"
+name = "Division of large numbers (200 digits vs 100 digits) B"
+
+[[cases]]
+a = "314159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812800000000"
+b = "141421356237309504880168872420969807856967187537694"
+name = "Division of large numbers (150 digits vs 50 digits) A"
+
+[[cases]]
+a = "316227766016824890583648059893174009579947593530458382628078540989121552735792899961040720792717368862335475063516761005757940794488625195802031018646600000000"
+b = "141421356237309504880168872420969807856967187537694"
+name = "Division of large numbers (150 digits vs 50 digits) B"
+
+[[cases]]
+a = "{316227766016824890583648059893174009579947593,1000}"
+b = "{141421356237309504880168872420969807856967187,100}"
+name = "Division of large numbers (5000 words vs 500 words)"
+
+[[cases]]
+a = "{316227766016824890583648059893174009579947593,10000}"
+b = "{141421356237309504880168872420969807856967187,1234}"
+name = "Division of large numbers (50000 words vs 6170 words)"
+
+[[cases]]
+a = "{123456789,65536}"
+b = "{987654321,4096}"
+name = "Division of large numbers (2^16 words vs 2^12 words)"
+
+[[cases]]
+a = "{123456789,262144}"
+b = "{987654321,16384}"
+name = "Division of large numbers (2^18 words vs 2^14 words)"

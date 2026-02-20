@@ -1,0 +1,82 @@
+[config]
+iterations = 1000
+
+[[cases]]
+a = "42"
+name = "Small integer (1-3 digits)"
+
+[[cases]]
+a = "1234567890"
+name = "Medium integer (10 digits)"
+
+[[cases]]
+a = "12345678901234567890123456789012345678901234567890"
+name = "Large integer (50 digits)"
+
+[[cases]]
+a = "1{0,99}"
+name = "Very large integer (100 digits)"
+
+[[cases]]
+a = "115792089237316195423570985008687907853269984665640564039457584007913129639936"
+name = "Power of 2 (2^256)"
+
+[[cases]]
+a = "{12345,10}"
+name = "Large number with repeating pattern (50 digits)"
+
+[[cases]]
+a = "{9,100}"
+name = "Number with all 9s (100 digits)"
+
+[[cases]]
+a = "{1,100}"
+name = "Number with all 1s (100 digits)"
+
+[[cases]]
+a = "{10,50}"
+name = "Number with alternating digits (100 digits)"
+
+[[cases]]
+a = "170141183460469231731687303715884105727"
+name = "Large prime number"
+
+[[cases]]
+a = "15511210043330985984000000"
+name = "Factorial value (25! = ~25 digits)"
+
+[[cases]]
+a = "000123456789"
+name = "String with leading zeros"
+
+[[cases]]
+a = "43466557686937456435688527675040625802564660517371780402481729089536555417949051890403879840079255169295922593080322634775209689623239873322471161642996440906533187938298969649928516003704476137795166849228875"
+name = "Large Fibonacci number (Fib(1000), ~209 digits)"
+
+[[cases]]
+a = "1{0,100}"
+name = "Power of ten (10^100)"
+
+[[cases]]
+a = "1{0,98}9"
+name = "Just below power of ten (10^50 - 1)"
+
+[[cases]]
+a = "31415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679"
+name = "Pi digits (100 digits)"
+
+[[cases]]
+a = "1{0,499}"
+name = "Very large number (500 digits)"
+
+[[cases]]
+a = "{123456789,22}1234"
+name = "Complex pattern (200 digits)"
+
+[[cases]]
+a = "1{0,999}"
+name = "Extremely large number (1000 digits)"
+
+[[cases]]
+a = "18446744073709551615"
+name = "Maximum UInt64 value"

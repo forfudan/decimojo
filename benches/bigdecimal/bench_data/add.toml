@@ -1,0 +1,324 @@
+[config]
+iterations = 1000
+
+# === BASIC DECIMAL ADDITION TESTS ===
+
+[[cases]]
+a = "42"
+b = "58"
+name = "Simple integer addition"
+
+[[cases]]
+a = "3.14"
+b = "2.71"
+name = "Simple decimal addition"
+
+[[cases]]
+a = "1.2345"
+b = "5.67"
+name = "Addition with different scales"
+
+[[cases]]
+a = "1.23456789012345678901234567"
+b = "5.6"
+name = "Addition with very different scales"
+
+[[cases]]
+a = "123.456"
+b = "0"
+name = "Addition with zero"
+
+# === SCALE AND PRECISION TESTS ===
+
+[[cases]]
+a = "1.2345678901234567890123456789"
+b = "9.8765432109876543210987654321"
+name = "Precision at decimal limit"
+
+[[cases]]
+a = "999999.999999"
+b = "0.000001"
+name = "Addition causing scale reduction"
+
+[[cases]]
+a = "0.33333333333333333333333333"
+b = "0.66666666666666666666666667"
+name = "Addition with high precision, repeating pattern"
+
+[[cases]]
+a = "0.33333333333333333333333333"
+b = "0.66666666666666666666666667"
+name = "Addition resulting in exact 1.0"
+
+[[cases]]
+a = "1.23e5"
+b = "4.56e4"
+name = "Addition with scientific notation"
+
+# === SIGN COMBINATION TESTS ===
+
+[[cases]]
+a = "-3.14"
+b = "10"
+name = "Negative + Positive (negative smaller)"
+
+[[cases]]
+a = "-10"
+b = "3.14"
+name = "Negative + Positive (negative larger)"
+
+[[cases]]
+a = "-5.75"
+b = "-10.25"
+name = "Negative + Negative"
+
+[[cases]]
+a = "123.456"
+b = "-123.456"
+name = "Addition resulting in zero (pos + neg)"
+
+[[cases]]
+a = "0.0000001"
+b = "-0.00000005"
+name = "Addition near zero (small difference)"
+
+# === LARGE NUMBER TESTS ===
+
+[[cases]]
+a = "{9,28}"
+b = "1"
+name = "Large integer addition"
+
+[[cases]]
+a = "-{9,28}"
+b = "{9,27}8"
+name = "Large negative + positive"
+
+[[cases]]
+a = "{9,20}.{9,8}"
+b = "1{0,19}.{0,7}1"
+name = "Very large decimal addition"
+
+[[cases]]
+a = "1{0,25}"
+b = "0.{0,25}1"
+name = "Very large + very small"
+
+[[cases]]
+a = "1.23e20"
+b = "4.56e19"
+name = "Extreme scales (large positive exponent)"
+
+# === SMALL NUMBER TESTS ===
+
+[[cases]]
+a = "0.{0,25}1"
+b = "0.{0,25}2"
+name = "Very small positive values"
+
+[[cases]]
+a = "-0.{0,25}1"
+b = "-0.{0,25}2"
+name = "Very small negative values"
+
+[[cases]]
+a = "0.{0,10}1"
+b = "0.{0,20}1"
+name = "Small values with different scales"
+
+[[cases]]
+a = "1.23e-15"
+b = "4.56e-20"
+name = "Extreme scales (large negative exponent)"
+
+[[cases]]
+a = "1.23e-10"
+b = "4.56e10"
+name = "Addition that requires significant rescaling"
+
+# === SPECIAL VALUE TESTS ===
+
+[[cases]]
+a = "3.14159265358979323846264338328"
+b = "2.71828182845904523536028747135"
+name = "Addition of exact mathematical constants (PI + E)"
+
+[[cases]]
+a = "1.61803398874989484820458683437"
+b = "1.41421356237309504880168872421"
+name = "Addition of famous constants (Phi + sqrt(2))"
+
+[[cases]]
+a = "1.23451234512345123451234512345"
+b = "5.67896789567895678956789567896"
+name = "Addition with repeating patterns"
+
+[[cases]]
+a = "10542.75"
+b = "3621.50"
+name = "Financial numbers (dollars and cents)"
+
+[[cases]]
+a = "98.76543"
+b = "87.65432"
+name = "Statistical data (means)"
+
+# === PRECISION TESTS ===
+
+[[cases]]
+a = "0.5"
+b = "0.25"
+name = "Binary-friendly decimals"
+
+[[cases]]
+a = "0.33333333333333333333333333"
+b = "0.33333333333333333333333333"
+name = "Decimal-unfriendly fractions"
+
+[[cases]]
+a = "9.99999999999999999999999999"
+b = "0.00000000000000000000000001"
+name = "Addition with many carries"
+
+[[cases]]
+a = "1.1000000000000000000000000"
+b = "2.2000000000000000000000000"
+name = "Addition with trailing zeros"
+
+[[cases]]
+a = "999999999999999999.9999999"
+b = "0.0000001"
+name = "Addition requiring precision increase"
+
+# === APPLICATION-SPECIFIC TESTS ===
+
+[[cases]]
+a = "299792458.0"
+b = "0.000000000000000000160217663"
+name = "Scientific measurement (physics)"
+
+[[cases]]
+a = "1.496e11"
+b = "3.844e8"
+name = "Astronomical distances"
+
+[[cases]]
+a = "0.00001234"
+b = "0.00005678"
+name = "Chemical concentrations"
+
+[[cases]]
+a = "3914.75"
+b = "0.05"
+name = "Financial market prices"
+
+[[cases]]
+a = "0.0425"
+b = "0.0015"
+name = "Interest rate calculations"
+
+# === EDGE CASES AND EXTREME VALUES ===
+
+[[cases]]
+a = "0.{1,28}"
+b = "0.{9,28}"
+name = "Addition with maximum precision"
+
+[[cases]]
+a = "1e20"
+b = "1e-20"
+name = "Addition with extreme exponents difference"
+
+[[cases]]
+a = "{9,28}.{9,28}"
+b = "0.{0,27}1"
+name = "Addition at precision boundary"
+
+[[cases]]
+a = "0.125"
+b = "0.0625"
+name = "Addition of exact fractions"
+
+[[cases]]
+a = "0.142857142857142857142857"
+b = "0.076923076923076923076923"
+name = "Addition of recurring decimals"
+
+# === PRACTICAL APPLICATION TESTS ===
+
+[[cases]]
+a = "37.7749"
+b = "0.0001"
+name = "GPS coordinates addition"
+
+[[cases]]
+a = "273.15"
+b = "32.0"
+name = "Temperature conversion factors"
+
+[[cases]]
+a = "156.78"
+b = "243.22"
+name = "Transaction amounts addition"
+
+[[cases]]
+a = "987654321987654321.987654321"
+b = "0.000000000000000000000000001"
+name = "Addition across wide range of magnitudes"
+
+[[cases]]
+a = "12345678901234567890.1234567890"
+b = "-12345678901234567890.1234567890"
+name = "Equal but opposite values"
+
+# === VERY LARGE NUMBER TESTS (1000+ digits) ===
+
+[[cases]]
+a = "1{23456789,62}123456.{789012345,62}789012345"
+b = "9{87654321,62}987654.{321098765,62}321098765"
+name = "Addition of 1000-digit decimals"
+
+[[cases]]
+a = "1{23456789,93}123456.{789012345,93}789012345"
+b = "9{87654321,93}987654.{321098765,93}321098765"
+name = "Addition of 1500-digit decimals with large fractional parts"
+
+[[cases]]
+a = "{9,1000}.{9,1000}"
+b = "0.{0,999}1"
+name = "Addition of 2000-digit decimals with carries"
+
+[[cases]]
+a = "1.{23456789,149}123456789e+500"
+b = "9.{87654321,149}987654321e+495"
+name = "Large decimal addition with scientific notation (1200 digits)"
+
+[[cases]]
+a = "1{23456789,112}1234567.{890123456,112}890123456"
+b = "-1{23456789,112}1234566.{890123456,112}890123455"
+name = "Very large positive + very large negative decimals (1800 digits)"
+
+[[cases]]
+a = "1{23456789,124}1234567.{890123456,124}890123456"
+b = "0.{0,1200}1{23456789,37}123456789"
+name = "Addition of decimals with vastly different scales (2500 digits total)"
+
+[[cases]]
+a = "1{12358132134,49}1123581321.{34455891442,49}34455891442"
+b = "2{35813213455,49}3358132134.{55891442334,49}55891442334"
+name = "Fibonacci-like large decimal addition (1100 digits each)"
+
+[[cases]]
+a = "2{357111317192329,43}23571113171923.{41434751617379,43}41434751617379"
+b = "4{143717919293137,43}14137171929313.{17918389719497,43}17918389719497"
+name = "Prime-like large decimal addition (1300 digits)"
+
+[[cases]]
+a = "1{23456789,62}1234567.{890123456,186}890123456"
+b = "0.{0,500}1{987654321,186}987654321"
+name = "Very large decimal with maximum fractional precision (2000+ digits)"
+
+[[cases]]
+a = "9{87654321,187}987654321.{123456789,187}123456789"
+b = "0.{0,1500}1{23456789,93}123456789"
+name = "Extreme scale difference with large decimals (3000+ digits combined)"

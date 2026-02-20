@@ -605,8 +605,13 @@ fn floor_divide(x1: BigInt2, x2: BigInt2) raises -> BigInt2:
     else:
         # Different signs → negative quotient
         if r_is_zero:
-            # Exact division
-            return BigInt2(raw_words=q_words^, sign=True)
+            # Exact division: check if quotient is zero (no -0)
+            var q_is_zero = True
+            for word in q_words:
+                if word != 0:
+                    q_is_zero = False
+                    break
+            return BigInt2(raw_words=q_words^, sign=not q_is_zero)
         else:
             # Non-exact: floor division rounds away from zero for negative
             # results, so quotient = -(|q| + 1)

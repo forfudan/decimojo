@@ -1,0 +1,102 @@
+[config]
+iterations = 1000
+
+[[cases]]
+a = "12345"
+b = "5"
+name = "Small power"
+
+[[cases]]
+a = "12345"
+b = "20"
+name = "Medium power"
+
+[[cases]]
+a = "12345"
+b = "50"
+name = "Large power"
+
+[[cases]]
+a = "12345"
+b = "100"
+name = "Very large power"
+
+[[cases]]
+a = "1"
+b = "5"
+name = "Small number, small power"
+
+[[cases]]
+a = "{9,50}"
+b = "5"
+name = "Large number, small power"
+
+[[cases]]
+a = "1"
+b = "50"
+name = "Small number, large power"
+
+[[cases]]
+a = "{9,50}"
+b = "50"
+name = "Large number, large power"
+
+[[cases]]
+a = "1"
+b = "10"
+name = "Power of 10"
+
+[[cases]]
+a = "1234567890"
+b = "10"
+name = "Power of 10, large number"
+
+[[cases]]
+a = "0"
+b = "10"
+name = "Zero value"
+
+[[cases]]
+a = "12345"
+b = "0"
+name = "Zero power"
+
+[[cases]]
+a = "{9,50}"
+b = "0"
+name = "Large number, zero power"
+
+[[cases]]
+a = "{1,100}"
+b = "5"
+name = "Number with many digits, small power"
+
+[[cases]]
+a = "{1,100}"
+b = "50"
+name = "Number with many digits, large power"
+
+[[cases]]
+a = "{12345,20}"
+b = "5"
+name = "Number with repeating digits, small power"
+
+[[cases]]
+a = "{12345,20}"
+b = "50"
+name = "Number with repeating digits, large power"
+
+[[cases]]
+a = "4294967295"
+b = "5"
+name = "Number close to max UInt32, small power"
+
+[[cases]]
+a = "4294967295"
+b = "50"
+name = "Number close to max UInt32, large power"
+
+[[cases]]
+a = "12345678901234567890"
+b = "100"
+name = "Large power, large number"

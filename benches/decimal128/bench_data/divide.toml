@@ -1,0 +1,52 @@
+[config]
+iterations = 1000
+
+[[cases]]
+a = "100"
+b = "4"
+name = "Integer division (no remainder)"
+
+[[cases]]
+a = "10.5"
+b = "2.5"
+name = "Simple decimal division"
+
+[[cases]]
+a = "10"
+b = "3"
+name = "Division with repeating decimal"
+
+[[cases]]
+a = "123.45"
+b = "1"
+name = "Division by one"
+
+[[cases]]
+a = "0"
+b = "123.45"
+name = "Division of zero"
+
+[[cases]]
+a = "123.45"
+b = "-2"
+name = "Division with negative numbers"
+
+[[cases]]
+a = "1"
+b = "0.0001"
+name = "Division by very small number"
+
+[[cases]]
+a = "0.1234567890123456789"
+b = "0.0987654321098765432"
+name = "High precision division"
+
+[[cases]]
+a = "10"
+b = "0.001"
+name = "Division resulting in power of 10"
+
+[[cases]]
+a = "{9,20}"
+b = "{9,10}"
+name = "Division of very large numbers"
