@@ -38,8 +38,6 @@ from decimojo.biguint.biguint import BigUInt
 # Type aliases
 comptime BInt2 = BigInt2
 """A shorter comptime for BigInt2."""
-comptime bint2 = BigInt2
-"""A shortcut constructor for BigInt2."""
 
 
 struct BigInt2(
