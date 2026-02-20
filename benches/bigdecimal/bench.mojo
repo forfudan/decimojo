@@ -10,8 +10,9 @@ from bench_bigdecimal_round import main as bench_round
 
 
 fn main() raises:
-    print(
-        """
+    while True:
+        print(
+            """
 =========================================
 This is the BigDecimal Benchmarks
 =========================================
@@ -28,38 +29,37 @@ all:         Run all benchmarks
 q:           Exit
 =========================================
 """
-    )
-    var command = input("Type name of bench you want to run: ")
-    if command == "add":
-        bench_add()
-    elif command == "sub":
-        bench_subtract()
-    elif command == "mul":
-        bench_multiply()
-    elif command == "div":
-        bench_divide()
-    elif command == "sqrt":
-        bench_sqrt()
-    elif command == "exp":
-        bench_exp()
-    elif command == "ln":
-        bench_ln()
-    elif command == "root":
-        bench_root()
-    elif command == "round":
-        bench_round()
-    elif command == "all":
-        bench_add()
-        bench_subtract()
-        bench_multiply()
-        bench_divide()
-        bench_sqrt()
-        bench_exp()
-        bench_ln()
-        bench_root()
-        bench_round()
-    elif command == "q":
-        return
-    else:
-        print("Invalid input")
-        main()
+        )
+        var command = input("Type name of bench you want to run: ")
+        if command == "add":
+            bench_add()
+        elif command == "sub":
+            bench_subtract()
+        elif command == "mul":
+            bench_multiply()
+        elif command == "div":
+            bench_divide()
+        elif command == "sqrt":
+            bench_sqrt()
+        elif command == "exp":
+            bench_exp()
+        elif command == "ln":
+            bench_ln()
+        elif command == "root":
+            bench_root()
+        elif command == "round":
+            bench_round()
+        elif command == "all":
+            bench_add()
+            bench_subtract()
+            bench_multiply()
+            bench_divide()
+            bench_sqrt()
+            bench_exp()
+            bench_ln()
+            bench_root()
+            bench_round()
+        elif command == "q":
+            return
+        else:
+            print("Invalid input")

@@ -4,7 +4,7 @@ This file loads TOML cases with an extra `op` field (==, <, >, <=, >=, !=)
 not handled by the standard BenchCase loader.
 """
 
-from decimojo.prelude import dm, Decimal128, RoundingMode
+from decimojo.prelude import Decimal128
 from decimojo.tests import (
     parse_file,
     expand_value,

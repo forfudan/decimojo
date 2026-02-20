@@ -10,8 +10,9 @@ from bench_biguint_multiply_complexity import main as bench_mul_complexity
 
 
 fn main() raises:
-    print(
-        """
+    while True:
+        print(
+            """
 =========================================
 This is the BigUInt Benchmarks
 =========================================
@@ -28,36 +29,35 @@ all:         Run all benchmarks
 q:           Exit
 =========================================
 """
-    )
-    var command = input("Type name of bench you want to run: ")
-    if command == "add":
-        bench_add()
-    elif command == "sub":
-        bench_subtraction()
-    elif command == "mul":
-        bench_multiply()
-    elif command == "div":
-        bench_truncate_divide()
-    elif command == "sqrt":
-        bench_sqrt()
-    elif command == "fromstr":
-        bench_from_string()
-    elif command == "scaleup":
-        bench_scale_up()
-    elif command == "divcomp":
-        bench_div_complexity()
-    elif command == "mulcomp":
-        bench_mul_complexity()
-    elif command == "all":
-        bench_add()
-        bench_subtraction()
-        bench_multiply()
-        bench_truncate_divide()
-        bench_sqrt()
-        bench_from_string()
-        bench_scale_up()
-    elif command == "q":
-        return
-    else:
-        print("Invalid input")
-        main()
+        )
+        var command = input("Type name of bench you want to run: ")
+        if command == "add":
+            bench_add()
+        elif command == "sub":
+            bench_subtraction()
+        elif command == "mul":
+            bench_multiply()
+        elif command == "div":
+            bench_truncate_divide()
+        elif command == "sqrt":
+            bench_sqrt()
+        elif command == "fromstr":
+            bench_from_string()
+        elif command == "scaleup":
+            bench_scale_up()
+        elif command == "divcomp":
+            bench_div_complexity()
+        elif command == "mulcomp":
+            bench_mul_complexity()
+        elif command == "all":
+            bench_add()
+            bench_subtraction()
+            bench_multiply()
+            bench_truncate_divide()
+            bench_sqrt()
+            bench_from_string()
+            bench_scale_up()
+        elif command == "q":
+            return
+        else:
+            print("Invalid input")

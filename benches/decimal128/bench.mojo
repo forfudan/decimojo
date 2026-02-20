@@ -21,8 +21,9 @@ from bench_round import main as bench_round
 
 
 fn main() raises:
-    print(
-        """
+    while True:
+        print(
+            """
 =========================================
 This is the Decimal128 Benchmarks
 =========================================
@@ -48,65 +49,64 @@ all:         Run all benchmarks
 q:           Exit
 =========================================
 """
-    )
-    var command = input("Type name of bench you want to run: ")
-    if command == "add":
-        bench_add()
-    elif command == "sub":
-        bench_subtract()
-    elif command == "mul":
-        bench_multiply()
-    elif command == "div":
-        bench_divide()
-    elif command == "mod":
-        bench_modulo()
-    elif command == "trunc":
-        bench_truncate_divide()
-    elif command == "pow":
-        bench_power()
-    elif command == "root":
-        bench_root()
-    elif command == "exp":
-        bench_exp()
-    elif command == "ln":
-        bench_ln()
-    elif command == "log10":
-        bench_log10()
-    elif command == "sqrt":
-        bench_sqrt()
-    elif command == "fstr":
-        bench_from_string()
-    elif command == "fint":
-        bench_from_int()
-    elif command == "fflt":
-        bench_from_float()
-    elif command == "cmp":
-        bench_comparison()
-    elif command == "quan":
-        bench_quantize()
-    elif command == "rnd":
-        bench_round()
-    elif command == "all":
-        bench_add()
-        bench_subtract()
-        bench_multiply()
-        bench_divide()
-        bench_modulo()
-        bench_truncate_divide()
-        bench_power()
-        bench_root()
-        bench_exp()
-        bench_ln()
-        bench_log10()
-        bench_sqrt()
-        bench_from_string()
-        bench_from_int()
-        bench_from_float()
-        bench_comparison()
-        bench_quantize()
-        bench_round()
-    elif command == "q":
-        return
-    else:
-        print("Invalid input")
-        main()
+        )
+        var command = input("Type name of bench you want to run: ")
+        if command == "add":
+            bench_add()
+        elif command == "sub":
+            bench_subtract()
+        elif command == "mul":
+            bench_multiply()
+        elif command == "div":
+            bench_divide()
+        elif command == "mod":
+            bench_modulo()
+        elif command == "trunc":
+            bench_truncate_divide()
+        elif command == "pow":
+            bench_power()
+        elif command == "root":
+            bench_root()
+        elif command == "exp":
+            bench_exp()
+        elif command == "ln":
+            bench_ln()
+        elif command == "log10":
+            bench_log10()
+        elif command == "sqrt":
+            bench_sqrt()
+        elif command == "fstr":
+            bench_from_string()
+        elif command == "fint":
+            bench_from_int()
+        elif command == "fflt":
+            bench_from_float()
+        elif command == "cmp":
+            bench_comparison()
+        elif command == "quan":
+            bench_quantize()
+        elif command == "rnd":
+            bench_round()
+        elif command == "all":
+            bench_add()
+            bench_subtract()
+            bench_multiply()
+            bench_divide()
+            bench_modulo()
+            bench_truncate_divide()
+            bench_power()
+            bench_root()
+            bench_exp()
+            bench_ln()
+            bench_log10()
+            bench_sqrt()
+            bench_from_string()
+            bench_from_int()
+            bench_from_float()
+            bench_comparison()
+            bench_quantize()
+            bench_round()
+        elif command == "q":
+            return
+        else:
+            print("Invalid input")

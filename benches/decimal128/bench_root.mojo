@@ -1,6 +1,6 @@
 """Benchmarks for Decimal128 nth root function. Compares against Python decimal."""
 
-from decimojo.prelude import dm, Decimal128, RoundingMode
+from decimojo.prelude import dm, Decimal128
 from decimojo.tests import (
     BenchCase,
     load_bench_cases,

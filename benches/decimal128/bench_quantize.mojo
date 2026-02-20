@@ -4,7 +4,7 @@ This file loads TOML cases with an extra `rounding` field not handled by the
 standard BenchCase loader.
 """
 
-from decimojo.prelude import dm, Decimal128, RoundingMode
+from decimojo.prelude import Decimal128, RoundingMode
 from decimojo.tests import (
     parse_file,
     expand_value,
