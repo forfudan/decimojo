@@ -3,7 +3,7 @@
 # ===----------------------------------------------------------------------=== #
 
 import testing
-from decimojo.bigbinaryint.bigbinaryint import BigInt2
+from decimojo.bigint2.bigint2 import BigInt2
 
 
 fn test_default_constructor() raises:

@@ -5,6 +5,8 @@ Compares performance against Python's built-in int multiplication with 60 divers
 
 from decimojo.bigint.bigint import BigInt
 import decimojo.bigint.arithmetics
+from decimojo.bigint2.bigint2 import BigInt2
+import decimojo.bigint2.arithmetics
 from python import Python, PythonObject
 from time import perf_counter_ns
 import time
@@ -57,9 +59,10 @@ fn run_benchmark_multiply(
     iterations: Int,
     log_file: PythonObject,
     mut speedup_factors: List[Float64],
+    mut bigint2_speedup_factors: List[Float64],
 ) raises:
     """
-    Run a benchmark comparing Mojo BigInt multiplication with Python int multiplication.
+    Run a benchmark comparing Mojo BigInt, BigInt2, and Python int multiplication.
 
     Args:
         name: Name of the benchmark case.
@@ -67,15 +70,18 @@ fn run_benchmark_multiply(
         factor2: String representation of the second factor.
         iterations: Number of iterations to run.
         log_file: File object for logging results.
-        speedup_factors: Mojo List to store speedup factors for averaging.
+        speedup_factors: Mojo List to store BigInt speedup factors.
+        bigint2_speedup_factors: Mojo List to store BigInt2 speedup factors.
     """
     log_print("\nBenchmark:     " + name, log_file)
     log_print("First factor:  " + factor1, log_file)
     log_print("Second factor: " + factor2, log_file)
 
-    # Set up Mojo and Python values
+    # Set up Mojo BigInt, BigInt2, and Python values
     var mojo_factor1 = BigInt(factor1)
     var mojo_factor2 = BigInt(factor2)
+    var mojo2_factor1 = BigInt2(factor1)
+    var mojo2_factor2 = BigInt2(factor2)
     var py = Python.import_module("builtins")
     var py_factor1 = py.int(factor1)
     var py_factor2 = py.int(factor2)
@@ -83,13 +89,15 @@ fn run_benchmark_multiply(
     # Execute the operations once to verify correctness
     try:
         var mojo_result = mojo_factor1 * mojo_factor2
+        var mojo2_result = mojo2_factor1 * mojo2_factor2
         var py_result = py_factor1 * py_factor2
 
         # Display results for verification
-        log_print("Mojo result:   " + String(mojo_result), log_file)
-        log_print("Python result: " + String(py_result), log_file)
+        log_print("BigInt result:  " + String(mojo_result), log_file)
+        log_print("BigInt2 result: " + String(mojo2_result), log_file)
+        log_print("Python result:  " + String(py_result), log_file)
 
-        # Benchmark Mojo implementation
+        # Benchmark BigInt implementation
         var t0 = perf_counter_ns()
         for _ in range(iterations):
             _ = mojo_factor1 * mojo_factor2
@@ -97,26 +105,41 @@ fn run_benchmark_multiply(
         if mojo_time == 0:
             mojo_time = 1  # Prevent division by zero
 
+        # Benchmark BigInt2 implementation
+        t0 = perf_counter_ns()
+        for _ in range(iterations):
+            _ = mojo2_factor1 * mojo2_factor2
+        var mojo2_time = (perf_counter_ns() - t0) / iterations
+        if mojo2_time == 0:
+            mojo2_time = 1  # Prevent division by zero
+
         # Benchmark Python implementation
         t0 = perf_counter_ns()
         for _ in range(iterations):
             _ = py_factor1 * py_factor2
         var python_time = (perf_counter_ns() - t0) / iterations
 
-        # Calculate speedup factor
+        # Calculate speedup factors (Python / Mojo)
         var speedup = Float64(python_time) / Float64(mojo_time)
+        var speedup2 = Float64(python_time) / Float64(mojo2_time)
         speedup_factors.append(Float64(speedup))
+        bigint2_speedup_factors.append(Float64(speedup2))
 
         # Print results with speedup comparison
         log_print(
-            "Mojo multiply:   " + String(mojo_time) + " ns per iteration",
+            "BigInt multiply:  " + String(mojo_time) + " ns per iteration",
             log_file,
         )
         log_print(
-            "Python multiply: " + String(python_time) + " ns per iteration",
+            "BigInt2 multiply: " + String(mojo2_time) + " ns per iteration",
             log_file,
         )
-        log_print("Speedup factor:  " + String(speedup), log_file)
+        log_print(
+            "Python multiply:  " + String(python_time) + " ns per iteration",
+            log_file,
+        )
+        log_print("BigInt speedup:   " + String(speedup) + "×", log_file)
+        log_print("BigInt2 speedup:  " + String(speedup2) + "×", log_file)
     except e:
         log_print("Error occurred during benchmark: " + String(e), log_file)
         log_print("Skipping this benchmark case", log_file)
@@ -127,8 +150,9 @@ fn main() raises:
     var log_file = open_log_file()
     var datetime = Python.import_module("datetime")
 
-    # Create a Mojo List to store speedup factors for averaging later
+    # Create Mojo Lists to store speedup factors for averaging later
     var speedup_factors = List[Float64]()
+    var bigint2_speedup_factors = List[Float64]()
 
     # Display benchmark header with system information
     log_print("=== DeciMojo BigInt Multiplication Benchmark ===", log_file)
@@ -171,6 +195,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 2: Simple small multiplication (negative × positive)
@@ -181,6 +206,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 3: Simple small multiplication (positive × negative)
@@ -191,6 +217,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 4: Simple small multiplication (negative × negative)
@@ -201,6 +228,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === MULTIPLICATION BY SPECIAL VALUES ===
@@ -213,6 +241,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 6: Multiplication by zero (negative)
@@ -223,6 +252,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 7: Multiplication by one (positive)
@@ -233,6 +263,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 8: Multiplication by one (negative)
@@ -243,6 +274,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 9: Multiplication by negative one (positive)
@@ -253,6 +285,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 10: Multiplication by negative one (negative)
@@ -263,6 +296,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === MEDIUM-SIZED NUMBER MULTIPLICATION ===
@@ -275,6 +309,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 12: Medium number multiplication (negative × positive)
@@ -285,6 +320,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 13: Medium number multiplication (positive × negative)
@@ -295,6 +331,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 14: Medium number multiplication (negative × negative)
@@ -305,6 +342,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === MULTIPLICATION BY POWERS OF 10 ===
@@ -317,6 +355,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 16: Multiplication by power of 10 (negative × positive)
@@ -327,6 +366,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 17: Multiplication by power of 10 (positive × negative)
@@ -337,6 +377,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 18: Multiplication by power of 10 (large)
@@ -347,6 +388,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === ASYMMETRIC MULTIPLICATION ===
@@ -359,6 +401,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 20: Asymmetric multiplication (small × very large)
@@ -369,6 +412,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 21: Asymmetric multiplication (medium × very large)
@@ -379,6 +423,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 22: Asymmetric multiplication (very large × medium)
@@ -389,6 +434,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === LARGE NUMBER MULTIPLICATION ===
@@ -401,6 +447,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 24: Large number multiplication (negative 50 digits × 50 digits)
@@ -411,6 +458,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 25: Large number multiplication (50 digits × negative 50 digits)
@@ -421,6 +469,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 26: Large number multiplication (negative 50 digits × negative 50 digits)
@@ -431,6 +480,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === VERY LARGE NUMBER MULTIPLICATION ===
@@ -443,6 +493,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 28: Very large number multiplication (negative 100 digits × 100 digits)
@@ -453,6 +504,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 29: Very large number multiplication (100 digits × negative 100 digits)
@@ -463,6 +515,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 30: Very large number multiplication (negative 100 digits × negative 100 digits)
@@ -476,6 +529,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === EXTREME LARGE NUMBER MULTIPLICATION ===
@@ -488,6 +542,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 32: Extreme large number multiplication (400 digits × 400 digits)
@@ -498,6 +553,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 33: Extreme large number multiplication (500 digits × 500 digits)
@@ -508,6 +564,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === FIBONACCI NUMBER MULTIPLICATION ===
@@ -520,6 +577,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 35: Fibonacci number multiplication (larger)
@@ -530,6 +588,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 36: Fibonacci number multiplication (negative)
@@ -540,6 +599,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === PRIME NUMBER MULTIPLICATION ===
@@ -552,6 +612,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 38: Large prime number multiplication
@@ -562,6 +623,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === NEAR INTEGER LIMIT MULTIPLICATION ===
@@ -574,6 +636,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 40: Near negative Int64 limit multiplication
@@ -584,6 +647,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === SPECIAL PATTERNS MULTIPLICATION ===
@@ -596,6 +660,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 42: Multiplication of alternating digits
@@ -606,6 +671,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 43: Multiplication of number near power of 10
@@ -616,6 +682,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === POWERS OF 2 MULTIPLICATION ===
@@ -628,6 +695,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 45: Powers of 2 multiplication (medium)
@@ -638,6 +706,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 46: Powers of 2 multiplication (large)
@@ -648,6 +717,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === DECIMAL AND SCIENTIFIC NOTATIONS ===
@@ -660,6 +730,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 48: Scientific notation-like multiplication
@@ -670,6 +741,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === RANDOM-LIKE PATTERN MULTIPLICATION ===
@@ -682,6 +754,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 50: Random-like pattern multiplication (large)
@@ -698,6 +771,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 51: Prime factor pattern multiplication
@@ -708,6 +782,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === VERY LARGE PATTERN MULTIPLICATION ===
@@ -720,6 +795,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 53: Very large multiplication with negative (300 digits × negative 300 digits)
@@ -733,6 +809,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 54: Extreme large multiplication (600 digits × 600 digits)
@@ -743,6 +820,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 55: Extreme large asymmetric multiplication (600 digits × 300 digits)
@@ -753,6 +831,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === SPECIAL INTEREST MULTIPLICATION ===
@@ -765,6 +844,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 57: Large factorial-like multiplication
@@ -775,6 +855,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 58: Square number calculation
@@ -785,6 +866,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 59: Negative square calculation
@@ -795,6 +877,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 60: Extreme large square calculation (700 digits × 700 digits)
@@ -805,36 +888,52 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
-    # Calculate average speedup factor (ignoring any cases that might have failed)
+    # Calculate average speedup factors (ignoring any cases that might have failed)
     if len(speedup_factors) > 0:
         var sum_speedup: Float64 = 0.0
         for i in range(len(speedup_factors)):
             sum_speedup += speedup_factors[i]
         var average_speedup = sum_speedup / Float64(len(speedup_factors))
 
+        var sum_speedup2: Float64 = 0.0
+        for i in range(len(bigint2_speedup_factors)):
+            sum_speedup2 += bigint2_speedup_factors[i]
+        var average_speedup2 = sum_speedup2 / Float64(
+            len(bigint2_speedup_factors)
+        )
+
         # Display summary
         log_print("\n=== BigInt Multiplication Benchmark Summary ===", log_file)
         log_print(
-            "Benchmarked:      "
+            "Benchmarked:              "
             + String(len(speedup_factors))
             + " different multiplication cases",
             log_file,
         )
         log_print(
-            "Each case ran:    " + String(iterations) + " iterations", log_file
+            "Each case ran:            " + String(iterations) + " iterations",
+            log_file,
         )
         log_print(
-            "Average speedup:  " + String(average_speedup) + "×", log_file
+            "BigInt avg speedup:       " + String(average_speedup) + "×",
+            log_file,
+        )
+        log_print(
+            "BigInt2 avg speedup:      " + String(average_speedup2) + "×",
+            log_file,
         )
 
         # List all speedup factors
         log_print("\nIndividual speedup factors:", log_file)
         for i in range(len(speedup_factors)):
             log_print(
-                String("Case {}: {}×").format(
-                    i + 1, round(speedup_factors[i], 2)
+                String("Case {}: BigInt {}× | BigInt2 {}×").format(
+                    i + 1,
+                    round(speedup_factors[i], 2),
+                    round(bigint2_speedup_factors[i], 2),
                 ),
                 log_file,
             )

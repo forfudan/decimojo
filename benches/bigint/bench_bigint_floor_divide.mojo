@@ -5,6 +5,8 @@ Compares performance against Python's built-in int floor division with 50 divers
 
 from decimojo.bigint.bigint import BigInt
 import decimojo.bigint.arithmetics
+from decimojo.bigint2.bigint2 import BigInt2
+import decimojo.bigint2.arithmetics
 from python import Python, PythonObject
 from time import perf_counter_ns
 import time
@@ -57,9 +59,10 @@ fn run_benchmark_floor_divide(
     iterations: Int,
     log_file: PythonObject,
     mut speedup_factors: List[Float64],
+    mut bigint2_speedup_factors: List[Float64],
 ) raises:
     """
-    Run a benchmark comparing Mojo BigInt floor_divide with Python int floor division.
+    Run a benchmark comparing Mojo BigInt, BigInt2, and Python int floor division.
 
     Args:
         name: Name of the benchmark case.
@@ -67,15 +70,18 @@ fn run_benchmark_floor_divide(
         divisor: String representation of the divisor.
         iterations: Number of iterations to run.
         log_file: File object for logging results.
-        speedup_factors: Mojo List to store speedup factors for averaging.
+        speedup_factors: Mojo List to store BigInt speedup factors.
+        bigint2_speedup_factors: Mojo List to store BigInt2 speedup factors.
     """
     log_print("\nBenchmark:       " + name, log_file)
     log_print("Dividend:        " + dividend, log_file)
     log_print("Divisor:         " + divisor, log_file)
 
-    # Set up Mojo and Python values
+    # Set up Mojo BigInt, BigInt2, and Python values
     var mojo_dividend = BigInt(dividend)
     var mojo_divisor = BigInt(divisor)
+    var mojo2_dividend = BigInt2(dividend)
+    var mojo2_divisor = BigInt2(divisor)
     var py = Python.import_module("builtins")
     var py_dividend = py.int(dividend)
     var py_divisor = py.int(divisor)
@@ -83,13 +89,15 @@ fn run_benchmark_floor_divide(
     # Execute the operations once to verify correctness
     try:
         var mojo_result = mojo_dividend // mojo_divisor
+        var mojo2_result = mojo2_dividend // mojo2_divisor
         var py_result = py_dividend // py_divisor
 
         # Display results for verification
-        log_print("Mojo result:     " + String(mojo_result), log_file)
+        log_print("BigInt result:   " + String(mojo_result), log_file)
+        log_print("BigInt2 result:  " + String(mojo2_result), log_file)
         log_print("Python result:   " + String(py_result), log_file)
 
-        # Benchmark Mojo implementation
+        # Benchmark BigInt implementation
         var t0 = perf_counter_ns()
         for _ in range(iterations):
             _ = mojo_dividend // mojo_divisor
@@ -97,26 +105,41 @@ fn run_benchmark_floor_divide(
         if mojo_time == 0:
             mojo_time = 1  # Prevent division by zero
 
+        # Benchmark BigInt2 implementation
+        t0 = perf_counter_ns()
+        for _ in range(iterations):
+            _ = mojo2_dividend // mojo2_divisor
+        var mojo2_time = (perf_counter_ns() - t0) / iterations
+        if mojo2_time == 0:
+            mojo2_time = 1  # Prevent division by zero
+
         # Benchmark Python implementation
         t0 = perf_counter_ns()
         for _ in range(iterations):
             _ = py_dividend // py_divisor
         var python_time = (perf_counter_ns() - t0) / iterations
 
-        # Calculate speedup factor
+        # Calculate speedup factors (Python / Mojo)
         var speedup = Float64(python_time) / Float64(mojo_time)
+        var speedup2 = Float64(python_time) / Float64(mojo2_time)
         speedup_factors.append(Float64(speedup))
+        bigint2_speedup_factors.append(Float64(speedup2))
 
         # Print results with speedup comparison
         log_print(
-            "Mojo division:   " + String(mojo_time) + " ns per iteration",
+            "BigInt division:  " + String(mojo_time) + " ns per iteration",
             log_file,
         )
         log_print(
-            "Python division: " + String(python_time) + " ns per iteration",
+            "BigInt2 division: " + String(mojo2_time) + " ns per iteration",
             log_file,
         )
-        log_print("Speedup factor:  " + String(speedup), log_file)
+        log_print(
+            "Python division:  " + String(python_time) + " ns per iteration",
+            log_file,
+        )
+        log_print("BigInt speedup:   " + String(speedup) + "×", log_file)
+        log_print("BigInt2 speedup:  " + String(speedup2) + "×", log_file)
     except e:
         log_print("Error occurred during benchmark: " + String(e), log_file)
         log_print("Skipping this benchmark case", log_file)
@@ -127,8 +150,9 @@ fn main() raises:
     var log_file = open_log_file()
     var datetime = Python.import_module("datetime")
 
-    # Create a Mojo List to store speedup factors for averaging later
+    # Create Mojo Lists to store speedup factors for averaging later
     var speedup_factors = List[Float64]()
+    var bigint2_speedup_factors = List[Float64]()
 
     # Display benchmark header with system information
     log_print("=== DeciMojo BigInt Floor Division Benchmark ===", log_file)
@@ -171,6 +195,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 2: Division with remainder (positive/positive)
@@ -181,6 +206,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 3: Division resulting in zero (positive/positive)
@@ -191,6 +217,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 4: Division by one (positive/positive)
@@ -201,6 +228,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === SIGN COMBINATION TESTS ===
@@ -213,6 +241,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 6: Negative dividend with remainder, positive divisor
@@ -223,6 +252,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 7: Positive dividend, negative divisor
@@ -233,6 +263,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 8: Positive dividend with remainder, negative divisor
@@ -243,6 +274,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 9: Negative dividend, negative divisor
@@ -253,6 +285,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 10: Negative dividend with remainder, negative divisor
@@ -263,6 +296,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === ZERO TESTS ===
@@ -275,6 +309,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 12: Zero dividend, negative divisor
@@ -285,6 +320,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === LARGE NUMBER TESTS ===
@@ -297,6 +333,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 14: Large number division (negative/positive)
@@ -307,6 +344,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 15: Large number division (positive/negative)
@@ -317,6 +355,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 16: Large number division (negative/negative)
@@ -327,6 +366,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === VERY LARGE NUMBER TESTS ===
@@ -339,6 +379,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 18: Very large number division (negative/positive)
@@ -349,6 +390,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 19: Very large number division (positive/negative)
@@ -359,6 +401,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 20: Very large number division (negative/negative)
@@ -369,6 +412,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === EXACT DIVISION WITH LARGE NUMBERS ===
@@ -381,6 +425,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 22: Exact large division (negative/positive)
@@ -391,6 +436,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 23: Exact large division (positive/negative)
@@ -401,6 +447,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 24: Exact large division (negative/negative)
@@ -411,6 +458,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === SPECIAL CASES ===
@@ -423,6 +471,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 26: Small negative dividend, very large divisor
@@ -433,6 +482,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 27: Fibonacci number division
@@ -443,6 +493,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 28: Prime number division
@@ -453,6 +504,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 29: Division near Int64 limit
@@ -463,6 +515,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 30: Division near negative Int64 limit
@@ -473,6 +526,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === CASES WITH SPECIFIC REMAINDERS (FLOOR VS TRUNCATE DIFFERENCES) ===
@@ -485,6 +539,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 32: Division where floor differs from truncate (positive/negative)
@@ -495,6 +550,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 33: Large division where floor differs from truncate
@@ -505,6 +561,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === BOUNDARY CASES ===
@@ -517,6 +574,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 35: Division with negative divisor just below negative dividend
@@ -527,6 +585,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 36: Division where dividend is one less than divisor multiple
@@ -537,6 +596,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 37: Division where negative dividend is one more than divisor multiple
@@ -547,6 +607,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === POWERS AND PATTERNS ===
@@ -559,6 +620,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 39: Division of repeated digits (positive)
@@ -569,6 +631,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 40: Division of repeated digits (negative dividend)
@@ -579,6 +642,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 41: Division with extremely large dividend and small divisor
@@ -589,6 +653,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 42: Division with extremely large negative dividend and small divisor
@@ -602,6 +667,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 43: Division with powers of 2
@@ -612,6 +678,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # === MORE COMPLEX CASES ===
@@ -624,6 +691,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 45: Division with random large numbers
@@ -634,6 +702,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 46: Division of very large numbers with different signs
@@ -647,6 +716,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 47: Division with around 50 digits and divisor just below dividend
@@ -660,6 +730,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 48: Division of very large repeated digits
@@ -670,6 +741,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 49: Division of large numbers with different signs
@@ -683,6 +755,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 50: Division of very large numbers with different signs
@@ -696,6 +769,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 51: Division with 500-digit dividend and 200-digit divisor (positive/positive)
@@ -709,6 +783,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 52: Division with 500-digit dividend and 200-digit divisor (negative/positive)
@@ -722,6 +797,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 53: Division with 500-digit dividend and 200-digit divisor (positive/negative)
@@ -735,6 +811,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 54: Division with 500-digit dividend and 200-digit divisor (negative/negative)
@@ -748,6 +825,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 55: Division with alternating pattern (600 digits / 300 digits)
@@ -758,6 +836,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 56: Division with repeating pattern of primes (700 digits / 350 digits)
@@ -768,6 +847,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 57: Division with random-like 800-digit number by 400-digit number (negative)
@@ -804,6 +884,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 58: Division with 1000-digit dividend near power of 10 and 300-digit divisor
@@ -817,6 +898,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 59: Division with 1200-digit by 400-digit (exact division, power of 2)
@@ -827,6 +909,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 60: Division with extremely large 1500-digit number by large 500-digit number
@@ -837,36 +920,52 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
-    # Calculate average speedup factor (ignoring any cases that might have failed)
+    # Calculate average speedup factors (ignoring any cases that might have failed)
     if len(speedup_factors) > 0:
         var sum_speedup: Float64 = 0.0
         for i in range(len(speedup_factors)):
             sum_speedup += speedup_factors[i]
         var average_speedup = sum_speedup / Float64(len(speedup_factors))
 
+        var sum_speedup2: Float64 = 0.0
+        for i in range(len(bigint2_speedup_factors)):
+            sum_speedup2 += bigint2_speedup_factors[i]
+        var average_speedup2 = sum_speedup2 / Float64(
+            len(bigint2_speedup_factors)
+        )
+
         # Display summary
         log_print("\n=== BigInt Floor Division Benchmark Summary ===", log_file)
         log_print(
-            "Benchmarked:      "
+            "Benchmarked:              "
             + String(len(speedup_factors))
             + " different division cases",
             log_file,
         )
         log_print(
-            "Each case ran:    " + String(iterations) + " iterations", log_file
+            "Each case ran:            " + String(iterations) + " iterations",
+            log_file,
         )
         log_print(
-            "Average speedup:  " + String(average_speedup) + "×", log_file
+            "BigInt avg speedup:       " + String(average_speedup) + "×",
+            log_file,
+        )
+        log_print(
+            "BigInt2 avg speedup:      " + String(average_speedup2) + "×",
+            log_file,
         )
 
         # List all speedup factors
         log_print("\nIndividual speedup factors:", log_file)
         for i in range(len(speedup_factors)):
             log_print(
-                String("Case {}: {}×").format(
-                    i + 1, round(speedup_factors[i], 2)
+                String("Case {}: BigInt {}× | BigInt2 {}×").format(
+                    i + 1,
+                    round(speedup_factors[i], 2),
+                    round(bigint2_speedup_factors[i], 2),
                 ),
                 log_file,
             )

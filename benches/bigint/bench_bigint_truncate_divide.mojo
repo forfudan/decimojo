@@ -5,6 +5,8 @@ Compares performance against Python's built-in int division with 20 diverse test
 
 from decimojo.bigint.bigint import BigInt
 import decimojo.bigint.arithmetics
+from decimojo.bigint2.bigint2 import BigInt2
+import decimojo.bigint2.arithmetics
 from python import Python, PythonObject
 from time import perf_counter_ns
 import time
@@ -57,9 +59,10 @@ fn run_benchmark_truncate_divide(
     iterations: Int,
     log_file: PythonObject,
     mut speedup_factors: List[Float64],
+    mut bigint2_speedup_factors: List[Float64],
 ) raises:
     """
-    Run a benchmark comparing Mojo BigInt truncate_divide with Python int division.
+    Run a benchmark comparing Mojo BigInt, BigInt2, and Python int truncate division.
 
     Args:
         name: Name of the benchmark case.
@@ -67,15 +70,18 @@ fn run_benchmark_truncate_divide(
         divisor: String representation of the divisor.
         iterations: Number of iterations to run.
         log_file: File object for logging results.
-        speedup_factors: Mojo List to store speedup factors for averaging.
+        speedup_factors: Mojo List to store BigInt speedup factors.
+        bigint2_speedup_factors: Mojo List to store BigInt2 speedup factors.
     """
     log_print("\nBenchmark:       " + name, log_file)
     log_print("Dividend:        " + dividend, log_file)
     log_print("Divisor:         " + divisor, log_file)
 
-    # Set up Mojo and Python values
+    # Set up Mojo BigInt, BigInt2, and Python values
     var mojo_dividend = BigInt(dividend)
     var mojo_divisor = BigInt(divisor)
+    var mojo2_dividend = BigInt2(dividend)
+    var mojo2_divisor = BigInt2(divisor)
     var py = Python.import_module("builtins")
     var py_dividend = py.int(dividend)
     var py_divisor = py.int(divisor)
@@ -83,13 +89,15 @@ fn run_benchmark_truncate_divide(
     # Execute the operations once to verify correctness
     try:
         var mojo_result = mojo_dividend.truncate_divide(mojo_divisor)
+        var mojo2_result = mojo2_dividend.truncate_divide(mojo2_divisor)
         var py_result = py_dividend // py_divisor
 
         # Display results for verification
-        log_print("Mojo result:     " + String(mojo_result), log_file)
+        log_print("BigInt result:   " + String(mojo_result), log_file)
+        log_print("BigInt2 result:  " + String(mojo2_result), log_file)
         log_print("Python result:   " + String(py_result), log_file)
 
-        # Benchmark Mojo implementation
+        # Benchmark BigInt implementation
         var t0 = perf_counter_ns()
         for _ in range(iterations):
             _ = mojo_dividend.truncate_divide(mojo_divisor)
@@ -97,26 +105,41 @@ fn run_benchmark_truncate_divide(
         if mojo_time == 0:
             mojo_time = 1  # Prevent division by zero
 
+        # Benchmark BigInt2 implementation
+        t0 = perf_counter_ns()
+        for _ in range(iterations):
+            _ = mojo2_dividend.truncate_divide(mojo2_divisor)
+        var mojo2_time = (perf_counter_ns() - t0) / iterations
+        if mojo2_time == 0:
+            mojo2_time = 1  # Prevent division by zero
+
         # Benchmark Python implementation
         t0 = perf_counter_ns()
         for _ in range(iterations):
             _ = py_dividend // py_divisor
         var python_time = (perf_counter_ns() - t0) / iterations
 
-        # Calculate speedup factor
+        # Calculate speedup factors (Python / Mojo)
         var speedup = Float64(python_time) / Float64(mojo_time)
+        var speedup2 = Float64(python_time) / Float64(mojo2_time)
         speedup_factors.append(Float64(speedup))
+        bigint2_speedup_factors.append(Float64(speedup2))
 
         # Print results with speedup comparison
         log_print(
-            "Mojo division:   " + String(mojo_time) + " ns per iteration",
+            "BigInt division:  " + String(mojo_time) + " ns per iteration",
             log_file,
         )
         log_print(
-            "Python division: " + String(python_time) + " ns per iteration",
+            "BigInt2 division: " + String(mojo2_time) + " ns per iteration",
             log_file,
         )
-        log_print("Speedup factor:  " + String(speedup), log_file)
+        log_print(
+            "Python division:  " + String(python_time) + " ns per iteration",
+            log_file,
+        )
+        log_print("BigInt speedup:   " + String(speedup) + "×", log_file)
+        log_print("BigInt2 speedup:  " + String(speedup2) + "×", log_file)
     except e:
         log_print("Error occurred during benchmark: " + String(e), log_file)
         log_print("Skipping this benchmark case", log_file)
@@ -127,8 +150,9 @@ fn main() raises:
     var log_file = open_log_file()
     var datetime = Python.import_module("datetime")
 
-    # Create a Mojo List to store speedup factors for averaging later
+    # Create Mojo Lists to store speedup factors for averaging later
     var speedup_factors = List[Float64]()
+    var bigint2_speedup_factors = List[Float64]()
 
     # Display benchmark header with system information
     log_print("=== DeciMojo BigInt Truncate Division Benchmark ===", log_file)
@@ -169,6 +193,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 2: Division with remainder
@@ -179,6 +204,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 3: Division of small numbers
@@ -189,6 +215,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 4: Division resulting in zero
@@ -199,6 +226,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 5: Division by one
@@ -209,6 +237,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 6: Negative dividend, positive divisor
@@ -219,6 +248,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 7: Positive dividend, negative divisor
@@ -229,6 +259,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 8: Negative dividend, negative divisor
@@ -239,6 +270,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 9: Zero dividend
@@ -249,6 +281,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 10: Large number division
@@ -259,6 +292,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 11: Very large number division
@@ -269,6 +303,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 12: Division of large numbers with exact result
@@ -279,6 +314,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 13: Division by large number
@@ -289,6 +325,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 14: Fibonacci number division
@@ -299,6 +336,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 15: Prime number division
@@ -309,6 +347,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 16: Division of numbers near Int64 limit
@@ -319,6 +358,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 17: Division with around 50 digits and with divisor just below dividend
@@ -329,6 +369,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 18: Division with exact powers of 10
@@ -339,6 +380,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 19: Division of repeated digits
@@ -349,6 +391,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 20: Division with extremely large dividend and small divisor
@@ -359,38 +402,54 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
-    # Calculate average speedup factor (ignoring any cases that might have failed)
+    # Calculate average speedup factors (ignoring any cases that might have failed)
     if len(speedup_factors) > 0:
         var sum_speedup: Float64 = 0.0
         for i in range(len(speedup_factors)):
             sum_speedup += speedup_factors[i]
         var average_speedup = sum_speedup / Float64(len(speedup_factors))
 
+        var sum_speedup2: Float64 = 0.0
+        for i in range(len(bigint2_speedup_factors)):
+            sum_speedup2 += bigint2_speedup_factors[i]
+        var average_speedup2 = sum_speedup2 / Float64(
+            len(bigint2_speedup_factors)
+        )
+
         # Display summary
         log_print(
             "\n=== BigInt Truncate Division Benchmark Summary ===", log_file
         )
         log_print(
-            "Benchmarked:      "
+            "Benchmarked:              "
             + String(len(speedup_factors))
             + " different division cases",
             log_file,
         )
         log_print(
-            "Each case ran:    " + String(iterations) + " iterations", log_file
+            "Each case ran:            " + String(iterations) + " iterations",
+            log_file,
         )
         log_print(
-            "Average speedup:  " + String(average_speedup) + "×", log_file
+            "BigInt avg speedup:       " + String(average_speedup) + "×",
+            log_file,
+        )
+        log_print(
+            "BigInt2 avg speedup:      " + String(average_speedup2) + "×",
+            log_file,
         )
 
         # List all speedup factors
         log_print("\nIndividual speedup factors:", log_file)
         for i in range(len(speedup_factors)):
             log_print(
-                String("Case {}: {}×").format(
-                    i + 1, round(speedup_factors[i], 2)
+                String("Case {}: BigInt {}× | BigInt2 {}×").format(
+                    i + 1,
+                    round(speedup_factors[i], 2),
+                    round(bigint2_speedup_factors[i], 2),
                 ),
                 log_file,
             )
