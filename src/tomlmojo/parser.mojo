@@ -440,35 +440,6 @@ fn _append_array_of_tables(
         raise Error("Key exists but is not a table or array: " + first)
 
 
-# ---------------------------------------------------------------------------
-# Helper: get a reference to the "current table" for a given path.
-# For array-of-tables paths, this returns the last element's table_values.
-# We return a copy; the caller must write it back.
-# ---------------------------------------------------------------------------
-fn _get_table_at_path(
-    root: Dict[String, TOMLValue], path: List[String]
-) raises -> Dict[String, TOMLValue]:
-    """Return a copy of the table at the given nested path."""
-    if len(path) == 0:
-        return root.copy()
-
-    var first = path[0]
-    if first not in root:
-        raise Error("Table path not found: " + first)
-
-    var remaining = List[String]()
-    for i in range(1, len(path)):
-        remaining.append(path[i])
-
-    if root[first].type == TOMLValueType.TABLE:
-        return _get_table_at_path(root[first].table_values, remaining)
-    elif root[first].type == TOMLValueType.ARRAY:
-        var arr = root[first].array_values.copy()
-        if len(arr) > 0:
-            return _get_table_at_path(arr[len(arr) - 1].table_values, remaining)
-    raise Error("Not a table at path: " + first)
-
-
 struct TOMLParser:
     """Parses TOML source text into a TOMLDocument."""
 

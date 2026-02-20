@@ -362,7 +362,16 @@ struct Tokenizer:
             # \uXXXX — 4-digit unicode codepoint
             var hex_str = String("")
             for _ in range(4):
-                hex_str += self.current_char
+                if not self.current_char:
+                    return "\\u" + hex_str  # Truncated escape
+                var ch = self.current_char
+                if not (
+                    (ch >= "0" and ch <= "9")
+                    or (ch >= "a" and ch <= "f")
+                    or (ch >= "A" and ch <= "F")
+                ):
+                    return "\\u" + hex_str  # Invalid hex digit
+                hex_str += ch
                 self._advance()
             var codepoint: Int = 0
             for i in range(len(hex_str)):
@@ -379,7 +388,16 @@ struct Tokenizer:
             # \UXXXXXXXX — 8-digit unicode codepoint
             var hex_str = String("")
             for _ in range(8):
-                hex_str += self.current_char
+                if not self.current_char:
+                    return "\\U" + hex_str  # Truncated escape
+                var ch = self.current_char
+                if not (
+                    (ch >= "0" and ch <= "9")
+                    or (ch >= "a" and ch <= "f")
+                    or (ch >= "A" and ch <= "F")
+                ):
+                    return "\\U" + hex_str  # Invalid hex digit
+                hex_str += ch
                 self._advance()
             var codepoint: Int = 0
             for i in range(len(hex_str)):
@@ -421,14 +439,39 @@ struct Tokenizer:
             self._advance()
             result += self.current_char  # 'x'/'o'/'b'
             self._advance()
-            # Read hex/octal/binary digits (including underscores)
-            while self.current_char and (
-                self.current_char.is_ascii_digit()
-                or self.current_char in "abcdefABCDEF_"
-            ):
-                if self.current_char != "_":
-                    result += self.current_char
-                self._advance()
+            # Determine valid digit set based on the base prefix
+            var base_char = String(
+                result[byte = len(result) - 1]
+            )  # 'x'/'o'/'b'
+            var digits_found = False
+
+            if base_char == "x" or base_char == "X":
+                # Hexadecimal: 0-9, a-f, A-F
+                while self.current_char and (
+                    self.current_char.is_ascii_digit()
+                    or self.current_char in "abcdefABCDEF_"
+                ):
+                    if self.current_char != "_":
+                        result += self.current_char
+                        digits_found = True
+                    self._advance()
+            elif base_char == "o" or base_char == "O":
+                # Octal: 0-7 only
+                while self.current_char and (self.current_char in "01234567_"):
+                    if self.current_char != "_":
+                        result += self.current_char
+                        digits_found = True
+                    self._advance()
+            else:
+                # Binary: 0-1 only
+                while self.current_char and (self.current_char in "01_"):
+                    if self.current_char != "_":
+                        result += self.current_char
+                        digits_found = True
+                    self._advance()
+
+            if not digits_found:
+                return Token(TokenType.ERROR, result, start_line, start_column)
             return Token(TokenType.INTEGER, result, start_line, start_column)
 
         # Read digits, dots, underscores, and exponents
