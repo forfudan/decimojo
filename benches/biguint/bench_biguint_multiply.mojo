@@ -63,6 +63,9 @@ fn run_case(
 
 
 fn main() raises:
+    var pysys = Python.import_module("sys")
+    pysys.set_int_max_str_digits(10000000)
+
     var toml_path = "bench_data/multiply.toml"
     var log_file = open_log_file("benchmark_biguint_multiply")
     print_header("DeciMojo BigUInt Multiplication Benchmark", log_file)

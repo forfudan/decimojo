@@ -15,9 +15,18 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-A simple TOML parser for Mojo.
-This provides basic parsing for TOML files, focusing on the core elements
-needed for test case parsing.
+A TOML parser for Mojo, implementing the core TOML v1.0 specification.
+
+Supports:
+- All basic types: strings, integers, floats, booleans
+- Inline tables: {key = "value", port = 8080}
+- Dotted keys: a.b.c = "value" → nested tables
+- Dotted table headers: [a.b.c] → nested tables
+- Quoted keys: "my key" = "value"
+- Array of tables: [[section]]
+- Multiline arrays with comments and trailing commas
+- Unicode escape sequences: \\uXXXX, \\UXXXXXXXX
+- Duplicate key detection
 """
 
 from collections import Dict
@@ -94,6 +103,14 @@ struct TOMLValue(Copyable, ImplicitlyCopyable, Movable):
         self.array_values = other.array_values.copy()
         self.table_values = other.table_values.copy()
 
+    fn is_table(self) -> Bool:
+        """Check if this value is a table."""
+        return self.type == TOMLValueType.TABLE
+
+    fn is_array(self) -> Bool:
+        """Check if this value is an array."""
+        return self.type == TOMLValueType.ARRAY
+
     fn as_string(self) -> String:
         """Get the value as a string."""
         if self.type == TOMLValueType.STRING:
@@ -130,11 +147,22 @@ struct TOMLValue(Copyable, ImplicitlyCopyable, Movable):
         else:
             return False
 
+    fn as_table(self) -> Dict[String, TOMLValue]:
+        """Get the value as a table dictionary."""
+        if self.type == TOMLValueType.TABLE:
+            return self.table_values.copy()
+        return Dict[String, TOMLValue]()
+
+    fn as_array(self) -> List[TOMLValue]:
+        """Get the value as an array."""
+        if self.type == TOMLValueType.ARRAY:
+            return self.array_values.copy()
+        return List[TOMLValue]()
+
 
 struct TOMLValueType(Copyable, ImplicitlyCopyable, Movable):
     """Types of values in TOML."""
 
-    # Aliases to mimic enum constants
     comptime NULL = TOMLValueType.null()
     comptime STRING = TOMLValueType.string()
     comptime INTEGER = TOMLValueType.integer()
@@ -145,7 +173,6 @@ struct TOMLValueType(Copyable, ImplicitlyCopyable, Movable):
 
     var value: Int
 
-    # Static methods for each value type
     @staticmethod
     fn null() -> TOMLValueType:
         return TOMLValueType(0)
@@ -174,18 +201,15 @@ struct TOMLValueType(Copyable, ImplicitlyCopyable, Movable):
     fn table() -> TOMLValueType:
         return TOMLValueType(6)
 
-    # Constructor
     fn __init__(out self, value: Int):
         self.value = value
 
-    # Equality comparison
     fn __eq__(self, other: TOMLValueType) -> Bool:
         return self.value == other.value
 
     fn __ne__(self, other: TOMLValueType) -> Bool:
         return self.value != other.value
 
-    # String representation for debugging
     fn to_string(self) -> String:
         if self == Self.NULL:
             return "NULL"
@@ -217,7 +241,7 @@ struct TOMLDocument(Copyable, Movable):
         """Get a value from the document."""
         if key in self.root:
             return self.root[key]
-        return TOMLValue()  # Return empty/null value
+        return TOMLValue()
 
     fn get_table(self, table_name: String) raises -> Dict[String, TOMLValue]:
         """Get a table from the document."""
@@ -250,225 +274,504 @@ struct TOMLDocument(Copyable, Movable):
         return result^
 
 
+# ---------------------------------------------------------------------------
+# Helper: create a TOMLValue wrapping a Dict as a TABLE
+# ---------------------------------------------------------------------------
+fn _make_table(var d: Dict[String, TOMLValue]) -> TOMLValue:
+    var v = TOMLValue()
+    v.type = TOMLValueType.TABLE
+    v.table_values = d^
+    return v^
+
+
+# ---------------------------------------------------------------------------
+# Helper: set a value at a nested path inside a table dict, creating
+# intermediate tables as needed.  Detects duplicate keys.
+# path = ["a", "b"] and key = "c" means root["a"]["b"]["c"] = value
+# ---------------------------------------------------------------------------
+fn _set_value(
+    mut root: Dict[String, TOMLValue],
+    path: List[String],
+    key: String,
+    var value: TOMLValue,
+) raises:
+    """Set a key-value pair at the given table path inside root.
+
+    Navigates through `path` (creating intermediate tables as needed),
+    then sets `key = value` in the target table.  Raises on duplicate
+    non-table keys.
+    """
+    if len(path) == 0:
+        # Set directly in root
+        if key in root:
+            # Both existing and new are tables → merge
+            if (
+                root[key].type == TOMLValueType.TABLE
+                and value.type == TOMLValueType.TABLE
+            ):
+                var existing = root[key].table_values.copy()
+                for entry in value.table_values.items():
+                    if entry.key in existing:
+                        raise Error("Duplicate key: " + key + "." + entry.key)
+                    existing[entry.key] = entry.value.copy()
+                root[key] = _make_table(existing^)
+                return
+            raise Error("Duplicate key: " + key)
+        root[key] = value^
+        return
+
+    # Navigate / create intermediate tables
+    var first = path[0]
+    if first not in root:
+        root[first] = _make_table(Dict[String, TOMLValue]())
+    elif root[first].type != TOMLValueType.TABLE:
+        # If it's an array-of-tables, we add to the last element
+        if root[first].type == TOMLValueType.ARRAY:
+            var arr = root[first].array_values.copy()
+            if len(arr) > 0:
+                var last_tbl = arr[len(arr) - 1].table_values.copy()
+                var remaining = List[String]()
+                for i in range(1, len(path)):
+                    remaining.append(path[i])
+                _set_value(last_tbl, remaining, key, value^)
+                arr[len(arr) - 1] = _make_table(last_tbl^)
+                root[first].array_values = arr^
+                return
+        raise Error("Key exists but is not a table: " + first)
+
+    var table = root[first].table_values.copy()
+    var remaining = List[String]()
+    for i in range(1, len(path)):
+        remaining.append(path[i])
+    _set_value(table, remaining, key, value^)
+    root[first] = _make_table(table^)
+
+
+# ---------------------------------------------------------------------------
+# Helper: ensure a table path exists and return a mutable reference-path
+# For [a.b.c], ensure root["a"]["b"]["c"] exists as a table.
+# ---------------------------------------------------------------------------
+fn _ensure_table_path(
+    mut root: Dict[String, TOMLValue], path: List[String]
+) raises:
+    """Ensure all tables along `path` exist in `root`."""
+    if len(path) == 0:
+        return
+
+    var first = path[0]
+    if first not in root:
+        root[first] = _make_table(Dict[String, TOMLValue]())
+    elif root[first].type == TOMLValueType.ARRAY:
+        # For array-of-tables: navigate into the last element
+        var arr = root[first].array_values.copy()
+        if len(arr) > 0:
+            var last_tbl = arr[len(arr) - 1].table_values.copy()
+            var remaining = List[String]()
+            for i in range(1, len(path)):
+                remaining.append(path[i])
+            _ensure_table_path(last_tbl, remaining)
+            arr[len(arr) - 1] = _make_table(last_tbl^)
+            root[first].array_values = arr^
+            return
+    elif root[first].type != TOMLValueType.TABLE:
+        raise Error("Key exists but is not a table: " + first)
+
+    if len(path) > 1:
+        var table = root[first].table_values.copy()
+        var remaining = List[String]()
+        for i in range(1, len(path)):
+            remaining.append(path[i])
+        _ensure_table_path(table, remaining)
+        root[first] = _make_table(table^)
+
+
+# ---------------------------------------------------------------------------
+# Helper: for [[a.b.c]], ensure path and append a new empty table to the
+# array at the final key.
+# ---------------------------------------------------------------------------
+fn _append_array_of_tables(
+    mut root: Dict[String, TOMLValue], path: List[String]
+) raises:
+    """Append a new empty table to the array-of-tables at `path`."""
+    if len(path) == 0:
+        raise Error("Array of tables path cannot be empty")
+
+    if len(path) == 1:
+        var key = path[0]
+        if key not in root:
+            # Create new array with one empty table
+            var arr_val = TOMLValue()
+            arr_val.type = TOMLValueType.ARRAY
+            arr_val.array_values = List[TOMLValue]()
+            arr_val.array_values.append(_make_table(Dict[String, TOMLValue]()))
+            root[key] = arr_val^
+        elif root[key].type == TOMLValueType.ARRAY:
+            root[key].array_values.append(
+                _make_table(Dict[String, TOMLValue]())
+            )
+        else:
+            raise Error("Cannot redefine as array of tables: " + key)
+        return
+
+    # Multi-part path: navigate to the parent, then handle the last key
+    var first = path[0]
+    if first not in root:
+        root[first] = _make_table(Dict[String, TOMLValue]())
+
+    if root[first].type == TOMLValueType.TABLE:
+        var table = root[first].table_values.copy()
+        var remaining = List[String]()
+        for i in range(1, len(path)):
+            remaining.append(path[i])
+        _append_array_of_tables(table, remaining)
+        root[first] = _make_table(table^)
+    elif root[first].type == TOMLValueType.ARRAY:
+        # Navigate into last element of the array
+        var arr = root[first].array_values.copy()
+        if len(arr) > 0:
+            var last_tbl = arr[len(arr) - 1].table_values.copy()
+            var remaining = List[String]()
+            for i in range(1, len(path)):
+                remaining.append(path[i])
+            _append_array_of_tables(last_tbl, remaining)
+            arr[len(arr) - 1] = _make_table(last_tbl^)
+            root[first].array_values = arr^
+    else:
+        raise Error("Key exists but is not a table or array: " + first)
+
+
 struct TOMLParser:
     """Parses TOML source text into a TOMLDocument."""
 
     var tokens: List[Token]
-    var current_index: Int
+    var pos: Int
 
     fn __init__(out self, source: String):
         var tokenizer = Tokenizer(source)
         self.tokens = tokenizer.tokenize()
-        self.current_index = 0
+        self.pos = 0
 
     fn __init__(out self, tokens: List[Token]):
         self.tokens = tokens.copy()
-        self.current_index = 0
+        self.pos = 0
 
-    fn current_token(self) -> Token:
-        """Get the current token."""
-        if self.current_index < len(self.tokens):
-            return self.tokens[self.current_index].copy()
-        # Return EOF token if we're past the end
+    # ---- token helpers ---------------------------------------------------
+
+    fn _tok(self) -> Token:
+        """Get current token."""
+        if self.pos < len(self.tokens):
+            return self.tokens[self.pos].copy()
         return Token(TokenType.EOF, "", 0, 0)
 
-    fn advance(mut self):
-        """Move to the next token."""
-        self.current_index += 1
+    fn _advance(mut self):
+        """Move to next token."""
+        self.pos += 1
 
-    fn parse_key_value(mut self) raises -> Tuple[String, TOMLValue]:
-        """Parse a key-value pair."""
-        if self.current_token().type != TokenType.KEY:
-            return (String(""), TOMLValue())
+    fn _skip_newlines(mut self):
+        """Skip NEWLINE tokens."""
+        while self._tok().type == TokenType.NEWLINE:
+            self._advance()
 
-        var key = self.current_token().value
-        self.advance()
+    fn _skip_ws(mut self):
+        """Skip NEWLINE and COMMA tokens (for arrays)."""
+        while (
+            self._tok().type == TokenType.NEWLINE
+            or self._tok().type == TokenType.COMMA
+        ):
+            self._advance()
 
-        if self.current_token().type != TokenType.EQUAL:
-            return (key, TOMLValue())
-        self.advance()
+    fn _is_key_token(self) -> Bool:
+        """Check if current token can be a key (KEY or STRING)."""
+        return (
+            self._tok().type == TokenType.KEY
+            or self._tok().type == TokenType.STRING
+        )
 
-        var value = self.parse_value()
-        return (key^, value^)
+    # ---- key parsing (supports dotted and quoted keys) -------------------
 
-    fn parse_value(mut self) raises -> TOMLValue:
+    fn _parse_key_path(mut self) raises -> List[String]:
+        """Parse a dotted key path like a.b."c d".e.
+
+        Returns a list of key parts.  Accepts both KEY and STRING tokens
+        as key components.
+        """
+        var parts = List[String]()
+
+        if not self._is_key_token():
+            raise Error("Expected key")
+
+        parts.append(self._tok().value)
+        self._advance()
+
+        # Continue while we see DOT followed by another key
+        while self._tok().type == TokenType.DOT:
+            self._advance()  # skip dot
+            if not self._is_key_token():
+                raise Error("Expected key after dot")
+            parts.append(self._tok().value)
+            self._advance()
+
+        return parts^
+
+    # ---- value parsing ---------------------------------------------------
+
+    fn _parse_integer(self, val_str: String) raises -> TOMLValue:
+        """Parse an integer string, handling hex/octal/binary prefixes."""
+        if len(val_str) > 2:
+            var prefix = String(val_str[:2])
+            if prefix == "0x" or prefix == "0X":
+                var hex_str = String(val_str[2:])
+                var result: Int = 0
+                for i in range(len(hex_str)):
+                    var ch = String(hex_str[byte=i])
+                    result *= 16
+                    if ch >= "0" and ch <= "9":
+                        result += ord(ch) - ord("0")
+                    elif ch >= "a" and ch <= "f":
+                        result += ord(ch) - ord("a") + 10
+                    elif ch >= "A" and ch <= "F":
+                        result += ord(ch) - ord("A") + 10
+                return TOMLValue(result)
+            elif prefix == "0o" or prefix == "0O":
+                var oct_str = String(val_str[2:])
+                var result: Int = 0
+                for i in range(len(oct_str)):
+                    result = result * 8 + (
+                        ord(String(oct_str[byte=i])) - ord("0")
+                    )
+                return TOMLValue(result)
+            elif prefix == "0b" or prefix == "0B":
+                var bin_str = String(val_str[2:])
+                var result: Int = 0
+                for i in range(len(bin_str)):
+                    result = result * 2 + (
+                        ord(String(bin_str[byte=i])) - ord("0")
+                    )
+                return TOMLValue(result)
+        return TOMLValue(atol(val_str))
+
+    fn _parse_float(self, val_str: String) raises -> TOMLValue:
+        """Parse a float string, handling inf/nan."""
+        if val_str == "inf" or val_str == "+inf":
+            return TOMLValue(Float64.MAX)
+        elif val_str == "-inf":
+            return TOMLValue(-Float64.MAX)
+        elif val_str == "nan" or val_str == "+nan" or val_str == "-nan":
+            return TOMLValue(atof("nan"))
+        return TOMLValue(atof(val_str))
+
+    fn _parse_value(mut self) raises -> TOMLValue:
         """Parse a TOML value."""
-        var token = self.current_token()
-        self.advance()
+        var token = self._tok()
+        self._advance()
 
         if token.type == TokenType.STRING:
             return TOMLValue(token.value)
+
         elif token.type == TokenType.INTEGER:
-            return TOMLValue(atol(token.value))
+            return self._parse_integer(token.value)
+
         elif token.type == TokenType.FLOAT:
-            return TOMLValue(atof(token.value))
+            return self._parse_float(token.value)
+
         elif token.type == TokenType.KEY:
             if token.value == "true":
                 return TOMLValue(True)
             elif token.value == "false":
                 return TOMLValue(False)
-            # Default to string for other keys
+            elif token.value == "inf":
+                return TOMLValue(Float64.MAX)
+            elif token.value == "nan":
+                return TOMLValue(atof("nan"))
+            # Bare key used as a value — treat as string
             return TOMLValue(token.value)
+
         elif token.type == TokenType.ARRAY_START:
-            var array = List[TOMLValue]()
+            return self._parse_array()
 
-            # Parse values until we reach the end of the array
-            while (
-                self.current_token().type != TokenType.ARRAY_END
-                and self.current_token().type != TokenType.EOF
-            ):
-                array.append(self.parse_value())
+        elif token.type == TokenType.TABLE_START:
+            # In value context, [ is an array start (tokenizer emits
+            # TABLE_START for all [ tokens; the parser provides context)
+            return self._parse_array()
 
-                # Skip comma if present
-                if self.current_token().type == TokenType.COMMA:
-                    self.advance()
+        elif token.type == TokenType.INLINE_TABLE_START:
+            return self._parse_inline_table()
 
-            # Skip the closing bracket
-            if self.current_token().type == TokenType.ARRAY_END:
-                self.advance()
-
-            var result = TOMLValue()
-            result.type = TOMLValueType.ARRAY
-            result.array_values = array^
-            return result^
-
-        # Default to NULL value
+        # Default
         return TOMLValue()
 
-    fn parse_table(mut self) raises -> Tuple[String, Dict[String, TOMLValue]]:
-        """Parse a table section."""
-        # Skip '[' token
-        self.advance()
+    # ---- arrays (with newline/comment support) ---------------------------
 
-        if self.current_token().type != TokenType.KEY:
-            return (String(""), Dict[String, TOMLValue]())
+    fn _parse_array(mut self) raises -> TOMLValue:
+        """Parse an array value (opening [ already consumed)."""
+        var elements = List[TOMLValue]()
 
-        var table_name = self.current_token().value
-        self.advance()
+        self._skip_newlines()
 
-        # Skip ']' token
-        if self.current_token().type == TokenType.ARRAY_END:
-            self.advance()
+        while (
+            self._tok().type != TokenType.ARRAY_END
+            and self._tok().type != TokenType.EOF
+        ):
+            elements.append(self._parse_value())
+            self._skip_newlines()
 
-        var table_values = Dict[String, TOMLValue]()
+            # Skip comma (optional trailing comma allowed)
+            if self._tok().type == TokenType.COMMA:
+                self._advance()
+                self._skip_newlines()
 
-        # Skip newline after table header
-        while self.current_token().type == TokenType.NEWLINE:
-            self.advance()
+        # Skip closing ]
+        if self._tok().type == TokenType.ARRAY_END:
+            self._advance()
 
-        var key: String
-        var value: TOMLValue
+        var result = TOMLValue()
+        result.type = TOMLValueType.ARRAY
+        result.array_values = elements^
+        return result^
 
-        # Parse key-value pairs until we reach a new table or EOF
-        while self.current_token().type == TokenType.KEY:
-            key, value = self.parse_key_value().copy()
-            if key:
-                table_values[key] = value^
+    # ---- inline tables ---------------------------------------------------
 
-            # Skip newline
-            if self.current_token().type == TokenType.NEWLINE:
-                self.advance()
+    fn _parse_inline_table(mut self) raises -> TOMLValue:
+        """Parse an inline table { key = value, ... } (opening { consumed)."""
+        var table = Dict[String, TOMLValue]()
 
-        return (table_name^, table_values^)
+        if self._tok().type == TokenType.INLINE_TABLE_END:
+            self._advance()
+            return _make_table(table^)
+
+        while True:
+            # Parse key (may be dotted)
+            var key_parts = self._parse_key_path()
+
+            # Expect equals
+            if self._tok().type != TokenType.EQUAL:
+                raise Error("Expected '=' in inline table")
+            self._advance()
+
+            # Parse value
+            var value = self._parse_value()
+
+            # Set value at potentially nested path
+            if len(key_parts) == 1:
+                if key_parts[0] in table:
+                    raise Error(
+                        "Duplicate key in inline table: " + key_parts[0]
+                    )
+                table[key_parts[0]] = value^
+            else:
+                # Dotted key: build nested structure
+                var last_key = key_parts[len(key_parts) - 1]
+                var path = List[String]()
+                for i in range(len(key_parts) - 1):
+                    path.append(key_parts[i])
+                _set_value(table, path, last_key, value^)
+
+            # Check what's next
+            if self._tok().type == TokenType.COMMA:
+                self._advance()
+            elif self._tok().type == TokenType.INLINE_TABLE_END:
+                self._advance()
+                break
+            else:
+                raise Error("Expected ',' or '}' in inline table")
+
+        return _make_table(table^)
+
+    # ---- table header parsing --------------------------------------------
+
+    fn _parse_table_header(mut self) raises -> List[String]:
+        """Parse [a.b.c] and return the path.  Opening [ already consumed."""
+        var path = self._parse_key_path()
+
+        # Expect closing ]
+        if self._tok().type == TokenType.ARRAY_END:
+            self._advance()
+        else:
+            raise Error("Expected ']' after table header")
+
+        return path^
+
+    fn _parse_array_of_tables_header(mut self) raises -> List[String]:
+        """Parse [[a.b.c]] and return the path.  Opening [[ already consumed."""
+        var path = self._parse_key_path()
+
+        # Expect closing ]]
+        if self._tok().type == TokenType.ARRAY_END:
+            self._advance()
+        else:
+            raise Error("Expected ']]' after array of tables header")
+        if self._tok().type == TokenType.ARRAY_END:
+            self._advance()
+        else:
+            raise Error("Expected ']]' after array of tables header")
+
+        return path^
+
+    # ---- main parse loop -------------------------------------------------
 
     fn parse(mut self) raises -> TOMLDocument:
         """Parse the tokens into a TOMLDocument."""
         var document = TOMLDocument()
+        var current_path = List[String]()
+        var is_array_of_tables = False
 
-        while self.current_index < len(self.tokens):
-            var token = self.current_token()
+        while self.pos < len(self.tokens):
+            var token = self._tok()
 
             if token.type == TokenType.NEWLINE:
-                self.advance()
+                self._advance()
                 continue
 
+            elif token.type == TokenType.EOF:
+                break
+
             elif token.type == TokenType.TABLE_START:
-                _tuple = self.parse_table()
-                var table_name: String = _tuple[0].copy()
-                var table_values: Dict[String, TOMLValue] = _tuple[1].copy()
-                if table_name:
-                    var table_value = TOMLValue()
-                    table_value.type = TOMLValueType.TABLE
-                    table_value.table_values = table_values^
-                    document.root[table_name] = table_value
+                # [table.path]
+                self._advance()  # skip [
+                current_path = self._parse_table_header()
+                is_array_of_tables = False
+                _ensure_table_path(document.root, current_path)
+                self._skip_newlines()
 
             elif token.type == TokenType.ARRAY_OF_TABLES_START:
-                # Get table name
-                self.advance()
-                if self.current_token().type != TokenType.KEY:
-                    self.advance()
+                # [[array.of.tables]]
+                self._advance()  # skip [[
+                current_path = self._parse_array_of_tables_header()
+                is_array_of_tables = True
+                _append_array_of_tables(document.root, current_path)
+                self._skip_newlines()
+
+            elif self._is_key_token():
+                # Key-value pair (may have dotted key)
+                var key_parts = self._parse_key_path()
+
+                # Expect =
+                if self._tok().type != TokenType.EQUAL:
+                    self._advance()
                     continue
+                self._advance()  # skip =
 
-                var table_name = self.current_token().value
-                self.advance()
+                var value = self._parse_value()
 
-                # Skip closing brackets
-                if self.current_token().type == TokenType.ARRAY_END:
-                    self.advance()
-                if self.current_token().type == TokenType.ARRAY_END:
-                    self.advance()
+                # Build the full path: current_path + key_parts[:-1]
+                var last_key = key_parts[len(key_parts) - 1]
+                var full_path = List[String]()
+                for p in current_path:
+                    full_path.append(p)
+                for i in range(len(key_parts) - 1):
+                    full_path.append(key_parts[i])
 
-                # Skip newlines
-                while self.current_token().type == TokenType.NEWLINE:
-                    self.advance()
-
-                # Parse table contents
-                var table_values = Dict[String, TOMLValue]()
-
-                # Parse key-value pairs
-                while self.current_token().type == TokenType.KEY:
-                    var key: String
-                    var value: TOMLValue
-                    key, value = self.parse_key_value()
-                    if key:
-                        table_values[key] = value^
-
-                    # Skip newline
-                    if self.current_token().type == TokenType.NEWLINE:
-                        self.advance()
-
-                # Create table value
-                var table_value = TOMLValue()
-                table_value.type = TOMLValueType.TABLE
-                table_value.table_values = table_values^
-
-                # Add to array of tables
-                if (
-                    table_name in document.root
-                    and document.root[table_name].type == TOMLValueType.ARRAY
-                ):
-                    # Array exists, append to it
-                    document.root[table_name].array_values.append(table_value)
+                if is_array_of_tables:
+                    # We need to set inside the last element of the array
+                    _set_value(document.root, full_path, last_key, value^)
                 else:
-                    # Create new array with this table
-                    var array_value = TOMLValue()
-                    array_value.type = TOMLValueType.ARRAY
-                    array_value.array_values = List[TOMLValue]()
-                    array_value.array_values.append(table_value)
-                    document.root[table_name] = array_value
+                    _set_value(document.root, full_path, last_key, value^)
 
-            elif token.type == TokenType.KEY:
-                var key: String
-                var value: TOMLValue
-                key, value = self.parse_key_value()
-                if key:
-                    document.root[key] = value^
+                self._skip_newlines()
 
-                # Skip newline
-                if self.current_token().type == TokenType.NEWLINE:
-                    self.advance()
-
-            elif token.type == TokenType.ARRAY_START:
-                _tuple = self.parse_table()
-                var table_name: String = _tuple[0].copy()
-                var table_values: Dict[String, TOMLValue] = _tuple[1].copy()
-                if table_name:
-                    var table_value = TOMLValue()
-                    table_value.type = TOMLValueType.TABLE
-                    table_value.table_values = table_values^
-                    document.root[table_name^] = table_value^
             else:
-                self.advance()
+                # Unknown token — skip
+                self._advance()
 
         return document^
 

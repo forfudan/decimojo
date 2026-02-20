@@ -58,6 +58,9 @@ fn run_case(
 
 
 fn main() raises:
+    var pysys = Python.import_module("sys")
+    pysys.set_int_max_str_digits(10000000)
+
     var toml_path = "bench_data/from_string.toml"
     var log_file = open_log_file("benchmark_biguint_from_string")
     print_header("DeciMojo BigUInt from_string Benchmark", log_file)

@@ -23,7 +23,7 @@ The core types are:
 - An arbitrary-precision decimal implementation (`BigDecimal`) allowing for calculations with unlimited digits and decimal places[^arbitrary]. It provides a complete set of arithmetic operations, comparisons, and mathematical functions like logarithms, exponentiation, roots, trigonometric functions, etc. It also supports rounding modes and conversions to/from built-in types.
 - A 128-bit fixed-point decimal implementation (`Decimal128`) supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed]. It features a complete set of mathematical functions including logarithms, exponentiation, roots, etc.
 
-This repository includes [TOMLMojo](https://github.com/mojomath/decimojo/tree/main/src/tomlmojo), a lightweight TOML parser in pure Mojo. It parses configuration files and test data, supporting basic types, arrays, and nested tables. While created for DeciMojo's testing framework, it offers general-purpose structured data parsing with a clean, simple API.
+This repository includes [TOMLMojo](./docs/readme_tomlmojo.md), a lightweight TOML parser in pure Mojo. It parses configuration files and test data, supporting basic types, arrays, and nested tables. While created for DeciMojo's testing framework, it offers general-purpose structured data parsing with a clean, simple API.
 
 | type         | alias             | information                          | internal representation             |
 | ------------ | ----------------- | ------------------------------------ | ----------------------------------- |
