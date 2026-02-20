@@ -7,7 +7,7 @@ import testing
 import tomlmojo
 
 from decimojo import Dec128
-from decimojo.prelude import Decimal128
+from decimojo import Decimal128
 from decimojo.tests import TestCase, parse_file, load_test_cases
 
 comptime file_path = "tests/decimal128/test_data/decimal128_conversions.toml"

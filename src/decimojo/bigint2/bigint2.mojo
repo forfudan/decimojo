@@ -26,8 +26,8 @@ BigInt2 is the core binary-represented arbitrary-precision signed integer
 for the DeciMojo library. It uses base-2^32 representation with UInt32 words
 in little-endian order, and a separate sign bit.
 
-Once BigInt2 is stable and performant, the current BigInt (base-10^9)
-will be renamed to BigInt10, and BigInt2 will be renamed to BigInt.
+Once BigInt2 is stable and performant, the alias `BInt` will be
+reassigned from BigInt10 to BigInt2, making BigInt2 the primary integer type.
 """
 
 from memory import UnsafePointer, memcpy
@@ -35,7 +35,7 @@ from memory import UnsafePointer, memcpy
 import decimojo.bigint2.arithmetics
 import decimojo.bigint2.comparison
 import decimojo.bigint2.exponential
-from decimojo.bigint.bigint import BigInt
+from decimojo.bigint10.bigint10 import BigInt10
 from decimojo.biguint.biguint import BigUInt
 from decimojo.errors import DeciMojoError
 
@@ -394,11 +394,11 @@ struct BigInt2(
         return result^
 
     @staticmethod
-    fn from_bigint(value: BigInt) -> Self:
-        """Converts a base-10^9 BigInt to a base-2^32 BigInt2.
+    fn from_bigint10(value: BigInt10) -> Self:
+        """Converts a base-10^9 BigInt10 to a base-2^32 BigInt2.
 
         Args:
-            value: The BigInt (base-10^9) to convert.
+            value: The BigInt10 (base-10^9) to convert.
 
         Returns:
             The BigInt2 (base-2^32) representation.
@@ -500,14 +500,14 @@ struct BigInt2(
                 )
             return Int(magnitude)
 
-    fn to_bigint(self) -> BigInt:
-        """Converts the BigInt2 to a base-10^9 BigInt.
+    fn to_bigint10(self) -> BigInt10:
+        """Converts the BigInt2 to a base-10^9 BigInt10.
 
         Returns:
-            The BigInt (base-10^9) representation with the same value.
+            The BigInt10 (base-10^9) representation with the same value.
         """
         if self.is_zero():
-            return BigInt()
+            return BigInt10()
 
         # Convert from base 2^32 to base 10^9 using repeated division
         var dividend = self.copy()
@@ -526,12 +526,12 @@ struct BigInt2(
 
             decimal_words.append(UInt32(remainder))
 
-        return BigInt(raw_words=decimal_words^, sign=self.sign)
+        return BigInt10(raw_words=decimal_words^, sign=self.sign)
 
     fn to_decimal_string(self, line_width: Int = 0) -> String:
         """Returns the decimal string representation of the BigInt2.
 
-        Converts to BigInt (base-10^9) and leverages its string formatting.
+        Converts to BigInt10 (base-10^9) and leverages its string formatting.
 
         Args:
             line_width: The maximum line width for the string representation.
@@ -540,7 +540,7 @@ struct BigInt2(
         Returns:
             The decimal string (e.g. "-12345").
         """
-        var result = String(self.to_bigint())
+        var result = String(self.to_bigint10())
 
         if line_width > 0:
             var start = 0
@@ -1059,8 +1059,8 @@ struct BigInt2(
         if self.is_zero():
             return 1
 
-        # Convert to BigInt and use its digit counting
-        return self.to_bigint().magnitude.number_of_digits()
+        # Convert to BigInt10 and use its digit counting
+        return self.to_bigint10().magnitude.number_of_digits()
 
     # ===------------------------------------------------------------------=== #
     # Internal utility methods

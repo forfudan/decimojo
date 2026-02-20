@@ -38,7 +38,6 @@ import decimojo.str
 
 # Type aliases
 comptime BUInt = BigUInt
-comptime BigUInt10 = BigUInt
 
 
 struct BigUInt(
@@ -1293,9 +1292,9 @@ struct BigUInt(
     # Other dunders
     # ===------------------------------------------------------------------=== #
 
-    fn __merge_with__[other_type: type_of(BigInt)](self) -> BigInt:
-        "Merges this BigUInt with a BigInt into a BigInt."
-        return BigInt(self)
+    fn __merge_with__[other_type: type_of(BigInt10)](self) -> BigInt10:
+        "Merges this BigUInt with a BigInt10 into a BigInt10."
+        return BigInt10(self)
 
     fn __merge_with__[other_type: type_of(BigDecimal)](self) -> BigDecimal:
         "Merges this BigUInt with a BigDecimal into a BigDecimal."
@@ -1762,7 +1761,7 @@ struct BigUInt(
         return result
 
     fn number_of_words(self) -> Int:
-        """Returns the number of words in the BigInt."""
+        """Returns the number of words in the BigUInt."""
         return len(self.words)
 
     fn number_of_trailing_zeros(self) -> Int:

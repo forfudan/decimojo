@@ -1,5 +1,5 @@
 # ===----------------------------------------------------------------------=== #
-# Test data for BigInt truncate division operations
+# Test data for BigInt10 truncate division operations
 # - Basic truncate division with positive numbers
 # - Basic truncate division with negative numbers
 # - Mixed sign truncate division

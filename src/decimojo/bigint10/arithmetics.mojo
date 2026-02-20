@@ -15,21 +15,21 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-Implements basic arithmetic functions for the BigInt type.
+Implements basic arithmetic functions for the BigInt10 type.
 """
 
-from decimojo.bigint.bigint import BigInt
+from decimojo.bigint10.bigint10 import BigInt10
 from decimojo.biguint.biguint import BigUInt
 from decimojo.errors import DeciMojoError
 from decimojo.rounding_mode import RoundingMode
 
 
-fn add(x1: BigInt, x2: BigInt) -> BigInt:
+fn add(x1: BigInt10, x2: BigInt10) -> BigInt10:
     """Returns the sum of two BigInts.
 
     Args:
-        x1: The first BigInt operand.
-        x2: The second BigInt operand.
+        x1: The first BigInt10 operand.
+        x2: The second BigInt10 operand.
 
     Returns:
         The sum of the two BigInts.
@@ -38,13 +38,13 @@ fn add(x1: BigInt, x2: BigInt) -> BigInt:
     if x1.is_zero():
         debug_assert[assert_mode="none"](
             len(x1.magnitude.words) == 1,
-            "decimojo.bigint.arithmetics.add(): leading zero words in x1",
+            "decimojo.bigint10.arithmetics.add(): leading zero words in x1",
         )
         return x2.copy()
     if x2.is_zero():
         debug_assert[assert_mode="none"](
             len(x2.magnitude.words) == 1,
-            "decimojo.bigint.arithmetics.add(): leading zero words in x2",
+            "decimojo.bigint10.arithmetics.add(): leading zero words in x2",
         )
         return x1.copy()
 
@@ -55,15 +55,15 @@ fn add(x1: BigInt, x2: BigInt) -> BigInt:
     # Same sign: add magnitudes and preserve the sign
     var magnitude: BigUInt = x1.magnitude + x2.magnitude
 
-    return BigInt(magnitude^, sign=x1.sign)
+    return BigInt10(magnitude^, sign=x1.sign)
 
 
-fn add_inplace(mut x1: BigInt, x2: BigInt) -> None:
-    """Increments a BigInt number by another BigInt number in place.
+fn add_inplace(mut x1: BigInt10, x2: BigInt10) -> None:
+    """Increments a BigInt10 number by another BigInt10 number in place.
 
     Args:
-        x1: The first BigInt operand.
-        x2: The second BigInt operand.
+        x1: The first BigInt10 operand.
+        x2: The second BigInt10 operand.
     """
 
     # If signs are different, delegate to `subtract`
@@ -78,7 +78,7 @@ fn add_inplace(mut x1: BigInt, x2: BigInt) -> None:
     return
 
 
-fn subtract(x1: BigInt, x2: BigInt) -> BigInt:
+fn subtract(x1: BigInt10, x2: BigInt10) -> BigInt10:
     """Returns the difference of two numbers.
 
     Args:
@@ -92,14 +92,14 @@ fn subtract(x1: BigInt, x2: BigInt) -> BigInt:
     if x2.is_zero():
         debug_assert[assert_mode="none"](
             len(x2.magnitude.words) == 1,
-            "decimojo.bigint.arithmetics.add(): leading zero words in x2",
+            "decimojo.bigint10.arithmetics.add(): leading zero words in x2",
         )
         return x1.copy()
     # If the minuend is zero, return the negated subtrahend
     if x1.is_zero():
         debug_assert[assert_mode="none"](
             len(x1.magnitude.words) == 1,
-            "decimojo.bigint.arithmetics.add(): leading zero words in x1",
+            "decimojo.bigint10.arithmetics.add(): leading zero words in x1",
         )
         return -x2
 
@@ -111,7 +111,7 @@ fn subtract(x1: BigInt, x2: BigInt) -> BigInt:
     var comparison_result = x1.magnitude.compare(x2.magnitude)
 
     if comparison_result == 0:
-        return BigInt()  # Equal magnitudes result in zero
+        return BigInt10()  # Equal magnitudes result in zero
 
     var magnitude: BigUInt
     var sign: Bool
@@ -131,42 +131,42 @@ fn subtract(x1: BigInt, x2: BigInt) -> BigInt:
         )
         sign = not x1.sign
 
-    return BigInt(magnitude^, sign=sign)
+    return BigInt10(magnitude^, sign=sign)
 
 
-fn negative(x: BigInt) -> BigInt:
-    """Returns the negative of a BigInt number.
+fn negative(x: BigInt10) -> BigInt10:
+    """Returns the negative of a BigInt10 number.
 
     Args:
-        x: The BigInt value to compute the negative of.
+        x: The BigInt10 value to compute the negative of.
 
     Returns:
-        A new BigInt containing the negative of x.
+        A new BigInt10 containing the negative of x.
 
     Notes:
-        `BigInt` does allow signed zeros, so the negative of zero is zero.
+        `BigInt10` does allow signed zeros, so the negative of zero is zero.
     """
     # If x is zero, return zero
     if x.is_zero():
         debug_assert[assert_mode="none"](
             len(x.magnitude.words) == 1,
-            "decimojo.bigint.arithmetics.add(): leading zero words in x",
+            "decimojo.bigint10.arithmetics.add(): leading zero words in x",
         )
-        return BigInt()
+        return BigInt10()
 
     var result = x.copy()
     result.sign = not result.sign
     return result^
 
 
-fn absolute(x: BigInt) -> BigInt:
-    """Returns the absolute value of a BigInt number.
+fn absolute(x: BigInt10) -> BigInt10:
+    """Returns the absolute value of a BigInt10 number.
 
     Args:
-        x: The BigInt value to compute the absolute value of.
+        x: The BigInt10 value to compute the absolute value of.
 
     Returns:
-        A new BigInt containing the absolute value of x.
+        A new BigInt10 containing the absolute value of x.
     """
     if x.sign:
         return -x
@@ -174,28 +174,28 @@ fn absolute(x: BigInt) -> BigInt:
         return x.copy()
 
 
-fn multiply(x1: BigInt, x2: BigInt) -> BigInt:
-    """Returns the product of two BigInt numbers.
+fn multiply(x1: BigInt10, x2: BigInt10) -> BigInt10:
+    """Returns the product of two BigInt10 numbers.
 
     Args:
-        x1: The first BigInt operand (multiplicand).
-        x2: The second BigInt operand (multiplier).
+        x1: The first BigInt10 operand (multiplicand).
+        x2: The second BigInt10 operand (multiplier).
 
     Returns:
-        The product of the two BigInt numbers.
+        The product of the two BigInt10 numbers.
     """
     # CASE: One of the operands is zero
     if x1.is_zero() or x2.is_zero():
-        return BigInt()  # Return zero regardless of sign
+        return BigInt10()  # Return zero regardless of sign
 
     # Multiply the magnitudes using BigUInt's multiplication
     var result_magnitude = x1.magnitude * x2.magnitude
 
     # Create and return final result with correct sign
-    return BigInt(result_magnitude^, sign=x1.sign != x2.sign)
+    return BigInt10(result_magnitude^, sign=x1.sign != x2.sign)
 
 
-fn floor_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
+fn floor_divide(x1: BigInt10, x2: BigInt10) raises -> BigInt10:
     """Returns the quotient of two numbers, rounding toward negative infinity.
     The modulo has the same sign as the divisor and satisfies:
     x1 = floor_divide(x1, x2) * x2 + floor_divide(x1, x2).
@@ -227,13 +227,13 @@ fn floor_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
         except e:
             raise Error(
                 DeciMojoError(
-                    file="src/decimojo/bigint/arithmetics",
+                    file="src/decimojo/bigint10/arithmetics",
                     function="floor_divide()",
                     message=None,
                     previous_error=e^,
                 ),
             )
-        return BigInt(magnitude^, sign=False)
+        return BigInt10(magnitude^, sign=False)
 
     else:
         # Use ceil division of the magnitudes
@@ -244,17 +244,17 @@ fn floor_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
         except e:
             raise Error(
                 DeciMojoError(
-                    file="src/decimojo/bigint/arithmetics",
+                    file="src/decimojo/bigint10/arithmetics",
                     function="floor_divide()",
                     message=None,
                     previous_error=e^,
                 ),
             )
-        return BigInt(magnitude^, sign=True)
+        return BigInt10(magnitude^, sign=True)
 
 
-fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
-    """Returns the quotient of two BigInt numbers, truncating toward zero.
+fn truncate_divide(x1: BigInt10, x2: BigInt10) raises -> BigInt10:
+    """Returns the quotient of two BigInt10 numbers, truncating toward zero.
     The modulo has the same sign as the divisor and satisfies:
     x1 = truncate_divide(x1, x2) * x2 + truncate_modulo(x1, x2).
 
@@ -276,16 +276,16 @@ fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
     except e:
         raise Error(
             DeciMojoError(
-                file="src/decimojo/bigint/arithmetics",
+                file="src/decimojo/bigint10/arithmetics",
                 function="truncate_divide()",
                 message=None,
                 previous_error=e^,
             ),
         )
-    return BigInt(magnitude^, sign=x1.sign != x2.sign)
+    return BigInt10(magnitude^, sign=x1.sign != x2.sign)
 
 
-fn floor_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
+fn floor_modulo(x1: BigInt10, x2: BigInt10) raises -> BigInt10:
     """Returns the remainder of two numbers, truncating toward negative infinity.
     The remainder has the same sign as the divisor and satisfies:
     x1 = floor_divide(x1, x2) * x2 + floor_modulo(x1, x2).
@@ -313,13 +313,13 @@ fn floor_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
         except e:
             raise Error(
                 DeciMojoError(
-                    file="src/decimojo/bigint/arithmetics",
+                    file="src/decimojo/bigint10/arithmetics",
                     function="floor_modulo()",
                     message=None,
                     previous_error=e^,
                 ),
             )
-        return BigInt(magnitude^, sign=x2.sign)
+        return BigInt10(magnitude^, sign=x2.sign)
 
     else:
         # Use ceil division of the magnitudes
@@ -330,16 +330,16 @@ fn floor_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
         except e:
             raise Error(
                 DeciMojoError(
-                    file="src/decimojo/bigint/arithmetics",
+                    file="src/decimojo/bigint10/arithmetics",
                     function="floor_modulo()",
                     message=None,
                     previous_error=e^,
                 ),
             )
-        return BigInt(magnitude^, sign=x2.sign)
+        return BigInt10(magnitude^, sign=x2.sign)
 
 
-fn truncate_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
+fn truncate_modulo(x1: BigInt10, x2: BigInt10) raises -> BigInt10:
     """Returns the remainder of two numbers, truncating toward zero.
     The remainder has the same sign as the dividend and satisfies:
     x1 = truncate_divide(x1, x2) * x2 + truncate_modulo(x1, x2).
@@ -362,10 +362,10 @@ fn truncate_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
     except e:
         raise Error(
             DeciMojoError(
-                file="src/decimojo/bigint/arithmetics",
+                file="src/decimojo/bigint10/arithmetics",
                 function="truncate_modulo()",
                 message=None,
                 previous_error=e^,
             ),
         )
-    return BigInt(magnitude^, sign=x1.sign)
+    return BigInt10(magnitude^, sign=x1.sign)

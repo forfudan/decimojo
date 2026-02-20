@@ -179,10 +179,10 @@ fn pi(precision: Int) raises -> BigDecimal:
 struct Rational:
     """Represents a rational number p/q for exact arithmetic."""
 
-    var p: BigInt  # numerator
-    var q: BigInt  # denominator
+    var p: BigInt10  # numerator
+    var q: BigInt10  # denominator
 
-    fn __init__(out self, p: BigInt, q: BigInt):
+    fn __init__(out self, p: BigInt10, q: BigInt10):
         self.p = p.copy()
         self.q = q.copy()
 
@@ -231,10 +231,10 @@ fn pi_chudnovsky_binary_split(precision: Int) raises -> BigDecimal:
 fn chudnovsky_split(a: Int, b: Int, precision: Int) raises -> Rational:
     """Conducts binary splitting for Chudnovsky series from term a to b-1."""
 
-    var bint_1 = BigInt(1)
-    var bint_13591409 = BigInt(13591409)
-    var bint_545140134 = BigInt(545140134)
-    var bint_262537412640768000 = BigInt(262537412640768000)
+    var bint_1 = BigInt10(1)
+    var bint_13591409 = BigInt10(13591409)
+    var bint_545140134 = BigInt10(545140134)
+    var bint_262537412640768000 = BigInt10(262537412640768000)
 
     if b - a == 1:
         # Base case: compute single term as exact rational
@@ -244,7 +244,7 @@ fn chudnovsky_split(a: Int, b: Int, precision: Int) raises -> Rational:
 
         # For k > 0: compute M(k), L(k), X(k)
         var m_k_rational = compute_m_k_rational(a)
-        var l_k = bint_545140134 * BigInt(a) + bint_13591409
+        var l_k = bint_545140134 * BigInt10(a) + bint_13591409
 
         # X(k) = (-262537412640768000)^k
         var x_k = bint_1^
@@ -276,7 +276,7 @@ fn chudnovsky_split(a: Int, b: Int, precision: Int) raises -> Rational:
 fn compute_m_k_rational(k: Int) raises -> Rational:
     """Computes M(k) = (6k)! / ((3k)! * (k!)³) as exact rational."""
 
-    var bint_1 = BigInt(1)
+    var bint_1 = BigInt10(1)
 
     if k == 0:
         return Rational(bint_1, bint_1)
@@ -284,12 +284,12 @@ fn compute_m_k_rational(k: Int) raises -> Rational:
     # Compute numerator: (6k)! / (3k)! = (3k+1) * (3k+2) * ... * (6k)
     var numerator = bint_1.copy()
     for i in range(3 * k + 1, 6 * k + 1):
-        numerator *= BigInt(i)
+        numerator *= BigInt10(i)
 
     # Compute denominator: (k!)³
     var k_factorial = bint_1.copy()
     for i in range(1, k + 1):
-        k_factorial *= BigInt(i)
+        k_factorial *= BigInt10(i)
 
     var denominator = k_factorial * k_factorial * k_factorial
 

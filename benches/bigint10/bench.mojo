@@ -1,7 +1,7 @@
-from bench_bigint_add import main as bench_add
-from bench_bigint_multiply import main as bench_multiply
-from bench_bigint_truncate_divide import main as bench_truncate_divide
-from bench_bigint_floor_divide import main as bench_floor_divide
+from bench_bigint10_add import main as bench_add
+from bench_bigint10_multiply import main as bench_multiply
+from bench_bigint10_truncate_divide import main as bench_truncate_divide
+from bench_bigint10_floor_divide import main as bench_floor_divide
 
 
 fn main() raises:
@@ -9,7 +9,7 @@ fn main() raises:
         print(
             """
 =========================================
-This is the BigInt Benchmarks
+This is the BigInt10 Benchmarks
 =========================================
 add:         Add
 mul:         Multiply

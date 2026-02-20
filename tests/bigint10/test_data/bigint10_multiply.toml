@@ -1,5 +1,5 @@
 # ===----------------------------------------------------------------------=== #
-# Test data for BigInt multiplication operations
+# Test data for BigInt10 multiplication operations
 # - Basic multiplication test cases
 # - Special cases (zero, one, negative one)
 # - Negative number multiplication

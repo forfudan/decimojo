@@ -6,7 +6,7 @@ with Python's decimal module implementation.
 
 import testing
 from python import Python, PythonObject
-from decimojo.prelude import dm, Decimal128, RoundingMode
+from decimojo.prelude import Decimal128, RoundingMode
 
 
 fn test_basic_quantization() raises:

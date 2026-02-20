@@ -1,13 +1,13 @@
 # ===----------------------------------------------------------------------=== #
-# Test data for BigInt arithmetic operations
-# - Test cases for BigInt addition
-# - Test cases for BigInt subtraction
-# - Test cases for BigInt negation
-# - Test cases for BigInt absolute value
+# Test data for BigInt10 arithmetic operations
+# - Test cases for BigInt10 addition
+# - Test cases for BigInt10 subtraction
+# - Test cases for BigInt10 negation
+# - Test cases for BigInt10 absolute value
 # ===----------------------------------------------------------------------=== #
 
 # ===----------------------------------------------------------------------=== #
-# Test cases for BigInt addition
+# Test cases for BigInt10 addition
 # ===----------------------------------------------------------------------=== #
 [[addition_tests]]
 a = "123"
@@ -94,7 +94,7 @@ description = "Adding opposite large numbers (should equal zero)"
 expected = "0"
 
 # ===----------------------------------------------------------------------=== #
-# Test cases for BigInt negation
+# Test cases for BigInt10 negation
 # ===----------------------------------------------------------------------=== #
 [[negation_tests]]
 a = "123"
@@ -117,7 +117,7 @@ description = "Negate large number"
 expected = "-{9,51}"
 
 # ===----------------------------------------------------------------------=== #
-# Test cases for BigInt absolute value
+# Test cases for BigInt10 absolute value
 # ===----------------------------------------------------------------------=== #
 [[abs_tests]]
 a = "123"
@@ -140,7 +140,7 @@ description = "Absolute value of large negative number"
 expected = "{9,51}"
 
 # ===----------------------------------------------------------------------=== #
-# Test cases for BigInt subtraction
+# Test cases for BigInt10 subtraction
 # ===----------------------------------------------------------------------=== #
 [[subtraction_tests]]
 a = "456"

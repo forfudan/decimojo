@@ -1,5 +1,5 @@
 # ===----------------------------------------------------------------------=== #
-# Test data for BigInt floor division operations
+# Test data for BigInt10 floor division operations
 # - Basic floor division with positive numbers
 # - Basic floor division with negative numbers
 # - Mixed sign floor division

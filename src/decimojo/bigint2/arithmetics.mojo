@@ -18,7 +18,7 @@
 Implements basic arithmetic functions for the BigInt2 type.
 
 BigInt2 uses base-2^32 representation with UInt32 words in little-endian order.
-Unlike the BigInt (base-10^9) type which delegates magnitude operations to
+Unlike the BigInt10 (base-10^9) type which delegates magnitude operations to
 BigUInt, BigInt2 implements all magnitude arithmetic directly since there is
 no separate unsigned counterpart.
 

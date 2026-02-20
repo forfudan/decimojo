@@ -17,6 +17,6 @@ This is a to-do list for DeciMojo.
 
 ## Roadmap for Decimojo
 
-- [ ] Re-implement some methods of `BigUInt` to improve the performance, since it is the building block of `BigDecimal` and `BigInt`.
+- [ ] Re-implement some methods of `BigUInt` to improve the performance, since it is the building block of `BigDecimal` and `BigInt10`.
 - [ ] Refine the methods of `BigDecimal` to improve the performance.
 - [ ] Implement the big **binary** (signed and unsigned) integer type (`BigBinaryUInt`) when users do not need the full precision of BigDecimal. When it is finished, the current BigUInt will be renamed to `BigDecimalUInt`. The alias `BUInt` may be rebound to `BigBinaryUInt`.

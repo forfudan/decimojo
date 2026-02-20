@@ -15,14 +15,14 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-Implements functions for comparison operations on BigInt objects.
+Implements functions for comparison operations on BigInt10 objects.
 """
 
-from decimojo.bigint.bigint import BigInt
+from decimojo.bigint10.bigint10 import BigInt10
 from decimojo.biguint.biguint import BigUInt
 
 
-fn compare_magnitudes(x1: BigInt, x2: BigInt) -> Int8:
+fn compare_magnitudes(x1: BigInt10, x2: BigInt10) -> Int8:
     """Compares the magnitudes of two numbers and returns the result.
 
     Args:
@@ -38,8 +38,8 @@ fn compare_magnitudes(x1: BigInt, x2: BigInt) -> Int8:
     return x1.magnitude.compare(x2.magnitude)
 
 
-fn compare(x1: BigInt, x2: BigInt) -> Int8:
-    """Compares two BigInt objects and returns the result.
+fn compare(x1: BigInt10, x2: BigInt10) -> Int8:
+    """Compares two BigInt10 objects and returns the result.
 
     Args:
         x1: First number.
@@ -65,7 +65,7 @@ fn compare(x1: BigInt, x2: BigInt) -> Int8:
     return magnitude_comparison if not x1.sign else -magnitude_comparison
 
 
-fn greater(x1: BigInt, x2: BigInt) -> Bool:
+fn greater(x1: BigInt10, x2: BigInt10) -> Bool:
     """Checks if the first number is greater than the second.
 
     Args:
@@ -78,7 +78,7 @@ fn greater(x1: BigInt, x2: BigInt) -> Bool:
     return compare(x1, x2) > 0
 
 
-fn greater_equal(x1: BigInt, x2: BigInt) -> Bool:
+fn greater_equal(x1: BigInt10, x2: BigInt10) -> Bool:
     """Checks if the first number is greater than or equal to the second.
 
     Args:
@@ -91,7 +91,7 @@ fn greater_equal(x1: BigInt, x2: BigInt) -> Bool:
     return compare(x1, x2) >= 0
 
 
-fn less(x1: BigInt, x2: BigInt) -> Bool:
+fn less(x1: BigInt10, x2: BigInt10) -> Bool:
     """Checks if the first number is less than the second.
 
     Args:
@@ -104,7 +104,7 @@ fn less(x1: BigInt, x2: BigInt) -> Bool:
     return compare(x1, x2) < 0
 
 
-fn less_equal(x1: BigInt, x2: BigInt) -> Bool:
+fn less_equal(x1: BigInt10, x2: BigInt10) -> Bool:
     """Checks if the first number is less than or equal to the second.
 
     Args:
@@ -117,7 +117,7 @@ fn less_equal(x1: BigInt, x2: BigInt) -> Bool:
     return compare(x1, x2) <= 0
 
 
-fn equal(x1: BigInt, x2: BigInt) -> Bool:
+fn equal(x1: BigInt10, x2: BigInt10) -> Bool:
     """Checks if two numbers are equal.
 
     Args:
@@ -130,7 +130,7 @@ fn equal(x1: BigInt, x2: BigInt) -> Bool:
     return compare(x1, x2) == 0
 
 
-fn not_equal(x1: BigInt, x2: BigInt) -> Bool:
+fn not_equal(x1: BigInt10, x2: BigInt10) -> Bool:
     """Checks if two numbers are not equal.
 
     Args:

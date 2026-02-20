@@ -1,7 +1,7 @@
-"""Benchmarks for BigInt2 multiplication. Compares BigInt, BigInt2, and Python int."""
+"""Benchmarks for BigInt2 multiplication. Compares BigInt10, BigInt2, and Python int."""
 
-from decimojo.bigint.bigint import BigInt
-import decimojo.bigint.arithmetics
+from decimojo.bigint10.bigint10 import BigInt10
+import decimojo.bigint10.arithmetics
 from decimojo.bigint2.bigint2 import BigInt2
 import decimojo.bigint2.arithmetics
 from decimojo.tests import (
@@ -29,8 +29,8 @@ fn run_case(
     log_print("a: " + bc.a[:80], log_file)
     log_print("b: " + bc.b[:80], log_file)
 
-    var m1a = BigInt(bc.a)
-    var m1b = BigInt(bc.b)
+    var m1a = BigInt10(bc.a)
+    var m1b = BigInt10(bc.b)
     var m2a = BigInt2(bc.a)
     var m2b = BigInt2(bc.b)
     var py = Python.import_module("builtins")
@@ -47,7 +47,7 @@ fn run_case(
         var rp_str = String(rp)
 
         log_print(
-            "BigInt result:   "
+            "BigInt10 result:   "
             + r1_str[:80]
             + (" ..." if len(r1_str) > 80 else ""),
             log_file,
@@ -93,10 +93,10 @@ fn run_case(
         sf_bigint.append(s1)
         sf_bigint2.append(s2)
 
-        log_print("BigInt:          " + String(t1) + " ns/iter", log_file)
+        log_print("BigInt10:          " + String(t1) + " ns/iter", log_file)
         log_print("BigInt2:         " + String(t2) + " ns/iter", log_file)
         log_print("Python:          " + String(tp) + " ns/iter", log_file)
-        log_print("BigInt speedup:  " + String(s1) + "×", log_file)
+        log_print("BigInt10 speedup:  " + String(s1) + "×", log_file)
         log_print("BigInt2 speedup: " + String(s2) + "×", log_file)
     except e:
         log_print("Error: " + String(e), log_file)
@@ -130,7 +130,7 @@ fn main() raises:
     print_summary_dual(
         "BigInt2 Multiplication Benchmark Summary",
         sf1,
-        "BigInt",
+        "BigInt10",
         sf2,
         "BigInt2",
         iterations,
