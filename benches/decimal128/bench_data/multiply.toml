@@ -1,0 +1,57 @@
+[config]
+iterations = 1000
+
+[[cases]]
+a = "12"
+b = "34"
+name = "Small integers"
+
+[[cases]]
+a = "12.34"
+b = "5.67"
+name = "Simple decimals"
+
+[[cases]]
+a = "12.3"
+b = "4.56"
+name = "Different scales"
+
+[[cases]]
+a = "123.45"
+b = "0"
+name = "Multiplication by zero"
+
+[[cases]]
+a = "123.45"
+b = "1"
+name = "Multiplication by one"
+
+[[cases]]
+a = "12.34"
+b = "-5.67"
+name = "Negative numbers"
+
+[[cases]]
+a = "0.12345678901234567"
+b = "0.98765432109876543"
+name = "High precision multiplication"
+
+[[cases]]
+a = "123456789"
+b = "987654321"
+name = "Large integer multiplication"
+
+[[cases]]
+a = "0.01"
+b = "0.01"
+name = "Fractional multiplication"
+
+[[cases]]
+a = "10"
+b = "10"
+name = "Powers of 10"
+
+[[cases]]
+a = "2.7182818284590452353602874714"
+b = "1.6487212707001281468486507878"
+name = "e * e^0.5"

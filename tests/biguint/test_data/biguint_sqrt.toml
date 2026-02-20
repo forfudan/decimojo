@@ -48,7 +48,7 @@ description = "sqrt(10000) = 100"
 expected = "100"
 
 [[sqrt_tests]]
-a = "12345678901234567890"
+a = "{1234567890,2}"
 description = "sqrt(12345678901234567890) = 3513641828.820... → 3513641828 (truncated)"
 expected = "3513641828"
 
@@ -58,6 +58,6 @@ description = "Large number square root"
 expected = "46195737075919770589653035762589470420235915593494302749617514351576404175199142"
 
 [[sqrt_tests]]
-a = "1440000000000000000000000000000000000000000"
+a = "144{0,40}"
 description = "Square root of a large perfect square"
-expected = "1200000000000000000000"
+expected = "12{0,20}"

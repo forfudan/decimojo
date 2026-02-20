@@ -1,0 +1,52 @@
+[config]
+iterations = 1000
+
+[[cases]]
+a = "12345"
+b = "6789"
+name = "Simple integers"
+
+[[cases]]
+a = "123.45"
+b = "67.89"
+name = "Simple decimals (same scale)"
+
+[[cases]]
+a = "123.4"
+b = "67.89"
+name = "Decimals with different scales"
+
+[[cases]]
+a = "67.89"
+b = "123.45"
+name = "Subtraction resulting in negative"
+
+[[cases]]
+a = "123.45"
+b = "-67.89"
+name = "Subtracting a negative"
+
+[[cases]]
+a = "10000.00"
+b = "0.01"
+name = "Requiring borrow across multiple digits"
+
+[[cases]]
+a = "1.0000001"
+b = "1.0000000"
+name = "Small difference"
+
+[[cases]]
+a = "0.123456789012345678901234567"
+b = "0.023456789012345678901234567"
+name = "High precision subtraction"
+
+[[cases]]
+a = "123.45"
+b = "123.45"
+name = "Subtraction resulting in zero"
+
+[[cases]]
+a = "79228162514264337593543950334"
+b = "79228162514264337593543950333"
+name = "Very large numbers"

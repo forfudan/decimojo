@@ -43,7 +43,7 @@ description = "Division by 1: 42 / 1"
 expected = "42"
 
 [[truncate_divide_tests]]
-a = "1000000000000"
+a = "1{0,12}"
 b = "1000000"
 description = "Large number division: 1000000000000 / 1000000"
 expected = "1000000"
@@ -135,40 +135,40 @@ expected = "0"
 # Large number division
 # ===----------------------------------------------------------------------=== #
 [[truncate_divide_tests]]
-a = "100000000000000000000000000000000000000000000000000"
+a = "1{0,50}"
 b = "7"
 description = "Large positive number divided by small number: 10^50 / 7"
-expected = "14285714285714285714285714285714285714285714285714"
+expected = "{142857,8}14"
 
 [[truncate_divide_tests]]
-a = "-100000000000000000000000000000000000000000000000000"
+a = "-1{0,50}"
 b = "7"
 description = "Large negative number divided by small number: -10^50 / 7"
-expected = "-14285714285714285714285714285714285714285714285714"
+expected = "-{142857,8}14"
 
 [[truncate_divide_tests]]
-a = "100000000000000000000000000000000000000000000000000"
+a = "1{0,50}"
 b = "-7"
 description = "Large positive / small negative: 10^50 / -7"
-expected = "-14285714285714285714285714285714285714285714285714"
+expected = "-{142857,8}14"
 
 [[truncate_divide_tests]]
-a = "-100000000000000000000000000000000000000000000000000"
+a = "-1{0,50}"
 b = "-7"
 description = "Large negative / small negative: -10^50 / -7"
-expected = "14285714285714285714285714285714285714285714285714"
+expected = "{142857,8}14"
 
 [[truncate_divide_tests]]
-a = "999999999999999999999999999999"
-b = "999999999999999"
+a = "{9,30}"
+b = "{9,15}"
 description = "Large / large (same sign): 30 nines / 15 nines"
-expected = "1000000000000001"
+expected = "1{0,14}1"
 
 [[truncate_divide_tests]]
-a = "999999999999999999999999999999"
-b = "-999999999999999"
+a = "{9,30}"
+b = "-{9,15}"
 description = "Large / large (opposite sign): 30 nines / -15 nines"
-expected = "-1000000000000001"
+expected = "-1{0,14}1"
 
 # ===----------------------------------------------------------------------=== #
 # Truncate division rounding behavior (rounds toward zero)
@@ -243,7 +243,7 @@ description = "Identity test: negative dividend, negative divisor: -17 / -5"
 expected = "3"
 
 [[truncate_divide_tests]]
-a = "12345678901234567890"
+a = "{1234567890,2}"
 b = "987654321"
 description = "Identity test with large numbers: 12345678901234567890 / 987654321"
 expected = "12499999887"
@@ -276,14 +276,14 @@ description = "Consecutive numbers (negative): -101 / 100"
 expected = "-1"
 
 [[truncate_divide_tests]]
-a = "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
-b = "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+a = "{9,99}"
+b = "{9,99}"
 description = "Equal large positive numbers: 100 nines / 100 nines"
 expected = "1"
 
 [[truncate_divide_tests]]
-a = "-999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
-b = "-999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+a = "-{9,99}"
+b = "-{9,99}"
 description = "Equal large negative numbers: -100 nines / -100 nines"
 expected = "1"
 
@@ -294,10 +294,10 @@ description = "Truncate vs floor comparison: -23 / 5 = -4.6 → -4 (truncate), -
 expected = "-4"
 
 [[truncate_divide_tests]]
-a = "100000000000000000000"
+a = "1{0,20}"
 b = "100000"
 description = "Powers of 10 division: 10^20 / 10^5"
-expected = "1000000000000000"
+expected = "1{0,15}"
 
 # ===----------------------------------------------------------------------=== #
 # Python comparison cases (for verification)
@@ -315,7 +315,7 @@ description = "Python comparison: negative dividend (differs from floor): -42 / 
 expected = "-8"
 
 [[truncate_divide_tests]]
-a = "999999999999999999999"
+a = "{9,21}"
 b = "3"
 description = "Python comparison: large positive numbers: 21 nines / 3"
-expected = "333333333333333333333"
+expected = "{3,21}"

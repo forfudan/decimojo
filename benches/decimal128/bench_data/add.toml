@@ -1,0 +1,52 @@
+[config]
+iterations = 1000
+
+[[cases]]
+a = "12345"
+b = "67890"
+name = "Simple integers"
+
+[[cases]]
+a = "123.45"
+b = "67.89"
+name = "Simple decimals"
+
+[[cases]]
+a = "0.123456789012345678901234567"
+b = "0.987654321098765432109876543"
+name = "High-precision decimals"
+
+[[cases]]
+a = "123.4"
+b = "67.89"
+name = "Different scales"
+
+[[cases]]
+a = "999.99"
+b = "0.01"
+name = "Numbers requiring carrying"
+
+[[cases]]
+a = "79228162514264337593543950334"
+b = "1"
+name = "Very large numbers"
+
+[[cases]]
+a = "0.{0,27}1"
+b = "0.{0,27}2"
+name = "Very small numbers"
+
+[[cases]]
+a = "123.456"
+b = "0"
+name = "Addition with zero"
+
+[[cases]]
+a = "123.45"
+b = "-67.89"
+name = "Negative numbers"
+
+[[cases]]
+a = "123.45"
+b = "-123.45"
+name = "Addition resulting in zero"

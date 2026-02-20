@@ -1,0 +1,102 @@
+[config]
+iterations = 1000
+
+[[cases]]
+a = "42"
+b = "58"
+name = "Small integer addition"
+
+[[cases]]
+a = "12345"
+b = "67890"
+name = "Medium integer addition"
+
+[[cases]]
+a = "9999999999"
+b = "1234567890"
+name = "Large integer addition"
+
+[[cases]]
+a = "{9,50}"
+b = "1{0,49}"
+name = "Very large integer addition"
+
+[[cases]]
+a = "-12345"
+b = "-67890"
+name = "Negative number addition"
+
+[[cases]]
+a = "12345"
+b = "-6789"
+name = "Mixed sign addition (positive + negative)"
+
+[[cases]]
+a = "-12345"
+b = "67890"
+name = "Mixed sign addition (negative + positive)"
+
+[[cases]]
+a = "123456789"
+b = "0"
+name = "Addition with zero"
+
+[[cases]]
+a = "987654321"
+b = "-987654321"
+name = "Addition resulting in zero"
+
+[[cases]]
+a = "1{0,20}"
+b = "1{0,15}"
+name = "Power-of-10 addition"
+
+[[cases]]
+a = "10946"
+b = "17711"
+name = "Fibonacci numbers addition"
+
+[[cases]]
+a = "{9,100}"
+b = "1{0,99}"
+name = "Extreme large integer addition"
+
+[[cases]]
+a = "1{0,30}"
+b = "{9,10}"
+name = "Addition with uneven length numbers"
+
+[[cases]]
+a = "{9,10}"
+b = "1{0,30}"
+name = "Addition with uneven length numbers (reversed)"
+
+[[cases]]
+a = "{9,25}"
+b = "1"
+name = "Addition with many carries"
+
+[[cases]]
+a = "2147483647"
+b = "2305843009213693951"
+name = "Prime number addition"
+
+[[cases]]
+a = "9223372036854775807"
+b = "9223372036854775807"
+name = "Addition near Int64 limit"
+
+[[cases]]
+a = "18446744073709551615"
+b = "1"
+name = "Addition near UInt64 limit"
+
+[[cases]]
+a = "{1,40}"
+b = "{9,40}"
+name = "Addition of repeated digits"
+
+[[cases]]
+a = "340282366920938463463374607431768211456"
+b = "115792089237316195423570985008687907853269984665640564039457584007913129639936"
+name = "Addition of powers of two"

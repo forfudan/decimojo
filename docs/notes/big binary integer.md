@@ -1,5 +1,39 @@
 # Big Binary Integer plan
 
+The current `BigInt` is based on `BigUInt` which uses a decimal representation with a base of 10^9. This design choice is to re-use the same data structure for the buffers of `BigInt` (as we implemented `BigUInt` initially for `BigDecimal`). However, when users use `BigInt` for general integer arithmetic, a binary representation with a base of 2^32 (or 2^64) would be more efficient. Thus, it is nice to have a separate binary implementation of `BigInt2` as the core integer type, while keeping the current decimal implementation of `BigInt10` for some special use cases (e.g., as a intermediate type when printing `BigInt2`). The `BigUInt` will continue to serve as the base type for `BigDecimal`.
+
+## Type system and renaming plan
+
+Currently we have:
+
+| type         | alias             | information                          | base |
+| ------------ | ----------------- | ------------------------------------ | ---- |
+| `BigDecimal` | `BDec`, `Decimal` | arbitrary-precision decimal          | 10^9 |
+| `BigInt`     | `BInt`            | arbitrary-precision integer          | 10^9 |
+| `BigUInt`    | `BUInt`           | arbitrary-precision unsigned integer | 10^9 |
+| `Decimal128` | `Dec128`          | 128-bit fixed-precision decimal      | -    |
+
+In the future, we will have:
+
+| type         | alias             | information                                               | internal representation |
+| ------------ | ----------------- | --------------------------------------------------------- | ----------------------- |
+| `BigDecimal` | `BDec`, `Decimal` | Decimal，arbitrary precision                              | 10^9                    |
+| `BigInt`     | `BInt2`           | Binary，as core big int type                              | 2^32                    |
+| `BigInt10`   | `BInt10`          | Decimal，gradually hidden from users                      | 10^9                    |
+| `BigUInt`    | `BigUInt`         | Decimal，as base type for `BigDecimal`, hidden from users | 10^9                    |
+| `Decimal128` | `Dec128`          | Decimal，128-bit fixed precision                          | -                       |
+
+Current `BigInt` and `BigUInt` are implemented based on 10^9 decimal representation. `BigUInt` will continue to serve as the base type for `BigDecimal`.
+
+At the same time, we will develop a new binary implementation of `BigInt2` as the core integer type.
+
+Once `BigInt2` is stable and performs well, we will proceed with renaming:
+
+- `BigInt` will be renamed to `BigInt10`
+- The alias `BInt` will be assigned to `BigInt2` (binary implementation)
+
+Then `BigInt10` and `BigUInt` will be hidden from users, leaving only `BigInt2` (binary implementation) and `BigDecimal` (decimal implementation) exposed to users.
+
 ## 大整數的 limb 大小
 
 | 項目              | limb 大小    | 存儲類型    | 原因                                          |
@@ -10,35 +44,3 @@
 | Rust `num-bigint` | 2^32 或 2^64 | native word | 同 GMP                                        |
 | Go `math/big`     | 2^32 或 2^64 | native word | 同 GMP                                        |
 | OpenSSL BIGNUM    | 2^32 或 2^64 | native word | 同 GMP                                        |
-
-## 命名
-
-目前情況：
-
-| type         | alias             | information                          | base |
-| ------------ | ----------------- | ------------------------------------ | ---- |
-| `BigUInt`    | `BUInt`           | arbitrary-precision unsigned integer | 10^9 |
-| `BigInt`     | `BInt`            | arbitrary-precision integer          | 10^9 |
-| `BigDecimal` | `BDec`, `Decimal` | arbitrary-precision decimal          | 10^9 |
-| `Decimal128` | `Dec128`          | 128-bit fixed-precision decimal      | -    |
-
-將來：
-
-| type         | alias             | information                        | internal representation |
-| ------------ | ----------------- | ---------------------------------- | ----------------------- |
-| `BigInt`     | `BInt`            | 二進制，作為核心整數類型           | 2^32                    |
-| `BigUInt`    | `BigUInt`         | 十進制，作為`BigDecimal`的基礎類型 | 10^9                    |
-| `BigInt10`   | `BDInt`           | 十進制，逐漸不對用戶暴露           | 10^9                    |
-| `BigDecimal` | `BDec`, `Decimal` | 十進制，任意精度                   | 10^9                    |
-| `Decimal128` | `Dec128`          | 十進制，128-bit固定精度            | -                       |
-
-當前的 `BigInt` 和 `BigUInt` 是 10^9 基底的十進制實現。`BigUInt` 將繼續作為 `BigDecimal` 的基礎類型。
-
-同時，我們將開發一個新的二進制實現的 `BigInt2`，作為核心整數類型。
-
-一旦 `BigInt2` 穩定並且性能優越，我們將進行更名：
-
-- `BigInt` 將改為 `BigInt10`
-- `BigInt2` 將改為 `BigInt`
-
-然後 `BigInt10` 將逐漸不對用戶暴露，最終只保留 `BigInt` (二進制實現) 和 `BigDecimal` (十進制實現)。

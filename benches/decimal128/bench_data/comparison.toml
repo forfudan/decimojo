@@ -1,0 +1,182 @@
+[config]
+iterations = 10000
+
+[[cases]]
+a = "100"
+b = "100"
+name = "Equal integers"
+op = "=="
+
+[[cases]]
+a = "100"
+b = "200"
+name = "Different integers (<)"
+op = "<"
+
+[[cases]]
+a = "200"
+b = "100"
+name = "Different integers (>)"
+op = ">"
+
+[[cases]]
+a = "100.00"
+b = "100"
+name = "Equal decimal with different scales"
+op = "=="
+
+[[cases]]
+a = "0"
+b = "-0.00"
+name = "Zero comparison (==)"
+op = "=="
+
+[[cases]]
+a = "0.0000000000000000000000000001"
+b = "0.0000000000000000000000000002"
+name = "Very small difference (<)"
+op = "<"
+
+[[cases]]
+a = "9999999999999999999999999999"
+b = "9999999999999999999999999998"
+name = "Very large numbers (>)"
+op = ">"
+
+[[cases]]
+a = "-10"
+b = "-20"
+name = "Negative numbers (>)"
+op = ">"
+
+[[cases]]
+a = "-10"
+b = "10"
+name = "Mixed signs (<)"
+op = "<"
+
+[[cases]]
+a = "99.99"
+b = "100"
+name = "Not equal (!=)"
+op = "!="
+
+[[cases]]
+a = "50"
+b = "100"
+name = "Less than or equal (<=, true because less)"
+op = "<="
+
+[[cases]]
+a = "100"
+b = "100"
+name = "Less than or equal (<=, true because equal)"
+op = "<="
+
+[[cases]]
+a = "200"
+b = "100"
+name = "Greater than or equal (>=, true because greater)"
+op = ">="
+
+[[cases]]
+a = "100"
+b = "100"
+name = "Greater than or equal (>=, true because equal)"
+op = ">="
+
+[[cases]]
+a = "0.12345678901234567890123456789"
+b = "0.12345678901234567890123456789"
+name = "Equal high precision numbers"
+op = "=="
+
+[[cases]]
+a = "0.12345678901234567890123456780"
+b = "0.12345678901234567890123456789"
+name = "Almost equal high precision (<)"
+op = "<"
+
+[[cases]]
+a = "1.10000"
+b = "1.1"
+name = "Equal with different trailing zeros"
+op = "=="
+
+[[cases]]
+a = "1.10001"
+b = "1.1"
+name = "Not equal with significant trailing digits"
+op = "!="
+
+[[cases]]
+a = "9999999"
+b = "-0.000001"
+name = "Large positive vs small negative (>)"
+op = ">"
+
+[[cases]]
+a = "0.000000000000000000000000001"
+b = "0.000000000000000000000000001"
+name = "Equal near zero (==)"
+op = "=="
+
+[[cases]]
+a = "19.99"
+b = "20.00"
+name = "Common financial values (<)"
+op = "<"
+
+[[cases]]
+a = "0"
+b = "-0"
+name = "Different sign zeros (==)"
+op = "=="
+
+[[cases]]
+a = "9.999999999"
+b = "10"
+name = "Repeated digits comparison (<)"
+op = "<"
+
+[[cases]]
+a = "1.23e2"
+b = "123"
+name = "Scientific notation equivalent (==)"
+op = "=="
+
+[[cases]]
+a = "100.00"
+b = "1.0e2"
+name = "Same value different format (==)"
+op = "=="
+
+[[cases]]
+a = "0.999999999999999999999"
+b = "1.000000000000000000000"
+name = "Almost but not quite equal values (<)"
+op = "<"
+
+[[cases]]
+a = "-100"
+b = "-200"
+name = "Greater than with negative numbers (>)"
+op = ">"
+
+[[cases]]
+a = "-42.5"
+b = "-42.50"
+name = "Equal negative values (==)"
+op = "=="
+
+[[cases]]
+a = "0.0000000000000000000000000001"
+b = "0"
+name = "Close to zero comparison (>)"
+op = ">"
+
+[[cases]]
+a = "79228162514264337593543950335"
+b = "79228162514264337593543950334"
+name = "Boundary values (>)"
+op = ">"

@@ -188,6 +188,48 @@ fn test_bigint2_division_by_zero() raises:
     testing.assert_true(raised, "Truncate division by zero should raise")
 
 
+fn test_bigint2_zero_quotient_mixed_sign() raises:
+    """Regression test: 0 // negative should be +0 with sign == False."""
+    # Floor divide: 0 // -5
+    var result_floor = BigInt2(0) // BigInt2(-5)
+    testing.assert_equal(
+        lhs=String(result_floor),
+        rhs="0",
+        msg="0 // -5 should produce numeric 0",
+    )
+    testing.assert_equal(
+        lhs=result_floor.sign,
+        rhs=False,
+        msg="0 // -5 should have sign == False (no negative zero)",
+    )
+
+    # Truncate divide: 0 truncate_divide -5
+    var result_trunc = BigInt2(0).truncate_divide(BigInt2(-5))
+    testing.assert_equal(
+        lhs=String(result_trunc),
+        rhs="0",
+        msg="0 truncate_divide -5 should produce numeric 0",
+    )
+    testing.assert_equal(
+        lhs=result_trunc.sign,
+        rhs=False,
+        msg="0 truncate_divide -5 should have sign == False (no negative zero)",
+    )
+
+    # Floor divide: 0 // -1
+    var result_neg1 = BigInt2(0) // BigInt2(-1)
+    testing.assert_equal(
+        lhs=String(result_neg1),
+        rhs="0",
+        msg="0 // -1 should produce numeric 0",
+    )
+    testing.assert_equal(
+        lhs=result_neg1.sign,
+        rhs=False,
+        msg="0 // -1 should have sign == False (no negative zero)",
+    )
+
+
 fn test_bigint2_augmented_assignment() raises:
     """Test augmented assignment operators (+=, -=, *=)."""
     var a = BigInt2(100)

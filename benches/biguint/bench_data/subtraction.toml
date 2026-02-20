@@ -1,0 +1,57 @@
+[config]
+iterations = 1000
+
+[[cases]]
+a = "{123456789,2}"
+b = "987654321"
+name = "Subtraction with 2 words - 1 word"
+
+[[cases]]
+a = "{123456789,4}"
+b = "{987654321,2}"
+name = "Subtraction with 4 words - 2 words"
+
+[[cases]]
+a = "{123456789,8}"
+b = "{987654321,4}"
+name = "Subtraction with 8 words - 4 words"
+
+[[cases]]
+a = "{123456789,16}"
+b = "{987654321,8}"
+name = "Subtraction with 16 words - 8 words"
+
+[[cases]]
+a = "{123456789,32}"
+b = "{987654321,16}"
+name = "Subtraction with 32 words - 16 words"
+
+[[cases]]
+a = "{123456789,64}"
+b = "{987654321,32}"
+name = "Subtraction with 64 words - 32 words"
+
+[[cases]]
+a = "{123456789,256}"
+b = "{987654321,128}"
+name = "Subtraction with 256 words - 128 words"
+
+[[cases]]
+a = "{123456789,1024}"
+b = "{987654321,512}"
+name = "Subtraction with 1024 words - 512 words"
+
+[[cases]]
+a = "{123456789,4096}"
+b = "{987654321,2048}"
+name = "Subtraction with 4096 words - 2048 words"
+
+[[cases]]
+a = "{123456789,16384}"
+b = "{987654321,8192}"
+name = "Subtraction with 16384 words - 8192 words"
+
+[[cases]]
+a = "{123456789,32768}"
+b = "{987654321,16384}"
+name = "Subtraction with 32768 words - 16384 words"

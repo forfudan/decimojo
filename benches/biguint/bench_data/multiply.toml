@@ -1,0 +1,212 @@
+[config]
+iterations = 100
+
+[[cases]]
+a = "42"
+b = "58"
+name = "Small integer multiplication"
+
+[[cases]]
+a = "12345"
+b = "67890"
+name = "Medium integer multiplication"
+
+[[cases]]
+a = "9876543210"
+b = "0"
+name = "Multiplication by zero"
+
+[[cases]]
+a = "9876543210"
+b = "1"
+name = "Multiplication by one"
+
+[[cases]]
+a = "100000"
+b = "100000"
+name = "Powers of ten (10^5 * 10^5)"
+
+[[cases]]
+a = "9999999999"
+b = "8888888888"
+name = "Medium-large multiplication"
+
+[[cases]]
+a = "999999999"
+b = "999999999"
+name = "Large base multiplication"
+
+[[cases]]
+a = "10946"
+b = "17711"
+name = "Fibonacci numbers multiplication"
+
+[[cases]]
+a = "2147483647"
+b = "2305843009213693951"
+name = "Prime numbers multiplication"
+
+[[cases]]
+a = "123456789012345"
+b = "123456789012345"
+name = "Square of a large number"
+
+[[cases]]
+a = "4294967296"
+b = "4294967296"
+name = "Power-of-2 numbers"
+
+[[cases]]
+a = "{9,50}"
+b = "9"
+name = "Large * Small"
+
+[[cases]]
+a = "12345"
+b = "10000"
+name = "Decimal shift multiplication"
+
+[[cases]]
+a = "999999998"
+b = "999999999"
+name = "Near word boundary multiplication"
+
+[[cases]]
+a = "999999999"
+b = "2"
+name = "Cross word boundary multiplication"
+
+[[cases]]
+a = "3628800"
+b = "479001600"
+name = "Factorial-like numbers"
+
+[[cases]]
+a = "{9,20}"
+b = "{9,20}"
+name = "Multiplication with repeating digits"
+
+[[cases]]
+a = "{1,50}"
+b = "{1,5}"
+name = "Uneven length multiplication"
+
+[[cases]]
+a = "115792089237316195423570985008687907853269984665640564039457584007908834671663"
+b = "65537"
+name = "Cryptographic size numbers"
+
+[[cases]]
+a = "{1,25}"
+b = "{9,25}"
+name = "Karatsuba threshold test"
+
+[[cases]]
+a = "{9,30}"
+b = "{9,30}"
+name = "Large product with carries"
+
+[[cases]]
+a = "1{0,100}"
+b = "42"
+name = "Very large number * small number"
+
+[[cases]]
+a = "{9,100}"
+b = "{9,100}"
+name = "Very large numbers multiplication"
+
+[[cases]]
+a = "{9,9}"
+b = "{9,9}"
+name = "Exact word-sized multiplication"
+
+[[cases]]
+a = "{2,40}"
+b = "{2,40}"
+name = "Binary-like values"
+
+[[cases]]
+a = "12345678901234567890"
+b = "12345678901234567890"
+name = "Perfect square calculation"
+
+[[cases]]
+a = "65535"
+b = "65537"
+name = "Product near UInt32 limit"
+
+[[cases]]
+a = "1{0,40}"
+b = "16{0,20}"
+name = "Product of different bases"
+
+[[cases]]
+a = "31415926535897932384626433832795"
+b = "27182818284590452353602874713527"
+name = "Mathematical constants product"
+
+[[cases]]
+a = "{123456789,200}"
+b = "{987654321,200}"
+name = "Extreme large numbers multiplication (1800 digits * 1800 digits)"
+
+[[cases]]
+a = "{123456789,2}"
+b = "{987654321,2}"
+name = "2 words * 2 words multiplication"
+
+[[cases]]
+a = "{123456789,4}"
+b = "{987654321,4}"
+name = "4 words * 4 words multiplication"
+
+[[cases]]
+a = "{123456789,8}"
+b = "{987654321,8}"
+name = "8 words * 8 words multiplication"
+
+[[cases]]
+a = "{123456789,16}"
+b = "{987654321,16}"
+name = "16 words * 16 words multiplication"
+
+[[cases]]
+a = "{123456789,32}"
+b = "{987654321,32}"
+name = "32 words * 32 words multiplication"
+
+[[cases]]
+a = "{123456789,64}"
+b = "{987654321,64}"
+name = "64 words * 64 words multiplication"
+
+[[cases]]
+a = "{123456789,128}"
+b = "{987654321,128}"
+name = "128 words * 128 words multiplication"
+
+[[cases]]
+a = "{123456789,256}"
+b = "{987654321,256}"
+name = "256 words * 256 words multiplication"
+
+[[cases]]
+a = "{123456789,512}"
+b = "{987654321,512}"
+name = "512 words * 512 words multiplication"
+
+[[cases]]
+a = "{123456789,1024}"
+b = "{987654321,1024}"
+name = "1024 words * 1024 words multiplication"
+
+[[cases]]
+a = "{123456789,2048}"
+b = "{987654321,2048}"
+name = "2048 words * 2048 words multiplication"
+
+[[cases]]
+a = "{123456789,4096}"
+b = "{987654321,4096}"
+name = "4096 words * 4096 words multiplication"

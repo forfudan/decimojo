@@ -1,0 +1,302 @@
+[config]
+iterations = 100
+
+[[cases]]
+a = "100"
+b = "10"
+name = "Simple division with no remainder (positive/positive)"
+
+[[cases]]
+a = "10"
+b = "3"
+name = "Division with remainder (positive/positive)"
+
+[[cases]]
+a = "5"
+b = "10"
+name = "Division resulting in zero (positive/positive)"
+
+[[cases]]
+a = "12345"
+b = "1"
+name = "Division by one (positive/positive)"
+
+[[cases]]
+a = "-10"
+b = "3"
+name = "Negative dividend, positive divisor"
+
+[[cases]]
+a = "-11"
+b = "3"
+name = "Negative dividend with remainder, positive divisor"
+
+[[cases]]
+a = "10"
+b = "-3"
+name = "Positive dividend, negative divisor"
+
+[[cases]]
+a = "11"
+b = "-3"
+name = "Positive dividend with remainder, negative divisor"
+
+[[cases]]
+a = "-10"
+b = "-3"
+name = "Negative dividend, negative divisor"
+
+[[cases]]
+a = "-11"
+b = "-3"
+name = "Negative dividend with remainder, negative divisor"
+
+[[cases]]
+a = "0"
+b = "5"
+name = "Zero dividend, positive divisor"
+
+[[cases]]
+a = "0"
+b = "-5"
+name = "Zero dividend, negative divisor"
+
+[[cases]]
+a = "9999999999"
+b = "333"
+name = "Large number division (positive/positive)"
+
+[[cases]]
+a = "-9999999999"
+b = "333"
+name = "Large number division (negative/positive)"
+
+[[cases]]
+a = "9999999999"
+b = "-333"
+name = "Large number division (positive/negative)"
+
+[[cases]]
+a = "-9999999999"
+b = "-333"
+name = "Large number division (negative/negative)"
+
+[[cases]]
+a = "1{0,50}"
+b = "7"
+name = "Very large number division (positive/positive)"
+
+[[cases]]
+a = "-1{0,50}"
+b = "7"
+name = "Very large number division (negative/positive)"
+
+[[cases]]
+a = "1{0,50}"
+b = "-7"
+name = "Very large number division (positive/negative)"
+
+[[cases]]
+a = "-1{0,50}"
+b = "-7"
+name = "Very large number division (negative/negative)"
+
+[[cases]]
+a = "1{0,30}"
+b = "1{0,10}"
+name = "Exact large division (positive/positive)"
+
+[[cases]]
+a = "-1{0,30}"
+b = "1{0,10}"
+name = "Exact large division (negative/positive)"
+
+[[cases]]
+a = "1{0,30}"
+b = "-1{0,10}"
+name = "Exact large division (positive/negative)"
+
+[[cases]]
+a = "-1{0,30}"
+b = "-1{0,10}"
+name = "Exact large division (negative/negative)"
+
+[[cases]]
+a = "12345"
+b = "{9,20}"
+name = "Small dividend, very large divisor"
+
+[[cases]]
+a = "-12345"
+b = "{9,20}"
+name = "Small negative dividend, very large divisor"
+
+[[cases]]
+a = "6765"
+b = "4181"
+name = "Fibonacci number division"
+
+[[cases]]
+a = "2147483647"
+b = "997"
+name = "Prime number division"
+
+[[cases]]
+a = "9223372036854775807"
+b = "2"
+name = "Division near Int64 limit"
+
+[[cases]]
+a = "-9223372036854775807"
+b = "2"
+name = "Division near negative Int64 limit"
+
+[[cases]]
+a = "-10"
+b = "3"
+name = "Division where floor differs from truncate (negative/positive)"
+
+[[cases]]
+a = "10"
+b = "-3"
+name = "Division where floor differs from truncate (positive/negative)"
+
+[[cases]]
+a = "-{9,50}"
+b = "3"
+name = "Large division where floor differs from truncate"
+
+[[cases]]
+a = "1000"
+b = "999"
+name = "Division with divisor just below dividend"
+
+[[cases]]
+a = "-1000"
+b = "-999"
+name = "Division with negative divisor just below negative dividend"
+
+[[cases]]
+a = "11"
+b = "3"
+name = "Division where dividend is one less than divisor multiple"
+
+[[cases]]
+a = "-11"
+b = "3"
+name = "Division where negative dividend is one more than divisor multiple"
+
+[[cases]]
+a = "1{0,20}"
+b = "1{0,5}"
+name = "Division with exact powers of 10"
+
+[[cases]]
+a = "{9,30}"
+b = "{9,15}"
+name = "Division of repeated digits (positive)"
+
+[[cases]]
+a = "-{9,30}"
+b = "{9,15}"
+name = "Division of repeated digits (negative dividend)"
+
+[[cases]]
+a = "{9,100}"
+b = "3"
+name = "Extreme large dividend and small divisor"
+
+[[cases]]
+a = "-{9,100}"
+b = "3"
+name = "Extreme large negative dividend and small divisor (100 digits vs 1 digit)"
+
+[[cases]]
+a = "1{0,50}"
+b = "256"
+name = "Division with powers of 2"
+
+[[cases]]
+a = "123456789"
+b = "123456780"
+name = "Division yielding a single-digit result"
+
+[[cases]]
+a = "8675309123456789098765432112345678909876543211234567"
+b = "12345678901234567890"
+name = "Division with random large numbers (52 digits vs 20 digits)"
+
+[[cases]]
+a = "-8675309123456789098765432112345678909876543211234567"
+b = "12345678901234567890"
+name = "Division of very large numbers with different signs (52 digits vs 20 digits)"
+
+[[cases]]
+a = "{12345,10}"
+b = "{6789,12}"
+name = "Division with around 50 digits divisor just below dividend (50 digits vs 48 digits)"
+
+[[cases]]
+a = "{990132857498314692374162398217,10}"
+b = "{85172390413429847239,10}"
+name = "Division of very large repeated digits (300 digits vs 200 digits)"
+
+[[cases]]
+a = "-{123456789,30}"
+b = "{987654321,15}"
+name = "Division of large numbers with different signs (270 digits vs 135 digits)"
+
+[[cases]]
+a = "{123456789,250}"
+b = "-{987654321,100}"
+name = "Division of very large numbers with different signs (2250 digits vs 900 digits)"
+
+[[cases]]
+a = "1{7,499}"
+b = "9{8,199}"
+name = "Division with 500-digit dividend and 200-digit divisor (positive/positive)"
+
+[[cases]]
+a = "-1{7,499}"
+b = "9{8,199}"
+name = "Division with 500-digit dividend and 200-digit divisor (negative/positive)"
+
+[[cases]]
+a = "1{7,499}"
+b = "-9{8,199}"
+name = "Division with 500-digit dividend and 200-digit divisor (positive/negative)"
+
+[[cases]]
+a = "-1{7,499}"
+b = "-9{8,199}"
+name = "Division with 500-digit dividend and 200-digit divisor (negative/negative)"
+
+[[cases]]
+a = "{1010101010,60}"
+b = "{9090909090,30}"
+name = "Division with alternating pattern (600 digits / 300 digits)"
+
+[[cases]]
+a = "{2357111317,70}"
+b = "{1931374143,35}"
+name = "Division with repeating pattern of primes (700 digits / 350 digits)"
+
+[[cases]]
+a = "-314159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196442881097566593344612847564823378678316527120190914564856692346034861045432664821339360726024914127372458700660631558817488152092096282925409171536436789259036001133053054882046652138414695194151160943305727036575959195309218611738193261179310511854807446237996274956735188575272489122793818301194912983367336244065664308602139494639522473719070217986094370277053921717629317675238467481846766940513200056812714526356082778577134275778960917363717872146844090122495343014654958537105079227968925892354201995611"
+b = "27182818284590452353602874713526624977572470936999595749669676277240766303535475945713821785251664274274663919320030599218174135966290435729003342952605956307381323286279434907632338298807531952510190115738341879307021540891499348841675092447614606680822648001684774118537423454424371075390777449920695517027618386062613313845830007520449338265602976067371132007093287091274437470472306969772093101416928368190255151086574637721112523897844250569536967707854499699679468644549059879316368892300987931277361782154249992295763514822082698951936680331825288693984964651058209392398294887933203625094431171"
+name = "Division with random-like 800-digit by 400-digit number (negative)"
+
+[[cases]]
+a = "{9,999}1"
+b = "{3,300}"
+name = "Division with 1000-digit dividend near power of 10 and 300-digit divisor"
+
+[[cases]]
+a = "{2,1200}"
+b = "{2,400}"
+name = "Division with 1200-digit by 400-digit (exact division, power of 2)"
+
+[[cases]]
+a = "7{3,1499}"
+b = "5{7,499}"
+name = "Division with extremely large 1500-digit by large 500-digit number"

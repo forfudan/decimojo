@@ -1,0 +1,222 @@
+[config]
+iterations = 100
+
+# === BASIC LOGARITHM TESTS ===
+
+[[cases]]
+a = "1"
+name = "ln(1)"
+
+[[cases]]
+a = "2.71828182845904523536028747135"
+name = "ln(e)"
+
+[[cases]]
+a = "2"
+name = "ln(2)"
+
+[[cases]]
+a = "10"
+name = "ln(10)"
+
+[[cases]]
+a = "0.5"
+name = "ln(0.5)"
+
+# === VALUES CLOSE TO 1 (CHALLENGING FOR PRECISION) ===
+
+[[cases]]
+a = "0.9"
+name = "ln(0.9)"
+
+[[cases]]
+a = "0.99"
+name = "ln(0.99)"
+
+[[cases]]
+a = "0.999"
+name = "ln(0.999)"
+
+[[cases]]
+a = "1.001"
+name = "ln(1.001)"
+
+[[cases]]
+a = "1.01"
+name = "ln(1.01)"
+
+[[cases]]
+a = "1.1"
+name = "ln(1.1)"
+
+# === SMALL VALUE TESTS ===
+
+[[cases]]
+a = "0.1"
+name = "ln(0.1)"
+
+[[cases]]
+a = "0.01"
+name = "ln(0.01)"
+
+[[cases]]
+a = "0.001"
+name = "ln(0.001)"
+
+[[cases]]
+a = "0.0001"
+name = "ln(0.0001)"
+
+[[cases]]
+a = "1e-10"
+name = "ln(1e-10)"
+
+[[cases]]
+a = "1e-20"
+name = "ln(1e-20)"
+
+# === LARGE VALUE TESTS ===
+
+[[cases]]
+a = "100"
+name = "ln(100)"
+
+[[cases]]
+a = "1000"
+name = "ln(1000)"
+
+[[cases]]
+a = "10000"
+name = "ln(10000)"
+
+[[cases]]
+a = "1e10"
+name = "ln(1e10)"
+
+[[cases]]
+a = "1e20"
+name = "ln(1e20)"
+
+[[cases]]
+a = "1e50"
+name = "ln(1e50)"
+
+[[cases]]
+a = "1e100"
+name = "ln(1e100)"
+
+# === SCIENTIFIC NOTATION TESTS ===
+
+[[cases]]
+a = "1.234e-5"
+name = "ln(1.234e-5)"
+
+[[cases]]
+a = "5.678e12"
+name = "ln(5.678e12)"
+
+[[cases]]
+a = "9.876e-10"
+name = "ln(9.876e-10)"
+
+[[cases]]
+a = "3.14159e20"
+name = "ln(3.14159e20)"
+
+# === SPECIAL VALUE TESTS ===
+
+[[cases]]
+a = "3.14159265358979323846264338328"
+name = "ln(PI)"
+
+[[cases]]
+a = "7.3890560989306502272304274606"
+name = "ln(e^2)"
+
+[[cases]]
+a = "1.4142135623730950488016887242"
+name = "ln(sqrt(2))"
+
+# === PRECISE DECIMAL TESTS ===
+
+[[cases]]
+a = "1.5"
+name = "ln(1.5)"
+
+[[cases]]
+a = "2.5"
+name = "ln(2.5)"
+
+[[cases]]
+a = "3.75"
+name = "ln(3.75)"
+
+[[cases]]
+a = "12.34567890"
+name = "ln(12.34567890)"
+
+[[cases]]
+a = "0.1234567890"
+name = "ln(0.1234567890)"
+
+# === POWERS OF 2 ===
+
+[[cases]]
+a = "4"
+name = "ln(4)"
+
+[[cases]]
+a = "8"
+name = "ln(8)"
+
+[[cases]]
+a = "16"
+name = "ln(16)"
+
+[[cases]]
+a = "32"
+name = "ln(32)"
+
+[[cases]]
+a = "64"
+name = "ln(64)"
+
+# === EXTREME VALUES ===
+
+[[cases]]
+a = "1e200"
+name = "ln(1e200)"
+
+[[cases]]
+a = "1e-200"
+name = "ln(1e-200)"
+
+[[cases]]
+a = "1.797693e308"
+name = "ln(1.797693e308)"
+
+[[cases]]
+a = "4.940656e-324"
+name = "ln(4.940656e-324)"
+
+# === PRECISE SPECIAL CASES ===
+
+[[cases]]
+a = "2.718281828459045"
+name = "ln(e precise)"
+
+[[cases]]
+a = "1.414213562373095"
+name = "ln(sqrt(2) precise)"
+
+[[cases]]
+a = "1.189207115002721"
+name = "ln(2^(1/4))"
+
+[[cases]]
+a = "1.0000000000000000000000001"
+name = "ln(1.0000000000000000000000001)"
+
+[[cases]]
+a = "123456789.123456789"
+name = "ln(123456789.123456789)"

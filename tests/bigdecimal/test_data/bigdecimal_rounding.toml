@@ -220,50 +220,50 @@ expected = "-0"
 
 # === EXTREME VALUES TESTS ===
 [[extreme_value_tests]]
-a = "0.00000000000000000000000001"
+a = "0.{0,25}1"
 b = "10"
 description = "Rounding very small number"
 expected = "0E-10"
 
 [[extreme_value_tests]]
-a = "9999999999999999999999999999.99999"
+a = "{9,28}.99999"
 b = "2"
 description = "Rounding very large number"
-expected = "1.000000000000000000000000000000E+28"
+expected = "1.{0,30}E+28"
 
 [[extreme_value_tests]]
-a = "0.5555555555555555555555555"
+a = "0.{5,25}"
 b = "10"
 description = "Rounding repeated digits"
 expected = "0.5555555556"
 
 [[extreme_value_tests]]
-a = "1.000000000000000000000000001"
+a = "1.{0,26}1"
 b = "10"
 description = "Rounding number very close to whole"
-expected = "1.0000000000"
+expected = "1.{0,10}"
 
 [[extreme_value_tests]]
-a = "-0.000000000000000000000000001"
+a = "-0.{0,26}1"
 b = "10"
 description = "Rounding very small negative number (becomes zero)"
 expected = "-0E-10"
 
 # === SPECIAL EDGE CASES ===
 [[edge_case_tests]]
-a = "9.9999999999999999999999999"
+a = "9.{9,25}"
 b = "2"
 description = "Rounding causes carrying over to next digit"
 expected = "10.00"
 
 [[edge_case_tests]]
-a = "999.9999999999999999999999999"
+a = "999.{9,25}"
 b = "0"
 description = "Rounding causes carrying over to next 10s place"
 expected = "1000"
 
 [[edge_case_tests]]
-a = "0.00000000000000000000000005"
+a = "0.{0,25}5"
 b = "28"
 description = "Rounding at maximum precision boundary"
 expected = "5.00E-26"
@@ -281,13 +281,13 @@ description = "Rounding negative zero"
 expected = "-0E-10"
 
 [[edge_case_tests]]
-a = "0.499999999999999999999999999"
+a = "0.4{9,26}"
 b = "0"
 description = "Rounding just under half"
 expected = "0"
 
 [[edge_case_tests]]
-a = "0.500000000000000000000000001"
+a = "0.5{0,25}1"
 b = "0"
 description = "Rounding just over half"
 expected = "1"
@@ -340,7 +340,7 @@ expected = "0.00001234"
 a = "9.9999e20"
 b = "0"
 description = "Rounding large scientific notation value"
-expected = "999990000000000000000"
+expected = "99999{0,16}"
 
 [[scientific_tests]]
 a = "-1.2345e-10"

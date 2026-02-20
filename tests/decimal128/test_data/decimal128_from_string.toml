@@ -51,9 +51,9 @@ description = "One-level precision"
 expected = "9.9"
 
 [[basic_decimal_tests]]
-a = "0.12345678901234567890123456789"
+a = "0.{1234567890,2}123456789"
 description = "High precision decimal"
-expected = "0.1234567890123456789012345679"
+expected = "0.{1234567890,2}12345679"
 
 # ===----------------------------------------------------------------------=== #
 # Negative number string conversions
@@ -99,9 +99,9 @@ description = "Zero with decimal"
 expected = "0.0"
 
 [[zero_variant_tests]]
-a = "0.00000000000000000000000000"
+a = "0.{0,26}"
 description = "Zero with high precision"
-expected = "0.00000000000000000000000000"
+expected = "0.{0,26}"
 
 [[zero_variant_tests]]
 a = "000000"
@@ -140,7 +140,7 @@ expected = "123"
 [[scientific_notation_tests]]
 a = "1.23e20"
 description = "Large exponent value"
-expected = "123000000000000000000"
+expected = "123{0,18}"
 
 # ===----------------------------------------------------------------------=== #
 # Formatting variant conversions
@@ -198,16 +198,16 @@ expected = "123"
 [[special_character_tests]]
 a = "1.23e+12"
 description = "Scientific notation with multiple digits in exponent"
-expected = "1230000000000"
+expected = "123{0,10}"
 
 # ===----------------------------------------------------------------------=== #
 # Boundary case conversions
 # ===----------------------------------------------------------------------=== #
 
 [[boundary_tests]]
-a = "0.1111111111111111111111111111"
+a = "0.{1,28}"
 description = "Value at maximum precision"
-expected = "0.1111111111111111111111111111"
+expected = "0.{1,28}"
 
 [[boundary_tests]]
 a = "9"
@@ -215,9 +215,9 @@ description = "Single digit maximum"
 expected = "9"
 
 [[boundary_tests]]
-a = "0.0000000000000000000000000001"
+a = "0.{0,27}1"
 description = "Smallest non-zero positive value"
-expected = "0.0000000000000000000000000001"
+expected = "0.{0,27}1"
 
 [[boundary_tests]]
 a = "79228162514264337593543950335"
@@ -234,16 +234,16 @@ description = "Trailing zeros should be preserved"
 expected = "1230.00"
 
 [[special_case_tests]]
-a = "9.999999999999999999999999999"
+a = "9.{9,27}"
 description = "Value with all 9s"
-expected = "9.999999999999999999999999999"
+expected = "9.{9,27}"
 
 [[special_case_tests]]
-a = "1.010101010101010101010101010"
+a = "1.{01,13}0"
 description = "Value with alternating digits"
-expected = "1.010101010101010101010101010"
+expected = "1.{01,13}0"
 
 [[special_case_tests]]
-a = "123.456789012345678901234567"
+a = "123.{4567890123,2}4567"
 description = "Value with specific pattern"
-expected = "123.456789012345678901234567"
+expected = "123.{4567890123,2}4567"

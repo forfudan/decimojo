@@ -38,7 +38,7 @@ description = "Division by 1: 42 // 1"
 expected = "42"
 
 [[floor_divide_tests]]
-a = "1000000000000"
+a = "1{0,12}"
 b = "1000000"
 description = "Large number division: 1000000000000 // 1000000"
 expected = "1000000"
@@ -130,52 +130,52 @@ expected = "0"
 # Large number division
 # ===----------------------------------------------------------------------=== #
 [[floor_divide_tests]]
-a = "100000000000000000000000000000000000000000000000000"
+a = "1{0,50}"
 b = "7"
 description = "Large positive number divided by small number: 10^50 // 7"
-expected = "14285714285714285714285714285714285714285714285714"
+expected = "{142857,8}14"
 
 [[floor_divide_tests]]
-a = "-100000000000000000000000000000000000000000000000000"
+a = "-1{0,50}"
 b = "7"
 description = "Large negative number divided by small number: -10^50 // 7"
-expected = "-14285714285714285714285714285714285714285714285715"
+expected = "-{142857,8}15"
 
 [[floor_divide_tests]]
-a = "100000000000000000000000000000000000000000000000000"
+a = "1{0,50}"
 b = "-7"
 description = "Large positive // small negative: 10^50 // -7"
-expected = "-14285714285714285714285714285714285714285714285715"
+expected = "-{142857,8}15"
 
 [[floor_divide_tests]]
-a = "-100000000000000000000000000000000000000000000000000"
+a = "-1{0,50}"
 b = "-7"
 description = "Large negative // small negative: -10^50 // -7"
-expected = "14285714285714285714285714285714285714285714285714"
+expected = "{142857,8}14"
 
 [[floor_divide_tests]]
-a = "999999999999999999999999999999"
-b = "999999999999999"
+a = "{9,30}"
+b = "{9,15}"
 description = "Large // large (same sign): 30 nines // 15 nines"
-expected = "1000000000000001"
+expected = "1{0,14}1"
 
 [[floor_divide_tests]]
-a = "999999999999999999999999999999"
-b = "-999999999999999"
+a = "{9,30}"
+b = "-{9,15}"
 description = "Large // large (opposite sign): 30 nines // -15 nines"
-expected = "-1000000000000001"
+expected = "-1{0,14}1"
 
 [[floor_divide_tests]]
-a = "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-b = "1000000000000000000000000000000000000000000"
+a = "1{0,100}"
+b = "1{0,42}"
 description = "Power of 10 division: 10^100 // 10^40"
-expected = "10000000000000000000000000000000000000000000000000000000000"
+expected = "1{0,58}"
 
 [[floor_divide_tests]]
-a = "-10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-b = "1000000000000000000000000000000000000000000"
+a = "-1{0,100}"
+b = "1{0,42}"
 description = "Negative power of 10 division: -10^100 // 10^40"
-expected = "-10000000000000000000000000000000000000000000000000000000000"
+expected = "-1{0,58}"
 
 # ===----------------------------------------------------------------------=== #
 # Floor division rounding behavior
@@ -268,7 +268,7 @@ description = "Identity test: negative dividend, negative divisor: -17 // -5"
 expected = "3"
 
 [[floor_divide_tests]]
-a = "12345678901234567890"
+a = "{1234567890,2}"
 b = "987654321"
 description = "Identity test with large numbers: 12345678901234567890 // 987654321"
 expected = "12499999887"
@@ -301,26 +301,26 @@ description = "Consecutive numbers (negative): -101 // 100"
 expected = "-2"
 
 [[floor_divide_tests]]
-a = "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
-b = "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+a = "{9,99}"
+b = "{9,99}"
 description = "Equal large positive numbers: 100 nines // 100 nines"
 expected = "1"
 
 [[floor_divide_tests]]
-a = "-999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
-b = "-999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+a = "-{9,99}"
+b = "-{9,99}"
 description = "Equal large negative numbers: -100 nines // -100 nines"
 expected = "1"
 
 [[floor_divide_tests]]
 a = "10000000001"
-b = "10000000000"
+b = "1{0,10}"
 description = "Very small remainder (positive numbers): 10000000001 // 10000000000"
 expected = "1"
 
 [[floor_divide_tests]]
 a = "-10000000001"
-b = "10000000000"
+b = "1{0,10}"
 description = "Very small remainder (negative dividend): -10000000001 // 10000000000"
 expected = "-2"
 

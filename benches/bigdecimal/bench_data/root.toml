@@ -1,0 +1,272 @@
+[config]
+iterations = 100
+
+# === BASIC ROOT TESTS ===
+
+[[cases]]
+a = "64"
+b = "2"
+name = "Square root of perfect square"
+
+[[cases]]
+a = "27"
+b = "3"
+name = "Cube root of perfect cube"
+
+[[cases]]
+a = "16"
+b = "4"
+name = "4th root of perfect power"
+
+[[cases]]
+a = "32"
+b = "5"
+name = "5th root of perfect power"
+
+[[cases]]
+a = "1024"
+b = "10"
+name = "10th root of perfect power"
+
+# === FRACTIONAL ROOTS ===
+
+[[cases]]
+a = "16"
+b = "0.5"
+name = "0.5th root (square)"
+
+[[cases]]
+a = "16"
+b = "0.25"
+name = "0.25th root (4th power)"
+
+[[cases]]
+a = "64"
+b = "1.5"
+name = "1.5th root"
+
+[[cases]]
+a = "32"
+b = "2.5"
+name = "2.5th root"
+
+[[cases]]
+a = "64"
+b = "0.33333"
+name = "0.33333rd root (~ cube)"
+
+# === IMPERFECT ROOTS ===
+
+[[cases]]
+a = "2"
+b = "2"
+name = "Square root of non-perfect square"
+
+[[cases]]
+a = "10"
+b = "3"
+name = "Cube root of non-perfect cube"
+
+[[cases]]
+a = "20"
+b = "4"
+name = "4th root of non-perfect power"
+
+[[cases]]
+a = "100"
+b = "5"
+name = "5th root of non-perfect power"
+
+[[cases]]
+a = "1000"
+b = "10"
+name = "10th root of non-perfect power"
+
+# === DECIMAL INPUTS ===
+
+[[cases]]
+a = "2.25"
+b = "2"
+name = "Square root of decimal"
+
+[[cases]]
+a = "8.125"
+b = "3"
+name = "Cube root of decimal"
+
+[[cases]]
+a = "0.0625"
+b = "4"
+name = "4th root of decimal"
+
+[[cases]]
+a = "0.25"
+b = "2"
+name = "Root of number < 1"
+
+[[cases]]
+a = "0.000001"
+b = "3"
+name = "Root of very small number"
+
+# === NEGATIVE INPUTS (for odd roots) ===
+
+[[cases]]
+a = "-27"
+b = "3"
+name = "Cube root of negative number"
+
+[[cases]]
+a = "-32"
+b = "5"
+name = "5th root of negative number"
+
+[[cases]]
+a = "16"
+b = "-2"
+name = "Negative root"
+
+[[cases]]
+a = "-27"
+b = "-3"
+name = "Negative odd root of negative number"
+
+# === LARGE NUMBERS ===
+
+[[cases]]
+a = "1000000"
+b = "2"
+name = "Root of large number"
+
+[[cases]]
+a = "2"
+b = "100"
+name = "Large root value"
+
+[[cases]]
+a = "1{0,20}"
+b = "5"
+name = "Root of very large number"
+
+[[cases]]
+a = "1.5"
+b = "50"
+name = "Large root of small number"
+
+[[cases]]
+a = "123456789.123456789"
+b = "3"
+name = "Root of large decimal"
+
+[[cases]]
+a = "12345"
+b = "2.5"
+name = "Root with decimal places"
+
+# === SPECIAL CASES ===
+
+[[cases]]
+a = "1"
+b = "42"
+name = "Root of 1"
+
+[[cases]]
+a = "123.456"
+b = "1"
+name = "1st root (identity)"
+
+[[cases]]
+a = "0"
+b = "7"
+name = "Root of 0"
+
+[[cases]]
+a = "3.14159265358979323846264338328"
+b = "2"
+name = "Root of Pi"
+
+[[cases]]
+a = "2.71828182845904523536028747135"
+b = "3"
+name = "Root of E"
+
+# === PRECISION TESTS ===
+
+[[cases]]
+a = "12345.6789"
+b = "2"
+name = "High precision root"
+
+[[cases]]
+a = "1.0001"
+b = "10000"
+name = "Root close to 1"
+
+[[cases]]
+a = "1.5"
+b = "1.1"
+name = "Root close to original value"
+
+# === MATHEMATICAL CONSTANTS ===
+
+[[cases]]
+a = "2"
+b = "2"
+name = "Square root of 2"
+
+[[cases]]
+a = "3"
+b = "3"
+name = "Cube root of 3"
+
+[[cases]]
+a = "4"
+b = "4"
+name = "4th root of 4"
+
+[[cases]]
+a = "5"
+b = "5"
+name = "5th root of 5"
+
+[[cases]]
+a = "6"
+b = "6"
+name = "6th root of 6"
+
+[[cases]]
+a = "7"
+b = "7"
+name = "7th root of 7"
+
+# === APPLICATION CASES ===
+
+[[cases]]
+a = "2"
+b = "10"
+name = "Compound interest root"
+
+[[cases]]
+a = "120"
+b = "5"
+name = "Geometric mean (5th root)"
+
+[[cases]]
+a = "10000000000"
+b = "10"
+name = "Sound pressure level (10th root)"
+
+[[cases]]
+a = "8"
+b = "3"
+name = "Volume scaling (cube root)"
+
+[[cases]]
+a = "1.5"
+b = "5"
+name = "Population growth rate"
+
+[[cases]]
+a = "2.5"
+b = "10"
+name = "Market return calculation"

@@ -1,0 +1,143 @@
+[config]
+iterations = 1000
+
+# b field encodes "decimal_places|ROUNDING_MODE"
+
+# === ROUND_DOWN MODE TESTS ===
+
+[[cases]]
+a = "12.345"
+b = "0|ROUND_DOWN"
+name = "Round down to integer"
+
+[[cases]]
+a = "12.345"
+b = "1|ROUND_DOWN"
+name = "Round down to 1 decimal place"
+
+[[cases]]
+a = "-12.345"
+b = "0|ROUND_DOWN"
+name = "Round down negative to integer"
+
+# === ROUND_UP MODE TESTS ===
+
+[[cases]]
+a = "12.345"
+b = "0|ROUND_UP"
+name = "Round up to integer"
+
+[[cases]]
+a = "12.345"
+b = "1|ROUND_UP"
+name = "Round up to 1 decimal place"
+
+[[cases]]
+a = "-12.345"
+b = "0|ROUND_UP"
+name = "Round up negative to integer"
+
+# === ROUND_HALF_UP MODE TESTS ===
+
+[[cases]]
+a = "12.5"
+b = "0|ROUND_HALF_UP"
+name = "Round half up to integer (0.5 -> 1)"
+
+[[cases]]
+a = "12.05"
+b = "1|ROUND_HALF_UP"
+name = "Round half up to 1 decimal place (0.05 -> 0.1)"
+
+[[cases]]
+a = "-12.5"
+b = "0|ROUND_HALF_UP"
+name = "Round half up negative to integer (-0.5 -> -1)"
+
+# === ROUND_HALF_EVEN (BANKER'S ROUNDING) MODE TESTS ===
+
+[[cases]]
+a = "12.5"
+b = "0|ROUND_HALF_EVEN"
+name = "Round half even to integer (even digit)"
+
+[[cases]]
+a = "13.5"
+b = "0|ROUND_HALF_EVEN"
+name = "Round half even to integer (odd digit)"
+
+[[cases]]
+a = "12.25"
+b = "1|ROUND_HALF_EVEN"
+name = "Round half even to 1 decimal place (even digit)"
+
+# === DECIMAL PLACES VARIATIONS ===
+
+[[cases]]
+a = "12.345"
+b = "5|ROUND_HALF_EVEN"
+name = "Round to higher precision (add zeros)"
+
+[[cases]]
+a = "123.456"
+b = "-1|ROUND_HALF_EVEN"
+name = "Negative decimal places (round to tens)"
+
+[[cases]]
+a = "123.456"
+b = "-2|ROUND_HALF_EVEN"
+name = "Negative decimal places (round to hundreds)"
+
+# === SPECIAL VALUES AND EDGE CASES ===
+
+[[cases]]
+a = "0"
+b = "2|ROUND_HALF_EVEN"
+name = "Round zero"
+
+[[cases]]
+a = "0.0000000000000000000000001"
+b = "10|ROUND_HALF_EVEN"
+name = "Round very small number"
+
+[[cases]]
+a = "9999999999.99999"
+b = "2|ROUND_HALF_EVEN"
+name = "Round very large number"
+
+[[cases]]
+a = "9.9999"
+b = "0|ROUND_HALF_EVEN"
+name = "Round with carry over (9.9999 -> 10)"
+
+[[cases]]
+a = "10.5"
+b = "0|ROUND_DOWN"
+name = "Round exactly half (down)"
+
+[[cases]]
+a = "10.5"
+b = "0|ROUND_UP"
+name = "Round exactly half (up)"
+
+[[cases]]
+a = "10.5"
+b = "0|ROUND_HALF_UP"
+name = "Round exactly half (half up)"
+
+[[cases]]
+a = "10.5"
+b = "0|ROUND_HALF_EVEN"
+name = "Round exactly half (half even)"
+
+# === SCIENTIFIC NOTATION INPUTS ===
+
+[[cases]]
+a = "1.2345e5"
+b = "2|ROUND_HALF_EVEN"
+name = "Round scientific notation value"
+
+[[cases]]
+a = "1.2345e-5"
+b = "8|ROUND_HALF_EVEN"
+name = "Round small scientific notation value"

@@ -1,0 +1,344 @@
+[config]
+iterations = 100
+
+# === BASIC DECIMAL DIVISION TESTS ===
+
+[[cases]]
+a = "100"
+b = "4"
+name = "Simple integer division"
+
+[[cases]]
+a = "10.5"
+b = "2.5"
+name = "Simple decimal division"
+
+[[cases]]
+a = "10.2345"
+b = "5.67"
+name = "Division with different scales"
+
+[[cases]]
+a = "5.23456789012345678901234567"
+b = "1.6"
+name = "Division with very different scales"
+
+[[cases]]
+a = "123.456"
+b = "1"
+name = "Division with one (a / 1)"
+
+# === SCALE AND PRECISION TESTS ===
+
+[[cases]]
+a = "9.8765432109876543210987654321"
+b = "1.2345678901234567890123456789"
+name = "Precision at decimal limit"
+
+[[cases]]
+a = "1"
+b = "0.000001"
+name = "Division causing scale increase"
+
+[[cases]]
+a = "1.00000000000000000000000000"
+b = "0.33333333333333333333333333"
+name = "Division with high precision, repeating pattern"
+
+[[cases]]
+a = "0"
+b = "0.33333333333333333333333333"
+name = "Division resulting in exact 0.0"
+
+[[cases]]
+a = "1.23e5"
+b = "4.56e4"
+name = "Division with scientific notation"
+
+# === SIGN COMBINATION TESTS ===
+
+[[cases]]
+a = "10"
+b = "-3.14"
+name = "Positive / Negative"
+
+[[cases]]
+a = "-10"
+b = "3.14"
+name = "Negative / Positive"
+
+[[cases]]
+a = "-5.75"
+b = "-10.25"
+name = "Negative / Negative"
+
+[[cases]]
+a = "50"
+b = "-60.5"
+name = "Division resulting in sign change"
+
+[[cases]]
+a = "0.0000001"
+b = "0.00000005"
+name = "Division near zero (small difference)"
+
+# === LARGE NUMBER TESTS ===
+
+[[cases]]
+a = "1{0,28}"
+b = "1"
+name = "Large integer division"
+
+[[cases]]
+a = "-{9,28}"
+b = "1"
+name = "Large negative / positive"
+
+[[cases]]
+a = "100000000000000000000.00000000"
+b = "0.00000001"
+name = "Very large decimal division with borrow"
+
+[[cases]]
+a = "1{0,25}"
+b = "0.{0,25}1"
+name = "Very large / very small"
+
+[[cases]]
+a = "1.23e20"
+b = "4.56e19"
+name = "Extreme scales (large positive exponent)"
+
+# === SMALL NUMBER TESTS ===
+
+[[cases]]
+a = "0.{0,25}3"
+b = "0.{0,25}2"
+name = "Very small positive values"
+
+[[cases]]
+a = "-0.{0,25}3"
+b = "-0.{0,25}2"
+name = "Very small negative values"
+
+[[cases]]
+a = "0.{0,10}3"
+b = "0.{0,20}1"
+name = "Small values with different scales"
+
+[[cases]]
+a = "1.23e-15"
+b = "4.56e-20"
+name = "Extreme scales (large negative exponent)"
+
+[[cases]]
+a = "4.56e10"
+b = "1.23e-10"
+name = "Division that requires significant rescaling"
+
+# === SPECIAL VALUE TESTS ===
+
+[[cases]]
+a = "3.14159265358979323846264338328"
+b = "2.71828182845904523536028747135"
+name = "Division of exact mathematical constants (PI / E)"
+
+[[cases]]
+a = "1.61803398874989484820458683437"
+b = "1.41421356237309504880168872421"
+name = "Division of famous constants (Phi / sqrt(2))"
+
+[[cases]]
+a = "5.67896789567895678956789567896"
+b = "1.23451234512345123451234512345"
+name = "Division with repeating patterns"
+
+[[cases]]
+a = "10542.75"
+b = "3621.50"
+name = "Financial numbers (dollars and cents)"
+
+[[cases]]
+a = "98.76543"
+b = "87.65432"
+name = "Statistical data (means)"
+
+# === PRECISION TESTS ===
+
+[[cases]]
+a = "0.5"
+b = "0.25"
+name = "Binary-friendly decimals"
+
+[[cases]]
+a = "0.66666666666666666666666666"
+b = "0.33333333333333333333333333"
+name = "Decimal-unfriendly fractions"
+
+[[cases]]
+a = "10.00000000000000000000000000"
+b = "9.99999999999999999999999999"
+name = "Division with many borrows"
+
+[[cases]]
+a = "3.3000000000000000000000000"
+b = "2.2000000000000000000000000"
+name = "Division with trailing zeros"
+
+[[cases]]
+a = "1000000000000000000.0000000"
+b = "0.0000001"
+name = "Division requiring precision increase"
+
+# === APPLICATION-SPECIFIC TESTS ===
+
+[[cases]]
+a = "299792458.0"
+b = "0.000000000000000000160217663"
+name = "Scientific measurement (physics)"
+
+[[cases]]
+a = "1.496e11"
+b = "3.844e8"
+name = "Astronomical distances"
+
+[[cases]]
+a = "0.00005678"
+b = "0.00001234"
+name = "Chemical concentrations"
+
+[[cases]]
+a = "3914.75"
+b = "3914.70"
+name = "Financial market price changes"
+
+[[cases]]
+a = "0.0440"
+b = "0.0015"
+name = "Interest rate calculations"
+
+# === EDGE CASES AND EXTREME VALUES ===
+
+[[cases]]
+a = "1.{0,28}"
+b = "0.{9,28}"
+name = "Division with maximum precision"
+
+[[cases]]
+a = "1e20"
+b = "1e-20"
+name = "Division with extreme exponents difference"
+
+[[cases]]
+a = "{9,28}.{9,28}"
+b = "0.{0,27}1"
+name = "Division at precision boundary"
+
+[[cases]]
+a = "0.125"
+b = "0.0625"
+name = "Division of exact fractions"
+
+[[cases]]
+a = "0.142857142857142857142857"
+b = "0.076923076923076923076923"
+name = "Division of recurring decimals"
+
+# === PRACTICAL APPLICATION TESTS ===
+
+[[cases]]
+a = "37.7749"
+b = "37.7748"
+name = "GPS coordinates division"
+
+[[cases]]
+a = "98.6"
+b = "37.0"
+name = "Temperature difference calculation"
+
+[[cases]]
+a = "1000.50"
+b = "243.22"
+name = "Bank balance calculation"
+
+[[cases]]
+a = "987654321987654321.987654321"
+b = "0.000000000000000000000000001"
+name = "Division across wide range of magnitudes"
+
+[[cases]]
+a = "0.0"
+b = "1"
+name = "Division resulting in negative zero"
+
+# === VERY LARGE NUMBER TESTS ===
+
+[[cases]]
+a = "{123456789,512}.{123456789,512}"
+b = "{987654321,512}.{987654321,512}"
+name = "Division 1024 words / 1024 words"
+
+[[cases]]
+a = "{123456789,1024}.{123456789,1024}"
+b = "{987654321,1024}.{987654321,1024}"
+name = "Division 2048 words / 2048 words"
+
+[[cases]]
+a = "{123456789,2048}.{123456789,2048}"
+b = "{987654321,2048}.{987654321,2048}"
+name = "Division 4096 words / 4096 words"
+
+[[cases]]
+a = "{123456789,4096}.{123456789,4096}"
+b = "{987654321,4096}.{987654321,4096}"
+name = "Division 8192 words / 8192 words"
+
+[[cases]]
+a = "{123456789,8192}.{123456789,8192}"
+b = "{987654321,8192}.{987654321,8192}"
+name = "Division 16384 words / 16384 words"
+
+[[cases]]
+a = "{123456789,16384}.{123456789,16384}"
+b = "{987654321,16384}.{987654321,16384}"
+name = "Division 32768 words / 32768 words"
+
+[[cases]]
+a = "{123456789,32768}.{123456789,32768}"
+b = "{987654321,32768}.{987654321,32768}"
+name = "Division 65536 words / 65536 words"
+
+[[cases]]
+a = "{123456789,131072}.{123456789,131072}"
+b = "{987654321,131072}.{987654321,131072}"
+name = "Division 262144 words / 262144 words"
+
+[[cases]]
+a = "{123456789,32768}.{123456789,32768}"
+b = "{987654321,16384}.{987654321,16384}"
+name = "Division 65536 words / 32768 words"
+
+[[cases]]
+a = "{123456789,16384}.{123456789,16384}"
+b = "{987654321,8192}.{987654321,8192}"
+name = "Division 65536 words / 16384 words"
+
+[[cases]]
+a = "{123456789,8192}.{123456789,8192}"
+b = "{987654321,4096}.{987654321,4096}"
+name = "Division 65536 words / 8192 words"
+
+[[cases]]
+a = "{123456789,4096}.{123456789,4096}"
+b = "{987654321,2048}.{987654321,2048}"
+name = "Division 65536 words / 4096 words"
+
+[[cases]]
+a = "{123456789,2048}.{123456789,2048}"
+b = "{987654321,1024}.{987654321,1024}"
+name = "Division 65536 words / 2048 words"
+
+[[cases]]
+a = "{123456789,1024}.{123456789,1024}"
+b = "{987654321,512}.{987654321,512}"
+name = "Division 65536 words / 1024 words"
