@@ -27,13 +27,14 @@ for the DeciMojo library. It uses base-2^32 representation with UInt32 words
 in little-endian order, and a separate sign bit.
 
 Once BigInt2 is stable and performant, the current BigInt (base-10^9)
-will be renamed to BigDecimalInt, and BigInt2 will be renamed to BigInt.
+will be renamed to BigInt10, and BigInt2 will be renamed to BigInt.
 """
 
 from memory import UnsafePointer, memcpy
 
 from decimojo.bigint.bigint import BigInt
 from decimojo.biguint.biguint import BigUInt
+from decimojo.errors import DeciMojoError
 
 # Type aliases
 comptime BInt2 = BigInt2
@@ -42,6 +43,7 @@ comptime BInt2 = BigInt2
 
 struct BigInt2(
     Absable,
+    Comparable,
     Copyable,
     Movable,
     Stringable,
@@ -514,31 +516,193 @@ struct BigInt2(
         return Self(raw_words=self.words.copy(), sign=False)
 
     # ===------------------------------------------------------------------=== #
-    # Binary arithmetic dunders (stubs for future implementation)
+    # Basic binary arithmetic operation dunders
+    # These methods are called to implement the binary arithmetic operations
+    # (+, -, *, @, /, //, %, divmod(), pow(), **, <<, >>, &, ^, |)
     # ===------------------------------------------------------------------=== #
 
-    # TODO: Phase 3 — Implement in arithmetics.mojo
-    # fn __add__(self, other: Self) -> Self
-    # fn __sub__(self, other: Self) -> Self
-    # fn __mul__(self, other: Self) -> Self
-    # fn __floordiv__(self, other: Self) raises -> Self
-    # fn __mod__(self, other: Self) raises -> Self
-    # fn __pow__(self, exponent: Self) raises -> Self
-    # fn __iadd__(mut self, other: Self)
-    # fn __isub__(mut self, other: Self)
-    # fn __imul__(mut self, other: Self)
+    @always_inline
+    fn __add__(self, other: Self) -> Self:
+        return decimojo.bigint2.arithmetics.add(self, other)
+
+    @always_inline
+    fn __sub__(self, other: Self) -> Self:
+        return decimojo.bigint2.arithmetics.subtract(self, other)
+
+    @always_inline
+    fn __mul__(self, other: Self) -> Self:
+        return decimojo.bigint2.arithmetics.multiply(self, other)
+
+    @always_inline
+    fn __floordiv__(self, other: Self) raises -> Self:
+        try:
+            return decimojo.bigint2.arithmetics.floor_divide(self, other)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    message=None,
+                    function="BigInt2.__floordiv__()",
+                    file="src/decimojo/bigint2/bigint2.mojo",
+                    previous_error=e^,
+                )
+            )
+
+    @always_inline
+    fn __mod__(self, other: Self) raises -> Self:
+        try:
+            return decimojo.bigint2.arithmetics.floor_modulo(self, other)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    message=None,
+                    function="BigInt2.__mod__()",
+                    file="src/decimojo/bigint2/bigint2.mojo",
+                    previous_error=e^,
+                )
+            )
 
     # ===------------------------------------------------------------------=== #
-    # Comparison dunders (stubs for future implementation)
+    # Basic binary right-side arithmetic operation dunders
     # ===------------------------------------------------------------------=== #
 
-    # TODO: Phase 2 — Implement in comparison.mojo
-    # fn __eq__(self, other: Self) -> Bool
-    # fn __ne__(self, other: Self) -> Bool
-    # fn __lt__(self, other: Self) -> Bool
-    # fn __le__(self, other: Self) -> Bool
-    # fn __gt__(self, other: Self) -> Bool
-    # fn __ge__(self, other: Self) -> Bool
+    @always_inline
+    fn __radd__(self, other: Self) -> Self:
+        return decimojo.bigint2.arithmetics.add(self, other)
+
+    @always_inline
+    fn __rsub__(self, other: Self) -> Self:
+        return decimojo.bigint2.arithmetics.subtract(other, self)
+
+    @always_inline
+    fn __rmul__(self, other: Self) -> Self:
+        return decimojo.bigint2.arithmetics.multiply(self, other)
+
+    @always_inline
+    fn __rfloordiv__(self, other: Self) raises -> Self:
+        return decimojo.bigint2.arithmetics.floor_divide(other, self)
+
+    @always_inline
+    fn __rmod__(self, other: Self) raises -> Self:
+        return decimojo.bigint2.arithmetics.floor_modulo(other, self)
+
+    # ===------------------------------------------------------------------=== #
+    # Basic binary augmented arithmetic assignments dunders
+    # (+=, -=, *=, //=, %=)
+    # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn __iadd__(mut self, other: Self):
+        self = decimojo.bigint2.arithmetics.add(self, other)
+
+    @always_inline
+    fn __isub__(mut self, other: Self):
+        self = decimojo.bigint2.arithmetics.subtract(self, other)
+
+    @always_inline
+    fn __imul__(mut self, other: Self):
+        self = decimojo.bigint2.arithmetics.multiply(self, other)
+
+    @always_inline
+    fn __ifloordiv__(mut self, other: Self) raises:
+        self = decimojo.bigint2.arithmetics.floor_divide(self, other)
+
+    @always_inline
+    fn __imod__(mut self, other: Self) raises:
+        self = decimojo.bigint2.arithmetics.floor_modulo(self, other)
+
+    # ===------------------------------------------------------------------=== #
+    # Basic binary comparison operation dunders
+    # __gt__, __ge__, __lt__, __le__, __eq__, __ne__
+    # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn __gt__(self, other: Self) -> Bool:
+        """Returns True if self > other."""
+        return decimojo.bigint2.comparison.greater(self, other)
+
+    @always_inline
+    fn __gt__(self, other: Int) -> Bool:
+        """Returns True if self > other."""
+        return decimojo.bigint2.comparison.greater(self, Self.from_int(other))
+
+    @always_inline
+    fn __ge__(self, other: Self) -> Bool:
+        """Returns True if self >= other."""
+        return decimojo.bigint2.comparison.greater_equal(self, other)
+
+    @always_inline
+    fn __ge__(self, other: Int) -> Bool:
+        """Returns True if self >= other."""
+        return decimojo.bigint2.comparison.greater_equal(
+            self, Self.from_int(other)
+        )
+
+    @always_inline
+    fn __lt__(self, other: Self) -> Bool:
+        """Returns True if self < other."""
+        return decimojo.bigint2.comparison.less(self, other)
+
+    @always_inline
+    fn __lt__(self, other: Int) -> Bool:
+        """Returns True if self < other."""
+        return decimojo.bigint2.comparison.less(self, Self.from_int(other))
+
+    @always_inline
+    fn __le__(self, other: Self) -> Bool:
+        """Returns True if self <= other."""
+        return decimojo.bigint2.comparison.less_equal(self, other)
+
+    @always_inline
+    fn __le__(self, other: Int) -> Bool:
+        """Returns True if self <= other."""
+        return decimojo.bigint2.comparison.less_equal(
+            self, Self.from_int(other)
+        )
+
+    @always_inline
+    fn __eq__(self, other: Self) -> Bool:
+        """Returns True if self == other."""
+        return decimojo.bigint2.comparison.equal(self, other)
+
+    @always_inline
+    fn __eq__(self, other: Int) -> Bool:
+        """Returns True if self == other."""
+        return decimojo.bigint2.comparison.equal(self, Self.from_int(other))
+
+    @always_inline
+    fn __ne__(self, other: Self) -> Bool:
+        """Returns True if self != other."""
+        return decimojo.bigint2.comparison.not_equal(self, other)
+
+    @always_inline
+    fn __ne__(self, other: Int) -> Bool:
+        """Returns True if self != other."""
+        return decimojo.bigint2.comparison.not_equal(self, Self.from_int(other))
+
+    # ===------------------------------------------------------------------=== #
+    # Mathematical methods that do not implement a trait (not a dunder)
+    # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn truncate_divide(self, other: Self) raises -> Self:
+        """Performs a truncated division of two BigInt2 numbers.
+        See `truncate_divide()` for more information.
+        """
+        return decimojo.bigint2.arithmetics.truncate_divide(self, other)
+
+    @always_inline
+    fn floor_modulo(self, other: Self) raises -> Self:
+        """Performs a floor modulo of two BigInt2 numbers.
+        See `floor_modulo()` for more information.
+        """
+        return decimojo.bigint2.arithmetics.floor_modulo(self, other)
+
+    @always_inline
+    fn truncate_modulo(self, other: Self) raises -> Self:
+        """Performs a truncated modulo of two BigInt2 numbers.
+        See `truncate_modulo()` for more information.
+        """
+        return decimojo.bigint2.arithmetics.truncate_modulo(self, other)
 
     # ===------------------------------------------------------------------=== #
     # Bitwise operation dunders (stubs for future implementation)

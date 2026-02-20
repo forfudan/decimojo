@@ -21,5 +21,5 @@ representation internally. This is the binary counterpart to BigInt (base-10^9).
 
 Once BigInt2 is stable and performant, the naming plan is:
 - BigInt2 → BigInt (the primary big integer type)
-- Current BigInt → BigDecimalInt (kept for decimal-friendly use cases)
+- Current BigInt → BigInt10 (kept for decimal-friendly use cases)
 """
