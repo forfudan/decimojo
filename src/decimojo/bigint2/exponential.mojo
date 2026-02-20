@@ -36,7 +36,15 @@ from decimojo.errors import DeciMojoError
 fn sqrt(x: BigInt2) raises -> BigInt2:
     """Calculates the integer square root of a BigInt2 using Newton's method.
 
-    The result is the largest integer y such that y * y <= x.
+    The result is the largest integer y such that y * y <= x
+    (for non-negative x).
+
+    Algorithm (CPython precision-doubling, adapted from Modules/mathmodule.c):
+        Uses a series of precision-doubling steps starting from a 1-bit
+        approximation. At each step, the approximation doubles in precision
+        via a division of the appropriate size. Total work is dominated by
+        the last step, giving O(M(n)) total where M(n) is multiplication
+        cost, rather than O(M(n) * log n) for standard Newton's method.
 
     Args:
         x: The BigInt2 to calculate the square root of. Must be non-negative.
@@ -60,13 +68,18 @@ fn sqrt(x: BigInt2) raises -> BigInt2:
     if x.is_zero():
         return BigInt2()
 
-    var one = BigInt2(1)
-
-    # Special case: single word
+    # Special case: single word — use hardware sqrt
     if len(x.words) == 1:
         if x.words[0] <= 1:
             return x.copy()
-        return BigInt2.from_int(Int(math.sqrt(x.words[0])))
+        var val = x.words[0]
+        var guess = UInt32(math.sqrt(val))
+        # Refine: ensure guess^2 <= val < (guess+1)^2
+        while guess * guess > val:
+            guess -= 1
+        while (guess + 1) * (guess + 1) <= val:
+            guess += 1
+        return BigInt2.from_int(Int(guess))
 
     # Special case: two words — compute via UInt64 sqrt
     if len(x.words) == 2:
@@ -79,34 +92,120 @@ fn sqrt(x: BigInt2) raises -> BigInt2:
             guess += 1
         return BigInt2.from_uint64(guess)
 
-    # Newton's method for larger numbers
-    # Initial guess: shift right by half the bit length
-    var bit_len = x.bit_length()
-    var initial_shift = bit_len // 2
-    var guess = decimojo.bigint2.arithmetics.right_shift(x, initial_shift)
-    if guess.is_zero():
-        guess = one.copy()
+    # For numbers up to ~520 digits (≤ 54 words), Newton's method with a tight
+    # initial guess converges in 3-5 iterations and has less per-iteration
+    # overhead than the precision-doubling algorithm.
+    if len(x.words) <= 54:
+        return _sqrt_newton(x)
 
-    # Newton's iteration: x_{k+1} = (x_k + n / x_k) / 2
+    # For larger numbers, use CPython's precision-doubling algorithm.
+    # This has O(M(n)) total cost vs O(M(n) * log(n)) for Newton's method,
+    # but higher per-iteration overhead.
+    return _sqrt_precision_doubling(x)
+
+
+fn _sqrt_newton(x: BigInt2) raises -> BigInt2:
+    """Newton's method integer sqrt with tight initial guess from top words.
+
+    Best for medium-sized numbers (3-54 words / up to ~512 digits) where
+    the per-iteration overhead of BigInt2 operations is the bottleneck.
+
+    Args:
+        x: The BigInt2 value (must be positive, >= 3 words).
+
+    Returns:
+        The integer square root.
+    """
+    var n = len(x.words)
+
+    # Build initial overestimate from top 1-2 words using hardware sqrt
+    var top_val: UInt64
+    var n_lower_words: Int
+
+    if n % 2 == 0:
+        top_val = UInt64(x.words[n - 1]) << 32 | UInt64(x.words[n - 2])
+        n_lower_words = n - 2
+    else:
+        top_val = UInt64(x.words[n - 1])
+        n_lower_words = n - 1
+
+    var top_sqrt = UInt64(math.sqrt(top_val)) + 2  # overestimate
+    var shift_words = n_lower_words // 2
+    var shift_bits = shift_words * 32
+
+    var guess = BigInt2.from_uint64(top_sqrt)
+    if shift_bits > 0:
+        guess = decimojo.bigint2.arithmetics.left_shift(guess, shift_bits)
+
+    # Newton iterations: converges monotonically from above
     while True:
         var quotient = x // guess
-        var new_guess = (guess + quotient) >> 1  # (guess + n/guess) / 2
-
-        # Check for convergence: new_guess >= guess means no more improvement
+        var new_guess = (guess + quotient) >> 1
         if new_guess >= guess:
             break
         guess = new_guess^
 
-    # Verify and adjust: ensure guess^2 <= x < (guess+1)^2
-    var guess_sq = guess * guess
-    if guess_sq > x:
-        guess = guess - one
-    else:
-        var next_sq = (guess + one) * (guess + one)
-        if next_sq <= x:
-            guess = guess + one
+    # Final adjustment
+    while True:
+        var guess_sq = guess * guess
+        if guess_sq > x:
+            guess = guess - BigInt2(1)
+        else:
+            var next = guess + BigInt2(1)
+            var next_sq = next * next
+            if next_sq <= x:
+                guess = next^
+            else:
+                break
 
     return guess^
+
+
+fn _sqrt_precision_doubling(x: BigInt2) raises -> BigInt2:
+    """CPython-style precision-doubling integer sqrt.
+
+    Adapted from CPython Modules/mathmodule.c. Each iteration doubles
+    the precision of the approximation. Total work is O(M(n)) where
+    M(n) is multiplication cost, making this superior to Newton's method
+    for large numbers.
+
+    Args:
+        x: The BigInt2 value (must be positive, >= 3 words).
+
+    Returns:
+        The integer square root.
+    """
+    var bit_len = x.bit_length()
+    var c = (bit_len - 1) // 2
+
+    var a = BigInt2(1)
+    var d: Int = 0
+
+    # c.bit_length()
+    var c_bits = 0
+    var tmp = c
+    while tmp > 0:
+        c_bits += 1
+        tmp >>= 1
+
+    for s in range(c_bits - 1, -1, -1):
+        var e = d
+        d = c >> s
+
+        var shift_a = d - e - 1
+        var shift_n = 2 * c - e - d + 1
+
+        var a_shifted = decimojo.bigint2.arithmetics.left_shift(a, shift_a)
+        var n_shifted = decimojo.bigint2.arithmetics.right_shift(x, shift_n)
+        var quotient = n_shifted // a
+        a = a_shifted + quotient
+
+    # Final adjustment: a - (1 if a*a > x else 0)
+    var a_sq = a * a
+    if a_sq > x:
+        a = a - BigInt2(1)
+
+    return a^
 
 
 fn isqrt(x: BigInt2) raises -> BigInt2:

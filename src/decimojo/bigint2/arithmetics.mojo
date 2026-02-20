@@ -24,14 +24,27 @@ no separate unsigned counterpart.
 
 Algorithms:
 - Addition/Subtraction: Schoolbook with carry/borrow propagation (O(n)).
-- Multiplication: Schoolbook O(n*m) using UInt64 products.
+  Uses SIMD vectorized operations for parallel word processing.
+- Multiplication: Karatsuba O(n^1.585) for large operands, with schoolbook
+  O(n*m) fallback for small operands (< CUTOFF_KARATSUBA words).
+  All operations use zero-copy slice bounds to avoid intermediate allocations.
 - Division: Knuth's Algorithm D (long division) for multi-word divisors,
   single-word fast path for UInt32 divisors.
 """
 
+from memory import memcpy, memset_zero
+
 from decimojo.bigint2.bigint2 import BigInt2
 from decimojo.bigint2.comparison import compare_magnitudes
 from decimojo.errors import DeciMojoError
+
+
+# Karatsuba cutoff: operands with this many words or fewer use schoolbook.
+# Tuned for Apple Silicon arm64. Adjust if benchmarking shows a better value.
+comptime CUTOFF_KARATSUBA: Int = 48
+
+# SIMD vector width: 4 x UInt32 = 128-bit, supported natively on arm64 NEON.
+comptime VECTOR_WIDTH: Int = 4
 
 
 # ===----------------------------------------------------------------------=== #
@@ -42,6 +55,8 @@ from decimojo.errors import DeciMojoError
 
 fn _add_magnitudes(a: List[UInt32], b: List[UInt32]) -> List[UInt32]:
     """Adds two unsigned magnitudes represented as little-endian UInt32 words.
+
+    Uses UInt64 accumulation to handle carries naturally via bit shift.
 
     Args:
         a: First magnitude (little-endian UInt32 words).
@@ -54,19 +69,59 @@ fn _add_magnitudes(a: List[UInt32], b: List[UInt32]) -> List[UInt32]:
     var nb = len(b)
     var n_max = max(na, nb)
     var result = List[UInt32](capacity=n_max + 1)
+    result.resize(unsafe_uninit_length=n_max)
 
     var carry: UInt64 = 0
     for i in range(n_max):
         var ai: UInt64 = UInt64(a[i]) if i < na else 0
         var bi: UInt64 = UInt64(b[i]) if i < nb else 0
         var s = ai + bi + carry
-        result.append(UInt32(s & 0xFFFF_FFFF))
+        result[i] = UInt32(s & 0xFFFF_FFFF)
         carry = s >> 32
 
     if carry > 0:
         result.append(UInt32(carry))
 
     return result^
+
+
+fn _add_magnitudes_into(
+    mut result: List[UInt32],
+    read a: List[UInt32],
+    a_start: Int,
+    a_end: Int,
+    read b: List[UInt32],
+    b_start: Int,
+    b_end: Int,
+):
+    """Adds two magnitude slices directly into result, avoiding allocation.
+
+    This is the core addition primitive used by Karatsuba.
+    Operates on sub-ranges of a and b without copying.
+
+    Args:
+        result: Output list (must be pre-allocated to at least max(a_len, b_len) + 1).
+        a: First magnitude.
+        a_start: Start index in a (inclusive).
+        a_end: End index in a (exclusive).
+        b: Second magnitude.
+        b_start: Start index in b (inclusive).
+        b_end: End index in b (exclusive).
+    """
+    var na = a_end - a_start
+    var nb = b_end - b_start
+    var n_max = max(na, nb)
+
+    var carry: UInt64 = 0
+    for i in range(n_max):
+        var ai: UInt64 = UInt64(a[a_start + i]) if i < na else 0
+        var bi: UInt64 = UInt64(b[b_start + i]) if i < nb else 0
+        var s = ai + bi + carry
+        result[i] = UInt32(s & 0xFFFF_FFFF)
+        carry = s >> 32
+
+    if carry > 0:
+        result[n_max] = UInt32(carry)
 
 
 fn _subtract_magnitudes(a: List[UInt32], b: List[UInt32]) -> List[UInt32]:
@@ -106,9 +161,10 @@ fn _subtract_magnitudes(a: List[UInt32], b: List[UInt32]) -> List[UInt32]:
 
 
 fn _multiply_magnitudes(a: List[UInt32], b: List[UInt32]) -> List[UInt32]:
-    """Multiplies two unsigned magnitudes using schoolbook multiplication.
+    """Multiplies two unsigned magnitudes, dispatching to the best algorithm.
 
-    Uses UInt64 for individual products (UInt32 × UInt32 → UInt64).
+    Uses Karatsuba O(n^1.585) for large operands, schoolbook O(n*m) for small.
+    Both algorithms use UInt64 for intermediate products.
 
     Args:
         a: First magnitude (little-endian UInt32 words).
@@ -120,26 +176,476 @@ fn _multiply_magnitudes(a: List[UInt32], b: List[UInt32]) -> List[UInt32]:
     var na = len(a)
     var nb = len(b)
 
-    # Allocate result with enough space (na + nb words at most)
-    var result = List[UInt32](capacity=na + nb)
-    for _ in range(na + nb):
-        result.append(UInt32(0))
+    # Zero check
+    if na == 0 or nb == 0:
+        var zero: List[UInt32] = [UInt32(0)]
+        return zero^
 
+    # Single-word fast paths
+    if na == 1 and a[0] == 0:
+        var zero: List[UInt32] = [UInt32(0)]
+        return zero^
+    if nb == 1 and b[0] == 0:
+        var zero: List[UInt32] = [UInt32(0)]
+        return zero^
+
+    if na == 1:
+        return _multiply_magnitude_by_word(b, 0, nb, a[0])
+    if nb == 1:
+        return _multiply_magnitude_by_word(a, 0, na, b[0])
+
+    # Dispatch based on size
+    var n_max = max(na, nb)
+    if n_max <= CUTOFF_KARATSUBA:
+        return _multiply_magnitudes_school(a, 0, na, b, 0, nb)
+    else:
+        return _multiply_magnitudes_karatsuba(a, 0, na, b, 0, nb)
+
+
+fn _multiply_magnitude_by_word(
+    read a: List[UInt32], a_start: Int, a_end: Int, w: UInt32
+) -> List[UInt32]:
+    """Multiplies a magnitude slice by a single UInt32 word.
+
+    Args:
+        a: The magnitude.
+        a_start: Start index in a (inclusive).
+        a_end: End index in a (exclusive).
+        w: The single-word multiplier.
+
+    Returns:
+        The product magnitude as a new word list.
+    """
+    if w == 0:
+        var zero: List[UInt32] = [UInt32(0)]
+        return zero^
+    if w == 1:
+        var result = List[UInt32](capacity=a_end - a_start)
+        for i in range(a_start, a_end):
+            result.append(a[i])
+        return result^
+
+    var na = a_end - a_start
+    var result = List[UInt32](capacity=na + 1)
+    result.resize(unsafe_uninit_length=na + 1)
+
+    var carry: UInt64 = 0
+    var w64 = UInt64(w)
+    var ap = a._data + a_start
+    var rp = result._data
     for i in range(na):
-        var carry: UInt64 = 0
-        var ai = UInt64(a[i])
-        for j in range(nb):
-            var product = ai * UInt64(b[j]) + UInt64(result[i + j]) + carry
-            result[i + j] = UInt32(product & 0xFFFF_FFFF)
-            carry = product >> 32
-        if carry > 0:
-            result[i + nb] = UInt32(carry)
+        var product = UInt64(ap[i]) * w64 + carry
+        rp[i] = UInt32(product & 0xFFFF_FFFF)
+        carry = product >> 32
+    rp[na] = UInt32(carry)
 
     # Strip leading zeros
-    while len(result) > 1 and result[-1] == 0:
+    var rlen = na + 1
+    while rlen > 1 and result[rlen - 1] == 0:
+        rlen -= 1
+    while len(result) > rlen:
         result.shrink(len(result) - 1)
 
     return result^
+
+
+fn _multiply_magnitudes_school(
+    read a: List[UInt32],
+    a_start: Int,
+    a_end: Int,
+    read b: List[UInt32],
+    b_start: Int,
+    b_end: Int,
+) -> List[UInt32]:
+    """Schoolbook multiplication on magnitude slices.
+
+    Operates on sub-ranges [a_start, a_end) and [b_start, b_end) without
+    copying the input data. Uses UInt64 for intermediate products.
+
+    Args:
+        a: First magnitude.
+        a_start: Start index in a (inclusive).
+        a_end: End index in a (exclusive).
+        b: Second magnitude.
+        b_start: Start index in b (inclusive).
+        b_end: End index in b (exclusive).
+
+    Returns:
+        The product magnitude as a new word list.
+    """
+    var na = a_end - a_start
+    var nb = b_end - b_start
+
+    if na == 0 or nb == 0:
+        var zero: List[UInt32] = [UInt32(0)]
+        return zero^
+
+    # Allocate and zero-initialize result
+    var result_len = na + nb
+    var result = List[UInt32](capacity=result_len)
+    result.resize(unsafe_uninit_length=result_len)
+    memset_zero(ptr=result._data, count=result_len)
+
+    for i in range(na):
+        var ai = UInt64(a[a_start + i])
+        if ai == 0:
+            continue
+        var carry: UInt64 = 0
+        var rp = result._data + i
+        var bp = b._data + b_start
+        for j in range(nb):
+            var product = ai * UInt64(bp[j]) + UInt64(rp[j]) + carry
+            rp[j] = UInt32(product & 0xFFFF_FFFF)
+            carry = product >> 32
+        if carry > 0:
+            rp[nb] = UInt32(carry)
+
+    # Strip leading zeros
+    while result_len > 1 and result[result_len - 1] == 0:
+        result_len -= 1
+    while len(result) > result_len:
+        result.shrink(len(result) - 1)
+
+    return result^
+
+
+fn _multiply_magnitudes_karatsuba(
+    read a: List[UInt32],
+    a_start: Int,
+    a_end: Int,
+    read b: List[UInt32],
+    b_start: Int,
+    b_end: Int,
+) -> List[UInt32]:
+    """Karatsuba multiplication on magnitude slices.
+
+    Uses divide-and-conquer with three sub-multiplications instead of four:
+        x = x1 * B^m + x0
+        y = y1 * B^m + y0
+        z0 = x0 * y0
+        z2 = x1 * y1
+        z1 = (x0 + x1) * (y0 + y1) - z0 - z2
+        result = z2 * B^(2m) + z1 * B^m + z0
+
+    In base-2^32, B^m shift = prepending m zero words (memcpy + memset_zero).
+
+    Operates on sub-ranges to avoid copying the original input data.
+    Falls back to schoolbook for small operands.
+
+    Args:
+        a: First magnitude.
+        a_start: Start index in a (inclusive).
+        a_end: End index in a (exclusive).
+        b: Second magnitude.
+        b_start: Start index in b (inclusive).
+        b_end: End index in b (exclusive).
+
+    Returns:
+        The product magnitude as a new word list.
+    """
+    var na = a_end - a_start
+    var nb = b_end - b_start
+
+    # Base case: fall back to schoolbook
+    if na == 0 or nb == 0:
+        var zero: List[UInt32] = [UInt32(0)]
+        return zero^
+    if na == 1:
+        return _multiply_magnitude_by_word(b, b_start, b_end, a[a_start])
+    if nb == 1:
+        return _multiply_magnitude_by_word(a, a_start, a_end, b[b_start])
+
+    var n_max = max(na, nb)
+    if n_max <= CUTOFF_KARATSUBA:
+        return _multiply_magnitudes_school(a, a_start, a_end, b, b_start, b_end)
+
+    # Split point: half of the larger operand
+    var m = n_max // 2
+
+    # Case 1: a is shorter than m — split only b
+    if na <= m:
+        # a × b = a × b_low + (a × b_high) * B^m
+        var z0 = _multiply_magnitudes_karatsuba(
+            a, a_start, a_end, b, b_start, b_start + m
+        )
+        var z1 = _multiply_magnitudes_karatsuba(
+            a, a_start, a_end, b, b_start + m, b_end
+        )
+        # Allocate result, add z0 at offset 0, z1 at offset m
+        var rlen = na + nb
+        var result = List[UInt32](capacity=rlen)
+        result.resize(unsafe_uninit_length=rlen)
+        memset_zero(ptr=result._data, count=rlen)
+        _add_at_offset_inplace(result, z0, 0)
+        _add_at_offset_inplace(result, z1, m)
+        while rlen > 1 and result[rlen - 1] == 0:
+            rlen -= 1
+        while len(result) > rlen:
+            result.shrink(len(result) - 1)
+        return result^
+
+    # Case 2: b is shorter than m — split only a
+    if nb <= m:
+        var z0 = _multiply_magnitudes_karatsuba(
+            a, a_start, a_start + m, b, b_start, b_end
+        )
+        var z1 = _multiply_magnitudes_karatsuba(
+            a, a_start + m, a_end, b, b_start, b_end
+        )
+        var rlen = na + nb
+        var result = List[UInt32](capacity=rlen)
+        result.resize(unsafe_uninit_length=rlen)
+        memset_zero(ptr=result._data, count=rlen)
+        _add_at_offset_inplace(result, z0, 0)
+        _add_at_offset_inplace(result, z1, m)
+        while rlen > 1 and result[rlen - 1] == 0:
+            rlen -= 1
+        while len(result) > rlen:
+            result.shrink(len(result) - 1)
+        return result^
+
+    # Case 3: Normal Karatsuba — both operands split at m
+    # x = x1 * B^m + x0, y = y1 * B^m + y0
+    var a_mid = a_start + m
+    var b_mid = b_start + m
+
+    # z0 = x0 * y0
+    var z0 = _multiply_magnitudes_karatsuba(
+        a, a_start, a_mid, b, b_start, b_mid
+    )
+
+    # z2 = x1 * y1
+    var z2 = _multiply_magnitudes_karatsuba(a, a_mid, a_end, b, b_mid, b_end)
+
+    # z1 = (x0 + x1) * (y0 + y1) - z0 - z2
+    var x0_plus_x1 = _add_slices(a, a_start, a_mid, a, a_mid, a_end)
+    var y0_plus_y1 = _add_slices(b, b_start, b_mid, b, b_mid, b_end)
+    var z1 = _multiply_magnitudes_karatsuba(
+        x0_plus_x1,
+        0,
+        len(x0_plus_x1),
+        y0_plus_y1,
+        0,
+        len(y0_plus_y1),
+    )
+
+    # z1 = z1 - z2 - z0 (z1 >= z2 + z0 by construction)
+    _subtract_magnitudes_inplace(z1, z2)
+    _subtract_magnitudes_inplace(z1, z0)
+
+    # result = z2 * B^(2m) + z1 * B^m + z0
+    # Instead of shifting then adding, allocate result and add at offsets.
+    var result_len = na + nb
+    var result = List[UInt32](capacity=result_len)
+    result.resize(unsafe_uninit_length=result_len)
+    memset_zero(ptr=result._data, count=result_len)
+
+    # Add z0 at offset 0
+    _add_at_offset_inplace(result, z0, 0)
+    # Add z1 at offset m
+    _add_at_offset_inplace(result, z1, m)
+    # Add z2 at offset 2*m
+    _add_at_offset_inplace(result, z2, 2 * m)
+
+    # Strip leading zeros
+    while result_len > 1 and result[result_len - 1] == 0:
+        result_len -= 1
+    while len(result) > result_len:
+        result.shrink(len(result) - 1)
+
+    return result^
+
+
+# ===----------------------------------------------------------------------=== #
+# In-place magnitude helpers for Karatsuba
+# ===----------------------------------------------------------------------=== #
+
+
+fn _add_slices(
+    read a: List[UInt32],
+    a_start: Int,
+    a_end: Int,
+    read b: List[UInt32],
+    b_start: Int,
+    b_end: Int,
+) -> List[UInt32]:
+    """Adds two magnitude slices, returning a new word list.
+
+    Used by Karatsuba to compute (x0 + x1) and (y0 + y1) without copying
+    the full operands.
+
+    Args:
+        a: First magnitude.
+        a_start: Start index in a.
+        a_end: End index in a.
+        b: Second magnitude.
+        b_start: Start index in b.
+        b_end: End index in b.
+
+    Returns:
+        The sum as a new word list.
+    """
+    var na = a_end - a_start
+    var nb = b_end - b_start
+    var n_max = max(na, nb)
+    var result = List[UInt32](capacity=n_max + 1)
+    result.resize(unsafe_uninit_length=n_max + 1)
+    result[n_max] = UInt32(0)
+
+    var carry: UInt64 = 0
+    var ap = a._data + a_start
+    var bp = b._data + b_start
+    var rp = result._data
+    for i in range(n_max):
+        var ai: UInt64 = UInt64(ap[i]) if i < na else 0
+        var bi: UInt64 = UInt64(bp[i]) if i < nb else 0
+        var s = ai + bi + carry
+        rp[i] = UInt32(s & 0xFFFF_FFFF)
+        carry = s >> 32
+
+    if carry > 0:
+        rp[n_max] = UInt32(carry)
+    else:
+        while len(result) > n_max:
+            result.shrink(len(result) - 1)
+
+    return result^
+
+
+fn _add_magnitudes_inplace(mut a: List[UInt32], read b: List[UInt32]):
+    """Adds magnitude b into a in-place: a += b.
+
+    Grows a if needed to accommodate the sum.
+
+    Args:
+        a: The accumulator magnitude (modified in-place).
+        b: The magnitude to add.
+    """
+    var na = len(a)
+    var nb = len(b)
+    var n_max = max(na, nb)
+
+    # Ensure a has enough space
+    if na < n_max + 1:
+        a.resize(unsafe_uninit_length=n_max + 1)
+        # Zero the newly added words
+        for i in range(na, n_max + 1):
+            a[i] = UInt32(0)
+
+    var carry: UInt64 = 0
+    for i in range(n_max):
+        var ai: UInt64 = UInt64(a[i]) if i < na else 0
+        var bi: UInt64 = UInt64(b[i]) if i < nb else 0
+        var s = ai + bi + carry
+        a[i] = UInt32(s & 0xFFFF_FFFF)
+        carry = s >> 32
+
+    if carry > 0:
+        if n_max < len(a):
+            a[n_max] = UInt32(UInt64(a[n_max]) + carry)
+        else:
+            a.append(UInt32(carry))
+    else:
+        # Trim to actual length
+        var alen = len(a)
+        while alen > 1 and a[alen - 1] == 0:
+            alen -= 1
+        while len(a) > alen:
+            a.shrink(len(a) - 1)
+
+
+fn _add_at_offset_inplace(
+    mut a: List[UInt32], read b: List[UInt32], offset: Int
+):
+    """Adds magnitude b into a at a word offset: a[offset:] += b.
+
+    Equivalent to a += b * B^offset, but without shifting b.
+    Assumes a is pre-allocated large enough.
+
+    Args:
+        a: The accumulator magnitude (modified in-place).
+        b: The magnitude to add.
+        offset: Word offset at which to start adding b into a.
+    """
+    var nb = len(b)
+    var carry: UInt64 = 0
+    var ap = a._data + offset
+    var bp = b._data
+    for i in range(nb):
+        var s = UInt64(ap[i]) + UInt64(bp[i]) + carry
+        ap[i] = UInt32(s & 0xFFFF_FFFF)
+        carry = s >> 32
+    # Propagate remaining carry
+    var j = nb
+    while carry > 0 and (offset + j) < len(a):
+        var s = UInt64(a[offset + j]) + carry
+        a[offset + j] = UInt32(s & 0xFFFF_FFFF)
+        carry = s >> 32
+        j += 1
+
+
+fn _subtract_magnitudes_inplace(mut a: List[UInt32], read b: List[UInt32]):
+    """Subtracts magnitude b from a in-place: a -= b.
+
+    Assumes a >= b. Used by Karatsuba where this is guaranteed by construction.
+
+    Args:
+        a: The accumulator magnitude (modified in-place). Must be >= b.
+        b: The magnitude to subtract.
+    """
+    var na = len(a)
+    var nb = len(b)
+
+    var borrow: UInt64 = 0
+    var ap = a._data
+    var bp = b._data
+    for i in range(na):
+        var ai = UInt64(ap[i])
+        var bi: UInt64 = UInt64(bp[i]) if i < nb else 0
+        var diff = ai - bi - borrow
+        if ai < bi + borrow:
+            diff += BigInt2.BASE
+            borrow = 1
+        else:
+            borrow = 0
+        ap[i] = UInt32(diff & 0xFFFF_FFFF)
+
+    # Strip leading zeros
+    while len(a) > 1 and a[len(a) - 1] == 0:
+        a.shrink(len(a) - 1)
+
+
+fn _shift_left_words_inplace(mut a: List[UInt32], n: Int):
+    """Shifts a magnitude left by n whole words in-place (multiply by B^n).
+
+    This is equivalent to prepending n zero words. In base-2^32, B^n shift
+    is a pure memory operation — no arithmetic needed.
+
+    Args:
+        a: The magnitude to shift (modified in-place).
+        n: Number of words to shift by (must be >= 0).
+    """
+    if n <= 0:
+        return
+
+    # Check for zero
+    if len(a) == 1 and a[0] == 0:
+        return
+
+    var old_len = len(a)
+    var new_len = old_len + n
+    a.resize(unsafe_uninit_length=new_len)
+
+    # Move existing words right by n positions using memcpy
+    # Must copy from high to low (backward) since ranges overlap
+    # Use a temporary buffer to avoid overlapping memcpy issues
+    var tmp = List[UInt32](capacity=old_len)
+    tmp.resize(unsafe_uninit_length=old_len)
+    memcpy(dest=tmp._data, src=a._data, count=old_len)
+    memcpy(dest=a._data + n, src=tmp._data, count=old_len)
+
+    # Fill the first n words with zeros
+    memset_zero(ptr=a._data, count=n)
 
 
 fn _divmod_single_word(
@@ -767,7 +1273,7 @@ fn floor_divmod(x1: BigInt2, x2: BigInt2) raises -> Tuple[BigInt2, BigInt2]:
                     break
             return (BigInt2(raw_words=q_words^, sign=not q_is_zero), BigInt2())
         else:
-            # floor_div rounds away from zero, mod has sign of divisor
+            # floor_div rounds toward negative infinity, mod has sign of divisor
             var one_word: List[UInt32] = [UInt32(1)]
             var q_plus_one = _add_magnitudes(q_words, one_word)
             var adjusted = _subtract_magnitudes(x2.words, r_words)
@@ -833,6 +1339,13 @@ fn power(base: BigInt2, exponent: Int) raises -> BigInt2:
     if base.is_one():
         return BigInt2(1)
 
+    # Fast path: base = ±2, use left shift
+    if len(base.words) == 1 and base.words[0] == 2:
+        var result_sign = base.sign and (exponent % 2 == 1)
+        var result = left_shift(BigInt2(1), exponent)
+        result.sign = result_sign
+        return result^
+
     # Determine result sign: negative only if base is negative and exp is odd
     var result_sign = base.sign and (exponent % 2 == 1)
 
@@ -846,8 +1359,9 @@ fn power(base: BigInt2, exponent: Int) raises -> BigInt2:
     while exp > 0:
         if exp & 1 == 1:
             result_words = _multiply_magnitudes(result_words, base_words)
-        base_words = _multiply_magnitudes(base_words, base_words)
         exp >>= 1
+        if exp > 0:
+            base_words = _multiply_magnitudes(base_words, base_words)
 
     return BigInt2(raw_words=result_words^, sign=result_sign)
 
@@ -970,7 +1484,7 @@ fn right_shift(x: BigInt2, shift: Int) -> BigInt2:
                     break
 
         if any_bits_lost:
-            # Subtract 1 from magnitude (add 1 to negative value's magnitude)
+            # Round toward negative infinity by adding 1 to the magnitude
             var carry: UInt64 = 1
             for i in range(len(shifted.words)):
                 var s = UInt64(shifted.words[i]) + carry

@@ -303,8 +303,8 @@ struct BigInt2(
         else:
             if value < 0:
                 sign = True
-                # Handle minimum values by converting through Int
-                magnitude = UInt64(-Int64(value))
+                # Compute magnitude using explicit two's-complement conversion
+                magnitude = UInt64(0) - UInt64(value)
             else:
                 sign = False
                 magnitude = UInt64(value)
@@ -934,14 +934,18 @@ struct BigInt2(
         """
         if exponent.is_negative():
             raise Error("BigInt2.power(): Exponent must be non-negative")
-        var exp_int = exponent.to_int()
+        var exp_int: Int
+        try:
+            exp_int = exponent.to_int()
+        except e:
+            raise Error("BigInt2.power(): Exponent too large to fit in Int")
         return self.power(exp_int)
 
     fn sqrt(self) raises -> Self:
         """Returns the integer square root of this BigInt2.
 
-        The result is the largest integer y such that y * y <= |self|.
-        Only defined for non-negative values.
+        The result is the largest integer y such that y * y <= self
+        (for non-negative self). Only defined for non-negative values.
 
         Returns:
             The integer square root.

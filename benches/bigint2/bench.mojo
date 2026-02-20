@@ -1,3 +1,4 @@
+from bench_bigint2_multiply import main as bench_multiply
 from bench_bigint2_power import main as bench_power
 from bench_bigint2_sqrt import main as bench_sqrt
 from bench_bigint2_shift import main as bench_shift
@@ -12,6 +13,7 @@ fn main() raises:
 =========================================
 This is the BigInt2 Benchmarks
 =========================================
+multiply:    Multiplication
 power:       Power / Exponentiation
 sqrt:        Integer Square Root
 shift:       Left Shift
@@ -23,7 +25,9 @@ q:           Exit
 """
         )
         var command = input("Type name of bench you want to run: ")
-        if command == "power":
+        if command == "multiply":
+            bench_multiply()
+        elif command == "power":
             bench_power()
         elif command == "sqrt":
             bench_sqrt()
@@ -34,6 +38,7 @@ q:           Exit
         elif command == "to_string":
             bench_to_string()
         elif command == "all":
+            bench_multiply()
             bench_power()
             bench_sqrt()
             bench_shift()
