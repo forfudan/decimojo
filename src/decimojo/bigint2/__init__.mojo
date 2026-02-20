@@ -20,8 +20,8 @@ BigInt2 is a signed arbitrary-precision integer that uses base-2^32
 representation internally. This is the binary counterpart to BigInt10 (base-10^9).
 
 Once BigInt2 is stable and performant, the naming plan is:
-- BigInt2 → BigInt10 (the primary big integer type)
-- Current BigInt10 → BigInt10 (kept for decimal-friendly use cases)
+- The alias `BInt` will be reassigned from BigInt10 to BigInt2
+- BigInt10 will be kept for decimal-friendly use cases but hidden from users
 
 Modules:
 - bigint2: Core struct with constructors, conversions, dunders

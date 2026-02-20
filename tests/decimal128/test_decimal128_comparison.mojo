@@ -11,7 +11,7 @@ Test Decimal128 comparison operations including:
 import testing
 
 from decimojo import Dec128
-from decimojo.prelude import Decimal128
+from decimojo import Decimal128
 from decimojo.decimal128.comparison import (
     greater,
     greater_equal,

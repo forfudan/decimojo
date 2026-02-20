@@ -10,7 +10,7 @@ mathematical relationship verification.
 import testing
 import tomlmojo
 
-from decimojo.prelude import dm, Decimal128, Dec128, RoundingMode
+from decimojo import Decimal128, RoundingMode
 from decimojo.tests import parse_file, load_test_cases
 
 comptime data_path = "tests/decimal128/test_data/decimal128_divide.toml"
@@ -25,7 +25,7 @@ fn _run_division_section(
     """Run division (/) test cases from a TOML section."""
     var cases = load_test_cases(doc, section)
     for tc in cases:
-        var result = Dec128(tc.a) / Dec128(tc.b)
+        var result = Decimal128(tc.a) / Decimal128(tc.b)
         testing.assert_equal(String(result), tc.expected, tc.description)
 
 
@@ -35,7 +35,7 @@ fn _run_truncate_section(
     """Run truncate division (//) test cases from a TOML section."""
     var cases = load_test_cases(doc, section)
     for tc in cases:
-        var result = Dec128(tc.a) // Dec128(tc.b)
+        var result = Decimal128(tc.a) // Decimal128(tc.b)
         testing.assert_equal(String(result), tc.expected, tc.description)
 
 

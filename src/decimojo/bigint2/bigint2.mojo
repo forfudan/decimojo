@@ -26,8 +26,8 @@ BigInt2 is the core binary-represented arbitrary-precision signed integer
 for the DeciMojo library. It uses base-2^32 representation with UInt32 words
 in little-endian order, and a separate sign bit.
 
-Once BigInt2 is stable and performant, the current BigInt10 (base-10^9)
-will be renamed to BigInt10, and BigInt2 will be renamed to BigInt10.
+Once BigInt2 is stable and performant, the alias `BInt` will be
+reassigned from BigInt10 to BigInt2, making BigInt2 the primary integer type.
 """
 
 from memory import UnsafePointer, memcpy

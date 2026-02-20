@@ -80,7 +80,7 @@ from decimojo import *
 
 This will import the following types or aliases into your namespace:
 
-- `BInt` (alias of `BigInt2`): An arbitrary-precision signed integer type.
+- `BigInt10` (alias `BInt`): A base-10^9 arbitrary-precision signed integer type.
 - `Decimal` or `BDec` (aliases of `BigDecimal`): An arbitrary-precision decimal type.
 - `Dec128` (alias of `Decimal128`): A 128-bit fixed-precision decimal type.
 - `RoundingMode`: An enumeration for rounding modes.

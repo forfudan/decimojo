@@ -38,7 +38,6 @@ import decimojo.str
 
 # Type aliases
 comptime BUInt = BigUInt
-comptime BigUInt10 = BigUInt
 
 
 struct BigUInt(
@@ -1762,7 +1761,7 @@ struct BigUInt(
         return result
 
     fn number_of_words(self) -> Int:
-        """Returns the number of words in the BigInt10."""
+        """Returns the number of words in the BigUInt."""
         return len(self.words)
 
     fn number_of_trailing_zeros(self) -> Int:

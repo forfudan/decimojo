@@ -14,16 +14,16 @@ Values >1× mean faster than Python; <1× mean slower than Python.
 ### Overall Results (Average Across All Cases)
 
 | Operation        | BigInt2 vs Python | BigInt10/BigUInt vs Python | BigInt2 vs BigInt10 |
-| ---------------- | :---------------: | :----------------------: | :---------------: |
-| **Addition**     |     **4.30×**     |          2.36×           |   ~1.8× faster    |
-| **Multiply**     |     **3.98×**     |          1.93×           |   ~2.1× faster    |
-| **Floor Divide** |       1.24×       |          1.95×           |   ~0.6× slower    |
-| **Trunc Divide** |       1.50×       |          2.32×           |   ~0.6× slower    |
-| **Left Shift**   |     **4.97×**     |           N/A            |        N/A        |
-| **Power**        |   **11.17×** ★    |          0.58×           |   ~19.3× faster   |
-| **Sqrt**         |     **1.39×**     |     1.29× (BigUInt)      |   ~1.1× faster    |
-| **from_string**  |     **2.21×**     |          1.48×           |   ~1.5× faster    |
-| **to_string**    |       0.97×       |        **9.74×**         |   ~0.1× slower    |
+| ---------------- | :---------------: | :------------------------: | :-----------------: |
+| **Addition**     |     **4.30×**     |           2.36×            |    ~1.8× faster     |
+| **Multiply**     |     **3.98×**     |           1.93×            |    ~2.1× faster     |
+| **Floor Divide** |       1.24×       |           1.95×            |    ~0.6× slower     |
+| **Trunc Divide** |       1.50×       |           2.32×            |    ~0.6× slower     |
+| **Left Shift**   |     **4.97×**     |            N/A             |         N/A         |
+| **Power**        |   **11.17×** ★    |           0.58×            |    ~19.3× faster    |
+| **Sqrt**         |     **1.39×**     |      1.29× (BigUInt)       |    ~1.1× faster     |
+| **from_string**  |     **2.21×**     |           1.48×            |    ~1.5× faster     |
+| **to_string**    |       0.97×       |         **9.74×**          |    ~0.1× slower     |
 
 ★ Power average dominated by 2^N shift fast path (up to 140×). General cases: 0.65–0.94×.
 
@@ -71,12 +71,12 @@ Values >1× mean faster than Python; <1× mean slower than Python.
 **Addition by size** (unchanged from initial benchmark):
 
 | Size            | BigInt2 vs Python | BigInt10 vs Python |
-| --------------- | :---------------: | :--------------: |
-| Small (<20 dig) |       5–8×        |      2.5–4×      |
-| 500 digits      |       3.71×       |      1.59×       |
-| 1000 digits     |       2.45×       |      1.43×       |
-| 5000 digits     |       1.59×       |      1.27×       |
-| 10000 digits    |       1.54×       |      1.91×       |
+| --------------- | :---------------: | :----------------: |
+| Small (<20 dig) |       5–8×        |       2.5–4×       |
+| 500 digits      |       3.71×       |       1.59×        |
+| 1000 digits     |       2.45×       |       1.43×        |
+| 5000 digits     |       1.59×       |       1.27×        |
+| 10000 digits    |       1.54×       |       1.91×        |
 
 At 10000 digits, BigInt10 overtakes BigInt2 in addition. This is because BigUInt
 (underlying BigInt10) uses SIMD vectorization for addition at large sizes.
@@ -84,19 +84,19 @@ At 10000 digits, BigInt10 overtakes BigInt2 in addition. This is because BigUInt
 **Multiplication by size** (post-Karatsuba):
 
 | Size              | BigInt2 (ns) | Python (ns) | BigInt2 vs Python | BigInt10 vs Python |
-| ----------------- | -----------: | ----------: | :---------------: | :--------------: |
-| Small (<20 dig)   |        40–50 |     230–310 |     4.6–7.8×      |      2.6–6×      |
-| 50 × 50 dig       |          100 |         300 |       3.0×        |      1.88×       |
-| 100 × 100 dig     |          160 |         530 |       3.3×        |      1.10×       |
-| 200 × 200 dig     |          540 |       1,000 |       1.85×       |      0.74×       |
-| 300 × 300 dig     |          680 |       1,050 |       1.55×       |      0.54×       |
-| 500 × 500 dig     |        1,320 |       1,940 |       1.47×       |      0.46×       |
-| 600 × 600 dig     |        1,720 |       2,810 |       1.63×       |      0.55×       |
-| 700 × 700 dig     |        2,130 |       2,790 |       1.31×       |      0.45×       |
-| 1000 × 1000 dig   |        4,660 |       5,650 |       1.21×       |      0.43×       |
-| 2000 × 2000 dig   |       15,160 |      16,740 |       1.10×       |      0.41×       |
-| 5000 × 5000 dig   |       63,580 |      84,910 |       1.34×       |      0.57×       |
-| 10000 × 10000 dig |      194,720 |     261,370 |       1.34×       |      0.57×       |
+| ----------------- | -----------: | ----------: | :---------------: | :----------------: |
+| Small (<20 dig)   |        40–50 |     230–310 |     4.6–7.8×      |       2.6–6×       |
+| 50 × 50 dig       |          100 |         300 |       3.0×        |       1.88×        |
+| 100 × 100 dig     |          160 |         530 |       3.3×        |       1.10×        |
+| 200 × 200 dig     |          540 |       1,000 |       1.85×       |       0.74×        |
+| 300 × 300 dig     |          680 |       1,050 |       1.55×       |       0.54×        |
+| 500 × 500 dig     |        1,320 |       1,940 |       1.47×       |       0.46×        |
+| 600 × 600 dig     |        1,720 |       2,810 |       1.63×       |       0.55×        |
+| 700 × 700 dig     |        2,130 |       2,790 |       1.31×       |       0.45×        |
+| 1000 × 1000 dig   |        4,660 |       5,650 |       1.21×       |       0.43×        |
+| 2000 × 2000 dig   |       15,160 |      16,740 |       1.10×       |       0.41×        |
+| 5000 × 5000 dig   |       63,580 |      84,910 |       1.34×       |       0.57×        |
+| 10000 × 10000 dig |      194,720 |     261,370 |       1.34×       |       0.57×        |
 
 **Critical improvement:** BigInt2 is now faster than Python at **every** size.
 Previously, 2000+ digit multiplication was 0.36–0.57× Python. Karatsuba brought
@@ -105,10 +105,10 @@ Previously, 2000+ digit multiplication was 0.36–0.57× Python. Karatsuba broug
 **Floor Division by size** (unchanged, not yet optimized):
 
 | Size              | BigInt2 vs Python | BigInt10 vs Python |
-| ----------------- | :---------------: | :--------------: |
-| Small (<20 dig)   |     1.5–2.0×      |       2–4×       |
-| 5000/2500 digits  |       1.47×       |      0.42×       |
-| 10000/5000 digits |       0.88×       |      0.39×       |
+| ----------------- | :---------------: | :----------------: |
+| Small (<20 dig)   |     1.5–2.0×      |        2–4×        |
+| 5000/2500 digits  |       1.47×       |       0.42×        |
+| 10000/5000 digits |       0.88×       |       0.39×        |
 
 BigInt2 division scales better than BigInt10's at large sizes, but both lag Python.
 
@@ -175,18 +175,18 @@ BigInt2 division scales better than BigInt10's at large sizes, but both lag Pyth
 **from_string by size:**
 
 | Size         | BigInt2 vs Python | BigInt10 vs Python |
-| ------------ | :---------------: | :--------------: |
-| 2 digits     |       7.0×        |      1.47×       |
-| 9 digits     |       5.6×        |      1.16×       |
-| 20 digits    |       3.1×        |      1.00×       |
-| 50 digits    |       1.6×        |      0.73×       |
-| 100 digits   |       1.3×        |      0.57×       |
-| 200 digits   |       1.1×        |      0.50×       |
-| 500 digits   |       1.4×        |      0.66×       |
-| 1000 digits  |       1.2×        |      0.91×       |
-| 2000 digits  |       1.1×        |      1.42×       |
-| 5000 digits  |       1.1×        |      3.28×       |
-| 10000 digits |       0.9×        |      5.51×       |
+| ------------ | :---------------: | :----------------: |
+| 2 digits     |       7.0×        |       1.47×        |
+| 9 digits     |       5.6×        |       1.16×        |
+| 20 digits    |       3.1×        |       1.00×        |
+| 50 digits    |       1.6×        |       0.73×        |
+| 100 digits   |       1.3×        |       0.57×        |
+| 200 digits   |       1.1×        |       0.50×        |
+| 500 digits   |       1.4×        |       0.66×        |
+| 1000 digits  |       1.2×        |       0.91×        |
+| 2000 digits  |       1.1×        |       1.42×        |
+| 5000 digits  |       1.1×        |       3.28×        |
+| 10000 digits |       0.9×        |       5.51×        |
 
 BigInt2's O(n²) `multiply+add` loop for from_string degrades at scale, crossing
 below Python at 10000 digits. BigInt10 is faster at 5000+ digits because parsing
@@ -196,18 +196,18 @@ would use `left_half * 10^(n/2) + right_half` to achieve O(n·log²n).
 **to_string by size:**
 
 | Size         | BigInt2 vs Python | BigInt10 vs Python |
-| ------------ | :---------------: | :--------------: |
-| 2 digits     |       3.3×        |      21.0×       |
-| 9 digits     |       2.2×        |      18.7×       |
-| 20 digits    |       1.2×        |       3.6×       |
-| 50 digits    |       0.7×        |       1.3×       |
-| 100 digits   |       0.5×        |       0.9×       |
-| 200 digits   |       0.5×        |       1.0×       |
-| 500 digits   |       0.5×        |       1.8×       |
-| 1000 digits  |       0.6×        |       3.6×       |
-| 2000 digits  |       0.6×        |       8.6×       |
-| 5000 digits  |       0.6×        |      24.1×       |
-| 10000 digits |       0.4×        |      31.5×       |
+| ------------ | :---------------: | :----------------: |
+| 2 digits     |       3.3×        |       21.0×        |
+| 9 digits     |       2.2×        |       18.7×        |
+| 20 digits    |       1.2×        |        3.6×        |
+| 50 digits    |       0.7×        |        1.3×        |
+| 100 digits   |       0.5×        |        0.9×        |
+| 200 digits   |       0.5×        |        1.0×        |
+| 500 digits   |       0.5×        |        1.8×        |
+| 1000 digits  |       0.6×        |        3.6×        |
+| 2000 digits  |       0.6×        |        8.6×        |
+| 5000 digits  |       0.6×        |       24.1×        |
+| 10000 digits |       0.4×        |       31.5×        |
 
 BigInt10's to_string advantage grows with size (trivial in base-10^9). BigInt2
 requires O(n²) repeated division by 10^9. Divide-and-conquer base conversion
@@ -394,7 +394,7 @@ for negative numbers (Python-compatible).
 
 ---
 
-### PR 7: Rename BigInt2 → BigInt10, BigInt10 → BigInt10
+### PR 7: Reassign BInt alias from BigInt10 → BigInt2
 
 **Priority: LOW** — Wait until BigInt2 is clearly better across the board
 
@@ -425,5 +425,5 @@ sizes (100000+).
 | PR4 | D&C from_string               | TODO       | MEDIUM   | from_string at scale       |
 | PR5 | Bitwise AND/OR/XOR/NOT        | TODO       | MEDIUM   | API completeness           |
 | PR6 | GCD + Modular Arithmetic      | TODO       | MEDIUM   | applications               |
-| PR7 | Rename BigInt2 → BigInt10       | TODO       | LOW      | ergonomics                 |
+| PR7 | Reassign BInt → BigInt2       | TODO       | LOW      | ergonomics                 |
 | PR8 | Toom-Cook / NTT               | TODO       | LOW      | extreme sizes (50000+ dig) |
