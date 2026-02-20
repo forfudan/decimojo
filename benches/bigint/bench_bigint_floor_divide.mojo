@@ -7,6 +7,7 @@ import decimojo.bigint2.arithmetics
 from decimojo.tests import (
     BenchCase,
     load_bench_cases,
+    load_bench_iterations,
     open_log_file,
     log_print,
     print_header,
@@ -80,11 +81,14 @@ fn run_case(
 
 
 fn main() raises:
+    var pysys = Python.import_module("sys")
+    pysys.set_int_max_str_digits(10000000)
+
     var log_file = open_log_file("benchmark_bigint_floor_divide")
     print_header("DeciMojo BigInt Floor Division Benchmark", log_file)
 
     var cases = load_bench_cases("bench_data/floor_divide.toml")
-    var iterations = 100
+    var iterations = load_bench_iterations("bench_data/floor_divide.toml")
     var sf1 = List[Float64]()
     var sf2 = List[Float64]()
 

@@ -15,9 +15,7 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-A simple TOML tokenizer for Mojo.
-This provides basic tokenization for TOML files, focusing on the core elements
-needed for test case parsing.
+A TOML tokenizer for Mojo, implementing the core TOML v1.0 specification.
 """
 
 comptime WHITESPACE = " \t"
@@ -220,53 +218,201 @@ struct Tokenizer:
                 self._advance()
 
     fn _read_string(mut self) -> Token:
-        """Read a string value."""
+        """Read a quoted string value (basic or literal).
+
+        Handles:
+        - Basic strings ("..."): escape sequences \\, \", \n, \t, \r, \b, \f
+        - Literal strings ('...'): no escape processing
+        - Multi-line basic strings (triple double quotes)
+        - Multi-line literal strings (triple single quotes)
+        """
         start_line = self.position.line
         start_column = self.position.column
         quote_char = self.current_char
 
-        # Skip opening quote
-        self._advance()
-
-        var chars = List[String]()
-
-        while self.current_char and self.current_char != quote_char:
-            # Handle escape sequence
-            if (
-                self.current_char == r"\\"
-                and self._get_char(self.position.index + 1) == quote_char
+        # Check for multi-line string (triple quotes)
+        var is_multiline = False
+        if (
+            self._get_char(self.position.index + 1) == quote_char
+            and self._get_char(self.position.index + 2) == quote_char
+        ):
+            is_multiline = True
+            self._advance()  # skip 1st quote
+            self._advance()  # skip 2nd quote
+            self._advance()  # skip 3rd quote
+            # A newline immediately after the opening delimiter is trimmed
+            if self.current_char == "\n":
+                self._advance()
+            elif (
+                self.current_char == "\r"
+                and self._get_char(self.position.index + 1) == "\n"
             ):
                 self._advance()
-                chars.append(quote_char)
-            else:
-                chars.append(self.current_char)
-            self._advance()
-
-        result = String.join("", chars)
-
-        # Skip closing quote
-        if self.current_char == quote_char:
-            self._advance()
-            return Token(TokenType.STRING, result, start_line, start_column)
+                self._advance()
         else:
-            return Token(
-                TokenType.ERROR, "Unterminated string", start_line, start_column
-            )
+            # Single-line: skip opening quote
+            self._advance()
 
-    fn _read_number(mut self) -> Token:
-        """Read a number value."""
+        var is_literal = quote_char == "'"
+        var chars = List[String]()
+
+        while self.current_char:
+            if is_multiline:
+                # Check for closing triple quotes
+                if (
+                    self.current_char == quote_char
+                    and self._get_char(self.position.index + 1) == quote_char
+                    and self._get_char(self.position.index + 2) == quote_char
+                ):
+                    self._advance()  # skip 1st
+                    self._advance()  # skip 2nd
+                    self._advance()  # skip 3rd
+                    return Token(
+                        TokenType.STRING,
+                        String.join("", chars),
+                        start_line,
+                        start_column,
+                    )
+                # Multi-line strings allow newlines
+                if not is_literal and self.current_char == "\\":
+                    # Process escape sequence
+                    var next_ch = self._get_char(self.position.index + 1)
+                    if next_ch == "\n" or next_ch == "\r":
+                        # Line ending backslash: skip whitespace continuation
+                        self._advance()  # skip backslash
+                        while self.current_char and (
+                            self.current_char == " "
+                            or self.current_char == "\t"
+                            or self.current_char == "\n"
+                            or self.current_char == "\r"
+                        ):
+                            self._advance()
+                        continue
+                    chars.append(self._read_escape_sequence())
+                else:
+                    chars.append(self.current_char)
+                    self._advance()
+            else:
+                # Single-line string
+                if self.current_char == quote_char:
+                    # Closing quote
+                    self._advance()
+                    return Token(
+                        TokenType.STRING,
+                        String.join("", chars),
+                        start_line,
+                        start_column,
+                    )
+                if self.current_char == "\n" or self.current_char == "\r":
+                    # Newlines not allowed in single-line strings
+                    return Token(
+                        TokenType.ERROR,
+                        "Newline in single-line string",
+                        start_line,
+                        start_column,
+                    )
+                if not is_literal and self.current_char == "\\":
+                    # Process escape sequence
+                    chars.append(self._read_escape_sequence())
+                else:
+                    chars.append(self.current_char)
+                    self._advance()
+
+        return Token(
+            TokenType.ERROR, "Unterminated string", start_line, start_column
+        )
+
+    fn _read_escape_sequence(mut self) -> String:
+        """Read and return the character for a backslash escape sequence.
+
+        Assumes current_char is '\\'. Advances past the full sequence.
+        Handles: \\, \", \', \n, \t, \r, \b, \f.
+        """
+        self._advance()  # skip the backslash
+        var esc = self.current_char
+        self._advance()  # skip the escape character
+
+        if esc == "\\":
+            return "\\"
+        elif esc == '"':
+            return '"'
+        elif esc == "'":
+            return "'"
+        elif esc == "n":
+            return "\n"
+        elif esc == "t":
+            return "\t"
+        elif esc == "r":
+            return "\r"
+        elif esc == "b":
+            return "\x08"
+        elif esc == "f":
+            return "\x0c"
+        else:
+            # Unknown escape: keep as-is (backslash + char)
+            return "\\" + esc
+
+    fn _read_number(mut self, sign: String = "") -> Token:
+        """Read a number value.
+
+        Handles:
+        - Plain integers: 42
+        - Signed numbers: +42, -42, +3.14, -3.14
+        - Underscored numbers: 1_000, 1_000.5
+        - Hex: 0xFF, Octal: 0o77, Binary: 0b1010
+        - Scientific notation: 1e10, 1.5e-3, 6.022E+23
+        - Float: 3.14
+        """
         start_line = self.position.line
         start_column = self.position.column
-        result = String("")
-        is_float = False
+        var result = sign
+        var is_float = False
 
+        # Check for hex/octal/binary prefixes: 0x, 0o, 0b
+        if (
+            self.current_char == "0"
+            and self._get_char(self.position.index + 1) in "xXoObB"
+        ):
+            result += self.current_char  # '0'
+            self._advance()
+            result += self.current_char  # 'x'/'o'/'b'
+            self._advance()
+            # Read hex/octal/binary digits (including underscores)
+            while self.current_char and (
+                self.current_char.is_ascii_digit()
+                or self.current_char in "abcdefABCDEF_"
+            ):
+                if self.current_char != "_":
+                    result += self.current_char
+                self._advance()
+            return Token(TokenType.INTEGER, result, start_line, start_column)
+
+        # Read digits, dots, underscores, and exponents
         while self.current_char and (
-            self.current_char.is_ascii_digit() or self.current_char == "."
+            self.current_char.is_ascii_digit()
+            or self.current_char == "."
+            or self.current_char == "_"
+            or self.current_char == "e"
+            or self.current_char == "E"
         ):
             if self.current_char == ".":
                 is_float = True
-            result += self.current_char
-            self._advance()
+                result += self.current_char
+                self._advance()
+            elif self.current_char == "e" or self.current_char == "E":
+                is_float = True
+                result += self.current_char
+                self._advance()
+                # Optional sign after exponent
+                if self.current_char == "+" or self.current_char == "-":
+                    result += self.current_char
+                    self._advance()
+            elif self.current_char == "_":
+                # Skip underscores (TOML allows them as visual separators)
+                self._advance()
+            else:
+                result += self.current_char
+                self._advance()
 
         if is_float:
             return Token(TokenType.FLOAT, result, start_line, start_column)
@@ -393,6 +539,40 @@ struct Tokenizer:
 
         if self.current_char == QUOTE or self.current_char == LITERAL_QUOTE:
             return self._read_string()
+
+        # Handle sign prefixes: +42, -42, +3.14, -3.14, +inf, -inf, +nan, -nan
+        if self.current_char == "+" or self.current_char == "-":
+            var sign_char = self.current_char
+            var next_ch = self._get_char(self.position.index + 1)
+            if next_ch.is_ascii_digit():
+                self._advance()  # skip the sign
+                return self._read_number(sign_char)
+            # +inf, -inf, +nan, -nan
+            var next2 = self._get_char(self.position.index + 2)
+            var next3 = self._get_char(self.position.index + 3)
+            if next_ch == "i" and next2 == "n" and next3 == "f":
+                var start_line = self.position.line
+                var start_col = self.position.column
+                self._advance()  # skip sign
+                self._advance()  # skip i
+                self._advance()  # skip n
+                self._advance()  # skip f
+                if sign_char == "-":
+                    return Token(
+                        TokenType.FLOAT,
+                        "-inf",
+                        start_line,
+                        start_col,
+                    )
+                return Token(TokenType.FLOAT, "inf", start_line, start_col)
+            if next_ch == "n" and next2 == "a" and next3 == "n":
+                var start_line = self.position.line
+                var start_col = self.position.column
+                self._advance()  # skip sign
+                self._advance()  # skip n
+                self._advance()  # skip a
+                self._advance()  # skip n
+                return Token(TokenType.FLOAT, "nan", start_line, start_col)
 
         if self.current_char.is_ascii_digit():
             return self._read_number()

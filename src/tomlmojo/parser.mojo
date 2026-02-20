@@ -15,9 +15,7 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-A simple TOML parser for Mojo.
-This provides basic parsing for TOML files, focusing on the core elements
-needed for test case parsing.
+A TOML parser for Mojo, implementing the core TOML v1.0 specification.
 """
 
 from collections import Dict
@@ -299,14 +297,64 @@ struct TOMLParser:
         if token.type == TokenType.STRING:
             return TOMLValue(token.value)
         elif token.type == TokenType.INTEGER:
-            return TOMLValue(atol(token.value))
+            var val_str = token.value
+            # Handle hex (0x), octal (0o), binary (0b) prefixes
+            if len(val_str) > 2:
+                var prefix = String(val_str[:2])
+                if prefix == "0x" or prefix == "0X":
+                    # Parse hexadecimal
+                    var hex_str = String(val_str[2:])
+                    var result: Int = 0
+                    for i in range(len(hex_str)):
+                        var ch = String(hex_str[byte=i])
+                        result *= 16
+                        if ch >= "0" and ch <= "9":
+                            result += ord(ch) - ord("0")
+                        elif ch >= "a" and ch <= "f":
+                            result += ord(ch) - ord("a") + 10
+                        elif ch >= "A" and ch <= "F":
+                            result += ord(ch) - ord("A") + 10
+                    return TOMLValue(result)
+                elif prefix == "0o" or prefix == "0O":
+                    # Parse octal
+                    var oct_str = String(val_str[2:])
+                    var result: Int = 0
+                    for i in range(len(oct_str)):
+                        result = result * 8 + (
+                            ord(String(oct_str[byte=i])) - ord("0")
+                        )
+                    return TOMLValue(result)
+                elif prefix == "0b" or prefix == "0B":
+                    # Parse binary
+                    var bin_str = String(val_str[2:])
+                    var result: Int = 0
+                    for i in range(len(bin_str)):
+                        result = result * 2 + (
+                            ord(String(bin_str[byte=i])) - ord("0")
+                        )
+                    return TOMLValue(result)
+            return TOMLValue(atol(val_str))
         elif token.type == TokenType.FLOAT:
+            if token.value == "inf" or token.value == "+inf":
+                return TOMLValue(Float64.MAX)
+            elif token.value == "-inf":
+                return TOMLValue(-Float64.MAX)
+            elif (
+                token.value == "nan"
+                or token.value == "+nan"
+                or token.value == "-nan"
+            ):
+                return TOMLValue(atof("nan"))
             return TOMLValue(atof(token.value))
         elif token.type == TokenType.KEY:
             if token.value == "true":
                 return TOMLValue(True)
             elif token.value == "false":
                 return TOMLValue(False)
+            elif token.value == "inf":
+                return TOMLValue(Float64.MAX)
+            elif token.value == "nan":
+                return TOMLValue(atof("nan"))
             # Default to string for other keys
             return TOMLValue(token.value)
         elif token.type == TokenType.ARRAY_START:

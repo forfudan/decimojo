@@ -15,7 +15,24 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-A simple TOML parser for Mojo.
+A TOML parser for Mojo, implementing the core TOML v1.0 specification.
+
+Supports:
+- Basic and literal strings (single-line and multi-line)
+- String escape sequences (\\n, \\t, \\r, \\\\, \\", etc.)
+- Integers (decimal, hex 0x, octal 0o, binary 0b, underscores)
+- Floats (decimal, scientific notation, inf, nan, underscores)
+- Signed numbers (+42, -3.14, +inf, -inf)
+- Booleans (true, false)
+- Arrays ([...])
+- Tables ([name]) and arrays of tables ([[name]])
+- Comments (#)
 """
 
-from .parser import parse_file, TOMLValueType
+from .parser import (
+    parse_file,
+    parse_string,
+    TOMLValue,
+    TOMLValueType,
+    TOMLDocument,
+)
