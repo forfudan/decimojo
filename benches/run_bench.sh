@@ -23,6 +23,7 @@ if [[ -z "$TYPE" ]]; then
     echo ""
     echo "Types:"
     echo "  bigint   (bint)    BigInt benchmarks (3-way: BigInt vs BigInt2 vs Python int)"
+    echo "  bigint2  (bint2)   BigInt2-specific benchmarks (power, sqrt, shift, string)"
     echo "  biguint  (buint)   BigUInt benchmarks (BigUInt vs Python int)"
     echo "  decimal128 (dec)   Decimal128 benchmarks (Decimal128 vs Python decimal)"
     echo "  bigdecimal (bdec)  BigDecimal benchmarks (BigDecimal vs Python decimal)"
@@ -39,6 +40,7 @@ fi
 # --- Map short names ---
 case "$TYPE" in
     bint)  TYPE="bigint" ;;
+    bint2) TYPE="bigint2" ;;
     buint) TYPE="biguint" ;;
     dec)   TYPE="decimal128" ;;
     bdec)  TYPE="bigdecimal" ;;

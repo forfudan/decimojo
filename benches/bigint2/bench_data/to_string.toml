@@ -1,0 +1,50 @@
+[config]
+iterations = 200
+
+[[cases]]
+a = "42"
+name = "Tiny number (2 digits)"
+
+[[cases]]
+a = "123456789"
+name = "Small number (9 digits)"
+
+[[cases]]
+a = "12345678901234567890"
+name = "Medium number (20 digits)"
+
+[[cases]]
+a = "{9,50}"
+name = "Large number (50 digits)"
+
+[[cases]]
+a = "{9,100}"
+name = "Very large number (100 digits)"
+
+[[cases]]
+a = "{9,200}"
+name = "Huge number (200 digits)"
+
+[[cases]]
+a = "{9,500}"
+name = "Extreme number (500 digits)"
+
+[[cases]]
+a = "{9,1000}"
+name = "Ultra-extreme number (1000 digits)"
+
+[[cases]]
+a = "{9,2000}"
+name = "2000-digit number"
+
+[[cases]]
+a = "{9,5000}"
+name = "5000-digit number"
+
+[[cases]]
+a = "{9,10000}"
+name = "10000-digit number (~1041 words)"
+
+[[cases]]
+a = "-{9,100}"
+name = "Negative 100-digit number"

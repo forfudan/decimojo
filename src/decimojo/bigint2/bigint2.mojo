@@ -32,6 +32,9 @@ will be renamed to BigInt10, and BigInt2 will be renamed to BigInt.
 
 from memory import UnsafePointer, memcpy
 
+import decimojo.bigint2.arithmetics
+import decimojo.bigint2.comparison
+import decimojo.bigint2.exponential
 from decimojo.bigint.bigint import BigInt
 from decimojo.biguint.biguint import BigUInt
 from decimojo.errors import DeciMojoError
@@ -45,7 +48,9 @@ struct BigInt2(
     Absable,
     Comparable,
     Copyable,
+    IntableRaising,
     Movable,
+    Representable,
     Stringable,
     Writable,
 ):
@@ -174,6 +179,16 @@ struct BigInt2(
         """
         self = Self.from_string(value)
 
+    @implicit
+    fn __init__(out self, value: Scalar):
+        """Constructs a BigInt2 from an integral scalar.
+        This includes all SIMD integral types, such as Int8, Int16, UInt32, etc.
+
+        Constraints:
+            The dtype of the scalar must be integral.
+        """
+        self = Self.from_integral_scalar(value)
+
     # ===------------------------------------------------------------------=== #
     # Constructing methods that are not dunders
     # ===------------------------------------------------------------------=== #
@@ -257,6 +272,51 @@ struct BigInt2(
             remaining >>= 32
 
         return Self(raw_words=words^, sign=False)
+
+    @staticmethod
+    fn from_integral_scalar[dtype: DType, //](value: SIMD[dtype, 1]) -> Self:
+        """Initializes a BigInt2 from an integral scalar.
+        This includes all SIMD integral types, such as Int8, Int16, UInt32, etc.
+
+        Constraints:
+            The dtype must be integral.
+
+        Args:
+            value: The Scalar value to be converted to BigInt2.
+
+        Returns:
+            The BigInt2 representation of the Scalar value.
+        """
+
+        constrained[dtype.is_integral(), "dtype must be integral."]()
+
+        if value == 0:
+            return Self()
+
+        var sign: Bool
+        var magnitude: UInt64
+
+        @parameter
+        if dtype.is_unsigned():
+            sign = False
+            magnitude = UInt64(value)
+        else:
+            if value < 0:
+                sign = True
+                # Handle minimum values by converting through Int
+                magnitude = UInt64(-Int64(value))
+            else:
+                sign = False
+                magnitude = UInt64(value)
+
+        var words = List[UInt32](capacity=2)
+        var lo = UInt32(magnitude & 0xFFFF_FFFF)
+        var hi = UInt32(magnitude >> 32)
+        words.append(lo)
+        if hi != 0:
+            words.append(hi)
+
+        return Self(raw_words=words^, sign=sign)
 
     @staticmethod
     fn from_string(value: String) raises -> Self:
@@ -383,6 +443,12 @@ struct BigInt2(
     # Output dunders, type-transfer dunders
     # ===------------------------------------------------------------------=== #
 
+    fn __int__(self) raises -> Int:
+        """Returns the number as Int.
+        See `to_int()` for more information.
+        """
+        return self.to_int()
+
     fn __str__(self) -> String:
         """Returns a decimal string representation of the BigInt2."""
         return self.to_decimal_string()
@@ -398,6 +464,41 @@ struct BigInt2(
     # ===------------------------------------------------------------------=== #
     # Type-transfer or output methods that are not dunders
     # ===------------------------------------------------------------------=== #
+
+    fn to_int(self) raises -> Int:
+        """Returns the number as Int.
+
+        Returns:
+            The number as Int.
+
+        Raises:
+            Error: If the number is too large or too small to fit in Int.
+        """
+        # Int is 64-bit, so we need at most 2 words to represent it.
+        # Int.MAX = 9_223_372_036_854_775_807 = 0x7FFF_FFFF_FFFF_FFFF
+        if len(self.words) > 2:
+            raise Error("BigInt2.to_int(): The number exceeds the size of Int")
+
+        var magnitude: UInt64 = UInt64(self.words[0])
+        if len(self.words) == 2:
+            magnitude += UInt64(self.words[1]) << 32
+
+        if self.sign:
+            # Negative: check against Int.MIN magnitude (2^63)
+            if magnitude > UInt64(9_223_372_036_854_775_808):
+                raise Error(
+                    "BigInt2.to_int(): The number exceeds the size of Int"
+                )
+            if magnitude == UInt64(9_223_372_036_854_775_808):
+                return Int.MIN
+            return -Int(magnitude)
+        else:
+            # Positive: check against Int.MAX (2^63 - 1)
+            if magnitude > UInt64(9_223_372_036_854_775_807):
+                raise Error(
+                    "BigInt2.to_int(): The number exceeds the size of Int"
+                )
+            return Int(magnitude)
 
     fn to_bigint(self) -> BigInt:
         """Converts the BigInt2 to a base-10^9 BigInt.
@@ -427,15 +528,63 @@ struct BigInt2(
 
         return BigInt(raw_words=decimal_words^, sign=self.sign)
 
-    fn to_decimal_string(self) -> String:
+    fn to_decimal_string(self, line_width: Int = 0) -> String:
         """Returns the decimal string representation of the BigInt2.
 
         Converts to BigInt (base-10^9) and leverages its string formatting.
 
+        Args:
+            line_width: The maximum line width for the string representation.
+                Default is 0, which means no line width limit.
+
         Returns:
             The decimal string (e.g. "-12345").
         """
-        return String(self.to_bigint())
+        var result = String(self.to_bigint())
+
+        if line_width > 0:
+            var start = 0
+            var end = line_width
+            var lines = List[String](capacity=len(result) // line_width + 1)
+            while end < len(result):
+                lines.append(String(result[start:end]))
+                start = end
+                end += line_width
+            lines.append(String(result[start:]))
+            result = String("\n").join(lines^)
+
+        return result^
+
+    fn to_string_with_separators(self, separator: String = "_") -> String:
+        """Returns string representation of the BigInt2 with separators.
+
+        Args:
+            separator: The separator string. Default is "_".
+
+        Returns:
+            The string representation of the BigInt2 with separators.
+        """
+
+        var result = self.to_decimal_string()
+        var start_idx = 0
+        if self.sign:
+            start_idx = 1  # Skip the minus sign
+
+        var digits_part = String(result[start_idx:])
+        var end = len(digits_part)
+        var start = end - 3
+        var blocks = List[String](capacity=len(digits_part) // 3 + 1)
+        while start > 0:
+            blocks.append(String(digits_part[start:end]))
+            end = start
+            start = end - 3
+        blocks.append(String(digits_part[0:end]))
+        blocks.reverse()
+        var formatted = separator.join(blocks)
+
+        if self.sign:
+            return String("-") + formatted
+        return formatted^
 
     fn to_hex_string(self) -> String:
         """Returns a hexadecimal string representation of the BigInt2.
@@ -561,6 +710,38 @@ struct BigInt2(
                 )
             )
 
+    @always_inline
+    fn __divmod__(self, other: Self) raises -> Tuple[Self, Self]:
+        try:
+            return decimojo.bigint2.arithmetics.floor_divmod(self, other)
+        except e:
+            raise Error(
+                DeciMojoError(
+                    message=None,
+                    function="BigInt2.__divmod__()",
+                    file="src/decimojo/bigint2/bigint2.mojo",
+                    previous_error=e^,
+                )
+            )
+
+    @always_inline
+    fn __pow__(self, exponent: Self) raises -> Self:
+        return self.power(exponent)
+
+    @always_inline
+    fn __pow__(self, exponent: Int) raises -> Self:
+        return self.power(exponent)
+
+    @always_inline
+    fn __lshift__(self, shift: Int) -> Self:
+        """Returns self << shift (multiply by 2^shift)."""
+        return decimojo.bigint2.arithmetics.left_shift(self, shift)
+
+    @always_inline
+    fn __rshift__(self, shift: Int) -> Self:
+        """Returns self >> shift (floor divide by 2^shift)."""
+        return decimojo.bigint2.arithmetics.right_shift(self, shift)
+
     # ===------------------------------------------------------------------=== #
     # Basic binary right-side arithmetic operation dunders
     # ===------------------------------------------------------------------=== #
@@ -585,6 +766,14 @@ struct BigInt2(
     fn __rmod__(self, other: Self) raises -> Self:
         return decimojo.bigint2.arithmetics.floor_modulo(other, self)
 
+    @always_inline
+    fn __rdivmod__(self, other: Self) raises -> Tuple[Self, Self]:
+        return decimojo.bigint2.arithmetics.floor_divmod(other, self)
+
+    @always_inline
+    fn __rpow__(self, base: Self) raises -> Self:
+        return base.power(self)
+
     # ===------------------------------------------------------------------=== #
     # Basic binary augmented arithmetic assignments dunders
     # (+=, -=, *=, //=, %=)
@@ -593,6 +782,11 @@ struct BigInt2(
     @always_inline
     fn __iadd__(mut self, other: Self):
         self = decimojo.bigint2.arithmetics.add(self, other)
+
+    @always_inline
+    fn __iadd__(mut self, other: Int):
+        """Optimized in-place addition with Int."""
+        self = decimojo.bigint2.arithmetics.add(self, Self.from_int(other))
 
     @always_inline
     fn __isub__(mut self, other: Self):
@@ -609,6 +803,14 @@ struct BigInt2(
     @always_inline
     fn __imod__(mut self, other: Self) raises:
         self = decimojo.bigint2.arithmetics.floor_modulo(self, other)
+
+    @always_inline
+    fn __ilshift__(mut self, shift: Int):
+        self = decimojo.bigint2.arithmetics.left_shift(self, shift)
+
+    @always_inline
+    fn __irshift__(mut self, shift: Int):
+        self = decimojo.bigint2.arithmetics.right_shift(self, shift)
 
     # ===------------------------------------------------------------------=== #
     # Basic binary comparison operation dunders
@@ -704,13 +906,83 @@ struct BigInt2(
         """
         return decimojo.bigint2.arithmetics.truncate_modulo(self, other)
 
+    fn power(self, exponent: Int) raises -> Self:
+        """Raises the BigInt2 to the power of an integer exponent.
+
+        Args:
+            exponent: The non-negative exponent.
+
+        Returns:
+            The result of self raised to the given exponent.
+
+        Raises:
+            Error: If the exponent is negative.
+        """
+        return decimojo.bigint2.arithmetics.power(self, exponent)
+
+    fn power(self, exponent: Self) raises -> Self:
+        """Raises the BigInt2 to the power of another BigInt2.
+
+        Args:
+            exponent: The exponent (must be non-negative and fit in Int).
+
+        Returns:
+            The result of self raised to the given exponent.
+
+        Raises:
+            Error: If the exponent is negative or too large.
+        """
+        if exponent.is_negative():
+            raise Error("BigInt2.power(): Exponent must be non-negative")
+        var exp_int = exponent.to_int()
+        return self.power(exp_int)
+
+    fn sqrt(self) raises -> Self:
+        """Returns the integer square root of this BigInt2.
+
+        The result is the largest integer y such that y * y <= |self|.
+        Only defined for non-negative values.
+
+        Returns:
+            The integer square root.
+
+        Raises:
+            Error: If the value is negative.
+        """
+        return decimojo.bigint2.exponential.sqrt(self)
+
+    fn isqrt(self) raises -> Self:
+        """Returns the integer square root of this BigInt2.
+        It is equal to `sqrt()`.
+
+        Returns:
+            The integer square root.
+
+        Raises:
+            Error: If the value is negative.
+        """
+        return decimojo.bigint2.exponential.sqrt(self)
+
+    @always_inline
+    fn compare_magnitudes(self, other: Self) -> Int8:
+        """Compares the magnitudes (absolute values) of two BigInt2 numbers.
+        See `compare_magnitudes()` for more information.
+        """
+        return decimojo.bigint2.comparison.compare_magnitudes(self, other)
+
+    @always_inline
+    fn compare(self, other: Self) -> Int8:
+        """Compares two BigInt2 numbers.
+        See `compare()` for more information.
+        """
+        return decimojo.bigint2.comparison.compare(self, other)
+
     # ===------------------------------------------------------------------=== #
-    # Bitwise operation dunders (stubs for future implementation)
+    # Bitwise operations — implemented via __lshift__/__rshift__ dunders above.
+    # Full bitwise AND/OR/XOR/NOT are planned for a future phase.
     # ===------------------------------------------------------------------=== #
 
     # TODO: Phase 4 — Implement in bitwise.mojo
-    # fn __lshift__(self, shift: Int) -> Self
-    # fn __rshift__(self, shift: Int) -> Self
     # fn __and__(self, other: Self) -> Self
     # fn __or__(self, other: Self) -> Self
     # fn __xor__(self, other: Self) -> Self
@@ -744,6 +1016,10 @@ struct BigInt2(
         """Returns True if the value is exactly 1."""
         return not self.sign and len(self.words) == 1 and self.words[0] == 1
 
+    fn is_one_or_minus_one(self) -> Bool:
+        """Returns True if the value is 1 or -1."""
+        return len(self.words) == 1 and self.words[0] == 1
+
     fn bit_length(self) -> Int:
         """Returns the number of bits needed to represent the magnitude,
         excluding leading zeros.
@@ -769,6 +1045,18 @@ struct BigInt2(
     fn number_of_words(self) -> Int:
         """Returns the number of words in the magnitude."""
         return len(self.words)
+
+    fn number_of_digits(self) -> Int:
+        """Returns the number of decimal digits in the magnitude.
+
+        Notes:
+            Zero has 1 digit.
+        """
+        if self.is_zero():
+            return 1
+
+        # Convert to BigInt and use its digit counting
+        return self.to_bigint().magnitude.number_of_digits()
 
     # ===------------------------------------------------------------------=== #
     # Internal utility methods

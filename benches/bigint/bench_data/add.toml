@@ -1,5 +1,5 @@
 [config]
-iterations = 1000
+iterations = 500
 
 [[cases]]
 a = "42"
@@ -100,3 +100,23 @@ name = "Addition of repeated digits"
 a = "340282366920938463463374607431768211456"
 b = "115792089237316195423570985008687907853269984665640564039457584007913129639936"
 name = "Addition of powers of two"
+
+[[cases]]
+a = "{9,500}"
+b = "{8,500}"
+name = "Addition of 500-digit numbers"
+
+[[cases]]
+a = "{9,1000}"
+b = "{8,1000}"
+name = "Addition of 1000-digit numbers"
+
+[[cases]]
+a = "{9,5000}"
+b = "{8,5000}"
+name = "Addition of 5000-digit numbers (~520 words)"
+
+[[cases]]
+a = "{9,10000}"
+b = "{8,10000}"
+name = "Addition of 10000-digit numbers (~1041 words)"
