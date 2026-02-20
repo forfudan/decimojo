@@ -28,7 +28,7 @@ DeciMojo 爲 Mojo 提供任意精度小數和整數運算庫，爲金融建模�
 | 類型         | 別名              | 信息               | 內部表示                            |
 | ------------ | ----------------- | ------------------ | ----------------------------------- |
 | `BigUInt`    | `BUInt`           | 任意精度無符號整數 | `List[UInt32]`                      |
-| `BigInt10`     | `BInt`            | 任意精度整數       | `BigUInt`, `Bool`                   |
+| `BigInt10`   | `BInt`            | 任意精度整數       | `BigUInt`, `Bool`                   |
 | `BigDecimal` | `BDec`, `Decimal` | 任意精度小數       | `BigUInt`, `Int`, `Bool`            |
 | `Decimal128` | `Dec128`          | 128 位定點精度小數 | `UInt32`,`UInt32`,`UInt32`,`UInt32` |
 
@@ -81,7 +81,7 @@ from decimojo import *
 - `BigInt10`（別名 `BInt`）：任意精度有符號整數類型。
 - `BigDecimal`（別名 `BDec` 和 `Decimal`）：任意精度小數類型。
 - `Decimal128`（別名 `Dec128`）：128 位定點精度小數類型。
-- `RoundingMode`（別名 `RM`）：捨入模式的枚舉。
+- `RoundingMode`：捨入模式的枚舉。
 - `ROUND_DOWN`、`ROUND_HALF_UP`、`ROUND_HALF_EVEN`、`ROUND_UP`：常用捨入模式的常量。
 
 ---
