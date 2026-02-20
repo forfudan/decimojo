@@ -300,3 +300,13 @@ name = "Division with 1200-digit by 400-digit (exact division, power of 2)"
 a = "7{3,1499}"
 b = "5{7,499}"
 name = "Division with extremely large 1500-digit by large 500-digit number"
+
+[[cases]]
+a = "{9,5000}"
+b = "{7,2500}"
+name = "5000-digit dividend / 2500-digit divisor"
+
+[[cases]]
+a = "{9,10000}"
+b = "{7,5000}"
+name = "10000-digit dividend / 5000-digit divisor"

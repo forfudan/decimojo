@@ -1,0 +1,107 @@
+[config]
+iterations = 50
+
+[[cases]]
+a = "2"
+b = "10"
+name = "Small base, small exponent (2^10)"
+
+[[cases]]
+a = "2"
+b = "64"
+name = "Small base, medium exponent (2^64)"
+
+[[cases]]
+a = "2"
+b = "256"
+name = "Small base, large exponent (2^256)"
+
+[[cases]]
+a = "2"
+b = "1024"
+name = "Small base, very large exponent (2^1024)"
+
+[[cases]]
+a = "10"
+b = "20"
+name = "Base 10, exponent 20"
+
+[[cases]]
+a = "10"
+b = "100"
+name = "Base 10, exponent 100"
+
+[[cases]]
+a = "10"
+b = "500"
+name = "Base 10, exponent 500"
+
+[[cases]]
+a = "3"
+b = "100"
+name = "Base 3, exponent 100"
+
+[[cases]]
+a = "7"
+b = "50"
+name = "Base 7, exponent 50"
+
+[[cases]]
+a = "99"
+b = "50"
+name = "Medium base, medium exponent (99^50)"
+
+[[cases]]
+a = "123456789"
+b = "10"
+name = "Large base, small exponent"
+
+[[cases]]
+a = "-2"
+b = "100"
+name = "Negative base, even exponent (-2^100)"
+
+[[cases]]
+a = "-2"
+b = "101"
+name = "Negative base, odd exponent (-2^101)"
+
+[[cases]]
+a = "2"
+b = "2048"
+name = "Small base, huge exponent (2^2048)"
+
+[[cases]]
+a = "1000"
+b = "100"
+name = "Base 1000, exponent 100"
+
+[[cases]]
+a = "2"
+b = "8192"
+name = "Small base, massive exponent (2^8192, ~2467 digits)"
+
+[[cases]]
+a = "2"
+b = "32768"
+name = "Small base, extreme exponent (2^32768, ~9864 digits)"
+
+[[cases]]
+a = "10"
+b = "2000"
+name = "Base 10, exponent 2000 (~2001 digits)"
+
+[[cases]]
+a = "10"
+b = "5000"
+name = "Base 10, exponent 5000 (~5001 digits)"
+
+[[cases]]
+a = "99"
+b = "500"
+name = "Medium base, large exponent (99^500, ~999 digits)"
+
+[[cases]]
+a = "99"
+b = "2500"
+name = "Medium base, huge exponent (99^2500, ~4990 digits)"

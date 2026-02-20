@@ -723,3 +723,263 @@ fn truncate_modulo(x1: BigInt2, x2: BigInt2) raises -> BigInt2:
 
     # Truncate modulo: remainder has the same sign as the dividend
     return BigInt2(raw_words=r_words^, sign=x1.sign)
+
+
+fn floor_divmod(x1: BigInt2, x2: BigInt2) raises -> Tuple[BigInt2, BigInt2]:
+    """Returns both the floor quotient and floor remainder.
+
+    The result satisfies: x1 = q * x2 + r, where r has same sign as x2.
+
+    Args:
+        x1: The dividend.
+        x2: The divisor.
+
+    Returns:
+        A tuple of (quotient, remainder).
+
+    Raises:
+        Error: If x2 is zero.
+    """
+    var result = _divmod_magnitudes(x1.words, x2.words)
+    var q_words = result[0].copy()
+    var r_words = result[1].copy()
+
+    # Check if remainder is zero
+    var r_is_zero = True
+    for word in r_words:
+        if word != 0:
+            r_is_zero = False
+            break
+
+    if x1.sign == x2.sign:
+        # Same signs → positive quotient (floor = truncate)
+        var q = BigInt2(raw_words=q_words^, sign=False)
+        if r_is_zero:
+            return (q^, BigInt2())
+        return (q^, BigInt2(raw_words=r_words^, sign=x1.sign))
+    else:
+        # Different signs → negative quotient
+        if r_is_zero:
+            var q_is_zero = True
+            for word in q_words:
+                if word != 0:
+                    q_is_zero = False
+                    break
+            return (BigInt2(raw_words=q_words^, sign=not q_is_zero), BigInt2())
+        else:
+            # floor_div rounds away from zero, mod has sign of divisor
+            var one_word: List[UInt32] = [UInt32(1)]
+            var q_plus_one = _add_magnitudes(q_words, one_word)
+            var adjusted = _subtract_magnitudes(x2.words, r_words)
+            return (
+                BigInt2(raw_words=q_plus_one^, sign=True),
+                BigInt2(raw_words=adjusted^, sign=x2.sign),
+            )
+
+
+fn power(base: BigInt2, exponent: Int) raises -> BigInt2:
+    """Raises a BigInt2 to the power of a non-negative integer exponent.
+
+    Uses binary exponentiation (exponentiation by squaring) for O(log n)
+    multiplications.
+
+    Args:
+        base: The base value.
+        exponent: The non-negative exponent.
+
+    Returns:
+        The result of base raised to the given exponent.
+
+    Raises:
+        Error: If the exponent is negative.
+        Error: If the exponent is too large (>= 1_000_000_000).
+    """
+    if exponent < 0:
+        raise Error(
+            DeciMojoError(
+                file="src/decimojo/bigint2/arithmetics.mojo",
+                function="power()",
+                message=(
+                    "The exponent "
+                    + String(exponent)
+                    + " is negative.\n"
+                    + "Consider using a non-negative exponent."
+                ),
+                previous_error=None,
+            )
+        )
+
+    if exponent == 0:
+        return BigInt2(1)
+
+    if exponent >= 1_000_000_000:
+        raise Error(
+            DeciMojoError(
+                file="src/decimojo/bigint2/arithmetics.mojo",
+                function="power()",
+                message=(
+                    "The exponent "
+                    + String(exponent)
+                    + " is too large.\n"
+                    + "Consider using an exponent below 1_000_000_000."
+                ),
+                previous_error=None,
+            )
+        )
+
+    if base.is_zero():
+        return BigInt2()
+
+    if base.is_one():
+        return BigInt2(1)
+
+    # Determine result sign: negative only if base is negative and exp is odd
+    var result_sign = base.sign and (exponent % 2 == 1)
+
+    # Binary exponentiation on the magnitude
+    var result_words: List[UInt32] = [UInt32(1)]
+    var base_words = List[UInt32](capacity=len(base.words))
+    for word in base.words:
+        base_words.append(word)
+
+    var exp = exponent
+    while exp > 0:
+        if exp & 1 == 1:
+            result_words = _multiply_magnitudes(result_words, base_words)
+        base_words = _multiply_magnitudes(base_words, base_words)
+        exp >>= 1
+
+    return BigInt2(raw_words=result_words^, sign=result_sign)
+
+
+fn left_shift(x: BigInt2, shift: Int) -> BigInt2:
+    """Shifts a BigInt2 left by `shift` bits (multiply by 2^shift).
+
+    This is an efficient operation for base-2^32 representation since it
+    operates directly on the word boundaries.
+
+    Args:
+        x: The value to shift.
+        shift: The number of bits to shift left (must be non-negative).
+
+    Returns:
+        The result of shifting x left by shift bits.
+    """
+    if x.is_zero() or shift == 0:
+        return x.copy()
+
+    if shift < 0:
+        return right_shift(x, -shift)
+
+    # Split shift into whole-word and sub-word parts
+    var word_shift = shift // 32
+    var bit_shift = shift % 32
+
+    var n = len(x.words)
+    var new_len = n + word_shift + (1 if bit_shift > 0 else 0)
+    var result = List[UInt32](capacity=new_len)
+
+    # Prepend zero words for the whole-word shift
+    for _ in range(word_shift):
+        result.append(UInt32(0))
+
+    # Shift the existing words
+    if bit_shift == 0:
+        for i in range(n):
+            result.append(x.words[i])
+    else:
+        var carry: UInt32 = 0
+        for i in range(n):
+            var shifted = UInt64(x.words[i]) << bit_shift
+            result.append(UInt32(shifted & 0xFFFF_FFFF) | carry)
+            carry = UInt32(shifted >> 32)
+        if carry > 0:
+            result.append(carry)
+
+    return BigInt2(raw_words=result^, sign=x.sign)
+
+
+fn right_shift(x: BigInt2, shift: Int) -> BigInt2:
+    """Shifts a BigInt2 right by `shift` bits (floor divide by 2^shift).
+
+    For negative numbers, this performs an arithmetic right shift (rounds
+    toward negative infinity), consistent with Python's behavior.
+
+    Args:
+        x: The value to shift.
+        shift: The number of bits to shift right (must be non-negative).
+
+    Returns:
+        The result of shifting x right by shift bits (floor division).
+    """
+    if x.is_zero() or shift == 0:
+        return x.copy()
+
+    if shift < 0:
+        return left_shift(x, -shift)
+
+    # Split shift into whole-word and sub-word parts
+    var word_shift = shift // 32
+    var bit_shift = shift % 32
+
+    var n = len(x.words)
+
+    # If shifting by more words than we have, result is 0 or -1
+    if word_shift >= n:
+        if x.sign:
+            return BigInt2.negative_one()
+        return BigInt2()
+
+    var new_len = n - word_shift
+    var result = List[UInt32](capacity=new_len)
+
+    if bit_shift == 0:
+        for i in range(word_shift, n):
+            result.append(x.words[i])
+    else:
+        for i in range(word_shift, n):
+            var lo = UInt64(x.words[i]) >> bit_shift
+            var hi: UInt64 = 0
+            if i + 1 < n:
+                hi = (UInt64(x.words[i + 1]) << (32 - bit_shift)) & 0xFFFF_FFFF
+            result.append(UInt32(lo | hi))
+
+    # Strip leading zeros
+    while len(result) > 1 and result[-1] == 0:
+        result.shrink(len(result) - 1)
+
+    if len(result) == 0:
+        result.append(UInt32(0))
+
+    var shifted = BigInt2(raw_words=result^, sign=x.sign)
+
+    # For negative numbers, if any shifted-out bits were set, round toward
+    # negative infinity (subtract 1 from the result)
+    if x.sign:
+        var any_bits_lost = False
+        # Check sub-word bits of the first skipped word
+        if word_shift < n and bit_shift > 0:
+            var mask = UInt32((1 << bit_shift) - 1)
+            if (x.words[word_shift] & mask) != 0:
+                any_bits_lost = True
+        # Check fully-shifted-out words
+        if not any_bits_lost:
+            for i in range(min(word_shift, n)):
+                if x.words[i] != 0:
+                    any_bits_lost = True
+                    break
+
+        if any_bits_lost:
+            # Subtract 1 from magnitude (add 1 to negative value's magnitude)
+            var carry: UInt64 = 1
+            for i in range(len(shifted.words)):
+                var s = UInt64(shifted.words[i]) + carry
+                shifted.words[i] = UInt32(s & 0xFFFF_FFFF)
+                carry = s >> 32
+                if carry == 0:
+                    break
+            if carry > 0:
+                shifted.words.append(UInt32(carry))
+
+    shifted._normalize()
+    return shifted^

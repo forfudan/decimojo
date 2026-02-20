@@ -1,0 +1,66 @@
+[config]
+iterations = 50
+
+[[cases]]
+a = "100"
+name = "Small perfect square (100)"
+
+[[cases]]
+a = "10000"
+name = "Medium perfect square (10000)"
+
+[[cases]]
+a = "1000000"
+name = "Larger perfect square (10^6)"
+
+[[cases]]
+a = "{9,20}"
+name = "20-digit number"
+
+[[cases]]
+a = "{9,50}"
+name = "50-digit number"
+
+[[cases]]
+a = "{9,100}"
+name = "100-digit number"
+
+[[cases]]
+a = "{9,200}"
+name = "200-digit number"
+
+[[cases]]
+a = "{9,500}"
+name = "500-digit number"
+
+[[cases]]
+a = "{9,1000}"
+name = "1000-digit number"
+
+[[cases]]
+a = "{9,2000}"
+name = "2000-digit number (~208 words)"
+
+[[cases]]
+a = "{9,5000}"
+name = "5000-digit number (~520 words)"
+
+[[cases]]
+a = "{9,10000}"
+name = "10000-digit number (~1041 words)"
+
+[[cases]]
+a = "1{0,100}"
+name = "Power of 10 (10^100)"
+
+[[cases]]
+a = "1{0,200}"
+name = "Power of 10 (10^200)"
+
+[[cases]]
+a = "123456789012345678901234567890"
+name = "30-digit arbitrary number"
+
+[[cases]]
+a = "3141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067"
+name = "Pi digits (97 digits)"

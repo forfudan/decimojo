@@ -300,3 +300,23 @@ name = "Negative square calculation"
 a = "{7,700}"
 b = "{7,700}"
 name = "Extreme large square calculation (700 digits × 700 digits)"
+
+[[cases]]
+a = "{7,1000}"
+b = "{7,1000}"
+name = "1000 digits × 1000 digits"
+
+[[cases]]
+a = "{7,2000}"
+b = "{7,2000}"
+name = "2000 digits × 2000 digits"
+
+[[cases]]
+a = "{7,5000}"
+b = "{7,5000}"
+name = "5000 digits × 5000 digits (~520 words)"
+
+[[cases]]
+a = "{7,10000}"
+b = "{7,10000}"
+name = "10000 digits × 10000 digits (~1041 words)"

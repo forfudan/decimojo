@@ -22,4 +22,10 @@ representation internally. This is the binary counterpart to BigInt (base-10^9).
 Once BigInt2 is stable and performant, the naming plan is:
 - BigInt2 → BigInt (the primary big integer type)
 - Current BigInt → BigInt10 (kept for decimal-friendly use cases)
+
+Modules:
+- bigint2: Core struct with constructors, conversions, dunders
+- arithmetics: add, subtract, multiply, divide, modulo, power, shifts
+- comparison: compare, greater, less, equal
+- exponential: sqrt, isqrt
 """
