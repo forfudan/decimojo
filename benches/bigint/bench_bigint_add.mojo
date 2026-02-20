@@ -5,6 +5,8 @@ Compares performance against Python's built-in int with 20 diverse test cases.
 
 from decimojo.bigint.bigint import BigInt
 import decimojo.bigint.arithmetics
+from decimojo.bigint2.bigint2 import BigInt2
+import decimojo.bigint2.arithmetics
 from python import Python, PythonObject
 from time import perf_counter_ns
 import time
@@ -55,9 +57,10 @@ fn run_benchmark_add(
     iterations: Int,
     log_file: PythonObject,
     mut speedup_factors: List[Float64],
+    mut bigint2_speedup_factors: List[Float64],
 ) raises:
     """
-    Run a benchmark comparing Mojo BigInt addition with Python int addition.
+    Run a benchmark comparing Mojo BigInt, BigInt2, and Python int addition.
 
     Args:
         name: Name of the benchmark case.
@@ -65,28 +68,33 @@ fn run_benchmark_add(
         value2: String representation of second operand.
         iterations: Number of iterations to run.
         log_file: File object for logging results.
-        speedup_factors: Mojo List to store speedup factors for averaging.
+        speedup_factors: Mojo List to store BigInt speedup factors.
+        bigint2_speedup_factors: Mojo List to store BigInt2 speedup factors.
     """
     log_print("\nBenchmark:       " + name, log_file)
     log_print("First operand:   " + value1, log_file)
     log_print("Second operand:  " + value2, log_file)
 
-    # Set up Mojo and Python values
+    # Set up Mojo BigInt, BigInt2, and Python values
     var mojo_value1 = BigInt(value1)
     var mojo_value2 = BigInt(value2)
+    var mojo2_value1 = BigInt2(value1)
+    var mojo2_value2 = BigInt2(value2)
     var py = Python.import_module("builtins")
     var py_value1 = py.int(value1)
     var py_value2 = py.int(value2)
 
     # Execute the operations once to verify correctness
     var mojo_result = mojo_value1 + mojo_value2
+    var mojo2_result = mojo2_value1 + mojo2_value2
     var py_result = py_value1 + py_value2
 
     # Display results for verification
-    log_print("Mojo result:     " + String(mojo_result), log_file)
+    log_print("BigInt result:   " + String(mojo_result), log_file)
+    log_print("BigInt2 result:  " + String(mojo2_result), log_file)
     log_print("Python result:   " + String(py_result), log_file)
 
-    # Benchmark Mojo implementation
+    # Benchmark BigInt implementation
     var t0 = perf_counter_ns()
     for _ in range(iterations):
         _ = mojo_value1 + mojo_value2
@@ -94,26 +102,41 @@ fn run_benchmark_add(
     if mojo_time == 0:
         mojo_time = 1  # Prevent division by zero
 
+    # Benchmark BigInt2 implementation
+    t0 = perf_counter_ns()
+    for _ in range(iterations):
+        _ = mojo2_value1 + mojo2_value2
+    var mojo2_time = (perf_counter_ns() - t0) / iterations
+    if mojo2_time == 0:
+        mojo2_time = 1  # Prevent division by zero
+
     # Benchmark Python implementation
     t0 = perf_counter_ns()
     for _ in range(iterations):
         _ = py_value1 + py_value2
     var python_time = (perf_counter_ns() - t0) / iterations
 
-    # Calculate speedup factor
+    # Calculate speedup factors (Python / Mojo)
     var speedup = Float64(python_time) / Float64(mojo_time)
+    var speedup2 = Float64(python_time) / Float64(mojo2_time)
     speedup_factors.append(Float64(speedup))
+    bigint2_speedup_factors.append(Float64(speedup2))
 
     # Print results with speedup comparison
     log_print(
-        "Mojo addition:   " + String(mojo_time) + " ns per iteration",
+        "BigInt addition:  " + String(mojo_time) + " ns per iteration",
         log_file,
     )
     log_print(
-        "Python addition: " + String(python_time) + " ns per iteration",
+        "BigInt2 addition: " + String(mojo2_time) + " ns per iteration",
         log_file,
     )
-    log_print("Speedup factor:  " + String(speedup), log_file)
+    log_print(
+        "Python addition:  " + String(python_time) + " ns per iteration",
+        log_file,
+    )
+    log_print("BigInt speedup:   " + String(speedup) + "×", log_file)
+    log_print("BigInt2 speedup:  " + String(speedup2) + "×", log_file)
 
 
 fn main() raises:
@@ -121,8 +144,9 @@ fn main() raises:
     var log_file = open_log_file()
     var datetime = Python.import_module("datetime")
 
-    # Create a Mojo List to store speedup factors for averaging later
+    # Create Mojo Lists to store speedup factors for averaging later
     var speedup_factors = List[Float64]()
+    var bigint2_speedup_factors = List[Float64]()
 
     # Display benchmark header with system information
     log_print("=== DeciMojo BigInt Addition Benchmark ===", log_file)
@@ -163,6 +187,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 2: Medium integer addition
@@ -173,6 +198,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 3: Large integer addition
@@ -183,6 +209,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 4: Very large integer addition
@@ -193,6 +220,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 5: Negative number addition
@@ -203,6 +231,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 6: Mixed sign addition (positive + negative)
@@ -213,6 +242,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 7: Mixed sign addition (negative + positive)
@@ -223,6 +253,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 8: Addition with zero
@@ -233,6 +264,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 9: Addition resulting in zero (a + (-a))
@@ -243,6 +275,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 10: Power-of-10 addition
@@ -253,6 +286,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 11: Fibonacci numbers addition
@@ -263,6 +297,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 12: Extreme large integer addition
@@ -273,6 +308,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 13: Addition with uneven length numbers
@@ -283,6 +319,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 14: Addition with uneven length numbers (reversed)
@@ -293,6 +330,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 15: Addition with many carries
@@ -303,6 +341,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 16: Prime number addition
@@ -313,6 +352,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 17: Addition of numbers near Int64 limit
@@ -323,6 +363,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 18: Addition of numbers near UInt64 limit
@@ -333,6 +374,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 19: Addition of repeated digits
@@ -343,6 +385,7 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
     # Case 20: Addition of powers of two
@@ -353,27 +396,45 @@ fn main() raises:
         iterations,
         log_file,
         speedup_factors,
+        bigint2_speedup_factors,
     )
 
-    # Calculate average speedup factor
+    # Calculate average speedup factors
     var sum_speedup: Float64 = 0.0
     for i in range(len(speedup_factors)):
         sum_speedup += speedup_factors[i]
     var average_speedup = sum_speedup / Float64(len(speedup_factors))
 
+    var sum_speedup2: Float64 = 0.0
+    for i in range(len(bigint2_speedup_factors)):
+        sum_speedup2 += bigint2_speedup_factors[i]
+    var average_speedup2 = sum_speedup2 / Float64(len(bigint2_speedup_factors))
+
     # Display summary
     log_print("\n=== BigInt Addition Benchmark Summary ===", log_file)
-    log_print("Benchmarked:      20 different addition cases", log_file)
+    log_print("Benchmarked:              20 different addition cases", log_file)
     log_print(
-        "Each case ran:    " + String(iterations) + " iterations", log_file
+        "Each case ran:            " + String(iterations) + " iterations",
+        log_file,
     )
-    log_print("Average speedup:  " + String(average_speedup) + "×", log_file)
+    log_print(
+        "BigInt avg speedup:       " + String(average_speedup) + "×",
+        log_file,
+    )
+    log_print(
+        "BigInt2 avg speedup:      " + String(average_speedup2) + "×",
+        log_file,
+    )
 
     # List all speedup factors
     log_print("\nIndividual speedup factors:", log_file)
     for i in range(len(speedup_factors)):
         log_print(
-            String("Case {}: {}×").format(i + 1, round(speedup_factors[i], 2)),
+            String("Case {}: BigInt {}× | BigInt2 {}×").format(
+                i + 1,
+                round(speedup_factors[i], 2),
+                round(bigint2_speedup_factors[i], 2),
+            ),
             log_file,
         )
 

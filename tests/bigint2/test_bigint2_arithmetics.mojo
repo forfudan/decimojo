@@ -15,6 +15,10 @@ comptime file_path_multiply = "tests/bigint/test_data/bigint_multiply.toml"
 comptime file_path_floor_divide = "tests/bigint/test_data/bigint_floor_divide.toml"
 comptime file_path_truncate_divide = "tests/bigint/test_data/bigint_truncate_divide.toml"
 
+# BigUInt TOML test data (unsigned, all positive values)
+comptime file_path_biguint_arithmetics = "tests/biguint/test_data/biguint_arithmetics.toml"
+comptime file_path_biguint_truncate_divide = "tests/biguint/test_data/biguint_truncate_divide.toml"
+
 
 fn test_bigint2_addition() raises:
     """Test BigInt2 addition using shared TOML test data."""
@@ -196,6 +200,89 @@ fn test_bigint2_augmented_assignment() raises:
 
     a *= BigInt2(3)
     testing.assert_equal(lhs=String(a), rhs="360", msg="*= test")
+
+
+# ===----------------------------------------------------------------------=== #
+# Additional tests from BigUInt TOML data (unsigned / positive only)
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_bigint2_biguint_addition() raises:
+    """Test BigInt2 addition with BigUInt TOML test data (all positive)."""
+    var toml = parse_file(file_path_biguint_arithmetics)
+    var test_cases = load_test_cases(toml, "addition_tests")
+    for test_case in test_cases:
+        var result = BigInt2(test_case.a) + BigInt2(test_case.b)
+        testing.assert_equal(
+            lhs=String(result),
+            rhs=test_case.expected,
+            msg="[biguint] " + test_case.description,
+        )
+
+
+fn test_bigint2_biguint_subtraction() raises:
+    """Test BigInt2 subtraction with BigUInt TOML test data (a >= b cases)."""
+    var toml = parse_file(file_path_biguint_arithmetics)
+    var test_cases = load_test_cases(toml, "subtraction_tests")
+    for test_case in test_cases:
+        var result = BigInt2(test_case.a) - BigInt2(test_case.b)
+        testing.assert_equal(
+            lhs=String(result),
+            rhs=test_case.expected,
+            msg="[biguint] " + test_case.description,
+        )
+
+    # Also test the extreme_subtraction_tests section
+    var extreme_cases = load_test_cases(toml, "extreme_subtraction_tests")
+    for test_case in extreme_cases:
+        var result = BigInt2(test_case.a) - BigInt2(test_case.b)
+        testing.assert_equal(
+            lhs=String(result),
+            rhs=test_case.expected,
+            msg="[biguint extreme] " + test_case.description,
+        )
+
+
+fn test_bigint2_biguint_subtraction_underflow() raises:
+    """Test that BigInt2 handles subtraction underflow (smaller - larger).
+
+    Unlike BigUInt which errors, BigInt2 should return a negative result.
+    """
+    # 123 - 456 = -333 for signed BigInt2
+    var result = BigInt2("123") - BigInt2("456")
+    testing.assert_equal(
+        lhs=String(result),
+        rhs="-333",
+        msg="[biguint underflow] BigInt2 handles smaller - larger correctly",
+    )
+
+
+fn test_bigint2_biguint_multiplication() raises:
+    """Test BigInt2 multiplication with BigUInt TOML test data (all positive).
+    """
+    var toml = parse_file(file_path_biguint_arithmetics)
+    var test_cases = load_test_cases(toml, "multiplication_tests")
+    for test_case in test_cases:
+        var result = BigInt2(test_case.a) * BigInt2(test_case.b)
+        testing.assert_equal(
+            lhs=String(result),
+            rhs=test_case.expected,
+            msg="[biguint] " + test_case.description,
+        )
+
+
+fn test_bigint2_biguint_truncate_divide() raises:
+    """Test BigInt2 truncate division with BigUInt TOML test data (all positive).
+    """
+    var toml = parse_file(file_path_biguint_truncate_divide)
+    var test_cases = load_test_cases(toml, "truncate_divide_tests")
+    for test_case in test_cases:
+        var result = BigInt2(test_case.a).truncate_divide(BigInt2(test_case.b))
+        testing.assert_equal(
+            lhs=String(result),
+            rhs=test_case.expected,
+            msg="[biguint] " + test_case.description,
+        )
 
 
 fn main() raises:
