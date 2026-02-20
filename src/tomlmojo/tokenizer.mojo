@@ -86,6 +86,8 @@ struct TokenType(Copyable, ImplicitlyCopyable, Movable):
     comptime DOT = TokenType.dot()
     comptime EOF = TokenType.eof()
     comptime ERROR = TokenType.error()
+    comptime INLINE_TABLE_START = TokenType.inline_table_start()
+    comptime INLINE_TABLE_END = TokenType.inline_table_end()
 
     # Attributes
     var value: Int
@@ -158,6 +160,14 @@ struct TokenType(Copyable, ImplicitlyCopyable, Movable):
     @staticmethod
     fn error() -> TokenType:
         return TokenType(15)
+
+    @staticmethod
+    fn inline_table_start() -> TokenType:
+        return TokenType(17)
+
+    @staticmethod
+    fn inline_table_end() -> TokenType:
+        return TokenType(18)
 
     # Constructor
     fn __init__(out self, value: Int):
@@ -348,6 +358,40 @@ struct Tokenizer:
             return "\x08"
         elif esc == "f":
             return "\x0c"
+        elif esc == "u":
+            # \uXXXX — 4-digit unicode codepoint
+            var hex_str = String("")
+            for _ in range(4):
+                hex_str += self.current_char
+                self._advance()
+            var codepoint: Int = 0
+            for i in range(len(hex_str)):
+                var ch = String(hex_str[byte=i])
+                codepoint *= 16
+                if ch >= "0" and ch <= "9":
+                    codepoint += ord(ch) - ord("0")
+                elif ch >= "a" and ch <= "f":
+                    codepoint += ord(ch) - ord("a") + 10
+                elif ch >= "A" and ch <= "F":
+                    codepoint += ord(ch) - ord("A") + 10
+            return chr(codepoint)
+        elif esc == "U":
+            # \UXXXXXXXX — 8-digit unicode codepoint
+            var hex_str = String("")
+            for _ in range(8):
+                hex_str += self.current_char
+                self._advance()
+            var codepoint: Int = 0
+            for i in range(len(hex_str)):
+                var ch = String(hex_str[byte=i])
+                codepoint *= 16
+                if ch >= "0" and ch <= "9":
+                    codepoint += ord(ch) - ord("0")
+                elif ch >= "a" and ch <= "f":
+                    codepoint += ord(ch) - ord("a") + 10
+                elif ch >= "A" and ch <= "F":
+                    codepoint += ord(ch) - ord("A") + 10
+            return chr(codepoint)
         else:
             # Unknown escape: keep as-is (backslash + char)
             return "\\" + esc
@@ -531,6 +575,26 @@ struct Tokenizer:
             token = Token(
                 TokenType.ARRAY_END,
                 "]",
+                self.position.line,
+                self.position.column,
+            )
+            self._advance()
+            return token^
+
+        if self.current_char == "{":
+            token = Token(
+                TokenType.INLINE_TABLE_START,
+                "{",
+                self.position.line,
+                self.position.column,
+            )
+            self._advance()
+            return token^
+
+        if self.current_char == "}":
+            token = Token(
+                TokenType.INLINE_TABLE_END,
+                "}",
                 self.position.line,
                 self.position.column,
             )
