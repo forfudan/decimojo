@@ -4,7 +4,7 @@ from decimojo.bigint.bigint import BigInt
 import decimojo.bigint.arithmetics
 from decimojo.bigint2.bigint2 import BigInt2
 import decimojo.bigint2.arithmetics
-from decimojo.bench_utils import (
+from decimojo.tests import (
     BenchCase,
     load_bench_cases,
     open_log_file,

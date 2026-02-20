@@ -7,7 +7,7 @@ Cases are generated programmatically — no TOML data file.
 from time import perf_counter_ns
 from decimojo import BigUInt
 from decimojo.biguint.arithmetics import multiply
-from decimojo.bench_utils import open_log_file, log_print, print_header
+from decimojo.tests import open_log_file, log_print, print_header
 from python import Python, PythonObject
 from collections import List
 

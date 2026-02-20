@@ -2,7 +2,7 @@
 
 from decimojo.biguint.biguint import BigUInt
 import decimojo.biguint.arithmetics
-from decimojo.bench_utils import (
+from decimojo.tests import (
     BenchCase,
     load_bench_cases,
     load_bench_iterations,

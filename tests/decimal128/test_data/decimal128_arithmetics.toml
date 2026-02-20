@@ -65,10 +65,10 @@ expected = "0.0000012"
 # === HIGH PRECISION TESTS ===
 
 [[addition_tests]]
-a = "0.123456789012345678901234567"
-b = "0.987654321098765432109876543"
+a = "0.{1234567890,2}1234567"
+b = "0.{9876543210,2}9876543"
 description = "Addition with many decimal places"
-expected = "1.111111110111111111011111110"
+expected = "1.{1111111101,2}1111110"
 
 [[addition_tests]]
 a = "123456789"
@@ -77,22 +77,22 @@ description = "Addition with extreme scale difference"
 expected = "123456789.000000000123456789"
 
 [[addition_tests]]
-a = "0.1111111111111111111111111111"
-b = "0.9999999999999999999999999999"
+a = "0.{1,28}"
+b = "0.{9,28}"
 description = "Addition near maximum precision"
-expected = "1.1111111111111111111111111110"
+expected = "1.{1,27}0"
 
 [[addition_tests]]
-a = "0.1111111111111111111111111111"
-b = "0.0999999999999999999999999999"
+a = "0.{1,28}"
+b = "0.0{9,27}"
 description = "Addition causing scale truncation"
-expected = "0.2111111111111111111111111110"
+expected = "0.2{1,26}0"
 
 [[addition_tests]]
-a = "0.0000000000000000000000000001"
-b = "0.0000000000000000000000000002"
+a = "0.{0,27}1"
+b = "0.{0,27}2"
 description = "Addition of very small numbers"
-expected = "0.0000000000000000000000000003"
+expected = "0.{0,27}3"
 
 # === MIXED SIGN AND SCALE TESTS ===
 
@@ -112,13 +112,13 @@ expected = "79228162514264337593543950335"
 
 [[addition_tests]]
 a = "1234567890123456789.0123456789"
-b = "0.0000000000000000009876543211"
+b = "0.{0,18}9876543211"
 description = "Addition with large and small values"
 expected = "1234567890123456789.0123456789"
 
 [[addition_tests]]
 a = "4563117171088016.3026696499898"
-b = "0.0000000000000000000000000000"
+b = "0.{0,28}"
 description = "Addition with zero (high scale)"
 expected = "4563117171088016.3026696499898"
 
@@ -191,10 +191,10 @@ expected = "0.0000001"
 # === HIGH PRECISION TESTS ===
 
 [[subtraction_tests]]
-a = "9999999999.9999999"
+a = "{9,10}.9999999"
 b = "0.0000001"
 description = "Subtraction of very small from very large"
-expected = "9999999999.9999998"
+expected = "{9,10}.9999998"
 
 # === SELF SUBTRACTION TESTS ===
 
@@ -255,9 +255,9 @@ description = "Negating with trailing zeros"
 expected = "-123.4500"
 
 [[negation_tests]]
-a = "0.0000000000000000000000000001"
+a = "0.{0,27}1"
 description = "Negating very small number"
-expected = "-0.0000000000000000000000000001"
+expected = "-0.{0,27}1"
 
 [[negation_tests]]
 a = "79228162514264337593543950335"
@@ -270,9 +270,9 @@ description = "Negating number from scientific notation (1.23e5)"
 expected = "-123000"
 
 [[negation_tests]]
-a = "0.1111111111111111111111111111"
+a = "0.{1,28}"
 description = "Negating number with maximum precision"
-expected = "-0.1111111111111111111111111111"
+expected = "-0.{1,28}"
 
 # ===----------------------------------------------------------------------=== #
 # Absolute value tests (unary)
@@ -304,14 +304,14 @@ description = "Absolute value of small negative number"
 expected = "0.0000000001"
 
 [[abs_tests]]
-a = "-9999999999.9999999999"
+a = "-{9,10}.{9,10}"
 description = "Absolute value of large negative number"
-expected = "9999999999.9999999999"
+expected = "{9,10}.{9,10}"
 
 [[abs_tests]]
-a = "-0.123456789012345678901234567"
+a = "-0.{1234567890,2}1234567"
 description = "Absolute value of high precision negative number"
-expected = "0.123456789012345678901234567"
+expected = "0.{1234567890,2}1234567"
 
 [[abs_tests]]
 a = "79228162514264337593543950335"
@@ -328,10 +328,10 @@ expected = "79228162514264337593543950335"
 # ===----------------------------------------------------------------------=== #
 
 [[extreme_addition_tests]]
-a = "0.1111111111111111111111111111"
-b = "-0.1111111111111111111111111111"
+a = "0.{1,28}"
+b = "-0.{1,28}"
 description = "High precision addition resulting in zero"
-expected = "0.0000000000000000000000000000"
+expected = "0.{0,28}"
 
 [[extreme_addition_tests]]
 a = "0.00"
@@ -346,7 +346,7 @@ description = "Addition of positive and negative zero"
 expected = "0.00"
 
 [[extreme_addition_tests]]
-a = "99999999999999999999.9999999999999999999999999999"
-b = "0.0000000000000000000000000001"
+a = "{9,20}.{9,28}"
+b = "0.{0,27}1"
 description = "Addition with extensive carry propagation"
-expected = "100000000000000000000.00000000"
+expected = "1{0,20}.00000000"

@@ -23,16 +23,16 @@ description = "Addition with zero"
 expected = "123"
 
 [[addition_tests]]
-a = "99999999999999999999"
+a = "{9,20}"
 b = "1"
 description = "Addition with large numbers"
-expected = "100000000000000000000"
+expected = "1{0,20}"
 
 [[addition_tests]]
-a = "9999999999"
+a = "{9,10}"
 b = "1"
 description = "Addition causing multiple carries"
-expected = "10000000000"
+expected = "1{0,10}"
 
 [[addition_tests]]
 a = "12345"
@@ -41,22 +41,22 @@ description = "Addition with numbers of different sizes"
 expected = "9876555555"
 
 [[addition_tests]]
-a = "12345678901234567890123456789"
-b = "98765432109876543210987654321"
+a = "{1234567890,2}123456789"
+b = "{9876543210,2}987654321"
 description = "Addition with very large numbers"
-expected = "111111111011111111101111111110"
+expected = "{1111111110,3}"
 
 [[addition_tests]]
-a = "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+a = "{9,100}"
 b = "1"
 description = "Addition with extensive carry propagation"
-expected = "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+expected = "1{0,100}"
 
 [[addition_tests]]
-a = "1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-b = "5000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+a = "1{0,99}"
+b = "5{0,96}"
 description = "Addition of very large numbers"
-expected = "1005000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+expected = "1005{0,96}"
 
 # ===----------------------------------------------------------------------=== #
 # Test cases for BigUInt subtraction
@@ -92,16 +92,16 @@ description = "Subtraction with multiple borrows"
 expected = "1"
 
 [[subtraction_tests]]
-a = "12345678901234567890"
-b = "12345678901234567890"
+a = "{1234567890,2}"
+b = "{1234567890,2}"
 description = "Self subtraction should yield zero"
 expected = "0"
 
 [[extreme_subtraction_tests]]
-a = "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+a = "1{0,196}"
 b = "1"
 description = "Very large subtraction within range"
-expected = "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+expected = "{9,196}"
 
 # ===----------------------------------------------------------------------=== #
 # Special test for subtraction underflow
@@ -140,13 +140,13 @@ description = "Multiplication of large numbers"
 expected = "838102050"
 
 [[multiplication_tests]]
-a = "9999999999"
-b = "9999999999"
+a = "{9,10}"
+b = "{9,10}"
 description = "Multiplication of very large numbers"
 expected = "99999999980000000001"
 
 [[multiplication_tests]]
-a = "10000000000"
-b = "10000000000"
+a = "1{0,10}"
+b = "1{0,10}"
 description = "Very large multiplication"
-expected = "100000000000000000000"
+expected = "1{0,20}"

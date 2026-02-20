@@ -1,11 +1,13 @@
 """Benchmarks for Decimal128 quantize() function. Compares against Python decimal.
 
-This file uses manual tomllib loading because the TOML cases have an extra
-`rounding` field not handled by the standard BenchCase loader.
+This file loads TOML cases with an extra `rounding` field not handled by the
+standard BenchCase loader.
 """
 
 from decimojo.prelude import dm, Decimal128, RoundingMode
-from decimojo.bench_utils import (
+from decimojo.tests import (
+    parse_file,
+    expand_value,
     open_log_file,
     log_print,
     print_header,
@@ -49,33 +51,26 @@ fn main() raises:
     var pydecimal = Python.import_module("decimal")
     pydecimal.getcontext().prec = 28
 
-    # --- manual TOML load for 'rounding' field ---
-    var tomllib = Python.import_module("tomllib")
-    var py_builtins = Python.import_module("builtins")
-    var f = py_builtins.open("bench_data/quantize.toml", "rb")
-    var data = tomllib.load(f)
-    f.close()
-
-    var cases = data["cases"]
+    # --- TOML load via tomlmojo for 'rounding' field ---
+    var doc = parse_file("bench_data/quantize.toml")
+    var cases_array = doc.get_array_of_tables("cases")
     var iterations = 10000
     var sf = List[Float64]()
-    var n = atol(String(py_builtins.len(cases)))
 
     log_print(
         "\nRunning "
-        + String(n)
+        + String(len(cases_array))
         + " benchmarks with "
         + String(iterations)
         + " iterations each",
         log_file,
     )
 
-    for i in range(n):
-        var c = cases[i]
-        var name = String(c["name"])
-        var a_str = String(c["a"])
-        var b_str = String(c["b"])
-        var rounding_str = String(c["rounding"])
+    for c in cases_array:
+        var name = c["name"].as_string()
+        var a_str = expand_value(c["a"].as_string())
+        var b_str = expand_value(c["b"].as_string())
+        var rounding_str = c["rounding"].as_string()
 
         log_print("\nBenchmark:       " + name, log_file)
         log_print("Input value:     " + a_str, log_file)

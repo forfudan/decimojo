@@ -2,7 +2,7 @@
 
 from decimojo.bigdecimal.bigdecimal import BigDecimal
 import decimojo.bigdecimal.arithmetics
-from decimojo.bench_utils import (
+from decimojo.tests import (
     BenchCase,
     load_bench_cases,
     open_log_file,

@@ -35,10 +35,10 @@ description = "Rounding with carry propagation"
 expected = "10.00"
 
 [[round_default]]
-a = "0.1111111111111111111111111111"
+a = "0.{1,28}"
 b = "14"
 description = "Rounding from maximum precision"
-expected = "0.11111111111111"
+expected = "0.{1,14}"
 
 # Rounding mode: down (truncate toward zero)
 

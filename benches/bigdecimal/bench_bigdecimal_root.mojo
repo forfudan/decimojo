@@ -3,7 +3,7 @@
 from decimojo.bigdecimal.bigdecimal import BigDecimal
 import decimojo.bigdecimal.arithmetics
 import decimojo.bigdecimal.exponential
-from decimojo.bench_utils import (
+from decimojo.tests import (
     BenchCase,
     load_bench_cases,
     open_log_file,

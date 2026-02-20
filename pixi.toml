@@ -20,11 +20,11 @@ format = "pixi run mojo format ./src && pixi run mojo format ./benches && pixi r
 p = "clear && pixi run package"
 package = "pixi run format && pixi run package_decimojo && pixi run package_tomlmojo"
 package_decimojo = "pixi run mojo package src/decimojo && cp decimojo.mojopkg tests/ && cp decimojo.mojopkg benches/ && rm decimojo.mojopkg"
-package_tomlmojo = "pixi run mojo package src/tomlmojo && mv tomlmojo.mojopkg tests/"
+package_tomlmojo = "pixi run mojo package src/tomlmojo && cp tomlmojo.mojopkg tests/ && cp tomlmojo.mojopkg benches/ && rm tomlmojo.mojopkg"
 
 # clean the package files in tests folder
 c = "clear && pixi run clean"
-clean = "rm tests/decimojo.mojopkg && rm benches/decimojo.mojopkg && rm tests/tomlmojo.mojopkg"
+clean = "rm tests/decimojo.mojopkg && rm benches/decimojo.mojopkg && rm tests/tomlmojo.mojopkg && rm benches/tomlmojo.mojopkg"
 
 # tests (use the mojo testing tool)
 b = "clear && pixi run package && bash ./tests/test_big.sh"

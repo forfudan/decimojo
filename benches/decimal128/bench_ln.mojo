@@ -1,7 +1,7 @@
 """Benchmarks for Decimal128 ln() function. Compares against Python decimal."""
 
 from decimojo.prelude import dm, Decimal128, RoundingMode
-from decimojo.bench_utils import (
+from decimojo.tests import (
     BenchCase,
     load_bench_cases,
     open_log_file,

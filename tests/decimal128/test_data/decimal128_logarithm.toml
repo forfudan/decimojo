@@ -68,11 +68,11 @@ description = "log10(0.01) = -2"
 expected = "-2"
 
 [[log10_exact]]
-a = "100000000000000000000"
+a = "1{0,20}"
 description = "log10(10^20) = 20"
 expected = "20"
 
 [[log10_exact]]
-a = "0.00000000000000000001"
+a = "0.{0,19}1"
 description = "log10(10^-20) = -20"
 expected = "-20"

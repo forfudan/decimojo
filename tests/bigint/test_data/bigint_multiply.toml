@@ -68,10 +68,10 @@ description = "Multiplication by negative one: 12345 * -1"
 expected = "-12345"
 
 [[multiplication_tests]]
-a = "100000000000000000000000000000000000000000000000000"
+a = "1{0,50}"
 b = "1"
 description = "Multiplication of very large values by one"
-expected = "100000000000000000000000000000000000000000000000000"
+expected = "1{0,50}"
 
 # ===----------------------------------------------------------------------=== #
 # Negative number multiplication
@@ -110,34 +110,34 @@ expected = "9999800001"
 # Large number multiplication
 # ===----------------------------------------------------------------------=== #
 [[multiplication_tests]]
-a = "12345678901234567890"
-b = "98765432109876543210"
+a = "{1234567890,2}"
+b = "{9876543210,2}"
 description = "Multiplication of large numbers"
 expected = "1219326311370217952237463801111263526900"
 
 [[multiplication_tests]]
-a = "99999999999999999999"
-b = "99999999999999999999"
+a = "{9,20}"
+b = "{9,20}"
 description = "Multiplication resulting in a number with many digits (20 nines * 20 nines)"
-expected = "9999999999999999999800000000000000000001"
+expected = "{9,19}8{0,19}1"
 
 [[multiplication_tests]]
 a = "12345"
-b = "100000000000"
+b = "1{0,11}"
 description = "Multiplication by a power of 10: 12345 * 10^11"
-expected = "1234500000000000"
+expected = "12345{0,11}"
 
 [[multiplication_tests]]
-a = "99999999999999999999999999999999999999999999999999"
+a = "{9,50}"
 b = "2"
 description = "Large * small multiplication: 50 nines * 2"
-expected = "199999999999999999999999999999999999999999999999998"
+expected = "1{9,49}8"
 
 [[multiplication_tests]]
-a = "100000000000000000000"
-b = "1000000000000000000"
+a = "1{0,20}"
+b = "1{0,18}"
 description = "Word-crossing multiplication: 10^20 * 10^18"
-expected = "100000000000000000000000000000000000000"
+expected = "1{0,38}"
 
 # ===----------------------------------------------------------------------=== #
 # Commutative property verification (a*b = b*a)
@@ -155,16 +155,16 @@ description = "Commutative property test: small integers 20 * 10"
 expected = "200"
 
 [[multiplication_tests]]
-a = "12345678901234567890"
+a = "{1234567890,2}"
 b = "42"
 description = "Commutative property test: large * small 12345678901234567890 * 42"
-expected = "518518513851851851380"
+expected = "{5185185138,2}0"
 
 [[multiplication_tests]]
 a = "42"
-b = "12345678901234567890"
+b = "{1234567890,2}"
 description = "Commutative property test: small * large 42 * 12345678901234567890"
-expected = "518518513851851851380"
+expected = "{5185185138,2}0"
 
 [[multiplication_tests]]
 a = "-500"
@@ -179,25 +179,25 @@ description = "Commutative property test: positive * negative 700 * -500"
 expected = "-350000"
 
 [[multiplication_tests]]
-a = "999999999999999"
-b = "888888888888"
+a = "{9,15}"
+b = "{8,12}"
 description = "Commutative property test: large numbers 15 nines * 12 eights"
-expected = "888888888887999111111111112"
+expected = "{8,11}7999{1,11}2"
 
 [[multiplication_tests]]
-a = "888888888888"
-b = "999999999999999"
+a = "{8,12}"
+b = "{9,15}"
 description = "Commutative property test: large numbers 12 eights * 15 nines"
-expected = "888888888887999111111111112"
+expected = "{8,11}7999{1,11}2"
 
 [[multiplication_tests]]
-a = "100000000000000000000000000000000000000000000000000"
+a = "1{0,50}"
 b = "0"
 description = "Commutative property test: very large * zero"
 expected = "0"
 
 [[multiplication_tests]]
 a = "0"
-b = "100000000000000000000000000000000000000000000000000"
+b = "1{0,50}"
 description = "Commutative property test: zero * very large"
 expected = "0"
