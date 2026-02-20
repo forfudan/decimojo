@@ -18,6 +18,9 @@
 Provides a list of things that can be imported at one time.
 The list contains the functions or types that are the most essential for a user.
 
+I only put aliases (shorter names) in the prelude, not the full type names, 
+because they are easier to remember and use.
+
 You can use the following code to import them:
 
 ```mojo
@@ -25,14 +28,12 @@ from decimojo.prelude import *
 ```
 """
 
-import decimojo as dm
-from decimojo.decimal128.decimal128 import Decimal128, Dec128
-from decimojo.bigdecimal.bigdecimal import BigDecimal, BDec, Decimal
-from decimojo.biguint.biguint import BigUInt, BUInt
-from decimojo.bigint.bigint import BigInt, BInt
+from decimojo.decimal128.decimal128 import Dec128
+from decimojo.bigdecimal.bigdecimal import BDec, Decimal
+from decimojo.biguint.biguint import BUInt
+from decimojo.bigint10.bigint10 import BInt
 from decimojo.rounding_mode import (
     RoundingMode,
-    RM,
     ROUND_DOWN,
     ROUND_HALF_UP,
     ROUND_HALF_EVEN,

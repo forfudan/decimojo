@@ -17,7 +17,6 @@
 """Implements the RoundingMode for different rounding modes.
 """
 
-comptime RM = RoundingMode
 comptime ROUND_DOWN = RoundingMode.ROUND_DOWN
 comptime ROUND_HALF_UP = RoundingMode.ROUND_HALF_UP
 comptime ROUND_HALF_EVEN = RoundingMode.ROUND_HALF_EVEN

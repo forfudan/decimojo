@@ -495,12 +495,12 @@ fn print_summary_dual(
 ) raises:
     """Print benchmark summary for two Mojo implementations vs Python.
 
-    For benchmarks comparing two Mojo types (e.g. BigInt + BigInt2).
+    For benchmarks comparing two Mojo types (e.g. BigInt10 + BigInt2).
 
     Args:
         title: Summary section title.
         sf1: Speedup factors for the first implementation.
-        label1: Label for the first implementation (e.g. "BigInt").
+        label1: Label for the first implementation (e.g. "BigInt10").
         sf2: Speedup factors for the second implementation.
         label2: Label for the second implementation (e.g. "BigInt2").
         iterations: Iterations per case.

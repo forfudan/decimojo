@@ -114,7 +114,7 @@ struct BigDecimal(
         self.sign = sign
 
     @implicit
-    fn __init__(out self, value: BigInt):
+    fn __init__(out self, value: BigInt10):
         """Constructs a BigDecimal from a big interger."""
         self.coefficient = value.magnitude.copy()
         self.scale = 0

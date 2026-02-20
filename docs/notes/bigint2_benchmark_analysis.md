@@ -2,7 +2,7 @@
 
 ## Benchmark Summary (2026-02-20, macOS arm64, Apple Silicon)
 
-All benchmarks compare **BigInt2** (base-2^32) against **BigInt/BigUInt** (base-10^9)
+All benchmarks compare **BigInt2** (base-2^32) against **BigInt10/BigUInt** (base-10^9)
 and **Python int** (CPython 3.13, GMP-backed). Speedup = Python time / Mojo time.
 Values >1× mean faster than Python; <1× mean slower than Python.
 
@@ -13,7 +13,7 @@ Values >1× mean faster than Python; <1× mean slower than Python.
 
 ### Overall Results (Average Across All Cases)
 
-| Operation        | BigInt2 vs Python | BigInt/BigUInt vs Python | BigInt2 vs BigInt |
+| Operation        | BigInt2 vs Python | BigInt10/BigUInt vs Python | BigInt2 vs BigInt10 |
 | ---------------- | :---------------: | :----------------------: | :---------------: |
 | **Addition**     |     **4.30×**     |          2.36×           |   ~1.8× faster    |
 | **Multiply**     |     **3.98×**     |          1.93×           |   ~2.1× faster    |
@@ -52,13 +52,13 @@ Values >1× mean faster than Python; <1× mean slower than Python.
    division (~1.24×) is barely faster than Python. Knuth Algorithm D or
    Burnikel-Ziegler would be the next major win.
 
-5. **to_string is still BigInt's killer feature.** BigInt (base-10^9) achieves
+5. **to_string is still BigInt10's killer feature.** BigInt10 (base-10^9) achieves
    31.5× at 10000 digits — trivial conversion. BigInt2 requires repeated
    division by 10^9 and is 0.37× at 10000 digits. Divide-and-conquer base
    conversion would close this gap.
 
 6. **from_string is competitive.** 7× at small, stays above 1× through 5000
-   digits. Only drops to 0.89× at 10000 digits. BigInt overtakes at ~5000+
+   digits. Only drops to 0.89× at 10000 digits. BigInt10 overtakes at ~5000+
    digits due to its native base-10^9 parsing advantage.
 
 7. **Shift is excellent.** Average 4.97× across all sizes. Degrades at extreme
@@ -70,7 +70,7 @@ Values >1× mean faster than Python; <1× mean slower than Python.
 
 **Addition by size** (unchanged from initial benchmark):
 
-| Size            | BigInt2 vs Python | BigInt vs Python |
+| Size            | BigInt2 vs Python | BigInt10 vs Python |
 | --------------- | :---------------: | :--------------: |
 | Small (<20 dig) |       5–8×        |      2.5–4×      |
 | 500 digits      |       3.71×       |      1.59×       |
@@ -78,12 +78,12 @@ Values >1× mean faster than Python; <1× mean slower than Python.
 | 5000 digits     |       1.59×       |      1.27×       |
 | 10000 digits    |       1.54×       |      1.91×       |
 
-At 10000 digits, BigInt overtakes BigInt2 in addition. This is because BigUInt
-(underlying BigInt) uses SIMD vectorization for addition at large sizes.
+At 10000 digits, BigInt10 overtakes BigInt2 in addition. This is because BigUInt
+(underlying BigInt10) uses SIMD vectorization for addition at large sizes.
 
 **Multiplication by size** (post-Karatsuba):
 
-| Size              | BigInt2 (ns) | Python (ns) | BigInt2 vs Python | BigInt vs Python |
+| Size              | BigInt2 (ns) | Python (ns) | BigInt2 vs Python | BigInt10 vs Python |
 | ----------------- | -----------: | ----------: | :---------------: | :--------------: |
 | Small (<20 dig)   |        40–50 |     230–310 |     4.6–7.8×      |      2.6–6×      |
 | 50 × 50 dig       |          100 |         300 |       3.0×        |      1.88×       |
@@ -104,13 +104,13 @@ Previously, 2000+ digit multiplication was 0.36–0.57× Python. Karatsuba broug
 
 **Floor Division by size** (unchanged, not yet optimized):
 
-| Size              | BigInt2 vs Python | BigInt vs Python |
+| Size              | BigInt2 vs Python | BigInt10 vs Python |
 | ----------------- | :---------------: | :--------------: |
 | Small (<20 dig)   |     1.5–2.0×      |       2–4×       |
 | 5000/2500 digits  |       1.47×       |      0.42×       |
 | 10000/5000 digits |       0.88×       |      0.39×       |
 
-BigInt2 division scales better than BigInt's at large sizes, but both lag Python.
+BigInt2 division scales better than BigInt10's at large sizes, but both lag Python.
 
 **Power by case** (post-optimization):
 
@@ -144,7 +144,7 @@ BigInt2 division scales better than BigInt's at large sizes, but both lag Python
 - Small general (result <200 digits): 0.78–0.94× (competitive with Python)
 - Large general (result >1000 digits): 0.65–0.80× (per-multiply overhead accumulates)
 - Eliminating the wasted final squaring gave a modest boost across all cases
-- BigInt2 always beats BigInt for power (BigInt averages 0.58×)
+- BigInt2 always beats BigInt10 for power (BigInt10 averages 0.58×)
 
 **Sqrt by size** (post-precision-doubling fix):
 
@@ -174,7 +174,7 @@ BigInt2 division scales better than BigInt's at large sizes, but both lag Python
 
 **from_string by size:**
 
-| Size         | BigInt2 vs Python | BigInt vs Python |
+| Size         | BigInt2 vs Python | BigInt10 vs Python |
 | ------------ | :---------------: | :--------------: |
 | 2 digits     |       7.0×        |      1.47×       |
 | 9 digits     |       5.6×        |      1.16×       |
@@ -189,13 +189,13 @@ BigInt2 division scales better than BigInt's at large sizes, but both lag Python
 | 10000 digits |       0.9×        |      5.51×       |
 
 BigInt2's O(n²) `multiply+add` loop for from_string degrades at scale, crossing
-below Python at 10000 digits. BigInt is faster at 5000+ digits because parsing
+below Python at 10000 digits. BigInt10 is faster at 5000+ digits because parsing
 into base-10^9 chunks is nearly free. Divide-and-conquer from_string (PR4)
 would use `left_half * 10^(n/2) + right_half` to achieve O(n·log²n).
 
 **to_string by size:**
 
-| Size         | BigInt2 vs Python | BigInt vs Python |
+| Size         | BigInt2 vs Python | BigInt10 vs Python |
 | ------------ | :---------------: | :--------------: |
 | 2 digits     |       3.3×        |      21.0×       |
 | 9 digits     |       2.2×        |      18.7×       |
@@ -209,7 +209,7 @@ would use `left_half * 10^(n/2) + right_half` to achieve O(n·log²n).
 | 5000 digits  |       0.6×        |      24.1×       |
 | 10000 digits |       0.4×        |      31.5×       |
 
-BigInt's to_string advantage grows with size (trivial in base-10^9). BigInt2
+BigInt10's to_string advantage grows with size (trivial in base-10^9). BigInt2
 requires O(n²) repeated division by 10^9. Divide-and-conquer base conversion
 (PR3) would bring this to O(n·log²n).
 
@@ -317,11 +317,11 @@ general case, plus Burnikel-Ziegler for large dividend/divisor ratios.
 
 ### PR 3: Optimized to_string (Divide-and-Conquer Base Conversion)
 
-**Priority: HIGH** — BigInt2's biggest weakness vs BigInt (31.5× gap at 10000 digits)
+**Priority: HIGH** — BigInt2's biggest weakness vs BigInt10 (31.5× gap at 10000 digits)
 
-**Current:** `to_decimal_string()` converts to BigInt (base-10^9) first by
+**Current:** `to_decimal_string()` converts to BigInt10 (base-10^9) first by
 repeated division. This is O(n²). At 10000 digits, BigInt2 is 0.37× vs Python
-while BigInt is 31.5×.
+while BigInt10 is 31.5×.
 
 **Target:** Divide-and-conquer base conversion:
 
@@ -345,7 +345,7 @@ This gives O(n·log²n) with Karatsuba multiplication.
 **Priority: MEDIUM** — Already 2.21× avg but degrades to 0.89× at 10000 digits
 
 **Current:** `from_string()` processes 9 digits at a time: `result = result *
-10^9 + chunk`. This is O(n²). BigInt is faster at 5000+ digits (3.28× vs 1.11×).
+10^9 + chunk`. This is O(n²). BigInt10 is faster at 5000+ digits (3.28× vs 1.11×).
 
 **Target:** Divide-and-conquer: split digit string in half, convert each half
 recursively, then `left_half * 10^(n/2) + right_half`.
@@ -394,11 +394,11 @@ for negative numbers (Python-compatible).
 
 ---
 
-### PR 7: Rename BigInt2 → BigInt, BigInt → BigInt10
+### PR 7: Rename BigInt2 → BigInt10, BigInt10 → BigInt10
 
 **Priority: LOW** — Wait until BigInt2 is clearly better across the board
 
-**Prerequisite:** PRs 2–3 complete, BigInt2 faster than BigInt in most operations.
+**Prerequisite:** PRs 2–3 complete, BigInt2 faster than BigInt10 in most operations.
 
 ---
 
@@ -425,5 +425,5 @@ sizes (100000+).
 | PR4 | D&C from_string               | TODO       | MEDIUM   | from_string at scale       |
 | PR5 | Bitwise AND/OR/XOR/NOT        | TODO       | MEDIUM   | API completeness           |
 | PR6 | GCD + Modular Arithmetic      | TODO       | MEDIUM   | applications               |
-| PR7 | Rename BigInt2 → BigInt       | TODO       | LOW      | ergonomics                 |
+| PR7 | Rename BigInt2 → BigInt10       | TODO       | LOW      | ergonomics                 |
 | PR8 | Toom-Cook / NTT               | TODO       | LOW      | extreme sizes (50000+ dig) |

@@ -2,12 +2,12 @@
 # CLI dispatch for DeciMojo benchmarks
 # Usage: pixi run bench <type> [operation]
 #
-# Types: bigint (bint), biguint (buint), decimal128 (dec), bigdecimal (bdec)
+# Types: bigint10 (bint), biguint (buint), decimal128 (dec), bigdecimal (bdec)
 # Operations: add, multiply, subtract, floor_divide, truncate_divide, etc.
 #             (varies by type — omit to get interactive menu)
 #
 # Examples:
-#   pixi run bench bigint add
+#   pixi run bench bigint10 add
 #   pixi run bench dec sqrt
 #   pixi run bench biguint          # interactive menu
 #   pixi run bench                  # show help
@@ -22,7 +22,7 @@ if [[ -z "$TYPE" ]]; then
     echo "Usage: pixi run bench <type> [operation]"
     echo ""
     echo "Types:"
-    echo "  bigint   (bint)    BigInt benchmarks (3-way: BigInt vs BigInt2 vs Python int)"
+    echo "  bigint10 (bint)    BigInt10 benchmarks (3-way: BigInt10 vs BigInt2 vs Python int)"
     echo "  bigint2  (bint2)   BigInt2-specific benchmarks (power, sqrt, shift, string)"
     echo "  biguint  (buint)   BigUInt benchmarks (BigUInt vs Python int)"
     echo "  decimal128 (dec)   Decimal128 benchmarks (Decimal128 vs Python decimal)"
@@ -31,7 +31,7 @@ if [[ -z "$TYPE" ]]; then
     echo "Omit operation to get interactive menu for that type."
     echo ""
     echo "Examples:"
-    echo "  pixi run bench bigint add"
+    echo "  pixi run bench bigint10 add"
     echo "  pixi run bench dec sqrt"
     echo "  pixi run bench biguint"
     exit 0
@@ -39,7 +39,7 @@ fi
 
 # --- Map short names ---
 case "$TYPE" in
-    bint)  TYPE="bigint" ;;
+    bint)  TYPE="bigint10" ;;
     bint2) TYPE="bigint2" ;;
     buint) TYPE="biguint" ;;
     dec)   TYPE="decimal128" ;;
@@ -50,7 +50,7 @@ DIR="benches/$TYPE"
 
 if [[ ! -d "$DIR" ]]; then
     echo "Error: Unknown type '$TYPE'"
-    echo "Available: bigint (bint), biguint (buint), decimal128 (dec), bigdecimal (bdec)"
+    echo "Available: bigint10 (bint), biguint (buint), decimal128 (dec), bigdecimal (bdec)"
     exit 1
 fi
 

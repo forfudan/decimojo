@@ -1681,7 +1681,7 @@ fn floor_divide(x: BigUInt, y: BigUInt) raises -> BigUInt:
 # TODO: Implement a `floor_divide_slices_school()` function that
 # can be used for slices of BigUInt numbers.
 fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
-    """**[PRIVATE]** General schoolbook division algorithm for BigInt numbers.
+    """**[PRIVATE]** General schoolbook division algorithm for BigInt10 numbers.
 
     Args:
         x: The dividend.

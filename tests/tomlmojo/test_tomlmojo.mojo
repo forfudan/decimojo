@@ -1,32 +1,11 @@
 """Comprehensive test suite for tomlmojo — covers all newly added TOML features."""
 
 import tomlmojo
+import testing
 
 
 fn main() raises:
-    print("=== tomlmojo feature tests ===\n")
-
-    test_basic_key_value()
-    test_table()
-    test_array()
-    test_multiline_array()
-    test_dotted_keys()
-    test_dotted_table_headers()
-    test_quoted_keys()
-    test_inline_table()
-    test_inline_table_nested()
-    test_array_of_tables()
-    test_array_of_tables_dotted()
-    test_unicode_escapes()
-    test_integer_bases()
-    test_special_floats()
-    test_multiline_strings()
-    test_nested_tables_via_dotted()
-    test_duplicate_key_detection()
-    test_mixed_features()
-    test_our_pixi_toml()
-
-    print("\n=== All tests passed! ===")
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
 
 # ---------------------------------------------------------------------------

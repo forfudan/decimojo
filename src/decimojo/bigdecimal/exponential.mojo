@@ -755,7 +755,7 @@ fn exp(x: BigDecimal, precision: Int) raises -> BigDecimal:
 
     # For very large positive values, result will overflow BigDecimal capacity
     # Calculate rough estimate to detect overflow early
-    # TODO: Use BigInt as scale can avoid overflow in this case
+    # TODO: Use BigInt10 as scale can avoid overflow in this case
     if not x.sign and x.exponent() >= 20:  # x > 10^20
         raise Error("Error in `exp`: Result too large to represent")
 

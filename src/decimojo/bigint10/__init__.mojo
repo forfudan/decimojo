@@ -16,10 +16,10 @@
 
 """Sub-package for base-10^9 big integer type."""
 
-# About the module name `bigint`:
+# About the module name `bigint10`:
 # According to PEP-8, Modules should have short, all-lowercase names.
 # Underscores can be used in the module name if it improves readability.
 # Python packages should also have short, all-lowercase names, although the use
 # of underscores is discouraged.
-# Becuase the readability of `bigint` is already good, I use `bigint` instead of
-# `big_int` for this sub-package and the module.
+# Becuase the readability of `bigint10` is already good, I use `bigint10`
+# instead of `big_int` for this sub-package and the module.

@@ -2,18 +2,18 @@
 Test BigInt2 arithmetic operations including addition, subtraction,
 negation, multiplication, floor division, and truncate division.
 
-Reuses TOML test data from the BigInt test suite, since the test cases
-use decimal string representations that are valid for both BigInt and BigInt2.
+Reuses TOML test data from the BigInt10 test suite, since the test cases
+use decimal string representations that are valid for both BigInt10 and BigInt2.
 """
 
 import testing
 from decimojo.bigint2.bigint2 import BigInt2
 from decimojo.tests import TestCase, parse_file, load_test_cases
 
-comptime file_path_arithmetics = "tests/bigint/test_data/bigint_arithmetics.toml"
-comptime file_path_multiply = "tests/bigint/test_data/bigint_multiply.toml"
-comptime file_path_floor_divide = "tests/bigint/test_data/bigint_floor_divide.toml"
-comptime file_path_truncate_divide = "tests/bigint/test_data/bigint_truncate_divide.toml"
+comptime file_path_arithmetics = "tests/bigint10/test_data/bigint10_arithmetics.toml"
+comptime file_path_multiply = "tests/bigint10/test_data/bigint10_multiply.toml"
+comptime file_path_floor_divide = "tests/bigint10/test_data/bigint10_floor_divide.toml"
+comptime file_path_truncate_divide = "tests/bigint10/test_data/bigint10_truncate_divide.toml"
 
 # BigUInt TOML test data (unsigned, all positive values)
 comptime file_path_biguint_arithmetics = "tests/biguint/test_data/biguint_arithmetics.toml"
