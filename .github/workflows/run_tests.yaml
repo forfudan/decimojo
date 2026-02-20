@@ -59,6 +59,7 @@ jobs:
       - name: Run tests
         run: |
           bash ./tests/test_all.sh
+          bash ./tests/test_toml.sh
 
       - name: Install pre-commit
         run: |
