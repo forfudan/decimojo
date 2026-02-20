@@ -1,5 +1,9 @@
 # BigInt2 Benchmark Results & Optimization Roadmap
 
+> **Benchmark location:** `benches/bigint/` (unified folder for BigInt10 vs BigInt2
+> comparisons). Run with `pixi run bint` (interactive) or `pixi run bench bigint <op>`.
+> BigUInt-only benchmarks remain in `benches/biguint/`.
+
 ## Benchmark Summary (2026-02-20, macOS arm64, Apple Silicon)
 
 All benchmarks compare **BigInt2** (base-2^32) against **BigInt10/BigUInt** (base-10^9)
@@ -287,7 +291,7 @@ BigInt2 now beats Python at ALL multiplication sizes.
 
 **Priority: HIGHEST** — The most impactful remaining optimization
 
-**Current:** `_divmod_magnitudes()` uses basic schoolbook division.
+**Current:** `_divmod_magnitudes()` uses Knuth's Algorithm D (schoolbook).
 BigInt2 is barely faster than Python at medium sizes and slower at 10000 digits (0.88×).
 Division is the bottleneck for:
 
@@ -297,21 +301,51 @@ Division is the bottleneck for:
   occasional division in Newton's method slows sqrt
 - **to_string** (O(n²) repeated division by 10^9)
 
-**Target:** Implement Knuth Algorithm D (normalized multi-word division) for
-general case, plus Burnikel-Ziegler for large dividend/divisor ratios.
+**First attempt (Burnikel-Ziegler, copy-based):** Implemented B-Z with recursive
+`_bz_div_two_by_one` / `_bz_div_three_by_two`, but benchmarks showed regressions
+at 700+ digits (0.39–0.77× Python vs 0.88–1.47× with schoolbook). The root cause
+is excessive `List[UInt32]` allocation in recursive calls — each level creates
+multiple copies via `_get_words_slice`, `_shift_left_words_inplace`, and
+`_add_magnitudes_inplace`. The code is retained but the dispatch is disabled.
 
-**Expected Impact:**
+At 300–600 digits, B-Z did show real wins (1.3–1.7× Python) thanks to shallow
+recursion depth, confirming the algorithm IS faster — the implementation just
+needs to minimize allocations.
 
-- Sqrt at 500 digits: from 0.21× to ~1.5–3× Python (fewer expensive Newton iterations)
-- Floor divide at 10000 digits: from 0.88× to 3–5× Python
-- to_string benefits cascading from faster division
+**Benchmark results (B-Z, copy-based):**
+
+| Size                 | Schoolbook (vs Python) | B-Z copy-based (vs Python) |
+| -------------------- | ---------------------- | -------------------------- |
+| 300 dig / 200 dig    | —                      | 1.51× (win)                |
+| 500 dig / 200 dig    | —                      | 1.55–1.67× (win)           |
+| 600 dig / 300 dig    | —                      | 1.44× (win)                |
+| 700 dig / 350 dig    | —                      | 0.39× (regression)         |
+| 1200 dig / 400 dig   | —                      | 0.50× (regression)         |
+| 5000 dig / 2500 dig  | 1.47×                  | 0.84× (regression)         |
+| 10000 dig / 5000 dig | 0.88×                  | 0.77× (regression)         |
+
+**Next step: slice-based B-Z (like BigUInt).** BigUInt's B-Z uses `from_slice`
+with `(bounds_a, bounds_b)` tuples to avoid materializing sub-BigUInts until the
+base case (schoolbook). Porting this approach to BigInt2's word lists should
+eliminate the allocation overhead and unlock the algorithmic win.
 
 **Tasks:**
 
-1. Implement Knuth Algorithm D with proper trial divisor estimation
-2. Implement Burnikel-Ziegler recursive division for large numbers
-3. Tune crossover thresholds
+1. ~~Implement Burnikel-Ziegler recursive division~~ ✅ (done, code in place)
+2. **Rewrite B-Z with slice-based operations** (pass word-list + bounds instead
+   of copying sub-lists). Key functions to create:
+   - `_bz_div_two_by_one_slices(a, bounds_a, b, bounds_b, n, cutoff)`
+   - `_bz_div_three_by_two_slices(a, bounds_a, b, bounds_b, n, cutoff)`
+   - `_multiply_slices(a, bounds_a, b, bounds_b)` → avoids sub-list copies
+   - `_subtract_inplace_by_slice(a, b, bounds_b)` → subtract without copying
+3. Re-enable dispatch and tune crossover thresholds
 4. Add regression tests for edge cases
+
+**Expected Impact (once slice-based):**
+
+- Floor divide at 10000 digits: from 0.88× to 3–5× Python
+- Sqrt at 500 digits: from 0.21× to ~1.5–3× Python
+- to_string benefits cascading from faster division
 
 ---
 
@@ -420,7 +454,7 @@ sizes (100000+).
 | --- | ----------------------------- | ---------- | -------- | -------------------------- |
 | PR0 | Fix sqrt correctness bug      | ✅ **DONE** | CRITICAL | correctness (fixed)        |
 | PR1 | Karatsuba Multiplication      | ✅ **DONE** | HIGHEST  | mul 3.8× faster at scale   |
-| PR2 | Fast Division (Knuth D + B-Z) | TODO       | HIGHEST  | div, sqrt, to_string       |
+| PR2 | Fast Division (Knuth D + B-Z) | WIP        | HIGHEST  | div, sqrt, to_string       |
 | PR3 | D&C to_string                 | TODO       | HIGH     | to_string (31× gap!)       |
 | PR4 | D&C from_string               | TODO       | MEDIUM   | from_string at scale       |
 | PR5 | Bitwise AND/OR/XOR/NOT        | TODO       | MEDIUM   | API completeness           |

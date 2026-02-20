@@ -742,9 +742,11 @@ fn _divmod_magnitudes(
         var r_words: List[UInt32] = [r_word]
         return (q^, r_words^)
 
-    # Large divisor: use Burnikel-Ziegler divide-and-conquer
-    if len_b > CUTOFF_BURNIKEL_ZIEGLER:
-        return _divmod_burnikel_ziegler(a, b)
+    # TODO(PR2): Re-enable B-Z dispatch once slice-based implementation avoids
+    # excessive allocation.  Current copy-heavy approach causes regressions at
+    # 700+ digits (0.39–0.77× Python vs 0.88–1.47× with schoolbook).
+    # if len_b > CUTOFF_BURNIKEL_ZIEGLER:
+    #     return _divmod_burnikel_ziegler(a, b)
 
     # ===--- Knuth's Algorithm D ---=== #
     # Step D1: Normalize
