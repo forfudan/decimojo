@@ -17,7 +17,6 @@
 """String parsing and manipulation functions."""
 
 from algorithm import vectorize
-from memory import UnsafePointer
 
 
 fn parse_numeric_string(
@@ -162,7 +161,8 @@ fn parse_numeric_string(
             if in_exponent:
                 if exponent_sign_read:
                     raise Error(
-                        "Exponent sign must appear before exponent digits."
+                        "Exponent sign can only appear once,"
+                        " before exponent digits."
                     )
                 exponent_sign_read = True
             else:
@@ -179,7 +179,8 @@ fn parse_numeric_string(
             if in_exponent:
                 if exponent_sign_read:
                     raise Error(
-                        "Exponent sign must appear before exponent digits."
+                        "Exponent sign can only appear once,"
+                        " before exponent digits."
                     )
                 exponent_sign_read = True
             else:
