@@ -1,6 +1,10 @@
 # DeciMojo changelog
 
-This is a list of RELEASED changes for the DeciMojo Package.
+This is a list of changes for the DeciMojo Package.
+
+## Unreleased (v0.8.0)
+
+### 🦋 Changed
 
 ## 20260212 (v0.7.0)
 
@@ -130,11 +134,11 @@ fn main() raises:
         i += 1
 ```
 
-| scenario        | Time taken |
-| --------------- | ---------- |
+| scenario          | Time taken |
+| ----------------- | ---------- |
 | v0.4.0 `BigInt10` | 1.102s     |
 | v0.4.1 `BigInt10` | 0.912s     |
-| Built-in `Int`  | 0.893s     |
+| Built-in `Int`    | 0.893s     |
 
 ### 🛠️ Fixed
 
