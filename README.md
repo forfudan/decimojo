@@ -19,7 +19,7 @@ DeciMojo provides an arbitrary-precision integer and decimal mathematics library
 
 The core types are:
 
-- A base-2 arbitrary-precision signed integer type (`BigInt2`) using a little-endian representation with `UInt32` words[^bigint2]. It is a drop-in replacement for Python's `int` in Mojo. It features comprehensive arithmetic operations, comparison functions, and supports extremely large integer calculations efficiently. It beats Python's `int` in most tested cases.
+- A base-2 arbitrary-precision signed integer type (`BigInt`) using a little-endian representation with `UInt32` words[^bigint]. It is a drop-in replacement for Python's `int` in Mojo. It features comprehensive arithmetic operations, comparison functions, and supports extremely large integer calculations efficiently. It beats Python's `int` in most tested cases.
 - An arbitrary-precision decimal implementation (`BigDecimal`) allowing for calculations with unlimited digits and decimal places[^arbitrary]. It provides a complete set of arithmetic operations, comparisons, and mathematical functions like logarithms, exponentiation, roots, trigonometric functions, etc. It also supports rounding modes and conversions to/from built-in types.
 - A 128-bit fixed-point decimal implementation (`Decimal128`) supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed]. It features a complete set of mathematical functions including logarithms, exponentiation, roots, etc.
 
@@ -29,7 +29,7 @@ This repository includes [TOMLMojo](./docs/readme_tomlmojo.md), a lightweight TO
 
 | type         | alias             | information                                     | internal representation  |
 | ------------ | ----------------- | ----------------------------------------------- | ------------------------ |
-| `BigInt2`    |                   | 2^32-based arbitrary-precision integer          | `List[UInt32]`, `Bool`   |
+| `BigInt`    |                   | 2^32-based arbitrary-precision integer          | `List[UInt32]`, `Bool`   |
 | `BigDecimal` | `BDec`, `Decimal` | 10^9-based arbitrary-precision decimal          | `BigUInt`, `Int`, `Bool` |
 | `Decimal128` | `Dec128`          | 128-bit fixed-precision decimal                 | `UInt32` * 4             |
 | `BigUInt`    | `BUInt`           | 10^9-based arbitrary-precision unsigned integer | `List[UInt32]`           |
@@ -325,6 +325,6 @@ If you find DeciMojo useful for your research, consider listing it in your citat
 This repository and its contributions are licensed under the Apache License v2.0.
 
 [^fixed]: The `Decimal128` type can represent values with up to 29 significant digits and a maximum of 28 digits after the decimal point. When a value exceeds the maximum representable value (`2^96 - 1`), DeciMojo either raises an error or rounds the value to fit within these constraints. For example, the significant digits of `8.8888888888888888888888888888` (29 eights total with 28 after the decimal point) exceeds the maximum representable value (`2^96 - 1`) and is automatically rounded to `8.888888888888888888888888889` (28 eights total with 27 after the decimal point). DeciMojo's `Decimal128` type is similar to `System.Decimal` (C#/.NET), `rust_decimal` in Rust, `DECIMAL/NUMERIC` in SQL Server, etc.
-[^bigint2]: The `BigInt2` implementation uses a base-2^32 representation with a little-endian format, where the least significant word is stored at index 0. Each word is a `UInt32`, allowing for efficient storage and arithmetic operations on large integers. This design choice optimizes performance for binary computations while still supporting arbitrary precision.
+[^bigint]: The `BigInt` implementation uses a base-2^32 representation with a little-endian format, where the least significant word is stored at index 0. Each word is a `UInt32`, allowing for efficient storage and arithmetic operations on large integers. This design choice optimizes performance for binary computations while still supporting arbitrary precision.
 [^bigint10]: The BigInt10 implementation uses a base-10 representation for users (maintaining decimal semantics), while internally using an optimized base-10^9 storage system for efficient calculations. This approach balances human-readable decimal operations with high-performance computing. It provides both floor division (round toward negative infinity) and truncate division (round toward zero) semantics, enabling precise handling of division operations with correct mathematical behavior regardless of operand signs.
 [^arbitrary]: Built on top of our completed BigInt10 implementation, BigDecimal will support arbitrary precision for both the integer and fractional parts, similar to `decimal` and `mpmath` in Python, `java.math.BigDecimal` in Java, etc.

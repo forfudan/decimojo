@@ -14,17 +14,17 @@
 # limitations under the License.
 # ===----------------------------------------------------------------------=== #
 
-"""Implements exponential functions for the BigInt2 type.
+"""Implements exponential functions for the BigInt type.
 
 This module provides integer square root using Newton's method with
-binary arithmetic, leveraging BigInt2's base-2^32 representation for
+binary arithmetic, leveraging BigInt's base-2^32 representation for
 efficient bit-level operations.
 """
 
 import math
 
-from decimojo.bigint2.bigint2 import BigInt2
-import decimojo.bigint2.arithmetics
+from decimojo.bigint.bigint import BigInt
+import decimojo.bigint.arithmetics
 from decimojo.errors import DeciMojoError
 
 
@@ -33,8 +33,8 @@ from decimojo.errors import DeciMojoError
 # ===----------------------------------------------------------------------=== #
 
 
-fn sqrt(x: BigInt2) raises -> BigInt2:
-    """Calculates the integer square root of a BigInt2 using Newton's method.
+fn sqrt(x: BigInt) raises -> BigInt:
+    """Calculates the integer square root of a BigInt using Newton's method.
 
     The result is the largest integer y such that y * y <= x
     (for non-negative x).
@@ -47,7 +47,7 @@ fn sqrt(x: BigInt2) raises -> BigInt2:
         cost, rather than O(M(n) * log n) for standard Newton's method.
 
     Args:
-        x: The BigInt2 to calculate the square root of. Must be non-negative.
+        x: The BigInt to calculate the square root of. Must be non-negative.
 
     Returns:
         The integer square root of x.
@@ -58,7 +58,7 @@ fn sqrt(x: BigInt2) raises -> BigInt2:
     if x.is_negative():
         raise Error(
             DeciMojoError(
-                file="src/decimojo/bigint2/exponential.mojo",
+                file="src/decimojo/bigint/exponential.mojo",
                 function="sqrt()",
                 message="Cannot compute square root of a negative number",
                 previous_error=None,
@@ -66,7 +66,7 @@ fn sqrt(x: BigInt2) raises -> BigInt2:
         )
 
     if x.is_zero():
-        return BigInt2()
+        return BigInt()
 
     # Special case: single word — use hardware sqrt
     if len(x.words) == 1:
@@ -79,7 +79,7 @@ fn sqrt(x: BigInt2) raises -> BigInt2:
             guess -= 1
         while (guess + 1) * (guess + 1) <= val:
             guess += 1
-        return BigInt2.from_int(Int(guess))
+        return BigInt.from_int(Int(guess))
 
     # Special case: two words — compute via UInt64 sqrt
     if len(x.words) == 2:
@@ -90,7 +90,7 @@ fn sqrt(x: BigInt2) raises -> BigInt2:
             guess -= 1
         while (guess + 1) * (guess + 1) <= val:
             guess += 1
-        return BigInt2.from_uint64(guess)
+        return BigInt.from_uint64(guess)
 
     # For numbers up to ~520 digits (≤ 54 words), Newton's method with a tight
     # initial guess converges in 3-5 iterations and has less per-iteration
@@ -104,14 +104,14 @@ fn sqrt(x: BigInt2) raises -> BigInt2:
     return _sqrt_precision_doubling(x)
 
 
-fn _sqrt_newton(x: BigInt2) raises -> BigInt2:
+fn _sqrt_newton(x: BigInt) raises -> BigInt:
     """Newton's method integer sqrt with tight initial guess from top words.
 
     Best for medium-sized numbers (3-54 words / up to ~512 digits) where
-    the per-iteration overhead of BigInt2 operations is the bottleneck.
+    the per-iteration overhead of BigInt operations is the bottleneck.
 
     Args:
-        x: The BigInt2 value (must be positive, >= 3 words).
+        x: The BigInt value (must be positive, >= 3 words).
 
     Returns:
         The integer square root.
@@ -133,9 +133,9 @@ fn _sqrt_newton(x: BigInt2) raises -> BigInt2:
     var shift_words = n_lower_words // 2
     var shift_bits = shift_words * 32
 
-    var guess = BigInt2.from_uint64(top_sqrt)
+    var guess = BigInt.from_uint64(top_sqrt)
     if shift_bits > 0:
-        guess = decimojo.bigint2.arithmetics.left_shift(guess, shift_bits)
+        guess = decimojo.bigint.arithmetics.left_shift(guess, shift_bits)
 
     # Newton iterations: converges monotonically from above
     while True:
@@ -149,20 +149,20 @@ fn _sqrt_newton(x: BigInt2) raises -> BigInt2:
     while True:
         var guess_sq = guess * guess
         if guess_sq > x:
-            guess -= BigInt2(1)
+            guess -= BigInt(1)
         else:
-            guess += BigInt2(1)
+            guess += BigInt(1)
             var next_sq = guess * guess
             if next_sq <= x:
                 continue
             else:
-                guess -= BigInt2(1)
+                guess -= BigInt(1)
                 break
 
     return guess^
 
 
-fn _sqrt_precision_doubling(x: BigInt2) raises -> BigInt2:
+fn _sqrt_precision_doubling(x: BigInt) raises -> BigInt:
     """CPython-style precision-doubling integer sqrt.
 
     Adapted from CPython Modules/mathmodule.c. Each iteration doubles
@@ -171,7 +171,7 @@ fn _sqrt_precision_doubling(x: BigInt2) raises -> BigInt2:
     for large numbers.
 
     Args:
-        x: The BigInt2 value (must be positive, >= 3 words).
+        x: The BigInt value (must be positive, >= 3 words).
 
     Returns:
         The integer square root.
@@ -179,7 +179,7 @@ fn _sqrt_precision_doubling(x: BigInt2) raises -> BigInt2:
     var bit_len = x.bit_length()
     var c = (bit_len - 1) // 2
 
-    var a = BigInt2(1)
+    var a = BigInt(1)
     var d: Int = 0
 
     # c.bit_length()
@@ -196,25 +196,25 @@ fn _sqrt_precision_doubling(x: BigInt2) raises -> BigInt2:
         var shift_a = d - e - 1
         var shift_n = 2 * c - e - d + 1
 
-        var a_shifted = decimojo.bigint2.arithmetics.left_shift(a, shift_a)
-        var n_shifted = decimojo.bigint2.arithmetics.right_shift(x, shift_n)
+        var a_shifted = decimojo.bigint.arithmetics.left_shift(a, shift_a)
+        var n_shifted = decimojo.bigint.arithmetics.right_shift(x, shift_n)
         var quotient = n_shifted // a
         a = a_shifted + quotient
 
     # Final adjustment: a - (1 if a*a > x else 0)
     var a_sq = a * a
     if a_sq > x:
-        a -= BigInt2(1)
+        a -= BigInt(1)
 
     return a^
 
 
-fn isqrt(x: BigInt2) raises -> BigInt2:
-    """Calculates the integer square root of a BigInt2.
+fn isqrt(x: BigInt) raises -> BigInt:
+    """Calculates the integer square root of a BigInt.
     Equivalent to `sqrt()`.
 
     Args:
-        x: The BigInt2 to calculate the integer square root of.
+        x: The BigInt to calculate the integer square root of.
 
     Returns:
         The integer square root of x.

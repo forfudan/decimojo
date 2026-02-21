@@ -1,4 +1,4 @@
-"""Unified BigInt benchmark runner. Compares BigInt10 vs BigInt2 vs Python int."""
+"""Unified BigInt benchmark runner. Compares BigInt10 vs BigInt vs Python int."""
 
 from bench_add import main as bench_add
 from bench_multiply import main as bench_multiply
@@ -16,17 +16,17 @@ fn main() raises:
         print(
             """
 =========================================
-  BigInt Benchmarks (BigInt10 vs BigInt2)
+  BigInt Benchmarks (BigInt10 vs BigInt)
 =========================================
 add:       Addition
 mul:       Multiplication
 fdiv:      Floor Division
 tdiv:      Truncate Division
-sqrt:      Integer Square Root (BigUInt vs BigInt2)
+sqrt:      Integer Square Root (BigUInt vs BigInt)
 power:     Power / Exponentiation
 fromstr:   String → BigInt construction
 tostr:     BigInt → String conversion
-shift:     Left Shift (BigInt2 only)
+shift:     Left Shift (BigInt only)
 all:       Run all benchmarks
 q:         Exit
 =========================================

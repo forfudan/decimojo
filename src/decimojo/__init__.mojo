@@ -26,7 +26,8 @@ from decimojo import Decimal, BigInt10, RoundingMode
 
 # Core types
 from .decimal128.decimal128 import Decimal128, Dec128
-from .bigint10.bigint10 import BigInt10, BInt
+from .bigint.bigint import BigInt, BInt
+from .bigint10.bigint10 import BigInt10
 from .biguint.biguint import BigUInt, BUInt
 from .bigdecimal.bigdecimal import BigDecimal, BDec, Decimal
 from .rounding_mode import (
@@ -38,4 +39,4 @@ from .rounding_mode import (
 )
 
 # Core functions
-from .bigint2.number_theory import gcd, lcm, extended_gcd, mod_inverse, mod_pow
+from .bigint.number_theory import gcd, lcm, extended_gcd, mod_inverse, mod_pow

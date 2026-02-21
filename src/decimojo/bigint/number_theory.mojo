@@ -14,15 +14,15 @@
 # limitations under the License.
 # ===----------------------------------------------------------------------=== #
 
-"""Number theory operations for BigInt2.
+"""Number theory operations for BigInt.
 
 Provides greatest common divisor (GCD), extended GCD, least common multiple
 (LCM), modular exponentiation, and modular multiplicative inverse.
 """
 
-from decimojo.bigint2.bigint2 import BigInt2
-from decimojo.bigint2.comparison import compare_magnitudes
-from decimojo.bigint2.arithmetics import (
+from decimojo.bigint.bigint import BigInt
+from decimojo.bigint.comparison import compare_magnitudes
+from decimojo.bigint.arithmetics import (
     absolute,
     negative,
     multiply,
@@ -76,7 +76,7 @@ fn _count_trailing_zeros(words: List[UInt32]) -> Int:
 # ===----------------------------------------------------------------------=== #
 
 
-fn gcd(a: BigInt2, b: BigInt2) -> BigInt2:
+fn gcd(a: BigInt, b: BigInt) -> BigInt:
     """Computes the greatest common divisor of two integers.
 
     Uses the binary GCD (Stein's) algorithm, which is efficient for the
@@ -141,9 +141,7 @@ fn gcd(a: BigInt2, b: BigInt2) -> BigInt2:
 # ===----------------------------------------------------------------------=== #
 
 
-fn extended_gcd(
-    a: BigInt2, b: BigInt2
-) raises -> Tuple[BigInt2, BigInt2, BigInt2]:
+fn extended_gcd(a: BigInt, b: BigInt) raises -> Tuple[BigInt, BigInt, BigInt]:
     """Computes the extended greatest common divisor.
 
     Returns (g, x, y) such that a * x + b * y = g, where g = gcd(a, b) >= 0.
@@ -162,10 +160,10 @@ fn extended_gcd(
     var b_neg = b.is_negative()
     var old_r = absolute(a)
     var r = absolute(b)
-    var old_s = BigInt2(1)
-    var s = BigInt2(0)
-    var old_t = BigInt2(0)
-    var t = BigInt2(1)
+    var old_s = BigInt(1)
+    var s = BigInt(0)
+    var old_t = BigInt(0)
+    var t = BigInt(1)
 
     while not r.is_zero():
         var qr = floor_divmod(old_r, r)
@@ -202,7 +200,7 @@ fn extended_gcd(
 # ===----------------------------------------------------------------------=== #
 
 
-fn lcm(a: BigInt2, b: BigInt2) raises -> BigInt2:
+fn lcm(a: BigInt, b: BigInt) raises -> BigInt:
     """Computes the least common multiple of two integers.
 
     Follows Python semantics:
@@ -217,7 +215,7 @@ fn lcm(a: BigInt2, b: BigInt2) raises -> BigInt2:
         The least common multiple, always >= 0.
     """
     if a.is_zero() or b.is_zero():
-        return BigInt2(0)
+        return BigInt(0)
 
     var g = gcd(a, b)
     # |a| / gcd(a,b) * |b| — divide first to keep intermediates small
@@ -229,9 +227,7 @@ fn lcm(a: BigInt2, b: BigInt2) raises -> BigInt2:
 # ===----------------------------------------------------------------------=== #
 
 
-fn mod_pow(
-    base: BigInt2, exponent: BigInt2, modulus: BigInt2
-) raises -> BigInt2:
+fn mod_pow(base: BigInt, exponent: BigInt, modulus: BigInt) raises -> BigInt:
     """Computes (base ** exponent) mod modulus efficiently.
 
     Uses right-to-left binary exponentiation with modular reduction at
@@ -243,7 +239,7 @@ fn mod_pow(
         modulus: The modulus (must be positive).
 
     Returns:
-        A BigInt2 in the range [0, modulus).
+        A BigInt in the range [0, modulus).
 
     Raises:
         If exponent < 0 or modulus <= 0.
@@ -251,7 +247,7 @@ fn mod_pow(
     if exponent.is_negative():
         raise Error(
             DeciMojoError(
-                file="src/decimojo/bigint2/number_theory.mojo",
+                file="src/decimojo/bigint/number_theory.mojo",
                 function="mod_pow()",
                 message="Exponent must be non-negative",
                 previous_error=None,
@@ -261,7 +257,7 @@ fn mod_pow(
     if not modulus.is_positive():
         raise Error(
             DeciMojoError(
-                file="src/decimojo/bigint2/number_theory.mojo",
+                file="src/decimojo/bigint/number_theory.mojo",
                 function="mod_pow()",
                 message="Modulus must be positive",
                 previous_error=None,
@@ -270,14 +266,14 @@ fn mod_pow(
 
     # x mod 1 = 0 for all x
     if modulus.is_one():
-        return BigInt2(0)
+        return BigInt(0)
 
     # base^0 = 1
     if exponent.is_zero():
-        return floor_modulo(BigInt2(1), modulus)
+        return floor_modulo(BigInt(1), modulus)
 
     # Reduce base modulo modulus (handles negative base via floor modulo)
-    var result = BigInt2(1)
+    var result = BigInt(1)
     var b = floor_modulo(base, modulus)
     var exp = exponent.copy()  # mutable copy to iterate over
 
@@ -297,7 +293,7 @@ fn mod_pow(
     return result^
 
 
-fn mod_pow(base: BigInt2, exponent: Int, modulus: BigInt2) raises -> BigInt2:
+fn mod_pow(base: BigInt, exponent: Int, modulus: BigInt) raises -> BigInt:
     """Convenience overload accepting an Int exponent.
 
     Args:
@@ -306,9 +302,9 @@ fn mod_pow(base: BigInt2, exponent: Int, modulus: BigInt2) raises -> BigInt2:
         modulus: The modulus (must be positive).
 
     Returns:
-        A BigInt2 in the range [0, modulus).
+        A BigInt in the range [0, modulus).
     """
-    return mod_pow(base, BigInt2(exponent), modulus)
+    return mod_pow(base, BigInt(exponent), modulus)
 
 
 # ===----------------------------------------------------------------------=== #
@@ -316,7 +312,7 @@ fn mod_pow(base: BigInt2, exponent: Int, modulus: BigInt2) raises -> BigInt2:
 # ===----------------------------------------------------------------------=== #
 
 
-fn mod_inverse(a: BigInt2, modulus: BigInt2) raises -> BigInt2:
+fn mod_inverse(a: BigInt, modulus: BigInt) raises -> BigInt:
     """Computes the modular multiplicative inverse of a modulo modulus.
 
     Returns x in [0, modulus) such that (a * x) ≡ 1 (mod modulus).
@@ -336,7 +332,7 @@ fn mod_inverse(a: BigInt2, modulus: BigInt2) raises -> BigInt2:
     if not modulus.is_positive():
         raise Error(
             DeciMojoError(
-                file="src/decimojo/bigint2/number_theory.mojo",
+                file="src/decimojo/bigint/number_theory.mojo",
                 function="mod_inverse()",
                 message="Modulus must be positive",
                 previous_error=None,
@@ -350,7 +346,7 @@ fn mod_inverse(a: BigInt2, modulus: BigInt2) raises -> BigInt2:
     if not g.is_one():
         raise Error(
             DeciMojoError(
-                file="src/decimojo/bigint2/number_theory.mojo",
+                file="src/decimojo/bigint/number_theory.mojo",
                 function="mod_inverse()",
                 message="Modular inverse does not exist (gcd != 1)",
                 previous_error=None,

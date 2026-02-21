@@ -15,11 +15,11 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-Implements basic arithmetic functions for the BigInt2 type.
+Implements basic arithmetic functions for the BigInt type.
 
-BigInt2 uses base-2^32 representation with UInt32 words in little-endian order.
+BigInt uses base-2^32 representation with UInt32 words in little-endian order.
 Unlike the BigInt10 (base-10^9) type which delegates magnitude operations to
-BigUInt, BigInt2 implements all magnitude arithmetic directly since there is
+BigUInt, BigInt implements all magnitude arithmetic directly since there is
 no separate unsigned counterpart.
 
 Algorithms:
@@ -35,8 +35,8 @@ Algorithms:
 
 from memory import memcpy, memset_zero
 
-from decimojo.bigint2.bigint2 import BigInt2
-from decimojo.bigint2.comparison import compare_magnitudes
+from decimojo.bigint.bigint import BigInt
+from decimojo.bigint.comparison import compare_magnitudes
 from decimojo.errors import DeciMojoError
 
 
@@ -152,7 +152,7 @@ fn _subtract_magnitudes(a: List[UInt32], b: List[UInt32]) -> List[UInt32]:
         var diff = ai - bi - borrow
         if ai < bi + borrow:
             # Underflow — add 2^32 and set borrow
-            diff += BigInt2.BASE
+            diff += BigInt.BASE
             borrow = 1
         else:
             borrow = 0
@@ -609,7 +609,7 @@ fn _subtract_magnitudes_inplace(mut a: List[UInt32], read b: List[UInt32]):
         var bi: UInt64 = UInt64(bp[i]) if i < len_b else 0
         var diff = ai - bi - borrow
         if ai < bi + borrow:
-            diff += BigInt2.BASE
+            diff += BigInt.BASE
             borrow = 1
         else:
             borrow = 0
@@ -714,7 +714,7 @@ fn _divmod_magnitudes(
     if divisor_is_zero:
         raise Error(
             DeciMojoError(
-                file="src/decimojo/bigint2/arithmetics",
+                file="src/decimojo/bigint/arithmetics",
                 function="_divmod_magnitudes()",
                 message="Division by zero",
                 previous_error=None,
@@ -786,13 +786,13 @@ fn _divmod_magnitudes(
         # Refine q_hat using Knuth's test:
         # If q_hat * v[n-2] > (r_hat << 32) + u[j+n-2], decrease q_hat
         while True:
-            if q_hat < BigInt2.BASE and not (
+            if q_hat < BigInt.BASE and not (
                 q_hat * v_n_minus_2 > (r_hat << 32) + u_jn_minus_2
             ):
                 break
             q_hat -= 1
             r_hat += v_n_minus_1
-            if r_hat >= BigInt2.BASE:
+            if r_hat >= BigInt.BASE:
                 break
 
         # Step D4: Multiply and subtract
@@ -808,7 +808,7 @@ fn _divmod_magnitudes(
                     u[idx] = UInt32(UInt64(u[idx]) - UInt64(prod_lo))
                 else:
                     u[idx] = UInt32(
-                        BigInt2.BASE + UInt64(u[idx]) - UInt64(prod_lo)
+                        BigInt.BASE + UInt64(u[idx]) - UInt64(prod_lo)
                     )
                     carry += 1
         # Subtract final carry from u[j+n]
@@ -818,7 +818,7 @@ fn _divmod_magnitudes(
                 u[jn] = UInt32(UInt64(u[jn]) - carry)
             else:
                 # Step D6: Add back — q_hat was one too large
-                u[jn] = UInt32(BigInt2.BASE + UInt64(u[jn]) - carry)
+                u[jn] = UInt32(BigInt.BASE + UInt64(u[jn]) - carry)
                 q_hat -= 1
                 # Add v back to u[j..j+n-1]
                 var add_carry: UInt64 = 0
@@ -1150,7 +1150,7 @@ fn _divmod_knuth_d_from_slices(
     if len_b_eff <= 0:
         raise Error(
             DeciMojoError(
-                file="src/decimojo/bigint2/arithmetics",
+                file="src/decimojo/bigint/arithmetics",
                 function="_divmod_knuth_d_from_slices()",
                 message="Division by zero in B-Z base case",
                 previous_error=None,
@@ -1223,13 +1223,13 @@ fn _divmod_knuth_d_from_slices(
 
         # Refine q_hat
         while True:
-            if q_hat < BigInt2.BASE and not (
+            if q_hat < BigInt.BASE and not (
                 q_hat * v_n_minus_2 > (r_hat << 32) + u_jn_minus_2
             ):
                 break
             q_hat -= 1
             r_hat += v_n_minus_1
-            if r_hat >= BigInt2.BASE:
+            if r_hat >= BigInt.BASE:
                 break
 
         # Multiply and subtract: u[j..j+n] -= q_hat * v[0..n-1]
@@ -1244,7 +1244,7 @@ fn _divmod_knuth_d_from_slices(
                     u[idx] = UInt32(UInt64(u[idx]) - UInt64(prod_lo))
                 else:
                     u[idx] = UInt32(
-                        BigInt2.BASE + UInt64(u[idx]) - UInt64(prod_lo)
+                        BigInt.BASE + UInt64(u[idx]) - UInt64(prod_lo)
                     )
                     carry += 1
 
@@ -1253,7 +1253,7 @@ fn _divmod_knuth_d_from_slices(
             if UInt64(u[jn]) >= carry:
                 u[jn] = UInt32(UInt64(u[jn]) - carry)
             else:
-                u[jn] = UInt32(BigInt2.BASE + UInt64(u[jn]) - carry)
+                u[jn] = UInt32(BigInt.BASE + UInt64(u[jn]) - carry)
                 q_hat -= 1
                 # Add back: u[j..j+n-1] += v
                 var add_carry: UInt64 = 0
@@ -1561,15 +1561,15 @@ fn _bz_three_by_two_slices(
 # ===----------------------------------------------------------------------=== #
 
 
-fn add(x1: BigInt2, x2: BigInt2) -> BigInt2:
-    """Returns the sum of two BigInt2 numbers.
+fn add(x1: BigInt, x2: BigInt) -> BigInt:
+    """Returns the sum of two BigInt numbers.
 
     Args:
         x1: The first operand.
         x2: The second operand.
 
     Returns:
-        The sum of the two BigInt2 numbers.
+        The sum of the two BigInt numbers.
     """
     # If one of the numbers is zero, return the other
     if x1.is_zero():
@@ -1583,11 +1583,11 @@ fn add(x1: BigInt2, x2: BigInt2) -> BigInt2:
 
     # Same sign: add magnitudes, preserve sign
     var result_words = _add_magnitudes(x1.words, x2.words)
-    return BigInt2(raw_words=result_words^, sign=x1.sign)
+    return BigInt(raw_words=result_words^, sign=x1.sign)
 
 
-fn subtract(x1: BigInt2, x2: BigInt2) -> BigInt2:
-    """Returns the difference of two BigInt2 numbers.
+fn subtract(x1: BigInt, x2: BigInt) -> BigInt:
+    """Returns the difference of two BigInt numbers.
 
     Args:
         x1: The first number (minuend).
@@ -1611,42 +1611,42 @@ fn subtract(x1: BigInt2, x2: BigInt2) -> BigInt2:
     var cmp = compare_magnitudes(x1, x2)
 
     if cmp == 0:
-        return BigInt2()  # Equal magnitudes → zero
+        return BigInt()  # Equal magnitudes → zero
 
     if cmp > 0:
         # |x1| > |x2|: subtract smaller from larger, keep x1's sign
         var result_words = _subtract_magnitudes(x1.words, x2.words)
-        return BigInt2(raw_words=result_words^, sign=x1.sign)
+        return BigInt(raw_words=result_words^, sign=x1.sign)
     else:
         # |x1| < |x2|: subtract larger from smaller, flip sign
         var result_words = _subtract_magnitudes(x2.words, x1.words)
-        return BigInt2(raw_words=result_words^, sign=not x1.sign)
+        return BigInt(raw_words=result_words^, sign=not x1.sign)
 
 
-fn negative(x: BigInt2) -> BigInt2:
-    """Returns the negative of a BigInt2 number.
+fn negative(x: BigInt) -> BigInt:
+    """Returns the negative of a BigInt number.
 
     Args:
-        x: The BigInt2 value to negate.
+        x: The BigInt value to negate.
 
     Returns:
-        A new BigInt2 containing the negative of x.
+        A new BigInt containing the negative of x.
     """
     if x.is_zero():
-        return BigInt2()
+        return BigInt()
     var result = x.copy()
     result.sign = not result.sign
     return result^
 
 
-fn absolute(x: BigInt2) -> BigInt2:
-    """Returns the absolute value of a BigInt2 number.
+fn absolute(x: BigInt) -> BigInt:
+    """Returns the absolute value of a BigInt number.
 
     Args:
-        x: The BigInt2 value to compute the absolute value of.
+        x: The BigInt value to compute the absolute value of.
 
     Returns:
-        A new BigInt2 containing |x|.
+        A new BigInt containing |x|.
     """
     if x.sign:
         return -x
@@ -1654,8 +1654,8 @@ fn absolute(x: BigInt2) -> BigInt2:
         return x.copy()
 
 
-fn multiply(x1: BigInt2, x2: BigInt2) -> BigInt2:
-    """Returns the product of two BigInt2 numbers.
+fn multiply(x1: BigInt, x2: BigInt) -> BigInt:
+    """Returns the product of two BigInt numbers.
 
     Uses schoolbook multiplication O(n*m) with UInt64 intermediate products.
 
@@ -1664,19 +1664,19 @@ fn multiply(x1: BigInt2, x2: BigInt2) -> BigInt2:
         x2: The second operand (multiplier).
 
     Returns:
-        The product of the two BigInt2 numbers.
+        The product of the two BigInt numbers.
     """
     # Zero check
     if x1.is_zero() or x2.is_zero():
-        return BigInt2()
+        return BigInt()
 
     var result_words = _multiply_magnitudes(x1.words, x2.words)
-    return BigInt2(raw_words=result_words^, sign=x1.sign != x2.sign)
+    return BigInt(raw_words=result_words^, sign=x1.sign != x2.sign)
 
 
 # ===----------------------------------------------------------------------=== #
 # True in-place signed arithmetic functions
-# These modify the first operand directly without allocating a new BigInt2.
+# These modify the first operand directly without allocating a new BigInt.
 # ===----------------------------------------------------------------------=== #
 
 
@@ -1698,10 +1698,10 @@ fn _compare_magnitudes_words(
     return 0
 
 
-fn add_inplace(mut x: BigInt2, read other: BigInt2):
+fn add_inplace(mut x: BigInt, read other: BigInt):
     """Performs x += other by mutating x.words directly.
 
-    Avoids allocating a new BigInt2. Uses the existing _add_magnitudes_inplace
+    Avoids allocating a new BigInt. Uses the existing _add_magnitudes_inplace
     and _subtract_magnitudes_inplace helpers for the magnitude operations.
 
     Args:
@@ -1741,10 +1741,10 @@ fn add_inplace(mut x: BigInt2, read other: BigInt2):
             x.sign = other.sign
 
 
-fn add_inplace_int(mut x: BigInt2, value: Int):
+fn add_inplace_int(mut x: BigInt, value: Int):
     """Performs x += value (Int) by mutating x.words directly.
 
-    Optimized for adding a small integer: avoids constructing a full BigInt2.
+    Optimized for adding a small integer: avoids constructing a full BigInt.
     Handles the common cases of adding +1, -1, or any Int-sized value.
 
     Args:
@@ -1814,10 +1814,10 @@ fn add_inplace_int(mut x: BigInt2, value: Int):
             x.sign = other_sign
 
 
-fn subtract_inplace(mut x: BigInt2, read other: BigInt2):
+fn subtract_inplace(mut x: BigInt, read other: BigInt):
     """Performs x -= other by mutating x.words directly.
 
-    Avoids allocating a new BigInt2. Leverages the relationship:
+    Avoids allocating a new BigInt. Leverages the relationship:
     x -= other is equivalent to x += (-other), i.e., flip other's sign
     and apply add_inplace logic.
 
@@ -1861,13 +1861,13 @@ fn subtract_inplace(mut x: BigInt2, read other: BigInt2):
             x.sign = effective_other_sign
 
 
-fn multiply_inplace(mut x: BigInt2, read other: BigInt2):
+fn multiply_inplace(mut x: BigInt, read other: BigInt):
     """Performs x *= other by computing the product and moving the result
     into x.words.
 
     Multiplication cannot be done truly in-place (input words are read
     during output computation), so this computes a new word list and moves
-    it into x. This still avoids the overhead of constructing a full BigInt2
+    it into x. This still avoids the overhead of constructing a full BigInt
     object with its __init__ validation.
 
     Args:
@@ -1888,10 +1888,10 @@ fn multiply_inplace(mut x: BigInt2, read other: BigInt2):
     x.sign = x.sign != other.sign
 
 
-fn left_shift_inplace(mut x: BigInt2, shift: Int):
+fn left_shift_inplace(mut x: BigInt, shift: Int):
     """Performs x <<= shift by mutating x.words directly.
 
-    Avoids allocating a new BigInt2. Shifts left by `shift` bits
+    Avoids allocating a new BigInt. Shifts left by `shift` bits
     (equivalent to multiplying by 2^shift).
 
     Args:
@@ -1933,7 +1933,7 @@ fn left_shift_inplace(mut x: BigInt2, shift: Int):
     x.words = new_words^
 
 
-fn right_shift_inplace(mut x: BigInt2, shift: Int):
+fn right_shift_inplace(mut x: BigInt, shift: Int):
     """Performs x >>= shift by mutating x.words directly.
 
     For negative numbers, performs arithmetic right shift (rounds toward
@@ -2023,13 +2023,13 @@ fn right_shift_inplace(mut x: BigInt2, shift: Int):
     x._normalize()
 
 
-fn floor_divide_inplace(mut x: BigInt2, read other: BigInt2) raises:
+fn floor_divide_inplace(mut x: BigInt, read other: BigInt) raises:
     """Performs x //= other by computing the quotient and moving the result
     into x.words.
 
     Division cannot be done truly in-place due to the nature of the algorithm,
     so this computes the quotient word list and moves it into x. This avoids
-    the overhead of constructing a full BigInt2 object.
+    the overhead of constructing a full BigInt object.
 
     Args:
         x: The dividend (modified in-place to hold the quotient).
@@ -2070,7 +2070,7 @@ fn floor_divide_inplace(mut x: BigInt2, read other: BigInt2) raises:
     x._normalize()
 
 
-fn floor_modulo_inplace(mut x: BigInt2, read other: BigInt2) raises:
+fn floor_modulo_inplace(mut x: BigInt, read other: BigInt) raises:
     """Performs x %= other by computing the remainder and moving the result
     into x.words.
 
@@ -2108,8 +2108,8 @@ fn floor_modulo_inplace(mut x: BigInt2, read other: BigInt2) raises:
     x._normalize()
 
 
-fn floor_divide(x1: BigInt2, x2: BigInt2) raises -> BigInt2:
-    """Returns the quotient of two BigInt2 numbers, rounding toward negative
+fn floor_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
+    """Returns the quotient of two BigInt numbers, rounding toward negative
     infinity.
 
     The result satisfies: x1 = floor_divide(x1, x2) * x2 + floor_modulo(x1, x2).
@@ -2141,7 +2141,7 @@ fn floor_divide(x1: BigInt2, x2: BigInt2) raises -> BigInt2:
 
     if x1.sign == x2.sign:
         # Same signs → positive quotient (floor = truncate)
-        return BigInt2(raw_words=q_words^, sign=False)
+        return BigInt(raw_words=q_words^, sign=False)
     else:
         # Different signs → negative quotient
         if r_is_zero:
@@ -2151,17 +2151,17 @@ fn floor_divide(x1: BigInt2, x2: BigInt2) raises -> BigInt2:
                 if word != 0:
                     q_is_zero = False
                     break
-            return BigInt2(raw_words=q_words^, sign=not q_is_zero)
+            return BigInt(raw_words=q_words^, sign=not q_is_zero)
         else:
             # Non-exact: floor division rounds away from zero for negative
             # results, so quotient = -(|q| + 1)
             var one_word: List[UInt32] = [UInt32(1)]
             var q_plus_one = _add_magnitudes(q_words, one_word)
-            return BigInt2(raw_words=q_plus_one^, sign=True)
+            return BigInt(raw_words=q_plus_one^, sign=True)
 
 
-fn truncate_divide(x1: BigInt2, x2: BigInt2) raises -> BigInt2:
-    """Returns the quotient of two BigInt2 numbers, truncating toward zero.
+fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
+    """Returns the quotient of two BigInt numbers, truncating toward zero.
 
     The result satisfies: x1 = truncate_divide(x1, x2) * x2 + truncate_modulo(x1, x2).
 
@@ -2188,11 +2188,11 @@ fn truncate_divide(x1: BigInt2, x2: BigInt2) raises -> BigInt2:
             break
 
     var sign = False if q_is_zero else (x1.sign != x2.sign)
-    return BigInt2(raw_words=q_words^, sign=sign)
+    return BigInt(raw_words=q_words^, sign=sign)
 
 
-fn floor_modulo(x1: BigInt2, x2: BigInt2) raises -> BigInt2:
-    """Returns the floor modulo (remainder) of two BigInt2 numbers.
+fn floor_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
+    """Returns the floor modulo (remainder) of two BigInt numbers.
 
     The result has the same sign as the divisor and satisfies:
     x1 = floor_divide(x1, x2) * x2 + floor_modulo(x1, x2).
@@ -2219,20 +2219,20 @@ fn floor_modulo(x1: BigInt2, x2: BigInt2) raises -> BigInt2:
             break
 
     if r_is_zero:
-        return BigInt2()
+        return BigInt()
 
     if x1.sign == x2.sign:
         # Same signs: remainder has the same sign as x1 (and x2)
-        return BigInt2(raw_words=r_words^, sign=x1.sign)
+        return BigInt(raw_words=r_words^, sign=x1.sign)
     else:
         # Different signs: floor_mod = |divisor| - |remainder|
         # and the result has the sign of the divisor
         var adjusted = _subtract_magnitudes(x2.words, r_words)
-        return BigInt2(raw_words=adjusted^, sign=x2.sign)
+        return BigInt(raw_words=adjusted^, sign=x2.sign)
 
 
-fn truncate_modulo(x1: BigInt2, x2: BigInt2) raises -> BigInt2:
-    """Returns the truncate modulo (remainder) of two BigInt2 numbers.
+fn truncate_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
+    """Returns the truncate modulo (remainder) of two BigInt numbers.
 
     The result has the same sign as the dividend and satisfies:
     x1 = truncate_divide(x1, x2) * x2 + truncate_modulo(x1, x2).
@@ -2259,13 +2259,13 @@ fn truncate_modulo(x1: BigInt2, x2: BigInt2) raises -> BigInt2:
             break
 
     if r_is_zero:
-        return BigInt2()
+        return BigInt()
 
     # Truncate modulo: remainder has the same sign as the dividend
-    return BigInt2(raw_words=r_words^, sign=x1.sign)
+    return BigInt(raw_words=r_words^, sign=x1.sign)
 
 
-fn floor_divmod(x1: BigInt2, x2: BigInt2) raises -> Tuple[BigInt2, BigInt2]:
+fn floor_divmod(x1: BigInt, x2: BigInt) raises -> Tuple[BigInt, BigInt]:
     """Returns both the floor quotient and floor remainder.
 
     The result satisfies: x1 = q * x2 + r, where r has same sign as x2.
@@ -2293,10 +2293,10 @@ fn floor_divmod(x1: BigInt2, x2: BigInt2) raises -> Tuple[BigInt2, BigInt2]:
 
     if x1.sign == x2.sign:
         # Same signs → positive quotient (floor = truncate)
-        var q = BigInt2(raw_words=q_words^, sign=False)
+        var q = BigInt(raw_words=q_words^, sign=False)
         if r_is_zero:
-            return (q^, BigInt2())
-        return (q^, BigInt2(raw_words=r_words^, sign=x1.sign))
+            return (q^, BigInt())
+        return (q^, BigInt(raw_words=r_words^, sign=x1.sign))
     else:
         # Different signs → negative quotient
         if r_is_zero:
@@ -2305,20 +2305,20 @@ fn floor_divmod(x1: BigInt2, x2: BigInt2) raises -> Tuple[BigInt2, BigInt2]:
                 if word != 0:
                     q_is_zero = False
                     break
-            return (BigInt2(raw_words=q_words^, sign=not q_is_zero), BigInt2())
+            return (BigInt(raw_words=q_words^, sign=not q_is_zero), BigInt())
         else:
             # floor_div rounds toward negative infinity, mod has sign of divisor
             var one_word: List[UInt32] = [UInt32(1)]
             var q_plus_one = _add_magnitudes(q_words, one_word)
             var adjusted = _subtract_magnitudes(x2.words, r_words)
             return (
-                BigInt2(raw_words=q_plus_one^, sign=True),
-                BigInt2(raw_words=adjusted^, sign=x2.sign),
+                BigInt(raw_words=q_plus_one^, sign=True),
+                BigInt(raw_words=adjusted^, sign=x2.sign),
             )
 
 
-fn power(base: BigInt2, exponent: Int) raises -> BigInt2:
-    """Raises a BigInt2 to the power of a non-negative integer exponent.
+fn power(base: BigInt, exponent: Int) raises -> BigInt:
+    """Raises a BigInt to the power of a non-negative integer exponent.
 
     Uses binary exponentiation (exponentiation by squaring) for O(log n)
     multiplications.
@@ -2337,7 +2337,7 @@ fn power(base: BigInt2, exponent: Int) raises -> BigInt2:
     if exponent < 0:
         raise Error(
             DeciMojoError(
-                file="src/decimojo/bigint2/arithmetics.mojo",
+                file="src/decimojo/bigint/arithmetics.mojo",
                 function="power()",
                 message=(
                     "The exponent "
@@ -2350,12 +2350,12 @@ fn power(base: BigInt2, exponent: Int) raises -> BigInt2:
         )
 
     if exponent == 0:
-        return BigInt2(1)
+        return BigInt(1)
 
     if exponent >= 1_000_000_000:
         raise Error(
             DeciMojoError(
-                file="src/decimojo/bigint2/arithmetics.mojo",
+                file="src/decimojo/bigint/arithmetics.mojo",
                 function="power()",
                 message=(
                     "The exponent "
@@ -2368,15 +2368,15 @@ fn power(base: BigInt2, exponent: Int) raises -> BigInt2:
         )
 
     if base.is_zero():
-        return BigInt2()
+        return BigInt()
 
     if base.is_one():
-        return BigInt2(1)
+        return BigInt(1)
 
     # Fast path: base = ±2, use left shift
     if len(base.words) == 1 and base.words[0] == 2:
         var result_sign = base.sign and (exponent % 2 == 1)
-        var result = left_shift(BigInt2(1), exponent)
+        var result = left_shift(BigInt(1), exponent)
         result.sign = result_sign
         return result^
 
@@ -2397,11 +2397,11 @@ fn power(base: BigInt2, exponent: Int) raises -> BigInt2:
         if exp > 0:
             base_words = _multiply_magnitudes(base_words, base_words)
 
-    return BigInt2(raw_words=result_words^, sign=result_sign)
+    return BigInt(raw_words=result_words^, sign=result_sign)
 
 
-fn left_shift(x: BigInt2, shift: Int) -> BigInt2:
-    """Shifts a BigInt2 left by `shift` bits (multiply by 2^shift).
+fn left_shift(x: BigInt, shift: Int) -> BigInt:
+    """Shifts a BigInt left by `shift` bits (multiply by 2^shift).
 
     This is an efficient operation for base-2^32 representation since it
     operates directly on the word boundaries.
@@ -2444,11 +2444,11 @@ fn left_shift(x: BigInt2, shift: Int) -> BigInt2:
         if carry > 0:
             result.append(carry)
 
-    return BigInt2(raw_words=result^, sign=x.sign)
+    return BigInt(raw_words=result^, sign=x.sign)
 
 
-fn right_shift(x: BigInt2, shift: Int) -> BigInt2:
-    """Shifts a BigInt2 right by `shift` bits (floor divide by 2^shift).
+fn right_shift(x: BigInt, shift: Int) -> BigInt:
+    """Shifts a BigInt right by `shift` bits (floor divide by 2^shift).
 
     For negative numbers, this performs an arithmetic right shift (rounds
     toward negative infinity), consistent with Python's behavior.
@@ -2475,8 +2475,8 @@ fn right_shift(x: BigInt2, shift: Int) -> BigInt2:
     # If shifting by more words than we have, result is 0 or -1
     if word_shift >= n:
         if x.sign:
-            return BigInt2.negative_one()
-        return BigInt2()
+            return BigInt.negative_one()
+        return BigInt()
 
     var new_len = n - word_shift
     var result = List[UInt32](capacity=new_len)
@@ -2499,7 +2499,7 @@ fn right_shift(x: BigInt2, shift: Int) -> BigInt2:
     if len(result) == 0:
         result.append(UInt32(0))
 
-    var shifted = BigInt2(raw_words=result^, sign=x.sign)
+    var shifted = BigInt(raw_words=result^, sign=x.sign)
 
     # For negative numbers, if any shifted-out bits were set, round toward
     # negative infinity (subtract 1 from the result)

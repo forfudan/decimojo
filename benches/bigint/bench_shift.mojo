@@ -1,7 +1,7 @@
-"""Benchmarks for BigInt2 left shift. Compares BigInt2 vs Python int."""
+"""Benchmarks for BigInt left shift. Compares BigInt vs Python int."""
 
-from decimojo.bigint2.bigint2 import BigInt2
-import decimojo.bigint2.arithmetics
+from decimojo.bigint.bigint import BigInt
+import decimojo.bigint.arithmetics
 from decimojo.tests import (
     BenchCase,
     load_bench_cases,
@@ -26,8 +26,8 @@ fn run_case(
     log_print("a: " + bc.a[:80] + (" ..." if len(bc.a) > 80 else ""), log_file)
     log_print("shift: " + bc.b, log_file)
 
-    var m2a = BigInt2(bc.a)
-    var shift = Int(BigInt2(bc.b))
+    var m2a = BigInt(bc.a)
+    var shift = Int(BigInt(bc.b))
     var py = Python.import_module("builtins")
     var pa = py.int(bc.a)
     var pb = py.int(bc.b)
@@ -39,7 +39,7 @@ fn run_case(
         var r2_str = String(r2)
         var rp_str = String(rp)
         log_print(
-            "BigInt2 result:  "
+            "BigInt result:  "
             + r2_str[:60]
             + (
                 " ... (" + String(len(r2_str)) + " digits)" if len(r2_str)
@@ -72,7 +72,7 @@ fn run_case(
         var s2 = Float64(tp) / Float64(t2)
         sf.append(s2)
 
-        log_print("BigInt2:         " + String(t2) + " ns/iter", log_file)
+        log_print("BigInt:         " + String(t2) + " ns/iter", log_file)
         log_print("Python:          " + String(tp) + " ns/iter", log_file)
         log_print("Speedup:         " + String(s2) + "×", log_file)
     except e:
@@ -85,7 +85,7 @@ fn main() raises:
     pysys.set_int_max_str_digits(10000000)
 
     var log_file = open_log_file("benchmark_bigint_shift")
-    print_header("DeciMojo BigInt2 Left Shift Benchmark", log_file)
+    print_header("DeciMojo BigInt Left Shift Benchmark", log_file)
 
     var cases = load_bench_cases("bench_data/shift.toml")
     var iterations = load_bench_iterations("bench_data/shift.toml")
@@ -104,9 +104,9 @@ fn main() raises:
         run_case(cases[i], iterations, log_file, sf)
 
     print_summary(
-        "BigInt2 Left Shift Benchmark Summary",
+        "BigInt Left Shift Benchmark Summary",
         sf,
-        "BigInt2",
+        "BigInt",
         iterations,
         log_file,
     )

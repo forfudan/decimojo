@@ -16,15 +16,15 @@
 
 """Sub-package for binary base-2^32 big integer type.
 
-BigInt2 is a signed arbitrary-precision integer that uses base-2^32
+BigInt is a signed arbitrary-precision integer that uses base-2^32
 representation internally. This is the binary counterpart to BigInt10 (base-10^9).
 
-Once BigInt2 is stable and performant, the naming plan is:
-- The alias `BInt` will be reassigned from BigInt10 to BigInt2
+Once BigInt is stable and performant, the naming plan is:
+- The alias `BInt` will be reassigned from BigInt10 to BigInt
 - BigInt10 will be kept for decimal-friendly use cases but hidden from users
 
 Modules:
-- bigint2: Core struct with constructors, conversions, dunders
+- bigint: Core struct with constructors, conversions, dunders
 - arithmetics: add, subtract, multiply, divide, modulo, power, shifts
 - bitwise: AND, OR, XOR, NOT (Python two's complement semantics)
 - comparison: compare, greater, less, equal

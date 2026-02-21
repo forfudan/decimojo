@@ -3,7 +3,7 @@ from decimojo.prelude import *
 
 fn main() raises:
     # === Construction ===
-    var a = BigInt10("12345678901234567890")  # From string
+    var a = BInt("12345678901234567890")  # From string
     var b = BInt(12345)  # From integer
 
     # === Basic Arithmetic ===

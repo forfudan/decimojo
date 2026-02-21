@@ -1,4 +1,4 @@
-"""Bitwise operations for BigInt2: AND, OR, XOR, NOT.
+"""Bitwise operations for BigInt: AND, OR, XOR, NOT.
 
 All operations follow Python's semantics for arbitrary-precision integers,
 treating negative numbers as having an infinite-width two's complement
@@ -27,7 +27,7 @@ Performance note: For the common case of two non-negative operands, no
 two's complement conversion is needed — just word-by-word operation.
 """
 
-from decimojo.bigint2.bigint2 import BigInt2
+from decimojo.bigint.bigint import BigInt
 
 
 # ===----------------------------------------------------------------------=== #
@@ -35,8 +35,8 @@ from decimojo.bigint2.bigint2 import BigInt2
 # ===----------------------------------------------------------------------=== #
 
 
-fn _binary_bitwise_op[op: StringLiteral](a: BigInt2, b: BigInt2) -> BigInt2:
-    """Performs a word-by-word binary bitwise operation on two BigInt2 values.
+fn _binary_bitwise_op[op: StringLiteral](a: BigInt, b: BigInt) -> BigInt:
+    """Performs a word-by-word binary bitwise operation on two BigInt values.
 
     The operation is determined by the `op` parameter:
     - "and": bitwise AND
@@ -76,7 +76,7 @@ fn _binary_bitwise_op[op: StringLiteral](a: BigInt2, b: BigInt2) -> BigInt2:
                 result_words.append(a.words[i] & b.words[i])
             while len(result_words) > 1 and result_words[-1] == 0:
                 result_words.shrink(len(result_words) - 1)
-            return BigInt2(raw_words=result_words^, sign=False)
+            return BigInt(raw_words=result_words^, sign=False)
         elif op == "or":
             var max_len = max(len(a.words), len(b.words))
             var result_words = List[UInt32](capacity=max_len)
@@ -86,7 +86,7 @@ fn _binary_bitwise_op[op: StringLiteral](a: BigInt2, b: BigInt2) -> BigInt2:
                 result_words.append(wa | wb)
             while len(result_words) > 1 and result_words[-1] == 0:
                 result_words.shrink(len(result_words) - 1)
-            return BigInt2(raw_words=result_words^, sign=False)
+            return BigInt(raw_words=result_words^, sign=False)
         else:  # xor
             var max_len = max(len(a.words), len(b.words))
             var result_words = List[UInt32](capacity=max_len)
@@ -96,7 +96,7 @@ fn _binary_bitwise_op[op: StringLiteral](a: BigInt2, b: BigInt2) -> BigInt2:
                 result_words.append(wa ^ wb)
             while len(result_words) > 1 and result_words[-1] == 0:
                 result_words.shrink(len(result_words) - 1)
-            return BigInt2(raw_words=result_words^, sign=False)
+            return BigInt(raw_words=result_words^, sign=False)
 
     # General path: convert negative operands to two's complement inline
     var a_n = len(a.words)
@@ -150,8 +150,8 @@ fn _binary_bitwise_op[op: StringLiteral](a: BigInt2, b: BigInt2) -> BigInt2:
         while len(result_tc) > 1 and result_tc[-1] == 0:
             result_tc.shrink(len(result_tc) - 1)
         if len(result_tc) == 1 and result_tc[0] == 0:
-            return BigInt2()
-        return BigInt2(raw_words=result_tc^, sign=False)
+            return BigInt()
+        return BigInt(raw_words=result_tc^, sign=False)
     else:
         # Negative: magnitude = ~result_tc + 1
         var n = len(result_tc)
@@ -171,8 +171,8 @@ fn _binary_bitwise_op[op: StringLiteral](a: BigInt2, b: BigInt2) -> BigInt2:
         while len(mag) > 1 and mag[-1] == 0:
             mag.shrink(len(mag) - 1)
         if len(mag) == 1 and mag[0] == 0:
-            return BigInt2()
-        return BigInt2(raw_words=mag^, sign=True)
+            return BigInt()
+        return BigInt(raw_words=mag^, sign=True)
 
 
 # ===----------------------------------------------------------------------=== #
@@ -180,13 +180,11 @@ fn _binary_bitwise_op[op: StringLiteral](a: BigInt2, b: BigInt2) -> BigInt2:
 # ===----------------------------------------------------------------------=== #
 
 
-fn _binary_bitwise_op_inplace[
-    op: StringLiteral
-](mut a: BigInt2, read b: BigInt2):
+fn _binary_bitwise_op_inplace[op: StringLiteral](mut a: BigInt, read b: BigInt):
     """Performs a word-by-word binary bitwise operation on `a` in-place.
 
     Computes the result word list and moves it into a.words, avoiding
-    full BigInt2 construction.
+    full BigInt construction.
 
     The operation is determined by the `op` parameter:
     - "and": bitwise AND
@@ -336,22 +334,22 @@ fn _binary_bitwise_op_inplace[
 # ===----------------------------------------------------------------------=== #
 
 
-fn bitwise_and(a: BigInt2, b: BigInt2) -> BigInt2:
+fn bitwise_and(a: BigInt, b: BigInt) -> BigInt:
     """Returns a & b using Python-compatible two's complement semantics."""
     return _binary_bitwise_op["and"](a, b)
 
 
-fn bitwise_or(a: BigInt2, b: BigInt2) -> BigInt2:
+fn bitwise_or(a: BigInt, b: BigInt) -> BigInt:
     """Returns a | b using Python-compatible two's complement semantics."""
     return _binary_bitwise_op["or"](a, b)
 
 
-fn bitwise_xor(a: BigInt2, b: BigInt2) -> BigInt2:
+fn bitwise_xor(a: BigInt, b: BigInt) -> BigInt:
     """Returns a ^ b using Python-compatible two's complement semantics."""
     return _binary_bitwise_op["xor"](a, b)
 
 
-fn bitwise_not(x: BigInt2) -> BigInt2:
+fn bitwise_not(x: BigInt) -> BigInt:
     """Returns ~x using Python-compatible two's complement semantics.
 
     ~x = -(x + 1)
@@ -370,7 +368,7 @@ fn bitwise_not(x: BigInt2) -> BigInt2:
             carry = s >> 32
         if carry > 0:
             result_words.append(UInt32(carry))
-        return BigInt2(raw_words=result_words^, sign=True)
+        return BigInt(raw_words=result_words^, sign=True)
     else:
         # ~negative = |x| - 1
         var n = len(x.words)
@@ -384,8 +382,8 @@ fn bitwise_not(x: BigInt2) -> BigInt2:
         while len(result_words) > 1 and result_words[-1] == 0:
             result_words.shrink(len(result_words) - 1)
         if len(result_words) == 1 and result_words[0] == 0:
-            return BigInt2()
-        return BigInt2(raw_words=result_words^, sign=False)
+            return BigInt()
+        return BigInt(raw_words=result_words^, sign=False)
 
 
 # ===----------------------------------------------------------------------=== #
@@ -393,19 +391,19 @@ fn bitwise_not(x: BigInt2) -> BigInt2:
 # ===----------------------------------------------------------------------=== #
 
 
-fn bitwise_and_inplace(mut a: BigInt2, read b: BigInt2):
+fn bitwise_and_inplace(mut a: BigInt, read b: BigInt):
     """Performs a &= b in-place using Python-compatible two's complement
     semantics."""
     _binary_bitwise_op_inplace["and"](a, b)
 
 
-fn bitwise_or_inplace(mut a: BigInt2, read b: BigInt2):
+fn bitwise_or_inplace(mut a: BigInt, read b: BigInt):
     """Performs a |= b in-place using Python-compatible two's complement
     semantics."""
     _binary_bitwise_op_inplace["or"](a, b)
 
 
-fn bitwise_xor_inplace(mut a: BigInt2, read b: BigInt2):
+fn bitwise_xor_inplace(mut a: BigInt, read b: BigInt):
     """Performs a ^= b in-place using Python-compatible two's complement
     semantics."""
     _binary_bitwise_op_inplace["xor"](a, b)
