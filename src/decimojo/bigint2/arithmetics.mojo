@@ -1674,6 +1674,220 @@ fn multiply(x1: BigInt2, x2: BigInt2) -> BigInt2:
     return BigInt2(raw_words=result_words^, sign=x1.sign != x2.sign)
 
 
+# ===----------------------------------------------------------------------=== #
+# True in-place signed arithmetic functions
+# These modify the first operand directly without allocating a new BigInt2.
+# ===----------------------------------------------------------------------=== #
+
+
+fn _compare_magnitudes_words(
+    read a: List[UInt32], read b: List[UInt32]
+) -> Int8:
+    """Compares the magnitudes of two word lists.
+
+    Returns:
+        1 if a > b, 0 if a == b, -1 if a < b.
+    """
+    var n_a = len(a)
+    var n_b = len(b)
+    if n_a != n_b:
+        return 1 if n_a > n_b else -1
+    for i in range(n_a - 1, -1, -1):
+        if a[i] != b[i]:
+            return 1 if a[i] > b[i] else -1
+    return 0
+
+
+fn add_inplace(mut x: BigInt2, read other: BigInt2):
+    """Performs x += other by mutating x.words directly.
+
+    Avoids allocating a new BigInt2. Uses the existing _add_magnitudes_inplace
+    and _subtract_magnitudes_inplace helpers for the magnitude operations.
+
+    Args:
+        x: The accumulator (modified in-place).
+        other: The value to add.
+    """
+    # x += 0 is a no-op
+    if other.is_zero():
+        return
+
+    # 0 += other → copy other into x
+    if x.is_zero():
+        x.words = other.words.copy()
+        x.sign = other.sign
+        return
+
+    if x.sign == other.sign:
+        # Same sign: add magnitudes, preserve sign
+        _add_magnitudes_inplace(x.words, other.words)
+    else:
+        # Different signs: subtract smaller magnitude from larger
+        var cmp = _compare_magnitudes_words(x.words, other.words)
+        if cmp == 0:
+            # Equal magnitudes → result is zero
+            x.words.clear()
+            x.words.append(UInt32(0))
+            x.sign = False
+        elif cmp > 0:
+            # |x| > |other|: x.words -= other.words, keep x.sign
+            _subtract_magnitudes_inplace(x.words, other.words)
+        else:
+            # |x| < |other|: result = other.words - x.words, flip sign
+            # We need a temporary since _subtract_magnitudes_inplace
+            # requires a >= b
+            var result = _subtract_magnitudes(other.words, x.words)
+            x.words = result^
+            x.sign = other.sign
+
+
+fn add_inplace_int(mut x: BigInt2, value: Int):
+    """Performs x += value (Int) by mutating x.words directly.
+
+    Optimized for adding a small integer: avoids constructing a full BigInt2.
+    Handles the common cases of adding +1, -1, or any Int-sized value.
+
+    Args:
+        x: The accumulator (modified in-place).
+        value: The integer value to add.
+    """
+    if value == 0:
+        return
+
+    # For zero x, just set the value
+    if x.is_zero():
+        var magnitude: UInt
+        if value < 0:
+            x.sign = True
+            if value == Int.MIN:
+                magnitude = UInt(Int.MAX) + 1
+            else:
+                magnitude = UInt(-value)
+        else:
+            x.sign = False
+            magnitude = UInt(value)
+        x.words.clear()
+        while magnitude != 0:
+            x.words.append(UInt32(magnitude & 0xFFFF_FFFF))
+            magnitude >>= 32
+        if len(x.words) == 0:
+            x.words.append(UInt32(0))
+        return
+
+    # Determine other's sign and magnitude words
+    var other_sign: Bool
+    var other_magnitude: UInt
+    if value < 0:
+        other_sign = True
+        if value == Int.MIN:
+            other_magnitude = UInt(Int.MAX) + 1
+        else:
+            other_magnitude = UInt(-value)
+    else:
+        other_sign = False
+        other_magnitude = UInt(value)
+
+    # Build the Int's words (at most 2 on 64-bit platform)
+    var other_words = List[UInt32](capacity=2)
+    var mag = other_magnitude
+    while mag != 0:
+        other_words.append(UInt32(mag & 0xFFFF_FFFF))
+        mag >>= 32
+    if len(other_words) == 0:
+        other_words.append(UInt32(0))
+
+    if x.sign == other_sign:
+        # Same sign: add magnitudes
+        _add_magnitudes_inplace(x.words, other_words)
+    else:
+        # Different signs: subtract
+        var cmp = _compare_magnitudes_words(x.words, other_words)
+        if cmp == 0:
+            x.words.clear()
+            x.words.append(UInt32(0))
+            x.sign = False
+        elif cmp > 0:
+            _subtract_magnitudes_inplace(x.words, other_words)
+        else:
+            var result = _subtract_magnitudes(other_words, x.words)
+            x.words = result^
+            x.sign = other_sign
+
+
+fn subtract_inplace(mut x: BigInt2, read other: BigInt2):
+    """Performs x -= other by mutating x.words directly.
+
+    Avoids allocating a new BigInt2. Leverages the relationship:
+    x -= other is equivalent to x += (-other), i.e., flip other's sign
+    and apply add_inplace logic.
+
+    Args:
+        x: The accumulator (modified in-place).
+        other: The value to subtract.
+    """
+    # x -= 0 is a no-op
+    if other.is_zero():
+        return
+
+    # 0 -= other → negate other into x
+    if x.is_zero():
+        x.words = other.words.copy()
+        x.sign = not other.sign
+        # Normalize -0
+        if x.is_zero():
+            x.sign = False
+        return
+
+    # x -= other with same sign is like subtracting magnitudes
+    # x -= other with different signs is like adding magnitudes
+    # (equivalent to x += (-other))
+    var effective_other_sign = not other.sign
+
+    if x.sign == effective_other_sign:
+        # Same effective sign: add magnitudes, preserve sign
+        _add_magnitudes_inplace(x.words, other.words)
+    else:
+        # Different effective signs: subtract smaller from larger
+        var cmp = _compare_magnitudes_words(x.words, other.words)
+        if cmp == 0:
+            x.words.clear()
+            x.words.append(UInt32(0))
+            x.sign = False
+        elif cmp > 0:
+            _subtract_magnitudes_inplace(x.words, other.words)
+        else:
+            var result = _subtract_magnitudes(other.words, x.words)
+            x.words = result^
+            x.sign = effective_other_sign
+
+
+fn multiply_inplace(mut x: BigInt2, read other: BigInt2):
+    """Performs x *= other by computing the product and moving the result
+    into x.words.
+
+    Multiplication cannot be done truly in-place (input words are read
+    during output computation), so this computes a new word list and moves
+    it into x. This still avoids the overhead of constructing a full BigInt2
+    object with its __init__ validation.
+
+    Args:
+        x: The accumulator (modified in-place).
+        other: The multiplier.
+    """
+    # Zero check
+    if x.is_zero():
+        return
+    if other.is_zero():
+        x.words.clear()
+        x.words.append(UInt32(0))
+        x.sign = False
+        return
+
+    var result_words = _multiply_magnitudes(x.words, other.words)
+    x.words = result_words^
+    x.sign = x.sign != other.sign
+
+
 fn floor_divide(x1: BigInt2, x2: BigInt2) raises -> BigInt2:
     """Returns the quotient of two BigInt2 numbers, rounding toward negative
     infinity.

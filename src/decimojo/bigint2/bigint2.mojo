@@ -825,20 +825,23 @@ struct BigInt2(
 
     @always_inline
     fn __iadd__(mut self, other: Self):
-        self = decimojo.bigint2.arithmetics.add(self, other)
+        """True in-place addition: mutates self.words directly."""
+        decimojo.bigint2.arithmetics.add_inplace(self, other)
 
     @always_inline
     fn __iadd__(mut self, other: Int):
-        """Optimized in-place addition with Int."""
-        self = decimojo.bigint2.arithmetics.add(self, Self.from_int(other))
+        """True in-place addition with Int: mutates self.words directly."""
+        decimojo.bigint2.arithmetics.add_inplace_int(self, other)
 
     @always_inline
     fn __isub__(mut self, other: Self):
-        self = decimojo.bigint2.arithmetics.subtract(self, other)
+        """True in-place subtraction: mutates self.words directly."""
+        decimojo.bigint2.arithmetics.subtract_inplace(self, other)
 
     @always_inline
     fn __imul__(mut self, other: Self):
-        self = decimojo.bigint2.arithmetics.multiply(self, other)
+        """True in-place multiplication: computes product into self.words."""
+        decimojo.bigint2.arithmetics.multiply_inplace(self, other)
 
     @always_inline
     fn __ifloordiv__(mut self, other: Self) raises:
