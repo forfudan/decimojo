@@ -36,3 +36,6 @@ from .rounding_mode import (
     ROUND_HALF_EVEN,
     ROUND_UP,
 )
+
+# Core functions
+from .bigint2.number_theory import gcd, lcm, extended_gcd, mod_inverse, mod_pow

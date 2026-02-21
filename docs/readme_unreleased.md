@@ -21,19 +21,25 @@ For Pythonistas, you can think of DeciMojo as a Mojo-native implementation of Py
 
 The core types are:
 
-- A base-2 arbitrary-precision signed integer type (`BigInt2`) using a little-endian representation with `UInt32` words[^bigint2]. It is a drop-in replacement for Python's `int` in Mojo. It features comprehensive arithmetic operations, comparison functions, and supports extremely large integer calculations efficiently. It beats Python's `int` in most tested cases.
-- An arbitrary-precision decimal implementation (`BigDecimal`) allowing for calculations with unlimited digits and decimal places[^arbitrary]. It provides a complete set of arithmetic operations, comparisons, and mathematical functions like logarithms, exponentiation, roots, trigonometric functions, etc. It also supports rounding modes and conversions to/from built-in types.
-- A 128-bit fixed-point decimal implementation (`Decimal128`) supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed]. It features a complete set of mathematical functions including logarithms, exponentiation, roots, etc.
+- An arbitrary-precision signed integer type `BInt`[^bigint2], which is a drop-in replacement for Python's `int` in Mojo.
+- An arbitrary-precision decimal implementation (`Decimal`) allowing for calculations with unlimited digits and decimal places[^arbitrary], which is a drop-in replacement for Python's `decimal.Decimal` in Mojo.
+- A 128-bit fixed-point decimal implementation (`Dec128`) supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed].
 
-The auxiliary types include a base-10 arbitrary-precision signed integer type (`BigInt10`) and a base-10 arbitrary-precision unsigned integer type (`BigUInt`) supporting unlimited digits[^bigint10]. They feature comprehensive arithmetic operations, comparison functions, and support extremely large integer calculations efficiently. `BigUInt` is used as the internal representation for `BigInt10` and `BigDecimal`.
+The auxiliary types include a base-10 arbitrary-precision signed integer type (`BigInt10`) and a base-10 arbitrary-precision unsigned integer type (`BigUInt`) supporting unlimited digits[^bigint10]. `BigUInt` is used as the internal representation for `BigInt10` and `Decimal`.
+
+| Type      | Other names          | Information                              | Internal representation |
+| --------- | -------------------- | ---------------------------------------- | ----------------------- |
+| `BInt`    | `BigInt`             | Equivalent to Python's `int`             | Base-2^32               |
+| `Decimal` | `BDec`, `BigDecimal` | Equivalent to Python's `decimal.Decimal` | Base-10^9               |
+| `Dec`     | `Decimal128`         | 128-bit fixed-precision decimal type     | Triple 32-bit words     |
+
+---
 
 This repository includes [TOMLMojo](./docs/readme_tomlmojo.md), a lightweight TOML parser in pure Mojo. It parses configuration files and test data, supporting basic types, arrays, and nested tables. While created for DeciMojo's testing framework, it offers general-purpose structured data parsing with a clean, simple API.
 
-| type         | alias             | information                            | internal representation  |
-| ------------ | ----------------- | -------------------------------------- | ------------------------ |
-| `BigInt2`    | `BInt`            | 2^32-based arbitrary-precision integer | `List[UInt32]`, `Bool`   |
-| `BigDecimal` | `BDec`, `Decimal` | 10^9-based arbitrary-precision decimal | `BigUInt`, `Int`, `Bool` |
-| `Decimal128` | `Dec128`          | 128-bit fixed-precision decimal        | `UInt32` * 4             |
+---
+
+DeciMojo was initially a personal project of Yuhao Zhu and the repo was under his personal Github account. From v0.7.0, it was moved to the MojoMath organization to encourage more community contributions and to better reflect its mission of providing high-quality mathematical tools for the Mojo ecosystem.
 
 ## Installation
 
@@ -81,15 +87,15 @@ from decimojo import *
 
 This will import the following types or aliases into your namespace:
 
-- `BigInt10` (alias `BInt`): A base-10^9 arbitrary-precision signed integer type.
-- `Decimal` or `BDec` (aliases of `BigDecimal`): An arbitrary-precision decimal type.
+- `BInt` (alias of `BigInt`): An arbitrary-precision signed integer type, equivalent to Python's `int`.
+- `Decimal` or `BDec` (aliases of `BigDecimal`): An arbitrary-precision decimal type, equivalent to Python's `decimal.Decimal`.
 - `Dec128` (alias of `Decimal128`): A 128-bit fixed-precision decimal type.
 - `RoundingMode`: An enumeration for rounding modes.
 - `ROUND_DOWN`, `ROUND_HALF_UP`, `ROUND_HALF_EVEN`, `ROUND_UP`: Constants for common rounding modes.
 
 ---
 
-Here are some examples showcasing the arbitrary-precision feature of the `BigDecimal` type (aliases: `BDec` and `Decimal`). For some mathematical operations, the default precision (number of significant digits) is set to `36`. You can change the precision by passing the `precision` argument to the function. This default precision will be configurable globally in future when Mojo supports global variables.
+Here are some examples showcasing the arbitrary-precision feature of the `Decimal` type. For some mathematical operations, the default precision (number of significant digits) is set to `36`. You can change the precision by passing the `precision` argument to the function. This default precision will be configurable globally in future when Mojo supports global variables.
 
 ```mojo
 from decimojo.prelude import *
@@ -287,15 +293,15 @@ This project draws inspiration from several established decimal implementations 
 
 DeciMojo combines "Deci" and "Mojo" - reflecting its purpose and implementation language. "Deci" (from Latin "decimus" meaning "tenth") highlights our focus on the decimal numeral system that humans naturally use for counting and calculations.
 
-Although the name emphasizes decimals with fractional parts, DeciMojo embraces the full spectrum of decimal mathematics. Our `BigInt10` type, while handling only integers, is designed specifically for the decimal numeral system with its base-10 internal representation. This approach offers optimal performance while maintaining human-readable decimal semantics, contrasting with binary-focused libraries. Furthermore, `BigInt10` serves as the foundation for our `BigDecimal` implementation, enabling arbitrary-precision calculations across both integer and fractional domains.
-
 The name ultimately emphasizes our mission: bringing precise, reliable decimal calculations to the Mojo ecosystem, addressing the fundamental need for exact arithmetic that floating-point representations cannot provide.
 
 ## Status
 
-Rome wasn't built in a day. DeciMojo is currently under active development. It has successfully progressed through the **"make it work"** phase and is now well into the **"make it right"** phase with many optimizations already in place. Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/mojomath/decimojo/issues).
+Rome wasn't built in a day. DeciMojo is currently under active development. It has successfully progressed through the **"make it work"** phase and the **"make it right"**, and is now well into the **"make it fast"** phase.
 
-Regular benchmarks against Python's `decimal` module are available in the `bench/` folder, documenting both the performance advantages and the few specific operations where different approaches are needed.
+The `BInt` type is fully implemented and optimized. It has been benchmarked against Python's `int` and demonstrates superior performance in most cases.
+
+Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/mojomath/decimojo/issues).
 
 ## Tests and benches
 
