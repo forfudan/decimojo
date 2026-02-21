@@ -964,7 +964,6 @@ fn _shift_right_words(
 
 
 # ===----------------------------------------------------------------------=== #
-# Burnikel-Ziegler division
 # Burnikel-Ziegler division (slice-based)
 # Recursive divide-and-conquer for large operands.
 # Passes word-list bounds through the recursion to avoid copying the large
@@ -1149,7 +1148,14 @@ fn _divmod_knuth_d_from_slices(
     if len_a_eff <= 0:
         return ([UInt32(0)], [UInt32(0)])
     if len_b_eff <= 0:
-        raise Error("Division by zero in B-Z base case")
+        raise Error(
+            DeciMojoError(
+                file="src/decimojo/bigint2/arithmetics",
+                function="_divmod_knuth_d_from_slices()",
+                message="Division by zero in B-Z base case",
+                previous_error=None,
+            )
+        )
 
     # Single-word divisor fast path
     if len_b_eff == 1:

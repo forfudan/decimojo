@@ -299,6 +299,89 @@ fn test_bigint2_biguint_subtraction_underflow() raises:
     )
 
 
+fn test_bigint2_floor_divide_burnikel_ziegler() raises:
+    """Test floor division with large operands that exercise the
+    Burnikel-Ziegler dispatch path (divisor > 64 words ≈ 617 digits).
+
+    Uses BigInt2 arithmetic to construct operands, then verifies:
+      a == q * b + r, 0 <= r < |b|, and sign correctness.
+    """
+
+    # --- Case 1: 1200-digit / 700-digit ---
+    # a = 10^1199 + 7, b = 10^699 + 3
+    var b1 = BigInt2(10).power(699) + BigInt2(3)
+    var a1 = BigInt2(10).power(1199) + BigInt2(7)
+    var q1 = a1 // b1
+    var r1 = a1 - q1 * b1
+    # Euclidean identity
+    testing.assert_equal(
+        lhs=String(q1 * b1 + r1),
+        rhs=String(a1),
+        msg="[B-Z case 1] a == q*b + r (1200-digit / 700-digit)",
+    )
+    # Remainder in range [0, b)
+    testing.assert_true(
+        r1 >= BigInt2(0) and r1 < b1,
+        msg="[B-Z case 1] 0 <= r < b",
+    )
+
+    # --- Case 2: 2000-digit / 1000-digit ---
+    # a = 2*10^1999 + 13, b = 3*10^999 + 17
+    var b2 = BigInt2(3) * BigInt2(10).power(999) + BigInt2(17)
+    var a2 = BigInt2(2) * BigInt2(10).power(1999) + BigInt2(13)
+    var q2 = a2 // b2
+    var r2 = a2 - q2 * b2
+    testing.assert_equal(
+        lhs=String(q2 * b2 + r2),
+        rhs=String(a2),
+        msg="[B-Z case 2] a == q*b + r (2000-digit / 1000-digit)",
+    )
+    testing.assert_true(
+        r2 >= BigInt2(0) and r2 < b2,
+        msg="[B-Z case 2] 0 <= r < b",
+    )
+
+    # --- Case 3: Negative / Positive (floor semantics) ---
+    # a = -(10^800 + 11), b = 10^650 + 7
+    # Floor division: q rounds toward -inf, r = a - q*b >= 0
+    var b3 = BigInt2(10).power(650) + BigInt2(7)
+    var a3 = -(BigInt2(10).power(800) + BigInt2(11))
+    var q3 = a3 // b3
+    var r3 = a3 - q3 * b3
+    testing.assert_equal(
+        lhs=String(q3 * b3 + r3),
+        rhs=String(a3),
+        msg="[B-Z case 3] a == q*b + r (negative / positive)",
+    )
+    testing.assert_true(
+        r3 >= BigInt2(0) and r3 < b3,
+        msg="[B-Z case 3] 0 <= r < b (floor semantics)",
+    )
+    # Quotient should be negative
+    testing.assert_true(
+        q3 < BigInt2(0),
+        msg="[B-Z case 3] q < 0 for negative/positive",
+    )
+
+    # --- Case 4: Nearly equal sizes (700-digit / 700-digit) ---
+    # a = 9*10^699 + 123456789, b = 5*10^699 + 987654321
+    # Quotient should be 1
+    var b4 = BigInt2(5) * BigInt2(10).power(699) + BigInt2(987654321)
+    var a4 = BigInt2(9) * BigInt2(10).power(699) + BigInt2(123456789)
+    var q4 = a4 // b4
+    var r4 = a4 - q4 * b4
+    testing.assert_equal(
+        lhs=String(q4 * b4 + r4),
+        rhs=String(a4),
+        msg="[B-Z case 4] a == q*b + r (700-digit / 700-digit)",
+    )
+    testing.assert_equal(
+        lhs=String(q4),
+        rhs="1",
+        msg="[B-Z case 4] quotient is 1 when a/b ≈ 1.8",
+    )
+
+
 fn test_bigint2_biguint_multiplication() raises:
     """Test BigInt2 multiplication with BigUInt TOML test data (all positive).
     """
