@@ -605,21 +605,22 @@ Toom-Cook / NTT where similar infrastructure is needed.
 
 ---
 
-### PR 6: Bitwise Operations (AND, OR, XOR, NOT)
+### PR 6: Bitwise Operations (AND, OR, XOR, NOT) ✅ DONE
 
 **Priority: MEDIUM** — Completes the integer API surface
 
-**Current:** Only shift operations implemented. AND/OR/XOR/NOT are stubbed.
+**Status:** Implemented and fully tested.
 
-**Target:** Implement full bitwise operations using two's-complement semantics
-for negative numbers (Python-compatible).
+**Implementation:**
 
-**Tasks:**
-
-1. Create `bitwise.mojo` module
-2. Implement `__and__`, `__or__`, `__xor__`, `__invert__`
-3. Handle negative numbers via two's-complement conversion
-4. Add comprehensive tests comparing against Python
+- Created `bitwise.mojo` module with parametric `_binary_bitwise_op[op]` helper
+- Python-compatible two's complement semantics for negative numbers
+- Fast path for both non-negative operands (direct word-by-word, no TC conversion)
+- General path: inline TC conversion (subtract 1 from magnitude, bitwise NOT)
+- Dunders: `__and__`, `__or__`, `__xor__`, `__invert__`, `__iand__`, `__ior__`, `__ixor__`
+- Each binary op has `(Self, Self)` and `(Self, Int)` overloads
+- 31 tests: NOT, AND, OR, XOR (positive/negative/mixed), augmented assignment,
+  De Morgan's laws, commutativity, identities, word-boundary values, Python cross-checks
 
 ---
 
@@ -673,7 +674,7 @@ sizes (100000+).
 | PR4c | from_string micro-optimizations | ✅ **DONE** | MEDIUM      | all sizes ≥ 0.98× Python   |
 | PR4d | to_string micro-optimizations   | ✅ **DONE** | MEDIUM      | to_string 0.97×→6.03× avg  |
 | PR5  | True in-place iadd/isub/imul    | TODO       | MEDIUM-HIGH | perf infra, readability    |
-| PR6  | Bitwise AND/OR/XOR/NOT          | TODO       | MEDIUM      | API completeness           |
+| PR6  | Bitwise AND/OR/XOR/NOT          | ✅ **DONE** | MEDIUM      | API completeness           |
 | PR7  | GCD + Modular Arithmetic        | TODO       | MEDIUM      | applications               |
 | PR8  | Reassign BInt → BigInt2         | TODO       | LOW         | ergonomics                 |
 | PR9  | Toom-Cook / NTT                 | TODO       | LOW         | extreme sizes (50000+ dig) |

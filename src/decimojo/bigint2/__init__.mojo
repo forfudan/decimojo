@@ -26,6 +26,7 @@ Once BigInt2 is stable and performant, the naming plan is:
 Modules:
 - bigint2: Core struct with constructors, conversions, dunders
 - arithmetics: add, subtract, multiply, divide, modulo, power, shifts
+- bitwise: AND, OR, XOR, NOT (Python two's complement semantics)
 - comparison: compare, greater, less, equal
 - exponential: sqrt, isqrt
 """

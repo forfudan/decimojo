@@ -1026,15 +1026,61 @@ struct BigInt2(
         return decimojo.bigint2.comparison.compare(self, other)
 
     # ===------------------------------------------------------------------=== #
-    # Bitwise operations — implemented via __lshift__/__rshift__ dunders above.
-    # Full bitwise AND/OR/XOR/NOT are planned for a future phase.
+    # Bitwise operations
     # ===------------------------------------------------------------------=== #
 
-    # TODO: Phase 4 — Implement in bitwise.mojo
-    # fn __and__(self, other: Self) -> Self
-    # fn __or__(self, other: Self) -> Self
-    # fn __xor__(self, other: Self) -> Self
-    # fn __invert__(self) -> Self
+    @always_inline
+    fn __and__(self, other: Self) -> Self:
+        """Returns self & other (bitwise AND, Python two's complement semantics).
+        """
+        return decimojo.bigint2.bitwise.bitwise_and(self, other)
+
+    @always_inline
+    fn __and__(self, other: Int) -> Self:
+        """Returns self & other where other is an Int."""
+        return decimojo.bigint2.bitwise.bitwise_and(self, Self(other))
+
+    @always_inline
+    fn __or__(self, other: Self) -> Self:
+        """Returns self | other (bitwise OR, Python two's complement semantics).
+        """
+        return decimojo.bigint2.bitwise.bitwise_or(self, other)
+
+    @always_inline
+    fn __or__(self, other: Int) -> Self:
+        """Returns self | other where other is an Int."""
+        return decimojo.bigint2.bitwise.bitwise_or(self, Self(other))
+
+    @always_inline
+    fn __xor__(self, other: Self) -> Self:
+        """Returns self ^ other (bitwise XOR, Python two's complement semantics).
+        """
+        return decimojo.bigint2.bitwise.bitwise_xor(self, other)
+
+    @always_inline
+    fn __xor__(self, other: Int) -> Self:
+        """Returns self ^ other where other is an Int."""
+        return decimojo.bigint2.bitwise.bitwise_xor(self, Self(other))
+
+    @always_inline
+    fn __invert__(self) -> Self:
+        """Returns ~self (bitwise NOT, Python two's complement semantics)."""
+        return decimojo.bigint2.bitwise.bitwise_not(self)
+
+    @always_inline
+    fn __iand__(mut self, other: Self):
+        """In-place self &= other."""
+        self = decimojo.bigint2.bitwise.bitwise_and(self, other)
+
+    @always_inline
+    fn __ior__(mut self, other: Self):
+        """In-place self |= other."""
+        self = decimojo.bigint2.bitwise.bitwise_or(self, other)
+
+    @always_inline
+    fn __ixor__(mut self, other: Self):
+        """In-place self ^= other."""
+        self = decimojo.bigint2.bitwise.bitwise_xor(self, other)
 
     # ===------------------------------------------------------------------=== #
     # Instance query methods
