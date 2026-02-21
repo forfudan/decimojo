@@ -1263,7 +1263,7 @@ fn _multiply_add_inplace(mut x: BigInt2, mul: UInt32, add: UInt32):
 # D&C method despite the power-table construction overhead.
 # Base threshold: within the recursion, switch to simple method.
 comptime _DC_FROM_STR_ENTRY_THRESHOLD = 10000
-comptime _DC_FROM_STR_BASE_THRESHOLD = 512
+comptime _DC_FROM_STR_BASE_THRESHOLD = 256
 
 
 fn _from_decimal_digits_simple(
@@ -1344,11 +1344,12 @@ fn _from_decimal_digits_dc(
     # We need up to max_level entries (indices 0 to max_level - 1).
     var num_powers = max_level
     var power_table = List[BigInt2](capacity=num_powers)
-    var cur = BigInt2(10)
-    power_table.append(cur.copy())
-    for _ in range(1, num_powers):
-        cur = cur * cur
-        power_table.append(cur.copy())
+    power_table.append(BigInt2(10))
+    for k in range(1, num_powers):
+        # Compute 10^(2^k) = (10^(2^(k-1)))^2 directly from the table.
+        # Avoids an extra .copy() per level.
+        var sq = power_table[k - 1] * power_table[k - 1]
+        power_table.append(sq^)
 
     # Run the recursive D&C conversion
     return _dc_from_str_recursive(
@@ -1409,7 +1410,9 @@ fn _dc_from_str_recursive(
     var low = _dc_from_str_recursive(digits, split, end, power_table, level - 1)
 
     # Combine: result = high * 10^(2^level) + low
-    return high * power_table[level] + low
+    var result = high * power_table[level]
+    result += low
+    return result^
 
 
 # ===----------------------------------------------------------------------=== #

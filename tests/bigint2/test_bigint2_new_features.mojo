@@ -7,6 +7,7 @@ to_decimal_string with line_width, __iadd__(Int), and __repr__.
 
 import testing
 from decimojo.bigint2.bigint2 import BigInt2
+from decimojo.bigint10.bigint10 import BigInt10
 
 
 # ===----------------------------------------------------------------------=== #
@@ -609,12 +610,12 @@ fn test_power_of_2_vs_shift() raises:
 
 
 fn test_from_string_large_dc() raises:
-    """Test that from_string correctly handles large numbers that trigger
-    the D&C path (>256 digits). Validates by round-tripping: construct a
-    BigInt2 via arithmetic, convert to string, parse back, and compare.
+    """Test from_string round-trip for large numbers (500–2000 digits).
+    These sizes exercise the simple O(n²) path. The D&C path is only
+    entered at >10000 digits and is tested in test_from_string_dc_path.
     """
 
-    # Case 1: 500-digit number (above 256-digit D&C threshold)
+    # Case 1: 500-digit number
     # Construct via arithmetic: 10^499 + 42
     var a1 = BigInt2(10).power(499) + BigInt2(42)
     var s1 = String(a1)
@@ -648,6 +649,41 @@ fn test_from_string_large_dc() raises:
         lhs=String(a4),
         rhs=String(a4.to_bigint10()),
         msg="[D&C from_string] D&C to_string matches BigInt10 for 600-digit",
+    )
+
+
+# ===----------------------------------------------------------------------=== #
+# Test: from_string D&C path (>10000 digits)
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_from_string_dc_path() raises:
+    """Test that from_string exercises the D&C conversion path by parsing
+    a string with >10000 digits (_DC_FROM_STR_ENTRY_THRESHOLD).
+    """
+
+    # Build "1" followed by 10500 zeros → 10^10500 (a 10501-digit number)
+    var s = String("1") + String("0") * 10500
+    var a = BigInt2(s)
+    # Verify via to_string round-trip
+    testing.assert_equal(
+        String(a), s, msg="[D&C from_string] 10501-digit round-trip"
+    )
+
+    # Cross-check with BigInt10 (independent reference implementation)
+    var b = BigInt2.from_bigint10(BigInt10(s))
+    testing.assert_true(
+        a == b,
+        msg="[D&C from_string] 10501-digit D&C matches BigInt10 path",
+    )
+
+    # Test a non-trivial large number: 7 * 10^10499 + 123456789
+    var a2 = BigInt2(7) * BigInt2(10).power(10499) + BigInt2(123456789)
+    var s2 = String(a2)
+    var b2 = BigInt2(s2)
+    testing.assert_true(
+        a2 == b2,
+        msg="[D&C from_string] 10500-digit non-trivial round-trip",
     )
 
 
@@ -709,14 +745,12 @@ fn test_from_string_non_integer_raises() raises:
         raised = True
     testing.assert_true(raised, msg="Should raise for non-integer '123.456'")
 
+    # 1.5e2 = 150, which is an integer, so parsing should not raise.
     raised = False
     try:
-        _ = BigInt2(
-            "1.5e2"
-        )  # 150.0 is integer... wait, 1.5e2 = 150, scale=1-2=-1, coef=[1,5], that's actually integer
+        _ = BigInt2("1.5e2")
     except:
         raised = True
-    # 1.5e2 = 150 which IS an integer, should NOT raise
     testing.assert_false(raised, msg="1.5e2 = 150 should not raise")
 
     raised = False

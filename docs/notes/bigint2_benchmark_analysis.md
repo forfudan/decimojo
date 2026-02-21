@@ -27,7 +27,7 @@ Values >1× mean faster than Python; <1× mean slower than Python.
 | **Left Shift**   |     **4.97×**     |            N/A             |         N/A         |
 | **Power**        |   **11.17×** ★    |           0.58×            |    ~19.3× faster    |
 | **Sqrt**         |     **1.39×**     |      1.29× (BigUInt)       |    ~1.1× faster     |
-| **from_string**  |     **1.57×**     |           7.17×            |    ~0.2× slower     |
+| **from_string**  |     **1.42×**     |           6.57×            |    ~0.2× slower     |
 | **to_string**    |       0.97×       |         **9.74×**          |    ~0.1× slower     |
 
 ★ Power average dominated by 2^N shift fast path (up to 140×). General cases: 0.65–0.94×.
@@ -62,10 +62,10 @@ Values >1× mean faster than Python; <1× mean slower than Python.
    division by 10^9 and is 0.37× at 10000 digits. Divide-and-conquer base
    conversion would close this gap.
 
-6. **from_string is competitive.** 4× at small sizes, stays above 1× through 10000
-   digits. Drops to 0.85× at 20000 digits. BigInt10 overtakes at ~5000+
-   digits due to its native base-10^9 parsing advantage. The SIMD-optimized
-   `parse_numeric_string` (PR4a) improved small-size parsing by 10–27%.
+6. **from_string is competitive.** 3.5× at small sizes, stays above 1× through
+   10000 digits. D&C conversion (PR4b, entry at >10000 digits) improved 20K
+   from 0.63→0.82× and 50K from 0.47→0.84×. The remaining gap at 20K+ digits
+   is due to Karatsuba vs GMP multiplication (requires PR8 Toom-Cook/NTT).
 
 7. **Shift is excellent.** Average 4.97× across all sizes. Degrades at extreme
    sizes (0.49× for 1 << 100000) due to memory allocation overhead.
@@ -434,20 +434,28 @@ Rewrote the string-to-digit-array parser in `str.mojo` with:
 **Result:** BigInt2 from_string average 1.42× → **1.57×** (+11%). Best improvement
 at small sizes: 2 digits 3.8→4.2× (+10%), 9 digits 2.67→3.40× (+27%).
 
-#### Remaining: PR 4b: Divide-and-Conquer Base Conversion — TODO
+#### ✅ PR 4b: Divide-and-Conquer Base Conversion — DONE
 
-**Current:** `from_string()` processes 9 digits at a time: `result = result *
-10^9 + chunk`. This is O(n²). BigInt10 is faster at 5000+ digits (8.9× vs 1.17×).
+Implemented D&C decimal→binary conversion in `_from_decimal_digits_dc()`:
 
-**Target:** Divide-and-conquer: split digit string in half, convert each half
-recursively, then `left_half * 10^(n/2) + right_half`.
+1. Precompute a power table: `powers[k] = 10^(2^k)` as BigInt2 values
+2. Recursively split: `high = digits[0..mid] * 10^(n-mid) + digits[mid..n]`
+3. Base case: switch to simple `_from_decimal_digits_simple()` at 256 digits
+4. Entry threshold: only enter D&C when digit_count > 10000
 
-**Expected Impact:**
+Also added a fused scalar `multiply_add` inner loop in `_from_decimal_digits_simple()`
+that processes 9 digits at a time with a single `result = result * 10^9 + chunk`
+step using pointer-based word-level arithmetic.
 
-- from_string at 5000 digits: from 1.17× to 5–8× vs Python
-- from_string at 10000 digits: from 1.35× to 4–7× vs Python
+Optimizations applied to D&C:
 
-**Prerequisite:** PR 1 (Karatsuba — already done) for the multiply step.
+- Power table built without `.copy()` — each entry computed directly from previous
+- Combine step uses in-place add (`result += low`) instead of `high * power + low`
+
+**Result:** At 20K digits: 0.63× → **0.82×** (+30%). At 50K digits: 0.47× → **0.84×**
+(+79%). The simple path (≤10K digits) averages ~1.1× vs Python. The remaining gap
+at 20K+ digits is due to Karatsuba O(n^1.585) vs Python/GMP's more advanced
+multiplication algorithms.
 
 ---
 
@@ -515,7 +523,7 @@ sizes (100000+).
 | PR2  | Fast Division (Knuth D + B-Z) | ✅ **DONE** | HIGHEST  | div, sqrt, to_string       |
 | PR3  | D&C to_string                 | ✅ **DONE** | HIGH     | to_string: 1.38× at 5K     |
 | PR4a | SIMD parse_numeric_string     | ✅ **DONE** | MEDIUM   | from_string +11% avg       |
-| PR4b | D&C from_string               | TODO       | MEDIUM   | from_string at scale       |
+| PR4b | D&C from_string               | ✅ **DONE** | MEDIUM   | from_string at scale       |
 | PR5  | Bitwise AND/OR/XOR/NOT        | TODO       | MEDIUM   | API completeness           |
 | PR6  | GCD + Modular Arithmetic      | TODO       | MEDIUM   | applications               |
 | PR7  | Reassign BInt → BigInt2       | TODO       | LOW      | ergonomics                 |
