@@ -15,6 +15,8 @@ Values >1× mean faster than Python; <1× mean slower than Python.
 - ✅ **PR0**: Fixed sqrt correctness bug (Newton converges from above + precision-doubling algorithm)
 - ✅ **PR1**: Karatsuba multiplication (O(n^1.585)) with pointer-based inner loops and offset-based assembly
 - ✅ **PR4a**: SIMD-optimized `parse_numeric_string` (two-pass architecture + `vectorize`-based digit extraction)
+- ✅ **PR4c**: from_string micro-optimizations (fast paths, pre-allocation, raw pointers, balanced D&C split)
+- ✅ **PR4d**: to_string micro-optimizations (fast paths for 1–2 words, `unsafe_ptr()`, byte buffer output)
 
 ### Overall Results (Average Across All Cases)
 
@@ -28,7 +30,7 @@ Values >1× mean faster than Python; <1× mean slower than Python.
 | **Power**        |   **11.17×** ★    |           0.58×            |    ~19.3× faster    |
 | **Sqrt**         |     **1.39×**     |      1.29× (BigUInt)       |    ~1.1× faster     |
 | **from_string**  |     **1.42×**     |           6.57×            |    ~0.2× slower     |
-| **to_string**    |       0.97×       |         **9.74×**          |    ~0.1× slower     |
+| **to_string**    |     **6.03×**     |         **9.74×**          |    ~0.6× slower     |
 
 ★ Power average dominated by 2^N shift fast path (up to 140×). General cases: 0.65–0.94×.
 
@@ -57,10 +59,11 @@ Values >1× mean faster than Python; <1× mean slower than Python.
    division (~1.24×) is barely faster than Python. Knuth Algorithm D or
    Burnikel-Ziegler would be the next major win.
 
-5. **to_string is still BigInt10's killer feature.** BigInt10 (base-10^9) achieves
-   31.5× at 10000 digits — trivial conversion. BigInt2 requires repeated
-   division by 10^9 and is 0.37× at 10000 digits. Divide-and-conquer base
-   conversion would close this gap.
+5. **to_string is greatly improved.** With PR4e fast paths, small numbers
+   (≤20 digits) now achieve 15–29× Python. At 2000+ digits, D&C base conversion
+   beats Python (1.0–1.38×). Medium range (100–1000 digits) remains 0.57–0.79×,
+   limited by O(n²) simple-path division. BigInt10 still dominates at scale
+   (34.5× at 10000 digits) due to trivial base-10^9 conversion.
 
 6. **from_string is competitive.** 3.5× at small sizes, stays above 1× through
    10000 digits. D&C conversion (PR4b, entry at >10000 digits) improved 20K
@@ -207,23 +210,24 @@ time. At large sizes (1000+), the O(n²) base-10 → base-2^32 conversion domina
 
 **to_string by size:**
 
-| Size         | BigInt2 vs Python | BigInt10 vs Python |
-| ------------ | :---------------: | :----------------: |
-| 2 digits     |       3.3×        |       21.0×        |
-| 9 digits     |       2.2×        |       18.7×        |
-| 20 digits    |       1.2×        |        3.6×        |
-| 50 digits    |       0.7×        |        1.3×        |
-| 100 digits   |       0.5×        |        0.9×        |
-| 200 digits   |       0.5×        |        1.0×        |
-| 500 digits   |       0.5×        |        1.8×        |
-| 1000 digits  |       0.6×        |        3.6×        |
-| 2000 digits  |       0.6×        |        8.6×        |
-| 5000 digits  |       0.6×        |       24.1×        |
-| 10000 digits |       0.4×        |       31.5×        |
+| Size         | BigInt2 vs Python | Before PR4e | BigInt10 vs Python |
+| ------------ | :---------------: | :---------: | :----------------: |
+| 2 digits     |     **29.0×**     |    3.3×     |       19.3×        |
+| 9 digits     |     **20.0×**     |    2.2×     |       15.4×        |
+| 20 digits    |     **15.5×**     |    1.2×     |        5.0×        |
+| 50 digits    |     **1.0×**      |    0.7×     |        1.2×        |
+| 100 digits   |       0.79×       |    0.5×     |        0.9×        |
+| 200 digits   |       0.71×       |    0.5×     |        1.0×        |
+| 500 digits   |       0.57×       |    0.5×     |        1.7×        |
+| 1000 digits  |       0.57×       |    0.6×     |        4.0×        |
+| 2000 digits  |     **1.0×**      |    0.6×     |        8.6×        |
+| 5000 digits  |     **1.38×**     |    0.6×     |       24.4×        |
+| 10000 digits |     **1.17×**     |    0.4×     |       34.5×        |
 
-BigInt10's to_string advantage grows with size (trivial in base-10^9). BigInt2
-requires O(n²) repeated division by 10^9. Divide-and-conquer base conversion
-(PR3) would bring this to O(n·log²n).
+**PR4e gains:** Fast paths for 1-word and 2-word values give 15–29× at ≤20 digits.
+D&C base conversion (PR3) makes 2000+ digits beat Python. Medium range (100–1000)
+remains 0.57–0.79×, limited by O(n²) repeated division in the simple path.
+BigInt10's to_string advantage grows with size (trivial in base-10^9).
 
 **Left Shift by size:**
 
@@ -408,8 +412,7 @@ At 5000+ digits, BigInt2 to_string now **beats Python**.
 
 **Remaining gap at medium sizes (100–1000 digits):** The simple O(n²) method
 is limited by per-word UInt64 division. Python uses GMP's assembly-optimized
-routines. Closing this gap would require sub-quadratic base conversion at
-smaller sizes or SIMD-optimized division loops.
+routines. See PR4e for micro-optimizations that partially close this gap.
 
 ---
 
@@ -462,8 +465,8 @@ Optimized both the simple and D&C paths for from_string:
 **D&C path (`_from_decimal_digits_dc`) optimizations:**
 
 - **Balanced splitting**: splits at the largest 2^k ≤ digit_count/2 instead
-  of the largest 2^k < digit_count. This keeps both halves within a 2:1
-  ratio, producing balanced operands for Karatsuba multiplication.
+  of the largest 2^k < digit_count. This keeps both halves reasonably close
+  in size (within ~3:1 worst case), producing balanced operands for Karatsuba.
 - **Smaller power table**: builds only up to `floor(log2(digit_count/2))`
   entries instead of `ceil(log2(digit_count))`, saving one expensive
   top-level squaring (e.g., skipping 10^32768 for 50K digits).
@@ -496,7 +499,113 @@ is due to Karatsuba O(n^1.585) vs Python/GMP's Toom-Cook algorithms.
 
 ---
 
-### PR 5: Bitwise Operations (AND, OR, XOR, NOT)
+#### ✅ PR 4d: to_string Micro-optimizations — DONE
+
+Optimized `_magnitude_to_decimal_simple` and the D&C string-building path:
+
+**Simple path (`_magnitude_to_decimal_simple`) optimizations:**
+
+- **Fast path for 1-word values** (≤9 digits): `return String(Int(words[0]))` —
+  delegates entirely to native int-to-string, zero BigInt2 overhead
+- **Fast path for 2-word values** (≤19 digits): combines into UInt64 and uses
+  `return String(combined_value)` — single native conversion
+- **Raw pointer inner loop**: `var dp = dividend.unsafe_ptr()` for O(1) access
+  to dividend words during repeated division, eliminating bounds-check overhead
+  (NOTE: `List._data` causes heap corruption — only `List.unsafe_ptr()` is safe)
+- **`div_len` tracking**: tracks the number of significant words in the dividend
+  via a local variable, shrinking the division loop naturally instead of calling
+  `shrink()` or scanning for leading zeros after each division pass
+- **Byte buffer output**: extracts 9 digits per chunk into an `InlineArray[UInt8, 9]`
+  on the stack, appends to a `List[UInt8]` buffer, then constructs the final
+  string with `String(unsafe_from_utf8=buf^)` — avoids all string concatenation
+
+**D&C path optimizations:**
+
+- **Power table**: builds entries via `power_table[k-1] * power_table[k-1]`
+  without `.copy()` — Mojo's value semantics handle this correctly
+- **Recursive string building**: replaced `result += "0" * pad_needed` with
+  byte buffer approach: append pad zeros + low_str bytes to `List[UInt8]`,
+  construct via `String(unsafe_from_utf8=buf^)`
+
+**What was tried and rejected:**
+
+- **UInt128 chunks with 10^18 divisor**: 128-bit division/modulo is software-
+  emulated on ARM64 (no hardware instruction). Made medium numbers 2× SLOWER.
+- **Lower D&C thresholds (entry=24, base=8)**: D&C overhead (power table
+  computation + BigInt2 division) exceeded simple-path cost for 500–10000 digits.
+  Restored original thresholds (entry=128, base=64).
+
+**Result (to_string speedup vs Python `str(int_value)`):**
+
+| Size         | Before PR4e | After PR4e | Improvement            |
+| ------------ | ----------- | ---------- | ---------------------- |
+| 2 digits     | 3.3×        | **29.0×**  | **+780%** (fast path)  |
+| 9 digits     | 2.2×        | **20.0×**  | **+810%** (fast path)  |
+| 20 digits    | 1.2×        | **15.5×**  | **+1190%** (fast path) |
+| 50 digits    | 0.7×        | **1.0×**   | **+43%**               |
+| 100 digits   | 0.5×        | 0.79×      | +58%                   |
+| 200 digits   | 0.5×        | 0.71×      | +42%                   |
+| 500 digits   | 0.5×        | 0.57×      | +14%                   |
+| 1000 digits  | 0.6×        | 0.57×      | ~same                  |
+| 2000 digits  | 0.6×        | **1.0×**   | **+67%**               |
+| 5000 digits  | 0.6×        | **1.38×**  | **+130%**              |
+| 10000 digits | 0.4×        | **1.17×**  | **+193%**              |
+| Avg          | 0.97×       | **6.03×**  | **+522%**              |
+
+Fast paths dominate the average. Excluding ≤20-digit fast paths, the average
+for 50–10000 digits improved from 0.54× to **0.91×** (+69%).
+
+---
+
+### PR 5: True In-Place Arithmetic Operations
+
+**Priority: MEDIUM-HIGH** — Performance infrastructure that benefits all callers
+
+**Current:** All augmented assignment operators (`+=`, `-=`, `*=`, `//=`, `%=`)
+create a new BigInt2 and move it back:
+
+```mojo
+fn __iadd__(mut self, other: Self):
+    self = arithmetics.add(self, other)  # allocates new BigInt2
+```
+
+This means `a += b` is no faster than `a = a + b`. Internal code already works
+around this by calling `_add_magnitudes_inplace` directly (e.g., the D&C
+from_string combine step), which hurts readability and maintainability.
+
+**Target:** Implement true in-place versions that modify `self.words` directly:
+
+1. `__iadd__` → `_add_inplace(mut self, other)`: extend `_add_magnitudes_inplace`
+   with sign handling (same-sign: magnitude add; different-sign: magnitude subtract)
+2. `__isub__` → `_subtract_inplace(mut self, other)`: dual of iadd
+3. `__imul__` with scalar: `_multiply_by_word_inplace(mut self, w: UInt32)` —
+   single O(n) pass, useful in from_string and power-of-10 scaling
+4. `__iadd__(mut self, other: Int)` → fast path for small addends (single-word
+   carry propagation, no allocation)
+
+**Why now (before PR5–PR8):**
+
+- The `_add_magnitudes_inplace` primitive already exists and is battle-tested
+- `__iadd__` with sign handling is straightforward (~30 lines)
+- Scalar `__imul__` is a direct generalization of `_multiply_add_inplace`
+- These are **performance infrastructure**: future PRs (bitwise ops, GCD,
+  modular arithmetic) will naturally benefit from fast in-place paths
+- Allows internal code to use idiomatic `result += low` instead of
+  `_add_magnitudes_inplace(result.words, low.words)`, improving readability
+
+**Non-target (defer to PR8):** Full in-place `__imul__` for BigInt2 × BigInt2
+requires in-place Karatsuba with scratch buffers — complex and belongs with
+Toom-Cook / NTT where similar infrastructure is needed.
+
+**Expected Impact:**
+
+- Eliminates one allocation per `+=` / `-=` call on hot paths
+- Enables idiomatic `a += b` in D&C combine, power table construction, etc.
+- Scalar `*=` enables efficient `result *= 10^9` without wrapping in BigInt2
+
+---
+
+### PR 6: Bitwise Operations (AND, OR, XOR, NOT)
 
 **Priority: MEDIUM** — Completes the integer API surface
 
@@ -514,7 +623,7 @@ for negative numbers (Python-compatible).
 
 ---
 
-### PR 6: GCD, Extended GCD, and Modular Arithmetic
+### PR 7: GCD, Extended GCD, and Modular Arithmetic
 
 **Priority: MEDIUM** — Useful for cryptographic and number theory applications
 
@@ -531,7 +640,7 @@ for negative numbers (Python-compatible).
 
 ---
 
-### PR 7: Reassign BInt alias from BigInt10 → BigInt2
+### PR 8: Reassign BInt alias from BigInt10 → BigInt2
 
 **Priority: LOW** — Wait until BigInt2 is clearly better across the board
 
@@ -539,7 +648,7 @@ for negative numbers (Python-compatible).
 
 ---
 
-### PR 8: Toom-Cook 3 / NTT Multiplication
+### PR 9: Toom-Cook 3 / NTT Multiplication
 
 **Priority: LOW** — Only valuable for very large numbers (10000+ digits)
 
@@ -553,16 +662,18 @@ sizes (100000+).
 
 ## Summary: Priority Order
 
-| PR   | Title                           | Status     | Priority | Impact                     |
-| ---- | ------------------------------- | ---------- | -------- | -------------------------- |
-| PR0  | Fix sqrt correctness bug        | ✅ **DONE** | CRITICAL | correctness (fixed)        |
-| PR1  | Karatsuba Multiplication        | ✅ **DONE** | HIGHEST  | mul 3.8× faster at scale   |
-| PR2  | Fast Division (Knuth D + B-Z)   | ✅ **DONE** | HIGHEST  | div, sqrt, to_string       |
-| PR3  | D&C to_string                   | ✅ **DONE** | HIGH     | to_string: 1.38× at 5K     |
-| PR4a | SIMD parse_numeric_string       | ✅ **DONE** | MEDIUM   | from_string +11% avg       |
-| PR4b | D&C from_string                 | ✅ **DONE** | MEDIUM   | from_string at scale       |
-| PR4c | from_string micro-optimizations | ✅ **DONE** | MEDIUM   | all sizes ≥ 0.98× Python   |
-| PR5  | Bitwise AND/OR/XOR/NOT          | TODO       | MEDIUM   | API completeness           |
-| PR6  | GCD + Modular Arithmetic        | TODO       | MEDIUM   | applications               |
-| PR7  | Reassign BInt → BigInt2         | TODO       | LOW      | ergonomics                 |
-| PR8  | Toom-Cook / NTT                 | TODO       | LOW      | extreme sizes (50000+ dig) |
+| PR   | Title                           | Status     | Priority    | Impact                     |
+| ---- | ------------------------------- | ---------- | ----------- | -------------------------- |
+| PR0  | Fix sqrt correctness bug        | ✅ **DONE** | CRITICAL    | correctness (fixed)        |
+| PR1  | Karatsuba Multiplication        | ✅ **DONE** | HIGHEST     | mul 3.8× faster at scale   |
+| PR2  | Fast Division (Knuth D + B-Z)   | ✅ **DONE** | HIGHEST     | div, sqrt, to_string       |
+| PR3  | D&C to_string                   | ✅ **DONE** | HIGH        | to_string: 1.38× at 5K     |
+| PR4a | SIMD parse_numeric_string       | ✅ **DONE** | MEDIUM      | from_string +11% avg       |
+| PR4b | D&C from_string                 | ✅ **DONE** | MEDIUM      | from_string at scale       |
+| PR4c | from_string micro-optimizations | ✅ **DONE** | MEDIUM      | all sizes ≥ 0.98× Python   |
+| PR4d | to_string micro-optimizations   | ✅ **DONE** | MEDIUM      | to_string 0.97×→6.03× avg  |
+| PR5  | True in-place iadd/isub/imul    | TODO       | MEDIUM-HIGH | perf infra, readability    |
+| PR6  | Bitwise AND/OR/XOR/NOT          | TODO       | MEDIUM      | API completeness           |
+| PR7  | GCD + Modular Arithmetic        | TODO       | MEDIUM      | applications               |
+| PR8  | Reassign BInt → BigInt2         | TODO       | LOW         | ergonomics                 |
+| PR9  | Toom-Cook / NTT                 | TODO       | LOW         | extreme sizes (50000+ dig) |

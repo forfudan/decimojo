@@ -677,7 +677,7 @@ fn test_from_string_dc_path() raises:
         msg="[D&C from_string] 10501-digit D&C matches BigInt10 path",
     )
 
-    # Test a non-trivial large number: 7 followed by 10499 zeros then 123456789
+    # Test a non-trivial large number: 7 followed by 10490 zeros then 123456789
     # Build the decimal string directly to avoid expensive power() + to_string
     var s2 = String("7") + String("0") * 10490 + String("123456789")
     var a2 = BigInt2(s2)
