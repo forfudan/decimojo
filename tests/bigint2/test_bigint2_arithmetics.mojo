@@ -313,16 +313,21 @@ fn test_bigint2_floor_divide_burnikel_ziegler() raises:
     var a1 = BigInt2(10).power(1199) + BigInt2(7)
     var q1 = a1 // b1
     var r1 = a1 - q1 * b1
-    # Euclidean identity
-    testing.assert_equal(
-        lhs=String(q1 * b1 + r1),
-        rhs=String(a1),
+    # Euclidean identity (numeric, not string-based)
+    testing.assert_true(
+        q1 * b1 + r1 == a1,
         msg="[B-Z case 1] a == q*b + r (1200-digit / 700-digit)",
     )
     # Remainder in range [0, b)
     testing.assert_true(
         r1 >= BigInt2(0) and r1 < b1,
         msg="[B-Z case 1] 0 <= r < b",
+    )
+    # Cross-check D&C string conversion against BigInt10 path
+    testing.assert_equal(
+        lhs=String(a1),
+        rhs=String(a1.to_bigint10()),
+        msg="[B-Z case 1] D&C to_string matches BigInt10 path",
     )
 
     # --- Case 2: 2000-digit / 1000-digit ---
@@ -331,14 +336,18 @@ fn test_bigint2_floor_divide_burnikel_ziegler() raises:
     var a2 = BigInt2(2) * BigInt2(10).power(1999) + BigInt2(13)
     var q2 = a2 // b2
     var r2 = a2 - q2 * b2
-    testing.assert_equal(
-        lhs=String(q2 * b2 + r2),
-        rhs=String(a2),
+    testing.assert_true(
+        q2 * b2 + r2 == a2,
         msg="[B-Z case 2] a == q*b + r (2000-digit / 1000-digit)",
     )
     testing.assert_true(
         r2 >= BigInt2(0) and r2 < b2,
         msg="[B-Z case 2] 0 <= r < b",
+    )
+    testing.assert_equal(
+        lhs=String(a2),
+        rhs=String(a2.to_bigint10()),
+        msg="[B-Z case 2] D&C to_string matches BigInt10 path",
     )
 
     # --- Case 3: Negative / Positive (floor semantics) ---
@@ -348,9 +357,8 @@ fn test_bigint2_floor_divide_burnikel_ziegler() raises:
     var a3 = -(BigInt2(10).power(800) + BigInt2(11))
     var q3 = a3 // b3
     var r3 = a3 - q3 * b3
-    testing.assert_equal(
-        lhs=String(q3 * b3 + r3),
-        rhs=String(a3),
+    testing.assert_true(
+        q3 * b3 + r3 == a3,
         msg="[B-Z case 3] a == q*b + r (negative / positive)",
     )
     testing.assert_true(
@@ -370,9 +378,8 @@ fn test_bigint2_floor_divide_burnikel_ziegler() raises:
     var a4 = BigInt2(9) * BigInt2(10).power(699) + BigInt2(123456789)
     var q4 = a4 // b4
     var r4 = a4 - q4 * b4
-    testing.assert_equal(
-        lhs=String(q4 * b4 + r4),
-        rhs=String(a4),
+    testing.assert_true(
+        q4 * b4 + r4 == a4,
         msg="[B-Z case 4] a == q*b + r (700-digit / 700-digit)",
     )
     testing.assert_equal(

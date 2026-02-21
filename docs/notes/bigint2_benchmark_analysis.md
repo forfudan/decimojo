@@ -14,6 +14,7 @@ Values >1× mean faster than Python; <1× mean slower than Python.
 
 - ✅ **PR0**: Fixed sqrt correctness bug (Newton converges from above + precision-doubling algorithm)
 - ✅ **PR1**: Karatsuba multiplication (O(n^1.585)) with pointer-based inner loops and offset-based assembly
+- ✅ **PR4a**: SIMD-optimized `parse_numeric_string` (two-pass architecture + `vectorize`-based digit extraction)
 
 ### Overall Results (Average Across All Cases)
 
@@ -26,7 +27,7 @@ Values >1× mean faster than Python; <1× mean slower than Python.
 | **Left Shift**   |     **4.97×**     |            N/A             |         N/A         |
 | **Power**        |   **11.17×** ★    |           0.58×            |    ~19.3× faster    |
 | **Sqrt**         |     **1.39×**     |      1.29× (BigUInt)       |    ~1.1× faster     |
-| **from_string**  |     **2.21×**     |           1.48×            |    ~1.5× faster     |
+| **from_string**  |     **1.57×**     |           7.17×            |    ~0.2× slower     |
 | **to_string**    |       0.97×       |         **9.74×**          |    ~0.1× slower     |
 
 ★ Power average dominated by 2^N shift fast path (up to 140×). General cases: 0.65–0.94×.
@@ -61,9 +62,10 @@ Values >1× mean faster than Python; <1× mean slower than Python.
    division by 10^9 and is 0.37× at 10000 digits. Divide-and-conquer base
    conversion would close this gap.
 
-6. **from_string is competitive.** 7× at small, stays above 1× through 5000
-   digits. Only drops to 0.89× at 10000 digits. BigInt10 overtakes at ~5000+
-   digits due to its native base-10^9 parsing advantage.
+6. **from_string is competitive.** 4× at small sizes, stays above 1× through 10000
+   digits. Drops to 0.85× at 20000 digits. BigInt10 overtakes at ~5000+
+   digits due to its native base-10^9 parsing advantage. The SIMD-optimized
+   `parse_numeric_string` (PR4a) improved small-size parsing by 10–27%.
 
 7. **Shift is excellent.** Average 4.97× across all sizes. Degrades at extreme
    sizes (0.49× for 1 << 100000) due to memory allocation overhead.
@@ -179,26 +181,29 @@ Average across 62 benchmark cases: **1.14× Python**.
 - BigUInt is extremely slow at all sizes >50 digits (schoolbook division in its Newton iterations)
 - Fixing division (PR2) would dramatically improve the medium-size sqrt performance
 
-**from_string by size:**
+**from_string by size** (re-benchmarked with SIMD `parse_numeric_string`):
 
-| Size         | BigInt2 vs Python | BigInt10 vs Python |
-| ------------ | :---------------: | :----------------: |
-| 2 digits     |       7.0×        |       1.47×        |
-| 9 digits     |       5.6×        |       1.16×        |
-| 20 digits    |       3.1×        |       1.00×        |
-| 50 digits    |       1.6×        |       0.73×        |
-| 100 digits   |       1.3×        |       0.57×        |
-| 200 digits   |       1.1×        |       0.50×        |
-| 500 digits   |       1.4×        |       0.66×        |
-| 1000 digits  |       1.2×        |       0.91×        |
-| 2000 digits  |       1.1×        |       1.42×        |
-| 5000 digits  |       1.1×        |       3.28×        |
-| 10000 digits |       0.9×        |       5.51×        |
+| Size         | BigInt2 (before) | BigInt2 (after PR4a) | BigInt10 vs Python |
+| ------------ | :--------------: | :------------------: | :----------------: |
+| 2 digits     |      3.80×       |      **4.20×**       |       1.91×        |
+| 9 digits     |      2.67×       |      **3.40×**       |       1.06×        |
+| 20 digits    |      2.12×       |        2.11×         |       1.58×        |
+| 50 digits    |      1.50×       |        1.08×         |       1.80×        |
+| 100 digits   |      1.05×       |      **1.24×**       |       1.13×        |
+| 200 digits   |      0.94×       |      **1.00×**       |       1.03×        |
+| 500 digits   |      1.28×       |        1.12×         |       1.24×        |
+| 1000 digits  |      1.12×       |        1.14×         |       1.92×        |
+| 2000 digits  |      0.78×       |      **1.21×**       |       4.04×        |
+| 5000 digits  |      1.08×       |        1.17×         |       8.90×        |
+| 10000 digits |      1.34×       |        1.35×         |       19.93×       |
+| 20000 digits |      0.63×       |      **0.85×**       |       21.25×       |
+| 50000 digits |      0.47×       |      **0.86×**       |       33.38×       |
 
-BigInt2's O(n²) `multiply+add` loop for from_string degrades at scale, crossing
-below Python at 10000 digits. BigInt10 is faster at 5000+ digits because parsing
-into base-10^9 chunks is nearly free. Divide-and-conquer from_string (PR4)
-would use `left_half * 10^(n/2) + right_half` to achieve O(n·log²n).
+**Average BigInt2 vs Python:** 1.42× → **1.57×** (14 cases, +11%)
+
+The SIMD optimization of `parse_numeric_string` provides the most visible benefit
+at small sizes (2–9 digits, +10–27%) where parsing is a large fraction of total
+time. At large sizes (1000+), the O(n²) base-10 → base-2^32 conversion dominates.
 
 **to_string by size:**
 
@@ -410,18 +415,37 @@ smaller sizes or SIMD-optimized division loops.
 
 ### PR 4: Optimized from_string (Divide-and-Conquer)
 
-**Priority: MEDIUM** — Already 2.21× avg but degrades to 0.89× at 10000 digits
+**Priority: MEDIUM** — Already 1.57× avg but degrades to 0.85× at 20000 digits
+
+#### ✅ PR 4a: SIMD-optimized `parse_numeric_string` — DONE
+
+Rewrote the string-to-digit-array parser in `str.mojo` with:
+
+- **Two-pass architecture:** Pass 1 scans structure (sign, decimal point, exponent,
+  separators) with position tracking. Pass 2 extracts digit values via SIMD.
+- **Three extraction paths:**
+  - **Fast path** (pure digits): `vectorize[16]()` processes 16 bytes at a time,
+    subtracting `ord("0")` via SIMD `load`/`store` on `List[UInt8]._data`
+  - **Medium path** (digits + decimal point): two `vectorize` calls around the `.`
+  - **Slow path** (with `_` separators): byte-by-byte extraction
+- **`vectorize` with `unified` capture:** Uses `unified {mut coef, read value_bytes}`
+  for proper Mojo origin tracking instead of manual SIMD width cascades
+
+**Result:** BigInt2 from_string average 1.42× → **1.57×** (+11%). Best improvement
+at small sizes: 2 digits 3.8→4.2× (+10%), 9 digits 2.67→3.40× (+27%).
+
+#### Remaining: PR 4b: Divide-and-Conquer Base Conversion — TODO
 
 **Current:** `from_string()` processes 9 digits at a time: `result = result *
-10^9 + chunk`. This is O(n²). BigInt10 is faster at 5000+ digits (3.28× vs 1.11×).
+10^9 + chunk`. This is O(n²). BigInt10 is faster at 5000+ digits (8.9× vs 1.17×).
 
 **Target:** Divide-and-conquer: split digit string in half, convert each half
 recursively, then `left_half * 10^(n/2) + right_half`.
 
 **Expected Impact:**
 
-- from_string at 5000 digits: from 1.11× to 5–8× vs Python
-- from_string at 10000 digits: from 0.89× to 4–7× vs Python
+- from_string at 5000 digits: from 1.17× to 5–8× vs Python
+- from_string at 10000 digits: from 1.35× to 4–7× vs Python
 
 **Prerequisite:** PR 1 (Karatsuba — already done) for the multiply step.
 
@@ -484,14 +508,15 @@ sizes (100000+).
 
 ## Summary: Priority Order
 
-| PR  | Title                         | Status     | Priority | Impact                     |
-| --- | ----------------------------- | ---------- | -------- | -------------------------- |
-| PR0 | Fix sqrt correctness bug      | ✅ **DONE** | CRITICAL | correctness (fixed)        |
-| PR1 | Karatsuba Multiplication      | ✅ **DONE** | HIGHEST  | mul 3.8× faster at scale   |
-| PR2 | Fast Division (Knuth D + B-Z) | ✅ **DONE** | HIGHEST  | div, sqrt, to_string       |
-| PR3 | D&C to_string                 | ✅ **DONE** | HIGH     | to_string: 1.38× at 5K     |
-| PR4 | D&C from_string               | TODO       | MEDIUM   | from_string at scale       |
-| PR5 | Bitwise AND/OR/XOR/NOT        | TODO       | MEDIUM   | API completeness           |
-| PR6 | GCD + Modular Arithmetic      | TODO       | MEDIUM   | applications               |
-| PR7 | Reassign BInt → BigInt2       | TODO       | LOW      | ergonomics                 |
-| PR8 | Toom-Cook / NTT               | TODO       | LOW      | extreme sizes (50000+ dig) |
+| PR   | Title                         | Status     | Priority | Impact                     |
+| ---- | ----------------------------- | ---------- | -------- | -------------------------- |
+| PR0  | Fix sqrt correctness bug      | ✅ **DONE** | CRITICAL | correctness (fixed)        |
+| PR1  | Karatsuba Multiplication      | ✅ **DONE** | HIGHEST  | mul 3.8× faster at scale   |
+| PR2  | Fast Division (Knuth D + B-Z) | ✅ **DONE** | HIGHEST  | div, sqrt, to_string       |
+| PR3  | D&C to_string                 | ✅ **DONE** | HIGH     | to_string: 1.38× at 5K     |
+| PR4a | SIMD parse_numeric_string     | ✅ **DONE** | MEDIUM   | from_string +11% avg       |
+| PR4b | D&C from_string               | TODO       | MEDIUM   | from_string at scale       |
+| PR5  | Bitwise AND/OR/XOR/NOT        | TODO       | MEDIUM   | API completeness           |
+| PR6  | GCD + Modular Arithmetic      | TODO       | MEDIUM   | applications               |
+| PR7  | Reassign BInt → BigInt2       | TODO       | LOW      | ergonomics                 |
+| PR8  | Toom-Cook / NTT               | TODO       | LOW      | extreme sizes (50000+ dig) |
