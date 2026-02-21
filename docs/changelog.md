@@ -4,6 +4,10 @@ This is a list of changes for the DeciMojo Package.
 
 ## Unreleased (v0.8.0)
 
+DeciMojo v0.8.0 is a profound milestone in the development of DeciMojo, introducing a brand new 2^32-based `BigInt` implementation to replace the previous 10^9-based `BigInt` implementation. This change significantly enhances the performance of `BigInt` operations, especially for large integers, by leveraging a more efficient internal representation. The new `BigInt` type is designed to be fully compatible with the existing API, ensuring a seamless transition for users. The benchmarks show that the new `BigInt` implementation can be up to 10x faster than the previous one for certain operations, particularly multiplication and division of large integers. It also beats Python's built-in `int` type in most cases.
+
+Besides... [to be finished at the release time]
+
 ### 🦋 Changed
 
 ## 20260212 (v0.7.0)
