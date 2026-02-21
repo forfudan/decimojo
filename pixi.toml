@@ -34,15 +34,13 @@ test = "pixi run package && bash ./tests/test_all.sh"
 test_toml = "pixi run package && bash ./tests/test_toml.sh"
 ttoml = "clear && pixi run package && bash ./tests/test_toml.sh"
 
-# benches
-bdec = "clear && pixi run package && cd benches/bigdecimal && pixi run mojo run -I ../ bench.mojo && cd ../.. && pixi run clean"
-bdec_debug = "clear && pixi run package && cd benches/bigdecimal && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
+# bench
 bench = "pixi run package && bash benches/run_bench.sh"
-bint = "clear && pixi run package && cd benches/bigint && pixi run mojo run -I ../ bench.mojo && cd ../.. && pixi run clean"
+
+# bench with debug assertions enabled
+bdec_debug = "clear && pixi run package && cd benches/bigdecimal && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
 bint_debug = "clear && pixi run package && cd benches/bigint && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
-buint = "clear && pixi run package && cd benches/biguint && pixi run mojo run -I ../ bench.mojo && cd ../.. && pixi run clean"
 buint_debug = "clear && pixi run package && cd benches/biguint && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
-dec = "clear && pixi run package && cd benches/decimal128 && pixi run mojo run -I ../ bench.mojo && cd ../.. && pixi run clean"
 dec_debug = "clear && pixi run package && cd benches/decimal128 && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
 
 # doc
