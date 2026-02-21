@@ -1092,6 +1092,57 @@ struct BigInt2(
         decimojo.bigint2.bitwise.bitwise_xor_inplace(self, other)
 
     # ===------------------------------------------------------------------=== #
+    # Number-theoretic methods
+    # ===------------------------------------------------------------------=== #
+
+    @always_inline
+    fn gcd(self, other: Self) -> Self:
+        """Returns the greatest common divisor of self and other."""
+        return decimojo.bigint2.number_theory.gcd(self, other)
+
+    @always_inline
+    fn extended_gcd(self, other: Self) raises -> Tuple[Self, Self, Self]:
+        """Returns a tuple (g, x, y) such that g = gcd(self, other) and
+        self*x + other*y = g.
+
+        This is useful for solving linear Diophantine equations and for
+        computing modular inverses.
+
+        Returns:
+            A tuple (g, x, y) where g is the gcd of self and other, and
+            x and y are the coefficients satisfying the equation.
+        """
+        return decimojo.bigint2.number_theory.extended_gcd(self, other)
+
+    @always_inline
+    fn lcm(self, other: Self) raises -> Self:
+        """Returns the least common multiple of self and other."""
+        return decimojo.bigint2.number_theory.lcm(self, other)
+
+    @always_inline
+    fn mod_pow(self, exponent: Self, modulus: Self) raises -> Self:
+        """Returns (self ** exponent) % modulus efficiently using modular
+        exponentiation.
+        """
+        return decimojo.bigint2.number_theory.mod_pow(self, exponent, modulus)
+
+    @always_inline
+    fn mod_pow(self, exponent: Int, modulus: Self) raises -> Self:
+        """Returns (self ** exponent) % modulus efficiently using modular
+        exponentiation.
+        """
+        return decimojo.bigint2.number_theory.mod_pow(
+            self, Self.from_int(exponent), modulus
+        )
+
+    @always_inline
+    fn mod_inverse(self, modulus: Self) raises -> Self:
+        """Returns the modular inverse of self modulo modulus, i.e. a number x
+        such that (self * x) % modulus == 1.
+        """
+        return decimojo.bigint2.number_theory.mod_inverse(self, modulus)
+
+    # ===------------------------------------------------------------------=== #
     # Instance query methods
     # ===------------------------------------------------------------------=== #
 

@@ -67,7 +67,7 @@ Other changes:
 ### 📚 Documentation and testing
 
 - Refactor the test files for `BigDecimal` (PR #93).
-- Refactor the test files for `BigInt10` (PR #106).
+- Refactor the test files for `BigInt` (PR #106).
 
 ## 20250701 (v0.4.1)
 
@@ -75,7 +75,7 @@ Version 0.4.1 of DeciMojo introduces implicit type conversion between built-in i
 
 ### ⭐️ New
 
-Now DeciMojo supports implicit type conversion between built-in integeral types (`Int`, `UInt`, `Int8`, `UInt8`, `Int16`, `UInt16`, `Int32`, `UInt32`, `Int64`, `UInt64`, `Int128`,`UInt128`, `Int256`, and `UInt256`) and the arbitrary-precision types (`BigUInt`, `BigInt10`, and `BigDecimal`). This allows you to use these built-in types directly in arithmetic operations with `BigInt10` and `BigUInt` without explicit conversion. The merged type will always be the most compatible one (PR #89, PR #90).
+Now DeciMojo supports implicit type conversion between built-in integeral types (`Int`, `UInt`, `Int8`, `UInt8`, `Int16`, `UInt16`, `Int32`, `UInt32`, `Int64`, `UInt64`, `Int128`,`UInt128`, `Int256`, and `UInt256`) and the arbitrary-precision types (`BigUInt`, `BigInt`, and `BigDecimal`). This allows you to use these built-in types directly in arithmetic operations with `BigInt` and `BigUInt` without explicit conversion. The merged type will always be the most compatible one (PR #89, PR #90).
 
 For example, you can now do the following:
 
@@ -121,24 +121,24 @@ c = 3.14159265358979323
 
 ### 🦋 Changed
 
-Optimize the case when you increase the value of a `BigInt10` object in-place by 1, *i.e.*, `i += 1`. This allows you to iterate faster (PR #89). For example, we can compute the time taken to iterate from `0` to `1_000_000` using `BigInt10` and compare it with the built-in `Int` type:
+Optimize the case when you increase the value of a `BigInt` object in-place by 1, *i.e.*, `i += 1`. This allows you to iterate faster (PR #89). For example, we can compute the time taken to iterate from `0` to `1_000_000` using `BigInt` and compare it with the built-in `Int` type:
 
 ```mojo
 from decimojo.prelude import *
 
 fn main() raises:
-    i = BigInt10(0)
-    end = BigInt10(1_000_000)
+    i = BigInt(0)
+    end = BigInt(1_000_000)
     while i < end:
         print(i)
         i += 1
 ```
 
-| scenario          | Time taken |
-| ----------------- | ---------- |
-| v0.4.0 `BigInt10` | 1.102s     |
-| v0.4.1 `BigInt10` | 0.912s     |
-| Built-in `Int`    | 0.893s     |
+| scenario        | Time taken |
+| --------------- | ---------- |
+| v0.4.0 `BigInt` | 1.102s     |
+| v0.4.1 `BigInt` | 0.912s     |
+| Built-in `Int`  | 0.893s     |
 
 ### 🛠️ Fixed
 
@@ -181,15 +181,15 @@ DeciMojo v0.3.0 introduces the arbitrary-precision `BigDecimal` type with compre
 
 ## 20250401 (v0.2.0)
 
-Version 0.2.0 marks a significant expansion of DeciMojo with the introduction of `BigInt10` and `BigUInt` types, providing unlimited precision integer arithmetic to complement the existing fixed-precision `Decimal` type. Core arithmetic functions for the `Decimal` type have been completely rewritten using Mojo 25.2's `UInt128`, delivering substantial performance improvements. This release also extends mathematical capabilities with advanced operations including logarithms, exponentials, square roots, and n-th roots for the `Decimal` type. The codebase has been reorganized into a more modular structure, enhancing maintainability and extensibility. With comprehensive test coverage, improved documentation in multiple languages, and optimized memory management, v0.2.0 represents a major advancement in both functionality and performance for numerical computing in Mojo.
+Version 0.2.0 marks a significant expansion of DeciMojo with the introduction of `BigInt` and `BigUInt` types, providing unlimited precision integer arithmetic to complement the existing fixed-precision `Decimal` type. Core arithmetic functions for the `Decimal` type have been completely rewritten using Mojo 25.2's `UInt128`, delivering substantial performance improvements. This release also extends mathematical capabilities with advanced operations including logarithms, exponentials, square roots, and n-th roots for the `Decimal` type. The codebase has been reorganized into a more modular structure, enhancing maintainability and extensibility. With comprehensive test coverage, improved documentation in multiple languages, and optimized memory management, v0.2.0 represents a major advancement in both functionality and performance for numerical computing in Mojo.
 
 ### ⭐️ New
 
-- Add comprehensive `BigInt10` and `BigUInt` implementation with unlimited precision integer arithmetic.
-- Implement full arithmetic operations for `BigInt10` and `BigUInt`: addition, subtraction, multiplication, division, modulo and power operations.
+- Add comprehensive `BigInt` and `BigUInt` implementation with unlimited precision integer arithmetic.
+- Implement full arithmetic operations for `BigInt` and `BigUInt`: addition, subtraction, multiplication, division, modulo and power operations.
 - Support both floor division (round toward negative infinity) and truncate division (round toward zero) semantics for mathematical correctness.
-- Add complete comparison operations for `BigInt10` with proper handling of negative values.
-- Implement efficient string representation and parsing for `BigInt10` and `BigUInt`.
+- Add complete comparison operations for `BigInt` with proper handling of negative values.
+- Implement efficient string representation and parsing for `BigInt` and `BigUInt`.
 - Add advanced mathematical operations for `Decimal`: square root and n-th root.
 - Add logarithm functions for `Decimal`: natural logarithm, base-10 logarithm, and logarithm with arbitrary base.
 - Add exponential function and power function with arbitrary exponents for `Decimal`.
@@ -217,8 +217,8 @@ Version 0.2.0 marks a significant expansion of DeciMojo with the introduction of
 
 ### 📚 Documentation and testing
 
-- Add comprehensive test suite for `BigInt10` and `BigUInt` with over 200 test cases covering all operations and edge cases.
-- Create detailed API documentation for both `Decimal` and `BigInt10`.
+- Add comprehensive test suite for `BigInt` and `BigUInt` with over 200 test cases covering all operations and edge cases.
+- Create detailed API documentation for both `Decimal` and `BigInt`.
 - Add performance comparison benchmarks between DeciMojo and Python's decimal/int implementation.
 - Update multi-language documentation to include all new functionality (English and Chinese).
 - Include clear explanations of division semantics and other potentially confusing numerical concepts.
