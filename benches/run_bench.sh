@@ -22,7 +22,7 @@ if [[ -z "$TYPE" ]]; then
     echo "Usage: pixi run bench <type> [operation]"
     echo ""
     echo "Types:"
-    echo "  bigint   (bint)    BigInt benchmarks (BigInt10 vs BigInt2 vs Python int)"
+    echo "  bigint   (bint)    BigInt benchmarks (BigInt10 vs BigInt vs Python int)"
     echo "  biguint  (buint)   BigUInt benchmarks (BigUInt vs Python int)"
     echo "  decimal128 (dec)   Decimal128 benchmarks (Decimal128 vs Python decimal)"
     echo "  bigdecimal (bdec)  BigDecimal benchmarks (BigDecimal vs Python decimal)"

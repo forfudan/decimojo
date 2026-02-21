@@ -1,7 +1,7 @@
-"""Benchmarks for BigInt to_string conversion. Compares BigInt10, BigInt2, and Python int."""
+"""Benchmarks for BigInt to_string conversion. Compares BigInt10, BigInt, and Python int."""
 
 from decimojo.bigint10.bigint10 import BigInt10
-from decimojo.bigint2.bigint2 import BigInt2
+from decimojo.bigint.bigint import BigInt
 from decimojo.tests import (
     BenchCase,
     load_bench_cases,
@@ -21,12 +21,12 @@ fn run_case(
     iterations: Int,
     log_file: PythonObject,
     mut sf_bigint10: List[Float64],
-    mut sf_bigint2: List[Float64],
+    mut sf_bigint: List[Float64],
 ) raises:
     log_print("\nBenchmark:       " + bc.name, log_file)
 
     var m1 = BigInt10(bc.a)
-    var m2 = BigInt2(bc.a)
+    var m2 = BigInt(bc.a)
     var py = Python.import_module("builtins")
     var pa = py.int(bc.a)
 
@@ -60,13 +60,13 @@ fn run_case(
         var s1 = Float64(tp) / Float64(t1)
         var s2 = Float64(tp) / Float64(t2)
         sf_bigint10.append(s1)
-        sf_bigint2.append(s2)
+        sf_bigint.append(s2)
 
         log_print("BigInt10:        " + String(t1) + " ns/iter", log_file)
-        log_print("BigInt2:         " + String(t2) + " ns/iter", log_file)
+        log_print("BigInt:         " + String(t2) + " ns/iter", log_file)
         log_print("Python:          " + String(tp) + " ns/iter", log_file)
         log_print("BigInt10 speedup:" + String(s1) + "×", log_file)
-        log_print("BigInt2 speedup: " + String(s2) + "×", log_file)
+        log_print("BigInt speedup: " + String(s2) + "×", log_file)
     except e:
         log_print("Error: " + String(e), log_file)
         log_print("Skipping this case", log_file)
@@ -101,7 +101,7 @@ fn main() raises:
         sf1,
         "BigInt10",
         sf2,
-        "BigInt2",
+        "BigInt",
         iterations,
         log_file,
     )

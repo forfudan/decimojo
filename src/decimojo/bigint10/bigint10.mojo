@@ -33,9 +33,6 @@ from decimojo.biguint.biguint import BigUInt
 from decimojo.errors import DeciMojoError
 import decimojo.str
 
-# Type aliases
-comptime BInt = BigInt10
-
 
 struct BigInt10(
     Absable,

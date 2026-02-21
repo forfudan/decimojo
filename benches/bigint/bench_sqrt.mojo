@@ -1,9 +1,9 @@
-"""Benchmarks for BigInt integer square root. Compares BigUInt, BigInt2, and Python isqrt."""
+"""Benchmarks for BigInt integer square root. Compares BigUInt, BigInt, and Python isqrt."""
 
 from decimojo.biguint.biguint import BigUInt
-from decimojo.bigint2.bigint2 import BigInt2
-import decimojo.bigint2.arithmetics
-import decimojo.bigint2.exponential
+from decimojo.bigint.bigint import BigInt
+import decimojo.bigint.arithmetics
+import decimojo.bigint.exponential
 from decimojo.tests import (
     BenchCase,
     load_bench_cases,
@@ -23,13 +23,13 @@ fn run_case(
     iterations: Int,
     log_file: PythonObject,
     mut sf_biguint: List[Float64],
-    mut sf_bigint2: List[Float64],
+    mut sf_bigint: List[Float64],
 ) raises:
     log_print("\nBenchmark:       " + bc.name, log_file)
     log_print("a: " + bc.a[:80] + (" ..." if len(bc.a) > 80 else ""), log_file)
 
     var m1a = BigUInt(bc.a)
-    var m2a = BigInt2(bc.a)
+    var m2a = BigInt(bc.a)
     var py = Python.import_module("builtins")
     var math_mod = Python.import_module("math")
     var pa = py.int(bc.a)
@@ -49,7 +49,7 @@ fn run_case(
             log_file,
         )
         log_print(
-            "BigInt2 result:  "
+            "BigInt result:  "
             + r2_str[:80]
             + (" ..." if len(r2_str) > 80 else ""),
             log_file,
@@ -83,13 +83,13 @@ fn run_case(
         var s1 = Float64(tp) / Float64(t1)
         var s2 = Float64(tp) / Float64(t2)
         sf_biguint.append(s1)
-        sf_bigint2.append(s2)
+        sf_bigint.append(s2)
 
         log_print("BigUInt:         " + String(t1) + " ns/iter", log_file)
-        log_print("BigInt2:         " + String(t2) + " ns/iter", log_file)
+        log_print("BigInt:         " + String(t2) + " ns/iter", log_file)
         log_print("Python:          " + String(tp) + " ns/iter", log_file)
         log_print("BigUInt speedup: " + String(s1) + "×", log_file)
-        log_print("BigInt2 speedup: " + String(s2) + "×", log_file)
+        log_print("BigInt speedup: " + String(s2) + "×", log_file)
     except e:
         log_print("Error: " + String(e), log_file)
         log_print("Skipping this case", log_file)
@@ -124,7 +124,7 @@ fn main() raises:
         sf1,
         "BigUInt",
         sf2,
-        "BigInt2",
+        "BigInt",
         iterations,
         log_file,
     )
