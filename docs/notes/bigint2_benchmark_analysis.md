@@ -356,6 +356,7 @@ overhead). For B-Z cases (divisor > 600 digits): consistently 1.2–1.8× Python
 **Status: ✅ Complete.** All 60 tests pass, B-Z dispatch enabled, code merged.
 
 **Remaining opportunities (future work):**
+
 - Barrett division (reciprocal via Newton) for very large balanced divisions
 - SIMD-ized Knuth D base case for additional constant-factor improvement
 - GMP-style asymmetric division for highly unbalanced operands (m >> n)
@@ -366,24 +367,44 @@ overhead). For B-Z cases (divisor > 600 digits): consistently 1.2–1.8× Python
 
 **Priority: HIGH** — BigInt2's biggest weakness vs BigInt10 (31.5× gap at 10000 digits)
 
-**Current:** `to_decimal_string()` converts to BigInt10 (base-10^9) first by
-repeated division. This is O(n²). At 10000 digits, BigInt2 is 0.37× vs Python
-while BigInt10 is 31.5×.
+**Status: ✅ DONE** (2026-02-21)
 
-**Target:** Divide-and-conquer base conversion:
+**Implementation:**
 
-1. Split the number in half by dividing by 10^(n/2)
-2. Recursively convert each half
-3. Concatenate results
+Divide-and-conquer base conversion replaces the O(n²) `to_bigint10()` path:
 
-This gives O(n·log²n) with Karatsuba multiplication.
+1. Precompute a power table: `powers[k] = 10^(2^k)` as BigInt2 values
+2. Find the largest `k` where `powers[k] ≤ n`
+3. `divmod(n, powers[k])` → split into high and low halves
+4. Recursively convert each half; zero-pad low part to exactly `2^k` digits
+5. Base case: simple repeated division by 10^9 for small sub-problems
 
-**Expected Impact:**
+Key optimizations:
 
-- to_string at 5000 digits: from 0.58× to 3–6× vs Python
-- to_string at 10000 digits: from 0.37× to 2–5× vs Python
+- **Dual threshold**: entry threshold = 128 words (only enter D&C when B-Z
+  division will help); base-case threshold = 64 words (within recursion)
+- **Lazy power table**: only build `powers[0..max_level-1]`, skipping the
+  unused largest entry (saves one expensive squaring)
+- **Leverages B-Z division**: the sub-quadratic Burnikel-Ziegler algorithm
+  from PR2 makes the recursive divisions fast
 
-**Prerequisite:** PR 2 (fast division) for the divide-by-power-of-10 step.
+**Results (vs Python `int.__str__()`):**
+
+| Size (digits) | Before D&C | After D&C | Improvement                       |
+| ------------- | ---------- | --------- | --------------------------------- |
+| 500           | 0.51×      | 0.56×     | (simple path, unchanged)          |
+| 1000          | 0.53×      | 0.57×     | no D&C overhead (entry threshold) |
+| 2000          | 0.86×      | 0.94×     | 1.1× faster                       |
+| 5000          | 1.06×      | **1.38×** | D&C + B-Z benefit                 |
+| 10000         | 0.88×      | **1.16×** | D&C + B-Z benefit                 |
+
+The "before D&C" column already includes B-Z division from PR2.
+At 5000+ digits, BigInt2 to_string now **beats Python**.
+
+**Remaining gap at medium sizes (100–1000 digits):** The simple O(n²) method
+is limited by per-word UInt64 division. Python uses GMP's assembly-optimized
+routines. Closing this gap would require sub-quadratic base conversion at
+smaller sizes or SIMD-optimized division loops.
 
 ---
 
@@ -467,8 +488,8 @@ sizes (100000+).
 | --- | ----------------------------- | ---------- | -------- | -------------------------- |
 | PR0 | Fix sqrt correctness bug      | ✅ **DONE** | CRITICAL | correctness (fixed)        |
 | PR1 | Karatsuba Multiplication      | ✅ **DONE** | HIGHEST  | mul 3.8× faster at scale   |
-| PR2 | Fast Division (Knuth D + B-Z) | WIP        | HIGHEST  | div, sqrt, to_string       |
-| PR3 | D&C to_string                 | TODO       | HIGH     | to_string (31× gap!)       |
+| PR2 | Fast Division (Knuth D + B-Z) | ✅ **DONE** | HIGHEST  | div, sqrt, to_string       |
+| PR3 | D&C to_string                 | ✅ **DONE** | HIGH     | to_string: 1.38× at 5K     |
 | PR4 | D&C from_string               | TODO       | MEDIUM   | from_string at scale       |
 | PR5 | Bitwise AND/OR/XOR/NOT        | TODO       | MEDIUM   | API completeness           |
 | PR6 | GCD + Modular Arithmetic      | TODO       | MEDIUM   | applications               |

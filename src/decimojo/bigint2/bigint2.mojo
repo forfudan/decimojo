@@ -531,7 +531,8 @@ struct BigInt2(
     fn to_decimal_string(self, line_width: Int = 0) -> String:
         """Returns the decimal string representation of the BigInt2.
 
-        Converts to BigInt10 (base-10^9) and leverages its string formatting.
+        Uses divide-and-conquer base conversion for large numbers (O(M(n)·log n))
+        and simple repeated division by 10^9 for small numbers (O(n²)).
 
         Args:
             line_width: The maximum line width for the string representation.
@@ -540,7 +541,32 @@ struct BigInt2(
         Returns:
             The decimal string (e.g. "-12345").
         """
-        var result = String(self.to_bigint10())
+        if self.is_zero():
+            return String("0")
+
+        # Get effective word count (excluding leading zeros)
+        var eff_words = len(self.words)
+        while eff_words > 1 and self.words[eff_words - 1] == 0:
+            eff_words -= 1
+
+        # Choose conversion strategy based on magnitude size
+        var magnitude_str: String
+        if eff_words <= _DC_TO_STR_ENTRY_THRESHOLD:
+            magnitude_str = _magnitude_to_decimal_simple(self.words, eff_words)
+        else:
+            try:
+                magnitude_str = _magnitude_to_decimal_dc(self.words, eff_words)
+            except:
+                # Fallback to simple O(n²) method if D&C fails
+                magnitude_str = _magnitude_to_decimal_simple(
+                    self.words, eff_words
+                )
+
+        var result: String
+        if self.sign:
+            result = String("-") + magnitude_str
+        else:
+            result = magnitude_str^
 
         if line_width > 0:
             var start = 0
@@ -1168,3 +1194,215 @@ fn _add_inplace_by_uint32(mut x: BigInt2, y: UInt32):
 
     if carry > 0:
         x.words.append(UInt32(carry))
+
+
+# ===----------------------------------------------------------------------=== #
+# Divide-and-conquer base conversion (binary → decimal string)
+# ===----------------------------------------------------------------------=== #
+
+# The threshold (in UInt32 words) below which we use the simple O(n²) method
+# of repeated division by 10^9. Above this, the D&C method is used.
+# D&C only wins when the internal divisions can use the sub-quadratic
+# Burnikel-Ziegler algorithm (CUTOFF_BURNIKEL_ZIEGLER = 64 words).
+# Since the D&C divisor is roughly half the dividend, we need the dividend
+# to be ≥ 2 × 64 = 128 words for B-Z to kick in at the first split.
+#
+# We use TWO thresholds:
+# - _DC_TO_STR_ENTRY_THRESHOLD (128): gates the top-level decision to enter D&C
+# - _DC_TO_STR_BASE_THRESHOLD (64): base-case size within the recursion
+comptime _DC_TO_STR_ENTRY_THRESHOLD = 128
+comptime _DC_TO_STR_BASE_THRESHOLD = 64
+
+
+fn _magnitude_to_decimal_simple(words: List[UInt32], eff_words: Int) -> String:
+    """Converts a magnitude (unsigned word list) to a decimal string using
+    the simple O(n²) method of repeated division by 10^9.
+
+    Args:
+        words: The magnitude in little-endian UInt32 words.
+        eff_words: Effective number of words (excluding trailing zeros).
+
+    Returns:
+        The unsigned decimal string (no sign prefix).
+    """
+    if eff_words == 1 and words[0] == 0:
+        return String("0")
+
+    # Copy the words so we can modify in-place during division
+    var dividend = List[UInt32](capacity=eff_words)
+    for i in range(eff_words):
+        dividend.append(words[i])
+
+    # Extract base-10^9 chunks via repeated division
+    var chunks = List[UInt32]()
+
+    while True:
+        # Check if dividend is zero
+        var is_zero = True
+        for i in range(len(dividend)):
+            if dividend[i] != 0:
+                is_zero = False
+                break
+        if is_zero:
+            break
+
+        # Divide by 10^9 and collect remainder
+        var remainder: UInt64 = 0
+        for i in range(len(dividend) - 1, -1, -1):
+            var temp = (remainder << 32) + UInt64(dividend[i])
+            dividend[i] = UInt32(temp // 1_000_000_000)
+            remainder = temp % 1_000_000_000
+
+        # Strip leading zeros from dividend
+        while len(dividend) > 1 and dividend[-1] == 0:
+            dividend.shrink(len(dividend) - 1)
+
+        chunks.append(UInt32(remainder))
+
+    if len(chunks) == 0:
+        return String("0")
+
+    # Build string from most-significant chunk first
+    var result = String()
+
+    for i in range(len(chunks) - 1, -1, -1):
+        var chunk_val = Int(chunks[i])
+        if i == len(chunks) - 1:
+            # Most significant chunk: no zero-padding
+            result += String(chunk_val)
+        else:
+            # Other chunks: zero-pad to exactly 9 digits
+            var chunk_str = String(chunk_val)
+            var pad_needed = 9 - len(chunk_str)
+            for _ in range(pad_needed):
+                result += "0"
+            result += chunk_str
+
+    return result^
+
+
+fn _magnitude_to_decimal_dc(
+    words: List[UInt32], eff_words: Int
+) raises -> String:
+    """Converts a magnitude to a decimal string using divide-and-conquer
+    base conversion. Complexity: O(M(n) · log n) where M(n) is the
+    multiplication cost.
+
+    Algorithm:
+    1. Precompute a power table: powers[k] = 10^(2^k) as BigInt2 values.
+    2. Find the largest k such that powers[k] ≤ the number.
+    3. divmod(number, powers[k]) → (high, low).
+    4. The low part has exactly 2^k decimal digits (zero-padded).
+    5. Recursively convert high and low halves.
+
+    Args:
+        words: The magnitude in little-endian UInt32 words.
+        eff_words: Effective number of words (excluding trailing zeros).
+
+    Returns:
+        The unsigned decimal string (no sign prefix).
+    """
+    # Estimate decimal digits from bit length
+    # bit_length = (eff_words - 1) * 32 + bits_in_top_word
+    var top_word = words[eff_words - 1]
+    var bits_in_top = 32
+    var probe: UInt32 = 1 << 31
+    while probe != 0 and (top_word & probe) == 0:
+        bits_in_top -= 1
+        probe >>= 1
+    var total_bits = (eff_words - 1) * 32 + bits_in_top
+
+    # Conservative overestimate: digits <= floor(bits * log10(2)) + 1
+    # log10(2) ≈ 0.30103 ≈ 78/259 (slightly over)
+    var est_digits = (total_bits * 78 + 258) // 259 + 1
+
+    # Find max_level such that 2^max_level >= est_digits.
+    # We only need powers[0..max_level-1] because 10^(2^max_level) > n,
+    # so the first split is always at a level < max_level.
+    var max_level = 0
+    while (1 << max_level) < est_digits:
+        max_level += 1
+
+    # Build power table: powers[k] = 10^(2^k) as BigInt2
+    # powers[0] = 10^1, powers[1] = 10^2, powers[2] = 10^4, ...
+    # Only build up to max_level - 1 (the highest level that can be used).
+    var num_powers = max_level  # indices 0 to max_level - 1
+    var power_table = List[BigInt2](capacity=num_powers)
+    var cur = BigInt2(10)
+    power_table.append(cur.copy())
+    for _ in range(1, num_powers):
+        cur = cur * cur
+        power_table.append(cur.copy())
+
+    # Create unsigned BigInt2 from the magnitude words
+    var trimmed = List[UInt32](capacity=eff_words)
+    for i in range(eff_words):
+        trimmed.append(words[i])
+    var n = BigInt2(raw_words=trimmed^, sign=False)
+
+    # Run the recursive D&C conversion
+    return _dc_to_str_recursive(n, power_table, num_powers - 1)
+
+
+fn _dc_to_str_recursive(
+    n: BigInt2,
+    power_table: List[BigInt2],
+    max_level: Int,
+) raises -> String:
+    """Recursively converts a non-negative BigInt2 to decimal string
+    using the precomputed power table.
+
+    At each level, divides by powers[level] = 10^(2^level) to split the number
+    into a high part and a low part with exactly 2^level decimal digits.
+
+    Args:
+        n: The non-negative number to convert.
+        power_table: Precomputed table where powers[k] = 10^(2^k).
+        max_level: Maximum level accessible in power_table for this subproblem.
+
+    Returns:
+        The decimal string representation.
+    """
+    # Base case: small enough for simple O(n²) conversion
+    var eff = len(n.words)
+    while eff > 1 and n.words[eff - 1] == 0:
+        eff -= 1
+
+    if eff <= _DC_TO_STR_BASE_THRESHOLD:
+        return _magnitude_to_decimal_simple(n.words, eff)
+
+    # Find the largest level k such that powers[k] <= n
+    var level = -1
+    for k in range(min(max_level + 1, len(power_table))):
+        if n >= power_table[k]:
+            level = k
+        else:
+            break
+
+    if level < 0:
+        # n < 10, use simple method
+        return _magnitude_to_decimal_simple(n.words, eff)
+
+    # Divide n by powers[level] = 10^(2^level)
+    var qr = decimojo.bigint2.arithmetics.floor_divmod(n, power_table[level])
+    var q = qr[0].copy()
+    var r = qr[1].copy()
+
+    # The low part has exactly 2^level decimal digits
+    var low_width = 1 << level
+
+    # Recurse on high and low parts
+    var high_str = _dc_to_str_recursive(q, power_table, level - 1)
+    var low_str = _dc_to_str_recursive(r, power_table, level - 1)
+
+    # Zero-pad low_str to exactly low_width digits
+    var padding = low_width - len(low_str)
+    if padding <= 0:
+        return high_str + low_str
+
+    # Build result with zero-padded low part
+    var result = high_str
+    for _ in range(padding):
+        result += "0"
+    result += low_str
+    return result^
