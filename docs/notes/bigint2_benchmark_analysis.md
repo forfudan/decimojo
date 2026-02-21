@@ -59,7 +59,7 @@ Values >1× mean faster than Python; <1× mean slower than Python.
    division (~1.24×) is barely faster than Python. Knuth Algorithm D or
    Burnikel-Ziegler would be the next major win.
 
-5. **to_string is greatly improved.** With PR4e fast paths, small numbers
+5. **to_string is greatly improved.** With PR4d fast paths, small numbers
    (≤20 digits) now achieve 15–29× Python. At 2000+ digits, D&C base conversion
    beats Python (1.0–1.38×). Medium range (100–1000 digits) remains 0.57–0.79×,
    limited by O(n²) simple-path division. BigInt10 still dominates at scale
@@ -210,7 +210,7 @@ time. At large sizes (1000+), the O(n²) base-10 → base-2^32 conversion domina
 
 **to_string by size:**
 
-| Size         | BigInt2 vs Python | Before PR4e | BigInt10 vs Python |
+| Size         | BigInt2 vs Python | Before PR4d | BigInt10 vs Python |
 | ------------ | :---------------: | :---------: | :----------------: |
 | 2 digits     |     **29.0×**     |    3.3×     |       19.3×        |
 | 9 digits     |     **20.0×**     |    2.2×     |       15.4×        |
@@ -224,7 +224,7 @@ time. At large sizes (1000+), the O(n²) base-10 → base-2^32 conversion domina
 | 5000 digits  |     **1.38×**     |    0.6×     |       24.4×        |
 | 10000 digits |     **1.17×**     |    0.4×     |       34.5×        |
 
-**PR4e gains:** Fast paths for 1-word and 2-word values give 15–29× at ≤20 digits.
+**PR4d gains:** Fast paths for 1-word and 2-word values give 15–29× at ≤20 digits.
 D&C base conversion (PR3) makes 2000+ digits beat Python. Medium range (100–1000)
 remains 0.57–0.79×, limited by O(n²) repeated division in the simple path.
 BigInt10's to_string advantage grows with size (trivial in base-10^9).
@@ -412,7 +412,7 @@ At 5000+ digits, BigInt2 to_string now **beats Python**.
 
 **Remaining gap at medium sizes (100–1000 digits):** The simple O(n²) method
 is limited by per-word UInt64 division. Python uses GMP's assembly-optimized
-routines. See PR4e for micro-optimizations that partially close this gap.
+routines. See PR4d for micro-optimizations that partially close this gap.
 
 ---
 
@@ -505,9 +505,9 @@ Optimized `_magnitude_to_decimal_simple` and the D&C string-building path:
 
 **Simple path (`_magnitude_to_decimal_simple`) optimizations:**
 
-- **Fast path for 1-word values** (≤9 digits): `return String(Int(words[0]))` —
+- **Fast path for 1-word values** (≤10 digits): `return String(Int(words[0]))` —
   delegates entirely to native int-to-string, zero BigInt2 overhead
-- **Fast path for 2-word values** (≤19 digits): combines into UInt64 and uses
+- **Fast path for 2-word values** (≤20 digits): combines into UInt64 and uses
   `return String(combined_value)` — single native conversion
 - **Raw pointer inner loop**: `var dp = dividend.unsafe_ptr()` for O(1) access
   to dividend words during repeated division, eliminating bounds-check overhead
@@ -537,7 +537,7 @@ Optimized `_magnitude_to_decimal_simple` and the D&C string-building path:
 
 **Result (to_string speedup vs Python `str(int_value)`):**
 
-| Size         | Before PR4e | After PR4e | Improvement            |
+| Size         | Before PR4d | After PR4d | Improvement            |
 | ------------ | ----------- | ---------- | ---------------------- |
 | 2 digits     | 3.3×        | **29.0×**  | **+780%** (fast path)  |
 | 9 digits     | 2.2×        | **20.0×**  | **+810%** (fast path)  |
@@ -605,21 +605,22 @@ Toom-Cook / NTT where similar infrastructure is needed.
 
 ---
 
-### PR 6: Bitwise Operations (AND, OR, XOR, NOT)
+### PR 6: Bitwise Operations (AND, OR, XOR, NOT) ✅ DONE
 
 **Priority: MEDIUM** — Completes the integer API surface
 
-**Current:** Only shift operations implemented. AND/OR/XOR/NOT are stubbed.
+**Status:** Implemented and fully tested.
 
-**Target:** Implement full bitwise operations using two's-complement semantics
-for negative numbers (Python-compatible).
+**Implementation:**
 
-**Tasks:**
-
-1. Create `bitwise.mojo` module
-2. Implement `__and__`, `__or__`, `__xor__`, `__invert__`
-3. Handle negative numbers via two's-complement conversion
-4. Add comprehensive tests comparing against Python
+- Created `bitwise.mojo` module with parametric `_binary_bitwise_op[op]` helper
+- Python-compatible two's complement semantics for negative numbers
+- Fast path for both non-negative operands (direct word-by-word, no TC conversion)
+- General path: inline TC conversion (subtract 1 from magnitude, bitwise NOT)
+- Dunders: `__and__`, `__or__`, `__xor__`, `__invert__`, `__iand__`, `__ior__`, `__ixor__`
+- Each binary op has `(Self, Self)` and `(Self, Int)` overloads
+- 31 tests: NOT, AND, OR, XOR (positive/negative/mixed), augmented assignment,
+  De Morgan's laws, commutativity, identities, word-boundary values, Python cross-checks
 
 ---
 
@@ -672,8 +673,8 @@ sizes (100000+).
 | PR4b | D&C from_string                 | ✅ **DONE** | MEDIUM      | from_string at scale       |
 | PR4c | from_string micro-optimizations | ✅ **DONE** | MEDIUM      | all sizes ≥ 0.98× Python   |
 | PR4d | to_string micro-optimizations   | ✅ **DONE** | MEDIUM      | to_string 0.97×→6.03× avg  |
-| PR5  | True in-place iadd/isub/imul    | TODO       | MEDIUM-HIGH | perf infra, readability    |
-| PR6  | Bitwise AND/OR/XOR/NOT          | TODO       | MEDIUM      | API completeness           |
+| PR5  | True in-place iadd/isub/imul    | ✅ **DONE** | MEDIUM-HIGH | perf infra, readability    |
+| PR6  | Bitwise AND/OR/XOR/NOT          | ✅ **DONE** | MEDIUM      | API completeness           |
 | PR7  | GCD + Modular Arithmetic        | TODO       | MEDIUM      | applications               |
 | PR8  | Reassign BInt → BigInt2         | TODO       | LOW         | ergonomics                 |
 | PR9  | Toom-Cook / NTT                 | TODO       | LOW         | extreme sizes (50000+ dig) |
