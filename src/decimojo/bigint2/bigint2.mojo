@@ -35,9 +35,10 @@ from memory import UnsafePointer, memcpy
 import decimojo.bigint2.arithmetics
 import decimojo.bigint2.comparison
 import decimojo.bigint2.exponential
+import decimojo.str
 from decimojo.bigint10.bigint10 import BigInt10
 from decimojo.biguint.biguint import BigUInt
-from decimojo.errors import DeciMojoError
+from decimojo.errors import DeciMojoError, ConversionError
 
 # Type aliases
 comptime BInt2 = BigInt2
@@ -320,73 +321,92 @@ struct BigInt2(
 
     @staticmethod
     fn from_string(value: String) raises -> Self:
-        """Creates a BigInt2 from a decimal string representation.
-        Supports optional leading '-' or '+' sign.
+        """Creates a BigInt2 from a string representation.
+        The string is normalized with `decimojo.str.parse_numeric_string()`.
+
+        Supports signs, commas, underscores, spaces, scientific notation,
+        and decimal points (the fractional part must be zero for integers).
 
         Uses divide-and-conquer base conversion for large numbers
         (O(M(n)·log n)) and simple multiply-and-add for small numbers (O(n²)).
 
         Args:
-            value: The decimal string (e.g. "12345", "-98765").
+            value: The string representation (e.g. "12345", "-98765",
+                "1_000_000", "1.23e5", "1,234,567").
 
         Returns:
             The BigInt2 representation.
 
         Raises:
-            Error: If the string is empty or contains non-digit characters.
+            Error: If the string is empty, contains invalid characters,
+                or represents a non-integer value.
         """
-        var s = value.strip()
-        var bytes = s.as_bytes()
-        var n = len(bytes)
+        # Use the shared string parser for format handling
+        _tuple = decimojo.str.parse_numeric_string(value)
+        var ref coef: List[UInt8] = _tuple[0]
+        var scale: Int = _tuple[1]
+        var sign: Bool = _tuple[2]
 
-        if n == 0:
-            raise Error("BigInt2.from_string(): Empty string")
-
-        var sign = False
-        var start = 0
-        # Check for sign character: '-' = 45, '+' = 43
-        if bytes[0] == 45:  # '-'
-            sign = True
-            start = 1
-        elif bytes[0] == 43:  # '+'
-            start = 1
-
-        if start >= n:
-            raise Error("BigInt2.from_string(): No digits after sign")
-
-        # Skip leading zeros (48 = '0')
-        while start < n - 1 and bytes[start] == 48:
-            start += 1
-
-        # Check for zero
-        if start == n - 1 and bytes[start] == 48:
+        # Check if the number is zero
+        if len(coef) == 1 and coef[0] == UInt8(0):
             return Self()
 
-        var digit_count = n - start
+        # Handle scale: positive scale means fractional digits exist.
+        # For BigInt2 (integer type), the fractional part must be zero.
+        if scale > 0:
+            if scale >= len(coef):
+                raise Error(
+                    ConversionError(
+                        file="src/decimojo/bigint2/bigint2.mojo",
+                        function="BigInt2.from_string(value: String)",
+                        message=(
+                            'The input value "'
+                            + value
+                            + '" is not an integer.\n'
+                            + "The scale is larger than the number of digits."
+                        ),
+                        previous_error=None,
+                    )
+                )
+            # Check that the fractional digits are all zero
+            for i in range(1, scale + 1):
+                if coef[-i] != 0:
+                    raise Error(
+                        ConversionError(
+                            file="src/decimojo/bigint2/bigint2.mojo",
+                            function="BigInt2.from_string(value: String)",
+                            message=(
+                                'The input value "'
+                                + value
+                                + '" is not an integer.\n'
+                                + "The fractional part is not zero."
+                            ),
+                            previous_error=None,
+                        )
+                    )
+            # Remove fractional zeros from coefficient
+            coef.resize(len(coef) - scale, UInt8(0))
 
-        # Validate all characters are digits before conversion
-        for i in range(start, n):
-            var code = bytes[i]
-            if code < 48 or code > 57:  # '0' = 48, '9' = 57
-                raise Error("BigInt2.from_string(): Invalid character")
+        # Handle negative scale: it means trailing zeros to append.
+        # e.g. "1.234e8" -> coef=[1,2,3,4], scale=-4, meaning 12340000
+        if scale < 0:
+            var zeros_to_add = -scale
+            for _ in range(zeros_to_add):
+                coef.append(0)
 
-        # Copy digit bytes into a List for the conversion functions
-        var digit_bytes = List[UInt8](capacity=digit_count)
-        for i in range(start, n):
-            digit_bytes.append(bytes[i])
+        var digit_count = len(coef)
 
-        # Choose conversion strategy based on digit count
+        # coef already contains digit values 0-9, pass directly.
+        # Choose conversion strategy based on digit count.
         var result: Self
         if digit_count <= _DC_FROM_STR_ENTRY_THRESHOLD:
-            result = _from_decimal_digits_simple(digit_bytes, 0, digit_count)
+            result = _from_decimal_digits_simple(coef, 0, digit_count)
         else:
             try:
-                result = _from_decimal_digits_dc(digit_bytes, 0, digit_count)
+                result = _from_decimal_digits_dc(coef, 0, digit_count)
             except e:
                 # Fallback to simple O(n²) method if D&C raises an Error
-                result = _from_decimal_digits_simple(
-                    digit_bytes, 0, digit_count
-                )
+                result = _from_decimal_digits_simple(coef, 0, digit_count)
 
         result.sign = sign
         return result^
@@ -1249,11 +1269,11 @@ comptime _DC_FROM_STR_BASE_THRESHOLD = 512
 fn _from_decimal_digits_simple(
     digits: List[UInt8], start: Int, end: Int
 ) -> BigInt2:
-    """Converts a range of ASCII digit bytes to a BigInt2 using the simple
+    """Converts a range of digit values to a BigInt2 using the simple
     O(n²) multiply-and-add method (9 digits at a time).
 
     Args:
-        digits: List of ASCII byte values ('0'=48...'9'=57).
+        digits: List of digit values (0-9).
         start: Start index (inclusive) in the digits list.
         end: End index (exclusive) in the digits list.
 
@@ -1269,10 +1289,10 @@ fn _from_decimal_digits_simple(
         # Determine chunk size (up to 9 digits)
         var chunk_size = min(9, end - i)
 
-        # Parse the chunk to an integer from byte codes
+        # Parse the chunk to an integer from digit values 0-9
         var chunk_val: UInt32 = 0
         for j in range(chunk_size):
-            chunk_val = chunk_val * 10 + UInt32(digits[i + j] - 48)
+            chunk_val = chunk_val * 10 + UInt32(digits[i + j])
 
         # Compute the multiplier: 10^chunk_size
         var multiplier: UInt32 = 1
@@ -1290,7 +1310,7 @@ fn _from_decimal_digits_simple(
 fn _from_decimal_digits_dc(
     digits: List[UInt8], start: Int, end: Int
 ) raises -> BigInt2:
-    """Converts a range of ASCII digit bytes to a BigInt2 using
+    """Converts a range of digit values to a BigInt2 using
     divide-and-conquer base conversion. Complexity: O(M(n) · log n)
     where M(n) is the multiplication cost.
 
@@ -1302,7 +1322,7 @@ fn _from_decimal_digits_dc(
     4. Combine: result = high * powers[k] + low.
 
     Args:
-        digits: List of ASCII byte values ('0'=48...'9'=57).
+        digits: List of digit values (0-9).
         start: Start index (inclusive) in the digits list.
         end: End index (exclusive) in the digits list.
 
@@ -1343,7 +1363,7 @@ fn _dc_from_str_recursive(
     power_table: List[BigInt2],
     max_level: Int,
 ) raises -> BigInt2:
-    """Recursively converts a range of ASCII digit bytes to BigInt2
+    """Recursively converts a range of digit values to BigInt2
     using the precomputed power table.
 
     At each level, splits the digit range into high and low parts where
@@ -1351,7 +1371,7 @@ fn _dc_from_str_recursive(
         result = high * 10^(2^level) + low
 
     Args:
-        digits: List of ASCII byte values.
+        digits: List of digit values (0-9).
         start: Start index (inclusive).
         end: End index (exclusive).
         power_table: Precomputed table where powers[k] = 10^(2^k).

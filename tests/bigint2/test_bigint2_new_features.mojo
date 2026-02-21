@@ -651,5 +651,88 @@ fn test_from_string_large_dc() raises:
     )
 
 
+# ===----------------------------------------------------------------------=== #
+# Test: from_string with various string formats (via parse_numeric_string)
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_from_string_with_commas() raises:
+    """Test from_string handles commas as thousand separators."""
+    testing.assert_equal(String(BigInt2("1,234,567")), "1234567")
+    testing.assert_equal(String(BigInt2("-1,000,000")), "-1000000")
+    testing.assert_equal(
+        String(BigInt2("123,456,789,012,345")), "123456789012345"
+    )
+
+
+fn test_from_string_with_underscores() raises:
+    """Test from_string handles underscores as digit separators."""
+    testing.assert_equal(String(BigInt2("1_000_000")), "1000000")
+    testing.assert_equal(String(BigInt2("-99_999")), "-99999")
+    testing.assert_equal(String(BigInt2("1_2_3_4_5")), "12345")
+
+
+fn test_from_string_with_spaces() raises:
+    """Test from_string handles spaces in the string."""
+    testing.assert_equal(String(BigInt2(" 42 ")), "42")
+    testing.assert_equal(String(BigInt2("1 000 000")), "1000000")
+    testing.assert_equal(String(BigInt2("- 123")), "-123")
+
+
+fn test_from_string_with_scientific_notation() raises:
+    """Test from_string handles scientific/exponential notation."""
+    # 1.23e5 = 123000
+    testing.assert_equal(String(BigInt2("1.23e5")), "123000")
+    # 5e10 = 50000000000
+    testing.assert_equal(String(BigInt2("5e10")), "50000000000")
+    # -2.5E4 = -25000
+    testing.assert_equal(String(BigInt2("-2.5E4")), "-25000")
+    # 1e0 = 1
+    testing.assert_equal(String(BigInt2("1e0")), "1")
+    # 100e2 = 10000
+    testing.assert_equal(String(BigInt2("100e2")), "10000")
+
+
+fn test_from_string_with_decimal_point_integer() raises:
+    """Test from_string with decimal point where fractional part is zero."""
+    testing.assert_equal(String(BigInt2("123.0")), "123")
+    testing.assert_equal(String(BigInt2("100.00")), "100")
+    testing.assert_equal(String(BigInt2("-42.000")), "-42")
+
+
+fn test_from_string_non_integer_raises() raises:
+    """Test from_string raises error for non-integer values."""
+    var raised = False
+    try:
+        _ = BigInt2("123.456")
+    except:
+        raised = True
+    testing.assert_true(raised, msg="Should raise for non-integer '123.456'")
+
+    raised = False
+    try:
+        _ = BigInt2(
+            "1.5e2"
+        )  # 150.0 is integer... wait, 1.5e2 = 150, scale=1-2=-1, coef=[1,5], that's actually integer
+    except:
+        raised = True
+    # 1.5e2 = 150 which IS an integer, should NOT raise
+    testing.assert_false(raised, msg="1.5e2 = 150 should not raise")
+
+    raised = False
+    try:
+        _ = BigInt2("1.23e1")  # 12.3, not integer
+    except:
+        raised = True
+    testing.assert_true(raised, msg="Should raise for non-integer '1.23e1'")
+
+
+fn test_from_string_plus_sign() raises:
+    """Test from_string handles explicit positive sign."""
+    testing.assert_equal(String(BigInt2("+42")), "42")
+    testing.assert_equal(String(BigInt2("+0")), "0")
+    testing.assert_equal(String(BigInt2("+1,000")), "1000")
+
+
 fn main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

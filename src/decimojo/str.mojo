@@ -65,16 +65,6 @@ fn parse_numeric_string(
     if value_bytes_len == 0:
         raise Error("Error in `parse_numeric_string`: Empty string.")
 
-    # Check for non-ASCII characters (each non-ASCII char is multi-byte)
-    for byte in value_bytes:
-        if byte > 127:
-            raise Error(
-                String(
-                    "There are invalid characters in the string of the"
-                    " number: {}"
-                ).format(value)
-            )
-
     # Yuhao's notes:
     # We scan each char in the string input.
     var mantissa_sign_read = False
@@ -95,15 +85,54 @@ fn parse_numeric_string(
     for code_ptr in value_bytes:
         ref code = code_ptr
 
+        # Check digits first (most common case for performance)
+        # If the char is a digit 1 - 9
+        if code >= 49 and code <= 57:
+            unexpected_end_char = False
+
+            # Exponent part
+            if exponent_notation_read:
+                # exponent_start = True
+                raw_exponent = raw_exponent * 10 + Int(code - 48)
+
+            # Mantissa part
+            else:
+                mantissa_significant_start = True
+                mantissa_start = True
+                coef.append(code - 48)
+                if decimal_point_read:
+                    scale += 1
+
+        # If the char is a digit 0
+        elif code == 48:
+            unexpected_end_char = False
+
+            # Exponent part
+            if exponent_notation_read:
+                exponent_sign_read = True
+                # exponent_start = True
+                raw_exponent = raw_exponent * 10
+
+            # Mantissa part
+            else:
+                mantissa_sign_read = True
+                mantissa_start = True
+
+                if mantissa_significant_start:
+                    coef.append(0)
+
+                if decimal_point_read:
+                    scale += 1
+
         # If the char is " ", skip it
-        if code == 32:
+        elif code == 32:
             pass
 
         # If the char is "," or "_", skip it
         elif code == 44 or code == 95:
             unexpected_end_char = True
-        # If the char is "-"
 
+        # If the char is "-"
         elif code == 45:
             unexpected_end_char = True
             if exponent_sign_read:
@@ -128,8 +157,8 @@ fn parse_numeric_string(
                 raise Error("Plus sign can only appear once at the begining.")
             else:
                 mantissa_sign_read = True
-        # If the char is "."
 
+        # If the char is "."
         elif code == 46:
             unexpected_end_char = False
             if decimal_point_read:
@@ -137,8 +166,8 @@ fn parse_numeric_string(
             else:
                 decimal_point_read = True
                 mantissa_sign_read = True
-        # If the char is "e" or "E"
 
+        # If the char is "e" or "E"
         elif code == 101 or code == 69:
             unexpected_end_char = True
             if exponent_notation_read:
@@ -147,44 +176,6 @@ fn parse_numeric_string(
                 raise Error("Exponential notation must follow a number.")
             else:
                 exponent_notation_read = True
-
-        # If the char is a digit 0
-        elif code == 48:
-            unexpected_end_char = False
-
-            # Exponent part
-            if exponent_notation_read:
-                exponent_sign_read = True
-                # exponent_start = True
-                raw_exponent = raw_exponent * 10
-
-            # Mantissa part
-            else:
-                mantissa_sign_read = True
-                mantissa_start = True
-
-                if mantissa_significant_start:
-                    coef.append(0)
-
-                if decimal_point_read:
-                    scale += 1
-
-        # If the char is a digit 1 - 9
-        elif code >= 49 and code <= 57:
-            unexpected_end_char = False
-
-            # Exponent part
-            if exponent_notation_read:
-                # exponent_start = True
-                raw_exponent = raw_exponent * 10 + Int(code - 48)
-
-            # Mantissa part
-            else:
-                mantissa_significant_start = True
-                mantissa_start = True
-                coef.append(code - 48)
-                if decimal_point_read:
-                    scale += 1
 
         else:
             raise Error(
