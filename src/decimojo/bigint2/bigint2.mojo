@@ -323,6 +323,9 @@ struct BigInt2(
         """Creates a BigInt2 from a decimal string representation.
         Supports optional leading '-' or '+' sign.
 
+        Uses divide-and-conquer base conversion for large numbers
+        (O(M(n)·log n)) and simple multiply-and-add for small numbers (O(n²)).
+
         Args:
             value: The decimal string (e.g. "12345", "-98765").
 
@@ -359,36 +362,31 @@ struct BigInt2(
         if start == n - 1 and bytes[start] == 48:
             return Self()
 
-        # Parse the decimal string by processing groups of 9 digits at a time,
-        # building up the binary representation using multiply-and-add.
-        # This converts from base-10 to base-2^32.
-        #
-        # Algorithm: for each decimal digit d, result = result * 10 + d
-        # We process 9 digits at a time: result = result * 10^9 + (9-digit chunk)
-        var result = Self()
-        var i = start
-        while i < n:
-            # Determine chunk size (up to 9 digits)
-            var chunk_size = min(9, n - i)
+        var digit_count = n - start
 
-            # Parse the chunk to an integer from byte codes
-            var chunk_val: UInt32 = 0
-            for j in range(chunk_size):
-                var code = bytes[i + j]
-                if code < 48 or code > 57:  # '0' = 48, '9' = 57
-                    raise Error("BigInt2.from_string(): Invalid character")
-                chunk_val = chunk_val * 10 + UInt32(code - 48)
+        # Validate all characters are digits before conversion
+        for i in range(start, n):
+            var code = bytes[i]
+            if code < 48 or code > 57:  # '0' = 48, '9' = 57
+                raise Error("BigInt2.from_string(): Invalid character")
 
-            # Compute the multiplier: 10^chunk_size
-            var multiplier: UInt32 = 1
-            for _ in range(chunk_size):
-                multiplier *= 10
+        # Copy digit bytes into a List for the conversion functions
+        var digit_bytes = List[UInt8](capacity=digit_count)
+        for i in range(start, n):
+            digit_bytes.append(bytes[i])
 
-            # result = result * multiplier + chunk_val
-            _multiply_inplace_by_uint32(result, multiplier)
-            _add_inplace_by_uint32(result, chunk_val)
-
-            i += chunk_size
+        # Choose conversion strategy based on digit count
+        var result: Self
+        if digit_count <= _DC_FROM_STR_ENTRY_THRESHOLD:
+            result = _from_decimal_digits_simple(digit_bytes, 0, digit_count)
+        else:
+            try:
+                result = _from_decimal_digits_dc(digit_bytes, 0, digit_count)
+            except e:
+                # Fallback to simple O(n²) method if D&C raises an Error
+                result = _from_decimal_digits_simple(
+                    digit_bytes, 0, digit_count
+                )
 
         result.sign = sign
         return result^
@@ -556,8 +554,8 @@ struct BigInt2(
         else:
             try:
                 magnitude_str = _magnitude_to_decimal_dc(self.words, eff_words)
-            except:
-                # Fallback to simple O(n²) method if D&C fails
+            except e:
+                # Fallback to simple O(n²) method if D&C raises an Error
                 magnitude_str = _magnitude_to_decimal_simple(
                     self.words, eff_words
                 )
@@ -1196,6 +1194,204 @@ fn _add_inplace_by_uint32(mut x: BigInt2, y: UInt32):
         x.words.append(UInt32(carry))
 
 
+fn _multiply_add_inplace(mut x: BigInt2, mul: UInt32, add: UInt32):
+    """Computes x = x * mul + add in a single pass over the word array.
+
+    Fuses the multiply-by-scalar and add-scalar operations into one O(n) pass
+    instead of two separate O(n) passes, halving memory traffic. This is the
+    inner loop of the simple base-conversion path (9 digits at a time).
+
+    Correctness: at each word position i,
+        product = x.words[i] * mul + carry
+    where carry starts at `add` and propagates upward. This correctly computes
+    x * mul + add because the carry chain handles both the multiplication
+    carry and the initial addend.
+
+    Overflow safety: product <= (2^32-1)*(2^32-1) + carry. Since carry < 2^32
+    after the first step, product < 2^64, fitting in UInt64.
+
+    Args:
+        x: The BigInt2 to modify in-place.
+        mul: The UInt32 multiplier (e.g. 10^9).
+        add: The UInt32 addend (e.g. a 9-digit chunk value).
+    """
+    if mul == 0:
+        x.words = [UInt32(add)]
+        x.sign = False
+        return
+
+    var carry: UInt64 = UInt64(add)
+    for i in range(len(x.words)):
+        var product = UInt64(x.words[i]) * UInt64(mul) + carry
+        x.words[i] = UInt32(product & 0xFFFF_FFFF)
+        carry = product >> 32
+
+    if carry > 0:
+        x.words.append(UInt32(carry))
+
+
+# ===----------------------------------------------------------------------=== #
+# Divide-and-conquer base conversion (decimal string → binary)
+# ===----------------------------------------------------------------------=== #
+
+# Thresholds for D&C from_string, measured in decimal digit count.
+# The simple multiply-and-add method has very low constant factors
+# (sequential UInt32 operations), so D&C only wins at much larger sizes
+# than for to_string (where the saved divisions are each expensive).
+# Entry threshold: only enter D&C when the digit count is large enough
+# that the O(n²) simple method is significantly slower than the O(M(n)·log n)
+# D&C method despite the power-table construction overhead.
+# Base threshold: within the recursion, switch to simple method.
+comptime _DC_FROM_STR_ENTRY_THRESHOLD = 10000
+comptime _DC_FROM_STR_BASE_THRESHOLD = 512
+
+
+fn _from_decimal_digits_simple(
+    digits: List[UInt8], start: Int, end: Int
+) -> BigInt2:
+    """Converts a range of ASCII digit bytes to a BigInt2 using the simple
+    O(n²) multiply-and-add method (9 digits at a time).
+
+    Args:
+        digits: List of ASCII byte values ('0'=48...'9'=57).
+        start: Start index (inclusive) in the digits list.
+        end: End index (exclusive) in the digits list.
+
+    Returns:
+        The unsigned BigInt2 value (sign is False).
+    """
+    if start >= end:
+        return BigInt2()
+
+    var result = BigInt2()
+    var i = start
+    while i < end:
+        # Determine chunk size (up to 9 digits)
+        var chunk_size = min(9, end - i)
+
+        # Parse the chunk to an integer from byte codes
+        var chunk_val: UInt32 = 0
+        for j in range(chunk_size):
+            chunk_val = chunk_val * 10 + UInt32(digits[i + j] - 48)
+
+        # Compute the multiplier: 10^chunk_size
+        var multiplier: UInt32 = 1
+        for _ in range(chunk_size):
+            multiplier *= 10
+
+        # Fused: result = result * multiplier + chunk_val (single pass)
+        _multiply_add_inplace(result, multiplier, chunk_val)
+
+        i += chunk_size
+
+    return result^
+
+
+fn _from_decimal_digits_dc(
+    digits: List[UInt8], start: Int, end: Int
+) raises -> BigInt2:
+    """Converts a range of ASCII digit bytes to a BigInt2 using
+    divide-and-conquer base conversion. Complexity: O(M(n) · log n)
+    where M(n) is the multiplication cost.
+
+    Algorithm:
+    1. Precompute a power table: powers[k] = 10^(2^k) as BigInt2 values.
+    2. Split the digit string: high gets the leading digits, low gets the
+       trailing 2^k digits (the largest power-of-2 chunk that fits).
+    3. Recursively convert both halves.
+    4. Combine: result = high * powers[k] + low.
+
+    Args:
+        digits: List of ASCII byte values ('0'=48...'9'=57).
+        start: Start index (inclusive) in the digits list.
+        end: End index (exclusive) in the digits list.
+
+    Returns:
+        The unsigned BigInt2 value (sign is False).
+    """
+    var digit_count = end - start
+
+    # Find max_level such that 2^max_level >= digit_count.
+    # Use bit-counting to avoid overflow.
+    var max_level = 0
+    var tmp = digit_count - 1
+    while tmp > 0:
+        tmp >>= 1
+        max_level += 1
+
+    # Build power table: powers[k] = 10^(2^k) as BigInt2
+    # powers[0] = 10^1, powers[1] = 10^2, powers[2] = 10^4, ...
+    # We need up to max_level entries (indices 0 to max_level - 1).
+    var num_powers = max_level
+    var power_table = List[BigInt2](capacity=num_powers)
+    var cur = BigInt2(10)
+    power_table.append(cur.copy())
+    for _ in range(1, num_powers):
+        cur = cur * cur
+        power_table.append(cur.copy())
+
+    # Run the recursive D&C conversion
+    return _dc_from_str_recursive(
+        digits, start, end, power_table, num_powers - 1
+    )
+
+
+fn _dc_from_str_recursive(
+    digits: List[UInt8],
+    start: Int,
+    end: Int,
+    power_table: List[BigInt2],
+    max_level: Int,
+) raises -> BigInt2:
+    """Recursively converts a range of ASCII digit bytes to BigInt2
+    using the precomputed power table.
+
+    At each level, splits the digit range into high and low parts where
+    the low part has exactly 2^level digits, then:
+        result = high * 10^(2^level) + low
+
+    Args:
+        digits: List of ASCII byte values.
+        start: Start index (inclusive).
+        end: End index (exclusive).
+        power_table: Precomputed table where powers[k] = 10^(2^k).
+        max_level: Maximum level accessible in power_table for this sub-problem.
+
+    Returns:
+        The unsigned BigInt2 value for digits[start:end].
+    """
+    var digit_count = end - start
+
+    # Base case: small enough for simple O(n²) conversion
+    if digit_count <= _DC_FROM_STR_BASE_THRESHOLD:
+        return _from_decimal_digits_simple(digits, start, end)
+
+    # Find the largest level k such that 2^k < digit_count.
+    # This ensures low part has 2^k digits and high part has ≥1 digit.
+    var level = min(max_level, len(power_table) - 1)
+    while level >= 0 and (1 << level) >= digit_count:
+        level -= 1
+
+    if level < 0:
+        # digit_count <= 1, use simple method
+        return _from_decimal_digits_simple(digits, start, end)
+
+    # Split: low part has exactly 2^level digits, high part gets the rest
+    var low_len = 1 << level
+    var split = (
+        end - low_len
+    )  # high = digits[start:split], low = digits[split:end]
+
+    # Recursively convert both halves
+    var high = _dc_from_str_recursive(
+        digits, start, split, power_table, level - 1
+    )
+    var low = _dc_from_str_recursive(digits, split, end, power_table, level - 1)
+
+    # Combine: result = high * 10^(2^level) + low
+    return high * power_table[level] + low
+
+
 # ===----------------------------------------------------------------------=== #
 # Divide-and-conquer base conversion (binary → decimal string)
 # ===----------------------------------------------------------------------=== #
@@ -1212,6 +1408,11 @@ fn _add_inplace_by_uint32(mut x: BigInt2, y: UInt32):
 # - _DC_TO_STR_BASE_THRESHOLD (64): base-case size within the recursion
 comptime _DC_TO_STR_ENTRY_THRESHOLD = 128
 comptime _DC_TO_STR_BASE_THRESHOLD = 64
+
+# Base for extracting 9-digit decimal chunks in the simple conversion path.
+# Same numerical value as BigUInt.BASE, but defined locally to avoid
+# coupling the binary→decimal conversion logic to the BigUInt type.
+comptime _DECIMAL_CHUNK_BASE: UInt64 = 1_000_000_000
 
 
 fn _magnitude_to_decimal_simple(words: List[UInt32], eff_words: Int) -> String:
@@ -1250,8 +1451,8 @@ fn _magnitude_to_decimal_simple(words: List[UInt32], eff_words: Int) -> String:
         var remainder: UInt64 = 0
         for i in range(len(dividend) - 1, -1, -1):
             var temp = (remainder << 32) + UInt64(dividend[i])
-            dividend[i] = UInt32(temp // 1_000_000_000)
-            remainder = temp % 1_000_000_000
+            dividend[i] = UInt32(temp // _DECIMAL_CHUNK_BASE)
+            remainder = temp % _DECIMAL_CHUNK_BASE
 
         # Strip leading zeros from dividend
         while len(dividend) > 1 and dividend[-1] == 0:
@@ -1319,8 +1520,12 @@ fn _magnitude_to_decimal_dc(
     # Find max_level such that 2^max_level >= est_digits.
     # We only need powers[0..max_level-1] because 10^(2^max_level) > n,
     # so the first split is always at a level < max_level.
+    # Use bit-counting instead of `1 << max_level` to avoid overflow
+    # when est_digits approaches the Int word size.
     var max_level = 0
-    while (1 << max_level) < est_digits:
+    var tmp = est_digits - 1
+    while tmp > 0:
+        tmp >>= 1
         max_level += 1
 
     # Build power table: powers[k] = 10^(2^k) as BigInt2

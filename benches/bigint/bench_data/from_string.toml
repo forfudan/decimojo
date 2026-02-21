@@ -1,5 +1,5 @@
 [config]
-iterations = 200
+iterations = 50
 
 [[cases]]
 a = "42"
@@ -44,6 +44,14 @@ name = "5000-digit number"
 [[cases]]
 a = "{9,10000}"
 name = "10000-digit number (~1041 words)"
+
+[[cases]]
+a = "{9,20000}"
+name = "20000-digit number"
+
+[[cases]]
+a = "{9,50000}"
+name = "50000-digit number"
 
 [[cases]]
 a = "-{9,100}"

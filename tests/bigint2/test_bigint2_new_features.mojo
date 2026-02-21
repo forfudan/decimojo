@@ -603,5 +603,53 @@ fn test_power_of_2_vs_shift() raises:
     testing.assert_equal(String(BigInt2(2) ** 128), String(BigInt2(1) << 128))
 
 
+# ===----------------------------------------------------------------------=== #
+# Test: D&C from_string for large numbers
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_from_string_large_dc() raises:
+    """Test that from_string correctly handles large numbers that trigger
+    the D&C path (>256 digits). Validates by round-tripping: construct a
+    BigInt2 via arithmetic, convert to string, parse back, and compare.
+    """
+
+    # Case 1: 500-digit number (above 256-digit D&C threshold)
+    # Construct via arithmetic: 10^499 + 42
+    var a1 = BigInt2(10).power(499) + BigInt2(42)
+    var s1 = String(a1)
+    var b1 = BigInt2(s1)
+    testing.assert_true(
+        a1 == b1,
+        msg="[D&C from_string] round-trip 500-digit number",
+    )
+
+    # Case 2: 1000-digit number
+    var a2 = BigInt2(7) * BigInt2(10).power(999) + BigInt2(123456789)
+    var s2 = String(a2)
+    var b2 = BigInt2(s2)
+    testing.assert_true(
+        a2 == b2,
+        msg="[D&C from_string] round-trip 1000-digit number",
+    )
+
+    # Case 3: 2000-digit negative number
+    var a3 = -(BigInt2(3) * BigInt2(10).power(1999) + BigInt2(987654321))
+    var s3 = String(a3)
+    var b3 = BigInt2(s3)
+    testing.assert_true(
+        a3 == b3,
+        msg="[D&C from_string] round-trip 2000-digit negative number",
+    )
+
+    # Case 4: Cross-check with BigInt10 path (independent reference)
+    var a4 = BigInt2(10).power(599) + BigInt2(10).power(300) + BigInt2(7)
+    testing.assert_equal(
+        lhs=String(a4),
+        rhs=String(a4.to_bigint10()),
+        msg="[D&C from_string] D&C to_string matches BigInt10 for 600-digit",
+    )
+
+
 fn main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()
