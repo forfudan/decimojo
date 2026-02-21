@@ -25,6 +25,7 @@ mathematical methods that do not implement a trait.
 
 from memory import UnsafePointer, memcpy, memcmp
 
+from decimojo.bigint10.bigint10 import BigInt10
 import decimojo.biguint.arithmetics
 import decimojo.biguint.comparison
 from decimojo.errors import (

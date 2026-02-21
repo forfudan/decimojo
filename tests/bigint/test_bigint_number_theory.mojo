@@ -18,7 +18,7 @@ from decimojo.bigint.number_theory import (
 
 
 fn test_gcd_zero_cases() raises:
-    """gcd involving zeros follows Python convention."""
+    """Tests gcd involving zeros follows Python convention."""
     testing.assert_equal(String(gcd(BigInt(0), BigInt(0))), "0")
     testing.assert_equal(String(gcd(BigInt(12), BigInt(0))), "12")
     testing.assert_equal(String(gcd(BigInt(0), BigInt(15))), "15")
@@ -27,7 +27,7 @@ fn test_gcd_zero_cases() raises:
 
 
 fn test_gcd_basic() raises:
-    """Basic GCD of small positive integers."""
+    """Tests basic GCD of small positive integers."""
     testing.assert_equal(String(gcd(BigInt(12), BigInt(8))), "4")
     testing.assert_equal(String(gcd(BigInt(48), BigInt(18))), "6")
     testing.assert_equal(String(gcd(BigInt(100), BigInt(75))), "25")
@@ -39,7 +39,7 @@ fn test_gcd_basic() raises:
 
 
 fn test_gcd_negative() raises:
-    """GCD is always non-negative regardless of input signs."""
+    """Tests GCD is always non-negative regardless of input signs."""
     testing.assert_equal(String(gcd(BigInt(-12), BigInt(8))), "4")
     testing.assert_equal(String(gcd(BigInt(12), BigInt(-8))), "4")
     testing.assert_equal(String(gcd(BigInt(-12), BigInt(-8))), "4")
@@ -48,7 +48,7 @@ fn test_gcd_negative() raises:
 
 
 fn test_gcd_commutativity() raises:
-    """gcd(a, b) == gcd(b, a)."""
+    """Tests gcd(a, b) == gcd(b, a)."""
     testing.assert_equal(
         String(gcd(BigInt(48), BigInt(18))),
         String(gcd(BigInt(18), BigInt(48))),
@@ -64,21 +64,21 @@ fn test_gcd_commutativity() raises:
 
 
 fn test_gcd_one() raises:
-    """gcd(1, n) = 1 and gcd(n, 1) = 1."""
+    """Tests gcd(1, n) = 1 and gcd(n, 1) = 1."""
     testing.assert_equal(String(gcd(BigInt(1), BigInt(999999))), "1")
     testing.assert_equal(String(gcd(BigInt(999999), BigInt(1))), "1")
     testing.assert_equal(String(gcd(BigInt(1), BigInt(1))), "1")
 
 
 fn test_gcd_same_value() raises:
-    """gcd(n, n) = |n|."""
+    """Tests gcd(n, n) = |n|."""
     testing.assert_equal(String(gcd(BigInt(42), BigInt(42))), "42")
     testing.assert_equal(String(gcd(BigInt(-42), BigInt(42))), "42")
     testing.assert_equal(String(gcd(BigInt(-42), BigInt(-42))), "42")
 
 
 fn test_gcd_common_factor() raises:
-    """gcd(a*m, b*m) = m when gcd(a,b) = 1."""
+    """Tests gcd(a*m, b*m) = m when gcd(a,b) = 1."""
     # gcd(17*m, 13*m) = m since gcd(17,13) = 1
     var m = BigInt(123456789)
     var a = m * BigInt(17)
@@ -87,7 +87,7 @@ fn test_gcd_common_factor() raises:
 
 
 fn test_gcd_powers_of_two() raises:
-    """GCD of powers of two uses the binary GCD fast path."""
+    """Tests GCD of powers of two uses the binary GCD fast path."""
     # gcd(2^16, 2^8) = 2^8 = 256
     var a = BigInt(1) << 16
     var b = BigInt(1) << 8
@@ -105,7 +105,7 @@ fn test_gcd_powers_of_two() raises:
 
 
 fn test_gcd_large_coprime() raises:
-    """Large coprime primes."""
+    """Tests large coprime primes."""
     var p = BigInt(1000000007)
     var q = BigInt(999999937)
     testing.assert_equal(String(gcd(p, q)), "1")
@@ -117,7 +117,7 @@ fn test_gcd_large_coprime() raises:
 
 
 fn test_extended_gcd_basic() raises:
-    """Extended GCD with known Bézout coefficients."""
+    """Tests extended GCD with known Bézout coefficients."""
     # gcd(35, 15) = 5, with 35*1 + 15*(-2) = 5
     var r = extended_gcd(BigInt(35), BigInt(15))
     testing.assert_equal(String(r[0]), "5")
@@ -127,7 +127,7 @@ fn test_extended_gcd_basic() raises:
 
 
 fn test_extended_gcd_240_46() raises:
-    """Extended GCD(240, 46) = 2."""
+    """Tests extended GCD(240, 46) = 2."""
     var r = extended_gcd(BigInt(240), BigInt(46))
     testing.assert_equal(String(r[0]), "2")
     var check = BigInt(240) * r[1] + BigInt(46) * r[2]
@@ -135,7 +135,7 @@ fn test_extended_gcd_240_46() raises:
 
 
 fn test_extended_gcd_coprime() raises:
-    """Extended GCD of coprime numbers gives gcd=1."""
+    """Tests extended GCD of coprime numbers gives gcd=1."""
     var r = extended_gcd(BigInt(17), BigInt(13))
     testing.assert_equal(String(r[0]), "1")
     var check = BigInt(17) * r[1] + BigInt(13) * r[2]
@@ -143,7 +143,7 @@ fn test_extended_gcd_coprime() raises:
 
 
 fn test_extended_gcd_zero_cases() raises:
-    """Extended GCD with zero arguments."""
+    """Tests extended GCD with zero arguments."""
     var r1 = extended_gcd(BigInt(0), BigInt(5))
     testing.assert_equal(String(r1[0]), "5")
     var check1 = BigInt(0) * r1[1] + BigInt(5) * r1[2]
@@ -159,7 +159,7 @@ fn test_extended_gcd_zero_cases() raises:
 
 
 fn test_extended_gcd_negative() raises:
-    """Extended GCD correctly adjusts signs for negative inputs."""
+    """Tests extended GCD correctly adjusts signs for negative inputs."""
     var r1 = extended_gcd(BigInt(-35), BigInt(15))
     testing.assert_equal(String(r1[0]), "5")
     var check1 = BigInt(-35) * r1[1] + BigInt(15) * r1[2]
@@ -177,7 +177,7 @@ fn test_extended_gcd_negative() raises:
 
 
 fn test_extended_gcd_bezout_various() raises:
-    """Verify Bézout identity for a range of input pairs."""
+    """Tests Bézout identity for a range of input pairs."""
 
     # (a, b) pairs
     fn _check(a_val: Int, b_val: Int) raises:
@@ -209,7 +209,7 @@ fn test_extended_gcd_bezout_various() raises:
 
 
 fn test_lcm_basic() raises:
-    """Basic LCM of small integers."""
+    """Tests basic LCM of small integers."""
     testing.assert_equal(String(lcm(BigInt(12), BigInt(18))), "36")
     testing.assert_equal(String(lcm(BigInt(4), BigInt(6))), "12")
     testing.assert_equal(String(lcm(BigInt(7), BigInt(13))), "91")
@@ -218,21 +218,21 @@ fn test_lcm_basic() raises:
 
 
 fn test_lcm_zero() raises:
-    """lcm(0, n) = lcm(n, 0) = 0."""
+    """Tests lcm(0, n) = lcm(n, 0) = 0."""
     testing.assert_equal(String(lcm(BigInt(0), BigInt(5))), "0")
     testing.assert_equal(String(lcm(BigInt(5), BigInt(0))), "0")
     testing.assert_equal(String(lcm(BigInt(0), BigInt(0))), "0")
 
 
 fn test_lcm_negative() raises:
-    """LCM is always non-negative."""
+    """Tests LCM is always non-negative."""
     testing.assert_equal(String(lcm(BigInt(-4), BigInt(6))), "12")
     testing.assert_equal(String(lcm(BigInt(4), BigInt(-6))), "12")
     testing.assert_equal(String(lcm(BigInt(-4), BigInt(-6))), "12")
 
 
 fn test_lcm_gcd_product_identity() raises:
-    """gcd(a,b) * lcm(a,b) = |a * b| for non-zero a, b."""
+    """Tests gcd(a,b) * lcm(a,b) = |a * b| for non-zero a, b."""
     var a = BigInt(48)
     var b = BigInt(18)
     var g = gcd(a, b)
@@ -329,7 +329,7 @@ fn test_mod_pow_int_overload() raises:
 
 
 fn test_mod_pow_errors() raises:
-    """mod_pow raises on negative exponent or non-positive modulus."""
+    """Tests mod_pow raises on negative exponent or non-positive modulus."""
     var raised = False
 
     # Negative exponent
@@ -398,7 +398,7 @@ fn test_mod_inverse_negative_input() raises:
 
 
 fn test_mod_inverse_not_exists() raises:
-    """mod_inverse raises when gcd(a, m) != 1."""
+    """Tests mod_inverse raises when gcd(a, m) != 1."""
     var raised = False
     try:
         var _ = mod_inverse(BigInt(2), BigInt(6))
@@ -427,76 +427,4 @@ fn test_mod_inverse_not_exists() raises:
 
 
 fn main() raises:
-    # GCD tests
-    test_gcd_zero_cases()
-    print("PASS: test_gcd_zero_cases")
-    test_gcd_basic()
-    print("PASS: test_gcd_basic")
-    test_gcd_negative()
-    print("PASS: test_gcd_negative")
-    test_gcd_commutativity()
-    print("PASS: test_gcd_commutativity")
-    test_gcd_one()
-    print("PASS: test_gcd_one")
-    test_gcd_same_value()
-    print("PASS: test_gcd_same_value")
-    test_gcd_common_factor()
-    print("PASS: test_gcd_common_factor")
-    test_gcd_powers_of_two()
-    print("PASS: test_gcd_powers_of_two")
-    test_gcd_large_coprime()
-    print("PASS: test_gcd_large_coprime")
-
-    # Extended GCD tests
-    test_extended_gcd_basic()
-    print("PASS: test_extended_gcd_basic")
-    test_extended_gcd_240_46()
-    print("PASS: test_extended_gcd_240_46")
-    test_extended_gcd_coprime()
-    print("PASS: test_extended_gcd_coprime")
-    test_extended_gcd_zero_cases()
-    print("PASS: test_extended_gcd_zero_cases")
-    test_extended_gcd_negative()
-    print("PASS: test_extended_gcd_negative")
-    test_extended_gcd_bezout_various()
-    print("PASS: test_extended_gcd_bezout_various")
-
-    # LCM tests
-    test_lcm_basic()
-    print("PASS: test_lcm_basic")
-    test_lcm_zero()
-    print("PASS: test_lcm_zero")
-    test_lcm_negative()
-    print("PASS: test_lcm_negative")
-    test_lcm_gcd_product_identity()
-    print("PASS: test_lcm_gcd_product_identity")
-
-    # mod_pow tests
-    test_mod_pow_basic()
-    print("PASS: test_mod_pow_basic")
-    test_mod_pow_edge_cases()
-    print("PASS: test_mod_pow_edge_cases")
-    test_mod_pow_fermat_little_theorem()
-    print("PASS: test_mod_pow_fermat_little_theorem")
-    test_mod_pow_larger_exponent()
-    print("PASS: test_mod_pow_larger_exponent")
-    test_mod_pow_negative_base()
-    print("PASS: test_mod_pow_negative_base")
-    test_mod_pow_int_overload()
-    print("PASS: test_mod_pow_int_overload")
-    test_mod_pow_errors()
-    print("PASS: test_mod_pow_errors")
-
-    # mod_inverse tests
-    test_mod_inverse_basic()
-    print("PASS: test_mod_inverse_basic")
-    test_mod_inverse_one()
-    print("PASS: test_mod_inverse_one")
-    test_mod_inverse_verify_roundtrip()
-    print("PASS: test_mod_inverse_verify_roundtrip")
-    test_mod_inverse_negative_input()
-    print("PASS: test_mod_inverse_negative_input")
-    test_mod_inverse_not_exists()
-    print("PASS: test_mod_inverse_not_exists")
-
-    print("\n=== All 31 number theory tests passed ===")
+    testing.TestSuite.discover_tests[__functions_in_module()]().run()

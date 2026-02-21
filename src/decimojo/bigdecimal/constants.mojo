@@ -20,6 +20,7 @@
 import math as builtin_math
 
 from decimojo.bigdecimal.bigdecimal import BigDecimal
+from decimojo.bigint10.bigint10 import BigInt10
 from decimojo.rounding_mode import RoundingMode
 
 comptime PI_1024 = BigDecimal(

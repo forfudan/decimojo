@@ -30,6 +30,7 @@ import testing
 from decimojo.errors import DeciMojoError
 from decimojo.rounding_mode import RoundingMode
 from decimojo.bigdecimal.rounding import round_to_precision
+from decimojo.bigint10.bigint10 import BigInt10
 
 comptime BDec = BigDecimal
 """Short alias for `BigDecimal`."""

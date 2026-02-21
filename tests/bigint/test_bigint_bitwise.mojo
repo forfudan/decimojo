@@ -14,12 +14,12 @@ from decimojo.bigint.bigint import BigInt
 
 
 fn test_invert_zero() raises:
-    """~0 = -1."""
+    """Tests ~0 = -1."""
     testing.assert_equal(String(~BigInt(0)), "-1")
 
 
 fn test_invert_positive() raises:
-    """~x = -(x+1) for positive x."""
+    """Tests ~x = -(x+1) for positive x."""
     testing.assert_equal(String(~BigInt(1)), "-2")
     testing.assert_equal(String(~BigInt(2)), "-3")
     testing.assert_equal(String(~BigInt(42)), "-43")
@@ -28,7 +28,7 @@ fn test_invert_positive() raises:
 
 
 fn test_invert_negative() raises:
-    """~(-x) = x - 1 for negative x."""
+    """Tests ~(-x) = x - 1 for negative x."""
     testing.assert_equal(String(~BigInt(-1)), "0")
     testing.assert_equal(String(~BigInt(-2)), "1")
     testing.assert_equal(String(~BigInt(-3)), "2")
@@ -38,7 +38,7 @@ fn test_invert_negative() raises:
 
 
 fn test_invert_double() raises:
-    """~~x = x (involution)."""
+    """Tests ~~x = x (involution)."""
     testing.assert_equal(String(~(~BigInt(0))), "0")
     testing.assert_equal(String(~(~BigInt(42))), "42")
     testing.assert_equal(String(~(~BigInt(-42))), "-42")
@@ -49,7 +49,7 @@ fn test_invert_double() raises:
 
 
 fn test_invert_large() raises:
-    """~x for large multi-word values."""
+    """Tests ~x for large multi-word values."""
     # ~(2^32) = -(2^32 + 1)
     testing.assert_equal(String(~BigInt("4294967296")), "-4294967297")
     # ~(2^64) = -(2^64 + 1)
@@ -68,7 +68,7 @@ fn test_invert_large() raises:
 
 
 fn test_and_both_positive() raises:
-    """Positive & Positive → Positive."""
+    """Tests Positive & Positive → Positive."""
     # 0xFF & 0x0F = 0x0F = 15
     testing.assert_equal(String(BigInt(255) & BigInt(15)), "15")
     # 0b1010 & 0b1100 = 0b1000 = 8
@@ -80,11 +80,11 @@ fn test_and_both_positive() raises:
 
 
 fn test_and_positive_negative() raises:
-    """Positive & Negative → Positive (Python semantics).
+    """Tests Positive & Negative → Positive (Python semantics).
     In Python: 5 & -3 = 5.
     5    = ...00000101
     -3   = ...11111101  (two's complement)
-    AND  = ...00000101  = 5
+    AND  = ...00000101  = 5.
     """
     testing.assert_equal(String(BigInt(5) & BigInt(-3)), "5")
 
@@ -99,11 +99,11 @@ fn test_and_positive_negative() raises:
 
 
 fn test_and_both_negative() raises:
-    """Negative & Negative → Negative (Python semantics).
+    """Tests Negative & Negative → Negative (Python semantics).
     In Python: -5 & -3 = -7.
     -5   = ...11111011
     -3   = ...11111101
-    AND  = ...11111001 = -7
+    AND  = ...11111001 = -7.
     """
     testing.assert_equal(String(BigInt(-5) & BigInt(-3)), "-7")
 
@@ -142,7 +142,7 @@ fn test_and_with_int() raises:
 
 
 fn test_or_both_positive() raises:
-    """Positive | Positive → Positive."""
+    """Tests Positive | Positive → Positive."""
     # 0b1010 | 0b1100 = 0b1110 = 14
     testing.assert_equal(String(BigInt(10) | BigInt(12)), "14")
     # x | 0 = x
@@ -154,11 +154,11 @@ fn test_or_both_positive() raises:
 
 
 fn test_or_positive_negative() raises:
-    """Positive | Negative → Negative (Python semantics).
+    """Tests Positive | Negative → Negative (Python semantics).
     In Python: 5 | -3 = -3.
     5    = ...00000101
     -3   = ...11111101
-    OR   = ...11111101  = -3
+    OR   = ...11111101  = -3.
     """
     testing.assert_equal(String(BigInt(5) | BigInt(-3)), "-3")
 
@@ -173,11 +173,11 @@ fn test_or_positive_negative() raises:
 
 
 fn test_or_both_negative() raises:
-    """Negative | Negative → Negative (Python semantics).
+    """Tests Negative | Negative → Negative (Python semantics).
     In Python: -5 | -3 = -1.
     -5   = ...11111011
     -3   = ...11111101
-    OR   = ...11111111 = -1
+    OR   = ...11111111 = -1.
     """
     testing.assert_equal(String(BigInt(-5) | BigInt(-3)), "-1")
 
@@ -215,11 +215,11 @@ fn test_xor_both_positive() raises:
 
 
 fn test_xor_positive_negative() raises:
-    """Positive ^ Negative → Negative (Python semantics).
+    """Tests Positive ^ Negative → Negative (Python semantics).
     In Python: 5 ^ -3 = -8.
     5    = ...00000101
     -3   = ...11111101
-    XOR  = ...11111000 = -8
+    XOR  = ...11111000 = -8.
     """
     testing.assert_equal(String(BigInt(5) ^ BigInt(-3)), "-8")
 
@@ -235,11 +235,11 @@ fn test_xor_positive_negative() raises:
 
 
 fn test_xor_both_negative() raises:
-    """Negative ^ Negative → Positive (Python semantics).
+    """Tests Negative ^ Negative → Positive (Python semantics).
     In Python: -5 ^ -3 = 6.
     -5   = ...11111011
     -3   = ...11111101
-    XOR  = ...00000110 = 6
+    XOR  = ...00000110 = 6.
     """
     testing.assert_equal(String(BigInt(-5) ^ BigInt(-3)), "6")
 
@@ -328,7 +328,7 @@ fn test_demorgan_laws() raises:
 
 
 fn test_xor_self_cancels() raises:
-    """a ^ a = 0 for various values."""
+    """Tests a ^ a = 0 for various values."""
     testing.assert_equal(String(BigInt(0) ^ BigInt(0)), "0")
     testing.assert_equal(String(BigInt(42) ^ BigInt(42)), "0")
     testing.assert_equal(String(BigInt(-42) ^ BigInt(-42)), "0")
@@ -337,7 +337,7 @@ fn test_xor_self_cancels() raises:
 
 
 fn test_and_with_minus_one() raises:
-    """a & -1 = a (AND with all-ones is identity)."""
+    """Tests a & -1 = a (AND with all-ones is identity)."""
     testing.assert_equal(String(BigInt(0) & BigInt(-1)), "0")
     testing.assert_equal(String(BigInt(42) & BigInt(-1)), "42")
     testing.assert_equal(String(BigInt(-42) & BigInt(-1)), "-42")
@@ -348,20 +348,20 @@ fn test_and_with_minus_one() raises:
 
 
 fn test_or_with_zero() raises:
-    """a | 0 = a (OR with zero is identity)."""
+    """Tests a | 0 = a (OR with zero is identity)."""
     testing.assert_equal(String(BigInt(0) | BigInt(0)), "0")
     testing.assert_equal(String(BigInt(42) | BigInt(0)), "42")
     testing.assert_equal(String(BigInt(-42) | BigInt(0)), "-42")
 
 
 fn test_xor_with_zero() raises:
-    """a ^ 0 = a (XOR with zero is identity)."""
+    """Tests a ^ 0 = a (XOR with zero is identity)."""
     testing.assert_equal(String(BigInt(42) ^ BigInt(0)), "42")
     testing.assert_equal(String(BigInt(-42) ^ BigInt(0)), "-42")
 
 
 fn test_commutativity() raises:
-    """a op b = b op a for all binary bitwise ops."""
+    """Tests a op b = b op a for all binary bitwise ops."""
     var a = BigInt(123)
     var b = BigInt(-456)
 
@@ -378,7 +378,7 @@ fn test_python_cross_check() raises:
         123 ^ -456 = -445
         -100 & -200 = -232
         -100 | -200 = -68
-        -100 ^ -200 = 164
+        -100 ^ -200 = 164.
     """
     testing.assert_equal(String(BigInt(123) & BigInt(-456)), "56")
     testing.assert_equal(String(BigInt(123) | BigInt(-456)), "-389")
