@@ -25,13 +25,13 @@ The core types are:
 - An arbitrary-precision decimal implementation (`Decimal`) allowing for calculations with unlimited digits and decimal places[^arbitrary], which is a drop-in replacement for Python's `decimal.Decimal` in Mojo.
 - A 128-bit fixed-point decimal implementation (`Dec128`) supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed].
 
-The auxiliary types include a base-10 arbitrary-precision signed integer type (`BigInt10`) and a base-10 arbitrary-precision unsigned integer type (`BigUInt`) supporting unlimited digits[^bigint10]. `BigUInt` is used as the internal representation for `BigInt10` and `Decimal`.
-
 | Type      | Other names          | Information                              | Internal representation |
 | --------- | -------------------- | ---------------------------------------- | ----------------------- |
 | `BInt`    | `BigInt`             | Equivalent to Python's `int`             | Base-2^32               |
 | `Decimal` | `BDec`, `BigDecimal` | Equivalent to Python's `decimal.Decimal` | Base-10^9               |
 | `Dec`     | `Decimal128`         | 128-bit fixed-precision decimal type     | Triple 32-bit words     |
+
+The auxiliary types include a base-10 arbitrary-precision signed integer type (`BigInt10`) and a base-10 arbitrary-precision unsigned integer type (`BigUInt`) supporting unlimited digits[^bigint10]. `BigUInt` is used as the internal representation for `BigInt10` and `Decimal`.
 
 ---
 
@@ -308,7 +308,7 @@ Bug reports and feature requests are welcome! If you encounter issues, please [f
 After cloning the repo onto your local disk, you can:
 
 - Use `pixi run test` to run tests.
-- Use `pixi run bdec` to generate logs for benchmarking tests against `python.decimal` module. The log files are saved in `benches/bigdecimal/logs/`.
+- Use `pixi run bench` to run benchmarks.
 
 <!-- 
 ## Citation

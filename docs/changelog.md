@@ -2,9 +2,26 @@
 
 This is a list of changes for the DeciMojo Package.
 
+<!-- 
 ## Unreleased (v0.8.0)
 
-### 🦋 Changed
+DeciMojo v0.8.0 is a profound milestone in the development of DeciMojo, introducing a brand new 2^32-based `BigInt` implementation to replace the previous 10^9-based `BigInt` implementation. This change significantly enhances the performance of `BigInt` operations, especially for large integers, by leveraging a more efficient internal representation. The new `BigInt` type is designed to be fully compatible with the existing API, ensuring a seamless transition for users. The benchmarks show that the new `BigInt` implementation can be up to 10x faster than the previous one for certain operations, particularly multiplication and division of large integers. It also beats Python's built-in `int` type in most cases.
+
+Besides... [to be finished at the release time]
+
+Benchmarks... [put some core benchmark results here at the release time] 
+
+### ⭐️ New in v0.8.0
+
+List the new features here and also refer to PR numbers in the format of `(PR #number)`.
+
+### 🦋 Changed in v0.8.0
+
+### 🛠️ Fixed in v0.8.0
+
+### 📚 Documentation and testing in v0.8.0
+
+-->
 
 ## 20260212 (v0.7.0)
 
@@ -26,14 +43,14 @@ DeciMojo v0.5.0 introduces significant enhancements to the `BigDecimal` and `Big
 
 DeciMojo v0.5.0 is compatible with Mojo v25.5.
 
-### ⭐️ New
+### ⭐️ New in v0.5.0
 
 1. Introduce trigonometric functions for `BigDecimal`: `sin()`, `cos()`, `tan()`, `cot()`, `csc()`, `sec()`. These functions compute the corresponding trigonometric values of a given angle in radians with arbitrary precision (#96, #99).
 1. Introduce the function `pi()` for `BigDecimal` to compute the value of π (pi) with arbitrary precision with the Chudnovsky algorithm with binary splitting (#95).
 1. Implement the `sqrt()` function for `BigUInt` to compute the square root of a `BigUInt` number as a `BigUInt` object (#107).
 1. Introduce a `DeciMojoError` type and various aliases to handle errors in DeciMojo. This enables a more consistent error handling mechanism across the library and allows users to track errors more easily (#114).
 
-### 🦋 Changed
+### 🦋 Changed in v0.5.0
 
 Changes in **BigUInt**:
 
@@ -59,12 +76,12 @@ Other changes:
 1. Rename the `Decimal` type to `Decimal128` to reflect its fixed precision of 128 bits. It has a new alias `Dec128` (#112).
 1. `Decimal` is now an alias for `BigDecimal` (#112).
 
-### 🛠️ Fixed
+### 🛠️ Fixed in v0.5.0
 
 - Fix a bug for `BigUInt` comparison: When there are leading zero words, the comparison returns incorrect results (#97).
 - Fix the `is_zero()`, `is_one()`, and `is_two()` methods for `BigUInt` to correctly handle the case when there are leading zero words (#97).
 
-### 📚 Documentation and testing
+### 📚 Documentation and testing in v0.5.0
 
 - Refactor the test files for `BigDecimal` (PR #93).
 - Refactor the test files for `BigInt` (PR #106).
@@ -73,7 +90,7 @@ Other changes:
 
 Version 0.4.1 of DeciMojo introduces implicit type conversion between built-in integral types and arbitrary-precision types.
 
-### ⭐️ New
+### ⭐️ New in v0.4.1
 
 Now DeciMojo supports implicit type conversion between built-in integeral types (`Int`, `UInt`, `Int8`, `UInt8`, `Int16`, `UInt16`, `Int32`, `UInt32`, `Int64`, `UInt64`, `Int128`,`UInt128`, `Int256`, and `UInt256`) and the arbitrary-precision types (`BigUInt`, `BigInt`, and `BigDecimal`). This allows you to use these built-in types directly in arithmetic operations with `BigInt` and `BigUInt` without explicit conversion. The merged type will always be the most compatible one (PR #89, PR #90).
 
@@ -119,7 +136,7 @@ c = 3.14159265358979323
 -1234567890, 31415926, 3.14159265358979323, 255, 22222, 1234567890,
 ```
 
-### 🦋 Changed
+### 🦋 Changed in v0.4.1
 
 Optimize the case when you increase the value of a `BigInt` object in-place by 1, *i.e.*, `i += 1`. This allows you to iterate faster (PR #89). For example, we can compute the time taken to iterate from `0` to `1_000_000` using `BigInt` and compare it with the built-in `Int` type:
 
@@ -140,11 +157,11 @@ fn main() raises:
 | v0.4.1 `BigInt` | 0.912s     |
 | Built-in `Int`  | 0.893s     |
 
-### 🛠️ Fixed
+### 🛠️ Fixed in v0.4.1
 
 Fix a bug in `BigDecimal` where it cannot create a correct value from a integral scalar, e.g., `BDec(UInt16(0))` returns an unitialized `BigDecimal` object (PR #89).
 
-### 📚 Documentation and testing
+### 📚 Documentation and testing in v0.4.1
 
 Update the `tests` module and refactor the test files for `BigUInt` (PR #88).
 
@@ -160,7 +177,7 @@ DeciMojo v0.3.1 updates the codebase to Mojo v25.3 and replaces the `magic` pack
 
 DeciMojo v0.3.0 introduces the arbitrary-precision `BigDecimal` type with comprehensive arithmetic operations, comparisons, and mathematical functions (`sqrt`, `root`, `log`, `exp`, `power`). A new `tomlmojo` package supports test refactoring. Improvements include refined `BigUInt` constructors, enhanced `scale_up_by_power_of_10()` functionality, and a critical multiplication bug fix.
 
-### ⭐️ New
+### ⭐️ New in v0.3.0
 
 - Implement the `BigDecimal` type with unlimited precision arithmetic.
   - Implement basic arithmetic operations for `BigDecimal`: addition, subtraction, multiplication, division, and modulo.
@@ -170,12 +187,12 @@ DeciMojo v0.3.0 introduces the arbitrary-precision `BigDecimal` type with compre
   - Iimplement rounding functions.
 - Implement a simple TOML parser as package `tomlmojo` to refactor tests (PR #63).
 
-### 🦋 Changed
+### 🦋 Changed in v0.3.0
 
 - Refine the constructors of `BigUInt` (PR #64).
 - Improve the method `BigUInt.scale_up_by_power_of_10()` (PR #72).
 
-### 🛠️ Fixed
+### 🛠️ Fixed in v0.3.0
 
 - Fix a bug in `BigUInt` multiplication where the calcualtion of carry is mistakenly skipped if a word of x2 is zero (PR #70).
 
@@ -183,7 +200,7 @@ DeciMojo v0.3.0 introduces the arbitrary-precision `BigDecimal` type with compre
 
 Version 0.2.0 marks a significant expansion of DeciMojo with the introduction of `BigInt` and `BigUInt` types, providing unlimited precision integer arithmetic to complement the existing fixed-precision `Decimal` type. Core arithmetic functions for the `Decimal` type have been completely rewritten using Mojo 25.2's `UInt128`, delivering substantial performance improvements. This release also extends mathematical capabilities with advanced operations including logarithms, exponentials, square roots, and n-th roots for the `Decimal` type. The codebase has been reorganized into a more modular structure, enhancing maintainability and extensibility. With comprehensive test coverage, improved documentation in multiple languages, and optimized memory management, v0.2.0 represents a major advancement in both functionality and performance for numerical computing in Mojo.
 
-### ⭐️ New
+### ⭐️ New in v0.2.0
 
 - Add comprehensive `BigInt` and `BigUInt` implementation with unlimited precision integer arithmetic.
 - Implement full arithmetic operations for `BigInt` and `BigUInt`: addition, subtraction, multiplication, division, modulo and power operations.
@@ -194,7 +211,7 @@ Version 0.2.0 marks a significant expansion of DeciMojo with the introduction of
 - Add logarithm functions for `Decimal`: natural logarithm, base-10 logarithm, and logarithm with arbitrary base.
 - Add exponential function and power function with arbitrary exponents for `Decimal`.
 
-### 🦋 Changed
+### 🦋 Changed in v0.2.0
 
 - Completely re-write the core arithmetic functions for `Decimal` type using `UInt128` introduced in Mojo 25.2. This significantly improves the performance of `Decimal` operations.
 - Improve memory management system to reduce allocations during calculations.
@@ -202,12 +219,12 @@ Version 0.2.0 marks a significant expansion of DeciMojo with the introduction of
 - Enhance `Decimal` comparison operators for better handling of edge cases.
 - Update internal representation of `Decimal` for better precision handling.
 
-### ❌ Removed
+### ❌ Removed in v0.2.0
 
 - Remove deprecated legacy string formatting methods.
 - Remove redundant conversion functions that were replaced with a more unified API.
 
-### 🛠️ Fixed
+### 🛠️ Fixed in v0.2.0
 
 - Fix edge cases in division operations with zero and one.
 - Correct sign handling in mixed-sign operations for both `Decimal`.
@@ -215,7 +232,7 @@ Version 0.2.0 marks a significant expansion of DeciMojo with the introduction of
 - Correct rounding behavior in edge cases for financial calculations.
 - Address inconsistencies between operator methods and named functions.
 
-### 📚 Documentation and testing
+### 📚 Documentation and testing in v0.2.0
 
 - Add comprehensive test suite for `BigInt` and `BigUInt` with over 200 test cases covering all operations and edge cases.
 - Create detailed API documentation for both `Decimal` and `BigInt`.
