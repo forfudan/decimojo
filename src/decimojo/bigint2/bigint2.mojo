@@ -845,19 +845,23 @@ struct BigInt2(
 
     @always_inline
     fn __ifloordiv__(mut self, other: Self) raises:
-        self = decimojo.bigint2.arithmetics.floor_divide(self, other)
+        """True in-place floor division: moves quotient into self.words."""
+        decimojo.bigint2.arithmetics.floor_divide_inplace(self, other)
 
     @always_inline
     fn __imod__(mut self, other: Self) raises:
-        self = decimojo.bigint2.arithmetics.floor_modulo(self, other)
+        """True in-place modulo: moves remainder into self.words."""
+        decimojo.bigint2.arithmetics.floor_modulo_inplace(self, other)
 
     @always_inline
     fn __ilshift__(mut self, shift: Int):
-        self = decimojo.bigint2.arithmetics.left_shift(self, shift)
+        """True in-place left shift: mutates self.words directly."""
+        decimojo.bigint2.arithmetics.left_shift_inplace(self, shift)
 
     @always_inline
     fn __irshift__(mut self, shift: Int):
-        self = decimojo.bigint2.arithmetics.right_shift(self, shift)
+        """True in-place right shift: mutates self.words directly."""
+        decimojo.bigint2.arithmetics.right_shift_inplace(self, shift)
 
     # ===------------------------------------------------------------------=== #
     # Basic binary comparison operation dunders
@@ -1072,18 +1076,18 @@ struct BigInt2(
 
     @always_inline
     fn __iand__(mut self, other: Self):
-        """In-place self &= other."""
-        self = decimojo.bigint2.bitwise.bitwise_and(self, other)
+        """True in-place bitwise AND: mutates self.words directly."""
+        decimojo.bigint2.bitwise.bitwise_and_inplace(self, other)
 
     @always_inline
     fn __ior__(mut self, other: Self):
-        """In-place self |= other."""
-        self = decimojo.bigint2.bitwise.bitwise_or(self, other)
+        """True in-place bitwise OR: mutates self.words directly."""
+        decimojo.bigint2.bitwise.bitwise_or_inplace(self, other)
 
     @always_inline
     fn __ixor__(mut self, other: Self):
-        """In-place self ^= other."""
-        self = decimojo.bigint2.bitwise.bitwise_xor(self, other)
+        """True in-place bitwise XOR: mutates self.words directly."""
+        decimojo.bigint2.bitwise.bitwise_xor_inplace(self, other)
 
     # ===------------------------------------------------------------------=== #
     # Instance query methods

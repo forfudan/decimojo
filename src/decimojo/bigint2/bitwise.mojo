@@ -176,6 +176,162 @@ fn _binary_bitwise_op[op: StringLiteral](a: BigInt2, b: BigInt2) -> BigInt2:
 
 
 # ===----------------------------------------------------------------------=== #
+# Core helper: in-place word-by-word binary bitwise operation
+# ===----------------------------------------------------------------------=== #
+
+
+fn _binary_bitwise_op_inplace[
+    op: StringLiteral
+](mut a: BigInt2, read b: BigInt2):
+    """Performs a word-by-word binary bitwise operation on `a` in-place.
+
+    Computes the result word list and moves it into a.words, avoiding
+    full BigInt2 construction.
+
+    The operation is determined by the `op` parameter:
+    - "and": bitwise AND
+    - "or":  bitwise OR
+    - "xor": bitwise XOR
+    """
+
+    # Determine fills (sign extension for infinite-width two's complement)
+    var a_fill = UInt32(0xFFFF_FFFF) if a.sign else UInt32(0)
+    var b_fill = UInt32(0xFFFF_FFFF) if b.sign else UInt32(0)
+
+    # Determine result sign from operation on sign-extension bits
+    var result_negative: Bool
+
+    @parameter
+    if op == "and":
+        result_negative = a.sign and b.sign
+    elif op == "or":
+        result_negative = a.sign or b.sign
+    elif op == "xor":
+        result_negative = a.sign != b.sign
+    else:
+        constrained[False, "op must be 'and', 'or', or 'xor'"]()
+        result_negative = False  # unreachable
+
+    # Fast path: both non-negative
+    if not a.sign and not b.sign:
+
+        @parameter
+        if op == "and":
+            var min_len = min(len(a.words), len(b.words))
+            # We can modify a.words in-place for AND (result <= min_len)
+            for i in range(min_len):
+                a.words[i] = a.words[i] & b.words[i]
+            # Truncate to min_len
+            while len(a.words) > min_len:
+                a.words.shrink(len(a.words) - 1)
+            # Strip leading zeros
+            while len(a.words) > 1 and a.words[-1] == 0:
+                a.words.shrink(len(a.words) - 1)
+            return
+        elif op == "or":
+            var b_len = len(b.words)
+            # Extend a if b is longer
+            while len(a.words) < b_len:
+                a.words.append(UInt32(0))
+            for i in range(b_len):
+                a.words[i] = a.words[i] | b.words[i]
+            # Words beyond b_len remain as-is (OR with 0)
+            while len(a.words) > 1 and a.words[-1] == 0:
+                a.words.shrink(len(a.words) - 1)
+            return
+        else:  # xor
+            var b_len = len(b.words)
+            while len(a.words) < b_len:
+                a.words.append(UInt32(0))
+            for i in range(b_len):
+                a.words[i] = a.words[i] ^ b.words[i]
+            # Words beyond b_len remain as-is (XOR with 0)
+            while len(a.words) > 1 and a.words[-1] == 0:
+                a.words.shrink(len(a.words) - 1)
+            return
+
+    # General path: convert negative operands to two's complement
+    var a_n = len(a.words)
+    var b_n = len(b.words)
+    var max_len = max(a_n, b_n)
+    if result_negative:
+        max_len += 1
+
+    # Pre-compute a's TC words
+    var a_tc = List[UInt32](capacity=a_n)
+    if a.sign:
+        var borrow: UInt64 = 1
+        for i in range(a_n):
+            var diff = UInt64(a.words[i]) - borrow
+            a_tc.append(~UInt32(diff & 0xFFFF_FFFF))
+            borrow = (diff >> 63) & 1
+    else:
+        for i in range(a_n):
+            a_tc.append(a.words[i])
+
+    # Pre-compute b's TC words
+    var b_tc = List[UInt32](capacity=b_n)
+    if b.sign:
+        var borrow: UInt64 = 1
+        for i in range(b_n):
+            var diff = UInt64(b.words[i]) - borrow
+            b_tc.append(~UInt32(diff & 0xFFFF_FFFF))
+            borrow = (diff >> 63) & 1
+    else:
+        for i in range(b_n):
+            b_tc.append(b.words[i])
+
+    # Perform the operation word-by-word into a new list
+    var result_tc = List[UInt32](capacity=max_len)
+    for i in range(max_len):
+        var wa = a_fill if i >= len(a_tc) else a_tc[i]
+        var wb = b_fill if i >= len(b_tc) else b_tc[i]
+
+        @parameter
+        if op == "and":
+            result_tc.append(wa & wb)
+        elif op == "or":
+            result_tc.append(wa | wb)
+        else:  # xor
+            result_tc.append(wa ^ wb)
+
+    # Convert result back from two's complement if negative
+    if not result_negative:
+        while len(result_tc) > 1 and result_tc[-1] == 0:
+            result_tc.shrink(len(result_tc) - 1)
+        if len(result_tc) == 1 and result_tc[0] == 0:
+            a.words.clear()
+            a.words.append(UInt32(0))
+            a.sign = False
+        else:
+            a.words = result_tc^
+            a.sign = False
+    else:
+        var n = len(result_tc)
+        var mag = List[UInt32](capacity=n)
+        for i in range(n):
+            mag.append(~result_tc[i])
+        var carry: UInt64 = 1
+        for i in range(len(mag)):
+            var s = UInt64(mag[i]) + carry
+            mag[i] = UInt32(s & 0xFFFF_FFFF)
+            carry = s >> 32
+            if carry == 0:
+                break
+        if carry > 0:
+            mag.append(UInt32(carry))
+        while len(mag) > 1 and mag[-1] == 0:
+            mag.shrink(len(mag) - 1)
+        if len(mag) == 1 and mag[0] == 0:
+            a.words.clear()
+            a.words.append(UInt32(0))
+            a.sign = False
+        else:
+            a.words = mag^
+            a.sign = True
+
+
+# ===----------------------------------------------------------------------=== #
 # Public API
 # ===----------------------------------------------------------------------=== #
 
@@ -230,3 +386,26 @@ fn bitwise_not(x: BigInt2) -> BigInt2:
         if len(result_words) == 1 and result_words[0] == 0:
             return BigInt2()
         return BigInt2(raw_words=result_words^, sign=False)
+
+
+# ===----------------------------------------------------------------------=== #
+# Public in-place API
+# ===----------------------------------------------------------------------=== #
+
+
+fn bitwise_and_inplace(mut a: BigInt2, read b: BigInt2):
+    """Performs a &= b in-place using Python-compatible two's complement
+    semantics."""
+    _binary_bitwise_op_inplace["and"](a, b)
+
+
+fn bitwise_or_inplace(mut a: BigInt2, read b: BigInt2):
+    """Performs a |= b in-place using Python-compatible two's complement
+    semantics."""
+    _binary_bitwise_op_inplace["or"](a, b)
+
+
+fn bitwise_xor_inplace(mut a: BigInt2, read b: BigInt2):
+    """Performs a ^= b in-place using Python-compatible two's complement
+    semantics."""
+    _binary_bitwise_op_inplace["xor"](a, b)
