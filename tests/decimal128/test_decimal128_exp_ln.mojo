@@ -5,7 +5,8 @@ Most tests use startswith prefix matching for high-precision results.
 """
 
 import testing
-from decimojo.prelude import Decimal128, RoundingMode
+from decimojo.decimal128.decimal128 import Decimal128
+from decimojo.rounding_mode import RoundingMode
 from decimojo.decimal128.exponential import exp, ln
 
 

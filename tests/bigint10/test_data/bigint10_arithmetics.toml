@@ -64,6 +64,12 @@ description = "Addition with numbers of different sizes"
 expected = "9876555555"
 
 [[addition_tests]]
+a = "19911018"
+b = "19911104"
+description = "Addition with numbers of same sizes"
+expected = "39822122"
+
+[[addition_tests]]
 a = "{1234567890,2}123456789"
 b = "{9876543210,2}987654321"
 description = "Addition with very large numbers spanning multiple words"
