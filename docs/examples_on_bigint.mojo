@@ -5,6 +5,8 @@ fn main() raises:
     # === Construction ===
     var a = BInt("12345678901234567890")  # From string
     var b = BInt(12345)  # From integer
+    var c = BInt("1991_10,18")  # From string with separators and spaces
+    print(a, b, c)
 
     # === Basic Arithmetic ===
     print(a + b)  # Addition: 12345678901234580235
@@ -38,3 +40,7 @@ fn main() raises:
     # === Extremely large numbers ===
     # 3600 digits // 1800 digits
     print(BInt("123456789" * 400) // BInt("987654321" * 200))
+
+    # === Greatest common divisor ===
+    print(a.gcd(b))  # Greatest common divisor: 15
+    print(a.gcd(c))  # Greatest common divisor: 6

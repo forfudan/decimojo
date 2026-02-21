@@ -20,14 +20,13 @@ DeciMojo: A comprehensive decimal mathematics library for Mojo.
 You can import a list of useful objects in one line, e.g., 
 
 ```mojo
-from decimojo import Decimal, BigInt10, RoundingMode
+from decimojo import Decimal, BInt, RoundingMode
 ```
 """
 
 # Core types
 from .decimal128.decimal128 import Decimal128, Dec128
 from .bigint.bigint import BigInt, BInt
-from .bigint10.bigint10 import BigInt10
 from .biguint.biguint import BigUInt, BUInt
 from .bigdecimal.bigdecimal import BigDecimal, BDec, Decimal
 from .rounding_mode import (
