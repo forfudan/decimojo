@@ -557,51 +557,75 @@ for 50–10000 digits improved from 0.54× to **0.91×** (+69%).
 
 ---
 
-### PR 5: True In-Place Arithmetic Operations
+### PR 5: True In-Place Arithmetic Operations ✅ DONE
 
 **Priority: MEDIUM-HIGH** — Performance infrastructure that benefits all callers
 
-**Current:** All augmented assignment operators (`+=`, `-=`, `*=`, `//=`, `%=`)
-create a new BigInt2 and move it back:
+**Status:** All 11 `__i*__` dunders now call true in-place functions. Fully tested.
+
+**Previous state:** All augmented assignment operators (`+=`, `-=`, `*=`, `//=`,
+`%=`, `<<=`, `>>=`, `&=`, `|=`, `^=`) created a new BigInt2 and replaced `self`:
 
 ```mojo
 fn __iadd__(mut self, other: Self):
     self = arithmetics.add(self, other)  # allocates new BigInt2
 ```
 
-This means `a += b` is no faster than `a = a + b`. Internal code already works
-around this by calling `_add_magnitudes_inplace` directly (e.g., the D&C
-from_string combine step), which hurts readability and maintainability.
+**Implementation (two phases):**
 
-**Target:** Implement true in-place versions that modify `self.words` directly:
+**Phase 1 — Core arithmetic (arithmetics.mojo):**
 
-1. `__iadd__` → `_add_inplace(mut self, other)`: extend `_add_magnitudes_inplace`
-   with sign handling (same-sign: magnitude add; different-sign: magnitude subtract)
-2. `__isub__` → `_subtract_inplace(mut self, other)`: dual of iadd
-3. `__imul__` with scalar: `_multiply_by_word_inplace(mut self, w: UInt32)` —
-   single O(n) pass, useful in from_string and power-of-10 scaling
-4. `__iadd__(mut self, other: Int)` → fast path for small addends (single-word
-   carry propagation, no allocation)
+- `add_inplace(mut x, other)` — true in-place `+=`. Uses existing
+  `_add_magnitudes_inplace` / `_subtract_magnitudes_inplace` with sign handling
+  (same sign → add magnitudes; different signs → subtract smaller from larger)
+- `add_inplace_int(mut x, value: Int)` — optimized `+= Int`. Builds at most
+  2 words from the Int value, avoids BigInt2 construction entirely
+- `subtract_inplace(mut x, other)` — true in-place `-=`. Flips other's sign
+  conceptually and applies add logic
+- `multiply_inplace(mut x, other)` — computes `_multiply_magnitudes`, moves
+  result words into x (can't be truly in-place due to read-during-write, but
+  avoids full BigInt2 construction)
+- Helper: `_compare_magnitudes_words(a, b) -> Int8` for raw word-list comparison
 
-**Why now (before PR5–PR8):**
+**Phase 2 — Shifts, division, bitwise (arithmetics.mojo + bitwise.mojo):**
 
-- The `_add_magnitudes_inplace` primitive already exists and is battle-tested
-- `__iadd__` with sign handling is straightforward (~30 lines)
-- Scalar `__imul__` is a direct generalization of `_multiply_add_inplace`
-- These are **performance infrastructure**: future PRs (bitwise ops, GCD,
-  modular arithmetic) will naturally benefit from fast in-place paths
-- Allows internal code to use idiomatic `result += low` instead of
-  `_add_magnitudes_inplace(result.words, low.words)`, improving readability
+- `left_shift_inplace(mut x, shift)` — builds shifted word list and moves into x
+- `right_shift_inplace(mut x, shift)` — shifts words in-place, truncates, handles
+  arithmetic right shift for negative numbers (round toward -∞)
+- `floor_divide_inplace(mut x, other)` — computes `_divmod_magnitudes`, moves
+  quotient words into x with correct sign/rounding
+- `floor_modulo_inplace(mut x, other)` — computes `_divmod_magnitudes`, moves
+  remainder words into x with correct sign adjustment
+- `bitwise_and_inplace(mut a, b)` — parametric `_binary_bitwise_op_inplace["and"]`.
+  Non-negative fast path: AND in-place, truncate to `min_len`
+- `bitwise_or_inplace(mut a, b)` — extend a if shorter, OR in-place
+- `bitwise_xor_inplace(mut a, b)` — extend a if shorter, XOR in-place
 
-**Non-target (defer to PR8):** Full in-place `__imul__` for BigInt2 × BigInt2
-requires in-place Karatsuba with scratch buffers — complex and belongs with
-Toom-Cook / NTT where similar infrastructure is needed.
+**Internal callers updated:**
 
-**Expected Impact:**
+- `_sqrt_newton()`: `guess -= BigInt2(1)` and `guess += BigInt2(1)` now use
+  true in-place ops instead of allocating `guess = guess - BigInt2(1)`
+- `_sqrt_precision_doubling()`: `a -= BigInt2(1)` for final adjustment
 
-- Eliminates one allocation per `+=` / `-=` call on hot paths
-- Enables idiomatic `a += b` in D&C combine, power table construction, etc.
-- Scalar `*=` enables efficient `result *= 10^9` without wrapping in BigInt2
+**Testing:**
+
+- 41 tests in `test_bigint2_inplace.mojo`: `+=`, `-=`, `*=` (basic, zero, sign,
+  carry, large, consistency with non-inplace, accumulator loops, factorial)
+- 59 tests in `test_bigint2_inplace_extended.mojo`: `<<=`, `>>=`, `//=`, `%=`,
+  `&=`, `|=`, `^=` (basic, edge cases, negative, large, consistency with
+  non-inplace, chained operations, mixed-op chains)
+- All 201 BigInt2 tests pass
+
+**Expected performance impact:**
+
+| Scenario                                           | Savings                                                   | Estimated speedup |
+| -------------------------------------------------- | --------------------------------------------------------- | ----------------- |
+| Small values (1–2 words), high-frequency `+=`      | 1 List alloc + BigInt2 construct per op                   | ~5–15%            |
+| Accumulator loops (`sum += i` × 1000)              | 1000 allocations eliminated                               | ~10–20%           |
+| Medium values (10–100 words)                       | Same savings, but arithmetic dominates                    | ~2–5%             |
+| Large values (1000+ words)                         | Arithmetic time dominates completely                      | <1%               |
+| `*=`, `//=`, `%=`                                  | Only saves BigInt2 construction (can't avoid temp buffer) | ~1–3%             |
+| Bitwise `&=`, `\|=`, `^=` (non-negative fast path) | True in-place word modification                           | ~5–10%            |
 
 ---
 

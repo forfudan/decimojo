@@ -1888,6 +1888,226 @@ fn multiply_inplace(mut x: BigInt2, read other: BigInt2):
     x.sign = x.sign != other.sign
 
 
+fn left_shift_inplace(mut x: BigInt2, shift: Int):
+    """Performs x <<= shift by mutating x.words directly.
+
+    Avoids allocating a new BigInt2. Shifts left by `shift` bits
+    (equivalent to multiplying by 2^shift).
+
+    Args:
+        x: The value to shift (modified in-place).
+        shift: The number of bits to shift left.
+    """
+    if x.is_zero() or shift == 0:
+        return
+
+    if shift < 0:
+        right_shift_inplace(x, -shift)
+        return
+
+    # Split shift into whole-word and sub-word parts
+    var word_shift = shift // 32
+    var bit_shift = shift % 32
+
+    var n = len(x.words)
+    var new_len = n + word_shift + (1 if bit_shift > 0 else 0)
+    var new_words = List[UInt32](capacity=new_len)
+
+    # Prepend zero words for the whole-word shift
+    for _ in range(word_shift):
+        new_words.append(UInt32(0))
+
+    # Shift existing words (low to high, with carry propagation)
+    if bit_shift == 0:
+        for i in range(n):
+            new_words.append(x.words[i])
+    else:
+        var carry: UInt32 = 0
+        for i in range(n):
+            var shifted = UInt64(x.words[i]) << bit_shift
+            new_words.append(UInt32(shifted & 0xFFFF_FFFF) | carry)
+            carry = UInt32(shifted >> 32)
+        if carry > 0:
+            new_words.append(carry)
+
+    x.words = new_words^
+
+
+fn right_shift_inplace(mut x: BigInt2, shift: Int):
+    """Performs x >>= shift by mutating x.words directly.
+
+    For negative numbers, performs arithmetic right shift (rounds toward
+    negative infinity), consistent with Python's behavior.
+
+    Args:
+        x: The value to shift (modified in-place).
+        shift: The number of bits to shift right.
+    """
+    if x.is_zero() or shift == 0:
+        return
+
+    if shift < 0:
+        left_shift_inplace(x, -shift)
+        return
+
+    var word_shift = shift // 32
+    var bit_shift = shift % 32
+    var n = len(x.words)
+
+    # If shifting by more words than we have, result is 0 or -1
+    if word_shift >= n:
+        if x.sign:
+            # -1
+            x.words.clear()
+            x.words.append(UInt32(1))
+            # sign stays True
+        else:
+            x.words.clear()
+            x.words.append(UInt32(0))
+            x.sign = False
+        return
+
+    # For negative numbers, check if any bits will be lost (for rounding)
+    var any_bits_lost = False
+    if x.sign:
+        # Check sub-word bits of the boundary word
+        if bit_shift > 0:
+            var mask = UInt32((1 << bit_shift) - 1)
+            if (x.words[word_shift] & mask) != 0:
+                any_bits_lost = True
+        # Check fully-shifted-out words
+        if not any_bits_lost:
+            for i in range(min(word_shift, n)):
+                if x.words[i] != 0:
+                    any_bits_lost = True
+                    break
+
+    # Perform the shift in-place
+    var new_len = n - word_shift
+    if bit_shift == 0:
+        for i in range(new_len):
+            x.words[i] = x.words[i + word_shift]
+    else:
+        for i in range(new_len):
+            var lo = UInt64(x.words[i + word_shift]) >> bit_shift
+            var hi: UInt64 = 0
+            if i + word_shift + 1 < n:
+                hi = (
+                    UInt64(x.words[i + word_shift + 1]) << (32 - bit_shift)
+                ) & 0xFFFF_FFFF
+            x.words[i] = UInt32(lo | hi)
+
+    # Truncate to new length
+    while len(x.words) > new_len:
+        x.words.shrink(len(x.words) - 1)
+
+    # Strip leading zeros
+    while len(x.words) > 1 and x.words[-1] == 0:
+        x.words.shrink(len(x.words) - 1)
+
+    if len(x.words) == 0:
+        x.words.append(UInt32(0))
+
+    # For negative numbers with lost bits, round toward negative infinity
+    if x.sign and any_bits_lost:
+        var carry: UInt64 = 1
+        for i in range(len(x.words)):
+            var s = UInt64(x.words[i]) + carry
+            x.words[i] = UInt32(s & 0xFFFF_FFFF)
+            carry = s >> 32
+            if carry == 0:
+                break
+        if carry > 0:
+            x.words.append(UInt32(carry))
+
+    x._normalize()
+
+
+fn floor_divide_inplace(mut x: BigInt2, read other: BigInt2) raises:
+    """Performs x //= other by computing the quotient and moving the result
+    into x.words.
+
+    Division cannot be done truly in-place due to the nature of the algorithm,
+    so this computes the quotient word list and moves it into x. This avoids
+    the overhead of constructing a full BigInt2 object.
+
+    Args:
+        x: The dividend (modified in-place to hold the quotient).
+        other: The divisor.
+    """
+    var result = _divmod_magnitudes(x.words, other.words)
+    var q_words = result[0].copy()
+    var r_words = result[1].copy()
+
+    # Check if remainder is zero
+    var r_is_zero = True
+    for word in r_words:
+        if word != 0:
+            r_is_zero = False
+            break
+
+    if x.sign == other.sign:
+        # Same signs → positive quotient (floor = truncate)
+        x.words = q_words^
+        x.sign = False
+    else:
+        # Different signs → negative quotient
+        if r_is_zero:
+            var q_is_zero = True
+            for word in q_words:
+                if word != 0:
+                    q_is_zero = False
+                    break
+            x.words = q_words^
+            x.sign = not q_is_zero
+        else:
+            # Non-exact: floor division rounds away from zero for negative
+            var one_word: List[UInt32] = [UInt32(1)]
+            _add_magnitudes_inplace(q_words, one_word)
+            x.words = q_words^
+            x.sign = True
+
+    x._normalize()
+
+
+fn floor_modulo_inplace(mut x: BigInt2, read other: BigInt2) raises:
+    """Performs x %= other by computing the remainder and moving the result
+    into x.words.
+
+    Args:
+        x: The dividend (modified in-place to hold the remainder).
+        other: The divisor.
+    """
+    var result = _divmod_magnitudes(x.words, other.words)
+    _ = result[0]
+    var r_words = result[1].copy()
+
+    # Check if remainder is zero
+    var r_is_zero = True
+    for word in r_words:
+        if word != 0:
+            r_is_zero = False
+            break
+
+    if r_is_zero:
+        x.words.clear()
+        x.words.append(UInt32(0))
+        x.sign = False
+        return
+
+    if x.sign == other.sign:
+        # Same signs: remainder has the same sign as x1 (and x2)
+        x.words = r_words^
+        # x.sign stays the same (already equals other.sign)
+    else:
+        # Different signs: floor_mod = |divisor| - |remainder|
+        var adjusted = _subtract_magnitudes(other.words, r_words)
+        x.words = adjusted^
+        x.sign = other.sign
+
+    x._normalize()
+
+
 fn floor_divide(x1: BigInt2, x2: BigInt2) raises -> BigInt2:
     """Returns the quotient of two BigInt2 numbers, rounding toward negative
     infinity.

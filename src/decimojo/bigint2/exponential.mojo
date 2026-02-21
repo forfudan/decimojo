@@ -149,13 +149,14 @@ fn _sqrt_newton(x: BigInt2) raises -> BigInt2:
     while True:
         var guess_sq = guess * guess
         if guess_sq > x:
-            guess = guess - BigInt2(1)
+            guess -= BigInt2(1)
         else:
-            var next = guess + BigInt2(1)
-            var next_sq = next * next
+            guess += BigInt2(1)
+            var next_sq = guess * guess
             if next_sq <= x:
-                guess = next^
+                continue
             else:
+                guess -= BigInt2(1)
                 break
 
     return guess^
@@ -203,7 +204,7 @@ fn _sqrt_precision_doubling(x: BigInt2) raises -> BigInt2:
     # Final adjustment: a - (1 if a*a > x else 0)
     var a_sq = a * a
     if a_sq > x:
-        a = a - BigInt2(1)
+        a -= BigInt2(1)
 
     return a^
 
