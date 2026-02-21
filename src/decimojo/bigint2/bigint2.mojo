@@ -1508,7 +1508,9 @@ fn _dc_from_str_recursive(
 #
 # We use TWO thresholds:
 # - _DC_TO_STR_ENTRY_THRESHOLD (128): gates the top-level decision to enter D&C
+#   (~1230 decimal digits; below this the simple O(n²) path is faster)
 # - _DC_TO_STR_BASE_THRESHOLD (64): base-case size within the recursion
+#   (~616 decimal digits; recursion bottoms out to simple path here)
 comptime _DC_TO_STR_ENTRY_THRESHOLD = 128
 comptime _DC_TO_STR_BASE_THRESHOLD = 64
 
@@ -1522,6 +1524,13 @@ fn _magnitude_to_decimal_simple(words: List[UInt32], eff_words: Int) -> String:
     """Converts a magnitude (unsigned word list) to a decimal string using
     the simple O(n²) method of repeated division by 10^9.
 
+    Optimizations over naive approach:
+    - Divides by 10^9, collecting base-10^9 chunks, then writes digits
+      to a byte buffer in one pass (no string concatenation).
+    - Tracks effective dividend length (`div_len`) instead of scanning
+      for is_zero.
+    - Uses `unsafe_ptr()` for the inner division loop.
+
     Args:
         words: The magnitude in little-endian UInt32 words.
         eff_words: Effective number of words (excluding trailing zeros).
@@ -1532,57 +1541,74 @@ fn _magnitude_to_decimal_simple(words: List[UInt32], eff_words: Int) -> String:
     if eff_words == 1 and words[0] == 0:
         return String("0")
 
-    # Copy the words so we can modify in-place during division
+    # Fast path for single-word values.
+    if eff_words == 1:
+        return String(Int(words[0]))
+
+    # Fast path for two-word values (fits in UInt64).
+    if eff_words == 2:
+        var val = (UInt64(words[1]) << 32) | UInt64(words[0])
+        return String(val)
+
+    # Allocate dividend buffer and get raw pointer for fast inner loop.
     var dividend = List[UInt32](capacity=eff_words)
     for i in range(eff_words):
         dividend.append(words[i])
+    var dp = dividend.unsafe_ptr()
 
-    # Extract base-10^9 chunks via repeated division
-    var chunks = List[UInt32]()
+    # Estimate number of 9-digit chunks: ceil(bits * log10(2) / 9) + 1.
+    var est_chunks = (eff_words * 32 * 9 + 268) // 269 + 1
 
-    while True:
-        # Check if dividend is zero
-        var is_zero = True
-        for i in range(len(dividend)):
-            if dividend[i] != 0:
-                is_zero = False
-                break
-        if is_zero:
-            break
+    # Extract base-10^9 chunks via repeated division.
+    var chunks = List[UInt32](capacity=est_chunks)
+    var div_len = eff_words
 
-        # Divide by 10^9 and collect remainder
+    while div_len > 0:
         var remainder: UInt64 = 0
-        for i in range(len(dividend) - 1, -1, -1):
-            var temp = (remainder << 32) + UInt64(dividend[i])
-            dividend[i] = UInt32(temp // _DECIMAL_CHUNK_BASE)
+        for i in range(div_len - 1, -1, -1):
+            var temp = (remainder << 32) + UInt64(dp[i])
+            dp[i] = UInt32(temp // _DECIMAL_CHUNK_BASE)
             remainder = temp % _DECIMAL_CHUNK_BASE
 
-        # Strip leading zeros from dividend
-        while len(dividend) > 1 and dividend[-1] == 0:
-            dividend.shrink(len(dividend) - 1)
+        while div_len > 0 and dp[div_len - 1] == 0:
+            div_len -= 1
 
         chunks.append(UInt32(remainder))
 
-    if len(chunks) == 0:
+    var num_chunks = len(chunks)
+    if num_chunks == 0:
         return String("0")
 
-    # Build string from most-significant chunk first
-    var result = String()
+    # --- Build the decimal string in a byte buffer ---
+    var max_digits = num_chunks * 9
+    var buf = List[UInt8](capacity=max_digits + 1)
 
-    for i in range(len(chunks) - 1, -1, -1):
-        var chunk_val = Int(chunks[i])
-        if i == len(chunks) - 1:
-            # Most significant chunk: no zero-padding
-            result += String(chunk_val)
-        else:
-            # Other chunks: zero-pad to exactly 9 digits
-            var chunk_str = String(chunk_val)
-            var pad_needed = 9 - len(chunk_str)
-            for _ in range(pad_needed):
-                result += "0"
-            result += chunk_str
+    # Most-significant chunk: no zero-padding.
+    var msb = Int(chunks[num_chunks - 1])
+    var msb_digits = InlineArray[UInt8, 10](fill=0)
+    var msb_len = 0
+    if msb == 0:
+        buf.append(48)  # '0'
+    else:
+        var v = msb
+        while v > 0:
+            msb_digits[msb_len] = UInt8(v % 10) + 48
+            msb_len += 1
+            v //= 10
+        for j in range(msb_len - 1, -1, -1):
+            buf.append(msb_digits[j])
 
-    return result^
+    # Remaining chunks: zero-padded to exactly 9 digits.
+    for ci in range(num_chunks - 2, -1, -1):
+        var val = Int(chunks[ci])
+        var digits9 = InlineArray[UInt8, 9](fill=48)  # pre-fill '0'
+        for d in range(9):
+            digits9[8 - d] = UInt8(val % 10) + 48
+            val //= 10
+        for d in range(9):
+            buf.append(digits9[d])
+
+    return String(unsafe_from_utf8=buf^)
 
 
 fn _magnitude_to_decimal_dc(
@@ -1636,11 +1662,10 @@ fn _magnitude_to_decimal_dc(
     # Only build up to max_level - 1 (the highest level that can be used).
     var num_powers = max_level  # indices 0 to max_level - 1
     var power_table = List[BigInt2](capacity=num_powers)
-    var cur = BigInt2(10)
-    power_table.append(cur.copy())
-    for _ in range(1, num_powers):
-        cur = cur * cur
-        power_table.append(cur.copy())
+    power_table.append(BigInt2(10))
+    for k in range(1, num_powers):
+        var sq = power_table[k - 1] * power_table[k - 1]
+        power_table.append(sq^)
 
     # Create unsigned BigInt2 from the magnitude words
     var trimmed = List[UInt32](capacity=eff_words)
@@ -1703,14 +1728,22 @@ fn _dc_to_str_recursive(
     var high_str = _dc_to_str_recursive(q, power_table, level - 1)
     var low_str = _dc_to_str_recursive(r, power_table, level - 1)
 
-    # Zero-pad low_str to exactly low_width digits
+    # Zero-pad low_str to exactly low_width digits.
+    # Build the result in a pre-allocated byte buffer to avoid O(n) concatenations.
     var padding = low_width - len(low_str)
     if padding <= 0:
         return high_str + low_str
 
-    # Build result with zero-padded low part
-    var result = high_str
+    var total_len = len(high_str) + padding + len(low_str)
+    var buf = List[UInt8](capacity=total_len)
+    # Copy high_str bytes
+    for i in range(len(high_str)):
+        buf.append(high_str.unsafe_ptr()[i])
+    # Write zero padding
     for _ in range(padding):
-        result += "0"
-    result += low_str
-    return result^
+        buf.append(48)  # ASCII '0'
+    # Copy low_str bytes
+    for i in range(len(low_str)):
+        buf.append(low_str.unsafe_ptr()[i])
+
+    return String(unsafe_from_utf8=buf^)
