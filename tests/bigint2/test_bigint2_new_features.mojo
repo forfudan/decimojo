@@ -677,10 +677,12 @@ fn test_from_string_dc_path() raises:
         msg="[D&C from_string] 10501-digit D&C matches BigInt10 path",
     )
 
-    # Test a non-trivial large number: 7 * 10^10499 + 123456789
-    var a2 = BigInt2(7) * BigInt2(10).power(10499) + BigInt2(123456789)
-    var s2 = String(a2)
-    var b2 = BigInt2(s2)
+    # Test a non-trivial large number: 7 followed by 10499 zeros then 123456789
+    # Build the decimal string directly to avoid expensive power() + to_string
+    var s2 = String("7") + String("0") * 10490 + String("123456789")
+    var a2 = BigInt2(s2)
+    # Cross-check against an independent BigInt10-based reference
+    var b2 = BigInt2.from_bigint10(BigInt10(s2))
     testing.assert_true(
         a2 == b2,
         msg="[D&C from_string] 10500-digit non-trivial round-trip",

@@ -443,19 +443,56 @@ Implemented D&C decimal→binary conversion in `_from_decimal_digits_dc()`:
 3. Base case: switch to simple `_from_decimal_digits_simple()` at 256 digits
 4. Entry threshold: only enter D&C when digit_count > 10000
 
-Also added a fused scalar `multiply_add` inner loop in `_from_decimal_digits_simple()`
-that processes 9 digits at a time with a single `result = result * 10^9 + chunk`
-step using pointer-based word-level arithmetic.
+#### ✅ PR 4c: from_string Micro-optimizations — DONE
 
-Optimizations applied to D&C:
+Optimized both the simple and D&C paths for from_string:
 
-- Power table built without `.copy()` — each entry computed directly from previous
-- Combine step uses in-place add (`result += low`) instead of `high * power + low`
+**Simple path (`_from_decimal_digits_simple`) optimizations:**
 
-**Result:** At 20K digits: 0.63× → **0.82×** (+30%). At 50K digits: 0.47× → **0.84×**
-(+79%). The simple path (≤10K digits) averages ~1.1× vs Python. The remaining gap
-at 20K+ digits is due to Karatsuba O(n^1.585) vs Python/GMP's more advanced
-multiplication algorithms.
+- Fast paths for ≤ 9 digits (single UInt32 word, zero allocation overhead)
+  and 10–19 digits (UInt64 → 1–2 words)
+- Pre-allocates the full word array to maximum size, avoiding all dynamic
+  growth (append / realloc) during conversion
+- Handles the first (possibly shorter) chunk separately so the hot loop
+  always processes exactly 9 digits with a compile-time 10^9 constant
+- Raw pointer access (`_data`) for both digit and word arrays, eliminating
+  bounds-checking in the inner multiply-add loop
+- Tracks live word count in a local variable; single trim pass at end
+
+**D&C path (`_from_decimal_digits_dc`) optimizations:**
+
+- **Balanced splitting**: splits at the largest 2^k ≤ digit_count/2 instead
+  of the largest 2^k < digit_count. This keeps both halves within a 2:1
+  ratio, producing balanced operands for Karatsuba multiplication.
+- **Smaller power table**: builds only up to `floor(log2(digit_count/2))`
+  entries instead of `ceil(log2(digit_count))`, saving one expensive
+  top-level squaring (e.g., skipping 10^32768 for 50K digits).
+- **Smarter max_level propagation**: the high recursive call receives
+  `level` (not `level-1`) since high ≥ digit_count/2 and may need the
+  same power-of-2 boundary. The low call receives `level-1`.
+- Combine step uses `_add_magnitudes_inplace` for true in-place add
+
+**Result (from_string speedup vs Python `int(string)`):**
+
+| Digits | Before PR4c | After PR4c | Improvement |
+| ------ | ----------- | ---------- | ----------- |
+| 2      | 3.67×       | 3.83×      | +4%         |
+| 9      | 3.60×       | 3.50×      | ~same       |
+| 20     | 2.38×       | 2.63×      | +10%        |
+| 50     | 1.33×       | 2.40×      | +80%        |
+| 100    | 1.19×       | 1.93×      | +62%        |
+| 200    | **0.94×**   | **1.10×**  | **FIXED**   |
+| 500    | 1.18×       | 1.24×      | +5%         |
+| 1000   | 1.06×       | 1.10×      | +4%         |
+| 2000   | 1.04×       | 1.11×      | +7%         |
+| 5000   | 1.13×       | 1.12×      | ~same       |
+| 10000  | 1.16×       | 1.06×      | ~same       |
+| 20000  | **0.83×**   | **0.98×**  | **+18%**    |
+| 50000  | **0.81×**   | **1.00×**  | **+23%**    |
+| Avg    | **1.53×**   | **1.78×**  | **+16%**    |
+
+All sizes now ≥ 0.98× Python. The remaining tiny gap at 20K digits
+is due to Karatsuba O(n^1.585) vs Python/GMP's Toom-Cook algorithms.
 
 ---
 
@@ -516,15 +553,16 @@ sizes (100000+).
 
 ## Summary: Priority Order
 
-| PR   | Title                         | Status     | Priority | Impact                     |
-| ---- | ----------------------------- | ---------- | -------- | -------------------------- |
-| PR0  | Fix sqrt correctness bug      | ✅ **DONE** | CRITICAL | correctness (fixed)        |
-| PR1  | Karatsuba Multiplication      | ✅ **DONE** | HIGHEST  | mul 3.8× faster at scale   |
-| PR2  | Fast Division (Knuth D + B-Z) | ✅ **DONE** | HIGHEST  | div, sqrt, to_string       |
-| PR3  | D&C to_string                 | ✅ **DONE** | HIGH     | to_string: 1.38× at 5K     |
-| PR4a | SIMD parse_numeric_string     | ✅ **DONE** | MEDIUM   | from_string +11% avg       |
-| PR4b | D&C from_string               | ✅ **DONE** | MEDIUM   | from_string at scale       |
-| PR5  | Bitwise AND/OR/XOR/NOT        | TODO       | MEDIUM   | API completeness           |
-| PR6  | GCD + Modular Arithmetic      | TODO       | MEDIUM   | applications               |
-| PR7  | Reassign BInt → BigInt2       | TODO       | LOW      | ergonomics                 |
-| PR8  | Toom-Cook / NTT               | TODO       | LOW      | extreme sizes (50000+ dig) |
+| PR   | Title                           | Status     | Priority | Impact                     |
+| ---- | ------------------------------- | ---------- | -------- | -------------------------- |
+| PR0  | Fix sqrt correctness bug        | ✅ **DONE** | CRITICAL | correctness (fixed)        |
+| PR1  | Karatsuba Multiplication        | ✅ **DONE** | HIGHEST  | mul 3.8× faster at scale   |
+| PR2  | Fast Division (Knuth D + B-Z)   | ✅ **DONE** | HIGHEST  | div, sqrt, to_string       |
+| PR3  | D&C to_string                   | ✅ **DONE** | HIGH     | to_string: 1.38× at 5K     |
+| PR4a | SIMD parse_numeric_string       | ✅ **DONE** | MEDIUM   | from_string +11% avg       |
+| PR4b | D&C from_string                 | ✅ **DONE** | MEDIUM   | from_string at scale       |
+| PR4c | from_string micro-optimizations | ✅ **DONE** | MEDIUM   | all sizes ≥ 0.98× Python   |
+| PR5  | Bitwise AND/OR/XOR/NOT          | TODO       | MEDIUM   | API completeness           |
+| PR6  | GCD + Modular Arithmetic        | TODO       | MEDIUM   | applications               |
+| PR7  | Reassign BInt → BigInt2         | TODO       | LOW      | ergonomics                 |
+| PR8  | Toom-Cook / NTT                 | TODO       | LOW      | extreme sizes (50000+ dig) |

@@ -1272,6 +1272,16 @@ fn _from_decimal_digits_simple(
     """Converts a range of digit values to a BigInt2 using the simple
     O(n²) multiply-and-add method (9 digits at a time).
 
+    Optimizations over the naive approach:
+    - Pre-allocates the word array to its maximum possible size, avoiding
+      all dynamic growth (append / reallocation) during conversion.
+    - Handles the first (possibly shorter) chunk separately so the main
+      loop always processes exactly 9 digits with a compile-time constant
+      10^9 multiplier — no inner loop to compute 10^chunk_size.
+    - Uses raw pointer access for both the digit array and the word array
+      to eliminate bounds-checking overhead in the hot inner loop.
+    - Tracks the live word count in a local variable, trimming once at end.
+
     Args:
         digits: List of digit values (0-9).
         start: Start index (inclusive) in the digits list.
@@ -1283,26 +1293,82 @@ fn _from_decimal_digits_simple(
     if start >= end:
         return BigInt2()
 
+    var digit_count = end - start
+
+    # ---- Fast path: ≤ 9 digits → single UInt32 word, no allocation ----
+    if digit_count <= 9:
+        var dp = digits._data + start
+        var val: UInt32 = UInt32(dp[0])
+        for j in range(1, digit_count):
+            val = val * 10 + UInt32(dp[j])
+        var result = BigInt2()
+        result.words[0] = val
+        return result^
+
+    # ---- Fast path: 10–19 digits → parse into UInt64, at most 2 words ----
+    if digit_count <= 19:
+        var dp = digits._data + start
+        var val: UInt64 = UInt64(dp[0])
+        for j in range(1, digit_count):
+            val = val * 10 + UInt64(dp[j])
+        var result = BigInt2()
+        result.words[0] = UInt32(val & 0xFFFF_FFFF)
+        var high_word = UInt32(val >> 32)
+        if high_word > 0:
+            result.words.append(high_word)
+        return result^
+
+    # ---- General path: pre-allocate and multiply-add by 10^9 chunks ----
+
+    # Pre-allocate words: ceil(digit_count * log2(10) / 32) + 2.
+    # 107/1024 ≈ 0.10449 > log2(10)/32 ≈ 0.10381, so always sufficient.
+    # The +2 guarantees room for a carry word at the end of every iteration.
+    var max_words = (digit_count * 107 + 1023) // 1024 + 2
+
     var result = BigInt2()
-    var i = start
-    while i < end:
-        # Determine chunk size (up to 9 digits)
-        var chunk_size = min(9, end - i)
+    result.words = List[UInt32](capacity=max_words)
+    result.words.resize(unsafe_uninit_length=max_words)
+    var wp = result.words._data  # stable pointer: no reallocation occurs
 
-        # Parse the chunk to an integer from digit values 0-9
-        var chunk_val: UInt32 = 0
-        for j in range(chunk_size):
-            chunk_val = chunk_val * 10 + UInt32(digits[i + j])
+    # Handle first chunk (1–9 digits) to align the rest to 9-digit boundaries.
+    var first_chunk = digit_count % 9
+    if first_chunk == 0:
+        first_chunk = 9
 
-        # Compute the multiplier: 10^chunk_size
-        var multiplier: UInt32 = 1
-        for _ in range(chunk_size):
-            multiplier *= 10
+    var dp = digits._data + start
+    var chunk_val: UInt32 = UInt32(dp[0])
+    for j in range(1, first_chunk):
+        chunk_val = chunk_val * 10 + UInt32(dp[j])
+    dp += first_chunk
 
-        # Fused: result = result * multiplier + chunk_val (single pass)
-        _multiply_add_inplace(result, multiplier, chunk_val)
+    wp[0] = chunk_val
+    var word_count: Int = 1
+    var remaining = digit_count - first_chunk
 
-        i += chunk_size
+    # Main loop: full 9-digit chunks with constant multiplier 10^9.
+    comptime MUL9: UInt64 = 1_000_000_000
+
+    while remaining > 0:
+        # Parse 9 digit values → UInt32 chunk
+        var cv: UInt32 = UInt32(dp[0])
+        for j in range(1, 9):
+            cv = cv * 10 + UInt32(dp[j])
+        dp += 9
+        remaining -= 9
+
+        # Fused multiply-add: result = result * 10^9 + cv  (single O(n) pass)
+        var carry: UInt64 = UInt64(cv)
+        for k in range(word_count):
+            var product = UInt64(wp[k]) * MUL9 + carry
+            wp[k] = UInt32(product & 0xFFFF_FFFF)
+            carry = product >> 32
+        if carry > 0:
+            wp[word_count] = UInt32(carry)
+            word_count += 1
+
+    # Trim pre-allocated words to the actual live word count.
+    while len(result.words) > word_count:
+        result.words.shrink(len(result.words) - 1)
 
     return result^
 
@@ -1316,10 +1382,15 @@ fn _from_decimal_digits_dc(
 
     Algorithm:
     1. Precompute a power table: powers[k] = 10^(2^k) as BigInt2 values.
-    2. Split the digit string: high gets the leading digits, low gets the
-       trailing 2^k digits (the largest power-of-2 chunk that fits).
+    2. **Balanced split**: choose the largest power-of-2 boundary ≤ digit_count/2.
+       This keeps both halves close in size, which is optimal for Karatsuba
+       multiplication (balanced operands give the best O(n^1.585) constant).
     3. Recursively convert both halves.
     4. Combine: result = high * powers[k] + low.
+
+    The balanced split also reduces the power-table size: we only build up
+    to floor(log2(digit_count/2)) instead of ceil(log2(digit_count)), saving
+    one expensive squaring at the top level.
 
     Args:
         digits: List of digit values (0-9).
@@ -1331,30 +1402,28 @@ fn _from_decimal_digits_dc(
     """
     var digit_count = end - start
 
-    # Find max_level such that 2^max_level >= digit_count.
-    # Use bit-counting to avoid overflow.
-    var max_level = 0
-    var tmp = digit_count - 1
+    # For balanced D&C, the top-level split uses 2^k ≤ digit_count/2.
+    # We only need power table entries up to that level, saving one
+    # expensive squaring compared to the "largest 2^k < digit_count" approach.
+    var half = digit_count >> 1
+    var top_level = 0
+    var tmp = half
     while tmp > 0:
         tmp >>= 1
-        max_level += 1
+        top_level += 1
+    top_level -= 1  # floor(log2(half)): 2^top_level ≤ half < 2^(top_level+1)
 
-    # Build power table: powers[k] = 10^(2^k) as BigInt2
-    # powers[0] = 10^1, powers[1] = 10^2, powers[2] = 10^4, ...
-    # We need up to max_level entries (indices 0 to max_level - 1).
-    var num_powers = max_level
+    # Build power table: powers[k] = 10^(2^k). Indices 0..top_level.
+    var num_powers = top_level + 1
     var power_table = List[BigInt2](capacity=num_powers)
     power_table.append(BigInt2(10))
     for k in range(1, num_powers):
         # Compute 10^(2^k) = (10^(2^(k-1)))^2 directly from the table.
-        # Avoids an extra .copy() per level.
         var sq = power_table[k - 1] * power_table[k - 1]
         power_table.append(sq^)
 
     # Run the recursive D&C conversion
-    return _dc_from_str_recursive(
-        digits, start, end, power_table, num_powers - 1
-    )
+    return _dc_from_str_recursive(digits, start, end, power_table, top_level)
 
 
 fn _dc_from_str_recursive(
@@ -1365,11 +1434,19 @@ fn _dc_from_str_recursive(
     max_level: Int,
 ) raises -> BigInt2:
     """Recursively converts a range of digit values to BigInt2
-    using the precomputed power table.
+    using the precomputed power table with balanced splitting.
 
     At each level, splits the digit range into high and low parts where
-    the low part has exactly 2^level digits, then:
+    the low part has 2^level digits (the largest power-of-2 ≤ digit_count/2),
+    then:
         result = high * 10^(2^level) + low
+
+    The balanced split ensures high and low are within a 2:1 ratio, keeping
+    the combine multiplication efficient under Karatsuba.
+
+    Note on max_level: the high part receives `level` (not `level - 1`)
+    because high ≥ digit_count/2, so it may legitimately need the same level.
+    The low part receives `level - 1` since it has exactly 2^level digits.
 
     Args:
         digits: List of digit values (0-9).
@@ -1387,31 +1464,34 @@ fn _dc_from_str_recursive(
     if digit_count <= _DC_FROM_STR_BASE_THRESHOLD:
         return _from_decimal_digits_simple(digits, start, end)
 
-    # Find the largest level k such that 2^k < digit_count.
-    # This ensures low part has 2^k digits and high part has ≥1 digit.
+    # Find the largest level k such that 2^k ≤ digit_count / 2.
+    # This balanced split keeps operands close in size for Karatsuba.
     var level = min(max_level, len(power_table) - 1)
-    while level >= 0 and (1 << level) >= digit_count:
+    var half = digit_count >> 1
+    while level >= 0 and (1 << level) > half:
         level -= 1
 
     if level < 0:
-        # digit_count <= 1, use simple method
+        # digit_count ≤ 2 (can't split meaningfully), use simple method
         return _from_decimal_digits_simple(digits, start, end)
 
-    # Split: low part has exactly 2^level digits, high part gets the rest
+    # Split: low part has exactly 2^level digits, high part gets the rest.
     var low_len = 1 << level
-    var split = (
-        end - low_len
-    )  # high = digits[start:split], low = digits[split:end]
+    var split = end - low_len
 
-    # Recursively convert both halves
-    var high = _dc_from_str_recursive(
-        digits, start, split, power_table, level - 1
-    )
+    # Recursively convert both halves.
+    # High part may need the same `level` (since high ≥ digit_count/2),
+    # so pass `level` rather than `level - 1`.
+    var high = _dc_from_str_recursive(digits, start, split, power_table, level)
     var low = _dc_from_str_recursive(digits, split, end, power_table, level - 1)
 
     # Combine: result = high * 10^(2^level) + low
+    # Use _add_magnitudes_inplace directly to avoid BigInt2.__iadd__ overhead
+    # (which creates a new BigInt2 via arithmetics.add).
     var result = high * power_table[level]
-    result += low
+    decimojo.bigint2.arithmetics._add_magnitudes_inplace(
+        result.words, low.words
+    )
     return result^
 
 
