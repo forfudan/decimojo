@@ -2,7 +2,7 @@
 
 由 [Mojo 程序設計語言 🔥](https://www.modular.com/mojo) 實現的任意精度小數和整數運算庫。
 
-**[English](https://zhuyuhao.com/decimojo/)**　|　**[更新日誌](https://github.com/mojomath/decimojo/blob/main/docs/changelog.md)**　|　**[GitHub 倉庫»](https://github.com/mojomath/decimojo)**　|　**[Discord 頻道»](https://discord.gg/3rGH87uZTk)**
+**[English](https://zhuyuhao.com/decimojo/)**　|　**[更新日誌](https://github.com/forfudan/decimojo/blob/main/docs/changelog.md)**　|　**[GitHub 倉庫»](https://github.com/forfudan/decimojo)**　|　**[Discord 頻道»](https://discord.gg/3rGH87uZTk)**
 
 - [概述](#概述)
 - [安裝](#安裝)
@@ -23,7 +23,7 @@ DeciMojo 爲 Mojo 提供任意精度小數和整數運算庫，爲金融建模�
 - 任意精度小數實現 (`BigDecimal`)，允許進行無限位數和小數位的計算[^arbitrary]。它提供完整的算術運算、比較以及數學函數集合，如對數、指數、根、三角函數等。它還支持捨入模式以及與內建類型的轉換。
 - 128 位定點小數實現 (`Decimal128`)，支持最多 29 位有效數字，小數點後最多 28 位數字[^fixed]。它具有完整的數學函數集合，包括對數、指數、根等。
 
-此倉庫包含 [TOMLMojo](https://github.com/mojomath/decimojo/tree/main/src/tomlmojo)，一個純 Mojo 實現的輕量級 TOML 解析器。它解析配置文件和測試數據，支持基本類型、數組和嵌套表。雖然爲 DeciMojo 的測試框架而創建，但它提供通用的結構化數據解析，具有簡潔的 API。
+此倉庫包含 [TOMLMojo](https://github.com/forfudan/decimojo/tree/main/src/tomlmojo)，一個純 Mojo 實現的輕量級 TOML 解析器。它解析配置文件和測試數據，支持基本類型、數組和嵌套表。雖然爲 DeciMojo 的測試框架而創建，但它提供通用的結構化數據解析，具有簡潔的 API。
 
 | 類型         | 別名              | 信息               | 內部表示                            |
 | ------------ | ----------------- | ------------------ | ----------------------------------- |
@@ -52,7 +52,7 @@ channels = ["https://conda.modular.com/max", "https://repo.prefix.dev/modular-co
 
     然後運行 `pixi install` 來下載並安裝包。
 
-1. 對於 `main` 分支中的最新開發版本，請克隆 [此 GitHub 倉庫](https://github.com/mojomath/decimojo) 並使用命令 `pixi run package` 在本地構建包。
+1. 對於 `main` 分支中的最新開發版本，請克隆 [此 GitHub 倉庫](https://github.com/forfudan/decimojo) 並使用命令 `pixi run package` 在本地構建包。
 
 下表總結了包版本及其對應的 Mojo 版本：
 
@@ -293,7 +293,7 @@ DeciMojo 結合了 "Deci" 和 "Mojo" 兩詞，反映了其目的和實現語言�
 
 ## 狀態
 
-羅馬不是一日建成的。DeciMojo 目前正在積極開發中。它已成功通過 **"讓它工作"** 階段，並已深入 **"讓它正確"** 階段，同時已實施多項優化。歡迎錯誤報告和功能請求！如果您遇到問題，請[在此提交](https://github.com/mojomath/decimojo/issues)。
+羅馬不是一日建成的。DeciMojo 目前正在積極開發中。它已成功通過 **"讓它工作"** 階段，並已深入 **"讓它正確"** 階段，同時已實施多項優化。歡迎錯誤報告和功能請求！如果您遇到問題，請[在此提交](https://github.com/forfudan/decimojo/issues)。
 
 定期對比 Python 的 `decimal` 模塊的基準測試可在 `bench/` 文件夾中找到，記錄了性能優勢以及需要不同方法的少數特定操作。
 
@@ -314,7 +314,7 @@ DeciMojo 結合了 "Deci" 和 "Mojo" 兩詞，反映了其目的和實現語言�
     author       = {Zhu, Yuhao},
     year         = {2025},
     title        = {An arbitrary-precision decimal and integer mathematics library for Mojo},
-    url          = {https://github.com/mojomath/decimojo},
+    url          = {https://github.com/forfudan/decimojo},
     version      = {0.6.0},
     note         = {Computer Software}
 }
