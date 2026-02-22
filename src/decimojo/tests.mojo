@@ -355,6 +355,85 @@ fn load_bench_iterations(toml_path: String) raises -> Int:
     return 1000
 
 
+fn load_bench_precision(toml_path: String) raises -> Int:
+    """Load the precision from TOML config section.
+
+    Args:
+        toml_path: Path to the TOML file.
+
+    Returns:
+        The precision, defaulting to 36 (BigDecimal default).
+    """
+    var doc = parse_file(toml_path)
+    try:
+        var config = doc.get_table("config")
+        if "precision" in config:
+            return config["precision"].as_int()
+    except:
+        pass
+    return 36
+
+
+# ===----------------------------------------------------------------------=== #
+# PrecisionLevel (for multi-precision benchmarks)
+# ===----------------------------------------------------------------------=== #
+
+
+struct PrecisionLevel(Copyable, Movable):
+    """A precision level for multi-precision benchmarks.
+
+    Pairs a target precision (significant digits) with the number of
+    timing iterations to run at that precision.
+    """
+
+    var precision: Int
+    var iterations: Int
+
+    fn __init__(out self, precision: Int, iterations: Int):
+        self.precision = precision
+        self.iterations = iterations
+
+    fn __copyinit__(out self, other: Self):
+        self.precision = other.precision
+        self.iterations = other.iterations
+
+    fn __moveinit__(out self, deinit other: Self):
+        self.precision = other.precision
+        self.iterations = other.iterations
+
+
+fn load_bench_precision_levels(
+    toml_path: String,
+) raises -> List[PrecisionLevel]:
+    """Load precision levels from a TOML file's [[precision_levels]] tables.
+
+    Each table must have 'precision' (Int) and 'iterations' (Int) keys.
+
+    TOML format:
+        [[precision_levels]]
+        precision = 50
+        iterations = 100
+
+        [[precision_levels]]
+        precision = 1000
+        iterations = 1
+
+    Args:
+        toml_path: Path to the TOML file.
+
+    Returns:
+        A list of PrecisionLevel objects, one per table.
+    """
+    var doc = parse_file(toml_path)
+    var levels_array = doc.get_array_of_tables("precision_levels")
+    var levels = List[PrecisionLevel]()
+    for level_table in levels_array:
+        var precision = level_table["precision"].as_int()
+        var iterations = level_table["iterations"].as_int()
+        levels.append(PrecisionLevel(precision, iterations))
+    return levels^
+
+
 # ===----------------------------------------------------------------------=== #
 # Logging
 # ===----------------------------------------------------------------------=== #

@@ -2,9 +2,11 @@
 
 from decimojo.bigdecimal.bigdecimal import BigDecimal
 import decimojo.bigdecimal.arithmetics
+from decimojo.bigdecimal.arithmetics import true_divide_general
 from decimojo.tests import (
     BenchCase,
     load_bench_cases,
+    load_bench_precision,
     open_log_file,
     log_print,
     print_header,
@@ -14,7 +16,6 @@ from python import Python, PythonObject
 from time import perf_counter_ns
 from collections import List
 
-comptime PRECISION = 4096
 comptime ITERATIONS = 100
 comptime ITERATIONS_LARGE = 3
 comptime LARGE_CASE_THRESHOLD = 50  # Cases index >= this use fewer iterations
@@ -23,6 +24,7 @@ comptime LARGE_CASE_THRESHOLD = 50  # Cases index >= this use fewer iterations
 fn run_case(
     bc: BenchCase,
     iterations: Int,
+    precision: Int,
     pydecimal: PythonObject,
     log_file: PythonObject,
     mut sf: List[Float64],
@@ -37,15 +39,30 @@ fn run_case(
     var pb = pydecimal.Decimal(bc.b)
 
     try:
-        var rm = m_a / m_b
+        var rm = true_divide_general(m_a, m_b, precision)
         var rp = pa / pb
 
-        log_print("BigDecimal result: " + String(rm)[:100], log_file)
-        log_print("Python result:     " + String(rp)[:100], log_file)
+        var rm_str = rm.to_string(precision=100000)
+        var rp_str = String(rp)
+        log_print("BigDecimal result: " + rm_str[:100], log_file)
+        log_print("Python result:     " + rp_str[:100], log_file)
+
+        # Correctness check
+        try:
+            var py_bdec = BigDecimal(rp_str)
+            var diff = rm - py_bdec
+            var diff_str = diff.to_string(precision=100000)[:80]
+            log_print("Difference:        " + diff_str, log_file)
+            if not diff.is_zero():
+                log_print(
+                    "*** WARNING: Non-zero difference detected! ***", log_file
+                )
+        except:
+            log_print("Difference:        (comparison failed)", log_file)
 
         var t0 = perf_counter_ns()
         for _ in range(iterations):
-            _ = m_a / m_b
+            _ = true_divide_general(m_a, m_b, precision)
         var tm = (perf_counter_ns() - t0) / iterations
         if tm == 0:
             tm = 1
@@ -71,12 +88,14 @@ fn main() raises:
     print_header("DeciMojo BigDecimal Division Benchmark", log_file)
 
     var pydecimal = Python.import_module("decimal")
-    pydecimal.getcontext().prec = PRECISION
     var pysys = Python.import_module("sys")
     pysys.set_int_max_str_digits(10000000)
-
-    var cases = load_bench_cases("bench_data/divide.toml")
+    var toml_path = "bench_data/divide.toml"
+    var cases = load_bench_cases(toml_path)
+    var precision = load_bench_precision(toml_path)
     var sf = List[Float64]()
+
+    pydecimal.getcontext().prec = precision
 
     log_print(
         "\nRunning "
@@ -87,7 +106,10 @@ fn main() raises:
         + " iter,"
         + " large: "
         + String(ITERATIONS_LARGE)
-        + " iter)",
+        + " iter,"
+        + " precision="
+        + String(precision)
+        + ")",
         log_file,
     )
 
@@ -96,7 +118,7 @@ fn main() raises:
         var iters = ITERATIONS
         if i >= LARGE_CASE_THRESHOLD and len(cases[i].a) > 10000:
             iters = ITERATIONS_LARGE
-        run_case(cases[i], iters, pydecimal, log_file, sf)
+        run_case(cases[i], iters, precision, pydecimal, log_file, sf)
 
     print_summary(
         "BigDecimal Division Benchmark Summary",
