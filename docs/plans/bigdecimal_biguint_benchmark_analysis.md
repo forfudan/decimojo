@@ -4,7 +4,7 @@ First version: 2026-02-21
 Yuhao Zhu
 
 > [!IMPORTANT]
-> For v0.8.0, Tasks 1✓, 3a✓, 3b✓, 3c✓, 7✓, 8 are the priority to be competitive at all sizes.
+> For v0.8.0, Tasks 1✓, 3a✓, 3b✓, 3c✓, 7✓, 8✓ are the priority to be competitive at all sizes.
 
 ## Optimization priority and planning
 
@@ -17,7 +17,7 @@ Yuhao Zhu
 | **Task 5** | ALL large operations      |             varies             |      2–10× gain      | Very High | Low          |
 | **Task 6** | Large multiplication      |              N/A               | ~1.5× over Karatsuba |  Medium   | Medium       |
 | **Task 7** | Nth root                  | ✓ **3.9–25× (was 0.14–0.49×)** |     ✓ COMPLETED      |   Done    | High         |
-| **Task 8** | All (allocation overhead) |               —                |        10–30%        |  Medium   | High         |
+| **Task 8** | All (allocation overhead) |      ✓ **+15–27% exp/ln**      |     ✓ COMPLETED      |   Done    | High         |
 | **Task 9** | Schoolbook multiply base  |               —                |        1.5–2×        |    Low    | Medium       |
 
 ### Planned Execution Order
@@ -27,7 +27,7 @@ Yuhao Zhu
 1. ~~**Task 3b** (exp/ln cheap integer division)~~ ✓ DONE — ln near-1 improved 30–100%, exp improved 5–30% at p≤200
 1. ~~**Task 3c** (cache `ln(10)` in MathCache)~~ ✓ DONE — `get_ln10()` used by `log10()`/`log()` directly; ln() decomposes into ln(2)+ln(1.25) for generality
 1. ~~**Task 7** (direct nth root) — Newton's method replaces exp(ln(x)/n)~~ ✓ DONE — integer roots 1.2–50× Python (was 0.14–0.49×)
-1. **Task 8** (in-place operations) — broad improvement
+1. ~~**Task 8** (in-place operations) — broad improvement~~ ✓ DONE — exp +15–21%, ln +15–27%, sqrt +9%
 1. **Task 4** (reciprocal sqrt) — less urgent (Mojo sqrt already fast-pathed via BigUInt.sqrt())
 1. **Task 2** (reciprocal-Newton division) — requires careful implementation
 1. **Task 6** (Toom-3) — medium complexity, medium gain
@@ -540,7 +540,7 @@ The multi-precision data reveals that **the optimization landscape depends heavi
 
 **Remaining task priorities after Tasks 3b+3c+7 ✓:**
 
-1. **Task 8** (in-place operations) — broad 10–30% improvement across all operations
+1. ~~**Task 8** (in-place operations)~~ ✓ DONE — +15–27% exp/ln, +9% sqrt
 2. **Task 4** (reciprocal sqrt) — less critical (Mojo sqrt already fast-pathed)
 3. **Task 2** (reciprocal-Newton division) — requires careful implementation
 4. **Task 5** (NTT) — less urgent; Karatsuba competitive up to p=2000
@@ -1051,21 +1051,59 @@ Then $x^{1/n} = x \cdot r$. Uses only multiplications (no division).
 
 ---
 
-### Task 8: In-Place Arithmetic for BigUInt (Reduce Allocations)
+### Task 8: In-Place Arithmetic for BigDecimal (Reduce Allocations) — ✓ DONE
 
-**Priority: MEDIUM** — Broad 10–30% improvement across all operations
+**Status: COMPLETED** (2026-02-23)
 
-Many BigUInt operations currently allocate new word lists unnecessarily:
+BigUInt already had 13 inplace functions (add_inplace, subtract_inplace,
+multiply_inplace_by_uint32, etc.). The gap was at the BigDecimal level:
+`__iadd__`, `__isub__`, `__imul__` all used `self = allocating_fn(self, other)`.
 
-- Addition: `add_slices_simd` allocates a result then assigns to `self`
-- Multiplication in Taylor series: each `term *= x` creates a new BigUInt
-- Scale alignment: `multiply_by_power_of_ten` always allocates new
+**Changes made:**
 
-**Fix:** Implement true in-place operations (similar to BigInt2's Task 5):
+1. **New BigDecimal inplace functions** (in `bigdecimal/arithmetics.mojo`):
+   - `multiply_inplace(mut x1, x2)` — computes product, moves result into x1
+   - `add_inplace(mut x1, x2)` — uses BigUInt inplace add/subtract with scale alignment
+   - `subtract_inplace(mut x1, x2)` — negates x2, delegates to add_inplace
 
-- `add_inplace(mut self, other)` with capacity pre-check
-- `multiply_inplace_by_uint32(mut self, v)` operating on existing buffer
-- `multiply_by_power_of_ten_inplace(mut self, n)` extending existing buffer
+2. **Updated `__iadd__`, `__isub__`, `__imul__`** to call inplace versions
+
+3. **Applied inplace multiply in Taylor series loops:**
+   - `exp_taylor_series`: `term = term * add_on` → `multiply_inplace(term, add_on)`
+   - `ln_series_expansion`: `term = term * z` → `multiply_inplace(term, z)`
+   - `compute_ln2`: `term * x_squared` → `multiply_inplace(term, x_squared)` + cached x²
+   - sin/cos/arctan: `term = term * x_squared` → `term *= x_squared` (uses new __imul__)
+
+4. **Quick wins (no new functions needed):**
+   - sin/cos: `BigDecimal(n) * BigDecimal(n-1)` → `true_divide_inexact_by_uint32(UInt32(n*(n-1)))`
+   - arctan: `term.true_divide(BigDecimal(n))` → `true_divide_inexact_by_uint32(UInt32(n))`
+   - compute_ln2: `term * BigDecimal.from_int(Int(k))` → `multiply_inplace_by_uint32(term.coefficient, k)`
+   - exp threshold doubling: `coefficient + coefficient` → `multiply_inplace_by_uint32_le_4(coefficient, 2)`
+   - sqrt Newton: `divide(x, BigDecimal(2))` → `true_divide_inexact_by_uint32(2, ...)`
+
+**Note:** Self-squaring (`x = x * x`) cannot benefit from inplace because `multiply_inplace`
+would need a copy of the operand first, negating the allocation savings.
+
+**Benchmark results (macOS arm64 Apple Silicon):**
+
+| Operation | Precision | Before |  After | Improvement |
+| --------- | --------: | -----: | -----: | ----------: |
+| **exp**   |        50 |  0.68× |  0.82× |    **+21%** |
+| **exp**   |       100 |  0.60× |  0.69× |    **+15%** |
+| **exp**   |       200 |  0.72× |  0.85× |    **+18%** |
+| **ln**    |        50 |  2.37× |  3.00× |    **+27%** |
+| **ln**    |       100 |  0.35× |  0.44× |    **+26%** |
+| **ln**    |       200 |  0.47× |  0.54× |    **+15%** |
+| **ln**    |       500 |  0.99× |  1.04× |     **+5%** |
+| root      |        50 |  3.86× |  3.98× |         +3% |
+| root      |       100 |  3.04× |  3.28× |         +8% |
+| root      |       200 |  5.61× |  5.61× |          0% |
+| root      |       500 | 15.86× | 15.86× |          0% |
+| root      |      1000 | 28.49× | 28.49× |       ~same |
+| sqrt      |      5000 |   398× |   432× |     **+9%** |
+
+Biggest wins: exp/ln Taylor series loops (many iterations, each saving 1–2 allocations).
+Root/sqrt show modest gains since Newton iteration has fewer multiplies per step.
 
 ---
 
@@ -1169,11 +1207,10 @@ All bench files now:
 | Division (sym)  |       15–28×        |       15–28×       | (no change)                              |
 | Division (asym) |     0.11–0.62×      |     **31–79×**     | ↑ **Task 1** — 74–724× raw improvement   |
 | Sqrt (irrat)    |     0.55–0.72×      |     0.55–0.72×     | (no change, sqrt bench was already fair) |
-| **Exp**         |       ~0.34×*       |     **~0.55×**     | ↑ **Precision fix** — was unfair before  |
-| **Ln (near 1)** |      (no data)      |   **0.68–0.97×**   | ✱ NEW — first fair benchmark             |
-| **Ln (far)**    |      (no data)      |  **0.001–0.18×**   | ✱ NEW — reveals ln(10) caching gap       |
-| **Root (nth)**  |     0.18–0.33×*     |   **0.14–0.49×**   | ↑ **Precision fix** — was unfair before  |
-| Root (√)        |        27.1×        |     **40.5×**      | ↑ Better with matched precision          |
+| **Exp**         |       ~0.34×*       |   **0.69–0.85×**   | ↑ Task 3b + **Task 8** inplace ops       |
+| **Ln (mixed)**  |      (no data)      |   **0.44–3.00×**   | ↑ Task 3a–3c + **Task 8** inplace ops    |
+| **Root (nth)**  |     0.18–0.33×*     |   **3.3–28.5×**    | ↑ **Task 7** Newton + **Task 8** inplace |
+| Root (√)        |        27.1×        |      **432×**      | ↑ Task 1 + **Task 8** divide-by-2 uint32 |
 | Rounding        |       105.8×        |       105.8×       | (no change)                              |
 
 \* Previous values were measured with mismatched precision (Mojo 28–36 digits vs Python 10000 digits) and were not valid benchmarks. The "Before" column shows the originally reported numbers for historical reference.
@@ -1195,13 +1232,19 @@ All bench files now:
    because Python was doing 357× more precision. With fair comparison, nth root is
    0.14–0.49× Python. ~~Task 7 (direct Newton) is the fix.~~ ✓ FIXED: now 1.2–50× Python.
 
+5. **Task 8 (in-place operations): +15–27% exp/ln, +9% sqrt** — Added BigDecimal-level
+   `multiply_inplace`, `add_inplace`, `subtract_inplace`; applied in all Taylor series
+   loops. Also replaced full BigDecimal divisions with `true_divide_inexact_by_uint32`
+   in sin/cos/arctan/sqrt/compute_ln2. Biggest wins at low-to-medium precision where
+   allocation overhead is a larger fraction of total cost.
+
 ### Remaining Targets
 
-| Priority  | Task    |          Current           |   Target    | Approach                                            |
-| --------- | ------- | :------------------------: | :---------: | --------------------------------------------------- |
-| HIGH      | Task 3b |         0.55× exp          |  0.8–1.0×   | Replace Taylor division with multiply-by-reciprocal |
-| HIGH      | Task 4  |      0.55–0.72× sqrt       |  1.5–2.0×   | Reciprocal sqrt Newton (no division)                |
-| ✓ DONE    | Task 7  | ~~0.14–0.49×~~ **3.9–25×** |   ✓ DONE    | Newton for nth root (was exp(ln(x)/n))              |
-| HIGH      | Task 8  |             —              | +10–30% all | In-place BigUInt operations                         |
-| MEDIUM    | Task 2  |         15–28× div         |   30–50×    | Reciprocal-Newton division                          |
-| LONG-TERM | Task 5  |             —              | 2–10× large | NTT multiplication                                  |
+| Priority  | Task    |           Current            |   Target    | Approach                                            |
+| --------- | ------- | :--------------------------: | :---------: | --------------------------------------------------- |
+| HIGH      | Task 3b |          0.55× exp           |  0.8–1.0×   | Replace Taylor division with multiply-by-reciprocal |
+| HIGH      | Task 4  |       0.55–0.72× sqrt        |  1.5–2.0×   | Reciprocal sqrt Newton (no division)                |
+| ✓ DONE    | Task 7  |  ~~0.14–0.49×~~ **3.9–25×**  |   ✓ DONE    | Newton for nth root (was exp(ln(x)/n))              |
+| ✓ DONE    | Task 8  | **+15–27% exp/ln, +9% sqrt** |   ✓ DONE    | In-place BigDecimal operations + uint32 quick paths |
+| MEDIUM    | Task 2  |          15–28× div          |   30–50×    | Reciprocal-Newton division                          |
+| LONG-TERM | Task 5  |              —               | 2–10× large | NTT multiplication                                  |

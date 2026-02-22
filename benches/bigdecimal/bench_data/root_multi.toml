@@ -21,6 +21,10 @@ precision = 500
 iterations = 1
 precision = 1000
 
+[[precision_levels]]
+iterations = 1
+precision = 2000
+
 # === REPRESENTATIVE CASES ===
 # Focus on integer roots (not fractional) since that's what Newton's method optimizes
 

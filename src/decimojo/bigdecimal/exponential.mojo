@@ -320,7 +320,10 @@ fn integer_power(
     while exp_value > BigUInt.zero():
         if exp_value.words[0] % 2 == 1:
             # If current bit is set, multiply result by current power
-            result = result * current_power
+            # Use inplace multiply
+            decimojo.bigdecimal.arithmetics.multiply_inplace(
+                result, current_power
+            )
             # Round to avoid coefficient explosion
             result.round_to_precision(
                 working_precision,
@@ -329,6 +332,8 @@ fn integer_power(
                 fill_zeros_to_precision=False,
             )
 
+        # Use inplace multiply for squaring is not beneficial
+        # because we need to copy first — just use regular multiply
         current_power = current_power * current_power
         # Round to avoid coefficient explosion
         current_power.round_to_precision(
@@ -889,10 +894,9 @@ fn sqrt_decimal_approach(x: BigDecimal, precision: Int) raises -> BigDecimal:
     while guess != prev_guess and iteration_count < 100:
         prev_guess = guess.copy()
         var quotient = x.true_divide_inexact(guess, working_precision)
-        var sum = guess + quotient
-        guess = sum.true_divide(
-            BigDecimal(BigUInt(raw_words=[2]), 0, False), working_precision
-        )
+        var sum_val = guess + quotient
+        # Use O(n) uint32 division instead of full BigDecimal divide-by-2
+        guess = sum_val.true_divide_inexact_by_uint32(2, working_precision)
         iteration_count += 1
 
     # Round to the desired precision
@@ -1117,9 +1121,10 @@ fn exp(x: BigDecimal, precision: Int) raises -> BigDecimal:
         var k = 0
         var threshold = BigDecimal(BigUInt.one(), 0, False)
         while threshold.exponent() <= x.exponent() + 1:
-            threshold.coefficient = (
-                threshold.coefficient + threshold.coefficient
-            )  # Multiply by 2
+            # Use inplace multiply by 2 instead of allocating add
+            decimojo.biguint.arithmetics.multiply_inplace_by_uint32_le_4(
+                threshold.coefficient, 2
+            )
             k += 1
 
         # Calculate exp(x/2^k)
@@ -1215,9 +1220,10 @@ fn exp_taylor_series(
     for _ in range(1, max_number_of_terms):
         # Calculate next term: x^i/i! = x^{i-1} * x/i
         # We can use the previous term to calculate the next one
-        # Task 3b: Use O(n) single-word division instead of full BigDecimal div
+        # Use O(n) single-word division instead of full BigDecimal div
         var add_on = x.true_divide_inexact_by_uint32(n, minimum_precision)
-        term = term * add_on
+        # Use inplace multiply to avoid BigDecimal allocation
+        decimojo.bigdecimal.arithmetics.multiply_inplace(term, add_on)
         term.round_to_precision(
             precision=minimum_precision,
             rounding_mode=RoundingMode.half_up(),
@@ -1469,7 +1475,7 @@ fn log10(x: BigDecimal, precision: Int) raises -> BigDecimal:
         return BigDecimal(BigUInt.zero(), 0, False)  # log10(1) = 0
 
     # Use the identity: log10(x) = ln(x) / ln(10)
-    # Use a shared cache so that ln(10) is retrieved from cache (Task 3c)
+    # Use a shared cache so that ln(10) is retrieved from cache
     var cache = MathCache()
     var ln_result = ln(x, working_precision, cache)
     var ln10 = cache.get_ln10(working_precision)
@@ -1513,12 +1519,13 @@ fn ln_series_expansion(
 
     for _ in range(2, max_terms):
         # Update for next iteration - multiply by z and divide by k
-        term = term * z  # z^k
+        # Use inplace multiply to avoid BigDecimal allocation
+        decimojo.bigdecimal.arithmetics.multiply_inplace(term, z)
         k += 1
 
         # Alternate sign: -1^(k+1) = -1 when k is even, 1 when k is odd
         var is_even = k % 2 == 0
-        # Task 3b: Use O(n) single-word division instead of full BigDecimal div
+        # Use O(n) single-word division instead of full BigDecimal div
         var next_term = term.true_divide_inexact_by_uint32(k, working_precision)
 
         if is_even:
@@ -1606,17 +1613,23 @@ fn compute_ln2(working_precision: Int) raises -> BigDecimal:
     )  # First term: 2*(1/3)
     var k: UInt32 = 1
 
+    # Cache x² to avoid recomputing each iteration (was term * x * x)
+    var x_squared = x * x
+
     # Add terms: 2*(x + x³/3 + x⁵/5 + ...)
     # Series: term_k = 2 * x^(2k-1) * 1 * 3 * 5 * ... * (2k-3) / (1 * 3 * 5 * ... * (2k-1))
     # Recurrence: term_{k+1} = term_k * x² * k / (k+2)
     for _ in range(1, max_terms):
         result += term
         var new_k = k + 2
-        # Task 3b: Use O(n) single-word division instead of full BigDecimal div
-        term = (term * x * x).true_divide_inexact_by_uint32(
-            new_k, working_precision
+        # Use O(n) single-word division instead of full BigDecimal div
+        # Use cached x_squared with inplace multiply, and uint32 multiply for k
+        decimojo.bigdecimal.arithmetics.multiply_inplace(term, x_squared)
+        term = term.true_divide_inexact_by_uint32(new_k, working_precision)
+        # Multiply by k using coefficient-level UInt32 multiply (avoids BigDecimal alloc)
+        decimojo.biguint.arithmetics.multiply_inplace_by_uint32(
+            term.coefficient, k
         )
-        term = term * BigDecimal.from_int(Int(k))
         k = new_k
         if term.exponent() < -working_precision:
             break
