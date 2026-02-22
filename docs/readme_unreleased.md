@@ -1,8 +1,8 @@
 # DeciMojo <!-- omit in toc -->
 
-An arbitrary-precision integer and decimal mathematics library for [Mojo](https://www.modular.com/mojo), a drop-in replacement for Python's `int` and `Decimal` types.
+An arbitrary-precision integer and decimal library for [Mojo](https://www.modular.com/mojo), inspired by Python's `int` and `Decimal`.
 
-**[中文·漢字](https://github.com/mojomath/decimojo/blob/main/docs/readme_zht.md)**　|　**[Changelog](https://github.com/mojomath/decimojo/blob/main/docs/changelog.md)**　|　**[Repository on GitHub»](https://github.com/mojomath/decimojo)**　|　**[Discord channel»](https://discord.gg/3rGH87uZTk)**
+**[中文·漢字](https://github.com/forfudan/decimojo/blob/main/docs/readme_zht.md)**　|　**[Changelog](https://github.com/forfudan/decimojo/blob/main/docs/changelog.md)**　|　**[Repository on GitHub»](https://github.com/forfudan/decimojo)**　|　**[Discord channel»](https://discord.gg/3rGH87uZTk)**
 
 - [Overview](#overview)
 - [Installation](#installation)
@@ -11,18 +11,19 @@ An arbitrary-precision integer and decimal mathematics library for [Mojo](https:
 - [Nomenclature](#nomenclature)
 - [Status](#status)
 - [Tests and benches](#tests-and-benches)
+- [Citation](#citation)
 - [License](#license)
 
 ## Overview
 
-DeciMojo provides an arbitrary-precision integer and decimal mathematics library for Mojo, delivering exact calculations for financial modeling, scientific computing, and applications where floating-point approximation errors are unacceptable. Beyond basic arithmetic, the library includes advanced mathematical functions with guaranteed precision.
+DeciMojo provides an arbitrary-precision integer and decimal library for Mojo. It delivers exact calculations for financial modeling, scientific computing, and applications where floating-point approximation errors are unacceptable. Beyond basic arithmetic, the library includes advanced mathematical functions with guaranteed precision.
 
-For Pythonistas, you can think of DeciMojo as a Mojo-native implementation of Python's `int` and `decimal.Decimal` types, designed to be a drop-in replacement for these types in Mojo. It offers similar semantics and precision guarantees as Python's built-in types, while being optimized for performance in the Mojo ecosystem. The library depends only on Mojo's standard library, and no external dependencies are required.
+For Pythonistas, DeciMojo is a Mojo-native replacement for Python's `int` and `decimal.Decimal`. It offers similar semantics and precision, runs purely on Mojo's standard library, and requires no Python interpreter.
 
 The core types are:
 
-- An arbitrary-precision signed integer type `BInt`[^bigint], which is a drop-in replacement for Python's `int` in Mojo.
-- An arbitrary-precision decimal implementation (`Decimal`) allowing for calculations with unlimited digits and decimal places[^arbitrary], which is a drop-in replacement for Python's `decimal.Decimal` in Mojo.
+- An arbitrary-precision signed integer type `BInt`[^bigint], which is a Mojo-native equivalent of Python's `int`.
+- An arbitrary-precision decimal implementation (`Decimal`) allowing for calculations with unlimited digits and decimal places[^arbitrary], which is a Mojo-native equivalent of Python's `decimal.Decimal`.
 - A 128-bit fixed-point decimal implementation (`Dec128`) supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed].
 
 | Type      | Other names          | Information                              | Internal representation |
@@ -36,10 +37,6 @@ The auxiliary types include a base-10 arbitrary-precision signed integer type (`
 ---
 
 This repository includes [TOMLMojo](./docs/readme_tomlmojo.md), a lightweight TOML parser in pure Mojo. It parses configuration files and test data, supporting basic types, arrays, and nested tables. While created for DeciMojo's testing framework, it offers general-purpose structured data parsing with a clean, simple API.
-
----
-
-DeciMojo was initially a personal project of Yuhao Zhu and the repo was under his personal Github account. From v0.7.0, it was moved to the MojoMath organization to encourage more community contributions and to better reflect its mission of providing high-quality mathematical tools for the Mojo ecosystem.
 
 ## Installation
 
@@ -61,7 +58,7 @@ Then, you can install DeciMojo using any of these methods:
 
     Then run `pixi install` to download and install the package.
 
-1. For the latest development version in the `main` branch, clone [this GitHub repository](https://github.com/mojomath/decimojo) and build the package locally using the command `pixi run package`.
+1. For the latest development version in the `main` branch, clone [this GitHub repository](https://github.com/forfudan/decimojo) and build the package locally using the command `pixi run package`.
 
 The following table summarizes the package versions and their corresponding Mojo versions:
 
@@ -310,7 +307,7 @@ Rome wasn't built in a day. DeciMojo is currently under active development. It h
 
 The `BInt` type is fully implemented and optimized. It has been benchmarked against Python's `int` and demonstrates superior performance in most cases.
 
-Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/mojomath/decimojo/issues).
+Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/forfudan/decimojo/issues).
 
 ## Tests and benches
 
@@ -319,22 +316,20 @@ After cloning the repo onto your local disk, you can:
 - Use `pixi run test` to run tests.
 - Use `pixi run bench` to run benchmarks.
 
-<!-- 
 ## Citation
 
-If you find DeciMojo useful for your research, consider listing it in your citations.
+If you find DeciMojo useful, consider listing it in your citations.
 
 ```tex
-@software{Zhu.2025,
+@software{Zhu.2026,
     author       = {Zhu, Yuhao},
-    year         = {2025},
-    title        = {An arbitrary-precision decimal and integer mathematics library for Mojo},
-    url          = {https://github.com/mojomath/decimojo},
-    version      = {0.6.0},
+    year         = {2026},
+    title        = {An arbitrary-precision integer and decimal mathematics library for Mojo},
+    url          = {https://github.com/forfudan/decimojo},
+    version      = {0.8.0},
     note         = {Computer Software}
 }
 ```
--->
 
 ## License
 
