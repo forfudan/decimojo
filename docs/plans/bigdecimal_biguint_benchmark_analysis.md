@@ -1,10 +1,43 @@
 # BigDecimal and BigUInt Benchmark Results & Optimization Roadmap
 
-2026-02-21
+2026-02-21  
+Yuhao Zhu
 
-> **Benchmark location:** `benches/bigdecimal/` (BigDecimal vs Python `decimal`).
-> BigUInt-only benchmarks are in `benches/biguint/`.
-> Run with `pixi run bdec` (interactive) or `pixi run bench bigdecimal <op>`.
+> [!IMPORTANT]
+> For v0.8.0, maybe I only need the first [Task 1, 3, 4, 7, 8](#planned-execution-order) to be competitive with Python at most sizes (small + medium). Other advanced algorithms are a stretch goal when Mojo reaches v1.0 with stable SIMD and better support for mutable state (for caching constants). Note that the current focus is to build the API foundation, correctness, and reasonable performance for small to medium sizes. The large-size optimizations can be rolled out incrementally as the library matures and when the community gets bigger.
+
+## Optimization priority and planning
+
+| Task       | Operation(s) Improved     | Current vs Python |    Expected After    |   Effort   | Priority |
+| ---------- | ------------------------- | :---------------: | :------------------: | :--------: | -------- |
+| **Task 1** | Asymmetric division       |   ✓ **31–79×**    |     ✓ COMPLETED      |    Done    | High     |
+| **Task 2** | Division, sqrt, exp, ln   |      varies       |     1.5–2× gain      |    High    | Medium   |
+| **Task 3** | Exp, ln                   |    0.31–0.43×     |       1.0–2.0×       |   Medium   | High     |
+| **Task 4** | Sqrt                      |    0.55–0.72×     |       1.5–3.0×       |   Medium   | High     |
+| **Task 5** | ALL large operations      |      varies       |      2–10× gain      | Very High  | Low      |
+| **Task 6** | Large multiplication      |        N/A        | ~1.5× over Karatsuba |   Medium   | Medium   |
+| **Task 7** | Nth root                  |    0.18–0.33×     |       1.0–2.0×       | Low-Medium | Medium   |
+| **Task 8** | All (allocation overhead) |         —         |        10–30%        |   Medium   | High     |
+| **Task 9** | Schoolbook multiply base  |         —         |        1.5–2×        |    Low     | Medium   |
+
+### Planned Execution Order
+
+1. ~~**Task 1** (asymmetric division fix) — immediate win, unblocks other work~~ ✓ DONE
+1. **Task 3a+3b** (exp/ln quick wins) — cache constants + cheap integer division
+1. **Task 4** (reciprocal sqrt) — standalone, high impact
+1. **Task 7** (direct nth root) — low effort, high impact for root()
+1. **Task 8** (in-place operations) — broad improvement
+1. **Task 2** (reciprocal-Newton division) — requires careful implementation
+1. **Task 6** (Toom-3) — medium complexity, medium gain
+1. **Task 3c** (binary splitting for series) — complex but transformative
+1. **Task 5** (NTT) — the end-game, makes everything fast at large sizes
+1. **Task 9** (SIMD multiply) — polish
+
+## Benchmarks
+
+**Benchmark location:** `benches/bigdecimal/` (BigDecimal vs Python `decimal`).  
+BigUInt-only benchmarks are in `benches/biguint/`.  
+Run with `pixi run bdec` (interactive) or `pixi run bench bigdecimal <op>`.
 
 ## Architecture Overview
 
@@ -25,17 +58,13 @@ entirely determined by BigUInt's performance, because:
 - Sqrt: extend coefficient by $10^{2t-s}$ → `BigUInt.sqrt()` → adjust scale
 - Exp/ln/trig: iterative algorithms (Taylor series, Newton) composed from the above
 
-**BigUInt internals:** base-$10^9$, each limb is `UInt32 ∈ [0, 999_999_999]`,
-SIMD-vectorized addition/subtraction (width=4), Karatsuba multiplication
-(cutoff=64 words), Burnikel-Ziegler division (cutoff=32 words).
+**BigUInt internals:** base-$10^9$, each limb is `UInt32 ∈ [0, 999_999_999]`, SIMD-vectorized addition/subtraction (width=4), Karatsuba multiplication (cutoff=64 words), Burnikel-Ziegler division (cutoff=32 words).
 
 ---
 
 ## Benchmark Summary (latest results, macOS arm64, Apple Silicon)
 
-All benchmarks compare **DeciMojo BigDecimal** against **Python `decimal.Decimal`**
-(CPython 3.13, backed by `libmpdec`). Speedup = Python time / Mojo time.
-Values >1× mean Mojo is faster; <1× mean Python is faster.
+All benchmarks compare **DeciMojo BigDecimal** against **Python `decimal.Decimal`** (CPython 3.13, backed by `libmpdec`). Speedup = Python time / Mojo time. Values >1× mean Mojo is faster; <1× mean Python is faster.
 
 ### Overall Results by Operation
 
@@ -50,8 +79,7 @@ Values >1× mean Mojo is faster; <1× mean Python is faster.
 | **Root (nth)**     |        6.57×*         |    28     | Fast for √ and trivial; **0.18–0.33× for general nth root** |
 | **Rounding**       |      **105.80×**      |    28     | Overwhelmingly faster (simple word truncation)              |
 
-\* Averages heavily skewed by fast-path cases (perfect squares, identity roots).
-For the general non-trivial cases, sqrt ≈ 0.66× and root ≈ 0.33×.
+\* Averages heavily skewed by fast-path cases (perfect squares, identity roots). For the general non-trivial cases, sqrt ≈ 0.66× and root ≈ 0.33×.
 
 ---
 
@@ -68,12 +96,9 @@ For the general non-trivial cases, sqrt ≈ 0.66× and root ≈ 0.33×.
 | 2500 digits        |       580 |         546 | **0.94×** |
 | 3000+ digits       |       819 |         626 | **0.76×** |
 
-**Analysis:** Addition is 2.0–2.5× faster for typical-precision decimals (≤28 digits).
-The SIMD-vectorized BigUInt addition gives an edge. At 2500+ digits, Python overtakes
-because `libmpdec` uses assembly-optimized routines for large coefficient arithmetic.
+**Analysis:** Addition is 2.0–2.5× faster for typical-precision decimals (≤28 digits). The SIMD-vectorized BigUInt addition gives an edge. At 2500+ digits, Python overtakes because `libmpdec` uses assembly-optimized routines for large coefficient arithmetic.
 
-**Bottleneck:** Scale alignment via `multiply_by_power_of_ten` can be expensive if
-scales differ greatly, triggering large word-array expansions before the actual add.
+**Bottleneck:** Scale alignment via `multiply_by_power_of_ten` can be expensive if scales differ greatly, triggering large word-array expansions before the actual add.
 
 ---
 
@@ -85,10 +110,7 @@ scales differ greatly, triggering large word-array expansions before the actual 
 | Zero result     |       141 |       1,585 |  11.2×  |
 | Subtract 0      |        58 |       1,669 |  28.8×  |
 
-**Analysis:** Subtraction is surprisingly fast — **~10× Python** on average. The gap
-vs addition speedup (2.2×) is noteworthy. This likely reflects Python `decimal`'s
-overhead for subtraction's sign handling and normalization, which `libmpdec` does
-not fast-path as well as addition.
+**Analysis:** Subtraction is surprisingly fast — **~10× Python** on average. The gap vs addition speedup (2.2×) is noteworthy. This likely reflects Python `decimal`'s overhead for subtraction's sign handling and normalization, which `libmpdec` does not fast-path as well as addition.
 
 ---
 
@@ -100,13 +122,9 @@ not fast-path as well as addition.
 | Small (≤28 digits) |    70–130 |     258–318 | 2.0–4.4× |
 | Typical (28-digit) |    80–110 |     274–304 | 2.8–3.8× |
 
-**Analysis:** Multiplication is consistently 3–4× faster for typical precision. This
-is excellent. The Karatsuba-accelerated BigUInt multiplication pays off even at small
-sizes because there's no overhead for scale handling (just add scales, XOR sign).
+**Analysis:** Multiplication is consistently 3–4× faster for typical precision. This is excellent. The Karatsuba-accelerated BigUInt multiplication pays off even at small sizes because there's no overhead for scale handling (just add scales, XOR sign).
 
-**Missing:** No benchmarks for very large multiplication (1000+ digit coefficients).
-This would be important for operations like `exp` at high precision, which need many
-large-coefficient multiplications internally.
+**Missing:** No benchmarks for very large multiplication (1000+ digit coefficients). This would be important for operations like `exp` at high precision, which need many large-coefficient multiplications internally.
 
 ---
 
@@ -126,7 +144,7 @@ large-coefficient multiplications internally.
 | 65536w / 65536w   |  2,712,610 |  51,848,670 | **19.1×** |
 | 262144w / 262144w | 12,126,666 | 205,680,333 | **17.0×** |
 
-**Asymmetric division (unbalanced operands) — BEFORE PR1 FIX:**
+**Asymmetric division (unbalanced operands) — BEFORE Task 1 FIX:**
 
 | Size            |   Mojo (ns) | Python (ns) |   Speedup   |
 | --------------- | ----------: | ----------: | :---------: |
@@ -137,7 +155,7 @@ large-coefficient multiplications internally.
 | 65536w / 2048w  |   5,099,000 |   3,180,333 | **0.62×** ✗ |
 | 65536w / 1024w  |   1,776,333 |     805,333 | **0.45×** ✗ |
 
-**Asymmetric division — AFTER PR1 FIX (2025-02-21):**
+**Asymmetric division — AFTER Task 1 FIX (2025-02-21):**
 
 | Size            | Mojo (ns) | Python (ns) |  Speedup  |
 | --------------- | --------: | ----------: | :-------: |
@@ -152,7 +170,7 @@ large-coefficient multiplications internally.
 
 1. **Balanced division is outstanding** — 15–28× faster than Python at large sizes.
    Burnikel-Ziegler is very effective when both operands are similar size.
-2. ~~**Asymmetric division is catastrophically slow**~~ **FIXED in PR1.**
+2. ~~**Asymmetric division is catastrophically slow**~~ **FIXED in Task 1.**
    Root cause was BigDecimal.true_divide_general computing full quotient then discarding.
    Now 31–79× faster than Python.
 3. The regression between run 1 (optimized, avg 6.29×) and run 2 (earlier, avg 3.34×)
@@ -241,56 +259,40 @@ times), plus the reciprocal computation for negative arguments ($e^{-x} = 1/e^x$
 | 100th root of 2      |    15,450 |      40,130 |  2.6×   |
 
 **Analysis:** For non-square roots, the implementation delegates to
-`exp(ln(x)/n)`, requiring both `ln()` and `exp()`. Since both `ln()` and `exp()`
-are slow (Taylor series with many iterations of expensive BigDecimal arithmetic),
-the compound cost is 0.18–0.33× Python.
+`exp(ln(x)/n)`, requiring both `ln()` and `exp()`. Since both `ln()` and `exp()` are slow (Taylor series with many iterations of expensive BigDecimal arithmetic), the compound cost is 0.18–0.33× Python.
 
-**Python `libmpdec`** computes nth root directly via Newton's method
-($x_{k+1} = ((n-1)x_k + a/x_k^{n-1})/n$), avoiding the `exp(ln(x)/n)` detour.
+**Python `libmpdec`** computes nth root directly via Newton's method ($x_{k+1} = ((n-1)x_k + a/x_k^{n-1})/n$), avoiding the `exp(ln(x)/n)` detour.
 
 ---
 
 ### Rounding (25 cases, precision=28)
 
-Avg 105.8×. This is dominated by the overhead of Python's `decimal.quantize()` vs
-Mojo's direct word-level truncation. Not a concern for optimization.
+Avg 105.8×. This is dominated by the overhead of Python's `decimal.quantize()` vs Mojo's direct word-level truncation. Not a concern for optimization.
 
 ---
 
 ## Root Cause Analysis: Where Performance Is Lost
 
-### 1. **Division (asymmetric case): ~~0.11–0.62× Python~~ → 31–79× Python** — PR1 ✅ FIXED
+### 1. **Division (asymmetric case): ~~0.11–0.62× Python~~ → 31–79× Python** — Task 1 ✓ FIXED
 
-~~The Burnikel-Ziegler algorithm pads the divisor up to match the dividend's block
-structure.~~ **Actual root cause:** `BigDecimal.true_divide_general()` computed full
-quotient coefficients regardless of the needed precision, then discarded excess digits
-via rounding. For 65536w/32768w at precision=4096, this meant a 65994-word / 32768-word
-integer division when only a ~458-word quotient was needed. Fix: compute
+~~The Burnikel-Ziegler algorithm pads the divisor up to match the dividend's block structure.~~ **Actual root cause:** `BigDecimal.true_divide_general()` computed full quotient coefficients regardless of the needed precision, then discarded excess digits via rounding. For 65536w/32768w at precision=4096, this meant a 65994-word / 32768-word integer division when only a ~458-word quotient was needed. Fix: compute
 `extra_words = ceil(P/9) + 2 - diff_n_words` and truncate the dividend when negative.
 
-### 2. **Exp function: 0.31–0.43× Python** — PR3/PR4 targets
+### 2. **Exp function: 0.31–0.43× Python** — Task 3/Task 4 targets
 
-The Taylor series requires ~$2.5p$ iterations, each with one full-precision
-BigDecimal division. At precision=28, this means ~70 divisions. The per-division cost
-(~2µs at 28 digits) accumulates. `libmpdec` avoids explicit division in the Taylor
-series by using reciprocals and NTT-multiplied accumulation.
+The Taylor series requires ~$2.5p$ iterations, each with one full-precision BigDecimal division. At precision=28, this means ~70 divisions. The per-division cost (~2µs at 28 digits) accumulates. `libmpdec` avoids explicit division in the Taylor series by using reciprocals and NTT-multiplied accumulation.
 
 ### 3. **Ln function: not benchmarked but expected ~0.3× Python**
 
-Same issue as exp. Additionally, `ln(2)` and `ln(1.25)` are recomputed on **every
-call** because Mojo doesn't support mutable global variable caching yet.
+Same issue as exp. Additionally, `ln(2)` and `ln(1.25)` are recomputed on **every call** because Mojo doesn't support mutable global variable caching yet.
 
 ### 4. **Sqrt (irrational, high precision): 0.55–0.72× Python**
 
-Newton's method for sqrt requires one division per iteration. At precision=5000,
-each division is on ~556-word numbers. The `BigUInt.sqrt()` converges in ~15–20
-iterations. `libmpdec` uses reciprocal sqrt (no division) and NTT multiplication.
+Newton's method for sqrt requires one division per iteration. At precision=5000, each division is on ~556-word numbers. The `BigUInt.sqrt()` converges in ~15–20 iterations. `libmpdec` uses reciprocal sqrt (no division) and NTT multiplication.
 
 ### 5. **Addition at very large sizes: 0.76× Python at 3000+ digits**
 
-BigUInt's SIMD vectorized addition (width=4) is fast but scale alignment
-(`multiply_by_power_of_ten`) for large scale differences creates oversized
-intermediate arrays.
+BigUInt's SIMD vectorized addition (width=4) is fast but scale alignment (`multiply_by_power_of_ten`) for large scale differences creates oversized intermediate arrays.
 
 ---
 
@@ -298,26 +300,16 @@ intermediate arrays.
 
 ### 1. Python `decimal` → `libmpdec` (Stefan Krah)
 
-**Internal representation:** base-$10^9$ (`uint32_t` limbs), optionally base-$10^{19}$
-(`uint64_t`) on 64-bit platforms. Sign + exponent + coefficient (similar to DeciMojo).
+**Internal representation:** base-$10^9$ (`uint32_t` limbs), optionally base-$10^{19}$ (`uint64_t`) on 64-bit platforms. Sign + exponent + coefficient (similar to DeciMojo).
 
 **Key algorithms:**
 
-- **Multiplication:** Schoolbook for small, Karatsuba for medium, **Number Theoretic
-  Transform (NTT)** for large (>1024 limbs). NTT is in-place, uses three primes
-  (MPD_PRIMES) enabling Chinese Remainder Theorem reconstruction for exact results.
-  $O(n \log n)$ — this is the primary advantage over DeciMojo's $O(n^{1.585})$ Karatsuba.
-- **Division:** Schoolbook for small, then balanced division via Newton's method for
-  the reciprocal (`1/y`), computed using **NTT-multiplied** Newton iterations:
-  $r_{k+1} = r_k(2 - yr_k)$. This avoids explicit long division entirely for large
-  operands. $O(M(n))$ where $M(n)$ is the cost of multiplication.
-- **Sqrt:** Reciprocal square root via Newton ($r_{k+1} = r_k(3 - yr_k^2)/2$) then
-  multiply ($\sqrt{y} = y \cdot r$). Again uses NTT multiplication, never divides.
-- **Exp/Ln:** Correct rounding via Ziv's method. Range reduction + Taylor/Maclaurin
-  series, with all multiplications done via NTT at large precision.
+- **Multiplication:** Schoolbook for small, Karatsuba for medium, **Number Theoretic   Transform (NTT)** for large (>1024 limbs). NTT is in-place, uses three primes   (MPD_PRIMES) enabling Chinese Remainder Theorem reconstruction for exact results. $O(n \log n)$ — this is the primary advantage over DeciMojo's $O(n^{1.585})$ Karatsuba.
+- **Division:** Schoolbook for small, then balanced division via Newton's method for the reciprocal (`1/y`), computed using *NTT-multiplied** Newton iterations: $r_{k+1} = r_k(2 - yr_k)$. This avoids explicit long division entirely for large operands. $O(M(n))$ where $M(n)$ is the cost of multiplication.
+- **Sqrt:** Reciprocal square root via Newton ($r_{k+1} = r_k(3 - yr_k^2)/2$) then multiply ($\sqrt{y} = y \cdot r$). Again uses NTT multiplication, never divides.
+- **Exp/Ln:** Correct rounding via Ziv's method. Range reduction + Taylor/Maclaurin series, with all multiplications done via NTT at large precision.
 
-**Why it's fast:** NTT gives $O(n \log n)$ multiplication for all sizes above ~1000
-digits. Since division and sqrt are reduced to multiplication, all operations benefit.
+**Why it's fast:** NTT gives $O(n \log n)$ multiplication for all sizes above ~1000 digits. Since division and sqrt are reduced to multiplication, all operations benefit.
 
 **Source:** `Modules/_decimal/libmpdec/` in CPython source.
 
@@ -327,29 +319,20 @@ digits. Since division and sqrt are reduced to multiplication, all operations be
 
 **Key algorithms:**
 
-- **Multiplication:** Schoolbook → Karatsuba → Toom-3 → Toom-4 → Toom-6.5 →
-  Toom-8.5 → **FFT** (Schönhage-Strassen). Seven levels of algorithms, carefully
-  tuned with machine-specific thresholds. The FFT is $O(n \log n \log \log n)$.
+- **Multiplication:** Schoolbook → Karatsuba → Toom-3 → Toom-4 → Toom-6.5 → Toom-8.5 → **FFT** (Schönhage-Strassen). Seven levels of algorithms, carefully tuned with machine-specific thresholds. The FFT is $O(n \log n \log \log n)$.
 - **Division:** $O(M(n))$ via Newton (reciprocal iteration) using fast multiplication.
 - **Sqrt:** $O(M(n))$ via reciprocal sqrt Newton.
 
-**Note:** MPFR is a **binary** floating-point library. It provides exact rounding
-for mathematical functions (exp, ln, sin, etc.) using Ziv's method. Not directly
-comparable to decimal arithmetic, but the algorithms translate.
+**Note:** MPFR is a **binary** floating-point library. It provides exact rounding for mathematical functions (exp, ln, sin, etc.) using Ziv's method. Not directly comparable to decimal arithmetic, but the algorithms translate.
 
-**DeciMojo relevance:** GMP's chain Schoolbook → Karatsuba → Toom-3 → FFT
-suggests DeciMojo should implement Toom-3 as the next multiplication tier before
+**DeciMojo relevance:** GMP's chain Schoolbook → Karatsuba → Toom-3 → FFT suggests DeciMojo should implement Toom-3 as the next multiplication tier before
 considering NTT.
 
 ### 3. mpdecimal (Rust) / `rust_decimal`
 
-**`rust_decimal`:** Fixed 96-bit coefficient (28 significant digits max). Not
-comparable to arbitrary precision.
+**`rust_decimal`:** Fixed 96-bit coefficient (28 significant digits max). Not comparable to arbitrary precision.
 
-**`bigdecimal` (Rust):** base-$10^9$ limbs via `num-bigint`. Uses the same
-Schoolbook → Karatsuba → Toom-3 progression from `num-bigint`. No NTT.
-Performance is typically 2–5× slower than Python `decimal` for very large
-numbers due to lack of NTT.
+**`bigdecimal` (Rust):** base-$10^9$ limbs via `num-bigint`. Uses the same Schoolbook → Karatsuba → Toom-3 progression from `num-bigint`. No NTT. Performance is typically 2–5× slower than Python `decimal` for very large numbers due to lack of NTT.
 
 ### 4. Java `BigDecimal` (OpenJDK)
 
@@ -357,29 +340,21 @@ numbers due to lack of NTT.
 
 **Key algorithms:**
 
-- `BigInteger` multiplication: Schoolbook → Karatsuba (≥80 ints/2560 bits) → Toom-3
-  (≥240 ints/7680 bits) → **Parallel Schönhage** (≥10240 ints). Uses fork-join for
-  parallel multiplication.
-- Division: Burnikel-Ziegler for large divisions, delegated to Knuth's Algorithm D
-  at the base case.
+- `BigInteger` multiplication: Schoolbook → Karatsuba (≥80 ints/2560 bits) → Toom-3 (≥240 ints/7680 bits) → **Parallel Schönhage** (≥10240 ints). Uses fork-join for parallel multiplication.
+- Division: Burnikel-Ziegler for large divisions, delegated to Knuth's Algorithm D at the base case.
 - Sqrt: Newton's method with binary integer arithmetic.
 
-**Note:** Java `BigDecimal` stores the coefficient in **binary** (as a `BigInteger`),
-not base-10^9. All base-10 formatting is done at I/O time. This gives Java the full
-benefit of binary arithmetic speed for internal computation.
+**Note:** Java `BigDecimal` stores the coefficient in **binary** (as a `BigInteger`), not base-10^9. All base-10 formatting is done at I/O time. This gives Java the full benefit of binary arithmetic speed for internal computation.
 
 ### 5. Intel® Decimal Floating-Point Math Library (BID)
 
-**Internal representation:** Binary Integer Decimal (BID) — coefficient is stored as a
-binary integer, exponent is power-of-10. This is IEEE 754-2008 decimal.
+**Internal representation:** Binary Integer Decimal (BID) — coefficient is stored as a binary integer, exponent is power-of-10. This is IEEE 754-2008 decimal.
 
-**Key insight:** By storing the coefficient in binary, BID gets fast binary arithmetic
-for +, -, *, and only pays the decimal conversion cost at I/O boundaries.
+**Key insight:** By storing the coefficient in binary, BID gets fast binary arithmetic for +, -, *, and only pays the decimal conversion cost at I/O boundaries.
 
 ### 6. `mpd` — Mike Cowlishaw's General Decimal Arithmetic
 
-The **specification** that Python `decimal` implements. Not a library per se, but
-defines the semantics. All conforming implementations share the same behavior.
+The **specification** that Python `decimal` implements. Not a library per se, but defines the semantics. All conforming implementations share the same behavior.
 
 ---
 
@@ -389,35 +364,28 @@ defines the semantics. All conforming implementations share the same behavior.
 
 **Advantages:**
 
-- ✅ **Trivial I/O:** `to_string()` is $O(n)$ — just print each 9-digit word with
-  zero padding. No expensive base conversion. This matters hugely for financial apps.
-- ✅ **Exact scale arithmetic:** Adding trailing zeros or shifting decimal point =
-  insert/remove whole words of zeros. No multiplication by powers of 10 needed.
-- ✅ **Natural precision control:** Truncating to $p$ significant digits = keeping
-  $\lceil p/9 \rceil$ words. Rounding operates on decimal digit boundaries.
-- ✅ **Simple debugging:** Internal state is human-readable.
-- ✅ **No representation error:** "0.1" is stored exactly.
+- ✓ **Trivial I/O:** `to_string()` is $O(n)$ — just print each 9-digit word with   zero padding. No expensive base conversion. This matters hugely for financial apps.
+- ✓ **Exact scale arithmetic:** Adding trailing zeros or shifting decimal point = insert/remove whole words of zeros. No multiplication by powers of 10 needed.
+- ✓ **Natural precision control:** Truncating to $p$ significant digits = keeping $\lceil p/9 \rceil$ words. Rounding operates on decimal digit boundaries.
+- ✓ **Simple debugging:** Internal state is human-readable.
+- ✓ **No representation error:** "0.1" is stored exactly.
 
 **Disadvantages:**
 
-- ✗ **Wasted bits:** Each 32-bit word stores $\log_2(10^9) ≈ 29.9$ bits of information
-  out of 32 bits — 6.5% waste. Not critical but adds up in memory and cache.
-- ✗ **Complex carry/borrow:** Carries are at $10^9$ boundary, requiring UInt64
-  intermediate products and modulo/division. Binary carry is a single bit shift.
-- ✗ **Sqrt/Newton division less efficient:** Per-iteration cost is higher than binary
-  because each BigUInt division involves more complex quotient estimation.
-- ✗ **No NTT:** NTT requires prime-modular arithmetic on binary words. Doing NTT in
-  base-$10^9$ is possible (`libmpdec` does it) but the primes must be carefully chosen.
+- ✗ **Wasted bits:** Each 32-bit word stores $\log_2(10^9) ≈ 29.9$ bits of information out of 32 bits — 6.5% waste. Not critical but adds up in memory and cache.
+- ✗ **Complex carry/borrow:** Carries are at $10^9$ boundary, requiring UInt64 intermediate products and modulo/division. Binary carry is a single bit shift.
+- ✗ **Sqrt/Newton division less efficient:** Per-iteration cost is higher than binary because each BigUInt division involves more complex quotient estimation.
+- ✗ **No NTT:** NTT requires prime-modular arithmetic on binary words. Doing NTT in base-$10^9$ is possible (`libmpdec` does it) but the primes must be carefully chosen.
 
 ### Alternative: base-$2^{32}$ (BigInt2)
 
 **Advantages:**
 
-- ✅ **Maximum bit density:** Every bit used.
-- ✅ **Simpler carry:** Single-bit carry propagation, pipeline-friendly.
-- ✅ **Standard algorithms apply directly:** Karatsuba, Toom, NTT all work naturally.
-- ✅ **Hardware-aligned:** SIMD, popcount, clz all work directly on limbs.
-- ✅ **Better benchmark performance:** BigInt2 is 4.3× Python for addition vs
+- ✓ **Maximum bit density:** Every bit used.
+- ✓ **Simpler carry:** Single-bit carry propagation, pipeline-friendly.
+- ✓ **Standard algorithms apply directly:** Karatsuba, Toom, NTT all work naturally.
+- ✓ **Hardware-aligned:** SIMD, popcount, clz all work directly on limbs.
+- ✓ **Better benchmark performance:** BigInt2 is 4.3× Python for addition vs
   BigUInt's 2.4×; 4× for multiplication vs 1.9×.
 
 **Disadvantages:**
@@ -460,7 +428,7 @@ The reasoning:
    `to_string()` at 10000 digits is significant.
 
 2. The current performance gap vs Python is **not because of the base**. It's because
-   `libmpdec` has NTT and DeciMojo doesn't. Once NTT is implemented (PR5), the
+   `libmpdec` has NTT and DeciMojo doesn't. Once NTT is implemented (Task 5), the
    multiplication gap closes.
 
 3. Division and sqrt performance will improve dramatically once they're reformulated
@@ -492,7 +460,7 @@ if the operation itself saves more than `O(n)` in total.
 
 ## Optimization Roadmap
 
-### PR 1: Fix Asymmetric Division Performance ✅ COMPLETED
+### Task 1: Fix Asymmetric Division Performance ✓ COMPLETED
 
 **Priority: CRITICAL** — Was 0.11× Python, now **31–79× Python**
 
@@ -536,7 +504,7 @@ Balanced cases unchanged (15–24× Python). Overall average speedup: **12.4× P
 
 ---
 
-### PR 2: Reciprocal-Newton Division (Avoids Explicit Long Division)
+### Task 2: Reciprocal-Newton Division (Avoids Explicit Long Division)
 
 **Priority: HIGH** — Reduces division to multiplication at large sizes
 
@@ -546,12 +514,9 @@ Balanced cases unchanged (15–24× Python). Overall average speedup: **12.4× P
 2. Then $q = a \times r$ (one multiplication)
 3. Adjust by at most ±1 using a correction step
 
-**Key requirement:** The Newton iteration uses only multiplication (no division),
-so this is $O(M(n))$ where $M(n)$ is multiplication cost. With NTT (PR5), this
-becomes $O(n \log n)$.
+**Key requirement:** The Newton iteration uses only multiplication (no division), so this is $O(M(n))$ where $M(n)$ is multiplication cost. With NTT (Task 5), this becomes $O(n \log n)$.
 
-**Without NTT (i.e., with Karatsuba only):** $O(n^{1.585})$ — still better than
-schoolbook division's $O(n^2)$, and avoids the B-Z recursion overhead.
+**Without NTT (i.e., with Karatsuba only):** $O(n^{1.585})$ — still better than schoolbook division's $O(n^2)$, and avoids the B-Z recursion overhead.
 
 **Expected gain at precision=5000:**
 
@@ -561,59 +526,45 @@ schoolbook division's $O(n^2)$, and avoids the B-Z recursion overhead.
 
 ---
 
-### PR 3: Optimized Exp/Ln (Reduce Iteration Count and Per-Iteration Cost)
+### Task 3: Optimized Exp/Ln (Reduce Iteration Count and Per-Iteration Cost)
 
 **Priority: HIGH** — Currently 0.31–0.43× Python
 
 **Sub-optimizations:**
 
-#### PR 3a: Cache `ln(2)` and `ln(1.25)`
+#### Task 3a: Cache `ln(2)` and `ln(1.25)`
 
 **Current:** Recomputed on every `ln()` call. At precision=28, this wastes ~5µs per call.
 
-**Fix:** Use a module-level variable (when Mojo supports it), or pass a context/cache
-object. As a workaround, precompute up to 1024 digits at compile time (already done
-for π) and check if precision ≤ 1024 before recomputing.
+**Fix:** Use a module-level variable (when Mojo supports it), or pass a context/cache object. As a workaround, precompute up to 1024 digits at compile time (already done for π) and check if precision ≤ 1024 before recomputing.
 
-#### PR 3b: Replace Division in Taylor Series with Multiplication by Reciprocal
+#### Task 3b: Replace Division in Taylor Series with Multiplication by Reciprocal
 
-**Current:** Each Taylor term computes `term = term * x / n`. The division by $n$
-(a small integer) is a BigDecimal division, which is overkill.
+**Current:** Each Taylor term computes `term = term * x / n`. The division by $n$ (a small integer) is a BigDecimal division, which is overkill.
 
-**Fix:** For small integer divisors $n$, use `BigUInt.floor_divide_by_uint32(n)` directly
-on the coefficient, avoiding BigDecimal division overhead entirely. This is already
-implemented in BigUInt — just not used by the Taylor series.
+**Fix:** For small integer divisors $n$, use `BigUInt.floor_divide_by_uint32(n)` directly on the coefficient, avoiding BigDecimal division overhead entirely. This is already implemented in BigUInt — just not used by the Taylor series.
 
-**Expected gain:** Each iteration drops from ~2000ns to ~200ns (division by small
-integer is 10× cheaper than general division). For 70 iterations, saves ~126µs.
+**Expected gain:** Each iteration drops from ~2000ns to ~200ns (division by small integer is 10× cheaper than general division). For 70 iterations, saves ~126µs.
 
-#### PR 3c: Binary Splitting for Exp/Ln Series
+#### Task 3c: Binary Splitting for Exp/Ln Series
 
-**Current:** Sequential Taylor series, one term at a time. Each term depends on the
-previous term.
+**Current:** Sequential Taylor series, one term at a time. Each term depends on the previous term.
 
-**Fix:** Use binary splitting to evaluate $\sum \frac{x^k}{k!}$ as a single rational
-$p/q$ with exact `BigUInt` arithmetic (same approach used for π Chudnovsky), then do
-a single final division.
+**Fix:** Use binary splitting to evaluate $\sum \frac{x^k}{k!}$ as a single rational $p/q$ with exact `BigUInt` arithmetic (same approach used for π Chudnovsky), then do a single final division.
 
-**Benefit:** Reduces $O(p)$ BigDecimal divisions to $O(1)$ final division + $O(p \log p)$
-BigUInt multiplications. At large precision, this is dramatically faster.
+**Benefit:** Reduces $O(p)$ BigDecimal divisions to $O(1)$ final division + $O(p \log p)$ BigUInt multiplications. At large precision, this is dramatically faster.
 
-**Note:** This is how `libmpdec` internally handles the series. It's the main reason
-Python exp is 3× faster.
+**Note:** This is how `libmpdec` internally handles the series. It's the main reason Python exp is 3× faster.
 
-#### PR 3d: Better Range Reduction for Exp
+#### Task 3d: Better Range Reduction for Exp
 
-**Current:** Halving strategy — divide by $2^k$ until $x < 1$, then square $k$ times.
-Each squaring is a full-precision multiplication.
+**Current:** Halving strategy — divide by $2^k$ until $x < 1$, then square $k$ times. Each squaring is a full-precision multiplication.
 
-**Better:** Reduce $x$ modulo $\ln(10)$ so the reduced argument is much smaller,
-requiring fewer Taylor terms. Then reconstruct using $e^{k\ln 10} = 10^k$ (trivial
-in base-$10^9$).
+**Better:** Reduce $x$ modulo $\ln(10)$ so the reduced argument is much smaller, requiring fewer Taylor terms. Then reconstruct using $e^{k\ln 10} = 10^k$ (trivial in base-$10^9$).
 
 ---
 
-### PR 4: Optimized Sqrt (Reciprocal Square Root, Avoid Division)
+### Task 4: Optimized Sqrt (Reciprocal Square Root, Avoid Division)
 
 **Priority: HIGH** — Currently 0.55–0.72× Python at precision=5000
 
@@ -633,7 +584,7 @@ in base-$10^9$).
 - 2 multiplications: $2 \times O(n^{1.585})$ ← same asymptotic, but ~2× constant
   factor better because no B-Z recursion overhead
 
-**With NTT (PR5):**
+**With NTT (Task 5):**
 
 - Current (with div): $O(n \log n)$ per iteration via NTT division
 - Reciprocal sqrt: $2 \times O(n \log n)$ per iteration, no division at all
@@ -656,7 +607,7 @@ This optimization is already used in BigInt2's sqrt — adapt it for BigUInt.
 
 ---
 
-### PR 5: Number Theoretic Transform (NTT) for Large Multiplication
+### Task 5: Number Theoretic Transform (NTT) for Large Multiplication
 
 **Priority: HIGHEST LONG-TERM** — The single most impactful optimization
 
@@ -695,7 +646,7 @@ $O(n \log n)$ by:
 
 ---
 
-### PR 6: Toom-3 Multiplication (Intermediate Step Before NTT)
+### Task 6: Toom-3 Multiplication (Intermediate Step Before NTT)
 
 **Priority: MEDIUM** — Useful if NTT implementation is delayed
 
@@ -714,7 +665,7 @@ sub-problem size to $n/3$ instead of $n/2$.
 
 ---
 
-### PR 7: Nth Root via Newton's Method (Avoid exp(ln(x)/n))
+### Task 7: Nth Root via Newton's Method (Avoid exp(ln(x)/n))
 
 **Priority: MEDIUM** — Currently 0.18–0.33× Python for general nth root
 
@@ -727,14 +678,14 @@ $$r_{k+1} = \frac{1}{n}\left((n-1)r_k + \frac{x}{r_k^{n-1}}\right)$$
 This requires only one division and one `power(r, n-1)` per iteration. For small $n$
 (2, 3, 4, 5), unroll the power manually.
 
-**Even better (after PR 2):** Reciprocal-Newton for $r = x^{-1/n}$:
+**Even better (after Task 2):** Reciprocal-Newton for $r = x^{-1/n}$:
 $$r_{k+1} = r_k \cdot \frac{n+1 - x \cdot r_k^n}{n}$$
 
 Then $x^{1/n} = x \cdot r$. Uses only multiplications (no division).
 
 ---
 
-### PR 8: In-Place Arithmetic for BigUInt (Reduce Allocations)
+### Task 8: In-Place Arithmetic for BigUInt (Reduce Allocations)
 
 **Priority: MEDIUM** — Broad 10–30% improvement across all operations
 
@@ -744,7 +695,7 @@ Many BigUInt operations currently allocate new word lists unnecessarily:
 - Multiplication in Taylor series: each `term *= x` creates a new BigUInt
 - Scale alignment: `multiply_by_power_of_ten` always allocates new
 
-**Fix:** Implement true in-place operations (similar to BigInt2's PR5):
+**Fix:** Implement true in-place operations (similar to BigInt2's Task 5):
 
 - `add_inplace(mut self, other)` with capacity pre-check
 - `multiply_inplace_by_uint32(mut self, v)` operating on existing buffer
@@ -752,7 +703,7 @@ Many BigUInt operations currently allocate new word lists unnecessarily:
 
 ---
 
-### PR 9: SIMD-Optimized BigUInt Multiplication
+### Task 9: SIMD-Optimized BigUInt Multiplication
 
 **Priority: LOW-MEDIUM** — Constant factor improvement for schoolbook
 
@@ -767,35 +718,6 @@ UInt64 SIMD vectors, then normalize carries. On Apple Silicon M-series:
 
 **Expected gain:** 1.5–2× for schoolbook kernel, which is the base case for both
 Karatsuba and Toom-3.
-
----
-
-## Optimization Priority Matrix
-
-| PR      | Operation(s) Improved     | Current vs Python |    Expected After    |   Effort   |
-| ------- | ------------------------- | :---------------: | :------------------: | :--------: |
-| **PR1** | Asymmetric division       |   ✅ **31–79×**    |     ✅ COMPLETED      |    Done    |
-| **PR2** | Division, sqrt, exp, ln   |      varies       |     1.5–2× gain      |    High    |
-| **PR3** | Exp, ln                   |    0.31–0.43×     |       1.0–2.0×       |   Medium   |
-| **PR4** | Sqrt                      |    0.55–0.72×     |       1.5–3.0×       |   Medium   |
-| **PR5** | ALL large operations      |      varies       |      2–10× gain      | Very High  |
-| **PR6** | Large multiplication      |        N/A        | ~1.5× over Karatsuba |   Medium   |
-| **PR7** | Nth root                  |    0.18–0.33×     |       1.0–2.0×       | Low-Medium |
-| **PR8** | All (allocation overhead) |         —         |        10–30%        |   Medium   |
-| **PR9** | Schoolbook multiply base  |         —         |        1.5–2×        |    Low     |
-
-### Suggested Execution Order
-
-1. ~~**PR1** (asymmetric division fix) — immediate win, unblocks other work~~ ✅ DONE
-2. **PR3a+3b** (exp/ln quick wins) — cache constants + cheap integer division
-3. **PR4** (reciprocal sqrt) — standalone, high impact
-4. **PR7** (direct nth root) — low effort, high impact for root()
-5. **PR8** (in-place operations) — broad improvement
-6. **PR2** (reciprocal-Newton division) — requires careful implementation
-7. **PR6** (Toom-3) — medium complexity, medium gain
-8. **PR3c** (binary splitting for series) — complex but transformative
-9. **PR5** (NTT) — the end-game, makes everything fast at large sizes
-10. **PR9** (SIMD multiply) — polish
 
 ---
 

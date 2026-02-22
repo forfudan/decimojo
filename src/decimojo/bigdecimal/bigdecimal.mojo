@@ -889,6 +889,15 @@ struct BigDecimal(
         return decimojo.bigdecimal.exponential.ln(self, precision)
 
     @always_inline
+    fn ln(
+        self,
+        precision: Int,
+        mut cache: decimojo.bigdecimal.exponential.MathCache,
+    ) raises -> Self:
+        """Returns the natural logarithm using a cache for ln(2)/ln(1.25)."""
+        return decimojo.bigdecimal.exponential.ln(self, precision, cache)
+
+    @always_inline
     fn log(self, base: Self, precision: Int = PRECISION) raises -> Self:
         """Returns the logarithm of the BigDecimal number with the given base.
         """

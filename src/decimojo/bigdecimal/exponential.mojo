@@ -21,6 +21,7 @@ from decimojo.rounding_mode import RoundingMode
 
 # ===----------------------------------------------------------------------=== #
 # List of functions in this module:
+# - MathCache (struct): Cache for ln(2) and ln(1.25) constants
 # - power(base: BigDecimal, exponent: BigDecimal, precision: Int) -> BigDecimal
 # - integer_power(base: BigDecimal, exponent: BigDecimal, precision: Int) -> BigDecimal
 # - root(x: BigDecimal, n: BigDecimal, precision: Int) -> BigDecimal
@@ -31,12 +32,113 @@ from decimojo.rounding_mode import RoundingMode
 # - exp(x: BigDecimal, precision: Int) -> BigDecimal
 # - exp_taylor_series(x: BigDecimal, minimum_precision: Int) -> BigDecimal
 # - ln(x: BigDecimal, precision: Int) -> BigDecimal
+# - ln(x: BigDecimal, precision: Int, inout cache: MathCache) -> BigDecimal
 # - log(x: BigDecimal, precision: Int) -> BigDecimal
 # - log10(x: BigDecimal, precision: Int) -> BigDecimal
 # - ln_series_expansion(x: BigDecimal, precision: Int) -> BigDecimal
 # - compute_ln2(precision: Int) -> BigDecimal
 # - compute_ln1d25(precision: Int) -> BigDecimal
 # ===----------------------------------------------------------------------=== #
+
+
+# ===----------------------------------------------------------------------=== #
+# Cache for mathematical constants
+# ===----------------------------------------------------------------------=== #
+
+
+struct MathCache:
+    """Cache for expensive mathematical constants used in ln() and related
+    functions.
+
+    Since Mojo does not support module-level mutable variables, this struct
+    provides a way to cache computed values of ln(2) and ln(1.25) across
+    multiple function calls, avoiding redundant computation.
+
+    The cache automatically handles precision upgrades: if a cached value was
+    computed at precision P1 and a new call requests precision P2 > P1, the
+    cache will recompute and store the higher-precision value.
+
+    Usage:
+
+    ```mojo
+    var cache = MathCache()
+    var result1 = ln(x1, 100, cache)
+    var result2 = ln(x2, 100, cache)  # Reuses cached ln(2) and ln(1.25)
+    ```
+
+    This is especially beneficial for:
+    - Functions like `log()` that call `ln()` twice internally
+    - User code that calls `ln()` on multiple values at the same precision
+    """
+
+    var _ln2: BigDecimal
+    """Cached value of ln(2)."""
+    var _ln1d25: BigDecimal
+    """Cached value of ln(1.25)."""
+    var _ln2_precision: Int
+    """Precision (in significant digits) at which _ln2 was computed."""
+    var _ln1d25_precision: Int
+    """Precision (in significant digits) at which _ln1d25 was computed."""
+
+    fn __init__(out self):
+        """Initializes an empty MathCache with no cached values."""
+        self._ln2 = BigDecimal(BigUInt.zero(), 0, False)
+        self._ln1d25 = BigDecimal(BigUInt.zero(), 0, False)
+        self._ln2_precision = 0
+        self._ln1d25_precision = 0
+
+    fn get_ln2(mut self, precision: Int) raises -> BigDecimal:
+        """Returns ln(2) computed to at least the specified precision.
+
+        If the cached value has sufficient precision, it is returned (rounded
+        down to the requested precision). Otherwise, ln(2) is recomputed and
+        cached at the new precision.
+
+        Args:
+            precision: The minimum number of significant digits required.
+
+        Returns:
+            The value of ln(2) with at least the specified precision.
+        """
+        if self._ln2_precision >= precision:
+            var result = self._ln2.copy()
+            result.round_to_precision(
+                precision=precision,
+                rounding_mode=RoundingMode.down(),
+                remove_extra_digit_due_to_rounding=False,
+                fill_zeros_to_precision=False,
+            )
+            return result^
+        self._ln2 = compute_ln2(precision)
+        self._ln2_precision = precision
+        return self._ln2.copy()
+
+    fn get_ln1d25(mut self, precision: Int) raises -> BigDecimal:
+        """Returns ln(1.25) computed to at least the specified precision.
+
+        If the cached value has sufficient precision, it is returned (rounded
+        down to the requested precision). Otherwise, ln(1.25) is recomputed
+        and cached at the new precision.
+
+        Args:
+            precision: The minimum number of significant digits required.
+
+        Returns:
+            The value of ln(1.25) with at least the specified precision.
+        """
+        if self._ln1d25_precision >= precision:
+            var result = self._ln1d25.copy()
+            result.round_to_precision(
+                precision=precision,
+                rounding_mode=RoundingMode.down(),
+                remove_extra_digit_due_to_rounding=False,
+                fill_zeros_to_precision=False,
+            )
+            return result^
+        self._ln1d25 = compute_ln1d25(precision)
+        self._ln1d25_precision = precision
+        return self._ln1d25.copy()
+
 
 # ===----------------------------------------------------------------------=== #
 # Power and root functions
@@ -915,9 +1017,33 @@ fn exp_taylor_series(
 fn ln(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculate the natural logarithm of x to the specified precision.
 
+    This is the non-cached version. For repeated calls, use the overload that
+    accepts a `MathCache` parameter to avoid recomputing ln(2) and ln(1.25).
+
     Args:
         x: The input value.
         precision: Desired precision in significant digits.
+
+    Returns:
+        The natural logarithm of x to the specified precision.
+
+    Raises:
+        Error: If x is negative or zero.
+    """
+    var cache = MathCache()
+    return ln(x, precision, cache)
+
+
+fn ln(x: BigDecimal, precision: Int, mut cache: MathCache) raises -> BigDecimal:
+    """Calculate the natural logarithm of x to the specified precision.
+
+    This overload accepts a `MathCache` to reuse cached values of ln(2) and
+    ln(1.25) across multiple calls, significantly improving performance.
+
+    Args:
+        x: The input value.
+        precision: Desired precision in significant digits.
+        cache: A mutable MathCache instance for caching ln(2) and ln(1.25).
 
     Returns:
         The natural logarithm of x to the specified precision.
@@ -982,18 +1108,12 @@ fn ln(x: BigDecimal, precision: Int) raises -> BigDecimal:
 
     # Apply range reduction adjustments
     # ln(m) + (a+b*2)*ln(2) + b*ln(1.25)
-    # TODO: Use precomputed ln(2) for better performance
-    # It is only calculated once and saved in the cache (global variable)
-    # Need Mojo to support global variables
+    # Use cached values from MathCache to avoid recomputation
     if power_of_2 + power_of_5 * 2 != 0:
-        # if len(decimojo.cache_ln2.coefficient.words) != 0:
-        #     var ln2 = decimojo.cache_ln2
-        var ln2 = compute_ln2(working_precision)
+        var ln2 = cache.get_ln2(working_precision)
         result += ln2 * BigDecimal.from_int(power_of_2 + power_of_5 * 2)
     if power_of_5 != 0:
-        # if len(decimojo.cache_ln5.coefficient.words) != 0:
-        #     var ln1d25 = decimojo.cache_ln1d25
-        var ln1d25 = compute_ln1d25(working_precision)
+        var ln1d25 = cache.get_ln1d25(working_precision)
         result += ln1d25 * BigDecimal.from_int(power_of_5)
 
     # Round to final precision
@@ -1063,8 +1183,10 @@ fn log(x: BigDecimal, base: BigDecimal, precision: Int) raises -> BigDecimal:
         return log10(x, precision)
 
     # Use the identity: log_base(x) = ln(x) / ln(base)
-    var ln_x = ln(x, working_precision)
-    var ln_base = ln(base, working_precision)
+    # Use a shared cache so that both ln() calls reuse cached ln(2)/ln(1.25)
+    var cache = MathCache()
+    var ln_x = ln(x, working_precision, cache)
+    var ln_base = ln(base, working_precision, cache)
 
     var result = ln_x.true_divide(ln_base, precision)
     return result^
@@ -1108,11 +1230,14 @@ fn log10(x: BigDecimal, precision: Int) raises -> BigDecimal:
         return BigDecimal(BigUInt.zero(), 0, False)  # log10(1) = 0
 
     # Use the identity: log10(x) = ln(x) / ln(10)
-    var ln_result = ln(x, working_precision)
+    # Use a shared cache so that both ln() calls reuse cached ln(2)/ln(1.25)
+    var cache = MathCache()
+    var ln_result = ln(x, working_precision, cache)
     var result = ln_result.true_divide(
         ln(
             BigDecimal(BigUInt(raw_words=[10]), 0, False),
             working_precision,
+            cache,
         ),
         precision,
     )

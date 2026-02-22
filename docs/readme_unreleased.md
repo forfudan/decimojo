@@ -18,7 +18,7 @@ An arbitrary-precision integer and decimal library for [Mojo](https://www.modula
 
 DeciMojo provides an arbitrary-precision integer and decimal library for Mojo. It delivers exact calculations for financial modeling, scientific computing, and applications where floating-point approximation errors are unacceptable. Beyond basic arithmetic, the library includes advanced mathematical functions with guaranteed precision.
 
-For Pythonistas, DeciMojo is a Mojo-native replacement for Python's `int` and `decimal.Decimal`. It offers similar semantics and precision, runs purely on Mojo's standard library, and requires no Python interpreter.
+For Pythonistas, `decimojo.BInt` to Mojo is like `int` to Python, and `decimojo.Decimal` to Mojo is like `decimal.Decimal` to Python.
 
 The core types are:
 
