@@ -38,8 +38,21 @@ fn run_case(
         var rm = m_a.root(m_n, 28)
         var rp = pa.__pow__(py_reciprocal)
 
-        log_print("BigDecimal result: " + String(rm)[:100], log_file)
-        log_print("Python result:     " + String(rp)[:100], log_file)
+        var rm_str = rm.to_string(precision=100000)
+        var rp_str = String(rp)
+        log_print("BigDecimal result: " + rm_str[:100], log_file)
+        log_print("Python result:     " + rp_str[:100], log_file)
+
+        # Correctness check
+        try:
+            var py_bdec = BigDecimal(rp_str)
+            var diff = rm - py_bdec
+            log_print(
+                "Difference:        " + diff.to_string(precision=100000)[:80],
+                log_file,
+            )
+        except:
+            log_print("Difference:        (comparison failed)", log_file)
 
         var t0 = perf_counter_ns()
         for _ in range(iterations):

@@ -1,5 +1,5 @@
 [config]
-iterations = 100
+iterations = 25
 
 # === BASIC SQUARE ROOT TESTS ===
 
