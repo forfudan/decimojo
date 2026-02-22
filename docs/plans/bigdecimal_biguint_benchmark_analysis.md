@@ -4,7 +4,7 @@ First version: 2026-02-21
 Yuhao Zhu
 
 > [!IMPORTANT]
-> For v0.8.0, Tasks 1✓, 3a✓, 3b✓, 3c✓, 7✓, 8✓ are the priority to be competitive at all sizes.
+> For v0.8.0, Tasks 1✓, 3a✓, 3b✓, 3c✓, 4✓, 7✓, 8✓ are the priority to be competitive at all sizes.
 
 ## Optimization priority and planning
 
@@ -13,7 +13,7 @@ Yuhao Zhu
 | **Task 1** | Asymmetric division       |          ✓ **31–79×**          |     ✓ COMPLETED      |   Done    | High         |
 | **Task 2** | Division, sqrt, exp, ln   |             varies             |     1.5–2× gain      |   High    | Medium       |
 | **Task 3** | Exp, ln                   |   Exp: 0.60×@p50→1.62×@p2000   |   3a ✓, 3b ✓, 3c ✓   |  Medium   | **Critical** |
-| **Task 4** | Sqrt                      |           0.55–0.72×           |       1.5–3.0×       |  Medium   | Medium       |
+| **Task 4** | Sqrt                      | ✓ **17.9× (was 0.90×@p5000)**  |     ✓ COMPLETED      |   Done    | High         |
 | **Task 5** | ALL large operations      |             varies             |      2–10× gain      | Very High | Low          |
 | **Task 6** | Large multiplication      |              N/A               | ~1.5× over Karatsuba |  Medium   | Medium       |
 | **Task 7** | Nth root                  | ✓ **3.9–25× (was 0.14–0.49×)** |     ✓ COMPLETED      |   Done    | High         |
@@ -28,7 +28,7 @@ Yuhao Zhu
 1. ~~**Task 3c** (cache `ln(10)` in MathCache)~~ ✓ DONE — `get_ln10()` used by `log10()`/`log()` directly; ln() decomposes into ln(2)+ln(1.25) for generality
 1. ~~**Task 7** (direct nth root) — Newton's method replaces exp(ln(x)/n)~~ ✓ DONE — integer roots 1.2–50× Python (was 0.14–0.49×)
 1. ~~**Task 8** (in-place operations) — broad improvement~~ ✓ DONE — exp +15–21%, ln +15–27%, sqrt +9%
-1. **Task 4** (reciprocal sqrt) — less urgent (Mojo sqrt already fast-pathed via BigUInt.sqrt())
+1. ~~**Task 4** (reciprocal sqrt with precision doubling)~~ ✓ DONE — 17.9× Python avg (was 0.90×), **~20× improvement**
 1. **Task 2** (reciprocal-Newton division) — requires careful implementation
 1. **Task 6** (Toom-3) — medium complexity, medium gain
 1. **Task 3c** (binary splitting for series) — complex but transformative
@@ -541,7 +541,7 @@ The multi-precision data reveals that **the optimization landscape depends heavi
 **Remaining task priorities after Tasks 3b+3c+7 ✓:**
 
 1. ~~**Task 8** (in-place operations)~~ ✓ DONE — +15–27% exp/ln, +9% sqrt
-2. **Task 4** (reciprocal sqrt) — less critical (Mojo sqrt already fast-pathed)
+2. ~~**Task 4** (reciprocal sqrt + precision doubling)~~ ✓ DONE — 17.9× Python (was 0.90×), **~20× improvement**
 3. **Task 2** (reciprocal-Newton division) — requires careful implementation
 4. **Task 5** (NTT) — less urgent; Karatsuba competitive up to p=2000
 
@@ -913,9 +913,38 @@ Exp improved 5–25% at p≤200 (e.g., exp(1): 0.48→0.60× at p=50).
 
 ---
 
-### Task 4: Optimized Sqrt (Reciprocal Square Root, Avoid Division)
+### Task 4: Optimized Sqrt (Reciprocal Square Root, Avoid Division) ✓ DONE
 
-**Priority: HIGH** — Currently 0.55–0.72× Python at precision=5000
+**Priority: HIGH** — ~~Currently 0.55–0.72× Python at precision=5000~~ ✓ Now **17.9× Python** at precision=5000
+
+**Implementation (2026-02-22):**
+
+Replaced the old BigUInt.sqrt()-based approach (Newton with division, no precision
+doubling) with a reciprocal square root Newton iteration at the BigDecimal level:
+
+1. Normalize $x$ to $[0.1, 100)$ by shifting scale by even power of 10
+2. Float64 initial guess: $r_0 \approx x^{-0.5}$ (~15 digits accuracy)
+3. Precision doubling schedule: start at ~20 digits, double each iteration up to
+   `working_precision = precision + BUFFER_DIGITS`
+4. Newton iterations: $r_{k+1} = r_k(3 - xr_k^2)/2$ (2 multiplications, no division)
+5. Final: $\sqrt{x} = x \times r$, adjust scale, round to precision
+6. Perfect square detection: strip trailing zeros, verify $\text{candidate}^2 = x$
+
+**Key optimizations:**
+- **No division** — each Newton step uses 2 multiplications instead of 1 division
+- **Precision doubling** — total work ≈ 2× cost of final iteration (vs k× full cost)
+- **BigDecimal-level** — natural precision control, no need to extend coefficient to 2× size
+- **BUFFER_DIGITS = 25** — sufficient guard digits for downstream consumers (e.g., arctan)
+
+**Benchmark results (precision=5000, 54 cases, 100 iterations each):**
+- Before: avg 0.90× Python (Mojo 10% slower) — old BigUInt.sqrt() with division
+- After:  avg **17.9× Python** — reciprocal sqrt with precision doubling
+- Range: 5.7–22× for non-trivial cases (49 of 54), extreme outliers up to 68,000×
+- **~20× improvement** over baseline, far exceeding the predicted 1.5–3×
+
+The massive gain comes primarily from precision doubling: the old approach ran every
+Newton iteration at full 5000-digit precision, while the new approach starts at ~20
+digits and doubles each step, making total work ≈ 3× the final iteration cost.
 
 **Algorithm (libmpdec-style):**
 
@@ -1238,13 +1267,20 @@ All bench files now:
    in sin/cos/arctan/sqrt/compute_ln2. Biggest wins at low-to-medium precision where
    allocation overhead is a larger fraction of total cost.
 
+6. **Task 4 (reciprocal sqrt + precision doubling): 0.90× → 17.9× (~20× improvement)** —
+   Replaced BigUInt.sqrt()-based Newton (with division, no precision doubling) with
+   reciprocal sqrt Newton at BigDecimal level. Two key wins: (a) no division (2 muls vs
+   1 div per iteration), (b) precision doubling (total work ≈ 3× final iteration cost
+   vs k× full cost). The improvement far exceeded the predicted 1.5–3× because the old
+   approach lacked precision doubling entirely.
+
 ### Remaining Targets
 
-| Priority  | Task    |           Current            |   Target    | Approach                                            |
-| --------- | ------- | :--------------------------: | :---------: | --------------------------------------------------- |
-| HIGH      | Task 3b |          0.55× exp           |  0.8–1.0×   | Replace Taylor division with multiply-by-reciprocal |
-| HIGH      | Task 4  |       0.55–0.72× sqrt        |  1.5–2.0×   | Reciprocal sqrt Newton (no division)                |
-| ✓ DONE    | Task 7  |  ~~0.14–0.49×~~ **3.9–25×**  |   ✓ DONE    | Newton for nth root (was exp(ln(x)/n))              |
-| ✓ DONE    | Task 8  | **+15–27% exp/ln, +9% sqrt** |   ✓ DONE    | In-place BigDecimal operations + uint32 quick paths |
-| MEDIUM    | Task 2  |          15–28× div          |   30–50×    | Reciprocal-Newton division                          |
-| LONG-TERM | Task 5  |              —               | 2–10× large | NTT multiplication                                  |
+| Priority  | Task    |            Current            |   Target    | Approach                                            |
+| --------- | ------- | :---------------------------: | :---------: | --------------------------------------------------- |
+| HIGH      | Task 3b |           0.55× exp           |  0.8–1.0×   | Replace Taylor division with multiply-by-reciprocal |
+| ✓ DONE    | Task 4  | ~~0.55–0.72×~~ **17.9× sqrt** |   ✓ DONE    | Reciprocal sqrt Newton + precision doubling         |
+| ✓ DONE    | Task 7  |  ~~0.14–0.49×~~ **3.9–25×**   |   ✓ DONE    | Newton for nth root (was exp(ln(x)/n))              |
+| ✓ DONE    | Task 8  | **+15–27% exp/ln, +9% sqrt**  |   ✓ DONE    | In-place BigDecimal operations + uint32 quick paths |
+| MEDIUM    | Task 2  |          15–28× div           |   30–50×    | Reciprocal-Newton division                          |
+| LONG-TERM | Task 5  |               —               | 2–10× large | NTT multiplication                                  |
