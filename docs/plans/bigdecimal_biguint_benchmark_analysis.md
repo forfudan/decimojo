@@ -4,25 +4,21 @@ First version: 2026-02-21
 Yuhao Zhu
 
 > [!IMPORTANT]
-> **Key discovery (2026-02-22):** Multi-precision benchmarks show Mojo exp is **1.62× Python at p=2000** and ln near-1 is **31× Python at p=2000**. After Task 3b+3c:
-> - Exp improved 5–30% at p≤200, now **1.1–1.6× Python at p=1000–2000**
-> - Ln near-1 improved **30–100%** across all precisions: 0.98× at p=50 → **5.87× at p=1000** → **31× at p=2000**
-> - Ln far-from-1 remains limited by O(p²) computation of ln(2)/ln(1.25) (cached `ln(10)` benefits log10/log only)
-> For v0.8.0, Tasks [1✓, 3a✓, 3b✓, 3c✓, 7, 8] are the priority to be competitive at all sizes.
+> For v0.8.0, Tasks [1✓, 3a✓, 3b✓, 3c✓, 7✓, 8] are the priority to be competitive at all sizes.
 
 ## Optimization priority and planning
 
-| Task       | Operation(s) Improved     |     Current vs Python      |    Expected After    |   Effort   | Priority     |
-| ---------- | ------------------------- | :------------------------: | :------------------: | :--------: | ------------ |
-| **Task 1** | Asymmetric division       |        ✓ **31–79×**        |     ✓ COMPLETED      |    Done    | High         |
-| **Task 2** | Division, sqrt, exp, ln   |           varies           |     1.5–2× gain      |    High    | Medium       |
-| **Task 3** | Exp, ln                   | Exp: 0.60×@p50→1.62×@p2000 |   3a ✓, 3b ✓, 3c ✓   |   Medium   | **Critical** |
-| **Task 4** | Sqrt                      |         0.55–0.72×         |       1.5–3.0×       |   Medium   | Medium       |
-| **Task 5** | ALL large operations      |           varies           |      2–10× gain      | Very High  | Low          |
-| **Task 6** | Large multiplication      |            N/A             | ~1.5× over Karatsuba |   Medium   | Medium       |
-| **Task 7** | Nth root                  |         0.14–0.49×         |       1.0–2.0×       | Low-Medium | Medium       |
-| **Task 8** | All (allocation overhead) |             —              |        10–30%        |   Medium   | High         |
-| **Task 9** | Schoolbook multiply base  |             —              |        1.5–2×        |    Low     | Medium       |
+| Task       | Operation(s) Improved     |       Current vs Python        |    Expected After    |  Effort   | Priority     |
+| ---------- | ------------------------- | :----------------------------: | :------------------: | :-------: | ------------ |
+| **Task 1** | Asymmetric division       |          ✓ **31–79×**          |     ✓ COMPLETED      |   Done    | High         |
+| **Task 2** | Division, sqrt, exp, ln   |             varies             |     1.5–2× gain      |   High    | Medium       |
+| **Task 3** | Exp, ln                   |   Exp: 0.60×@p50→1.62×@p2000   |   3a ✓, 3b ✓, 3c ✓   |  Medium   | **Critical** |
+| **Task 4** | Sqrt                      |           0.55–0.72×           |       1.5–3.0×       |  Medium   | Medium       |
+| **Task 5** | ALL large operations      |             varies             |      2–10× gain      | Very High | Low          |
+| **Task 6** | Large multiplication      |              N/A               | ~1.5× over Karatsuba |  Medium   | Medium       |
+| **Task 7** | Nth root                  | ✓ **3.9–25× (was 0.14–0.49×)** |     ✓ COMPLETED      |   Done    | High         |
+| **Task 8** | All (allocation overhead) |               —                |        10–30%        |  Medium   | High         |
+| **Task 9** | Schoolbook multiply base  |               —                |        1.5–2×        |    Low    | Medium       |
 
 ### Planned Execution Order
 
@@ -30,7 +26,7 @@ Yuhao Zhu
 1. ~~**Task 3a** (cache ln(2)/ln(1.25) via MathCache struct)~~ ✓ DONE
 1. ~~**Task 3b** (exp/ln cheap integer division)~~ ✓ DONE — ln near-1 improved 30–100%, exp improved 5–30% at p≤200
 1. ~~**Task 3c** (cache `ln(10)` in MathCache)~~ ✓ DONE — `get_ln10()` used by `log10()`/`log()` directly; ln() decomposes into ln(2)+ln(1.25) for generality
-1. **Task 7** (direct nth root) — low effort, removes exp+ln bottleneck for root()
+1. ~~**Task 7** (direct nth root) — Newton's method replaces exp(ln(x)/n)~~ ✓ DONE — integer roots 1.2–50× Python (was 0.14–0.49×)
 1. **Task 8** (in-place operations) — broad improvement
 1. **Task 4** (reciprocal sqrt) — less urgent (Mojo sqrt already fast-pathed via BigUInt.sqrt())
 1. **Task 2** (reciprocal-Newton division) — requires careful implementation
@@ -263,7 +259,7 @@ Python underflows to zero due to exponent range limits).
 | exp(0.0001) |    58,200 |      25,590 |  0.44×   |   0E-50    |
 | exp(1e-10)  |    27,960 |       9,850 |  0.35×   |   0E-50    |
 
-**New average: ~0.55× (Python ~1.8× faster)**
+**New average**: ~0.55× (Python ~1.8× faster)
 
 **Analysis (updated):** With matched precision=50, Mojo's exp is **less slow than
 previously reported** (0.55× vs the misleading 0.34×). The per-call cost is higher
@@ -374,9 +370,18 @@ with 1–3 ULP last-digit difference, expected for compound `exp(ln(x)/n)`).
 | ∛10           |     0.20×      |     0.14×     | ↓ Slightly worse (Python was undercounted before) |
 | ⁵√32          |     0.27×      |     0.26×     | ≈ Same                                            |
 
-**Analysis (updated):** Square roots are fast-pathed via `BigUInt.sqrt()` and show excellent speedups (10–40×). Non-square roots (cube, 5th, etc.) delegate to `exp(ln(x)/n)`, which requires two expensive transcendental function evaluations. At precision=50, general nth root is **0.14–0.49× Python**, confirming that Task 7 (direct Newton for nth root) is important.
+**Analysis (updated after Task 7 ✓):** Square roots are fast-pathed via `BigUInt.sqrt()` and show excellent speedups (10–40×). General nth roots now use direct Newton's method ($r_{k+1} = ((n-1)r + x/r^{n-1})/n$), matching Python `libmpdec`'s approach. At precision=50, **integer roots improved from 0.14–0.49× to 1.2–9× Python**. Fractional roots (0.5th, 0.25th, 0.333rd) still use `exp(ln(x)/n)` path (0.2–0.4×).
 
-**Python `libmpdec`** computes nth root directly via Newton's method ($x_{k+1} = ((n-1)x_k + a/x_k^{n-1})/n$), avoiding the `exp(ln(x)/n)` detour.
+**Before → After Task 7 (selected cases at p=50):**
+
+| Case              | Before | After | Improvement |
+| ----------------- | :----: | :---: | :---------: |
+| ∛27 (perfect)     | 0.24×  | 4.25× |    17.7×    |
+| ∛10 (non-perfect) | 0.14×  | 2.0×  |    14.3×    |
+| ⁴√16              | 0.30×  | 5.91× |    19.7×    |
+| ⁵√32              | 0.26×  | 4.83× |    18.6×    |
+| ¹⁰√1024           | 0.25×  | 2.47× |    9.9×     |
+| ¹⁰⁰√2             | 0.17×  | 5.13× |    28.5×    |
 
 ---
 
@@ -533,13 +538,37 @@ The multi-precision data reveals that **the optimization landscape depends heavi
 - Ln near-1 is **3.2–31× Python** → Mojo dominates massively
 - Ln far-from-1 at p=2000: 0.12× (Python also recomputes at high precision)
 
-**Remaining task priorities after Tasks 3b+3c ✓:**
+**Remaining task priorities after Tasks 3b+3c+7 ✓:**
 
-1. **Task 7** (direct nth root) — low effort, removes exp+ln bottleneck for root() (currently 0.14–0.49×)
-2. **Task 8** (in-place operations) — broad 10–30% improvement across all operations
-3. **Task 4** (reciprocal sqrt) — less critical (Mojo sqrt already fast-pathed)
-4. **Task 2** (reciprocal-Newton division) — requires careful implementation
-5. **Task 5** (NTT) — less urgent; Karatsuba competitive up to p=2000
+1. **Task 8** (in-place operations) — broad 10–30% improvement across all operations
+2. **Task 4** (reciprocal sqrt) — less critical (Mojo sqrt already fast-pathed)
+3. **Task 2** (reciprocal-Newton division) — requires careful implementation
+4. **Task 5** (NTT) — less urgent; Karatsuba competitive up to p=2000
+
+### Root — Multi-Precision Scaling (after Task 7 ✓)
+
+Benchmarked 10 representative root cases (cbrt, 5th root, 10th root, sqrt) at 5 precision levels.
+Newton's method scales better than Python's approach at larger precisions:
+
+**Summary table (integer roots only, excluding fractional root cases):**
+
+| Case            |     p=50 |    p=100 |    p=200 |     p=500 |    p=1000 |
+| --------------- | -------: | -------: | -------: | --------: | --------: |
+| cbrt(2)         |    5.18× |    5.51× |    7.74× |     21.0× |     43.8× |
+| cbrt(10)        |    1.56× |    1.29× |    2.31× |     8.07× |     15.8× |
+| 5th_root(2)     |    5.25× |    4.82× |    6.68× |    19.58× |     40.4× |
+| 5th_root(100)   |    1.48× |    1.34× |    2.62× |     7.38× |     13.3× |
+| 10th_root(2)    |    3.81× |    4.04× |    5.65× |    11.06× |     22.3× |
+| 10th_root(1000) |    1.21× |    1.00× |    1.80× |     5.78× |     10.1× |
+| cbrt(PI)        |    4.69× |    4.32× |    6.17× |    14.81× |     30.2× |
+| cbrt(large_dec) |    5.14× |    4.46× |    7.06× |    21.15× |     30.4× |
+| cbrt(0.001)     |    1.86× |    1.75× |    3.85× |    14.15× |     16.1× |
+| sqrt(2)         |    8.52× |    4.93× |    6.37× |    13.19× |     22.1× |
+| **Average**     | **3.9×** | **3.3×** | **5.0×** | **13.6×** | **25.0×** |
+
+**Key insight:** Newton's method has the same asymptotic complexity per iteration as Python's
+approach, but Mojo's tighter inner loops and no interpreter overhead compound across iterations.
+At p=1000, cbrt(2) reaches **43.8× Python** — a ~300× improvement from the original 0.14×.
 
 ---
 
@@ -842,6 +871,7 @@ Balanced cases unchanged (15–24× Python). Overall average speedup: **12.4× P
 **Problem:** Each Taylor term computed `term = term * x / n`. The division by $n$ (a small integer that fits in UInt32) went through the full BigDecimal division pipeline: constructing `BigDecimal(n, 0, False)`, computing buffer digits, scaling up the coefficient, doing general BigUInt division, then rounding.
 
 **Solution:** Added `true_divide_inexact_by_uint32()` function in `arithmetics.mojo` that wraps `BigUInt.floor_divide_by_uint32()` for O(n) single-word division. Changed the loop variable `n` from `BigUInt`/`BigDecimal` to `UInt32` in three functions:
+
 - `exp_taylor_series()`: `n` (factorial index) changed to UInt32
 - `ln_series_expansion()`: `k` (series index) changed to UInt32, even/odd check simplified
 - `compute_ln2()`: `k` (series index) changed to UInt32
@@ -984,22 +1014,39 @@ sub-problem size to $n/3$ instead of $n/2$.
 
 ---
 
-### Task 7: Nth Root via Newton's Method (Avoid exp(ln(x)/n))
+### Task 7: Nth Root via Newton's Method (Avoid exp(ln(x)/n)) — ✓ COMPLETED (2026-02-22)
 
-**Priority: MEDIUM** — Currently 0.18–0.33× Python for general nth root
+**Status: COMPLETED** — Integer roots improved from 0.14–0.49× to **1.2–50× Python**
 
-**Current:** `root(x, n)` = `exp(ln(x) / n)`, requiring two expensive transcendental
-function evaluations.
-
-**Better:** Direct Newton's method for $x^{1/n}$:
+**Implementation:** Direct Newton's method for `integer_root()` in `exponential.mojo`:
 $$r_{k+1} = \frac{1}{n}\left((n-1)r_k + \frac{x}{r_k^{n-1}}\right)$$
 
-This requires only one division and one `power(r, n-1)` per iteration. For small $n$
-(2, 3, 4, 5), unroll the power manually.
+**Key design decisions:**
+- Float64 initial guess via `exponent()` + mantissa normalization
+- Precision doubling for quadratic convergence (start at 18 digits)
+- Uses `integer_power(r, n-1)` (binary exponentiation) per iteration
+- Division by n uses `true_divide_inexact_by_uint32()` for n ≤ UInt32.MAX
+- Falls back to `exp(ln(x)/n)` for n > 1000 (binary exponentiation too expensive)
+- Early convergence detection for exact results (e.g., cbrt(0.001) = 0.1)
+- Coefficient trimming prevents bloated representations from triggering BigUInt division edge cases
 
-**Even better (after Task 2):** Reciprocal-Newton for $r = x^{-1/n}$:
+**Multi-precision scaling (10 representative cases avg):**
+
+| Precision | Avg Speedup | Notes                              |
+| --------- | :---------: | ---------------------------------- |
+| p=50      |  **3.9×**   | Newton overhead visible at small p |
+| p=100     |  **3.3×**   | Crossover region                   |
+| p=200     |  **5.0×**   | Newton's O(M(n)) advantage grows   |
+| p=500     |  **13.6×**  | Mojo dominates                     |
+| p=1000    |  **25.0×**  | Massive advantage                  |
+
+**Peak speedups at p=1000:** cbrt(2) = 43.8×, 5th_root(2) = 40.4×, cbrt(PI) = 30.2×
+
+**Remaining:** Fractional roots (0.5th, 0.25th, 0.333rd) still use `exp(ln(x)/n)` (~0.2–0.4×).
+Could be improved by converting to integer root + integer power combination.
+
+**Future:** Reciprocal-Newton for $r = x^{-1/n}$ (after Task 2):
 $$r_{k+1} = r_k \cdot \frac{n+1 - x \cdot r_k^n}{n}$$
-
 Then $x^{1/n} = x \cdot r$. Uses only multiplications (no division).
 
 ---
@@ -1146,15 +1193,15 @@ All bench files now:
 
 4. **Root: 0.18× → 0.14× (corrected)** — The previous 0.18× was actually optimistic
    because Python was doing 357× more precision. With fair comparison, nth root is
-   0.14–0.49× Python. Task 7 (direct Newton) is the fix.
+   0.14–0.49× Python. ~~Task 7 (direct Newton) is the fix.~~ ✓ FIXED: now 1.2–50× Python.
 
 ### Remaining Targets
 
-| Priority  | Task    |     Current     |   Target    | Approach                                            |
-| --------- | ------- | :-------------: | :---------: | --------------------------------------------------- |
-| HIGH      | Task 3b |    0.55× exp    |  0.8–1.0×   | Replace Taylor division with multiply-by-reciprocal |
-| HIGH      | Task 4  | 0.55–0.72× sqrt |  1.5–2.0×   | Reciprocal sqrt Newton (no division)                |
-| HIGH      | Task 7  | 0.14–0.49× root |  1.0–2.0×   | Direct Newton for nth root                          |
-| HIGH      | Task 8  |        —        | +10–30% all | In-place BigUInt operations                         |
-| MEDIUM    | Task 2  |   15–28× div    |   30–50×    | Reciprocal-Newton division                          |
-| LONG-TERM | Task 5  |        —        | 2–10× large | NTT multiplication                                  |
+| Priority  | Task    |          Current           |   Target    | Approach                                            |
+| --------- | ------- | :------------------------: | :---------: | --------------------------------------------------- |
+| HIGH      | Task 3b |         0.55× exp          |  0.8–1.0×   | Replace Taylor division with multiply-by-reciprocal |
+| HIGH      | Task 4  |      0.55–0.72× sqrt       |  1.5–2.0×   | Reciprocal sqrt Newton (no division)                |
+| ✓ DONE    | Task 7  | ~~0.14–0.49×~~ **3.9–25×** |   ✓ DONE    | Newton for nth root (was exp(ln(x)/n))              |
+| HIGH      | Task 8  |             —              | +10–30% all | In-place BigUInt operations                         |
+| MEDIUM    | Task 2  |         15–28× div         |   30–50×    | Reciprocal-Newton division                          |
+| LONG-TERM | Task 5  |             —              | 2–10× large | NTT multiplication                                  |

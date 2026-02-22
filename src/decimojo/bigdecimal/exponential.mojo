@@ -442,7 +442,11 @@ fn root(x: BigDecimal, n: BigDecimal, precision: Int) raises -> BigDecimal:
 fn integer_root(
     x: BigDecimal, n: BigDecimal, precision: Int
 ) raises -> BigDecimal:
-    """Calculate the nth integer root of a BigDecimal number.
+    """Calculate the nth integer root of a BigDecimal number using Newton's
+    method.
+
+    Uses the iteration: r_{k+1} = ((n-1)*r_k + x/r_k^(n-1)) / n
+    which converges quadratically to x^(1/n).
 
     Args:
         x: The number to calculate the root of.
@@ -456,10 +460,6 @@ fn integer_root(
         Error: If x is negative and n is even.
         Error: If n is not a positive integer.
         Error: If n is zero.
-
-    Notes:
-        Uses the identity x^(1/n) = exp(ln(|x|)/n) for calculation.
-        Optimizes for special cases including n=1 and n=2.
     """
     comptime BUFFER_DIGITS = 9
     var working_precision = precision + BUFFER_DIGITS
@@ -514,7 +514,193 @@ fn integer_root(
                 "Error in `root`: Cannot compute even root of a negative number"
             )
 
-    # Compute root using the identity: x^(1/n) = exp(ln(|x|)/n)
+    # Extract n as Int for Newton's method
+    var n_int: Int
+    if n.scale > 0:
+        n_int = Int(
+            n.coefficient.floor_divide_by_power_of_ten(n.scale).words[0]
+        )
+    elif n.scale == 0:
+        n_int = Int(n.coefficient.words[0])
+    else:
+        # n has negative scale (e.g., n = 300 stored as 3 * 10^2)
+        # For very large n, fall back to exp(ln(x)/n)
+        return _integer_root_via_exp_ln(x, n, precision, result_sign)
+
+    # For very large n values, the Newton approach with integer_power(r, n-1)
+    # is expensive. Fall back to exp(ln(x)/n) for n > 1000.
+    if n_int > 1000:
+        return _integer_root_via_exp_ln(x, n, precision, result_sign)
+
+    var abs_x = abs(x)
+
+    # --- Newton's method for x^(1/n) ---
+    # Iteration: r_{k+1} = ((n-1)*r + x/r^(n-1)) / n
+    # This converges quadratically to x^(1/n).
+
+    # Initial guess using Float64 approximation
+    # Use exponent to get log10(x), then compute 10^(log10(x)/n)
+    var x_exp = abs_x.exponent()  # floor(log10(x))
+
+    # Extract leading digits for a more precise Float64 approximation
+    var top_word = Float64(abs_x.coefficient.words[-1])
+    var digits_in_top = 0
+    var temp_val = abs_x.coefficient.words[-1]
+    while temp_val > 0:
+        temp_val //= 10
+        digits_in_top += 1
+    if digits_in_top == 0:
+        digits_in_top = 1
+
+    # Normalize: get a value in [1, 10) * 10^x_exp
+    var mantissa = top_word / Float64(10.0) ** Float64(digits_in_top - 1)
+    if len(abs_x.coefficient.words) > 1:
+        mantissa += Float64(abs_x.coefficient.words[-2]) / (
+            Float64(10.0) ** Float64(digits_in_top - 1) * 1e9
+        )
+
+    var x_f64 = mantissa * Float64(10.0) ** Float64(x_exp)
+    var guess_f64 = x_f64 ** (1.0 / Float64(n_int))
+    # Clamp to avoid degenerate values
+    if guess_f64 <= 0.0 or guess_f64 != guess_f64:  # NaN check
+        guess_f64 = 1.0
+
+    var r = BigDecimal(String(guess_f64))
+
+    # BigDecimal constants
+    var n_bd = BigDecimal.from_int(n_int)
+    var n_minus_1_bd = BigDecimal.from_int(n_int - 1)
+    var n_minus_1_int = n_int - 1
+
+    # Newton's method with precision doubling
+    # Start at low precision and double each iteration (quadratic convergence)
+    # Number of iterations: ceil(log2(working_precision / 15)) + 2
+    var iter_precision = 18  # Start with 18-digit precision
+    var max_iterations = 0
+    var p = iter_precision
+    while p < working_precision:
+        p *= 2
+        max_iterations += 1
+    max_iterations += 3  # Safety margin
+
+    var converged_early = False  # Track early convergence
+    for i in range(max_iterations):
+        # Increase precision toward the target
+        if iter_precision < working_precision:
+            if converged_early:
+                # If value converged at low precision (exact result like
+                # cbrt(0.001)=0.1), jump to working_precision to finish
+                # quickly rather than wasting iterations at intermediate
+                # precision levels.
+                iter_precision = working_precision
+            else:
+                iter_precision = min(iter_precision * 2, working_precision)
+
+        # Trim r to iter_precision digits to prevent coefficient bloat.
+        # Without this, exact results like 0.1 = coeff(10^71)/scale(72) cause
+        # integer_power to produce huge coefficients that trigger BigUInt
+        # division edge cases.
+        if r.coefficient.number_of_digits() > iter_precision + BUFFER_DIGITS:
+            r.round_to_precision(
+                precision=iter_precision + BUFFER_DIGITS,
+                rounding_mode=RoundingMode.half_even(),
+                remove_extra_digit_due_to_rounding=True,
+                fill_zeros_to_precision=False,
+            )
+
+        # r_new = ((n-1)*r + x / r^(n-1)) / n
+        var r_pow_nm1 = integer_power(r, n_minus_1_bd, iter_precision)
+        var x_div_r_pow = abs_x.true_divide_inexact(r_pow_nm1, iter_precision)
+
+        var numerator: BigDecimal
+        if n_minus_1_int == 1:
+            numerator = r + x_div_r_pow
+        elif n_minus_1_int == 2:
+            numerator = r + r + x_div_r_pow
+        else:
+            numerator = r * n_minus_1_bd + x_div_r_pow
+
+        var r_new: BigDecimal
+        if n_int <= Int(UInt32.MAX):
+            r_new = numerator.true_divide_inexact_by_uint32(
+                UInt32(n_int), iter_precision
+            )
+        else:
+            r_new = numerator.true_divide_inexact(n_bd, iter_precision)
+
+        # Check convergence
+        if i >= 1:
+            if iter_precision >= working_precision:
+                # Final precision reached: compare at target precision
+                var r_rounded = r.copy()
+                r_rounded.round_to_precision(
+                    precision=precision,
+                    rounding_mode=RoundingMode.half_even(),
+                    remove_extra_digit_due_to_rounding=True,
+                    fill_zeros_to_precision=False,
+                )
+                var r_new_rounded = r_new.copy()
+                r_new_rounded.round_to_precision(
+                    precision=precision,
+                    rounding_mode=RoundingMode.half_even(),
+                    remove_extra_digit_due_to_rounding=True,
+                    fill_zeros_to_precision=False,
+                )
+                if r_rounded == r_new_rounded:
+                    r = r_new^
+                    break
+            else:
+                # Before final precision: detect early convergence (exact results
+                # like cbrt(0.001)=0.1 converge in few iterations at any precision).
+                var r_rounded = r.copy()
+                r_rounded.round_to_precision(
+                    precision=iter_precision,
+                    rounding_mode=RoundingMode.half_even(),
+                    remove_extra_digit_due_to_rounding=True,
+                    fill_zeros_to_precision=False,
+                )
+                var r_new_rounded = r_new.copy()
+                r_new_rounded.round_to_precision(
+                    precision=iter_precision,
+                    rounding_mode=RoundingMode.half_even(),
+                    remove_extra_digit_due_to_rounding=True,
+                    fill_zeros_to_precision=False,
+                )
+                if r_rounded == r_new_rounded:
+                    converged_early = True
+
+        r = r_new^
+
+    r.sign = result_sign
+    r.round_to_precision(
+        precision=precision,
+        rounding_mode=RoundingMode.half_even(),
+        remove_extra_digit_due_to_rounding=True,
+        fill_zeros_to_precision=False,
+    )
+
+    return r^
+
+
+fn _integer_root_via_exp_ln(
+    x: BigDecimal, n: BigDecimal, precision: Int, result_sign: Bool
+) raises -> BigDecimal:
+    """Fallback: compute integer root via exp(ln(|x|)/n).
+
+    Used when n is too large for Newton's method to be efficient
+    (each iteration requires computing r^(n-1) via binary exponentiation).
+
+    Args:
+        x: The input value.
+        n: The root index.
+        precision: Desired precision.
+        result_sign: The sign of the result.
+
+    Returns:
+        x^(1/n) with the specified precision.
+    """
+    comptime BUFFER_DIGITS = 9
+    var working_precision = precision + BUFFER_DIGITS
     var abs_x = abs(x)
     var ln_x = ln(abs_x, working_precision)
     var ln_divided = ln_x.true_divide(n, working_precision)
