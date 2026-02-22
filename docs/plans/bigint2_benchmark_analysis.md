@@ -12,11 +12,11 @@ Values >1× mean faster than Python; <1× mean slower than Python.
 
 **Key optimizations applied:**
 
-- ✅ **PR0**: Fixed sqrt correctness bug (Newton converges from above + precision-doubling algorithm)
-- ✅ **PR1**: Karatsuba multiplication (O(n^1.585)) with pointer-based inner loops and offset-based assembly
-- ✅ **PR4a**: SIMD-optimized `parse_numeric_string` (two-pass architecture + `vectorize`-based digit extraction)
-- ✅ **PR4c**: from_string micro-optimizations (fast paths, pre-allocation, raw pointers, balanced D&C split)
-- ✅ **PR4d**: to_string micro-optimizations (fast paths for 1–2 words, `unsafe_ptr()`, byte buffer output)
+- ✓ **PR0**: Fixed sqrt correctness bug (Newton converges from above + precision-doubling algorithm)
+- ✓ **PR1**: Karatsuba multiplication (O(n^1.585)) with pointer-based inner loops and offset-based assembly
+- ✓ **PR4a**: SIMD-optimized `parse_numeric_string` (two-pass architecture + `vectorize`-based digit extraction)
+- ✓ **PR4c**: from_string micro-optimizations (fast paths, pre-allocation, raw pointers, balanced D&C split)
+- ✓ **PR4d**: to_string micro-optimizations (fast paths for 1–2 words, `unsafe_ptr()`, byte buffer output)
 
 ### Overall Results (Average Across All Cases)
 
@@ -111,7 +111,7 @@ At 10000 digits, BigInt10 overtakes BigInt2 in addition. This is because BigUInt
 Previously, 2000+ digit multiplication was 0.36–0.57× Python. Karatsuba brought
 10000-digit multiply from 745 µs → 195 µs (3.8× internal speedup).
 
-**Floor Division by size** (✅ optimized with slice-based Burnikel-Ziegler):
+**Floor Division by size** (✓ optimized with slice-based Burnikel-Ziegler):
 
 | Size              | BigInt2 vs Python | BigInt10 vs Python |
 | ----------------- | :---------------: | :----------------: |
@@ -168,12 +168,12 @@ Average across 62 benchmark cases: **1.14× Python**.
 | 100 digits         |        3,440 |         560 |       0.16×       |       0.11×       |
 | 200 digits         |        4,680 |         880 |       0.19×       |       0.06×       |
 | 500 digits         |        8,860 |       1,880 |       0.21×       |       0.06×       |
-| **1000 digits** ✅  |        7,400 |       4,340 |     **0.59×**     |       0.04×       |
-| **2000 digits** ✅  |       15,520 |      14,540 |     **0.94×**     |       0.03×       |
-| **5000 digits** ✅  |       62,840 |      74,980 |     **1.19×**     |       0.05×       |
-| **10000 digits** ✅ |      204,140 |     259,280 |     **1.27×**     |       0.05×       |
+| **1000 digits** ✓  |        7,400 |       4,340 |     **0.59×**     |       0.04×       |
+| **2000 digits** ✓  |       15,520 |      14,540 |     **0.94×**     |       0.03×       |
+| **5000 digits** ✓  |       62,840 |      74,980 |     **1.19×**     |       0.05×       |
+| **10000 digits** ✓ |      204,140 |     259,280 |     **1.27×**     |       0.05×       |
 
-✅ All results are now **correct** (verified `sqrt(n)^2 <= n < (sqrt(n)+1)^2`).
+✓ All results are now **correct** (verified `sqrt(n)^2 <= n < (sqrt(n)+1)^2`).
 
 **Key observations:**
 
@@ -253,7 +253,7 @@ memory allocation overhead for very large result buffers.
 
 ## Resolved Bugs
 
-### ✅ BigInt2 sqrt correctness bug at 1000+ digits (FIXED)
+### ✓ BigInt2 sqrt correctness bug at 1000+ digits (FIXED)
 
 **Symptom:** sqrt(10^999) returned 975387... instead of the correct 999...9.
 Newton's method converged to the wrong answer because the initial guess was an
@@ -276,12 +276,12 @@ tested correctness up to 5000 digits with `sqrt(n)^2 <= n < (sqrt(n)+1)^2`.
 
 ## Optimization Roadmap
 
-### ✅ PR 0 (BUGFIX): Fix BigInt2 sqrt correctness — DONE
+### ✓ PR 0 (BUGFIX): Fix BigInt2 sqrt correctness — DONE
 
 Fixed with overestimate-based Newton's method + CPython precision-doubling algorithm.
 See "Resolved Bugs" section above.
 
-### ✅ PR 1: Karatsuba Multiplication — DONE
+### ✓ PR 1: Karatsuba Multiplication — DONE
 
 Implemented Karatsuba O(n^1.585) in `_multiply_magnitudes_karatsuba()` with:
 
@@ -324,7 +324,7 @@ At 300–600 digits, B-Z did show real wins (1.3–1.7× Python) thanks to shall
 recursion depth, confirming the algorithm IS faster — the implementation just
 needs to minimize allocations.
 
-**Second attempt (slice-based B-Z): ✅ DONE.** Rewrote B-Z following BigUInt's
+**Second attempt (slice-based B-Z): ✓ DONE.** Rewrote B-Z following BigUInt's
 proven approach — passes `(list, start, end)` bounds through the recursion instead
 of materializing sub-lists. Key optimizations:
 
@@ -362,7 +362,7 @@ Tested 32, 64, and 128. Cutoff=32 triggered B-Z too early (overhead > gain for
 **Average across 62 test cases: ~1.14× Python** (dominated by small-number constant
 overhead). For B-Z cases (divisor > 600 digits): consistently 1.2–1.8× Python.
 
-**Status: ✅ Complete.** All 60 tests pass, B-Z dispatch enabled, code merged.
+**Status: ✓ Complete.** All 60 tests pass, B-Z dispatch enabled, code merged.
 
 **Remaining opportunities (future work):**
 
@@ -376,7 +376,7 @@ overhead). For B-Z cases (divisor > 600 digits): consistently 1.2–1.8× Python
 
 **Priority: HIGH** — BigInt2's biggest weakness vs BigInt10 (31.5× gap at 10000 digits)
 
-**Status: ✅ DONE** (2026-02-21)
+**Status: ✓ DONE** (2026-02-21)
 
 **Implementation:**
 
@@ -420,7 +420,7 @@ routines. See PR4d for micro-optimizations that partially close this gap.
 
 **Priority: MEDIUM** — Already 1.57× avg but degrades to 0.85× at 20000 digits
 
-#### ✅ PR 4a: SIMD-optimized `parse_numeric_string` — DONE
+#### ✓ PR 4a: SIMD-optimized `parse_numeric_string` — DONE
 
 Rewrote the string-to-digit-array parser in `str.mojo` with:
 
@@ -437,7 +437,7 @@ Rewrote the string-to-digit-array parser in `str.mojo` with:
 **Result:** BigInt2 from_string average 1.42× → **1.57×** (+11%). Best improvement
 at small sizes: 2 digits 3.8→4.2× (+10%), 9 digits 2.67→3.40× (+27%).
 
-#### ✅ PR 4b: Divide-and-Conquer Base Conversion — DONE
+#### ✓ PR 4b: Divide-and-Conquer Base Conversion — DONE
 
 Implemented D&C decimal→binary conversion in `_from_decimal_digits_dc()`:
 
@@ -446,7 +446,7 @@ Implemented D&C decimal→binary conversion in `_from_decimal_digits_dc()`:
 3. Base case: switch to simple `_from_decimal_digits_simple()` at 256 digits
 4. Entry threshold: only enter D&C when digit_count > 10000
 
-#### ✅ PR 4c: from_string Micro-optimizations — DONE
+#### ✓ PR 4c: from_string Micro-optimizations — DONE
 
 Optimized both the simple and D&C paths for from_string:
 
@@ -499,7 +499,7 @@ is due to Karatsuba O(n^1.585) vs Python/GMP's Toom-Cook algorithms.
 
 ---
 
-#### ✅ PR 4d: to_string Micro-optimizations — DONE
+#### ✓ PR 4d: to_string Micro-optimizations — DONE
 
 Optimized `_magnitude_to_decimal_simple` and the D&C string-building path:
 
@@ -557,7 +557,7 @@ for 50–10000 digits improved from 0.54× to **0.91×** (+69%).
 
 ---
 
-### PR 5: True In-Place Arithmetic Operations ✅ DONE
+### PR 5: True In-Place Arithmetic Operations ✓ DONE
 
 **Priority: MEDIUM-HIGH** — Performance infrastructure that benefits all callers
 
@@ -629,7 +629,7 @@ fn __iadd__(mut self, other: Self):
 
 ---
 
-### PR 6: Bitwise Operations (AND, OR, XOR, NOT) ✅ DONE
+### PR 6: Bitwise Operations (AND, OR, XOR, NOT) ✓ DONE
 
 **Priority: MEDIUM** — Completes the integer API surface
 
@@ -648,7 +648,7 @@ fn __iadd__(mut self, other: Self):
 
 ---
 
-### PR 7: GCD, Extended GCD, and Modular Arithmetic ✅ DONE
+### PR 7: GCD, Extended GCD, and Modular Arithmetic ✓ DONE
 
 **Priority: MEDIUM** — Useful for cryptographic and number theory applications
 
@@ -707,16 +707,16 @@ sizes (100000+).
 
 | PR   | Title                           | Status     | Priority    | Impact                     |
 | ---- | ------------------------------- | ---------- | ----------- | -------------------------- |
-| PR0  | Fix sqrt correctness bug        | ✅ **DONE** | CRITICAL    | correctness (fixed)        |
-| PR1  | Karatsuba Multiplication        | ✅ **DONE** | HIGHEST     | mul 3.8× faster at scale   |
-| PR2  | Fast Division (Knuth D + B-Z)   | ✅ **DONE** | HIGHEST     | div, sqrt, to_string       |
-| PR3  | D&C to_string                   | ✅ **DONE** | HIGH        | to_string: 1.38× at 5K     |
-| PR4a | SIMD parse_numeric_string       | ✅ **DONE** | MEDIUM      | from_string +11% avg       |
-| PR4b | D&C from_string                 | ✅ **DONE** | MEDIUM      | from_string at scale       |
-| PR4c | from_string micro-optimizations | ✅ **DONE** | MEDIUM      | all sizes ≥ 0.98× Python   |
-| PR4d | to_string micro-optimizations   | ✅ **DONE** | MEDIUM      | to_string 0.97×→6.03× avg  |
-| PR5  | True in-place iadd/isub/imul    | ✅ **DONE** | MEDIUM-HIGH | perf infra, readability    |
-| PR6  | Bitwise AND/OR/XOR/NOT          | ✅ **DONE** | MEDIUM      | API completeness           |
-| PR7  | GCD + Modular Arithmetic        | ✅ **DONE** | MEDIUM      | applications               |
+| PR0  | Fix sqrt correctness bug        | ✓ **DONE** | CRITICAL    | correctness (fixed)        |
+| PR1  | Karatsuba Multiplication        | ✓ **DONE** | HIGHEST     | mul 3.8× faster at scale   |
+| PR2  | Fast Division (Knuth D + B-Z)   | ✓ **DONE** | HIGHEST     | div, sqrt, to_string       |
+| PR3  | D&C to_string                   | ✓ **DONE** | HIGH        | to_string: 1.38× at 5K     |
+| PR4a | SIMD parse_numeric_string       | ✓ **DONE** | MEDIUM      | from_string +11% avg       |
+| PR4b | D&C from_string                 | ✓ **DONE** | MEDIUM      | from_string at scale       |
+| PR4c | from_string micro-optimizations | ✓ **DONE** | MEDIUM      | all sizes ≥ 0.98× Python   |
+| PR4d | to_string micro-optimizations   | ✓ **DONE** | MEDIUM      | to_string 0.97×→6.03× avg  |
+| PR5  | True in-place iadd/isub/imul    | ✓ **DONE** | MEDIUM-HIGH | perf infra, readability    |
+| PR6  | Bitwise AND/OR/XOR/NOT          | ✓ **DONE** | MEDIUM      | API completeness           |
+| PR7  | GCD + Modular Arithmetic        | ✓ **DONE** | MEDIUM      | applications               |
 | PR8  | Reassign BInt → BigInt2         | TODO       | LOW         | ergonomics                 |
 | PR9  | Toom-Cook / NTT                 | TODO       | LOW         | extreme sizes (50000+ dig) |

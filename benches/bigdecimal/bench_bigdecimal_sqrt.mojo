@@ -6,6 +6,7 @@ import decimojo.bigdecimal.exponential
 from decimojo.tests import (
     BenchCase,
     load_bench_cases,
+    load_bench_precision,
     open_log_file,
     log_print,
     print_header,
@@ -15,12 +16,11 @@ from python import Python, PythonObject
 from time import perf_counter_ns
 from collections import List
 
-comptime PRECISION = 5000
-
 
 fn run_case(
     bc: BenchCase,
     iterations: Int,
+    precision: Int,
     pydecimal: PythonObject,
     log_file: PythonObject,
     mut sf: List[Float64],
@@ -32,7 +32,7 @@ fn run_case(
     var pa = pydecimal.Decimal(bc.a)
 
     try:
-        var rm = m_a.sqrt(precision=PRECISION)
+        var rm = m_a.sqrt(precision=precision)
         var rp = pa.sqrt()
 
         var rm_str = rm.to_string(precision=100000)
@@ -44,16 +44,18 @@ fn run_case(
         try:
             var py_bdec = BigDecimal(rp_str)
             var diff = rm - py_bdec
-            log_print(
-                "Difference:        " + diff.to_string(precision=100000)[:80],
-                log_file,
-            )
+            var diff_str = diff.to_string(precision=100000)[:80]
+            log_print("Difference:        " + diff_str, log_file)
+            if not diff.is_zero():
+                log_print(
+                    "*** WARNING: Non-zero difference detected! ***", log_file
+                )
         except:
             log_print("Difference:        (comparison failed)", log_file)
 
         var t0 = perf_counter_ns()
         for _ in range(iterations):
-            _ = m_a.sqrt(precision=PRECISION)
+            _ = m_a.sqrt(precision=precision)
         var tm = (perf_counter_ns() - t0) / iterations
         if tm == 0:
             tm = 1
@@ -79,23 +81,28 @@ fn main() raises:
     print_header("DeciMojo BigDecimal Square Root Benchmark", log_file)
 
     var pydecimal = Python.import_module("decimal")
-    pydecimal.getcontext().prec = PRECISION
-
-    var cases = load_bench_cases("bench_data/sqrt.toml")
+    var toml_path = "bench_data/sqrt.toml"
+    var cases = load_bench_cases(toml_path)
+    var precision = load_bench_precision(toml_path)
     var iterations = 100
     var sf = List[Float64]()
+
+    pydecimal.getcontext().prec = precision
 
     log_print(
         "\nRunning "
         + String(len(cases))
         + " benchmarks with "
         + String(iterations)
-        + " iterations each",
+        + " iterations each"
+        + " (precision="
+        + String(precision)
+        + ")",
         log_file,
     )
 
     for i in range(len(cases)):
-        run_case(cases[i], iterations, pydecimal, log_file, sf)
+        run_case(cases[i], iterations, precision, pydecimal, log_file, sf)
 
     print_summary(
         "BigDecimal Square Root Benchmark Summary",

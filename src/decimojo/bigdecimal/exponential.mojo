@@ -32,7 +32,7 @@ from decimojo.rounding_mode import RoundingMode
 # - exp(x: BigDecimal, precision: Int) -> BigDecimal
 # - exp_taylor_series(x: BigDecimal, minimum_precision: Int) -> BigDecimal
 # - ln(x: BigDecimal, precision: Int) -> BigDecimal
-# - ln(x: BigDecimal, precision: Int, inout cache: MathCache) -> BigDecimal
+# - ln(x: BigDecimal, precision: Int, mut cache: MathCache) -> BigDecimal
 # - log(x: BigDecimal, precision: Int) -> BigDecimal
 # - log10(x: BigDecimal, precision: Int) -> BigDecimal
 # - ln_series_expansion(x: BigDecimal, precision: Int) -> BigDecimal

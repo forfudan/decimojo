@@ -1,6 +1,6 @@
 # BigDecimal and BigUInt Benchmark Results & Optimization Roadmap
 
-2026-02-21  
+Frist version: 2026-02-21  
 Yuhao Zhu
 
 > [!IMPORTANT]
@@ -8,22 +8,23 @@ Yuhao Zhu
 
 ## Optimization priority and planning
 
-| Task       | Operation(s) Improved     | Current vs Python |    Expected After    |   Effort   | Priority |
-| ---------- | ------------------------- | :---------------: | :------------------: | :--------: | -------- |
-| **Task 1** | Asymmetric division       |   ✓ **31–79×**    |     ✓ COMPLETED      |    Done    | High     |
-| **Task 2** | Division, sqrt, exp, ln   |      varies       |     1.5–2× gain      |    High    | Medium   |
-| **Task 3** | Exp, ln                   |    0.31–0.43×     |       1.0–2.0×       |   Medium   | High     |
-| **Task 4** | Sqrt                      |    0.55–0.72×     |       1.5–3.0×       |   Medium   | High     |
-| **Task 5** | ALL large operations      |      varies       |      2–10× gain      | Very High  | Low      |
-| **Task 6** | Large multiplication      |        N/A        | ~1.5× over Karatsuba |   Medium   | Medium   |
-| **Task 7** | Nth root                  |    0.18–0.33×     |       1.0–2.0×       | Low-Medium | Medium   |
-| **Task 8** | All (allocation overhead) |         —         |        10–30%        |   Medium   | High     |
-| **Task 9** | Schoolbook multiply base  |         —         |        1.5–2×        |    Low     | Medium   |
+| Task       | Operation(s) Improved     | Current vs Python |       Expected After        |   Effort   | Priority |
+| ---------- | ------------------------- | :---------------: | :-------------------------: | :--------: | -------- |
+| **Task 1** | Asymmetric division       |   ✓ **31–79×**    |         ✓ COMPLETED         |    Done    | High     |
+| **Task 2** | Division, sqrt, exp, ln   |      varies       |         1.5–2× gain         |    High    | Medium   |
+| **Task 3** | Exp, ln                   |    0.31–0.43×     | 3a ✓ (cache); 3b–3d pending |   Medium   | High     |
+| **Task 4** | Sqrt                      |    0.55–0.72×     |          1.5–3.0×           |   Medium   | High     |
+| **Task 5** | ALL large operations      |      varies       |         2–10× gain          | Very High  | Low      |
+| **Task 6** | Large multiplication      |        N/A        |    ~1.5× over Karatsuba     |   Medium   | Medium   |
+| **Task 7** | Nth root                  |    0.18–0.33×     |          1.0–2.0×           | Low-Medium | Medium   |
+| **Task 8** | All (allocation overhead) |         —         |           10–30%            |   Medium   | High     |
+| **Task 9** | Schoolbook multiply base  |         —         |           1.5–2×            |    Low     | Medium   |
 
 ### Planned Execution Order
 
 1. ~~**Task 1** (asymmetric division fix) — immediate win, unblocks other work~~ ✓ DONE
-1. **Task 3a+3b** (exp/ln quick wins) — cache constants + cheap integer division
+1. ~~**Task 3a** (cache ln(2)/ln(1.25) via MathCache struct)~~ ✓ DONE
+1. **Task 3b** (exp/ln cheap integer division) — replace BigDecimal division by small int
 1. **Task 4** (reciprocal sqrt) — standalone, high impact
 1. **Task 7** (direct nth root) — low effort, high impact for root()
 1. **Task 8** (in-place operations) — broad improvement
@@ -284,7 +285,7 @@ The Taylor series requires ~$2.5p$ iterations, each with one full-precision BigD
 
 ### 3. **Ln function: not benchmarked but expected ~0.3× Python**
 
-Same issue as exp. Additionally, `ln(2)` and `ln(1.25)` are recomputed on **every call** because Mojo doesn't support mutable global variable caching yet.
+Same issue as exp. Additionally, ~~`ln(2)` and `ln(1.25)` are recomputed on **every call**~~ **partially fixed in Task 3a:** `MathCache` struct now caches these across calls within the same cache instance. Internal callers (`log`, `log10`) share a local cache. Standalone `ln()` calls still pay the cost once per call (until Mojo supports global variables for a true global cache).
 
 ### 4. **Sqrt (irrational, high precision): 0.55–0.72× Python**
 
@@ -532,11 +533,27 @@ Balanced cases unchanged (15–24× Python). Overall average speedup: **12.4× P
 
 **Sub-optimizations:**
 
-#### Task 3a: Cache `ln(2)` and `ln(1.25)`
+#### Task 3a: Cache `ln(2)` and `ln(1.25)` — ✓ COMPLETED (2026-02-22)
 
-**Current:** Recomputed on every `ln()` call. At precision=28, this wastes ~5µs per call.
+**Problem:** `ln(2)` and `ln(1.25)` were recomputed on every `ln()` call. At precision=28, this wastes ~5µs per call. Functions like `log()` that call `ln()` twice internally pay this cost doubly.
 
-**Fix:** Use a module-level variable (when Mojo supports it), or pass a context/cache object. As a workaround, precompute up to 1024 digits at compile time (already done for π) and check if precision ≤ 1024 before recomputing.
+**Solution:** Implemented `MathCache` struct in `exponential.mojo` — a user-passable cache that stores computed values of `ln(2)` and `ln(1.25)` with their precision levels. Auto-handles precision upgrades (if cached at P1, requesting P2 > P1 recomputes and re-caches).
+
+**Implementation details:**
+
+- Added `struct MathCache` with `get_ln2(precision)` / `get_ln1d25(precision)` methods
+- Added overloaded `fn ln(x, precision, mut cache: MathCache)` as the primary implementation
+- Original `fn ln(x, precision)` delegates to cached version with a local cache (100% backward compatible)
+- `log()` and `log10()` now create a local `MathCache` so their 2 internal `ln()` calls share cached constants
+- Added `BigDecimal.ln(precision, cache)` method overload
+- Exported `MathCache` from `decimojo` top-level
+
+**Measured speedup (10× ln() calls at same precision, with shared MathCache):**
+
+- precision=100: **~3× faster** (4ms → 1ms)
+- precision=500: **~4.5× faster** (103ms → 23ms)
+
+**Limitation (documented compromise):** Mojo doesn't support module-level mutable variables, so each standalone `ln()` call still creates a fresh `MathCache`. The full benefit requires: (a) internal callers like `log()` sharing a local cache, or (b) users manually passing a cache across multiple `ln()` calls. When Mojo adds global variables, a single global `MathCache` will eliminate all redundant computation automatically.
 
 #### Task 3b: Replace Division in Taylor Series with Multiplication by Reciprocal
 
@@ -734,7 +751,7 @@ Karatsuba and Toom-3.
 | Large asymmetric div |   B-Z (broken for m >> n)    |           GMP-style recursive            |           **Critical gap**           |
 | Sqrt                 |    Newton (with division)    |    **Reciprocal sqrt** (no division)     |           Significant gap            |
 | Exp                  |  Taylor series (sequential)  |      Taylor + **binary splitting**       |              Major gap               |
-| Ln                   |  Taylor series (sequential)  |        Similar + cached constants        |             Moderate gap             |
+| Ln                   |  Taylor series (sequential)  |        Similar + cached constants        |        Moderate gap (3a done)        |
 | I/O (to/from string) |        $O(n)$ trivial        |              $O(n)$ trivial              |                Parity                |
 | Rounding             |    Word-level truncation     |                 Similar                  |           Mojo 100× faster           |
 

@@ -355,6 +355,25 @@ fn load_bench_iterations(toml_path: String) raises -> Int:
     return 1000
 
 
+fn load_bench_precision(toml_path: String) raises -> Int:
+    """Load the precision from TOML config section.
+
+    Args:
+        toml_path: Path to the TOML file.
+
+    Returns:
+        The precision, defaulting to 36 (BigDecimal default).
+    """
+    var doc = parse_file(toml_path)
+    try:
+        var config = doc.get_table("config")
+        if "precision" in config:
+            return config["precision"].as_int()
+    except:
+        pass
+    return 36
+
+
 # ===----------------------------------------------------------------------=== #
 # Logging
 # ===----------------------------------------------------------------------=== #
