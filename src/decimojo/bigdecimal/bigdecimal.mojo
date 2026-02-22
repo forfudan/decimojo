@@ -557,9 +557,13 @@ struct BigDecimal(
         var coefficient_string = self.coefficient.to_string()
 
         # Check whether scientific notation is needed
+        # CPython rule: scientific when exp > 0 (scale < 0) OR
+        #               adjusted_exponent < -6 (i.e., 7+ leading zeros)
+        # The `precision` threshold provides an additional DeciMojo-specific
+        # trigger for very large exponents (default 28).
         var exponent = self.coefficient.number_of_digits() - 1 - self.scale
         var exponent_ge_precision = exponent >= precision
-        var leading_zeros_too_many = exponent <= Int(-6)
+        var leading_zeros_too_many = exponent < Int(-6)
         var negative_scale = self.scale < 0
 
         if (

@@ -23,6 +23,7 @@ import time
 from decimojo.bigdecimal.bigdecimal import BigDecimal
 from decimojo.rounding_mode import RoundingMode
 import decimojo.bigdecimal.constants
+import decimojo.bigdecimal.exponential
 
 
 # ===----------------------------------------------------------------------=== #
@@ -498,7 +499,11 @@ fn arctan(x: BigDecimal, precision: Int) raises -> BigDecimal:
         # This is to ensure convergence of the Taylor series.
         # print("Using identity for arctan with |x| <= 2")
         # print(bdec_1 + x * x)
-        var sqrt_term = (bdec_1 + x * x).sqrt(precision=working_precision)
+        # Use sqrt_reciprocal for speed — exact perfect square detection is
+        # unnecessary since this is an intermediate computation.
+        var sqrt_term = decimojo.bigdecimal.exponential.sqrt_reciprocal(
+            bdec_1 + x * x, working_precision
+        )
         var x_divided = x.true_divide(
             bdec_1 + sqrt_term, precision=working_precision
         )
