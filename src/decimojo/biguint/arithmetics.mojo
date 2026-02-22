@@ -2665,7 +2665,7 @@ fn floor_divide_slices_three_by_two(
     """
 
     # SPECIAL CASE:
-    # If a2 is empty or zero, than it beomes a2a1 // b1b0
+    # If a2 is empty or zero, than it becomes a2a1 // b1b0
     # Because the most significant word of b1 is at least 500_000_000,
     # The quotient will be either 1 or 0.
     if bounds_a[0] + 2 * n == bounds_a[1]:
@@ -2673,15 +2673,13 @@ fn floor_divide_slices_three_by_two(
             a.words[bounds_a[1] - 1] != 0,
             "the most significant word of a must not be zero",
         )
-        if a.words[bounds_a[1] - 1] >= b.words[bounds_b[1] - 1]:
-            var r = BigUInt.from_slice(a, (bounds_a[0], bounds_a[1]))
-            subtract_inplace(r, BigUInt.from_slice(b, bounds_b))
-            return (BigUInt.one(), r^)
+        var a_slice = BigUInt.from_slice(a, (bounds_a[0], bounds_a[1]))
+        var b_slice = BigUInt.from_slice(b, bounds_b)
+        if a_slice.compare(b_slice) >= 0:
+            subtract_inplace(a_slice, b_slice)
+            return (BigUInt.one(), a_slice^)
         else:
-            return (
-                BigUInt.zero(),
-                BigUInt.from_slice(a, bounds_a),
-            )
+            return (BigUInt.zero(), a_slice^)
 
     # Now we can safely assume that a2 is not empty.
     var bounds_a0 = (bounds_a[0], bounds_a[0] + n)
