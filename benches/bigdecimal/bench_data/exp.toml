@@ -1,6 +1,6 @@
 [config]
-iterations = 25
-precision = 50
+iterations = 10
+precision = 200
 
 # === BASIC EXPONENTIAL TESTS ===
 
