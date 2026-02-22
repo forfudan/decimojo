@@ -1,5 +1,11 @@
 # BigInt2 Benchmark Results & Optimization Roadmap
 
+First version: 2026-02-20
+Yuhao Zhu
+
+> [!IMPORTANT]
+> For v0.8.0, Tasks 1✓, 2✓, 3✓, 4✓, 5✓, 6✓, 7✓, 8✓ are the priority to be competitive at all sizes. Task 9 will be left for future optimization of extreme sizes (50000+ digits).
+
 > **Benchmark location:** `benches/bigint/` (unified folder for BigInt10 vs BigInt2
 > comparisons). Run with `pixi run bint` (interactive) or `pixi run bench bigint <op>`.
 > BigUInt-only benchmarks remain in `benches/biguint/`.
@@ -14,9 +20,16 @@ Values >1× mean faster than Python; <1× mean slower than Python.
 
 - ✓ **PR0**: Fixed sqrt correctness bug (Newton converges from above + precision-doubling algorithm)
 - ✓ **PR1**: Karatsuba multiplication (O(n^1.585)) with pointer-based inner loops and offset-based assembly
+- ✓ **PR2**: Slice-based Burnikel-Ziegler division (sub-quadratic, cutoff=64 words)
+- ✓ **PR3**: Divide-and-conquer to_string base conversion (leverages B-Z division)
 - ✓ **PR4a**: SIMD-optimized `parse_numeric_string` (two-pass architecture + `vectorize`-based digit extraction)
+- ✓ **PR4b**: Divide-and-conquer from_string base conversion (entry at >10000 digits)
 - ✓ **PR4c**: from_string micro-optimizations (fast paths, pre-allocation, raw pointers, balanced D&C split)
 - ✓ **PR4d**: to_string micro-optimizations (fast paths for 1–2 words, `unsafe_ptr()`, byte buffer output)
+- ✓ **PR5**: True in-place arithmetic operations (all 11 `__i*__` dunders)
+- ✓ **PR6**: Bitwise operations (AND, OR, XOR, NOT) with two's complement semantics
+- ✓ **PR7**: GCD, extended GCD, LCM, modular exponentiation, modular inverse
+- ✓ **PR8**: Reassigned `BInt` alias from `BigInt10` → `BigInt` (formerly `BigInt2`)
 
 ### Overall Results (Average Across All Cases)
 
@@ -54,10 +67,10 @@ Values >1× mean faster than Python; <1× mean slower than Python.
    At 10000 digits: 1.27× Python. Medium sizes (20–500 digits) remain 0.12–0.24×
    due to per-operation overhead of BigInt2 divisions.
 
-4. **Division remains the primary bottleneck.** Still schoolbook O(n²). This
-   limits sqrt, power, and to_string performance at medium sizes. BigInt2's
-   division (~1.24×) is barely faster than Python. Knuth Algorithm D or
-   Burnikel-Ziegler would be the next major win.
+4. **Division improved with Burnikel-Ziegler.** Slice-based B-Z (PR2) replaced
+   schoolbook O(n²) for large divisors. Average across 62 cases: 1.14× Python.
+   For B-Z cases (divisor >600 digits): consistently 1.2–1.8× Python. Medium
+   sizes (20–500 digits) still limited by Knuth D base-case overhead.
 
 5. **to_string is greatly improved.** With PR4d fast paths, small numbers
    (≤20 digits) now achieve 15–29× Python. At 2000+ digits, D&C base conversion
@@ -68,7 +81,7 @@ Values >1× mean faster than Python; <1× mean slower than Python.
 6. **from_string is competitive.** 3.5× at small sizes, stays above 1× through
    10000 digits. D&C conversion (PR4b, entry at >10000 digits) improved 20K
    from 0.63→0.82× and 50K from 0.47→0.84×. The remaining gap at 20K+ digits
-   is due to Karatsuba vs GMP multiplication (requires PR8 Toom-Cook/NTT).
+   is due to Karatsuba vs GMP multiplication (requires PR9 Toom-Cook/NTT).
 
 7. **Shift is excellent.** Average 4.97× across all sizes. Degrades at extreme
    sizes (0.49× for 1 << 100000) due to memory allocation overhead.
@@ -683,11 +696,15 @@ fn __iadd__(mut self, other: Self):
 
 ---
 
-### PR 8: Reassign BInt alias from BigInt10 → BigInt2
+### ✓ PR 8: Reassign BInt alias from BigInt10 → BigInt (formerly BigInt2) — DONE
 
-**Priority: LOW** — Wait until BigInt2 is clearly better across the board
+**Priority: LOW** → **Completed** (commit `73e527e`, PR #154)
 
-**Prerequisite:** PRs 2–3 complete, BigInt2 faster than BigInt10 in most operations.
+**Prerequisite:** PRs 2–3 complete ✓, BigInt2 faster than BigInt10 in most operations ✓.
+
+Renamed `BigInt2` → `BigInt` and bound the `BInt` alias to it. The old `BigInt`
+was renamed to `BigInt10` (commit `a77d2b4`, PR #143) earlier in the process.
+This makes `BigInt` (base-2^32) the default big integer type in DeciMojo.
 
 ---
 
@@ -718,5 +735,5 @@ sizes (100000+).
 | PR5  | True in-place iadd/isub/imul    | ✓ **DONE** | MEDIUM-HIGH | perf infra, readability    |
 | PR6  | Bitwise AND/OR/XOR/NOT          | ✓ **DONE** | MEDIUM      | API completeness           |
 | PR7  | GCD + Modular Arithmetic        | ✓ **DONE** | MEDIUM      | applications               |
-| PR8  | Reassign BInt → BigInt2         | TODO       | LOW         | ergonomics                 |
+| PR8  | Reassign BInt → BigInt          | ✓ **DONE** | LOW         | ergonomics                 |
 | PR9  | Toom-Cook / NTT                 | TODO       | LOW         | extreme sizes (50000+ dig) |

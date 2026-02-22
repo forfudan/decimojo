@@ -184,6 +184,115 @@ fn multiply(x1: BigDecimal, x2: BigDecimal) -> BigDecimal:
     )
 
 
+fn multiply_inplace(mut x1: BigDecimal, x2: BigDecimal):
+    """Multiplies x1 by x2 in place, avoiding full BigDecimal construction.
+
+    This computes the product and moves the result words into x1,
+    avoiding the overhead of constructing a new BigDecimal object.
+
+    Args:
+        x1: The first operand (modified in place to hold the result).
+        x2: The second operand (multiplier).
+    """
+    if x1.coefficient.is_zero() or x2.coefficient.is_zero():
+        x1.coefficient = BigUInt.zero()
+        x1.scale = x1.scale + x2.scale
+        x1.sign = x1.sign != x2.sign
+        return
+
+    x1.coefficient = x1.coefficient * x2.coefficient
+    x1.scale = x1.scale + x2.scale
+    x1.sign = x1.sign != x2.sign
+
+
+fn add_inplace(mut x1: BigDecimal, x2: BigDecimal) raises:
+    """Adds x2 to x1 in place.
+
+    This avoids constructing a new BigDecimal for the result.
+    Uses BigUInt inplace operations where possible.
+
+    Args:
+        x1: The accumulator (modified in place to hold x1 + x2).
+        x2: The value to add.
+    """
+    var max_scale = max(x1.scale, x2.scale)
+    var scale_factor1 = (max_scale - x1.scale) if x1.scale < max_scale else 0
+    var scale_factor2 = (max_scale - x2.scale) if x2.scale < max_scale else 0
+
+    # Handle zero operands
+    if x1.coefficient.is_zero():
+        if x2.coefficient.is_zero():
+            x1.scale = max_scale
+            x1.sign = False
+            return
+        else:
+            x1.coefficient = x2.coefficient.multiply_by_power_of_ten(
+                scale_factor2
+            )
+            x1.scale = max_scale
+            x1.sign = x2.sign
+            return
+    if x2.coefficient.is_zero():
+        if scale_factor1 > 0:
+            x1.coefficient.multiply_inplace_by_power_of_ten(scale_factor1)
+        x1.scale = max_scale
+        return
+
+    # Scale x1 in place if needed
+    if scale_factor1 > 0:
+        x1.coefficient.multiply_inplace_by_power_of_ten(scale_factor1)
+
+    if x1.sign == x2.sign:
+        # Same sign: add magnitudes (use inplace add on x1's coefficient)
+        if scale_factor2 == 0:
+            decimojo.biguint.arithmetics.add_inplace(
+                x1.coefficient, x2.coefficient
+            )
+        else:
+            var coef2 = x2.coefficient.multiply_by_power_of_ten(scale_factor2)
+            decimojo.biguint.arithmetics.add_inplace(x1.coefficient, coef2)
+        x1.scale = max_scale
+    else:
+        # Different signs: subtract magnitudes
+        var coef2 = (
+            x2.coefficient.multiply_by_power_of_ten(
+                scale_factor2
+            ) if scale_factor2
+            > 0 else x2.coefficient.copy()
+        )
+
+        if x1.coefficient > coef2:
+            decimojo.biguint.arithmetics.subtract_inplace(x1.coefficient, coef2)
+            x1.scale = max_scale
+        elif coef2 > x1.coefficient:
+            decimojo.biguint.arithmetics.subtract_inplace(coef2, x1.coefficient)
+            x1.coefficient = coef2^
+            x1.scale = max_scale
+            x1.sign = x2.sign
+        else:
+            x1.coefficient = BigUInt.zero()
+            x1.scale = max_scale
+            x1.sign = False
+
+
+fn subtract_inplace(mut x1: BigDecimal, x2: BigDecimal) raises:
+    """Subtracts x2 from x1 in place.
+
+    This avoids constructing a new BigDecimal for the result.
+
+    Args:
+        x1: The accumulator (modified in place to hold x1 - x2).
+        x2: The value to subtract.
+    """
+    # Create a negated view of x2 and use add_inplace
+    var neg_x2 = BigDecimal(
+        coefficient=x2.coefficient.copy(),
+        scale=x2.scale,
+        sign=not x2.sign,
+    )
+    add_inplace(x1, neg_x2)
+
+
 fn true_divide(
     x: BigDecimal, y: BigDecimal, precision: Int
 ) raises -> BigDecimal:

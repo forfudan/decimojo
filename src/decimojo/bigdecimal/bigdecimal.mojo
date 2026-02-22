@@ -748,15 +748,15 @@ struct BigDecimal(
 
     @always_inline
     fn __iadd__(mut self, other: Self) raises:
-        self = decimojo.bigdecimal.arithmetics.add(self, other)
+        decimojo.bigdecimal.arithmetics.add_inplace(self, other)
 
     @always_inline
     fn __isub__(mut self, other: Self) raises:
-        self = decimojo.bigdecimal.arithmetics.subtract(self, other)
+        decimojo.bigdecimal.arithmetics.subtract_inplace(self, other)
 
     @always_inline
     fn __imul__(mut self, other: Self) raises:
-        self = decimojo.bigdecimal.arithmetics.multiply(self, other)
+        decimojo.bigdecimal.arithmetics.multiply_inplace(self, other)
 
     @always_inline
     fn __itruediv__(mut self, other: Self) raises:
