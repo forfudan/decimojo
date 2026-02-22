@@ -1,12 +1,17 @@
-"""Benchmarks for BigDecimal ln. Compares against Python decimal."""
+"""Benchmarks for BigDecimal ln. Compares against Python decimal.
+
+Multi-precision benchmark: runs each case at multiple precision levels
+(50, 100, 200, 500, 1000) to show how performance scales with precision.
+"""
 
 from decimojo.bigdecimal.bigdecimal import BigDecimal
 import decimojo.bigdecimal.arithmetics
 import decimojo.bigdecimal.exponential
 from decimojo.tests import (
     BenchCase,
+    PrecisionLevel,
     load_bench_cases,
-    load_bench_precision,
+    load_bench_precision_levels,
     open_log_file,
     log_print,
     print_header,
@@ -78,38 +83,53 @@ fn run_case(
 
 fn main() raises:
     var log_file = open_log_file("benchmark_bigdecimal_ln")
-    print_header("DeciMojo BigDecimal Logarithm (ln) Benchmark", log_file)
+    print_header(
+        "DeciMojo BigDecimal Logarithm (ln) Multi-Precision Benchmark", log_file
+    )
 
     var pydecimal = Python.import_module("decimal")
     var toml_path = "bench_data/ln.toml"
     var cases = load_bench_cases(toml_path)
-    var precision = load_bench_precision(toml_path)
-    var iterations = 100
-    var sf = List[Float64]()
-
-    pydecimal.getcontext().prec = precision
+    var levels = load_bench_precision_levels(toml_path)
 
     log_print(
-        "\nRunning "
+        "\nMulti-precision benchmark: "
         + String(len(cases))
-        + " benchmarks with "
-        + String(iterations)
-        + " iterations each"
-        + " (precision="
-        + String(precision)
-        + ")",
+        + " cases × "
+        + String(len(levels))
+        + " precision levels",
         log_file,
     )
 
-    for i in range(len(cases)):
-        run_case(cases[i], iterations, precision, pydecimal, log_file, sf)
+    for level_idx in range(len(levels)):
+        var precision = levels[level_idx].precision
+        var iterations = levels[level_idx].iterations
 
-    print_summary(
-        "BigDecimal Logarithm (ln) Benchmark Summary",
-        sf,
-        "BigDecimal",
-        iterations,
-        log_file,
-    )
+        pydecimal.getcontext().prec = precision
+
+        log_print("\n" + String("=" * 70), log_file)
+        log_print(
+            "=== Precision Level: "
+            + String(precision)
+            + " ("
+            + String(iterations)
+            + " iterations) ===",
+            log_file,
+        )
+        log_print(String("=" * 70), log_file)
+
+        var sf = List[Float64]()
+
+        for i in range(len(cases)):
+            run_case(cases[i], iterations, precision, pydecimal, log_file, sf)
+
+        print_summary(
+            "Ln Summary (precision=" + String(precision) + ")",
+            sf,
+            "BigDecimal",
+            iterations,
+            log_file,
+        )
+
     log_file.close()
     print("Benchmark completed. Log file closed.")

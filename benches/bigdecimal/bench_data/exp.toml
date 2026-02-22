@@ -1,8 +1,31 @@
-[config]
-iterations = 10
+# Multi-precision benchmark for exp()
+# Tests scaling behavior across precision levels.
+
+[[precision_levels]]
+iterations = 50
+precision = 50
+
+[[precision_levels]]
+iterations = 20
+precision = 100
+
+[[precision_levels]]
+iterations = 5
 precision = 200
 
-# === BASIC EXPONENTIAL TESTS ===
+[[precision_levels]]
+iterations = 2
+precision = 500
+
+[[precision_levels]]
+iterations = 1
+precision = 1000
+
+[[precision_levels]]
+iterations = 1
+precision = 2000
+
+# === REPRESENTATIVE CASES ===
 
 [[cases]]
 a = "0"
@@ -21,32 +44,20 @@ a = "2"
 name = "exp(2)"
 
 [[cases]]
-a = "-2"
-name = "exp(-2)"
-
-# === SCALE AND PRECISION TESTS ===
+a = "0.5"
+name = "exp(0.5)"
 
 [[cases]]
-a = "0.1"
-name = "exp(0.1)"
-
-[[cases]]
-a = "-0.1"
-name = "exp(-0.1)"
+a = "-0.5"
+name = "exp(-0.5)"
 
 [[cases]]
 a = "0.01"
 name = "exp(0.01)"
 
 [[cases]]
-a = "-0.01"
-name = "exp(-0.01)"
-
-[[cases]]
-a = "0.5"
-name = "exp(0.5)"
-
-# === LARGE NUMBER TESTS ===
+a = "0.1"
+name = "exp(0.1)"
 
 [[cases]]
 a = "10"
@@ -61,157 +72,5 @@ a = "100"
 name = "exp(100)"
 
 [[cases]]
-a = "-100"
-name = "exp(-100)"
-
-# === SMALL NUMBER TESTS ===
-
-[[cases]]
 a = "0.0001"
 name = "exp(0.0001)"
-
-[[cases]]
-a = "-0.0001"
-name = "exp(-0.0001)"
-
-[[cases]]
-a = "1e-10"
-name = "exp(1e-10)"
-
-[[cases]]
-a = "-1e-10"
-name = "exp(-1e-10)"
-
-# === SCIENTIFIC NOTATION TESTS ===
-
-[[cases]]
-a = "1.234e2"
-name = "exp(1.234e2)"
-
-[[cases]]
-a = "-1.234e2"
-name = "exp(-1.234e2)"
-
-[[cases]]
-a = "1.234e-2"
-name = "exp(1.234e-2)"
-
-[[cases]]
-a = "-1.234e-2"
-name = "exp(-1.234e-2)"
-
-# === SPECIAL VALUE TESTS ===
-
-[[cases]]
-a = "3.14159265358979323846264338328"
-name = "exp(PI)"
-
-[[cases]]
-a = "-3.14159265358979323846264338328"
-name = "exp(-PI)"
-
-[[cases]]
-a = "2.71828182845904523536028747135"
-name = "exp(E)"
-
-[[cases]]
-a = "-2.71828182845904523536028747135"
-name = "exp(-E)"
-
-[[cases]]
-a = "0.6931471805599453"
-name = "exp(ln(2))"
-
-[[cases]]
-a = "-0.6931471805599453"
-name = "exp(-ln(2))"
-
-# === MORE EDGE CASES ===
-
-[[cases]]
-a = "0.000000000000000000000000001"
-name = "exp(very small positive)"
-
-[[cases]]
-a = "-0.000000000000000000000000001"
-name = "exp(very small negative)"
-
-[[cases]]
-a = "50"
-name = "exp(large positive)"
-
-[[cases]]
-a = "-50"
-name = "exp(large negative)"
-
-[[cases]]
-a = "709"
-name = "exp(near max double)"
-
-[[cases]]
-a = "-709"
-name = "exp(near min double)"
-
-[[cases]]
-a = "1000"
-name = "exp(1000)"
-
-[[cases]]
-a = "-1000"
-name = "exp(-1000)"
-
-[[cases]]
-a = "10000"
-name = "exp(10000)"
-
-[[cases]]
-a = "-10000"
-name = "exp(-10000)"
-
-[[cases]]
-a = "100000"
-name = "exp(100000)"
-
-[[cases]]
-a = "-100000"
-name = "exp(-100000)"
-
-[[cases]]
-a = "1000000"
-name = "exp(1000000)"
-
-[[cases]]
-a = "-1000000"
-name = "exp(-1000000)"
-
-[[cases]]
-a = "5000.1234567890"
-name = "exp(5000.1234567890)"
-
-[[cases]]
-a = "-10000000"
-name = "exp(-10000000)"
-
-[[cases]]
-a = "987654"
-name = "exp(987654)"
-
-[[cases]]
-a = "-100000000"
-name = "exp(-100000000)"
-
-[[cases]]
-a = "888888"
-name = "exp(888888)"
-
-[[cases]]
-a = "-1000000000"
-name = "exp(-1000000000)"
-
-[[cases]]
-a = "1234.5678901234567890"
-name = "exp(1234.5678901234567890)"
-
-[[cases]]
-a = "-10000000000"
-name = "exp(-10000000000)"

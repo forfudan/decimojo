@@ -61,6 +61,11 @@ struct MathCache:
     Usage:
 
     ```mojo
+    from decimojo import Decimal
+    from decimojo.bigdecimal.exponential import MathCache, ln
+
+    var x1 = Decimal("2.0")
+    var x2 = Decimal("3.0")
     var cache = MathCache()
     var result1 = ln(x1, 100, cache)
     var result2 = ln(x2, 100, cache)  # Reuses cached ln(2) and ln(1.25)

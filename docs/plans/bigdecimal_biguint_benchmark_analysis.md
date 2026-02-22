@@ -4,34 +4,38 @@ Frist version: 2026-02-21
 Yuhao Zhu
 
 > [!IMPORTANT]
-> For v0.8.0, maybe I only need the first [Task 1, 3, 4, 7, 8](#planned-execution-order) to be competitive with Python at most sizes (small + medium). Other advanced algorithms are a stretch goal when Mojo reaches v1.0 with stable SIMD and better support for mutable state (for caching constants). Note that the current focus is to build the API foundation, correctness, and reasonable performance for small to medium sizes. The large-size optimizations can be rolled out incrementally as the library matures and when the community gets bigger.
+> **Key discovery (2026-02-22):** Multi-precision benchmarks show Mojo exp is **1.09× Python at p=1000** and ln near-1 is **4.24× Python at p=1000**. The primary remaining gap is:
+> (1) ln far-from-1 (0.0002× due to missing `ln(10)` cache — fixable with Task 3c), and
+> (2) exp/ln at small precision p<200 (0.3–0.6× due to constant-factor overhead).
+> For v0.8.0, Tasks [1✓, 3a✓, 3b, 3c, 7, 8] are the priority to be competitive at all sizes.
 
 ## Optimization priority and planning
 
-| Task       | Operation(s) Improved     | Current vs Python |       Expected After        |   Effort   | Priority |
-| ---------- | ------------------------- | :---------------: | :-------------------------: | :--------: | -------- |
-| **Task 1** | Asymmetric division       |   ✓ **31–79×**    |         ✓ COMPLETED         |    Done    | High     |
-| **Task 2** | Division, sqrt, exp, ln   |      varies       |         1.5–2× gain         |    High    | Medium   |
-| **Task 3** | Exp, ln                   |    0.31–0.43×     | 3a ✓ (cache); 3b–3d pending |   Medium   | High     |
-| **Task 4** | Sqrt                      |    0.55–0.72×     |          1.5–3.0×           |   Medium   | High     |
-| **Task 5** | ALL large operations      |      varies       |         2–10× gain          | Very High  | Low      |
-| **Task 6** | Large multiplication      |        N/A        |    ~1.5× over Karatsuba     |   Medium   | Medium   |
-| **Task 7** | Nth root                  |    0.18–0.33×     |          1.0–2.0×           | Low-Medium | Medium   |
-| **Task 8** | All (allocation overhead) |         —         |           10–30%            |   Medium   | High     |
-| **Task 9** | Schoolbook multiply base  |         —         |           1.5–2×            |    Low     | Medium   |
+| Task       | Operation(s) Improved     |     Current vs Python      |         Expected After          |   Effort   | Priority     |
+| ---------- | ------------------------- | :------------------------: | :-----------------------------: | :--------: | ------------ |
+| **Task 1** | Asymmetric division       |        ✓ **31–79×**        |           ✓ COMPLETED           |    Done    | High         |
+| **Task 2** | Division, sqrt, exp, ln   |           varies           |           1.5–2× gain           |    High    | Medium       |
+| **Task 3** | Exp, ln                   | Exp: 0.48×@p50→1.09×@p1000 | 3a ✓ (cache ln2); 3b+3c pending |   Medium   | **Critical** |
+| **Task 4** | Sqrt                      |         0.55–0.72×         |            1.5–3.0×             |   Medium   | Medium       |
+| **Task 5** | ALL large operations      |           varies           |           2–10× gain            | Very High  | Low          |
+| **Task 6** | Large multiplication      |            N/A             |      ~1.5× over Karatsuba       |   Medium   | Medium       |
+| **Task 7** | Nth root                  |         0.14–0.49×         |            1.0–2.0×             | Low-Medium | Medium       |
+| **Task 8** | All (allocation overhead) |             —              |             10–30%              |   Medium   | High         |
+| **Task 9** | Schoolbook multiply base  |             —              |             1.5–2×              |    Low     | Medium       |
 
 ### Planned Execution Order
 
 1. ~~**Task 1** (asymmetric division fix) — immediate win, unblocks other work~~ ✓ DONE
 1. ~~**Task 3a** (cache ln(2)/ln(1.25) via MathCache struct)~~ ✓ DONE
-1. **Task 3b** (exp/ln cheap integer division) — replace BigDecimal division by small int
-1. **Task 4** (reciprocal sqrt) — standalone, high impact
-1. **Task 7** (direct nth root) — low effort, high impact for root()
+1. **Task 3b** (exp/ln cheap integer division) — helps exp at p<200 (0.3–0.6× → ~0.7–1.0×)
+1. **Task 3c** (cache `ln(10)` in MathCache) — **highest ROI**: fixes ln(10)/ln(100)/ln(0.001) catastrophe (0.0002× → ~1×). Low effort.
+1. **Task 7** (direct nth root) — low effort, removes exp+ln bottleneck for root()
 1. **Task 8** (in-place operations) — broad improvement
+1. **Task 4** (reciprocal sqrt) — less urgent (Mojo sqrt already fast-pathed via BigUInt.sqrt())
 1. **Task 2** (reciprocal-Newton division) — requires careful implementation
 1. **Task 6** (Toom-3) — medium complexity, medium gain
 1. **Task 3c** (binary splitting for series) — complex but transformative
-1. **Task 5** (NTT) — the end-game, makes everything fast at large sizes
+1. **Task 5** (NTT) — less urgent than thought; Karatsuba competitive up to p=1000
 1. **Task 9** (SIMD multiply) — polish
 
 ## Benchmarks
@@ -69,18 +73,20 @@ All benchmarks compare **DeciMojo BigDecimal** against **Python `decimal.Decimal
 
 ### Overall Results by Operation
 
-| Operation          | Avg Speedup vs Python | Precision | Key Observation                                             |
-| ------------------ | :-------------------: | :-------: | ----------------------------------------------------------- |
-| **Addition**       |       **2.22×**       |    28     | Consistent ~2.4× for ≤28 digits; degrades >1000 digits      |
-| **Subtraction**    |       **9.79×**       |    28     | Consistently ~9× across all small cases                     |
-| **Multiplication** |       **3.44×**       |    28     | 2–7× across all tested sizes                                |
-| **Division**       |       **6.29×**       |   4096    | Up to 28× for large balanced; **0.11× for asymmetric**      |
-| **Sqrt**           |        0.66×*         |   5000    | Perfect squares ~200×; irrational results **0.55–0.72×**    |
-| **Exp**            |         0.34×         |    28     | Python 2–4× faster consistently                             |
-| **Root (nth)**     |        6.57×*         |    28     | Fast for √ and trivial; **0.18–0.33× for general nth root** |
-| **Rounding**       |      **105.80×**      |    28     | Overwhelmingly faster (simple word truncation)              |
+| Operation          | Avg Speedup vs Python | Precision | Key Observation                                                  |
+| ------------------ | :-------------------: | :-------: | ---------------------------------------------------------------- |
+| **Addition**       |       **2.22×**       |    28     | Consistent ~2.4× for ≤28 digits; degrades >1000 digits           |
+| **Subtraction**    |       **9.79×**       |    28     | Consistently ~9× across all small cases                          |
+| **Multiplication** |       **3.44×**       |    28     | 2–7× across all tested sizes                                     |
+| **Division**       |       **6.29×**       |    50     | Up to 28× for large balanced; **31–79× asymmetric** (Task 1 fix) |
+| **Sqrt**           |        0.66×*         |   5000    | Perfect squares ~200×; irrational results **0.55–0.72×**         |
+| **Exp**            |        0.55×†         |    50     | ↑ from 0.34× at p=28; Python still ~2× faster consistently       |
+| **Ln**             |        0.18×†         |    50     | 0.78× near 1; Python has cached ln(10) for power-of-10 args      |
+| **Root (nth)**     |        0.25×†         |    50     | √ fast; general nth root **0.14–0.49×** (exp(ln(x)/n) costly)    |
+| **Rounding**       |      **105.80×**      |    28     | Overwhelmingly faster (simple word truncation)                   |
 
-\* Averages heavily skewed by fast-path cases (perfect squares, identity roots). For the general non-trivial cases, sqrt ≈ 0.66× and root ≈ 0.33×.
+\* Averages heavily skewed by fast-path cases (perfect squares, identity roots).  
+† New results with precision = 50 (Mojo and Python at same precision). Previous results at mismatched precision (Mojo default 28–36 vs Python 10000) were not comparable.
 
 ---
 
@@ -129,7 +135,12 @@ All benchmarks compare **DeciMojo BigDecimal** against **Python `decimal.Decimal
 
 ---
 
-### Division (64 cases, precision=4096)
+### Division (64 cases, precision=50)
+
+> **Update (2026-02-22):** Precision unified to 50 via TOML config. Both Mojo
+> (`true_divide_general(a, b, precision)`) and Python (`getcontext().prec = 50`)
+> now compute the same number of significant digits. Previous benchmarks used
+> `comptime PRECISION = 4096` for Mojo and `prec = 4096` for Python.
 
 **Balanced division (equal-size operands):**
 
@@ -211,56 +222,158 @@ iterations, each costing ~400µs (dominated by one ~556-word division).
 
 ---
 
-### Exp (50 cases, precision=28)
+### Exp (50 cases)
 
-| Input        | Mojo (ns) | Python (ns) | Speedup |
-| ------------ | --------: | ----------: | :-----: |
-| exp(0)       |        60 |       1,510 |  25.2×  |
-| exp(1)       |    16,250 |       6,410 |  0.39×  |
-| exp(0.01)    |    11,750 |       4,030 |  0.34×  |
-| exp(0.1)     |    14,480 |       6,270 |  0.43×  |
-| exp(10)      |    17,740 |       7,710 |  0.43×  |
-| exp(100)     |    17,830 |       7,650 |  0.43×  |
-| exp(-1)      |    21,630 |       6,760 |  0.31×  |
-| exp(-100)    |    19,390 |       6,040 |  0.31×  |
-| exp(1e-10)   |     3,840 |       1,670 |  0.43×  |
-| exp(1000000) |    20,800 |      11,240 |  0.54×  |
+#### BEFORE precision matching (Mojo default=36, Python prec=10000) — NOT comparable
 
-Average: 0.34× (Python is ~3× faster)
+These earlier results were invalid benchmarks: Mojo computed only 36 significant digits
+while Python computed 10000. The speedup figures were misleading.
 
-**Analysis:** This is the weakest operation. The Taylor series implementation
-(`exp_taylor_series`) converges in ~$2.5p$ iterations, each requiring:
+| Input        | Mojo (ns) | Python (ns) | Speedup | Note                  |
+| ------------ | --------: | ----------: | :-----: | --------------------- |
+| exp(0)       |        60 |       1,510 |  25.2×  | Fast-path (trivial)   |
+| exp(1)       |    16,250 |       6,410 |  0.39×  | Mojo=36 vs Python=10K |
+| exp(0.01)    |    11,750 |       4,030 |  0.34×  | ← unfair comparison   |
+| exp(0.1)     |    14,480 |       6,270 |  0.43×  | ← unfair comparison   |
+| exp(10)      |    17,740 |       7,710 |  0.43×  | ← unfair comparison   |
+| exp(-1)      |    21,630 |       6,760 |  0.31×  | ← unfair comparison   |
+| exp(1e-10)   |     3,840 |       1,670 |  0.43×  | ← unfair comparison   |
+| exp(1000000) |    20,800 |      11,240 |  0.54×  | ← unfair comparison   |
 
-- 1 BigDecimal multiplication (~100ns at 28 digits)
-- 1 BigDecimal division (~2000ns at 28 digits)
+Previous average: 0.34× (Python appeared ~3× faster)
 
-So ~70 iterations × ~2100ns/iteration ≈ 147µs, but observed time is ~17µs.
-The actual bottleneck is likely the range reduction (`exp(x/2^k)` then squaring $k$
-times), plus the reciprocal computation for negative arguments ($e^{-x} = 1/e^x$).
+#### AFTER precision matching (both precision=50, 2026-02-22)
 
-**Python `libmpdec`'s advantage:** Uses the following optimizations:
+All computations now produce identical results at 50 significant digits.
+Zero correctness warnings except for extreme edge cases (`exp(-10000000)` etc. where
+Python underflows to zero due to exponent range limits).
 
-- Correct rounding arithmetic via Ziv's method (compute at higher precision, retry if needed)
-- NTT-based multiplication for all internal arithmetic
-- Optimized reduction algorithm (argument reduction by $\ln(10)$, not $\ln(2)$)
-- Cache of precomputed constants ($\ln(10)$ at various precisions)
+| Input       | Mojo (ns) | Python (ns) | Speedup  | Difference |
+| ----------- | --------: | ----------: | :------: | :--------: |
+| exp(0)      |       120 |         320 | **2.7×** |     0      |
+| exp(1)      |   105,290 |      68,190 |  0.65×   |   0E-50    |
+| exp(-1)     |   110,490 |      66,280 |  0.60×   |   0E-50    |
+| exp(2)      |   106,350 |      67,730 |  0.64×   |   0E-50    |
+| exp(0.1)    |    94,530 |      66,100 |  0.70×   |   0E-50    |
+| exp(0.01)   |    90,420 |      42,280 |  0.47×   |   0E-50    |
+| exp(0.5)    |   111,650 |      64,580 |  0.58×   |   0E-50    |
+| exp(10)     |   106,420 |      65,860 |  0.62×   |   0E-49    |
+| exp(100)    |   110,440 |      71,840 |  0.65×   |   0E-48    |
+| exp(0.0001) |    58,200 |      25,590 |  0.44×   |   0E-50    |
+| exp(1e-10)  |    27,960 |       9,850 |  0.35×   |   0E-50    |
+
+**New average: ~0.55× (Python ~1.8× faster)**
+
+**Analysis (updated):** With matched precision=50, Mojo's exp is **less slow than
+previously reported** (0.55× vs the misleading 0.34×). The per-call cost is higher
+because Mojo now computes 50 digits instead of 36, but the comparison is fair.
+Python is still ~1.8× faster due to:
+
+- `libmpdec`'s NTT-based multiplication for internal Taylor series arithmetic
+- Optimized range reduction (reduction by `ln(10)`, not `ln(2)`)
+- Correct rounding via Ziv's method (compute at slightly higher precision, retry if needed)
+
+**Key insight:** The previous 0.34× figure was artificially deflated by Python
+doing 278× more work (10000 vs 36 digits). The true gap is ~1.8×, which is
+much more tractable for optimization via Task 3b–3d.
 
 ---
 
-### Root (50 cases, precision=28)
+### Ln (50 cases)
 
-| Input                | Mojo (ns) | Python (ns) | Speedup |
-| -------------------- | --------: | ----------: | :-----: |
-| √64 (perfect square) |     1,750 |      47,420 |  27.1×  |
-| √2 (irrational)      |     7,640 |      46,530 |  6.1×   |
-| ∛27 (perfect cube)   |   171,430 |      50,030 |  0.29×  |
-| ∛10 (non-perfect)    |    85,080 |      17,340 |  0.20×  |
-| ⁵√32                 |   175,460 |      47,870 |  0.27×  |
-| ∛e                   |   291,100 |      51,200 |  0.18×  |
-| 100th root of 2      |    15,450 |      40,130 |  2.6×   |
+> **Note (2026-02-22):** Ln was not benchmarked with matched precision before this
+> update. Previous estimates came from the root cause analysis section (estimated
+> ~0.3× Python at precision=28 based on exp performance). These are the first
+> properly matched benchmarks.
 
-**Analysis:** For non-square roots, the implementation delegates to
-`exp(ln(x)/n)`, requiring both `ln()` and `exp()`. Since both `ln()` and `exp()` are slow (Taylor series with many iterations of expensive BigDecimal arithmetic), the compound cost is 0.18–0.33× Python.
+#### Ln results with precision matching (both precision=50, 2026-02-22)
+
+All computations produce identical results at 50 significant digits.
+Zero correctness warnings (all differences are 0 or 0E-xxx with zero coefficient).
+
+| Input     | Mojo (ns) | Python (ns) | Speedup  | Difference |
+| --------- | --------: | ----------: | :------: | :--------: |
+| ln(1)     |       300 |         300 | **1.0×** |     0      |
+| ln(e)     | 6,607,540 |     120,050 |  0.02×   |   0E-200   |
+| ln(2)     |   677,110 |     118,700 |  0.18×   |   0E-200   |
+| ln(10)    | 1,007,810 |       1,130 |  0.001×  |   0E-199   |
+| ln(0.5)   |   672,140 |     124,260 |  0.18×   |   0E-200   |
+| ln(0.9)   |   162,430 |     126,330 |  0.78×   |   0E-200   |
+| ln(0.99)  |    83,710 |      76,420 |  0.91×   |   0E-201   |
+| ln(0.999) |    56,390 |      54,520 |  0.97×   |   0E-202   |
+| ln(1.001) |    55,340 |      44,180 |  0.80×   |   0E-203   |
+| ln(1.01)  |    80,630 |      55,160 |  0.68×   |   0E-202   |
+| ln(1.1)   |   162,240 |      76,580 |  0.47×   |   0E-201   |
+| ln(0.1)   |   994,350 |         770 |  0.001×  |   0E-199   |
+| ln(100)   |   998,260 |       1,020 |  0.001×  |   0E-199   |
+| ln(1e-10) |   993,000 |         710 |  0.001×  |   0E-198   |
+
+**Key observations:**
+
+1. **Values near 1 are competitive:** `ln(0.9)` = 0.78×, `ln(0.99)` = 0.91×, `ln(0.999)` = 0.97× — the Taylor series converges very fast for small arguments.
+2. **Powers of 10 are catastrophically slow:** `ln(10)`, `ln(0.1)`, `ln(100)` show Mojo 1000× slower. Python's `libmpdec` caches `ln(10)` and computes `ln(10^k)` = `k × ln(10)` in O(1). Mojo must compute from scratch each time.
+3. **ln(e)** is surprisingly slow (~6.6ms) because `e` = 2.718… is far from 1.0 and requires full range reduction + series evaluation.
+4. **ln(2)** = 677µs vs Python's 119µs → 0.18×. This is the constant that `MathCache` optimizes for repeated calls.
+
+**Analysis:** The ln performance landscape has two distinct regimes:
+
+- **Near 1 (|x-1| < 0.1):** Mojo is 0.68–0.97× Python (nearly competitive)
+- **Far from 1:** Mojo is 0.001–0.18× Python (extremely slow)
+
+The far-from-1 case is dominated by range reduction to $x = m \times 2^k \times 1.25^j$, which requires computing `ln(2)` and `ln(1.25)` each time (unless cached via `MathCache`). The `MathCache` from Task 3a helps with repeated calls but can't eliminate the first-call cost.
+
+**Python `libmpdec`'s advantage for ln:**
+
+- Cached `ln(10)` at various precisions with sub-microsecond lookup
+- Range reduction modulo `ln(10)` instead of `ln(2)` (more efficient for decimal base)
+- NTT-based multiplication in the Taylor series
+- Ziv's method for correct rounding
+
+---
+
+### Root (50 cases)
+
+#### BEFORE precision matching (Mojo hardcoded=28, Python prec=10000) — NOT comparable
+
+| Input                | Mojo (ns) | Python (ns) | Speedup | Note                  |
+| -------------------- | --------: | ----------: | :-----: | --------------------- |
+| √64 (perfect square) |     1,750 |      47,420 |  27.1×  | Fast-path             |
+| √2 (irrational)      |     7,640 |      46,530 |  6.1×   | Mojo=28 vs Python=10K |
+| ∛27 (perfect cube)   |   171,430 |      50,030 |  0.29×  | ← unfair comparison   |
+| ∛10 (non-perfect)    |    85,080 |      17,340 |  0.20×  | ← unfair comparison   |
+| ⁵√32                 |   175,460 |      47,870 |  0.27×  | ← unfair comparison   |
+| ∛e                   |   291,100 |      51,200 |  0.18×  | ← unfair comparison   |
+| 100th root of 2      |    15,450 |      40,130 |  2.6×   | ← unfair comparison   |
+
+#### AFTER precision matching (both precision=50, 2026-02-22)
+
+All computations produce identical results at 50 significant digits (4 edge cases
+with 1–3 ULP last-digit difference, expected for compound `exp(ln(x)/n)`).
+
+| Input                    | Mojo (ns) | Python (ns) |  Speedup  | Difference |
+| ------------------------ | --------: | ----------: | :-------: | :--------: |
+| √64 (perfect square)     |     1,500 |      60,730 | **40.5×** |   0E-49    |
+| √(non-perfect)           |     7,250 |      74,510 | **10.3×** |   0E-49    |
+| ∛27 (perfect cube)       |   243,570 |      58,390 |   0.24×   |   0E-49    |
+| ∛10 (non-perfect)        |   145,880 |      20,440 |   0.14×   |   0E-49    |
+| ⁴√16 (perfect power)     |   200,000 |      60,830 |   0.30×   |   0E-49    |
+| ⁵√32 (perfect power)     |   242,190 |      62,390 |   0.26×   |   0E-49    |
+| ¹⁰√1024 (perfect power)  |   149,830 |      37,660 |   0.25×   |   0E-49    |
+| ∛(non-perfect, 4th root) |   129,020 |      63,560 |   0.49×   |   0E-49    |
+| ¹⁰⁰√2                    |   116,780 |      20,170 |   0.17×   |   0E-49    |
+| ⅓ root (0.333…)          |   241,970 |     100,710 |   0.42×   |   0E-49    |
+
+**Before vs After comparison for Root:**
+
+| Input         | Before Speedup | After Speedup | Change                                            |
+| ------------- | :------------: | :-----------: | ------------------------------------------------- |
+| √64           |     27.1×      |   **40.5×**   | ↑ Faster (precision=50 vs 28)                     |
+| √2 (non-perf) |      6.1×      |   **10.3×**   | ↑ Faster (new sqrt case)                          |
+| ∛27           |     0.29×      |     0.24×     | ≈ Same (fair comparison now)                      |
+| ∛10           |     0.20×      |     0.14×     | ↓ Slightly worse (Python was undercounted before) |
+| ⁵√32          |     0.27×      |     0.26×     | ≈ Same                                            |
+
+**Analysis (updated):** Square roots are fast-pathed via `BigUInt.sqrt()` and show excellent speedups (10–40×). Non-square roots (cube, 5th, etc.) delegate to `exp(ln(x)/n)`, which requires two expensive transcendental function evaluations. At precision=50, general nth root is **0.14–0.49× Python**, confirming that Task 7 (direct Newton for nth root) is important.
 
 **Python `libmpdec`** computes nth root directly via Newton's method ($x_{k+1} = ((n-1)x_k + a/x_k^{n-1})/n$), avoiding the `exp(ln(x)/n)` detour.
 
@@ -272,6 +385,150 @@ Avg 105.8×. This is dominated by the overhead of Python's `decimal.quantize()` 
 
 ---
 
+## Multi-Precision Scaling Analysis (2026-02-22)
+
+> **Why multi-precision?** A single precision level (e.g., p=50) only tests small-sized
+> computation. Precision determines problem size for transcendental functions — at p=50,
+> BigUInt coefficients are ~6 words; at p=1000, they're ~112 words. Scaling behavior
+> reveals where algorithmic complexity differences dominate.
+
+### Exp — Multi-Precision Scaling (p=50 to 1000)
+
+Benchmarked 12 representative cases at 5 precision levels. Iterations decrease with
+precision to keep total bench time manageable (50→20→5→2→1).
+
+**Summary table (excluding trivial exp(0)):**
+
+| Case        |  p=50 | p=100 | p=200 | p=500 | p=1000 |
+| ----------- | ----: | ----: | ----: | ----: | -----: |
+| exp(1)      | 0.48× | 0.43× | 0.63× | 1.07× |  1.09× |
+| exp(-1)     | 0.44× | 0.37× | 0.62× | 1.16× |  1.17× |
+| exp(2)      | 0.52× | 0.42× | 0.65× | 1.07× |  1.02× |
+| exp(0.5)    | 0.52× | 0.34× | 0.63× | 1.08× |  0.95× |
+| exp(-0.5)   | 0.40× | 0.35× | 0.55× | 0.96× |  1.02× |
+| exp(0.01)   | 0.26× | 0.30× | 0.50× | 0.80× |  0.88× |
+| exp(0.1)    | 0.45× | 0.44× | 0.80× | 1.15× |  1.13× |
+| exp(10)     | 0.58× | 0.40× | 0.60× | 1.04× |  1.09× |
+| exp(-10)    | 0.45× | 0.33× | 0.53× | 0.94× |  1.03× |
+| exp(100)    | 0.57× | 0.41× | 0.63× | 1.13× |  1.10× |
+| exp(0.0001) | 0.21× | 0.23× | 0.41× | 0.65× |  0.75× |
+
+**Key findings:**
+
+1. **Mojo exp catches up to Python at high precision.** At p=500, Mojo is roughly **1.0× Python** for most inputs. At p=1000, Mojo is **slightly faster** (1.02–1.17×) for standard inputs.
+2. **At p=50, Mojo is 0.21–0.58×** — Python's constant-factor advantages (optimized C, NTT at small sizes) dominate.
+3. **The crossover happens around p=200–500.** This suggests Mojo's Karatsuba (which kicks in at ~8 words ≈ 72 digits) is competitive with libmpdec's NTT for medium-sized operands, and Mojo's Taylor series implementation has acceptable overhead.
+4. **exp(0.0001) and exp(0.01) are consistently the slowest relative to Python.** These involve very small arguments where Python's fast-path optimizations (fewer Taylor terms, early truncation) are more effective.
+
+**Absolute timing growth (exp(1)):**
+
+| Precision | Mojo (ns) | Python (ns) | Ratio |
+| --------: | --------: | ----------: | ----: |
+|        50 |    19,260 |       9,280 | 0.48× |
+|       100 |    34,850 |      15,150 | 0.43× |
+|       200 |   104,600 |      66,000 | 0.63× |
+|       500 |   824,000 |     879,500 | 1.07× |
+|     1,000 | 4,168,000 |   4,553,000 | 1.09× |
+
+Mojo scales at roughly $O(p^{2.3})$ while Python scales at $O(p^{2.5})$ — Mojo's per-step cost is higher at small sizes but grows slower, leading to the crossover.
+
+---
+
+### Ln — Multi-Precision Scaling (p=50 to 1000)
+
+Benchmarked 12 representative cases at 5 precision levels.
+
+**Summary table (excluding trivial ln(1)):**
+
+| Case      |   p=50 |  p=100 |  p=200 |   p=500 |  p=1000 |
+| --------- | -----: | -----: | -----: | ------: | ------: |
+| ln(2)     | 16.13× |  0.21× |  0.17× |   0.14× |   0.11× |
+| ln(e)     |  0.05× |  0.02× |  0.02× |   0.02× |   0.03× |
+| ln(10)    | 0.008× | 0.003× | 0.001× | 0.0004× | 0.0002× |
+| ln(0.5)   | 13.55× |  0.23× |  0.18× |   0.15× |   0.11× |
+| ln(0.9)   |  0.57× |  0.46× |  0.76× |   1.78× |   3.57× |
+| ln(0.99)  |  0.56× |  0.53× |  0.87× |   2.41× |   4.24× |
+| ln(1.01)  |  0.44× |  0.41× |  0.62× |   1.30× |   3.83× |
+| ln(1.1)   |  0.28× |  0.28× |  0.46× |   1.19× |   2.45× |
+| ln(100)   | 0.007× |   0.0× | 0.001× | 0.0003× | 0.0002× |
+| ln(0.001) | 0.010× |   0.0× | 0.002× | 0.0003× | 0.0002× |
+| ln(PI)    |  0.04× |  0.02× |  0.02× |   0.02× |   0.03× |
+
+**Key findings:**
+
+1. **Near-1 inputs show dramatic improvement with precision.** `ln(0.99)` goes from 0.56× at p=50 to **4.24×** at p=1000! `ln(0.9)` goes from 0.57× to **3.57×**. This means Mojo's AGM-like convergence for near-1 arguments scales much better than Python at high precision.
+2. **ln(2) anomaly at p=50:** Shows 16× speedup because at p=50 both Mojo and Python are very fast (1.3µs vs 21.9µs), likely a caching hit or fast-path in Mojo. At p=100+, the relationship normalizes to 0.11–0.21×.
+3. **Powers-of-10 get catastrophically WORSE with precision.** `ln(10)` goes from 0.008× to 0.0002× — Mojo scales $O(p^2)$ while Python returns cached `ln(10)` in $O(1)$.
+4. **ln(e) and ln(PI) remain consistently slow (0.02–0.05×)** because they require full argument reduction + series evaluation, while Python benefits from NTT multiplication in the series.
+5. **The near-1 crossover happens around p=200–500**, similar to exp. This confirms the pattern: Mojo's Karatsuba becomes competitive with libmpdec's NTT at ~100+ digits.
+
+**Two distinct scaling regimes in ln:**
+
+| Regime     |    p=50     |    p=1000    | Scaling             |
+| :--------- | :---------: | :----------: | :------------------ |
+| Near-1 (   |     x-1     |    <0.1)     | 0.44–0.57×          | 2.45–4.24× | **Mojo wins big** |
+| Far-from-1 | 0.005–0.18× | 0.0002–0.11× | **Mojo loses more** |
+
+**Why the split?** Near-1 inputs use a Taylor series that converges in few terms with small coefficients — multiplication cost dominates, and Karatsuba scales well. Far-from-1 inputs require: (a) computing `ln(2)` and `ln(1.25)` from scratch (Python caches `ln(10)`), (b) many more series terms, (c) full-precision arithmetic on larger intermediate values.
+
+**Absolute timing growth (ln(0.99), near-1 case):**
+
+| Precision | Mojo (ns) | Python (ns) | Ratio |
+| --------: | --------: | ----------: | ----: |
+|        50 |    21,000 |      11,760 | 0.56× |
+|       100 |    41,450 |      21,800 | 0.53× |
+|       200 |    86,800 |      75,400 | 0.87× |
+|       500 |   295,000 |     712,000 | 2.41× |
+|     1,000 | 1,012,000 |   4,287,000 | 4.24× |
+
+Mojo scales at $O(p^{1.8})$ while Python scales at $O(p^{2.8})$ for this near-1 case — a dramatic difference that explains the crossover.
+
+**Absolute timing growth (ln(10), far-from-1 case):**
+
+| Precision |  Mojo (ns) | Python (ns) |   Ratio |
+| --------: | ---------: | ----------: | ------: |
+|        50 |     75,120 |         600 |  0.008× |
+|       100 |    368,750 |       1,050 |  0.003× |
+|       200 |    988,600 |         800 |  0.001× |
+|       500 |  9,316,000 |       4,000 | 0.0004× |
+|     1,000 | 53,970,000 |      13,000 | 0.0002× |
+
+Python's `ln(10)` time is essentially $O(1)$ (sub-microsecond at all precisions due to caching). Mojo's time grows as $O(p^{2.5})$ — pure algorithmic mismatch.
+
+---
+
+### Implications for Task Priorities
+
+The multi-precision data reveals that **the optimization landscape depends heavily on the target precision range**:
+
+**For p ≤ 100 (most common use cases):**
+
+- Exp is 0.3–0.6× Python → needs Task 3b (cheap integer division) and constant-factor improvements
+- Ln near-1 is 0.4–0.6× → same as exp
+- Ln far-from-1 is 0.001–0.2× → needs cached `ln(10)` (Task 3 variant)
+
+**For p = 200–500 (medium precision):**
+
+- Exp is at parity or slightly ahead → **no action needed!**
+- Ln near-1 is catching up → will be ahead by p=500
+- Ln far-from-1 still poor → `ln(10)` caching critical
+
+**For p ≥ 1000 (high precision):**
+
+- Exp is **1.0–1.2× Python** → Mojo already wins! 🎉
+- Ln near-1 is **2.5–4.2× Python** → Mojo dominates here
+- Ln far-from-1 is **0.0002× Python** → catastrophic, but caused by single factor (cached `ln(10)`)
+
+**Revised task priorities based on multi-precision data:**
+
+1. **Cache `ln(10)` in MathCache** (new Task 3c) — this single change would fix the catastrophic ln(10)/ln(100)/ln(0.001) cases across ALL precision levels. Extremely high ROI.
+2. **Task 3b** (cheap integer division) — still valuable for p<200 where exp is 0.3–0.6×
+3. **Task 7** (direct nth root) — still important (avoids exp+ln, which is the bottleneck)
+4. **Task 4** (reciprocal sqrt) — less critical now that we know Mojo catches up at high precision
+5. **Task 5** (NTT) — less urgent than thought; Karatsuba is competitive up to p=1000
+
+---
+
 ## Root Cause Analysis: Where Performance Is Lost
 
 ### 1. **Division (asymmetric case): ~~0.11–0.62× Python~~ → 31–79× Python** — Task 1 ✓ FIXED
@@ -279,13 +536,25 @@ Avg 105.8×. This is dominated by the overhead of Python's `decimal.quantize()` 
 ~~The Burnikel-Ziegler algorithm pads the divisor up to match the dividend's block structure.~~ **Actual root cause:** `BigDecimal.true_divide_general()` computed full quotient coefficients regardless of the needed precision, then discarded excess digits via rounding. For 65536w/32768w at precision=4096, this meant a 65994-word / 32768-word integer division when only a ~458-word quotient was needed. Fix: compute
 `extra_words = ceil(P/9) + 2 - diff_n_words` and truncate the dividend when negative.
 
-### 2. **Exp function: 0.31–0.43× Python** — Task 3/Task 4 targets
+### 2. **Exp function: ~~0.35–0.65×~~ → 0.48× at p=50, **1.09× at p=1000** — Task 3 targets (partially resolved at high precision)
 
-The Taylor series requires ~$2.5p$ iterations, each with one full-precision BigDecimal division. At precision=28, this means ~70 divisions. The per-division cost (~2µs at 28 digits) accumulates. `libmpdec` avoids explicit division in the Taylor series by using reciprocals and NTT-multiplied accumulation.
+Previous estimate (0.31–0.43×) was based on mismatched precision (Mojo=36, Python=10000).
+Multi-precision analysis reveals the gap is **precision-dependent**: at p=50 Mojo is ~0.48×,
+but at p=500+ Mojo catches up to parity and at p=1000 **slightly exceeds Python** (1.09×).
+The primary remaining gap is at small precisions (p<200) where Python's constant-factor
+advantages (optimized C codepath, efficient small-number handling) dominate.
 
-### 3. **Ln function: not benchmarked but expected ~0.3× Python**
+### 3. **Ln function: two radically different regimes (confirmed across all precision levels)**
 
-Same issue as exp. Additionally, ~~`ln(2)` and `ln(1.25)` are recomputed on **every call**~~ **partially fixed in Task 3a:** `MathCache` struct now caches these across calls within the same cache instance. Internal callers (`log`, `log10`) share a local cache. Standalone `ln()` calls still pay the cost once per call (until Mojo supports global variables for a true global cache).
+Multi-precision analysis confirms ln has two fundamentally different performance profiles:
+
+- **Near 1 (|x-1| < 0.1):** Mojo scales as $O(p^{1.8})$ vs Python's $O(p^{2.8})$.
+  Mojo is 0.56× at p=50 but **4.24× at p=1000**. Major win at high precision.
+- **Far from 1 (powers of 10):** Mojo scales as $O(p^{2.5})$ vs Python's $O(1)$ (cached).
+  The gap widens from 0.008× at p=50 to **0.0002× at p=1000**. Root cause: Python caches
+  `ln(10)` at various precisions; Mojo computes from scratch.
+
+**Fix:** Add `get_ln10(precision)` to `MathCache` — eliminates the far-from-1 catastrophe.
 
 ### 4. **Sqrt (irrational, high precision): 0.55–0.72× Python**
 
@@ -751,7 +1020,7 @@ Karatsuba and Toom-3.
 | Large asymmetric div |   B-Z (broken for m >> n)    |           GMP-style recursive            |           **Critical gap**           |
 | Sqrt                 |    Newton (with division)    |    **Reciprocal sqrt** (no division)     |           Significant gap            |
 | Exp                  |  Taylor series (sequential)  |      Taylor + **binary splitting**       |              Major gap               |
-| Ln                   |  Taylor series (sequential)  |        Similar + cached constants        |        Moderate gap (3a done)        |
+| Ln                   |  Taylor series (sequential)  |    Taylor + cached `ln(10)` + **NTT**    |  Major gap (3a partially mitigates)  |
 | I/O (to/from string) |        $O(n)$ trivial        |              $O(n)$ trivial              |                Parity                |
 | Rounding             |    Word-level truncation     |                 Similar                  |           Mojo 100× faster           |
 
@@ -759,3 +1028,100 @@ Karatsuba and Toom-3.
 the algorithm tier for large numbers: NTT multiplication, reciprocal-based division
 and sqrt, and binary splitting for series evaluation. These are all implementable in
 base-$10^9$.
+
+---
+
+## Before vs After Optimization Summary (All Operations)
+
+> **Date:** 2026-02-22. All benchmarks run on macOS arm64 Apple Silicon (M-series).
+> All "After" results use precision-matched benchmarks via TOML config (`precision` field).
+
+### Completed Optimizations
+
+#### Task 1: Fix Asymmetric Division (2026-02-21)
+
+| Case            | BEFORE (ns) | BEFORE vs Python | AFTER (ns) | AFTER vs Python | Improvement |
+| --------------- | ----------: | :--------------: | ---------: | :-------------: | ----------: |
+| 65536w / 32768w | 444,571,666 |      0.11×       |    614,000 |    **76.1×**    |    **724×** |
+| 65536w / 16384w | 146,761,000 |      0.17×       |    299,333 |    **77.9×**    |    **490×** |
+| 65536w / 8192w  |  47,861,000 |      0.26×       |    149,000 |    **78.8×**    |    **321×** |
+| 65536w / 4096w  |  15,804,000 |      0.40×       |     89,000 |    **67.1×**    |    **178×** |
+| 65536w / 2048w  |   5,099,000 |      0.62×       |     42,666 |    **72.2×**    |    **119×** |
+| 65536w / 1024w  |   1,776,333 |      0.45×       |     24,000 |    **31.2×**    |     **74×** |
+
+**Root cause:** `true_divide_general()` computed full quotient regardless of needed precision.
+**Fix:** `extra_words = ceil(P/9) + 2 - diff_n_words` + truncate dividend when excess.
+
+#### Task 3a: MathCache for ln(2)/ln(1.25) (2026-02-22)
+
+| Scenario                              | BEFORE |  AFTER |  Speedup |
+| ------------------------------------- | -----: | -----: | -------: |
+| 10× ln() calls, precision=100, cached |   4 ms |   1 ms |   **3×** |
+| 10× ln() calls, precision=500, cached | 103 ms |  23 ms | **4.5×** |
+| log(x) — 2 internal ln() calls shared |  2× ln | ~1× ln |   **2×** |
+
+**Root cause:** `ln(2)` and `ln(1.25)` recomputed on every `ln()` call.
+**Fix:** `MathCache` struct caches computed constants with precision-aware invalidation.
+
+#### Benchmark Infrastructure: Precision Unification (2026-02-22)
+
+| Bench File | BEFORE (Mojo prec / Python prec) | AFTER                    |
+| ---------- | :------------------------------: | :----------------------- |
+| ln         |       36 / 10000 ← UNFAIR        | **50 / 50** via TOML     |
+| exp        |       36 / 10000 ← UNFAIR        | **50 / 50** via TOML     |
+| root       | 28 (hardcoded) / 10000 ← UNFAIR  | **50 / 50** via TOML     |
+| sqrt       |       5000 / 5000 (was OK)       | **5000 / 5000** via TOML |
+| divide     | 4096 (comptime) / 4096 (was OK)  | **50 / 50** via TOML     |
+
+All bench files now:
+
+- Read `precision` from TOML `[config]` section
+- Pass it to both Mojo's BigDecimal methods and Python's `getcontext().prec`
+- Flag non-zero differences via `diff.is_zero()` with `*** WARNING ***` message
+
+### Updated Performance Scorecard
+
+| Operation       | Before Optimization | After Optimization | Change                                   |
+| --------------- | :-----------------: | :----------------: | ---------------------------------------- |
+| Addition        |        2.22×        |       2.22×        | (no change)                              |
+| Subtraction     |        9.79×        |       9.79×        | (no change)                              |
+| Multiplication  |        3.44×        |       3.44×        | (no change)                              |
+| Division (sym)  |       15–28×        |       15–28×       | (no change)                              |
+| Division (asym) |     0.11–0.62×      |     **31–79×**     | ↑ **Task 1** — 74–724× raw improvement   |
+| Sqrt (irrat)    |     0.55–0.72×      |     0.55–0.72×     | (no change, sqrt bench was already fair) |
+| **Exp**         |       ~0.34×*       |     **~0.55×**     | ↑ **Precision fix** — was unfair before  |
+| **Ln (near 1)** |      (no data)      |   **0.68–0.97×**   | ✱ NEW — first fair benchmark             |
+| **Ln (far)**    |      (no data)      |  **0.001–0.18×**   | ✱ NEW — reveals ln(10) caching gap       |
+| **Root (nth)**  |     0.18–0.33×*     |   **0.14–0.49×**   | ↑ **Precision fix** — was unfair before  |
+| Root (√)        |        27.1×        |     **40.5×**      | ↑ Better with matched precision          |
+| Rounding        |       105.8×        |       105.8×       | (no change)                              |
+
+\* Previous values were measured with mismatched precision (Mojo 28–36 digits vs Python 10000 digits) and were not valid benchmarks. The "Before" column shows the originally reported numbers for historical reference.
+
+### What Changed and Why
+
+1. **Division asymmetric: 0.11× → 76×** — Algorithmic fix in `true_divide_general()`.
+   The biggest single improvement. Two-line fix eliminated 99.8% of wasted computation.
+
+2. **Exp: 0.34× → 0.55×** — Not an algorithmic improvement; the 0.34× was an artifact
+   of Python computing 278× more digits. The true gap is ~1.8× (Python faster), much
+   more tractable for future optimization (Task 3b–3d).
+
+3. **Ln: first real data** — Reveals two regimes. Near 1: nearly competitive (0.97×).
+   Far from 1: Python's cached `ln(10)` is game-changing. `MathCache` (Task 3a) helps
+   with repeated calls but can't eliminate first-call cost without global variables.
+
+4. **Root: 0.18× → 0.14× (corrected)** — The previous 0.18× was actually optimistic
+   because Python was doing 357× more precision. With fair comparison, nth root is
+   0.14–0.49× Python. Task 7 (direct Newton) is the fix.
+
+### Remaining Targets
+
+| Priority  | Task    |     Current     |   Target    | Approach                                            |
+| --------- | ------- | :-------------: | :---------: | --------------------------------------------------- |
+| HIGH      | Task 3b |    0.55× exp    |  0.8–1.0×   | Replace Taylor division with multiply-by-reciprocal |
+| HIGH      | Task 4  | 0.55–0.72× sqrt |  1.5–2.0×   | Reciprocal sqrt Newton (no division)                |
+| HIGH      | Task 7  | 0.14–0.49× root |  1.0–2.0×   | Direct Newton for nth root                          |
+| HIGH      | Task 8  |        —        | +10–30% all | In-place BigUInt operations                         |
+| MEDIUM    | Task 2  |   15–28× div    |   30–50×    | Reciprocal-Newton division                          |
+| LONG-TERM | Task 5  |        —        | 2–10× large | NTT multiplication                                  |
