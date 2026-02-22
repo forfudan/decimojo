@@ -8,17 +8,17 @@ Yuhao Zhu
 
 ## Optimization priority and planning
 
-| Task       | Operation(s) Improved     |       Current vs Python        |    Expected After    |  Effort   | Priority     |
-| ---------- | ------------------------- | :----------------------------: | :------------------: | :-------: | ------------ |
-| **Task 1** | Asymmetric division       |          ✓ **31–79×**          |     ✓ COMPLETED      |   Done    | High         |
-| **Task 2** | Division, sqrt, exp, ln   |             varies             |     1.5–2× gain      |   High    | Medium       |
-| **Task 3** | Exp, ln                   |   Exp: 0.60×@p50→1.62×@p2000   |   3a ✓, 3b ✓, 3c ✓   |  Medium   | **Critical** |
-| **Task 4** | Sqrt                      | ✓ **17.9× (was 0.90×@p5000)**  |     ✓ COMPLETED      |   Done    | High         |
-| **Task 5** | ALL large operations      |             varies             |      2–10× gain      | Very High | Low          |
-| **Task 6** | Large multiplication      |              N/A               | ~1.5× over Karatsuba |  Medium   | Medium       |
-| **Task 7** | Nth root                  | ✓ **3.9–25× (was 0.14–0.49×)** |     ✓ COMPLETED      |   Done    | High         |
-| **Task 8** | All (allocation overhead) |      ✓ **+15–27% exp/ln**      |     ✓ COMPLETED      |   Done    | High         |
-| **Task 9** | Schoolbook multiply base  |               —                |        1.5–2×        |    Low    | Medium       |
+| Task       | Operation(s) Improved     |         Current vs Python         |    Expected After    |  Effort   | Priority     |
+| ---------- | ------------------------- | :-------------------------------: | :------------------: | :-------: | ------------ |
+| **Task 1** | Asymmetric division       |           ✓ **31–79×**            |     ✓ COMPLETED      |   Done    | High         |
+| **Task 2** | Division, sqrt, exp, ln   |              varies               |     1.5–2× gain      |   High    | Medium       |
+| **Task 3** | Exp, ln                   |    Exp: 0.60×@p50→1.62×@p2000     |   3a ✓, 3b ✓, 3c ✓   |  Medium   | **Critical** |
+| **Task 4** | Sqrt                      | ✓ **3.53× geo (was 0.66×@p5000)** |     ✓ COMPLETED      |   Done    | High         |
+| **Task 5** | ALL large operations      |              varies               |      2–10× gain      | Very High | Low          |
+| **Task 6** | Large multiplication      |                N/A                | ~1.5× over Karatsuba |  Medium   | Medium       |
+| **Task 7** | Nth root                  |  ✓ **3.9–25× (was 0.14–0.49×)**   |     ✓ COMPLETED      |   Done    | High         |
+| **Task 8** | All (allocation overhead) |       ✓ **+15–27% exp/ln**        |     ✓ COMPLETED      |   Done    | High         |
+| **Task 9** | Schoolbook multiply base  |                 —                 |        1.5–2×        |    Low    | Medium       |
 
 ### Planned Execution Order
 
@@ -28,7 +28,7 @@ Yuhao Zhu
 1. ~~**Task 3c** (cache `ln(10)` in MathCache)~~ ✓ DONE — `get_ln10()` used by `log10()`/`log()` directly; ln() decomposes into ln(2)+ln(1.25) for generality
 1. ~~**Task 7** (direct nth root) — Newton's method replaces exp(ln(x)/n)~~ ✓ DONE — integer roots 1.2–50× Python (was 0.14–0.49×)
 1. ~~**Task 8** (in-place operations) — broad improvement~~ ✓ DONE — exp +15–21%, ln +15–27%, sqrt +9%
-1. ~~**Task 4** (reciprocal sqrt with precision doubling)~~ ✓ DONE — 17.9× Python avg (was 0.90×), **~20× improvement**
+1. ~~**Task 4** (CPython-style exact sqrt + reciprocal sqrt hybrid)~~ ✓ DONE — 3.53× geometric mean (was 0.66×), 0 correctness warnings, bit-perfect Python match
 1. **Task 2** (reciprocal-Newton division) — requires careful implementation
 1. **Task 6** (Toom-3) — medium complexity, medium gain
 1. **Task 3c** (binary splitting for series) — complex but transformative
@@ -57,7 +57,7 @@ entirely determined by BigUInt's performance, because:
 - Addition/subtraction: align scales via `multiply_by_power_of_ten` → add/subtract BigUInt coefficients
 - Multiplication: multiply BigUInt coefficients → add scales
 - Division: scale up dividend's BigUInt → integer divide → adjust scale
-- Sqrt: extend coefficient by $10^{2t-s}$ → `BigUInt.sqrt()` → adjust scale
+- Sqrt: CPython-style exact integer rescaling → `fast_isqrt` (reciprocal sqrt + Newton) → round
 - Exp/ln/trig: iterative algorithms (Taylor series, Newton) composed from the above
 
 **BigUInt internals:** base-$10^9$, each limb is `UInt32 ∈ [0, 999_999_999]`, SIMD-vectorized addition/subtraction (width=4), Karatsuba multiplication (cutoff=64 words), Burnikel-Ziegler division (cutoff=32 words).
@@ -70,19 +70,19 @@ All benchmarks compare **DeciMojo BigDecimal** against **Python `decimal.Decimal
 
 ### Overall Results by Operation
 
-| Operation          | Avg Speedup vs Python | Precision | Key Observation                                                  |
-| ------------------ | :-------------------: | :-------: | ---------------------------------------------------------------- |
-| **Addition**       |       **2.22×**       |    28     | Consistent ~2.4× for ≤28 digits; degrades >1000 digits           |
-| **Subtraction**    |       **9.79×**       |    28     | Consistently ~9× across all small cases                          |
-| **Multiplication** |       **3.44×**       |    28     | 2–7× across all tested sizes                                     |
-| **Division**       |       **6.29×**       |    50     | Up to 28× for large balanced; **31–79× asymmetric** (Task 1 fix) |
-| **Sqrt**           |        0.66×*         |   5000    | Perfect squares ~200×; irrational results **0.55–0.72×**         |
-| **Exp**            |        0.55×†         |    50     | ↑ from 0.34× at p=28; Python still ~2× faster consistently       |
-| **Ln**             |        0.18×†         |    50     | 0.78× near 1; Python has cached ln(10) for power-of-10 args      |
-| **Root (nth)**     |        0.25×†         |    50     | √ fast; general nth root **0.14–0.49×** (exp(ln(x)/n) costly)    |
-| **Rounding**       |      **105.80×**      |    28     | Overwhelmingly faster (simple word truncation)                   |
+| Operation          | Avg Speedup vs Python | Precision | Key Observation                                                    |
+| ------------------ | :-------------------: | :-------: | ------------------------------------------------------------------ |
+| **Addition**       |       **2.22×**       |    28     | Consistent ~2.4× for ≤28 digits; degrades >1000 digits             |
+| **Subtraction**    |       **9.79×**       |    28     | Consistently ~9× across all small cases                            |
+| **Multiplication** |       **3.44×**       |    28     | 2–7× across all tested sizes                                       |
+| **Division**       |       **6.29×**       |    50     | Up to 28× for large balanced; **31–79× asymmetric** (Task 1 fix)   |
+| **Sqrt**           |       **3.53×**       |   5000    | 1.6–75× all cases; **0 correctness warnings** (exact Python match) |
+| **Exp**            |        0.55×†         |    50     | ↑ from 0.34× at p=28; Python still ~2× faster consistently         |
+| **Ln**             |        0.18×†         |    50     | 0.78× near 1; Python has cached ln(10) for power-of-10 args        |
+| **Root (nth)**     |        0.25×†         |    50     | √ fast; general nth root **0.14–0.49×** (exp(ln(x)/n) costly)      |
+| **Rounding**       |      **105.80×**      |    28     | Overwhelmingly faster (simple word truncation)                     |
 
-\* Averages heavily skewed by fast-path cases (perfect squares, identity roots).  
+\* Geometric mean across all 70 cases; trivial cases (√1, √0.01, etc.) are 73–75×.  
 † New results with precision = 50 (Mojo and Python at same precision). Previous results at mismatched precision (Mojo default 28–36 vs Python 10000) were not comparable.
 
 ---
@@ -190,32 +190,59 @@ All benchmarks compare **DeciMojo BigDecimal** against **Python `decimal.Decimal
 
 ### Square Root (70 cases, precision=5000)
 
+> **Update (2026-02-23):** sqrt completely rewritten with CPython's exact integer
+> algorithm (`sqrt_exact`) for bit-perfect correctness, plus a hybrid `fast_isqrt`
+> accelerator (reciprocal sqrt approximation + exact integer Newton refinement).
+> `to_string()` boundary condition also fixed (`<= -6` → `< -6`). All 70 benchmark
+> cases now produce **identical** output to Python's `Decimal.sqrt()` with 0 warnings.
+
+#### BEFORE Task 4 (BigUInt.sqrt Newton only, v0.5.0)
+
 | Input type               |           Mojo (ns) |         Python (ns) |    Speedup     |
 | ------------------------ | ------------------: | ------------------: | :------------: |
 | Perfect squares (√4, √9) |       25,000–28,000 | 5,135,000–5,520,000 |  **185–215×**  |
 | Trivial scale (√0.0001)  |               6,550 |           5,478,790 |    **836×**    |
 | Irrational (√2, √3, √5)  | 7,550,000–7,670,000 | 4,500,000–5,500,000 | **0.55–0.72×** |
-| 100-word coefficient     |           7,668,330 |           5,478,220 |   **0.71×**    |
-| 1000-word coefficient    |           7,600,870 |           5,161,650 |   **0.68×**    |
-| 5000-word coefficient    |           7,712,970 |           5,088,320 |   **0.66×**    |
+| Large coefficients       | 7,600,000–7,710,000 | 5,088,000–5,478,000 | **0.66–0.71×** |
 
-**Critical observation:** Mojo sqrt time is **nearly constant** (~7.6ms) regardless
-of input coefficient size (100 to 5000 words). This is because the precision is fixed
-at 5000, and the algorithm extends the coefficient to 5000-digit precision before
-calling `BigUInt.sqrt()`. The BigUInt.sqrt() cost is dominated by the Newton iterations
-at this fixed precision.
+Geometric mean: ~0.66× (heavily skewed by perfect square fast-paths).
+**50 of 54 irrational cases had correctness warnings** (last digits mismatch).
 
-**Python's advantage:** Python `decimal` at precision=5000 takes 4.5–5.5ms. It uses
-`libmpdec`'s optimized sqrt which employs:
+#### AFTER Task 4 (CPython exact algorithm + fast_isqrt hybrid, 2026-02-23)
 
-- Assembly-optimized Number Theoretic Transform (NTT) for multiplication
-- Reciprocal sqrt via Newton's method (avoids division entirely)
-- Precise initial guess from hardware sqrt
+| Input type                   |           Mojo (ns) |         Python (ns) |   Speedup    |
+| ---------------------------- | ------------------: | ------------------: | :----------: |
+| Perfect squares (√4, √9)     |     584,000–634,000 | 5,170,000–5,496,000 | **8.2–8.9×** |
+| Trivial (√0.0001, √1, √0.01) |       72,000–75,000 | 5,482,000–5,514,000 |  **73–75×**  |
+| Small irrational (√2, √PI)   | 1,560,000–1,600,000 | 5,196,000–5,546,000 | **3.2–3.5×** |
+| General irrational (primes)  | 1,560,000–2,100,000 | 4,232,000–5,520,000 | **2.0–3.5×** |
+| Large coefficients (≥2500w)  | 2,726,000–3,271,000 | 5,088,000–5,486,000 | **1.6–2.0×** |
 
-**Mojo's bottleneck:** BigUInt Newton's method uses schoolbook/Karatsuba multiplication
-and Burnikel-Ziegler division. At 5000-digit precision, each Newton iteration requires
-one division (the bottleneck). The ~7.6ms constant time suggests ~15–20 Newton
-iterations, each costing ~400µs (dominated by one ~556-word division).
+**Summary statistics (70 cases):**
+
+| Metric          |  Speedup  |
+| --------------- | :-------: |
+| Min             |   1.58×   |
+| Median          |   2.86×   |
+| Geometric mean  | **3.53×** |
+| Arithmetic mean |   8.14×   |
+| Max             |   75.4×   |
+| Warnings        |   **0**   |
+
+**Key improvements:**
+
+1. **100% correctness.** All 70 results match Python's `Decimal.sqrt()` string output
+   exactly. Zero warnings (was 50+ warnings before). Perfect squares produce exact
+   results (e.g., `sqrt(9) = "3"`, not `"2.999..."`) at all precisions including p=5000.
+2. **Consistently faster than Python.** Every case is ≥1.58× Python speed. No cases
+   slower than Python (was 0.55–0.72× for all irrationals before).
+3. **Algorithm:** CPython-style exact integer rescaling + `isqrt(c)` + `n*n==c` check. For large inputs (>20 BigUInt words), `fast_isqrt` provides a fast initial approximation via reciprocal sqrt with precision doubling, then refines with exact integer Newton iterations to converge to the true `isqrt(c)`.
+4. **Function hierarchy:** `sqrt()` (public API) → `sqrt_exact()` (CPython-style, for user-facing results) and `sqrt_reciprocal()` (fast, for internal use by `arctan`, `ln`, `pi`, etc. where exact perfect-square detection is unnecessary).
+
+**Why perfect squares are slower than before (8× vs 185×):** The old algorithm
+fast-pathed perfect squares with a trivial check before any Newton work. The CPython algorithm always rescales `c` and computes `isqrt(c)` before checking exactness. The ~630µs cost is the rescaling + isqrt of an ~5000-digit number. This trade-off is worth it: 8× Python is still fast, and correctness is guaranteed.
+
+**Why irrationals are much faster (1.6–3.5× vs 0.55–0.72×):** The old algorithm used pure `BigUInt.sqrt()` Newton (with division in every iteration). The new `fast_isqrt` uses reciprocal sqrt with precision doubling (division-free, O(M(n) log n)) to get a close approximation, then only 1–3 cheap integer Newton steps to converge exactly. This avoids the expensive ~15–20 Newton divisions of the old approach.
 
 ---
 
@@ -697,37 +724,26 @@ The **specification** that Python `decimal` implements. Not a library per se, bu
 - ✓ **Simpler carry:** Single-bit carry propagation, pipeline-friendly.
 - ✓ **Standard algorithms apply directly:** Karatsuba, Toom, NTT all work naturally.
 - ✓ **Hardware-aligned:** SIMD, popcount, clz all work directly on limbs.
-- ✓ **Better benchmark performance:** BigInt2 is 4.3× Python for addition vs
-  BigUInt's 2.4×; 4× for multiplication vs 1.9×.
+- ✓ **Better benchmark performance:** BigInt2 is 4.3× Python for addition vs BigUInt's 2.4×; 4× for multiplication vs 1.9×.
 
 **Disadvantages:**
 
-- ✗ **Expensive base conversion:** `to_string()` is $O(n^2)$ naïvely,
-  $O(M(n) \log n)$ with D&C. The BigInt2 analysis shows to_string is only 1.17× Python
-  at 10000 digits vs BigUInt's 34.5×.
-- ✗ **Scale arithmetic is expensive:** Multiplying/dividing by $10^k$ requires actual
-  multiplication, not word insertion.
-- ✗ **Precision control is hard:** Truncating to $p$ decimal digits requires computing
-  how many binary words correspond to $p$ digits, then base-converting.
+- ✗ **Expensive base conversion:** `to_string()` is $O(n^2)$ naïvely, $O(M(n) \log n)$ with D&C. The BigInt2 analysis shows to_string is only 1.17× Python at 10000 digits vs BigUInt's 34.5×.
+- ✗ **Scale arithmetic is expensive:** Multiplying/dividing by $10^k$ requires actual multiplication, not word insertion.
+- ✗ **Precision control is hard:** Truncating to $p$ decimal digits requires computing how many binary words correspond to $p$ digits, then base-converting.
 
 ### What libmpdec Does (and Why)
 
-**`libmpdec` uses base-$10^9$ on 32-bit platforms and base-$10^{19}$ on 64-bit
-platforms.** It implements NTT directly on the decimal limbs. The NTT primes are
-specifically chosen so that the transform operates on numbers in $[0, 10^9)$ or
-$[0, 10^{19})$.
+**`libmpdec` uses base-$10^9$ on 32-bit platforms and base-$10^{19}$ on 64-bit platforms.** It implements NTT directly on the decimal limbs. The NTT primes are specifically chosen so that the transform operates on numbers in $[0, 10^9)$ or $[0, 10^{19})$.
 
-This is the strongest evidence that **staying with base-$10^9$ is correct** for a
-decimal library. The key insight is:
+This is the strongest evidence that **staying with base-$10^9$ is correct** for a decimal library. The key insight is:
 
 > The O(n log n) multiplication advantage of NTT/FFT can be obtained in ANY base.
 > But the O(1) I/O advantage of decimal base is unique to decimal.
 
 ### What Java BigDecimal Does (and Why)
 
-Java stores the coefficient as a **binary** `BigInteger` internally, paying the
-conversion cost at construction and `toString()`. This gives fast arithmetic but slow
-I/O. For computation-heavy uses (scientific computing), this is a good tradeoff.
+Java stores the coefficient as a **binary** `BigInteger` internally, paying the conversion cost at construction and `toString()`. This gives fast arithmetic but slow I/O. For computation-heavy uses (scientific computing), this is a good tradeoff.
 
 ### Recommendation
 
@@ -735,22 +751,10 @@ I/O. For computation-heavy uses (scientific computing), this is a good tradeoff.
 
 The reasoning:
 
-1. **For a decimal library**, I/O speed matters. Financial and engineering users
-   frequently create decimals from strings and print them. A 34× advantage on
-   `to_string()` at 10000 digits is significant.
-
-2. The current performance gap vs Python is **not because of the base**. It's because
-   `libmpdec` has NTT and DeciMojo doesn't. Once NTT is implemented (Task 5), the
-   multiplication gap closes.
-
-3. Division and sqrt performance will improve dramatically once they're reformulated
-   to use reciprocal-Newton methods (avoiding explicit division), which requires fast
-   multiplication (NTT) to be worthwhile.
-
-4. For specific operations where binary arithmetic is vastly superior (e.g., integer
-   sqrt at intermediate precision), it's possible to **use BigInt2 as a transit format**:
-   convert to BigInt2, compute, convert back. But this should be the exception, not
-   the default.
+1. **For a decimal library**, I/O speed matters. Financial and engineering users frequently create decimals from strings and print them. A 34× advantage on `to_string()` at 10000 digits is significant.
+2. The current performance gap vs Python is **not because of the base**. It's because `libmpdec` has NTT and DeciMojo doesn't. Once NTT is implemented (Task 5), the multiplication gap closes.
+3. Division and sqrt performance will improve dramatically once they're reformulated to use reciprocal-Newton methods (avoiding explicit division), which requires fast multiplication (NTT) to be worthwhile.
+4. For specific operations where binary arithmetic is vastly superior (e.g., integer sqrt at intermediate precision), it's possible to **use BigInt2 as a transit format**: convert to BigInt2, compute, convert back. But this should be the exception, not the default.
 
 ### Hybrid Strategy (Selective BigInt2 Transit)
 
@@ -765,8 +769,7 @@ For operations where BigInt2 is clearly faster and the conversion overhead is am
 | Power                  |      **Maybe**       | Binary exponentiation benefits from BigInt2's shift fast path |
 | Exp / Ln / Trig        |          No          | These compose from multiply/divide, which BigUInt handles     |
 
-The transit overhead is roughly `O(n)` for conversion each way, so it's only worth it
-if the operation itself saves more than `O(n)` in total.
+The transit overhead is roughly `O(n)` for conversion each way, so it's only worth it if the operation itself saves more than `O(n)` in total.
 
 ---
 
@@ -776,14 +779,8 @@ if the operation itself saves more than `O(n)` in total.
 
 **Priority: CRITICAL** — Was 0.11× Python, now **31–79× Python**
 
-**Root cause:** The real bottleneck was NOT in B-Z itself, but in
-`BigDecimal.true_divide_general()`. When dividend has $d$ more coefficient words
-than divisor, the function always padded by `ceil(P/9) + 2` extra words WITHOUT
-subtracting the existing surplus $d$. For 65536w/32768w at precision=4096:
-the integer division was **65994w / 32768w → ~33226-word quotient**, but only
-**~458 words** were needed. The **32768 excess quotient words** were computed
-and immediately discarded by rounding. The exact-check multiplication
-(`q × b == a_scaled`) on these oversized operands compounded the waste.
+**Root cause:** The real bottleneck was NOT in B-Z itself, but in `BigDecimal.true_divide_general()`. When dividend has $d$ more coefficient words than divisor, the function always padded by `ceil(P/9) + 2` extra words WITHOUT subtracting the existing surplus $d$. For 65536w/32768w at precision=4096: the integer division was **65994w / 32768w → ~33226-word quotient**, but only
+**~458 words** were needed. The **32768 excess quotient words** were computed and immediately discarded by rounding. The exact-check multiplication (`q × b == a_scaled`) on these oversized operands compounded the waste.
 
 **Fix (2 lines changed in `arithmetics.mojo`):**
 
@@ -919,8 +916,7 @@ Exp improved 5–25% at p≤200 (e.g., exp(1): 0.48→0.60× at p=50).
 
 **Implementation (2026-02-22):**
 
-Replaced the old BigUInt.sqrt()-based approach (Newton with division, no precision
-doubling) with a reciprocal square root Newton iteration at the BigDecimal level:
+Replaced the old BigUInt.sqrt()-based approach (Newton with division, no precision doubling) with a reciprocal square root Newton iteration at the BigDecimal level:
 
 1. Normalize $x$ to $[0.1, 100)$ by shifting scale by even power of 10
 2. Float64 initial guess: $r_0 \approx x^{-0.5}$ (~15 digits accuracy)
@@ -931,20 +927,20 @@ doubling) with a reciprocal square root Newton iteration at the BigDecimal level
 6. Perfect square detection: strip trailing zeros, verify $\text{candidate}^2 = x$
 
 **Key optimizations:**
+
 - **No division** — each Newton step uses 2 multiplications instead of 1 division
 - **Precision doubling** — total work ≈ 2× cost of final iteration (vs k× full cost)
 - **BigDecimal-level** — natural precision control, no need to extend coefficient to 2× size
 - **BUFFER_DIGITS = 25** — sufficient guard digits for downstream consumers (e.g., arctan)
 
 **Benchmark results (precision=5000, 54 cases, 100 iterations each):**
+
 - Before: avg 0.90× Python (Mojo 10% slower) — old BigUInt.sqrt() with division
 - After:  avg **17.9× Python** — reciprocal sqrt with precision doubling
 - Range: 5.7–22× for non-trivial cases (49 of 54), extreme outliers up to 68,000×
 - **~20× improvement** over baseline, far exceeding the predicted 1.5–3×
 
-The massive gain comes primarily from precision doubling: the old approach ran every
-Newton iteration at full 5000-digit precision, while the new approach starts at ~20
-digits and doubles each step, making total work ≈ 3× the final iteration cost.
+The massive gain comes primarily from precision doubling: the old approach ran every Newton iteration at full 5000-digit precision, while the new approach starts at ~20 digits and doubles each step, making total work ≈ 3× the final iteration cost.
 
 **Algorithm (libmpdec-style):**
 
@@ -953,26 +949,22 @@ digits and doubles each step, making total work ≈ 3× the final iteration cost
 2. Then $\sqrt{x} = x \times r$
 3. Correct by at most ±1 ulp
 
-**Each Newton iteration cost:** 2 multiplications + 1 subtraction + 1 right-shift
-(vs current: 1 division + 1 addition + 1 right-shift)
+**Each Newton iteration cost:** 2 multiplications + 1 subtraction + 1 right-shift (vs current: 1 division + 1 addition + 1 right-shift)
 
 **With Karatsuba (current):**
 
 - Division: $O(n^{1.585})$ via B-Z + Karatsuba
-- 2 multiplications: $2 \times O(n^{1.585})$ ← same asymptotic, but ~2× constant
-  factor better because no B-Z recursion overhead
+- 2 multiplications: $2 \times O(n^{1.585})$ ← same asymptotic, but ~2× constant factor better because no B-Z recursion overhead
 
 **With NTT (Task 5):**
 
 - Current (with div): $O(n \log n)$ per iteration via NTT division
 - Reciprocal sqrt: $2 \times O(n \log n)$ per iteration, no division at all
 
-**Expected gain:** ~1.5× improvement immediately (Karatsuba-based), ~3× with NTT.
-At precision=5000, this means sqrt goes from 7.6ms to ~2.5ms, beating Python's ~5ms.
+**Expected gain:** ~1.5× improvement immediately (Karatsuba-based), ~3× with NTT. At precision=5000, this means sqrt goes from 7.6ms to ~2.5ms, beating Python's ~5ms.
 
 **Additional optimization — Precision doubling:**
-Newton's method has quadratic convergence. Start with low precision and double each
-iteration:
+Newton's method has quadratic convergence. Start with low precision and double each iteration:
 
 - Iteration 1: 8 digits precision (hardware arithmetic)
 - Iteration 2: 16 digits
@@ -980,8 +972,7 @@ iteration:
 - ...
 - Iteration k: 5000 digits
 
-Total work ≈ $2 \times$ cost of the final iteration, instead of $k \times$ full cost.
-This optimization is already used in BigInt2's sqrt — adapt it for BigUInt.
+Total work ≈ $2 \times$ cost of the final iteration, instead of $k \times$ full cost. This optimization is already used in BigInt2's sqrt — adapt it for BigUInt.
 
 ---
 
@@ -989,8 +980,7 @@ This optimization is already used in BigInt2's sqrt — adapt it for BigUInt.
 
 **Priority: HIGHEST LONG-TERM** — The single most impactful optimization
 
-**What it is:** NTT is the integer analogue of FFT. It computes multiplication in
-$O(n \log n)$ by:
+**What it is:** NTT is the integer analogue of FFT. It computes multiplication in $O(n \log n)$ by:
 
 1. Transform both operands into NTT domain (modular evaluation at roots of unity)
 2. Pointwise multiply in NTT domain
@@ -1028,9 +1018,7 @@ $O(n \log n)$ by:
 
 **Priority: MEDIUM** — Useful if NTT implementation is delayed
 
-**Algorithm:** Toom-3 splits each operand into 3 parts instead of Karatsuba's 2.
-Requires 5 recursive multiplications instead of Karatsuba's 3, but reduces the
-sub-problem size to $n/3$ instead of $n/2$.
+**Algorithm:** Toom-3 splits each operand into 3 parts instead of Karatsuba's 2. Requires 5 recursive multiplications instead of Karatsuba's 3, but reduces the sub-problem size to $n/3$ instead of $n/2$.
 
 **Complexity:** $O(n^{\log_3 5}) = O(n^{1.465})$, better than Karatsuba's $O(n^{1.585})$.
 
@@ -1047,10 +1035,10 @@ sub-problem size to $n/3$ instead of $n/2$.
 
 **Status: COMPLETED** — Integer roots improved from 0.14–0.49× to **1.2–50× Python**
 
-**Implementation:** Direct Newton's method for `integer_root()` in `exponential.mojo`:
-$$r_{k+1} = \frac{1}{n}\left((n-1)r_k + \frac{x}{r_k^{n-1}}\right)$$
+**Implementation:** Direct Newton's method for `integer_root()` in `exponential.mojo`: $$r_{k+1} = \frac{1}{n}\left((n-1)r_k + \frac{x}{r_k^{n-1}}\right)$$
 
 **Key design decisions:**
+
 - Float64 initial guess via `exponent()` + mantissa normalization
 - Precision doubling for quadratic convergence (start at 18 digits)
 - Uses `integer_power(r, n-1)` (binary exponentiation) per iteration
@@ -1071,12 +1059,9 @@ $$r_{k+1} = \frac{1}{n}\left((n-1)r_k + \frac{x}{r_k^{n-1}}\right)$$
 
 **Peak speedups at p=1000:** cbrt(2) = 43.8×, 5th_root(2) = 40.4×, cbrt(PI) = 30.2×
 
-**Remaining:** Fractional roots (0.5th, 0.25th, 0.333rd) still use `exp(ln(x)/n)` (~0.2–0.4×).
-Could be improved by converting to integer root + integer power combination.
+**Remaining:** Fractional roots (0.5th, 0.25th, 0.333rd) still use `exp(ln(x)/n)` (~0.2–0.4×). Could be improved by converting to integer root + integer power combination.
 
-**Future:** Reciprocal-Newton for $r = x^{-1/n}$ (after Task 2):
-$$r_{k+1} = r_k \cdot \frac{n+1 - x \cdot r_k^n}{n}$$
-Then $x^{1/n} = x \cdot r$. Uses only multiplications (no division).
+**Future:** Reciprocal-Newton for $r = x^{-1/n}$ (after Task 2): $$r_{k+1} = r_k \cdot \frac{n+1 - x \cdot r_k^n}{n}$$ Then $x^{1/n} = x \cdot r$. Uses only multiplications (no division).
 
 ---
 
@@ -1084,9 +1069,7 @@ Then $x^{1/n} = x \cdot r$. Uses only multiplications (no division).
 
 **Status: COMPLETED** (2026-02-23)
 
-BigUInt already had 13 inplace functions (add_inplace, subtract_inplace,
-multiply_inplace_by_uint32, etc.). The gap was at the BigDecimal level:
-`__iadd__`, `__isub__`, `__imul__` all used `self = allocating_fn(self, other)`.
+BigUInt already had 13 inplace functions (add_inplace, subtract_inplace, multiply_inplace_by_uint32, etc.). The gap was at the BigDecimal level: `__iadd__`, `__isub__`, `__imul__` all used `self = allocating_fn(self, other)`.
 
 **Changes made:**
 
@@ -1101,7 +1084,7 @@ multiply_inplace_by_uint32, etc.). The gap was at the BigDecimal level:
    - `exp_taylor_series`: `term = term * add_on` → `multiply_inplace(term, add_on)`
    - `ln_series_expansion`: `term = term * z` → `multiply_inplace(term, z)`
    - `compute_ln2`: `term * x_squared` → `multiply_inplace(term, x_squared)` + cached x²
-   - sin/cos/arctan: `term = term * x_squared` → `term *= x_squared` (uses new __imul__)
+   - sin/cos/arctan: `term = term * x_squared` → `term *= x_squared` (uses new **imul**)
 
 4. **Quick wins (no new functions needed):**
    - sin/cos: `BigDecimal(n) * BigDecimal(n-1)` → `true_divide_inexact_by_uint32(UInt32(n*(n-1)))`
@@ -1110,8 +1093,7 @@ multiply_inplace_by_uint32, etc.). The gap was at the BigDecimal level:
    - exp threshold doubling: `coefficient + coefficient` → `multiply_inplace_by_uint32_le_4(coefficient, 2)`
    - sqrt Newton: `divide(x, BigDecimal(2))` → `true_divide_inexact_by_uint32(2, ...)`
 
-**Note:** Self-squaring (`x = x * x`) cannot benefit from inplace because `multiply_inplace`
-would need a copy of the operand first, negating the allocation savings.
+**Note:** Self-squaring (`x = x * x`) cannot benefit from inplace because `multiply_inplace` would need a copy of the operand first, negating the allocation savings.
 
 **Benchmark results (macOS arm64 Apple Silicon):**
 
@@ -1131,8 +1113,7 @@ would need a copy of the operand first, negating the allocation savings.
 | root      |      1000 | 28.49× | 28.49× |       ~same |
 | sqrt      |      5000 |   398× |   432× |     **+9%** |
 
-Biggest wins: exp/ln Taylor series loops (many iterations, each saving 1–2 allocations).
-Root/sqrt show modest gains since Newton iteration has fewer multiplies per step.
+Biggest wins: exp/ln Taylor series loops (many iterations, each saving 1–2 allocations). Root/sqrt show modest gains since Newton iteration has fewer multiplies per step.
 
 ---
 
@@ -1142,15 +1123,13 @@ Root/sqrt show modest gains since Newton iteration has fewer multiplies per step
 
 **Current:** Schoolbook multiplication uses UInt64 products with sequential carry.
 
-**Optimization:** Use SIMD to process 4 limb products in parallel, accumulate in
-UInt64 SIMD vectors, then normalize carries. On Apple Silicon M-series:
+**Optimization:** Use SIMD to process 4 limb products in parallel, accumulate in UInt64 SIMD vectors, then normalize carries. On Apple Silicon M-series:
 
 - `SIMD[DType.uint32, 4]` for load/store
 - `SIMD[DType.uint64, 4]` for products
 - Horizontal add + carry propagation
 
-**Expected gain:** 1.5–2× for schoolbook kernel, which is the base case for both
-Karatsuba and Toom-3.
+**Expected gain:** 1.5–2× for schoolbook kernel, which is the base case for both Karatsuba and Toom-3.
 
 ---
 
@@ -1171,10 +1150,7 @@ Karatsuba and Toom-3.
 | I/O (to/from string) |        $O(n)$ trivial        |              $O(n)$ trivial              |                Parity                |
 | Rounding             |    Word-level truncation     |                 Similar                  |           Mojo 100× faster           |
 
-**Bottom line:** The performance gap is not about the base representation. It's about
-the algorithm tier for large numbers: NTT multiplication, reciprocal-based division
-and sqrt, and binary splitting for series evaluation. These are all implementable in
-base-$10^9$.
+**Bottom line:** The performance gap is not about the base representation. It's about the algorithm tier for large numbers: NTT multiplication, reciprocal-based division and sqrt, and binary splitting for series evaluation. These are all implementable in base-$10^9$.
 
 ---
 
@@ -1246,33 +1222,17 @@ All bench files now:
 
 ### What Changed and Why
 
-1. **Division asymmetric: 0.11× → 76×** — Algorithmic fix in `true_divide_general()`.
-   The biggest single improvement. Two-line fix eliminated 99.8% of wasted computation.
+1. **Division asymmetric: 0.11× → 76×** — Algorithmic fix in `true_divide_general()`. The biggest single improvement. Two-line fix eliminated 99.8% of wasted computation.
 
-2. **Exp: 0.34× → 0.55×** — Not an algorithmic improvement; the 0.34× was an artifact
-   of Python computing 278× more digits. The true gap is ~1.8× (Python faster), much
-   more tractable for future optimization (Task 3b–3d).
+2. **Exp: 0.34× → 0.55×** — Not an algorithmic improvement; the 0.34× was an artifact of Python computing 278× more digits. The true gap is ~1.8× (Python faster), much more tractable for future optimization (Task 3b–3d).
 
-3. **Ln: first real data** — Reveals two regimes. Near 1: nearly competitive (0.97×).
-   Far from 1: Python's cached `ln(10)` is game-changing. `MathCache` (Task 3a) helps
-   with repeated calls but can't eliminate first-call cost without global variables.
+3. **Ln: first real data** — Reveals two regimes. Near 1: nearly competitive (0.97×). Far from 1: Python's cached `ln(10)` is game-changing. `MathCache` (Task 3a) helps with repeated calls but can't eliminate first-call cost without global variables.
 
-4. **Root: 0.18× → 0.14× (corrected)** — The previous 0.18× was actually optimistic
-   because Python was doing 357× more precision. With fair comparison, nth root is
-   0.14–0.49× Python. ~~Task 7 (direct Newton) is the fix.~~ ✓ FIXED: now 1.2–50× Python.
+4. **Root: 0.18× → 0.14× (corrected)** — The previous 0.18× was actually optimistic because Python was doing 357× more precision. With fair comparison, nth root is 0.14–0.49× Python. ~~Task 7 (direct Newton) is the fix.~~ ✓ FIXED: now 1.2–50× Python.
 
-5. **Task 8 (in-place operations): +15–27% exp/ln, +9% sqrt** — Added BigDecimal-level
-   `multiply_inplace`, `add_inplace`, `subtract_inplace`; applied in all Taylor series
-   loops. Also replaced full BigDecimal divisions with `true_divide_inexact_by_uint32`
-   in sin/cos/arctan/sqrt/compute_ln2. Biggest wins at low-to-medium precision where
-   allocation overhead is a larger fraction of total cost.
+5. **Task 8 (in-place operations): +15–27% exp/ln, +9% sqrt** — Added BigDecimal-level `multiply_inplace`, `add_inplace`, `subtract_inplace`; applied in all Taylor series loops. Also replaced full BigDecimal divisions with `true_divide_inexact_by_uint32` in sin/cos/arctan/sqrt/compute_ln2. Biggest wins at low-to-medium precision where allocation overhead is a larger fraction of total cost.
 
-6. **Task 4 (reciprocal sqrt + precision doubling): 0.90× → 17.9× (~20× improvement)** —
-   Replaced BigUInt.sqrt()-based Newton (with division, no precision doubling) with
-   reciprocal sqrt Newton at BigDecimal level. Two key wins: (a) no division (2 muls vs
-   1 div per iteration), (b) precision doubling (total work ≈ 3× final iteration cost
-   vs k× full cost). The improvement far exceeded the predicted 1.5–3× because the old
-   approach lacked precision doubling entirely.
+6. **Task 4 (reciprocal sqrt + precision doubling): 0.90× → 17.9× (~20× improvement)** — Replaced BigUInt.sqrt()-based Newton (with division, no precision doubling) with reciprocal sqrt Newton at BigDecimal level. Two key wins: (a) no division (2 muls vs 1 div per iteration), (b) precision doubling (total work ≈ 3× final iteration cost vs k× full cost). The improvement far exceeded the predicted 1.5–3× because the old approach lacked precision doubling entirely.
 
 ### Remaining Targets
 
