@@ -101,6 +101,12 @@ struct BigDecimal(
     # Constructors and life time dunder methods
     # ===------------------------------------------------------------------=== #
 
+    fn __init__(out self):
+        """Initializes to zero by default."""
+        self.coefficient = BigUInt()
+        self.scale = 0
+        self.sign = False
+
     @implicit
     fn __init__(out self, coefficient: BigUInt):
         """Constructs a BigDecimal from a BigUInt object."""
@@ -988,6 +994,17 @@ struct BigDecimal(
         """
         return decimojo.bigdecimal.arithmetics.true_divide_inexact(
             self, other, number_of_significant_digits
+        )
+
+    @always_inline
+    fn true_divide_inexact_by_uint32(
+        self, y: UInt32, number_of_significant_digits: Int
+    ) raises -> Self:
+        """Returns the result of division by a small UInt32 integer.
+        See `arithmetics.true_divide_inexact_by_uint32()` for more information.
+        """
+        return decimojo.bigdecimal.arithmetics.true_divide_inexact_by_uint32(
+            self, y, number_of_significant_digits
         )
 
     @always_inline

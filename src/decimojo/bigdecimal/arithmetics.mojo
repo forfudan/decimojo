@@ -449,6 +449,81 @@ fn true_divide_inexact(
     )
 
 
+fn true_divide_inexact_by_uint32(
+    x1: BigDecimal, y: UInt32, number_of_significant_digits: Int
+) raises -> BigDecimal:
+    """Returns the quotient of a BigDecimal divided by a small UInt32 integer.
+
+    This is much faster than full BigDecimal division for small divisors,
+    using O(n) single-word division instead of O(n²) schoolbook division.
+
+    The divisor y is treated as a positive integer with scale=0. The result
+    preserves the sign of x1.
+
+    Args:
+        x1: The dividend.
+        y: The divisor (must be non-zero).
+        number_of_significant_digits: The desired precision.
+
+    Returns:
+        The quotient x1 / y with the specified precision.
+    """
+    debug_assert[assert_mode="none"](
+        y != 0,
+        (
+            "bigdecimal.arithmetics.true_divide_inexact_by_uint32(): Division"
+            " by zero"
+        ),
+    )
+
+    if x1.coefficient.is_zero():
+        return BigDecimal(
+            coefficient=BigUInt.zero(),
+            scale=number_of_significant_digits,
+            sign=x1.sign,
+        )
+
+    var x1_digits = x1.coefficient.number_of_digits()
+
+    # Calculate number of digits in y
+    var y_digits = 1
+    var temp = y
+    while temp >= 10:
+        temp //= 10
+        y_digits += 1
+
+    # Calculate how many digits we need in the dividend
+    var buffer_digits = number_of_significant_digits - (x1_digits - y_digits)
+    buffer_digits = max(0, buffer_digits)
+
+    # Scale up the dividend to ensure sufficient precision
+    var scaled_x1 = x1.coefficient.copy()
+    if buffer_digits > 0:
+        scaled_x1.multiply_inplace_by_power_of_ten(buffer_digits)
+
+    # O(n) division by single word — the key speedup
+    var quotient = decimojo.biguint.arithmetics.floor_divide_by_uint32(
+        scaled_x1, y
+    )
+    var result_scale = buffer_digits + x1.scale
+
+    var result_digits = quotient.number_of_digits()
+    if result_digits > number_of_significant_digits:
+        var digits_to_remove = result_digits - number_of_significant_digits
+        quotient = quotient.remove_trailing_digits_with_rounding(
+            digits_to_remove,
+            RoundingMode.down(),
+            remove_extra_digit_due_to_rounding=False,
+        )
+        result_scale -= digits_to_remove
+
+    return BigDecimal(
+        coefficient=quotient^,
+        scale=result_scale,
+        sign=x1.sign,
+    )
+
+
 fn truncate_divide(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
     """Returns the quotient of two numbers truncated to zeros.
 

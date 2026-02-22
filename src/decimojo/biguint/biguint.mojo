@@ -122,7 +122,7 @@ struct BigUInt(
     # ===------------------------------------------------------------------=== #
 
     fn __init__(out self):
-        """Initializes a BigUInt with value 0."""
+        """Initializes to zero by default."""
         self.words = [UInt32(0)]
 
     fn __init__(out self, *, uninitialized_capacity: Int):
