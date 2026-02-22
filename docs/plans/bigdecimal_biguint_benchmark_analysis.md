@@ -4,7 +4,7 @@ First version: 2026-02-21
 Yuhao Zhu
 
 > [!IMPORTANT]
-> For v0.8.0, Tasks [1✓, 3a✓, 3b✓, 3c✓, 7✓, 8] are the priority to be competitive at all sizes.
+> For v0.8.0, Tasks 1✓, 3a✓, 3b✓, 3c✓, 7✓, 8 are the priority to be competitive at all sizes.
 
 ## Optimization priority and planning
 
