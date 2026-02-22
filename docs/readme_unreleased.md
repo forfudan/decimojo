@@ -1,6 +1,6 @@
 # DeciMojo <!-- omit in toc -->
 
-An arbitrary-precision integer and decimal mathematics library for [Mojo](https://www.modular.com/mojo), a drop-in replacement for Python's `int` and `Decimal` types.
+An arbitrary-precision integer and decimal library for [Mojo](https://www.modular.com/mojo), inspired by Python's `int` and `Decimal`.
 
 **[中文·漢字](https://github.com/forfudan/decimojo/blob/main/docs/readme_zht.md)**　|　**[Changelog](https://github.com/forfudan/decimojo/blob/main/docs/changelog.md)**　|　**[Repository on GitHub»](https://github.com/forfudan/decimojo)**　|　**[Discord channel»](https://discord.gg/3rGH87uZTk)**
 
@@ -16,14 +16,14 @@ An arbitrary-precision integer and decimal mathematics library for [Mojo](https:
 
 ## Overview
 
-DeciMojo provides an arbitrary-precision integer and decimal mathematics library for Mojo. It delivers exact calculations for financial modeling, scientific computing, and applications where floating-point approximation errors are unacceptable. Beyond basic arithmetic, the library includes advanced mathematical functions with guaranteed precision.
+DeciMojo provides an arbitrary-precision integer and decimal library for Mojo. It delivers exact calculations for financial modeling, scientific computing, and applications where floating-point approximation errors are unacceptable. Beyond basic arithmetic, the library includes advanced mathematical functions with guaranteed precision.
 
-For Pythonistas, you can think of DeciMojo as a Mojo-native implementation of Python's `int` and `decimal.Decimal` types, designed to be a drop-in replacement for these types in Mojo. It offers similar semantics and precision guarantees as Python's built-in types, while being optimized for performance in the Mojo ecosystem. The library depends only on Mojo's standard library, and no external dependencies are required.
+For Pythonistas, DeciMojo is a Mojo-native replacement for Python's `int` and `decimal.Decimal`. It offers similar semantics and precision, runs purely on Mojo's standard library, and requires no Python interpreter.
 
 The core types are:
 
-- An arbitrary-precision signed integer type `BInt`[^bigint], which is a drop-in replacement for Python's `int` in Mojo.
-- An arbitrary-precision decimal implementation (`Decimal`) allowing for calculations with unlimited digits and decimal places[^arbitrary], which is a drop-in replacement for Python's `decimal.Decimal` in Mojo.
+- An arbitrary-precision signed integer type `BInt`[^bigint], which is a Mojo-native equivalent of Python's `int`.
+- An arbitrary-precision decimal implementation (`Decimal`) allowing for calculations with unlimited digits and decimal places[^arbitrary], which is a Mojo-native equivalent of Python's `decimal.Decimal`.
 - A 128-bit fixed-point decimal implementation (`Dec128`) supporting up to 29 significant digits with a maximum of 28 decimal places[^fixed].
 
 | Type      | Other names          | Information                              | Internal representation |
