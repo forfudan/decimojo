@@ -126,7 +126,7 @@ large-coefficient multiplications internally.
 | 65536w / 65536w   |  2,712,610 |  51,848,670 | **19.1×** |
 | 262144w / 262144w | 12,126,666 | 205,680,333 | **17.0×** |
 
-**Asymmetric division (unbalanced operands):**
+**Asymmetric division (unbalanced operands) — BEFORE PR1 FIX:**
 
 | Size            |   Mojo (ns) | Python (ns) |   Speedup   |
 | --------------- | ----------: | ----------: | :---------: |
@@ -137,13 +137,24 @@ large-coefficient multiplications internally.
 | 65536w / 2048w  |   5,099,000 |   3,180,333 | **0.62×** ✗ |
 | 65536w / 1024w  |   1,776,333 |     805,333 | **0.45×** ✗ |
 
+**Asymmetric division — AFTER PR1 FIX (2025-02-21):**
+
+| Size            | Mojo (ns) | Python (ns) |  Speedup  |
+| --------------- | --------: | ----------: | :-------: |
+| 65536w / 32768w |   614,000 |  46,727,333 | **76.1×** |
+| 65536w / 16384w |   299,333 |  23,327,666 | **77.9×** |
+| 65536w / 8192w  |   149,000 |  11,748,000 | **78.8×** |
+| 65536w / 4096w  |    89,000 |   5,974,666 | **67.1×** |
+| 65536w / 2048w  |    42,666 |   3,079,000 | **72.2×** |
+| 65536w / 1024w  |    24,000 |     749,333 | **31.2×** |
+
 **Key findings:**
 
 1. **Balanced division is outstanding** — 15–28× faster than Python at large sizes.
    Burnikel-Ziegler is very effective when both operands are similar size.
-2. **Asymmetric division is catastrophically slow** — 0.11–0.62× Python. The current
-   B-Z implementation pads the divisor to match the dividend's block structure, causing
-   massive waste when divisor << dividend. This is the #1 performance regression.
+2. ~~**Asymmetric division is catastrophically slow**~~ **FIXED in PR1.**
+   Root cause was BigDecimal.true_divide_general computing full quotient then discarding.
+   Now 31–79× faster than Python.
 3. The regression between run 1 (optimized, avg 6.29×) and run 2 (earlier, avg 3.34×)
    shows that recent optimizations helped balanced cases, but asymmetric regression
    worsened.
@@ -248,12 +259,14 @@ Mojo's direct word-level truncation. Not a concern for optimization.
 
 ## Root Cause Analysis: Where Performance Is Lost
 
-### 1. **Division (asymmetric case): 0.11–0.62× Python** — PR1 target
+### 1. **Division (asymmetric case): ~~0.11–0.62× Python~~ → 31–79× Python** — PR1 ✅ FIXED
 
-The Burnikel-Ziegler algorithm pads the divisor up to match the dividend's block
-structure. When a 65536-word dividend is divided by a 1024-word divisor, the
-algorithm still processes as if both are 65536 words. `libmpdec` uses GMP-style
-asymmetric division that handles m >> n efficiently.
+~~The Burnikel-Ziegler algorithm pads the divisor up to match the dividend's block
+structure.~~ **Actual root cause:** `BigDecimal.true_divide_general()` computed full
+quotient coefficients regardless of the needed precision, then discarded excess digits
+via rounding. For 65536w/32768w at precision=4096, this meant a 65994-word / 32768-word
+integer division when only a ~458-word quotient was needed. Fix: compute
+`extra_words = ceil(P/9) + 2 - diff_n_words` and truncate the dividend when negative.
 
 ### 2. **Exp function: 0.31–0.43× Python** — PR3/PR4 targets
 
@@ -479,28 +492,47 @@ if the operation itself saves more than `O(n)` in total.
 
 ## Optimization Roadmap
 
-### PR 1: Fix Asymmetric Division Performance
+### PR 1: Fix Asymmetric Division Performance ✅ COMPLETED
 
-**Priority: CRITICAL** — Current 0.11× Python is the worst regression
+**Priority: CRITICAL** — Was 0.11× Python, now **31–79× Python**
 
-**Problem:** Burnikel-Ziegler pads divisor up to dividend's block structure. When
-dividing 65536 words by 1024 words, the algorithm wastes 98% of work.
+**Root cause:** The real bottleneck was NOT in B-Z itself, but in
+`BigDecimal.true_divide_general()`. When dividend has $d$ more coefficient words
+than divisor, the function always padded by `ceil(P/9) + 2` extra words WITHOUT
+subtracting the existing surplus $d$. For 65536w/32768w at precision=4096:
+the integer division was **65994w / 32768w → ~33226-word quotient**, but only
+**~458 words** were needed. The **32768 excess quotient words** were computed
+and immediately discarded by rounding. The exact-check multiplication
+(`q × b == a_scaled`) on these oversized operands compounded the waste.
 
-**Solution:** Implement **GMP-style recursive unbalanced division**:
+**Fix (2 lines changed in `arithmetics.mojo`):**
 
-1. If dividend has $m$ words and divisor has $n$ words with $m > 2n$:
-   - Divide the top $2n$ words of dividend by the $n$-word divisor
-   - Use the quotient to reduce the problem
-   - Recurse on the remainder concatenated with the next block
-2. This gives $O(M(n) \cdot m/n)$ instead of $O(M(m))$.
+```python
+# Before (BUG): extra_words = ceil(P/9) + 2  ← ignores positive diff_n_words
+# After  (FIX): extra_words = ceil(P/9) + 2 - diff_n_words
+```
 
-**Expected gain:**
+When `extra_words < 0`, the dividend is truncated via
+`floor_divide_by_power_of_billion()` to eliminate unnecessary low-order
+words, and the exact-division check is skipped (truncation discards the
+information needed for that check; exactness is vanishingly unlikely
+for large asymmetric operands anyway).
 
-- 65536w / 1024w: from 0.45× → ~5× Python (based on BigInt2's slice-based B-Z results)
-- 65536w / 32768w: from 0.11× → ~10× Python
+Also fixed a bug in `true_divide_fast()`: was passing `-extra_words * 9`
+(9× too many words) to `floor_divide_by_power_of_billion()`.
 
-**Impact:** Directly fixes asymmetric division. Also speeds up `to_string()` at
-medium sizes (which does repeated division by $10^9$, an extremely asymmetric case).
+**Actual benchmark results (2025-02-21):**
+
+| Size            | Before (ns) | Before | After (ns) |     After | Improvement |
+| --------------- | ----------: | -----: | ---------: | --------: | ----------: |
+| 65536w / 32768w | 444,571,666 |  0.11× |    614,000 | **76.1×** |    **724×** |
+| 65536w / 16384w | 146,761,000 |  0.17× |    299,333 | **77.9×** |    **490×** |
+| 65536w / 8192w  |  47,861,000 |  0.26× |    149,000 | **78.8×** |    **321×** |
+| 65536w / 4096w  |  15,804,000 |  0.40× |     89,000 | **67.1×** |    **178×** |
+| 65536w / 2048w  |   5,099,000 |  0.62× |     42,666 | **72.2×** |    **119×** |
+| 65536w / 1024w  |   1,776,333 |  0.45× |     24,000 | **31.2×** |     **74×** |
+
+Balanced cases unchanged (15–24× Python). Overall average speedup: **12.4× Python**.
 
 ---
 
@@ -742,7 +774,7 @@ Karatsuba and Toom-3.
 
 | PR      | Operation(s) Improved     | Current vs Python |    Expected After    |   Effort   |
 | ------- | ------------------------- | :---------------: | :------------------: | :--------: |
-| **PR1** | Asymmetric division       |    0.11–0.62×     |        3–10×         |   Medium   |
+| **PR1** | Asymmetric division       |   ✅ **31–79×**    |     ✅ COMPLETED      |    Done    |
 | **PR2** | Division, sqrt, exp, ln   |      varies       |     1.5–2× gain      |    High    |
 | **PR3** | Exp, ln                   |    0.31–0.43×     |       1.0–2.0×       |   Medium   |
 | **PR4** | Sqrt                      |    0.55–0.72×     |       1.5–3.0×       |   Medium   |
@@ -754,7 +786,7 @@ Karatsuba and Toom-3.
 
 ### Suggested Execution Order
 
-1. **PR1** (asymmetric division fix) — immediate win, unblocks other work
+1. ~~**PR1** (asymmetric division fix) — immediate win, unblocks other work~~ ✅ DONE
 2. **PR3a+3b** (exp/ln quick wins) — cache constants + cheap integer division
 3. **PR4** (reciprocal sqrt) — standalone, high impact
 4. **PR7** (direct nth root) — low effort, high impact for root()

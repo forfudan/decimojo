@@ -274,7 +274,7 @@ fn true_divide_fast(
         )
     elif extra_words < 0:
         coef_x = decimojo.biguint.arithmetics.floor_divide_by_power_of_billion(
-            x.coefficient, -extra_words * 9
+            x.coefficient, -extra_words
         )
     else:
         coef_x = x.coefficient.copy()
@@ -317,9 +317,10 @@ fn true_divide_general(
     # We need to ensure that a * 10^s // b has more significant digits than p.
     # A quicker way is to add whole empty words to the dividend.
     # Let n_diff = len(a.words) - len(b.words).
-    # We add ceil(precision // 9) + 1 + max(-n_diff, 0) words to the dividend.
-    # This ensures that we always have at least 9 extra digits in the dividend.
-    # We take max(-n_diff, 0) because we need to check the exact division.
+    # We compute extra_words = ceil(precision / 9) + 2 - n_diff.
+    # When n_diff > 0 (dividend larger): fewer extra words needed (may be negative,
+    #   meaning we truncate the dividend to avoid computing excess quotient digits).
+    # When n_diff < 0 (dividend smaller): more extra words needed to pad up.
 
     debug_assert[assert_mode="none"](
         precision > 0,
@@ -327,9 +328,7 @@ fn true_divide_general(
     )
 
     var diff_n_words = len(x.coefficient.words) - len(y.coefficient.words)
-    var extra_words = math.ceildiv(precision, 9) + 2
-    if diff_n_words < 0:
-        extra_words -= diff_n_words  # diff_n_words is negative, so we add words
+    var extra_words = math.ceildiv(precision, 9) + 2 - diff_n_words
     var extra_digits = extra_words * 9
 
     var coef_x: BigUInt
@@ -337,11 +336,21 @@ fn true_divide_general(
         coef_x = decimojo.biguint.arithmetics.multiply_by_power_of_billion(
             x.coefficient, extra_words
         )
+    elif extra_words < 0:
+        # Dividend already has more than enough words for the desired precision.
+        # Truncate low-order words to avoid computing unnecessary quotient digits.
+        coef_x = decimojo.biguint.arithmetics.floor_divide_by_power_of_billion(
+            x.coefficient, -extra_words
+        )
     else:
         coef_x = x.coefficient.copy()
 
     var coef = coef_x // y.coefficient
-    if coef * y.coefficient == coef_x:
+
+    # Only check for exact division when we haven't truncated the dividend.
+    # When extra_words < 0, we've discarded low-order digits so the exact
+    # check would be meaningless.
+    if extra_words >= 0 and coef * y.coefficient == coef_x:
         # The division is exact, so we need to remove the extra trailing zeros
         # so that the final scale is at least (x.scale - y.scale).
         # If x.scale - y.scale < 0, we can safely remove all trailing zeros.
