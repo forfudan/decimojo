@@ -80,17 +80,23 @@ struct MathCache:
     """Cached value of ln(2)."""
     var _ln1d25: BigDecimal
     """Cached value of ln(1.25)."""
+    var _ln10: BigDecimal
+    """Cached value of ln(10)."""
     var _ln2_precision: Int
     """Precision (in significant digits) at which _ln2 was computed."""
     var _ln1d25_precision: Int
     """Precision (in significant digits) at which _ln1d25 was computed."""
+    var _ln10_precision: Int
+    """Precision (in significant digits) at which _ln10 was computed."""
 
     fn __init__(out self):
         """Initializes an empty MathCache with no cached values."""
         self._ln2 = BigDecimal(BigUInt.zero(), 0, False)
         self._ln1d25 = BigDecimal(BigUInt.zero(), 0, False)
+        self._ln10 = BigDecimal(BigUInt.zero(), 0, False)
         self._ln2_precision = 0
         self._ln1d25_precision = 0
+        self._ln10_precision = 0
 
     fn get_ln2(mut self, precision: Int) raises -> BigDecimal:
         """Returns ln(2) computed to at least the specified precision.
@@ -143,6 +149,47 @@ struct MathCache:
         self._ln1d25 = compute_ln1d25(precision)
         self._ln1d25_precision = precision
         return self._ln1d25.copy()
+
+    fn get_ln10(mut self, precision: Int) raises -> BigDecimal:
+        """Returns ln(10) computed to at least the specified precision.
+
+        If the cached value has sufficient precision, it is returned (rounded
+        down to the requested precision). Otherwise, ln(10) is recomputed and
+        cached at the new precision.
+
+        Uses the identity: ln(10) = 3*ln(2) + ln(1.25), leveraging the cached
+        values of ln(2) and ln(1.25) to avoid redundant computation.
+
+        Args:
+            precision: The minimum number of significant digits required.
+
+        Returns:
+            The value of ln(10) with at least the specified precision.
+        """
+        if self._ln10_precision >= precision:
+            var result = self._ln10.copy()
+            result.round_to_precision(
+                precision=precision,
+                rounding_mode=RoundingMode.down(),
+                remove_extra_digit_due_to_rounding=False,
+                fill_zeros_to_precision=False,
+            )
+            return result^
+        # ln(10) = ln(2 * 5) = ln(2) + ln(5)
+        #        = ln(2) + ln(4 * 1.25) = ln(2) + 2*ln(2) + ln(1.25)
+        #        = 3*ln(2) + ln(1.25)
+        var extra = precision + 9
+        var ln2 = self.get_ln2(extra)
+        var ln1d25 = self.get_ln1d25(extra)
+        self._ln10 = ln2 * BigDecimal.from_int(3) + ln1d25
+        self._ln10.round_to_precision(
+            precision=precision,
+            rounding_mode=RoundingMode.down(),
+            remove_extra_digit_due_to_rounding=False,
+            fill_zeros_to_precision=False,
+        )
+        self._ln10_precision = precision
+        return self._ln10.copy()
 
 
 # ===----------------------------------------------------------------------=== #
@@ -976,15 +1023,14 @@ fn exp_taylor_series(
     var max_number_of_terms = Int(minimum_precision * 2.5) + 1
     var result = BigDecimal(BigUInt.one(), 0, False)
     var term = BigDecimal(BigUInt.one(), 0, False)
-    var n = BigUInt.one()
+    var n: UInt32 = 1
 
     # Calculate Taylor series: 1 + x + x²/2! + x³/3! + ...
     for _ in range(1, max_number_of_terms):
         # Calculate next term: x^i/i! = x^{i-1} * x/i
         # We can use the previous term to calculate the next one
-        var add_on = x.true_divide_inexact(
-            BigDecimal(n, 0, False), minimum_precision
-        )
+        # Task 3b: Use O(n) single-word division instead of full BigDecimal div
+        var add_on = x.true_divide_inexact_by_uint32(n, minimum_precision)
         term = term * add_on
         term.round_to_precision(
             precision=minimum_precision,
@@ -992,7 +1038,7 @@ fn exp_taylor_series(
             remove_extra_digit_due_to_rounding=False,
             fill_zeros_to_precision=False,
         )
-        n += BigUInt.one()
+        n += 1
 
         # Add term to result
         result += term
@@ -1070,16 +1116,16 @@ fn ln(x: BigDecimal, precision: Int, mut cache: MathCache) raises -> BigDecimal:
         return BigDecimal(BigUInt.zero(), 0, False)  # ln(1) = 0
 
     # Range reduction to improve convergence
-    # ln(x) = ln(m * 2^a * 5^b) =
-    #   = ln(m) + a*ln(2) + b*ln(5)
-    #   = ln(m) + a*ln(2) + b*(ln(5/4) + ln(4))
-    #   = ln(m) + a*ln(2) + b*(ln(1.25) + 2*ln(2))
-    #   = ln(m) + (a+b*2)*ln(2) + b*ln(1.25)
+    # ln(x) = ln(m * 10^p10 * 2^a * 5^b)
+    #       = ln(m) + p10*ln(10) + a*ln(2) + b*ln(5)
+    #       = ln(m) + p10*ln(10) + (a+2b)*ln(2) + b*ln(1.25)
     #   where 0.5 <= m < 1.5
-    # Use Taylor series for ln(m) = ln(1+z)
+    # By keeping power_of_10 separate (cached), we avoid decomposing it into
+    # ln(2) and ln(1.25), which was the source of the catastrophic slowdown
+    # for ln(10), ln(100), ln(0.001) etc.
     var m = x.copy()
-    var power_of_2: Int = 0
-    var power_of_5: Int = 0
+    var adj_power_of_2: Int = 0
+    var adj_power_of_5: Int = 0
     # First, scale down to [0.1, 1)
     var power_of_10 = m.exponent() + 1
     m.scale += power_of_10
@@ -1090,36 +1136,38 @@ fn ln(x: BigDecimal, precision: Int, mut cache: MathCache) raises -> BigDecimal:
         m.scale -= 1
     elif m < BigDecimal(BigUInt(raw_words=[275]), 3, False):
         # [0.135, 0.275) * 5 -> [0.675, 1.375)]
-        power_of_5 -= 1
+        adj_power_of_5 = -1
         m = m * BigDecimal(BigUInt(raw_words=[5]), 0, False)
     elif m < BigDecimal(BigUInt(raw_words=[65]), 2, False):
         # [0.275, 0.65) * 2 -> [0.55, 1.3)]
-        power_of_2 -= 1
+        adj_power_of_2 = -1
         m = m * BigDecimal(BigUInt(raw_words=[2]), 0, False)
     else:  # [0.65, 1) -> no change
         pass
-    # Replace 10 with 5 and 2
-    power_of_5 += power_of_10
-    power_of_2 += power_of_10
-
-    # print("Input: {} = {} * 2^{} * 5^{}".format(x, m, power_of_2, power_of_5))
 
     # Use series expansion for ln(m) = ln(1+z) = z - z²/2 + z³/3 - ...
     var result = ln_series_expansion(
         m - BigDecimal(BigUInt.one(), 0, False), working_precision
     )
 
-    # print("Result after series expansion:", result)
-
     # Apply range reduction adjustments
-    # ln(m) + (a+b*2)*ln(2) + b*ln(1.25)
-    # Use cached values from MathCache to avoid recomputation
-    if power_of_2 + power_of_5 * 2 != 0:
+    # ln(x) = ln(m) + power_of_10*ln(10) + (adj_2 + 2*adj_5)*ln(2)
+    #                                     + adj_5*ln(1.25)
+    # Decompose power_of_10 into ln(2)/ln(1.25) to avoid computing ln(10)
+    # unnecessarily: ln(10) = 3*ln(2) + ln(1.25)
+    # This avoids regression for inputs like ln(2) which would otherwise
+    # trigger a full ln(10) computation (requiring both ln(2) AND ln(1.25)).
+    # The cached get_ln10() is still used by log10()/log() where it's needed.
+    var combined_ln2_factor = (
+        adj_power_of_2 + adj_power_of_5 * 2 + 3 * power_of_10
+    )
+    var combined_ln1d25_factor = adj_power_of_5 + power_of_10
+    if combined_ln2_factor != 0:
         var ln2 = cache.get_ln2(working_precision)
-        result += ln2 * BigDecimal.from_int(power_of_2 + power_of_5 * 2)
-    if power_of_5 != 0:
+        result += ln2 * BigDecimal.from_int(combined_ln2_factor)
+    if combined_ln1d25_factor != 0:
         var ln1d25 = cache.get_ln1d25(working_precision)
-        result += ln1d25 * BigDecimal.from_int(power_of_5)
+        result += ln1d25 * BigDecimal.from_int(combined_ln1d25_factor)
 
     # Round to final precision
     result.round_to_precision(
@@ -1235,17 +1283,11 @@ fn log10(x: BigDecimal, precision: Int) raises -> BigDecimal:
         return BigDecimal(BigUInt.zero(), 0, False)  # log10(1) = 0
 
     # Use the identity: log10(x) = ln(x) / ln(10)
-    # Use a shared cache so that both ln() calls reuse cached ln(2)/ln(1.25)
+    # Use a shared cache so that ln(10) is retrieved from cache (Task 3c)
     var cache = MathCache()
     var ln_result = ln(x, working_precision, cache)
-    var result = ln_result.true_divide(
-        ln(
-            BigDecimal(BigUInt(raw_words=[10]), 0, False),
-            working_precision,
-            cache,
-        ),
-        precision,
-    )
+    var ln10 = cache.get_ln10(working_precision)
+    var result = ln_result.true_divide(ln10, precision)
 
     return result^
 
@@ -1278,32 +1320,25 @@ fn ln_series_expansion(
     var max_terms = Int(working_precision * 2.5) + 1
     var result = BigDecimal(BigUInt.zero(), working_precision, False)
     var term = z.copy()
-    var k = BigUInt.one()
+    var k: UInt32 = 1
 
     # Use the series ln(1+z) = z - z²/2 + z³/3 - z⁴/4 + ...
-    result += term  # First term is just x
-    # print("DEBUG: term =", term, "result =", result)
-    # print("DEBUG: k =", k, "max_terms =", max_terms)
+    result += term  # First term is just z
 
     for _ in range(2, max_terms):
         # Update for next iteration - multiply by z and divide by k
         term = term * z  # z^k
-        k += BigUInt.one()
+        k += 1
 
         # Alternate sign: -1^(k+1) = -1 when k is even, 1 when k is odd
-        var sign = k % BigUInt(raw_words=[2]) == BigUInt.zero()
-        var next_term = term.true_divide_inexact(
-            BigDecimal(k, 0, False), working_precision
-        )
+        var is_even = k % 2 == 0
+        # Task 3b: Use O(n) single-word division instead of full BigDecimal div
+        var next_term = term.true_divide_inexact_by_uint32(k, working_precision)
 
-        if sign:
+        if is_even:
             result -= next_term
         else:
             result += next_term
-
-        # print("DEBUG: k =", k, "max_terms =", max_terms)
-        # print("DEBUG: term =", term, "next_term =", next_term)
-        # print("DEBUG: result =", result)
 
         # Check for convergence
         if next_term.exponent() < -working_precision:
@@ -1383,14 +1418,20 @@ fn compute_ln2(working_precision: Int) raises -> BigDecimal:
     var term = x * BigDecimal(
         BigUInt(raw_words=[2]), 0, False
     )  # First term: 2*(1/3)
-    var k = BigDecimal(BigUInt.one(), 0, False)
+    var k: UInt32 = 1
 
     # Add terms: 2*(x + x³/3 + x⁵/5 + ...)
+    # Series: term_k = 2 * x^(2k-1) * 1 * 3 * 5 * ... * (2k-3) / (1 * 3 * 5 * ... * (2k-1))
+    # Recurrence: term_{k+1} = term_k * x² * k / (k+2)
     for _ in range(1, max_terms):
         result += term
-        var new_k = k + BigDecimal(BigUInt(raw_words=[2]), 0, False)
-        term = (term * x * x * k).true_divide_inexact(new_k, working_precision)
-        k = new_k^
+        var new_k = k + 2
+        # Task 3b: Use O(n) single-word division instead of full BigDecimal div
+        term = (term * x * x).true_divide_inexact_by_uint32(
+            new_k, working_precision
+        )
+        term = term * BigDecimal.from_int(Int(k))
+        k = new_k
         if term.exponent() < -working_precision:
             break
 

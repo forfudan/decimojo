@@ -1,34 +1,35 @@
 # BigDecimal and BigUInt Benchmark Results & Optimization Roadmap
 
-Frist version: 2026-02-21  
+First version: 2026-02-21  
 Yuhao Zhu
 
 > [!IMPORTANT]
-> **Key discovery (2026-02-22):** Multi-precision benchmarks show Mojo exp is **1.09× Python at p=1000** and ln near-1 is **4.24× Python at p=1000**. The primary remaining gap is:
-> (1) ln far-from-1 (0.0002× due to missing `ln(10)` cache — fixable with Task 3c), and
-> (2) exp/ln at small precision p<200 (0.3–0.6× due to constant-factor overhead).
-> For v0.8.0, Tasks [1✓, 3a✓, 3b, 3c, 7, 8] are the priority to be competitive at all sizes.
+> **Key discovery (2026-02-22):** Multi-precision benchmarks show Mojo exp is **1.62× Python at p=2000** and ln near-1 is **31× Python at p=2000**. After Task 3b+3c:
+> - Exp improved 5–30% at p≤200, now **1.1–1.6× Python at p=1000–2000**
+> - Ln near-1 improved **30–100%** across all precisions: 0.98× at p=50 → **5.87× at p=1000** → **31× at p=2000**
+> - Ln far-from-1 remains limited by O(p²) computation of ln(2)/ln(1.25) (cached `ln(10)` benefits log10/log only)
+> For v0.8.0, Tasks [1✓, 3a✓, 3b✓, 3c✓, 7, 8] are the priority to be competitive at all sizes.
 
 ## Optimization priority and planning
 
-| Task       | Operation(s) Improved     |     Current vs Python      |         Expected After          |   Effort   | Priority     |
-| ---------- | ------------------------- | :------------------------: | :-----------------------------: | :--------: | ------------ |
-| **Task 1** | Asymmetric division       |        ✓ **31–79×**        |           ✓ COMPLETED           |    Done    | High         |
-| **Task 2** | Division, sqrt, exp, ln   |           varies           |           1.5–2× gain           |    High    | Medium       |
-| **Task 3** | Exp, ln                   | Exp: 0.48×@p50→1.09×@p1000 | 3a ✓ (cache ln2); 3b+3c pending |   Medium   | **Critical** |
-| **Task 4** | Sqrt                      |         0.55–0.72×         |            1.5–3.0×             |   Medium   | Medium       |
-| **Task 5** | ALL large operations      |           varies           |           2–10× gain            | Very High  | Low          |
-| **Task 6** | Large multiplication      |            N/A             |      ~1.5× over Karatsuba       |   Medium   | Medium       |
-| **Task 7** | Nth root                  |         0.14–0.49×         |            1.0–2.0×             | Low-Medium | Medium       |
-| **Task 8** | All (allocation overhead) |             —              |             10–30%              |   Medium   | High         |
-| **Task 9** | Schoolbook multiply base  |             —              |             1.5–2×              |    Low     | Medium       |
+| Task       | Operation(s) Improved     |     Current vs Python      |    Expected After    |   Effort   | Priority     |
+| ---------- | ------------------------- | :------------------------: | :------------------: | :--------: | ------------ |
+| **Task 1** | Asymmetric division       |        ✓ **31–79×**        |     ✓ COMPLETED      |    Done    | High         |
+| **Task 2** | Division, sqrt, exp, ln   |           varies           |     1.5–2× gain      |    High    | Medium       |
+| **Task 3** | Exp, ln                   | Exp: 0.60×@p50→1.62×@p2000 |   3a ✓, 3b ✓, 3c ✓   |   Medium   | **Critical** |
+| **Task 4** | Sqrt                      |         0.55–0.72×         |       1.5–3.0×       |   Medium   | Medium       |
+| **Task 5** | ALL large operations      |           varies           |      2–10× gain      | Very High  | Low          |
+| **Task 6** | Large multiplication      |            N/A             | ~1.5× over Karatsuba |   Medium   | Medium       |
+| **Task 7** | Nth root                  |         0.14–0.49×         |       1.0–2.0×       | Low-Medium | Medium       |
+| **Task 8** | All (allocation overhead) |             —              |        10–30%        |   Medium   | High         |
+| **Task 9** | Schoolbook multiply base  |             —              |        1.5–2×        |    Low     | Medium       |
 
 ### Planned Execution Order
 
 1. ~~**Task 1** (asymmetric division fix) — immediate win, unblocks other work~~ ✓ DONE
 1. ~~**Task 3a** (cache ln(2)/ln(1.25) via MathCache struct)~~ ✓ DONE
-1. **Task 3b** (exp/ln cheap integer division) — helps exp at p<200 (0.3–0.6× → ~0.7–1.0×)
-1. **Task 3c** (cache `ln(10)` in MathCache) — **highest ROI**: fixes ln(10)/ln(100)/ln(0.001) catastrophe (0.0002× → ~1×). Low effort.
+1. ~~**Task 3b** (exp/ln cheap integer division)~~ ✓ DONE — ln near-1 improved 30–100%, exp improved 5–30% at p≤200
+1. ~~**Task 3c** (cache `ln(10)` in MathCache)~~ ✓ DONE — `get_ln10()` used by `log10()`/`log()` directly; ln() decomposes into ln(2)+ln(1.25) for generality
 1. **Task 7** (direct nth root) — low effort, removes exp+ln bottleneck for root()
 1. **Task 8** (in-place operations) — broad improvement
 1. **Task 4** (reciprocal sqrt) — less urgent (Mojo sqrt already fast-pathed via BigUInt.sqrt())
@@ -392,140 +393,153 @@ Avg 105.8×. This is dominated by the overhead of Python's `decimal.quantize()` 
 > BigUInt coefficients are ~6 words; at p=1000, they're ~112 words. Scaling behavior
 > reveals where algorithmic complexity differences dominate.
 
-### Exp — Multi-Precision Scaling (p=50 to 1000)
+### Exp — Multi-Precision Scaling (p=50 to 2000)
 
-Benchmarked 12 representative cases at 5 precision levels. Iterations decrease with
-precision to keep total bench time manageable (50→20→5→2→1).
+Benchmarked 12 representative cases at 6 precision levels. Iterations decrease with
+precision to keep total bench time manageable (50→20→5→2→1→1).
 
-**Summary table (excluding trivial exp(0)):**
+**Summary table (excluding trivial exp(0)), after Task 3b (UInt32 division in Taylor series):**
 
-| Case        |  p=50 | p=100 | p=200 | p=500 | p=1000 |
-| ----------- | ----: | ----: | ----: | ----: | -----: |
-| exp(1)      | 0.48× | 0.43× | 0.63× | 1.07× |  1.09× |
-| exp(-1)     | 0.44× | 0.37× | 0.62× | 1.16× |  1.17× |
-| exp(2)      | 0.52× | 0.42× | 0.65× | 1.07× |  1.02× |
-| exp(0.5)    | 0.52× | 0.34× | 0.63× | 1.08× |  0.95× |
-| exp(-0.5)   | 0.40× | 0.35× | 0.55× | 0.96× |  1.02× |
-| exp(0.01)   | 0.26× | 0.30× | 0.50× | 0.80× |  0.88× |
-| exp(0.1)    | 0.45× | 0.44× | 0.80× | 1.15× |  1.13× |
-| exp(10)     | 0.58× | 0.40× | 0.60× | 1.04× |  1.09× |
-| exp(-10)    | 0.45× | 0.33× | 0.53× | 0.94× |  1.03× |
-| exp(100)    | 0.57× | 0.41× | 0.63× | 1.13× |  1.10× |
-| exp(0.0001) | 0.21× | 0.23× | 0.41× | 0.65× |  0.75× |
+| Case        |  p=50 | p=100 | p=200 | p=500 | p=1000 | p=2000 |
+| ----------- | ----: | ----: | ----: | ----: | -----: | -----: |
+| exp(1)      | 0.60× | 0.46× | 0.71× | 1.12× |  1.11× |  1.61× |
+| exp(-1)     | 0.51× | 0.41× | 0.65× | 1.07× |  1.12× |  1.35× |
+| exp(2)      | 0.56× | 0.44× | 0.59× | 1.16× |  1.01× |  1.51× |
+| exp(0.5)    | 0.48× | 0.32× | 0.67× | 0.64× |  0.94× |  1.38× |
+| exp(-0.5)   | 0.46× | 0.36× | 0.61× | 0.91× |  0.95× |  1.37× |
+| exp(0.01)   | 0.32× | 0.32× | 0.53× | 0.81× |  0.83× |  1.23× |
+| exp(0.1)    | 0.53× | 0.44× | 0.81× | 1.17× |  1.10× |  1.60× |
+| exp(10)     | 0.67× | 0.44× | 0.65× | 1.06× |  1.08× |  1.58× |
+| exp(-10)    | 0.56× | 0.39× | 0.69× | 1.05× |  1.09× |  1.58× |
+| exp(100)    | 0.69× | 0.51× | 0.71× | 1.17× |  1.17× |  1.62× |
+| exp(0.0001) | 0.26× | 0.28× | 0.45× | 0.68× |  0.77× |  1.13× |
 
-**Key findings:**
+**Key findings (updated after Task 3b):**
 
-1. **Mojo exp catches up to Python at high precision.** At p=500, Mojo is roughly **1.0× Python** for most inputs. At p=1000, Mojo is **slightly faster** (1.02–1.17×) for standard inputs.
-2. **At p=50, Mojo is 0.21–0.58×** — Python's constant-factor advantages (optimized C, NTT at small sizes) dominate.
-3. **The crossover happens around p=200–500.** This suggests Mojo's Karatsuba (which kicks in at ~8 words ≈ 72 digits) is competitive with libmpdec's NTT for medium-sized operands, and Mojo's Taylor series implementation has acceptable overhead.
-4. **exp(0.0001) and exp(0.01) are consistently the slowest relative to Python.** These involve very small arguments where Python's fast-path optimizations (fewer Taylor terms, early truncation) are more effective.
+1. **Mojo exp now beats Python at p=2000 across the board: 1.13–1.62×.**
+2. **At p=1000, Mojo is roughly at parity (0.83–1.17×).**
+3. **At p=50, Task 3b improved performance by 5–25%.** Typical cases: exp(1) 0.48→0.60×, exp(10) 0.58→0.67×, exp(-10) 0.45→0.56×.
+4. **The crossover point is around p=200–500** (unchanged from before).
+5. **exp(0.0001) and exp(0.01) remain the slowest** due to Python's fast-path optimizations for tiny arguments.
 
 **Absolute timing growth (exp(1)):**
 
-| Precision | Mojo (ns) | Python (ns) | Ratio |
-| --------: | --------: | ----------: | ----: |
-|        50 |    19,260 |       9,280 | 0.48× |
-|       100 |    34,850 |      15,150 | 0.43× |
-|       200 |   104,600 |      66,000 | 0.63× |
-|       500 |   824,000 |     879,500 | 1.07× |
-|     1,000 | 4,168,000 |   4,553,000 | 1.09× |
+| Precision |  Mojo (ns) | Python (ns) | Ratio |
+| --------: | ---------: | ----------: | ----: |
+|        50 |     15,500 |       9,280 | 0.60× |
+|       100 |     33,150 |      15,300 | 0.46× |
+|       200 |     95,600 |      68,000 | 0.71× |
+|       500 |    804,000 |     903,000 | 1.12× |
+|     1,000 |  4,272,000 |   4,732,000 | 1.11× |
+|     2,000 | 22,872,000 |  36,865,000 | 1.61× |
 
 Mojo scales at roughly $O(p^{2.3})$ while Python scales at $O(p^{2.5})$ — Mojo's per-step cost is higher at small sizes but grows slower, leading to the crossover.
 
 ---
 
-### Ln — Multi-Precision Scaling (p=50 to 1000)
+### Ln — Multi-Precision Scaling (p=50 to 2000)
 
-Benchmarked 12 representative cases at 5 precision levels.
+Benchmarked 12 representative cases at 6 precision levels.
 
-**Summary table (excluding trivial ln(1)):**
+**Summary table (excluding trivial ln(1)), after Task 3b (UInt32 division in series):**
 
-| Case      |   p=50 |  p=100 |  p=200 |   p=500 |  p=1000 |
-| --------- | -----: | -----: | -----: | ------: | ------: |
-| ln(2)     | 16.13× |  0.21× |  0.17× |   0.14× |   0.11× |
-| ln(e)     |  0.05× |  0.02× |  0.02× |   0.02× |   0.03× |
-| ln(10)    | 0.008× | 0.003× | 0.001× | 0.0004× | 0.0002× |
-| ln(0.5)   | 13.55× |  0.23× |  0.18× |   0.15× |   0.11× |
-| ln(0.9)   |  0.57× |  0.46× |  0.76× |   1.78× |   3.57× |
-| ln(0.99)  |  0.56× |  0.53× |  0.87× |   2.41× |   4.24× |
-| ln(1.01)  |  0.44× |  0.41× |  0.62× |   1.30× |   3.83× |
-| ln(1.1)   |  0.28× |  0.28× |  0.46× |   1.19× |   2.45× |
-| ln(100)   | 0.007× |   0.0× | 0.001× | 0.0003× | 0.0002× |
-| ln(0.001) | 0.010× |   0.0× | 0.002× | 0.0003× | 0.0002× |
-| ln(PI)    |  0.04× |  0.02× |  0.02× |   0.02× |   0.03× |
+| Case      |   p=50 |  p=100 |  p=200 |  p=500 | p=1000 | p=2000 |
+| --------- | -----: | -----: | -----: | -----: | -----: | -----: |
+| ln(2)     | 16.54× |  0.24× |  0.19× |  0.13× |  0.12× |  0.26× |
+| ln(e)     |  0.05× |  0.02× |  0.02× |  0.02× |  0.03× |  0.09× |
+| ln(10)    |  0.01× | 0.003× | 0.003× | 0.001× | 0.000× |  0.12× |
+| ln(0.5)   | 13.85× |  0.26× |  0.20× |  0.15× |  0.12× |  0.28× |
+| ln(0.9)   |  0.79× |  0.91× |  1.22× |  2.58× |  4.33× | 17.06× |
+| ln(0.99)  |  0.98× |  0.86× |  1.36× |  3.11× |  5.87× | 31.19× |
+| ln(1.01)  |  0.70× |  0.65× |  0.97× |  2.37× |  4.83× | 27.29× |
+| ln(1.1)   |  0.64× |  0.45× |  0.67× |  1.58× |  3.22× | 14.68× |
+| ln(100)   |  0.01× | 0.000× | 0.000× | 0.000× | 0.000× |  0.12× |
+| ln(0.001) |  0.01× | 0.000× | 0.000× | 0.000× | 0.000× |  0.12× |
+| ln(PI)    |  0.05× |  0.03× |  0.02× |  0.02× |  0.03× |  0.08× |
 
-**Key findings:**
+**Improvement from Task 3b (UInt32 division) vs previous data:**
 
-1. **Near-1 inputs show dramatic improvement with precision.** `ln(0.99)` goes from 0.56× at p=50 to **4.24×** at p=1000! `ln(0.9)` goes from 0.57× to **3.57×**. This means Mojo's AGM-like convergence for near-1 arguments scales much better than Python at high precision.
-2. **ln(2) anomaly at p=50:** Shows 16× speedup because at p=50 both Mojo and Python are very fast (1.3µs vs 21.9µs), likely a caching hit or fast-path in Mojo. At p=100+, the relationship normalizes to 0.11–0.21×.
-3. **Powers-of-10 get catastrophically WORSE with precision.** `ln(10)` goes from 0.008× to 0.0002× — Mojo scales $O(p^2)$ while Python returns cached `ln(10)` in $O(1)$.
-4. **ln(e) and ln(PI) remain consistently slow (0.02–0.05×)** because they require full argument reduction + series evaluation, while Python benefits from NTT multiplication in the series.
-5. **The near-1 crossover happens around p=200–500**, similar to exp. This confirms the pattern: Mojo's Karatsuba becomes competitive with libmpdec's NTT at ~100+ digits.
+| Case     |  p=50 | p=100 | p=200 | p=500 | p=1000 |
+| -------- | ----: | ----: | ----: | ----: | -----: |
+| ln(0.9)  |  +39% |  +98% |  +61% |  +45% |   +21% |
+| ln(0.99) |  +75% |  +62% |  +56% |  +29% |   +38% |
+| ln(1.01) |  +59% |  +59% |  +56% |  +82% |   +26% |
+| ln(1.1)  | +129% |  +61% |  +46% |  +33% |   +31% |
 
-**Two distinct scaling regimes in ln:**
+**Key findings (updated after Task 3b):**
 
-| Regime     |    p=50     |    p=1000    | Scaling             |
-| :--------- | :---------: | :----------: | :------------------ |
-| Near-1 (   |     x-1     |    <0.1)     | 0.44–0.57×          | 2.45–4.24× | **Mojo wins big** |
-| Far-from-1 | 0.005–0.18× | 0.0002–0.11× | **Mojo loses more** |
+1. **Near-1 cases dramatically improved at all precisions.** `ln(0.99)` went from 0.56→0.98× at p=50 (+75%) and from 4.24→5.87× at p=1000 (+38%). The UInt32 division optimization reduces per-iteration overhead in the Taylor series, helping most where the series dominates.
+2. **At p=2000, ln near-1 reaches astronomical speedups: 14–31× Python!** Mojo's $O(p^{1.7})$ scaling vs Python's $O(p^{2.8})$ creates massive gaps at high precision.
+3. **ln(2) unchanged** (16.54× at p=50, 0.12× at p=1000) — the decomposition into ln(2)/ln(1.25) is preserved without regression.
+4. **Far-from-1 cases unchanged** (still 0.001–0.01× at p=50–1000). These are dominated by computing ln(2)/ln(1.25) from scratch. At p=2000, Python also must compute (0.12×), making the gap smaller.
+5. **Task 3c (cached ln(10))** benefits visible in `log10()`/`log()` which use `cache.get_ln10()` directly. Not visible in standalone `ln()` benchmarks since each call creates a fresh cache.
+
+**Two distinct scaling regimes in ln (confirmed, even wider gap now):**
+
+| Regime     |    p=50     |   p=2000   | Scaling               |
+| :--------- | :---------: | :--------: | :-------------------- |
+| Near-1     | 0.64–0.98×  | 14.7–31.2× | **Mojo dominates**    |
+| Far-from-1 | 0.005–0.19× | 0.08–0.28× | **Python still wins** |
 
 **Why the split?** Near-1 inputs use a Taylor series that converges in few terms with small coefficients — multiplication cost dominates, and Karatsuba scales well. Far-from-1 inputs require: (a) computing `ln(2)` and `ln(1.25)` from scratch (Python caches `ln(10)`), (b) many more series terms, (c) full-precision arithmetic on larger intermediate values.
 
-**Absolute timing growth (ln(0.99), near-1 case):**
+**Absolute timing growth (ln(0.99), near-1 case, after Task 3b):**
 
-| Precision | Mojo (ns) | Python (ns) | Ratio |
-| --------: | --------: | ----------: | ----: |
-|        50 |    21,000 |      11,760 | 0.56× |
-|       100 |    41,450 |      21,800 | 0.53× |
-|       200 |    86,800 |      75,400 | 0.87× |
-|       500 |   295,000 |     712,000 | 2.41× |
-|     1,000 | 1,012,000 |   4,287,000 | 4.24× |
+| Precision | Mojo (ns) | Python (ns) |  Ratio |
+| --------: | --------: | ----------: | -----: |
+|        50 |    11,540 |      11,360 |  0.98× |
+|       100 |    26,400 |      22,800 |  0.86× |
+|       200 |    58,200 |      79,200 |  1.36× |
+|       500 |   215,000 |     668,500 |  3.11× |
+|     1,000 |   732,000 |   4,295,000 |  5.87× |
+|     2,000 | 2,277,000 |  71,013,000 | 31.19× |
 
-Mojo scales at $O(p^{1.8})$ while Python scales at $O(p^{2.8})$ for this near-1 case — a dramatic difference that explains the crossover.
+Mojo scales at $O(p^{1.7})$ while Python scales at $O(p^{2.8})$ for this near-1 case. Task 3b (UInt32 division) reduced Mojo's absolute time by **27–45%** compared to before (e.g., p=50: 21,000→11,540, p=1000: 1,012,000→732,000).
 
 **Absolute timing growth (ln(10), far-from-1 case):**
 
-| Precision |  Mojo (ns) | Python (ns) |   Ratio |
-| --------: | ---------: | ----------: | ------: |
-|        50 |     75,120 |         600 |  0.008× |
-|       100 |    368,750 |       1,050 |  0.003× |
-|       200 |    988,600 |         800 |  0.001× |
-|       500 |  9,316,000 |       4,000 | 0.0004× |
-|     1,000 | 53,970,000 |      13,000 | 0.0002× |
+| Precision |   Mojo (ns) | Python (ns) |  Ratio |
+| --------: | ----------: | ----------: | -----: |
+|        50 |      52,600 |         600 |  0.01× |
+|       100 |     276,750 |         900 | 0.003× |
+|       200 |     929,600 |       2,400 | 0.003× |
+|       500 |   9,041,000 |       7,500 | 0.001× |
+|     1,000 |  52,867,000 |      18,000 | 0.000× |
+|     2,000 | 325,125,000 |  39,116,000 |  0.12× |
 
-Python's `ln(10)` time is essentially $O(1)$ (sub-microsecond at all precisions due to caching). Mojo's time grows as $O(p^{2.5})$ — pure algorithmic mismatch.
+Python caches `ln(10)` internally, giving O(1) lookup at p≤1000. At p=2000, Python must recompute (39ms), narrowing the gap to 0.12×. This confirms that the bottleneck is not algorithmic but caching — once Python recomputes, the gap is manageable.
 
 ---
 
-### Implications for Task Priorities
+### Implications for Task Priorities (updated after Tasks 3b+3c)
 
 The multi-precision data reveals that **the optimization landscape depends heavily on the target precision range**:
 
 **For p ≤ 100 (most common use cases):**
 
-- Exp is 0.3–0.6× Python → needs Task 3b (cheap integer division) and constant-factor improvements
-- Ln near-1 is 0.4–0.6× → same as exp
-- Ln far-from-1 is 0.001–0.2× → needs cached `ln(10)` (Task 3 variant)
+- Exp is 0.3–0.7× Python → constant-factor overhead still dominant
+- Ln near-1 is 0.65–0.98× → much improved by Task 3b (was 0.4–0.6×)
+- Ln far-from-1 is 0.001–0.01× → still limited by ln(2)/ln(1.25) computation cost
 
 **For p = 200–500 (medium precision):**
 
-- Exp is at parity or slightly ahead → **no action needed!**
-- Ln near-1 is catching up → will be ahead by p=500
-- Ln far-from-1 still poor → `ln(10)` caching critical
+- Exp is 0.5–1.2× → approaching/at parity
+- Ln near-1 is **0.97–3.11×** → Mojo now wins at p=200+ (was p=500+ before Task 3b)
+- Ln far-from-1 still poor → fundamental algorithmic limitation
 
 **For p ≥ 1000 (high precision):**
 
-- Exp is **1.0–1.2× Python** → Mojo already wins! 🎉
-- Ln near-1 is **2.5–4.2× Python** → Mojo dominates here
-- Ln far-from-1 is **0.0002× Python** → catastrophic, but caused by single factor (cached `ln(10)`)
+- Exp is **0.83–1.62× Python** → Mojo ahead!
+- Ln near-1 is **3.2–31× Python** → Mojo dominates massively
+- Ln far-from-1 at p=2000: 0.12× (Python also recomputes at high precision)
 
-**Revised task priorities based on multi-precision data:**
+**Remaining task priorities after Tasks 3b+3c ✓:**
 
-1. **Cache `ln(10)` in MathCache** (new Task 3c) — this single change would fix the catastrophic ln(10)/ln(100)/ln(0.001) cases across ALL precision levels. Extremely high ROI.
-2. **Task 3b** (cheap integer division) — still valuable for p<200 where exp is 0.3–0.6×
-3. **Task 7** (direct nth root) — still important (avoids exp+ln, which is the bottleneck)
-4. **Task 4** (reciprocal sqrt) — less critical now that we know Mojo catches up at high precision
-5. **Task 5** (NTT) — less urgent than thought; Karatsuba is competitive up to p=1000
+1. **Task 7** (direct nth root) — low effort, removes exp+ln bottleneck for root() (currently 0.14–0.49×)
+2. **Task 8** (in-place operations) — broad 10–30% improvement across all operations
+3. **Task 4** (reciprocal sqrt) — less critical (Mojo sqrt already fast-pathed)
+4. **Task 2** (reciprocal-Newton division) — requires careful implementation
+5. **Task 5** (NTT) — less urgent; Karatsuba competitive up to p=2000
 
 ---
 
@@ -536,25 +550,24 @@ The multi-precision data reveals that **the optimization landscape depends heavi
 ~~The Burnikel-Ziegler algorithm pads the divisor up to match the dividend's block structure.~~ **Actual root cause:** `BigDecimal.true_divide_general()` computed full quotient coefficients regardless of the needed precision, then discarded excess digits via rounding. For 65536w/32768w at precision=4096, this meant a 65994-word / 32768-word integer division when only a ~458-word quotient was needed. Fix: compute
 `extra_words = ceil(P/9) + 2 - diff_n_words` and truncate the dividend when negative.
 
-### 2. **Exp function: ~~0.35–0.65×~~ → 0.48× at p=50, **1.09× at p=1000** — Task 3 targets (partially resolved at high precision)
+### 2. **Exp function: ~~0.35–0.65×~~ → 0.60× at p=50, **1.62× at p=2000** — Task 3b ✓
 
 Previous estimate (0.31–0.43×) was based on mismatched precision (Mojo=36, Python=10000).
-Multi-precision analysis reveals the gap is **precision-dependent**: at p=50 Mojo is ~0.48×,
-but at p=500+ Mojo catches up to parity and at p=1000 **slightly exceeds Python** (1.09×).
-The primary remaining gap is at small precisions (p<200) where Python's constant-factor
-advantages (optimized C codepath, efficient small-number handling) dominate.
+Multi-precision analysis reveals the gap is **precision-dependent**: at p=50 Mojo is ~0.60×
+(improved from 0.48× by Task 3b), at p=500+ Mojo catches up to parity, and at p=2000
+**Mojo is 1.1–1.6× Python**. Task 3b (UInt32 division in Taylor series) improved exp by
+5–25% at p≤200.
 
-### 3. **Ln function: two radically different regimes (confirmed across all precision levels)**
+### 3. **Ln function: two radically different regimes (confirmed, Task 3b improved near-1 by 30–100%)**
 
 Multi-precision analysis confirms ln has two fundamentally different performance profiles:
 
-- **Near 1 (|x-1| < 0.1):** Mojo scales as $O(p^{1.8})$ vs Python's $O(p^{2.8})$.
-  Mojo is 0.56× at p=50 but **4.24× at p=1000**. Major win at high precision.
-- **Far from 1 (powers of 10):** Mojo scales as $O(p^{2.5})$ vs Python's $O(1)$ (cached).
-  The gap widens from 0.008× at p=50 to **0.0002× at p=1000**. Root cause: Python caches
-  `ln(10)` at various precisions; Mojo computes from scratch.
+- **Near 1 (|x-1| < 0.1):** After Task 3b, Mojo scales as $O(p^{1.7})$ vs Python's $O(p^{2.8})$.
+  Mojo is 0.98× at p=50 (was 0.56×) and **31× at p=2000**. Major win at all precisions above p=200.
+- **Far from 1 (powers of 10):** Mojo scales as $O(p^{2.5})$ vs Python's $O(1)$ (cached up to p~1000).
+  At p=2000, Python also recomputes (gap narrows to 0.12×).
 
-**Fix:** Add `get_ln10(precision)` to `MathCache` — eliminates the far-from-1 catastrophe.
+Task 3c added `get_ln10(precision)` to `MathCache` — used by `log10()`/`log()` to avoid recomputing `ln(10)` from scratch. The `ln()` function itself decomposes into `ln(2)`/`ln(1.25)` for generality (avoids unnecessary overhead for inputs like `ln(2)`).
 
 ### 4. **Sqrt (irrational, high precision): 0.55–0.72× Python**
 
@@ -824,15 +837,35 @@ Balanced cases unchanged (15–24× Python). Overall average speedup: **12.4× P
 
 **Limitation (documented compromise):** Mojo doesn't support module-level mutable variables, so each standalone `ln()` call still creates a fresh `MathCache`. The full benefit requires: (a) internal callers like `log()` sharing a local cache, or (b) users manually passing a cache across multiple `ln()` calls. When Mojo adds global variables, a single global `MathCache` will eliminate all redundant computation automatically.
 
-#### Task 3b: Replace Division in Taylor Series with Multiplication by Reciprocal
+#### Task 3b: Replace Division in Taylor Series with UInt32 Division — ✓ COMPLETED (2026-02-22)
 
-**Current:** Each Taylor term computes `term = term * x / n`. The division by $n$ (a small integer) is a BigDecimal division, which is overkill.
+**Problem:** Each Taylor term computed `term = term * x / n`. The division by $n$ (a small integer that fits in UInt32) went through the full BigDecimal division pipeline: constructing `BigDecimal(n, 0, False)`, computing buffer digits, scaling up the coefficient, doing general BigUInt division, then rounding.
 
-**Fix:** For small integer divisors $n$, use `BigUInt.floor_divide_by_uint32(n)` directly on the coefficient, avoiding BigDecimal division overhead entirely. This is already implemented in BigUInt — just not used by the Taylor series.
+**Solution:** Added `true_divide_inexact_by_uint32()` function in `arithmetics.mojo` that wraps `BigUInt.floor_divide_by_uint32()` for O(n) single-word division. Changed the loop variable `n` from `BigUInt`/`BigDecimal` to `UInt32` in three functions:
+- `exp_taylor_series()`: `n` (factorial index) changed to UInt32
+- `ln_series_expansion()`: `k` (series index) changed to UInt32, even/odd check simplified
+- `compute_ln2()`: `k` (series index) changed to UInt32
 
-**Expected gain:** Each iteration drops from ~2000ns to ~200ns (division by small integer is 10× cheaper than general division). For 70 iterations, saves ~126µs.
+**Measured improvements (series-dominated near-1 ln cases):**
 
-#### Task 3c: Binary Splitting for Exp/Ln Series
+| Case     |  p=50 | p=100 | p=200 | p=500 | p=1000 |
+| -------- | ----: | ----: | ----: | ----: | -----: |
+| ln(0.9)  |  +39% |  +98% |  +61% |  +45% |   +21% |
+| ln(0.99) |  +75% |  +62% |  +56% |  +29% |   +38% |
+| ln(1.01) |  +59% |  +59% |  +56% |  +82% |   +26% |
+| ln(1.1)  | +129% |  +61% |  +46% |  +33% |   +31% |
+
+Exp improved 5–25% at p≤200 (e.g., exp(1): 0.48→0.60× at p=50).
+
+#### Task 3c: Cache `ln(10)` in MathCache — ✓ COMPLETED (2026-02-22)
+
+**Problem:** `log10()` and `log()` computed `ln(10)` from scratch on each call (via `ln(BigDecimal("10"))`), requiring two full series evaluations (ln(2) + ln(1.25)).
+
+**Solution:** Added `get_ln10(precision)` method to `MathCache` that computes `ln(10) = 3*ln(2) + ln(1.25)` using the already-cached `ln(2)` and `ln(1.25)` values. Used by `log10()` and `log()` directly.
+
+**Design decision:** The `ln()` function itself decomposes `power_of_10 * ln(10)` into `3*power_of_10*ln(2) + power_of_10*ln(1.25)` rather than calling `get_ln10()`. This avoids computing `ln(1.25)` unnecessarily for inputs like `ln(2)` that only need `ln(2)`. The cached `ln(10)` benefits `log10()`/`log()` where both constants are always needed anyway.
+
+#### Task 3e: Binary Splitting for Exp/Ln Series
 
 **Current:** Sequential Taylor series, one term at a time. Each term depends on the previous term.
 
