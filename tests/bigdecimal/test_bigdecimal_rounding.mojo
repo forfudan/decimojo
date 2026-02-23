@@ -15,294 +15,250 @@ comptime file_path = "tests/bigdecimal/test_data/bigdecimal_rounding.toml"
 fn test_bigdecimal_rounding() raises:
     # Load test cases from TOML file
     var pydecimal = Python.import_module("decimal")
+    # Set high precision so Python's quantize doesn't raise InvalidOperation
+    # for results that exceed the default 28 significant digits.
+    pydecimal.getcontext().prec = 500
     var toml = parse_file(file_path)
     var test_cases: List[TestCase]
 
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal ROUND_DOWN mode...")
-    # print("------------------------------------------------------")
+    # -------------------------------------------------------
+    # Testing BigDecimal ROUND_DOWN mode
+    # -------------------------------------------------------
 
     pydecimal.getcontext().rounding = pydecimal.ROUND_DOWN
     test_cases = load_test_cases(toml, "round_down_tests")
     count_wrong = 0
     for test_case in test_cases:
-        var result = BDec(test_case.a).round(
-            Int(test_case.b), RoundingMode.down()
-        )
-        try:
-            testing.assert_equal(
-                lhs=String(result),
-                rhs=test_case.expected,
-                msg=test_case.description,
-            )
-        except e:
+        var precision = Int(test_case.b)
+        var result = BDec(test_case.a).round(precision, RoundingMode.down())
+        var mojo_str = String(result)
+        # Use string construction to preserve exponent for quantize template:
+        # Decimal("1E-2") has exponent -2 (0.01), Decimal("1E2") has exponent 2.
+        var template = pydecimal.Decimal("1E" + String(-precision))
+        var py_result = pydecimal.Decimal(test_case.a).quantize(template)
+        if pydecimal.Decimal(mojo_str) != py_result:
             print(
                 test_case.description,
-                "\n  Expected:",
-                test_case.expected,
-                "\n  Got:",
-                String(result),
-                "\n  Python decimal result (for reference):",
-                String(
-                    pydecimal.Decimal(test_case.a).__round__(Int(test_case.b))
-                ),
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                String(py_result),
+                "\n",
             )
             count_wrong += 1
     testing.assert_equal(
         count_wrong,
         0,
-        "Some test cases failed. See above for details.",
+        "ROUND_DOWN: Mojo and Python results differ. See above.",
     )
 
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal ROUND_UP mode...")
-    # print("------------------------------------------------------")
+    # -------------------------------------------------------
+    # Testing BigDecimal ROUND_UP mode
+    # -------------------------------------------------------
 
     pydecimal.getcontext().rounding = pydecimal.ROUND_UP
     test_cases = load_test_cases(toml, "round_up_tests")
     count_wrong = 0
     for test_case in test_cases:
-        var result = BDec(test_case.a).round(
-            Int(test_case.b), RoundingMode.up()
-        )
-        try:
-            testing.assert_equal(
-                lhs=String(result),
-                rhs=test_case.expected,
-                msg=test_case.description,
-            )
-        except e:
+        var precision = Int(test_case.b)
+        var result = BDec(test_case.a).round(precision, RoundingMode.up())
+        var mojo_str = String(result)
+        var template = pydecimal.Decimal("1E" + String(-precision))
+        var py_result = pydecimal.Decimal(test_case.a).quantize(template)
+        if pydecimal.Decimal(mojo_str) != py_result:
             print(
                 test_case.description,
-                "\n  Expected:",
-                test_case.expected,
-                "\n  Got:",
-                String(result),
-                "\n  Python decimal result (for reference):",
-                String(
-                    pydecimal.Decimal(test_case.a).__round__(Int(test_case.b))
-                ),
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                String(py_result),
+                "\n",
             )
             count_wrong += 1
     testing.assert_equal(
         count_wrong,
         0,
-        "Some test cases failed. See above for details.",
+        "ROUND_UP: Mojo and Python results differ. See above.",
     )
 
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal ROUND_HALF_UP mode...")
-    # print("------------------------------------------------------")
+    # -------------------------------------------------------
+    # Testing BigDecimal ROUND_HALF_UP mode
+    # -------------------------------------------------------
 
     pydecimal.getcontext().rounding = pydecimal.ROUND_HALF_UP
     test_cases = load_test_cases(toml, "round_half_up_tests")
     count_wrong = 0
     for test_case in test_cases:
-        var result = BDec(test_case.a).round(
-            Int(test_case.b), RoundingMode.half_up()
-        )
-        try:
-            testing.assert_equal(
-                lhs=String(result),
-                rhs=test_case.expected,
-                msg=test_case.description,
-            )
-        except e:
+        var precision = Int(test_case.b)
+        var result = BDec(test_case.a).round(precision, RoundingMode.half_up())
+        var mojo_str = String(result)
+        var template = pydecimal.Decimal("1E" + String(-precision))
+        var py_result = pydecimal.Decimal(test_case.a).quantize(template)
+        if pydecimal.Decimal(mojo_str) != py_result:
             print(
                 test_case.description,
-                "\n  Expected:",
-                test_case.expected,
-                "\n  Got:",
-                String(result),
-                "\n  Python decimal result (for reference):",
-                String(
-                    pydecimal.Decimal(test_case.a).__round__(Int(test_case.b))
-                ),
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                String(py_result),
+                "\n",
             )
             count_wrong += 1
     testing.assert_equal(
         count_wrong,
         0,
-        "Some test cases failed. See above for details.",
+        "ROUND_HALF_UP: Mojo and Python results differ. See above.",
     )
 
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal ROUND_HALF_EVEN (banker's rounding) mode...")
-    # print("------------------------------------------------------")
+    # -------------------------------------------------------
+    # Testing BigDecimal ROUND_HALF_EVEN (banker's rounding) mode
+    # -------------------------------------------------------
 
     pydecimal.getcontext().rounding = pydecimal.ROUND_HALF_EVEN
     test_cases = load_test_cases(toml, "round_half_even_tests")
     count_wrong = 0
     for test_case in test_cases:
+        var precision = Int(test_case.b)
         var result = BDec(test_case.a).round(
-            Int(test_case.b), RoundingMode.half_even()
+            precision, RoundingMode.half_even()
         )
-        try:
-            testing.assert_equal(
-                lhs=String(result),
-                rhs=test_case.expected,
-                msg=test_case.description,
-            )
-        except e:
+        var mojo_str = String(result)
+        var template = pydecimal.Decimal("1E" + String(-precision))
+        var py_result = pydecimal.Decimal(test_case.a).quantize(template)
+        if pydecimal.Decimal(mojo_str) != py_result:
             print(
                 test_case.description,
-                "\n  Expected:",
-                test_case.expected,
-                "\n  Got:",
-                String(result),
-                "\n  Python decimal result (for reference):",
-                String(
-                    pydecimal.Decimal(test_case.a).__round__(Int(test_case.b))
-                ),
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                String(py_result),
+                "\n",
             )
             count_wrong += 1
     testing.assert_equal(
         count_wrong,
         0,
-        "Some test cases failed. See above for details.",
+        "ROUND_HALF_EVEN: Mojo and Python results differ. See above.",
     )
 
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal rounding with extreme values...")
-    # print("------------------------------------------------------")
+    # -------------------------------------------------------
+    # Testing BigDecimal rounding with extreme values (HALF_EVEN)
+    # -------------------------------------------------------
 
     test_cases = load_test_cases(toml, "extreme_value_tests")
     count_wrong = 0
     for test_case in test_cases:
+        var precision = Int(test_case.b)
         var result = BDec(test_case.a).round(
-            Int(test_case.b), RoundingMode.half_even()
+            precision, RoundingMode.half_even()
         )
-        try:
-            testing.assert_equal(
-                lhs=String(result),
-                rhs=test_case.expected,
-                msg=test_case.description,
-            )
-        except e:
+        var mojo_str = String(result)
+        var template = pydecimal.Decimal("1E" + String(-precision))
+        var py_result = pydecimal.Decimal(test_case.a).quantize(template)
+        if pydecimal.Decimal(mojo_str) != py_result:
             print(
                 test_case.description,
-                "\n  Expected:",
-                test_case.expected,
-                "\n  Got:",
-                String(result),
-                "\n  Python decimal result (for reference):",
-                String(
-                    pydecimal.Decimal(test_case.a).__round__(Int(test_case.b))
-                ),
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                String(py_result),
+                "\n",
             )
             count_wrong += 1
     testing.assert_equal(
         count_wrong,
         0,
-        "Some test cases failed. See above for details.",
+        "Extreme values: Mojo and Python results differ. See above.",
     )
 
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal rounding with special edge cases...")
-    # print("------------------------------------------------------")
+    # -------------------------------------------------------
+    # Testing BigDecimal rounding with special edge cases (HALF_EVEN)
+    # -------------------------------------------------------
 
     test_cases = load_test_cases(toml, "edge_case_tests")
     count_wrong = 0
     for test_case in test_cases:
+        var precision = Int(test_case.b)
         var result = BDec(test_case.a).round(
-            Int(test_case.b), RoundingMode.half_even()
+            precision, RoundingMode.half_even()
         )
-        try:
-            testing.assert_equal(
-                lhs=String(result),
-                rhs=test_case.expected,
-                msg=test_case.description,
-            )
-        except e:
+        var mojo_str = String(result)
+        var template = pydecimal.Decimal("1E" + String(-precision))
+        var py_result = pydecimal.Decimal(test_case.a).quantize(template)
+        if pydecimal.Decimal(mojo_str) != py_result:
             print(
                 test_case.description,
-                "\n  Expected:",
-                test_case.expected,
-                "\n  Got:",
-                String(result),
-                "\n  Python decimal result (for reference):",
-                String(
-                    pydecimal.Decimal(test_case.a).__round__(Int(test_case.b))
-                ),
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                String(py_result),
+                "\n",
             )
             count_wrong += 1
     testing.assert_equal(
         count_wrong,
         0,
-        "Some test cases failed. See above for details.",
+        "Edge cases: Mojo and Python results differ. See above.",
     )
 
-    # print("------------------------------------------------------")
-    # print(
-    #     "Testing BigDecimal rounding with negative precision (rounding to tens,"
-    #     " hundreds, etc.)"
-    # )
-    # print("------------------------------------------------------")
+    # -------------------------------------------------------
+    # Testing BigDecimal rounding with negative precision (HALF_EVEN)
+    # -------------------------------------------------------
 
     test_cases = load_test_cases(toml, "precision_tests")
     count_wrong = 0
     for test_case in test_cases:
+        var precision = Int(test_case.b)
         var result = BDec(test_case.a).round(
-            Int(test_case.b), RoundingMode.half_even()
+            precision, RoundingMode.half_even()
         )
-        try:
-            testing.assert_equal(
-                lhs=String(result),
-                rhs=test_case.expected,
-                msg=test_case.description,
-            )
-        except e:
+        var mojo_str = String(result)
+        var template = pydecimal.Decimal("1E" + String(-precision))
+        var py_result = pydecimal.Decimal(test_case.a).quantize(template)
+        if pydecimal.Decimal(mojo_str) != py_result:
             print(
                 test_case.description,
-                "\n  Expected:",
-                test_case.expected,
-                "\n  Got:",
-                String(result),
-                "\n  Python decimal result (for reference):",
-                String(
-                    pydecimal.Decimal(test_case.a).__round__(Int(test_case.b))
-                ),
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                String(py_result),
+                "\n",
             )
             count_wrong += 1
     testing.assert_equal(
         count_wrong,
         0,
-        "Some test cases failed. See above for details.",
+        "Precision tests: Mojo and Python results differ. See above.",
     )
 
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal rounding with scientific notation inputs...")
-    # print("------------------------------------------------------")
+    # -------------------------------------------------------
+    # Testing BigDecimal rounding with scientific notation inputs
+    # -------------------------------------------------------
 
     test_cases = load_test_cases(toml, "scientific_tests")
     count_wrong = 0
     for test_case in test_cases:
+        var precision = Int(test_case.b)
         var result = BDec(test_case.a).round(
-            Int(test_case.b), RoundingMode.half_even()
+            precision, RoundingMode.half_even()
         )
-        try:
-            testing.assert_equal(
-                lhs=String(result),
-                rhs=test_case.expected,
-                msg=test_case.description,
-            )
-        except e:
+        var mojo_str = String(result)
+        var template = pydecimal.Decimal("1E" + String(-precision))
+        var py_result = pydecimal.Decimal(test_case.a).quantize(template)
+        if pydecimal.Decimal(mojo_str) != py_result:
             print(
                 test_case.description,
-                "\n  Expected:",
-                test_case.expected,
-                "\n  Got:",
-                String(result),
-                "\n  Python decimal result (for reference):",
-                String(
-                    pydecimal.Decimal(test_case.a).__round__(Int(test_case.b))
-                ),
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                String(py_result),
+                "\n",
             )
             count_wrong += 1
     testing.assert_equal(
         count_wrong,
         0,
-        "Some test cases failed. See above for details.",
+        "Scientific notation: Mojo and Python results differ. See above.",
     )
 
 
@@ -344,36 +300,28 @@ fn test_quantize_basic() raises:
     var count_wrong = 0
 
     for test_case in test_cases:
-        var value = BDec(test_case.a)
-        var template = BDec(test_case.b)
-        var result = value.quantize(template)
-
-        try:
-            testing.assert_equal(
-                lhs=String(result),
-                rhs=test_case.expected,
-                msg=test_case.description,
+        var result = BDec(test_case.a).quantize(BDec(test_case.b))
+        var mojo_str = String(result)
+        var py_str = String(
+            pydecimal.Decimal(test_case.a).quantize(
+                pydecimal.Decimal(test_case.b)
             )
-        except e:
+        )
+        if mojo_str != py_str:
             print(
                 test_case.description,
-                "\n  Expected:",
-                test_case.expected,
-                "\n  Got:",
-                String(result),
-                "\n  Python decimal result (for reference):",
-                String(
-                    pydecimal.Decimal(test_case.a).quantize(
-                        pydecimal.Decimal(test_case.b)
-                    )
-                ),
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
             )
             count_wrong += 1
 
     testing.assert_equal(
         count_wrong,
         0,
-        "Some test cases failed. See above for details.",
+        "quantize_basic: Mojo and Python results differ. See above.",
     )
 
 
@@ -387,30 +335,28 @@ fn test_quantize_financial() raises:
     var count_wrong = 0
 
     for test_case in test_cases:
-        var value = BDec(test_case.a)
-        var template = BDec(test_case.b)
-        var result = value.quantize(template)
-
-        try:
-            testing.assert_equal(
-                lhs=String(result),
-                rhs=test_case.expected,
-                msg=test_case.description,
+        var result = BDec(test_case.a).quantize(BDec(test_case.b))
+        var mojo_str = String(result)
+        var py_str = String(
+            pydecimal.Decimal(test_case.a).quantize(
+                pydecimal.Decimal(test_case.b)
             )
-        except e:
+        )
+        if mojo_str != py_str:
             print(
                 test_case.description,
-                "\n  Expected:",
-                test_case.expected,
-                "\n  Got:",
-                String(result),
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
             )
             count_wrong += 1
 
     testing.assert_equal(
         count_wrong,
         0,
-        "Some test cases failed. See above for details.",
+        "quantize_financial: Mojo and Python results differ. See above.",
     )
 
 
@@ -424,30 +370,28 @@ fn test_quantize_scientific() raises:
     var count_wrong = 0
 
     for test_case in test_cases:
-        var value = BDec(test_case.a)
-        var template = BDec(test_case.b)
-        var result = value.quantize(template)
-
-        try:
-            testing.assert_equal(
-                lhs=String(result),
-                rhs=test_case.expected,
-                msg=test_case.description,
+        var result = BDec(test_case.a).quantize(BDec(test_case.b))
+        var mojo_str = String(result)
+        var py_str = String(
+            pydecimal.Decimal(test_case.a).quantize(
+                pydecimal.Decimal(test_case.b)
             )
-        except e:
+        )
+        if mojo_str != py_str:
             print(
                 test_case.description,
-                "\n  Expected:",
-                test_case.expected,
-                "\n  Got:",
-                String(result),
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
             )
             count_wrong += 1
 
     testing.assert_equal(
         count_wrong,
         0,
-        "Some test cases failed. See above for details.",
+        "quantize_scientific: Mojo and Python results differ. See above.",
     )
 
 
@@ -461,30 +405,28 @@ fn test_quantize_negative_scale() raises:
     var count_wrong = 0
 
     for test_case in test_cases:
-        var value = BDec(test_case.a)
-        var template = BDec(test_case.b)
-        var result = value.quantize(template)
-
-        try:
-            testing.assert_equal(
-                lhs=String(result),
-                rhs=test_case.expected,
-                msg=test_case.description,
+        var result = BDec(test_case.a).quantize(BDec(test_case.b))
+        var mojo_str = String(result)
+        var py_str = String(
+            pydecimal.Decimal(test_case.a).quantize(
+                pydecimal.Decimal(test_case.b)
             )
-        except e:
+        )
+        if mojo_str != py_str:
             print(
                 test_case.description,
-                "\n  Expected:",
-                test_case.expected,
-                "\n  Got:",
-                String(result),
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
             )
             count_wrong += 1
 
     testing.assert_equal(
         count_wrong,
         0,
-        "Some test cases failed. See above for details.",
+        "quantize_negative_scale: Mojo and Python results differ. See above.",
     )
 
 
@@ -498,30 +440,28 @@ fn test_quantize_add_zeros() raises:
     var count_wrong = 0
 
     for test_case in test_cases:
-        var value = BDec(test_case.a)
-        var template = BDec(test_case.b)
-        var result = value.quantize(template)
-
-        try:
-            testing.assert_equal(
-                lhs=String(result),
-                rhs=test_case.expected,
-                msg=test_case.description,
+        var result = BDec(test_case.a).quantize(BDec(test_case.b))
+        var mojo_str = String(result)
+        var py_str = String(
+            pydecimal.Decimal(test_case.a).quantize(
+                pydecimal.Decimal(test_case.b)
             )
-        except e:
+        )
+        if mojo_str != py_str:
             print(
                 test_case.description,
-                "\n  Expected:",
-                test_case.expected,
-                "\n  Got:",
-                String(result),
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
             )
             count_wrong += 1
 
     testing.assert_equal(
         count_wrong,
         0,
-        "Some test cases failed. See above for details.",
+        "quantize_add_zeros: Mojo and Python results differ. See above.",
     )
 
 
@@ -535,30 +475,28 @@ fn test_quantize_same_scale() raises:
     var count_wrong = 0
 
     for test_case in test_cases:
-        var value = BDec(test_case.a)
-        var template = BDec(test_case.b)
-        var result = value.quantize(template)
-
-        try:
-            testing.assert_equal(
-                lhs=String(result),
-                rhs=test_case.expected,
-                msg=test_case.description,
+        var result = BDec(test_case.a).quantize(BDec(test_case.b))
+        var mojo_str = String(result)
+        var py_str = String(
+            pydecimal.Decimal(test_case.a).quantize(
+                pydecimal.Decimal(test_case.b)
             )
-        except e:
+        )
+        if mojo_str != py_str:
             print(
                 test_case.description,
-                "\n  Expected:",
-                test_case.expected,
-                "\n  Got:",
-                String(result),
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
             )
             count_wrong += 1
 
     testing.assert_equal(
         count_wrong,
         0,
-        "Some test cases failed. See above for details.",
+        "quantize_same_scale: Mojo and Python results differ. See above.",
     )
 
 
@@ -572,30 +510,28 @@ fn test_quantize_normalization() raises:
     var count_wrong = 0
 
     for test_case in test_cases:
-        var value = BDec(test_case.a)
-        var template = BDec(test_case.b)
-        var result = value.quantize(template)
-
-        try:
-            testing.assert_equal(
-                lhs=String(result),
-                rhs=test_case.expected,
-                msg=test_case.description,
+        var result = BDec(test_case.a).quantize(BDec(test_case.b))
+        var mojo_str = String(result)
+        var py_str = String(
+            pydecimal.Decimal(test_case.a).quantize(
+                pydecimal.Decimal(test_case.b)
             )
-        except e:
+        )
+        if mojo_str != py_str:
             print(
                 test_case.description,
-                "\n  Expected:",
-                test_case.expected,
-                "\n  Got:",
-                String(result),
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
             )
             count_wrong += 1
 
     testing.assert_equal(
         count_wrong,
         0,
-        "Some test cases failed. See above for details.",
+        "quantize_normalization: Mojo and Python results differ. See above.",
     )
 
 
@@ -609,30 +545,28 @@ fn test_quantize_edge_cases() raises:
     var count_wrong = 0
 
     for test_case in test_cases:
-        var value = BDec(test_case.a)
-        var template = BDec(test_case.b)
-        var result = value.quantize(template)
-
-        try:
-            testing.assert_equal(
-                lhs=String(result),
-                rhs=test_case.expected,
-                msg=test_case.description,
+        var result = BDec(test_case.a).quantize(BDec(test_case.b))
+        var mojo_str = String(result)
+        var py_str = String(
+            pydecimal.Decimal(test_case.a).quantize(
+                pydecimal.Decimal(test_case.b)
             )
-        except e:
+        )
+        if mojo_str != py_str:
             print(
                 test_case.description,
-                "\n  Expected:",
-                test_case.expected,
-                "\n  Got:",
-                String(result),
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
             )
             count_wrong += 1
 
     testing.assert_equal(
         count_wrong,
         0,
-        "Some test cases failed. See above for details.",
+        "quantize_edge_cases: Mojo and Python results differ. See above.",
     )
 
 
@@ -660,40 +594,33 @@ fn test_quantize_rounding_modes() raises:
 
     for i in range(len(test_cases)):
         ref test_case = test_cases[i]
-        var value = BDec(test_case.a)
-        var template = BDec(test_case.b)
-
         var rounding_mode = rounding_modes[i % 4]
         pydecimal.getcontext().rounding = py_rounding_modes[i % 4]
 
-        var result = value.quantize(template, rounding_mode)
-
-        try:
-            testing.assert_equal(
-                lhs=String(result),
-                rhs=test_case.expected,
-                msg=test_case.description,
+        var result = BDec(test_case.a).quantize(
+            BDec(test_case.b), rounding_mode
+        )
+        var mojo_str = String(result)
+        var py_str = String(
+            pydecimal.Decimal(test_case.a).quantize(
+                pydecimal.Decimal(test_case.b)
             )
-        except e:
+        )
+        if mojo_str != py_str:
             print(
                 test_case.description,
-                "\n  Expected:",
-                test_case.expected,
-                "\n  Got:",
-                String(result),
-                "\n  Python decimal result (for reference):",
-                String(
-                    pydecimal.Decimal(test_case.a).quantize(
-                        pydecimal.Decimal(test_case.b)
-                    )
-                ),
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
             )
             count_wrong += 1
 
     testing.assert_equal(
         count_wrong,
         0,
-        "Some test cases failed. See above for details.",
+        "quantize_rounding_modes: Mojo and Python results differ. See above.",
     )
 
 

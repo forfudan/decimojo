@@ -76,8 +76,21 @@ fn round(
     else:  # ndigits_to_remove > 0
         # Remove trailing digits from the number
         if ndigits_to_remove > number.coefficient.number_of_digits():
-            # If the number of digits to remove is greater than
-            # the number of digits in the coefficient, return 0.
+            # All significant digits are removed. For ROUND_DOWN this is
+            # always 0. For ROUND_UP (away from zero), any non-zero value
+            # rounds to 1 at the target scale. For ROUND_HALF_UP /
+            # ROUND_HALF_EVEN, it depends on whether the removed value is
+            # >= 0.5 at the target scale (it can't be when all digits are
+            # below the target precision), so it's 0.
+            if (
+                effective_mode == RoundingMode.up()
+                and number.coefficient != BigUInt.zero()
+            ):
+                return BigDecimal(
+                    coefficient=BigUInt.one(),
+                    scale=ndigits,
+                    sign=number.sign,
+                )
             return BigDecimal(
                 coefficient=BigUInt.zero(),
                 scale=ndigits,

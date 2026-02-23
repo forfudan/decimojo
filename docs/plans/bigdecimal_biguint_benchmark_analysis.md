@@ -9,17 +9,17 @@
 
 ## Optimization priority and planning
 
-| Task       | Operation(s) Improved     |         Current vs Python         |    Expected After    |  Effort   | Priority     |
-| ---------- | ------------------------- | :-------------------------------: | :------------------: | :-------: | ------------ |
-| **Task 1** | Asymmetric division       |           ✓ **31–79×**            |     ✓ COMPLETED      |   Done    | High         |
-| **Task 2** | Division, sqrt, exp, ln   |              varies               |     1.5–2× gain      |   High    | Medium       |
-| **Task 3** | Exp, ln                   |    Exp: 0.60×@p50→1.62×@p2000     |   3a ✓, 3b ✓, 3c ✓   |  Medium   | **Critical** |
-| **Task 4** | Sqrt                      | ✓ **3.53× geo (was 0.66×@p5000)** |     ✓ COMPLETED      |   Done    | High         |
-| **Task 5** | ALL large operations      |              varies               |      2–10× gain      | Very High | Low          |
-| **Task 6** | Large multiplication      |                N/A                | ~1.5× over Karatsuba |  Medium   | Medium       |
-| **Task 7** | Nth root                  |  ✓ **3.9–25× (was 0.14–0.49×)**   |     ✓ COMPLETED      |   Done    | High         |
-| **Task 8** | All (allocation overhead) |       ✓ **+15–27% exp/ln**        |     ✓ COMPLETED      |   Done    | High         |
-| **Task 9** | Schoolbook multiply base  |                 —                 |        1.5–2×        |    Low    | Medium       |
+| Task       | Operation(s) Improved     |            Current vs Python            |    Expected After    |  Effort   | Priority     |
+| ---------- | ------------------------- | :-------------------------------------: | :------------------: | :-------: | ------------ |
+| **Task 1** | Asymmetric division       |              ✓ **31–79×**               |     ✓ COMPLETED      |   Done    | High         |
+| **Task 2** | Division (large operands) | ✓ **avg 24.6× (was 0.78×), up to 915×** |     ✓ COMPLETED      |   Done    | High         |
+| **Task 3** | Exp, ln                   |       Exp: 0.60×@p50→1.62×@p2000        |   3a ✓, 3b ✓, 3c ✓   |  Medium   | **Critical** |
+| **Task 4** | Sqrt                      |    ✓ **3.53× geo (was 0.66×@p5000)**    |     ✓ COMPLETED      |   Done    | High         |
+| **Task 5** | ALL large operations      |                 varies                  |      2–10× gain      | Very High | Low          |
+| **Task 6** | Large multiplication      |                   N/A                   | ~1.5× over Karatsuba |  Medium   | Medium       |
+| **Task 7** | Nth root                  |     ✓ **3.9–25× (was 0.14–0.49×)**      |     ✓ COMPLETED      |   Done    | High         |
+| **Task 8** | All (allocation overhead) |          ✓ **+15–27% exp/ln**           |     ✓ COMPLETED      |   Done    | High         |
+| **Task 9** | Schoolbook multiply base  |                    —                    |        1.5–2×        |    Low    | Medium       |
 
 ### Planned Execution Order
 
@@ -30,11 +30,39 @@
 1. ~~**Task 7** (direct nth root) — Newton's method replaces exp(ln(x)/n)~~ ✓ DONE — integer roots 1.2–50× Python (was 0.14–0.49×)
 1. ~~**Task 8** (in-place operations) — broad improvement~~ ✓ DONE — exp +15–21%, ln +15–27%, sqrt +9%
 1. ~~**Task 4** (CPython-style exact sqrt + reciprocal sqrt hybrid)~~ ✓ DONE — 3.53× geometric mean (was 0.66×), 0 correctness warnings, bit-perfect Python match
-1. **Task 2** (reciprocal-Newton division) — requires careful implementation
+1. ~~**Task 2** (truncation optimization for large-operand division)~~ ✓ DONE — avg 24.6× (was 0.78×), large balanced up to 915× Python, asymmetric up to 124×
 1. **Task 6** (Toom-3) — medium complexity, medium gain
 1. **Task 3c** (binary splitting for series) — complex but transformative
 1. **Task 5** (NTT) — less urgent than thought; Karatsuba competitive up to p=1000
 1. **Task 9** (SIMD multiply) — polish
+
+---
+
+### Design Idea: `pad_to_precision: Bool = False` parameter
+
+**Context:** After implementing the truncation optimization (Task 2), an exact-division post-check was added: when the result has trailing zeros, we verify whether `stripped_result × original_y == original_x`. If so, we return the stripped result (e.g., `"2"` instead of `"2.0000000000000000000000000000"`). This ensures Python-matching behavior for exact divisions.
+
+**Proposal:** Add an optional `pad_to_precision: Bool = False` parameter to `true_divide()` (and potentially `sqrt()`).
+
+| `pad_to_precision` | Behavior                                                                                                        | Use Case                                                                    |
+| ------------------ | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `False` (default)  | Python semantics: detect exact division, strip trailing zeros. `10 / 5 → "2"`                                   | Correctness, Python compatibility, financial precision                      |
+| `True`             | Always return a result with exactly `precision` significant digits. `10 / 5 → "2.0000000000000000000000000000"` | High-throughput scientific computing where fixed-width results are expected |
+
+**Advantages:**
+
+1. **Performance:** When `True`, skips the exact-division check (a `BigUInt × BigUInt` multiplication + comparison), saving time for callers who don't need minimal representation.
+2. **Predictable output width:** All results have exactly `precision` digits, simplifying downstream formatting/alignment.
+3. **No breaking change:** Default is `False` → existing code behaves identically.
+
+**Concerns addressed:**
+
+- The exact-division check only fires when trailing zeros exist, so the cost is already minimal for non-exact divisions. The speedup from `pad_to_precision=True` is only meaningful when many exact divisions occur in a hot loop.
+- For `sqrt()`, the same logic applies: `sqrt(4, precision=28)` currently returns `"2"`, but with `pad_to_precision=True` would return `"2.000000000000000000000000000"`.
+
+**Recommendation:** Good idea. Low implementation cost (single `if` guard around the post-check), zero overhead for existing callers, useful for batch numerical computing. Implement when a concrete use case demands it.
+
+---
 
 ## Benchmarks
 
@@ -76,7 +104,7 @@ All benchmarks compare **DeciMojo BigDecimal** against **Python `decimal.Decimal
 | **Addition**       |       **2.22×**       |    28     | Consistent ~2.4× for ≤28 digits; degrades >1000 digits             |
 | **Subtraction**    |       **9.79×**       |    28     | Consistently ~9× across all small cases                            |
 | **Multiplication** |       **3.44×**       |    28     | 2–7× across all tested sizes                                       |
-| **Division**       |       **6.29×**       |    50     | Up to 28× for large balanced; **31–79× asymmetric** (Task 1 fix)   |
+| **Division**       |      **24.62×**       |    50     | Up to 915× for large balanced; **12–124× asymmetric** (Tasks 1+2)  |
 | **Sqrt**           |       **3.53×**       |   5000    | 1.6–75× all cases; **0 correctness warnings** (exact Python match) |
 | **Exp**            |        0.55×†         |    50     | ↑ from 0.34× at p=28; Python still ~2× faster consistently         |
 | **Ln**             |        0.18×†         |    50     | 0.78× near 1; Python has cached ln(10) for power-of-10 args        |
@@ -139,20 +167,39 @@ All benchmarks compare **DeciMojo BigDecimal** against **Python `decimal.Decimal
 > (`true_divide_general(a, b, precision)`) and Python (`getcontext().prec = 50`)
 > now compute the same number of significant digits. Previous benchmarks used
 > `comptime PRECISION = 4096` for Mojo and `prec = 4096` for Python.
+>
+> **Update (2026-02-23):** Task 2 implemented — truncation optimization for large-operand
+> division. When both operands have far more words than needed for the requested precision,
+> truncate to only the significant top words before dividing. This avoids running
+> Burnikel-Ziegler on hundreds of thousands of unnecessary words. Average speedup
+> improved from **0.78× → 24.6×** (was slower than Python, now massively faster).
 
-**Balanced division (equal-size operands):**
+**Balanced division (equal-size operands) — AFTER Task 2 (truncation optimization, 2026-02-23):**
 
-| Size (words)      |  Mojo (ns) | Python (ns) |  Speedup  |
-| ----------------- | ---------: | ----------: | :-------: |
-| Small (≤28 d)     |    310–680 |   730–2,710 | 2.0–8.0×  |
-| 1024w / 1024w     |     31,440 |     513,560 | **16.3×** |
-| 2048w / 2048w     |     68,920 |   1,037,740 | **15.1×** |
-| 4096w / 4096w     |    130,040 |   3,652,110 | **28.1×** |
-| 8192w / 8192w     |    292,390 |   6,848,600 | **23.4×** |
-| 16384w / 16384w   |    613,040 |  13,254,220 | **21.6×** |
-| 32768w / 32768w   |  1,301,410 |  25,958,660 | **20.0×** |
-| 65536w / 65536w   |  2,712,610 |  51,848,670 | **19.1×** |
-| 262144w / 262144w | 12,126,666 | 205,680,333 | **17.0×** |
+| Size (words)      | Mojo (ns) | Python (ns) |   Speedup   |
+| ----------------- | --------: | ----------: | :---------: |
+| Small (≤28 d)     |   310–680 |   730–2,710 |  2.0–8.0×   |
+| 1024w / 1024w     |     1,480 |      11,280 |  **7.62×**  |
+| 2048w / 2048w     |     2,000 |      25,333 | **12.67×**  |
+| 4096w / 4096w     |     1,333 |      42,333 | **31.76×**  |
+| 8192w / 8192w     |     9,000 |      88,666 |  **9.85×**  |
+| 16384w / 16384w   |    10,666 |     170,000 | **15.94×**  |
+| 32768w / 32768w   |     5,333 |     334,333 | **62.69×**  |
+| 65536w / 65536w   |     5,666 |     646,666 | **114.13×** |
+| 262144w / 262144w |     2,666 |   2,438,666 | **914.73×** |
+
+**Balanced division — BEFORE Task 2 (for comparison):**
+
+| Size (words)      |  Mojo (ns) | Python (ns) | Speedup |
+| ----------------- | ---------: | ----------: | :-----: |
+| 1024w / 1024w     |     36,990 |      11,180 |  0.30×  |
+| 2048w / 2048w     |     75,666 |      21,333 |  0.28×  |
+| 4096w / 4096w     |    156,666 |      40,666 |  0.26×  |
+| 8192w / 8192w     |    310,666 |      83,333 |  0.27×  |
+| 16384w / 16384w   |    680,000 |     225,666 |  0.33×  |
+| 32768w / 32768w   |  1,375,666 |     335,000 |  0.24×  |
+| 65536w / 65536w   |  2,842,333 |     641,666 |  0.23×  |
+| 262144w / 262144w | 12,088,000 |   2,276,666 |  0.19×  |
 
 **Asymmetric division (unbalanced operands) — BEFORE Task 1 FIX:**
 
@@ -165,27 +212,24 @@ All benchmarks compare **DeciMojo BigDecimal** against **Python `decimal.Decimal
 | 65536w / 2048w  |   5,099,000 |   3,180,333 | **0.62×** ✗ |
 | 65536w / 1024w  |   1,776,333 |     805,333 | **0.45×** ✗ |
 
-**Asymmetric division — AFTER Task 1 FIX (2025-02-21):**
+**Asymmetric division — AFTER Task 2 (2026-02-23), supersedes Task 1 results:**
 
-| Size            | Mojo (ns) | Python (ns) |  Speedup  |
-| --------------- | --------: | ----------: | :-------: |
-| 65536w / 32768w |   614,000 |  46,727,333 | **76.1×** |
-| 65536w / 16384w |   299,333 |  23,327,666 | **77.9×** |
-| 65536w / 8192w  |   149,000 |  11,748,000 | **78.8×** |
-| 65536w / 4096w  |    89,000 |   5,974,666 | **67.1×** |
-| 65536w / 2048w  |    42,666 |   3,079,000 | **72.2×** |
-| 65536w / 1024w  |    24,000 |     749,333 | **31.2×** |
+| Size            | Mojo (ns) | Python (ns) |   Speedup   |
+| --------------- | --------: | ----------: | :---------: |
+| 65536w / 32768w |     5,333 |     652,666 | **122.38×** |
+| 65536w / 16384w |     2,333 |     289,000 | **123.87×** |
+| 65536w / 8192w  |     3,333 |     144,000 | **43.20×**  |
+| 65536w / 4096w  |     2,000 |      72,333 | **36.17×**  |
+| 65536w / 2048w  |     1,666 |      38,666 | **23.21×**  |
+| 65536w / 1024w  |     2,000 |      25,000 | **12.50×**  |
 
 **Key findings:**
 
-1. **Balanced division is outstanding** — 15–28× faster than Python at large sizes.
-   Burnikel-Ziegler is very effective when both operands are similar size.
-2. ~~**Asymmetric division is catastrophically slow**~~ **FIXED in Task 1.**
-   Root cause was BigDecimal.true_divide_general computing full quotient then discarding.
-   Now 31–79× faster than Python.
-3. The regression between run 1 (optimized, avg 6.29×) and run 2 (earlier, avg 3.34×)
-   shows that recent optimizations helped balanced cases, but asymmetric regression
-   worsened.
+1. ~~**Balanced division is outstanding** — 15–28× faster than Python at large sizes.~~ **IMPROVED to 8–915× after Task 2 truncation.** Truncation reduces the effective problem size to ~12 words regardless of operand size, making Mojo time nearly constant while Python scales linearly with operand size. The 262144w case went from 0.19× (5× slower than Python) to **914.73×** (fastest case in the benchmark).
+2. ~~**Asymmetric division is catastrophically slow**~~ **FIXED in Task 1, further improved in Task 2.**
+   Task 1 root cause was BigDecimal.true_divide_general computing full quotient then discarding (31–79× after fix). Task 2 truncation further improved to **12–124×** by also truncating the large dividend.
+3. **Small-case performance unchanged.** The truncation optimization uses an early-return to a helper function only when the divisor exceeds `needed_divisor_words = ceil(precision/9) + 2 + 4`. For small operands the original code path runs untouched — no regression.
+4. **Algorithm:** When divisor has more words than needed for the target precision, both operands are truncated by removing low-order words via `floor_divide_by_power_of_billion()` (O(n) memcpy). This exploits $x/y \approx (x/10^k)/(y/10^k)$ with negligible relative error for the requested precision. Guard words (`TRUNCATION_GUARD = 4`) ensure sufficient accuracy.
 
 ---
 

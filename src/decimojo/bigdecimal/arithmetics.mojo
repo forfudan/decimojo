@@ -623,9 +623,11 @@ fn _true_divide_general_truncated(
 
     var coef = coef_x // y_coef_tr
 
-    # Skip exact division check — truncation discards the information
-    # needed for this check, and exactness is vanishingly unlikely
-    # for large operands anyway.
+    # Truncation discards low-order digits, so we cannot detect exact division
+    # by checking coef * y_coef_tr == coef_x (the truncated values).
+    # Instead, after rounding, we verify exactness by multiplying the stripped
+    # candidate back by the ORIGINAL y and comparing with the ORIGINAL x.
+    # This is O(n) for small_quotient × large_y + O(n) comparison.
 
     var scale = x.scale + extra_digits - y.scale
     var result = BigDecimal(
@@ -639,6 +641,26 @@ fn _true_divide_general_truncated(
         remove_extra_digit_due_to_rounding=True,
         fill_zeros_to_precision=False,
     )
+
+    # Post-rounding exact division check: if the rounded result has trailing
+    # zeros, strip them and verify by multiplying back against the original y.
+    var tz = result.coefficient.number_of_trailing_zeros()
+    if tz > 0:
+        var stripped_coef = (
+            decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
+                result.coefficient, tz
+            )
+        )
+        var stripped = BigDecimal(
+            coefficient=stripped_coef^,
+            scale=result.scale - tz,
+            sign=result.sign,
+        )
+        # Verify: stripped * y == x (using original, untruncated operands)
+        var product = decimojo.bigdecimal.arithmetics.multiply(stripped, y)
+        if product == x:
+            return stripped^
+
     return result^
 
 

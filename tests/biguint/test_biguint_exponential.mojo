@@ -15,21 +15,39 @@ comptime file_path_sqrt = "tests/biguint/test_data/biguint_sqrt.toml"
 
 fn test_biguint_sqrt() raises:
     # Load test cases from TOML file
+    var pysys = Python.import_module("sys")
+    var pymath = Python.import_module("math")
+    pysys.set_int_max_str_digits(25000)
+
     var toml = parse_file(file_path_sqrt)
     var test_cases: List[TestCase]
 
-    # print("------------------------------------------------------")
-    # print("Testing BigUInt sqrt...")
+    # -------------------------------------------------------
+    # Testing BigUInt sqrt
+    # -------------------------------------------------------
+
     test_cases = load_test_cases[unary=True](toml, "sqrt_tests")
     assert_true(len(test_cases) > 0, "No sqrt test cases found")
+    count_wrong = 0
     for test_case in test_cases:
         var result = BigUInt(test_case.a).sqrt()
-        assert_equal(
-            lhs=String(result),
-            rhs=test_case.expected,
-            msg=test_case.description,
-        )
-    # print("BigUInt sqrt tests passed!")
+        var mojo_str = String(result)
+        var py_str = String(pymath.isqrt(Python.int(test_case.a)))
+        if mojo_str != py_str:
+            print(
+                test_case.description,
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
+            )
+            count_wrong += 1
+    assert_equal(
+        count_wrong,
+        0,
+        "sqrt: Mojo and Python results differ. See above.",
+    )
 
 
 fn test_biguint_sqrt_random_numbers_against_python() raises:
