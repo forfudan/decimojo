@@ -521,33 +521,30 @@ struct BigDecimal(
 
     fn to_string(
         self,
-        precision: Int = 28,
         scientific_notation: Bool = False,
         line_width: Int = 0,
     ) -> String:
         """Returns string representation of the number.
 
+        This method follows CPython's `Decimal.__str__` logic exactly:
+
+        - Scientific notation is used when:
+          1. `scientific_notation` parameter is True, OR
+          2. The internal exponent > 0 (i.e., scale < 0), OR
+          3. There are more than 6 leading zeros after the decimal
+             point (adjusted exponent < -6).
+        - Otherwise, plain (fixed-point) notation is used.
+
         Args:
-            precision: The threshold for scientific notation.
-                If the digits to display is greater than this value,
-                the number is represented in scientific notation.
             scientific_notation: If True, the number is always represented in
                 scientific notation. If False, the format is determined by the
-                `precision` argument.
+                CPython-compatible rules described above.
             line_width: The maximum line width for the string representation.
                 If 0, the string is returned as a single line.
                 If greater than 0, the string is split into multiple lines.
 
         Returns:
             A string representation of the number.
-
-        Notes:
-
-        In follwing cases, scientific notation is used:
-        1. `scientific_notation` is True.
-        2. exponent >= `precision`.
-        3. There 6 or more leading zeros after decimal and before significand.
-        4. The scale is negative.
         """
 
         if self.coefficient.is_unitialized():
@@ -555,61 +552,68 @@ struct BigDecimal(
 
         var result = String("-") if self.sign else String("")
         var coefficient_string = self.coefficient.to_string()
+        var num_digits = len(coefficient_string)
 
-        # Check whether scientific notation is needed
-        # CPython rule: scientific when exp > 0 (scale < 0) OR
-        #               adjusted_exponent < -6 (i.e., 7+ leading zeros)
-        # The `precision` threshold provides an additional DeciMojo-specific
-        # trigger for very large exponents (default 28).
-        var exponent = self.coefficient.number_of_digits() - 1 - self.scale
-        var exponent_ge_precision = exponent >= precision
-        var leading_zeros_too_many = exponent < Int(-6)
-        var negative_scale = self.scale < 0
+        # CPython-compatible logic for Decimal.__str__:
+        #
+        # In CPython, a Decimal stores (_sign, _int, _exp) where:
+        #   value = (-1)**_sign * int(_int) * 10**_exp
+        #
+        # Mapping to DeciMojo:
+        #   CPython _exp  = -self.scale
+        #   CPython _int  = coefficient_string (digit string)
+        #
+        # leftdigits = _exp + len(_int) = num_digits - self.scale
+        #
+        # CPython uses plain notation when:
+        #   _exp <= 0 (i.e., scale >= 0) AND leftdigits > -6
+        # Otherwise, scientific notation with 1 digit before the point.
 
-        if (
+        var leftdigits = num_digits - self.scale
+
+        # Determine whether to use scientific notation
+        var use_scientific = (
             scientific_notation
-            or exponent_ge_precision
-            or leading_zeros_too_many
-            or negative_scale
-        ):
-            # Use scientific notation
-            var exponent_string = String(exponent)
+            or self.scale < 0  # CPython: _exp > 0
+            or leftdigits <= -6  # Too many leading zeros
+        )
+
+        if use_scientific:
+            # Scientific notation: 1 digit on left of the decimal point
+            var exponent = leftdigits - 1
             result += coefficient_string[byte=0]
-            if len(coefficient_string) > 1:
+            if num_digits > 1:
                 result += "."
                 result += coefficient_string[1:]
             result += "E"
             if exponent > 0:
                 result += "+"
-            result += exponent_string
+            result += String(exponent)
 
         else:
-            # Normal notation
-            if self.scale == 0:
+            # Plain notation (scale >= 0 and leftdigits > -6)
+            if leftdigits <= 0:
+                # All digits are after the decimal point with leading zeros.
+                # Example: coefficient "123", scale 5 -> leftdigits = -2
+                #          -> "0.00123"
+                result += "0."
+                result += "0" * (-leftdigits)
                 result += coefficient_string
 
-            elif self.scale > 0:
-                if self.scale < len(coefficient_string):
-                    # Example: 123_456 with scale 3 -> 123.456
-                    result += coefficient_string[
-                        : len(coefficient_string) - self.scale
-                    ]
-                    result += "."
-                    result += coefficient_string[
-                        len(coefficient_string) - self.scale :
-                    ]
-                else:
-                    # Example: 123_456 with scale 6 -> 0.123_456
-                    # Example: 123_456 with scale 7 -> 0.012_345_6
-                    result += "0."
-                    result += "0" * (self.scale - len(coefficient_string))
-                    result += coefficient_string
+            elif leftdigits >= num_digits:
+                # All digits are before the decimal point (scale == 0).
+                # Example: coefficient "12345", scale 0 -> "12345"
+                result += coefficient_string
+                # leftdigits - num_digits trailing zeros (always 0 here
+                # since scale >= 0 implies leftdigits <= num_digits,
+                # with equality when scale == 0).
 
             else:
-                # scale < 0
-                # Example: 12_345 with scale -3 -> 12_345_000
-                result += coefficient_string
-                result += "0" * (-self.scale)
+                # Decimal point falls within the digit string.
+                # Example: coefficient "123456", scale 3 -> "123.456"
+                result += coefficient_string[:leftdigits]
+                result += "."
+                result += coefficient_string[leftdigits:]
 
         # Split the result in multiple lines if line_width > 0
         if line_width > 0:

@@ -42,7 +42,7 @@ fn run_case(
         var rm = true_divide_general(m_a, m_b, precision)
         var rp = pa / pb
 
-        var rm_str = rm.to_string(precision=100000)
+        var rm_str = rm.to_string()
         var rp_str = String(rp)
 
         # Correctness check: exact string match with Python

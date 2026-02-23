@@ -40,7 +40,7 @@ fn run_case(
         var rm = m_a.ln(precision)
         var rp = pa.ln()
 
-        var rm_str = rm.to_string(precision=100000)
+        var rm_str = rm.to_string()
         var rp_str = String(rp)
 
         # Correctness check: exact string match with Python
