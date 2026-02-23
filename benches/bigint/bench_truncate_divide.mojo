@@ -42,9 +42,16 @@ fn run_case(
         var r2 = m2a.truncate_divide(m2b)
         var rp = pa // pb
 
-        log_print("BigInt10 result: " + String(r1)[:120], log_file)
-        log_print("BigInt result:  " + String(r2)[:120], log_file)
-        log_print("Python result:   " + String(rp)[:120], log_file)
+        var r1_str = String(r1)
+        var r2_str = String(r2)
+        var rp_str = String(rp)
+
+        # Correctness check: string match
+        if r1_str != rp_str or r2_str != rp_str:
+            log_print("*** WARNING: String mismatch detected! ***", log_file)
+            log_print("BigInt10 result: " + r1_str[:120], log_file)
+            log_print("BigInt result:  " + r2_str[:120], log_file)
+            log_print("Python result:   " + rp_str[:120], log_file)
 
         var t0 = perf_counter_ns()
         for _ in range(iterations):

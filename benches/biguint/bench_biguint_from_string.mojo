@@ -31,8 +31,14 @@ fn run_case(
         var rm = BigUInt(bc.a)
         var rp = py.int(bc.a)
 
-        log_print("BigUInt result:  " + String(rm)[:120], log_file)
-        log_print("Python result:   " + String(rp)[:120], log_file)
+        var rm_str = String(rm)
+        var rp_str = String(rp)
+
+        # Correctness check: string match
+        if rm_str != rp_str:
+            log_print("*** WARNING: String mismatch detected! ***", log_file)
+            log_print("BigUInt result:  " + rm_str[:120], log_file)
+            log_print("Python result:   " + rp_str[:120], log_file)
 
         var t0 = perf_counter_ns()
         for _ in range(iterations):

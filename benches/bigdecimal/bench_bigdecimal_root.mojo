@@ -1,12 +1,17 @@
-"""Benchmarks for BigDecimal root (nth root). Compares against Python decimal."""
+"""Benchmarks for BigDecimal root (nth root). Compares against Python decimal.
+
+Multi-precision benchmark: runs each case at multiple precision levels
+to show how performance scales with precision.
+"""
 
 from decimojo.bigdecimal.bigdecimal import BigDecimal
 import decimojo.bigdecimal.arithmetics
 import decimojo.bigdecimal.exponential
 from decimojo.tests import (
     BenchCase,
+    PrecisionLevel,
     load_bench_cases,
-    load_bench_precision,
+    load_bench_precision_levels,
     open_log_file,
     log_print,
     print_header,
@@ -27,14 +32,13 @@ fn run_case(
 ) raises:
     log_print("\nBenchmark:       " + bc.name, log_file)
     log_print("a: " + bc.a[:80], log_file)
-    log_print("b (n): " + bc.b, log_file)
+    log_print("b (root index): " + bc.b[:80], log_file)
 
     var m_a = BigDecimal(bc.a)
     var m_n = BigDecimal(bc.b)
     var pa = pydecimal.Decimal(bc.a)
-    var py_one = pydecimal.Decimal("1")
     var py_n = pydecimal.Decimal(bc.b)
-    var py_reciprocal = py_one / py_n
+    var py_reciprocal = pydecimal.Decimal(1) / py_n
 
     try:
         var rm = m_a.root(m_n, precision)
@@ -42,21 +46,12 @@ fn run_case(
 
         var rm_str = rm.to_string(precision=100000)
         var rp_str = String(rp)
-        log_print("BigDecimal result: " + rm_str[:100], log_file)
-        log_print("Python result:     " + rp_str[:100], log_file)
 
-        # Correctness check
-        try:
-            var py_bdec = BigDecimal(rp_str)
-            var diff = rm - py_bdec
-            var diff_str = diff.to_string(precision=100000)[:80]
-            log_print("Difference:        " + diff_str, log_file)
-            if not diff.is_zero():
-                log_print(
-                    "*** WARNING: Non-zero difference detected! ***", log_file
-                )
-        except:
-            log_print("Difference:        (comparison failed)", log_file)
+        # Correctness check: exact string match with Python
+        if rm_str != rp_str:
+            log_print("*** WARNING: String mismatch detected! ***", log_file)
+            log_print("DeciMojo result:   " + rm_str[:100], log_file)
+            log_print("Python result:     " + rp_str[:100], log_file)
 
         var t0 = perf_counter_ns()
         for _ in range(iterations):
@@ -83,38 +78,54 @@ fn run_case(
 
 fn main() raises:
     var log_file = open_log_file("benchmark_bigdecimal_root")
-    print_header("DeciMojo BigDecimal Nth Root Benchmark", log_file)
+    print_header(
+        "DeciMojo BigDecimal Root (nth root) Multi-Precision Benchmark",
+        log_file,
+    )
 
     var pydecimal = Python.import_module("decimal")
-    var toml_path = "bench_data/root.toml"
+    var toml_path = "bench_data/root_multi.toml"
     var cases = load_bench_cases(toml_path)
-    var precision = load_bench_precision(toml_path)
-    var iterations = 100
-    var sf = List[Float64]()
-
-    pydecimal.getcontext().prec = precision
+    var levels = load_bench_precision_levels(toml_path)
 
     log_print(
-        "\nRunning "
+        "\nMulti-precision benchmark: "
         + String(len(cases))
-        + " benchmarks with "
-        + String(iterations)
-        + " iterations each"
-        + " (precision="
-        + String(precision)
-        + ")",
+        + " cases × "
+        + String(len(levels))
+        + " precision levels",
         log_file,
     )
 
-    for i in range(len(cases)):
-        run_case(cases[i], iterations, precision, pydecimal, log_file, sf)
+    for level_idx in range(len(levels)):
+        var precision = levels[level_idx].precision
+        var iterations = levels[level_idx].iterations
 
-    print_summary(
-        "BigDecimal Nth Root Benchmark Summary",
-        sf,
-        "BigDecimal",
-        iterations,
-        log_file,
-    )
+        pydecimal.getcontext().prec = precision
+
+        log_print("\n" + String("=" * 70), log_file)
+        log_print(
+            "=== Precision Level: "
+            + String(precision)
+            + " ("
+            + String(iterations)
+            + " iterations) ===",
+            log_file,
+        )
+        log_print(String("=" * 70), log_file)
+
+        var sf = List[Float64]()
+
+        for i in range(len(cases)):
+            run_case(cases[i], iterations, precision, pydecimal, log_file, sf)
+
+        print_summary(
+            "Root Summary (precision=" + String(precision) + ")",
+            sf,
+            "BigDecimal",
+            iterations,
+            log_file,
+        )
+
     log_file.close()
     print("Benchmark completed. Log file closed.")

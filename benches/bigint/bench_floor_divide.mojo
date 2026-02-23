@@ -46,24 +46,12 @@ fn run_case(
         var r2_str = String(r2)
         var rp_str = String(rp)
 
-        log_print(
-            "BigInt10 result: "
-            + r1_str[:80]
-            + (" ..." if len(r1_str) > 80 else ""),
-            log_file,
-        )
-        log_print(
-            "BigInt result:  "
-            + r2_str[:80]
-            + (" ..." if len(r2_str) > 80 else ""),
-            log_file,
-        )
-        log_print(
-            "Python result:   "
-            + rp_str[:80]
-            + (" ..." if len(rp_str) > 80 else ""),
-            log_file,
-        )
+        # Correctness check: string match
+        if r1_str != rp_str or r2_str != rp_str:
+            log_print("*** WARNING: String mismatch detected! ***", log_file)
+            log_print("BigInt10 result: " + r1_str[:80], log_file)
+            log_print("BigInt result:  " + r2_str[:80], log_file)
+            log_print("Python result:   " + rp_str[:80], log_file)
 
         var t0 = perf_counter_ns()
         for _ in range(iterations):

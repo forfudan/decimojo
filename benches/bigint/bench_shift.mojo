@@ -38,24 +38,12 @@ fn run_case(
 
         var r2_str = String(r2)
         var rp_str = String(rp)
-        log_print(
-            "BigInt result:  "
-            + r2_str[:60]
-            + (
-                " ... (" + String(len(r2_str)) + " digits)" if len(r2_str)
-                > 60 else ""
-            ),
-            log_file,
-        )
-        log_print(
-            "Python result:   "
-            + rp_str[:60]
-            + (
-                " ... (" + String(len(rp_str)) + " digits)" if len(rp_str)
-                > 60 else ""
-            ),
-            log_file,
-        )
+
+        # Correctness check: string match
+        if r2_str != rp_str:
+            log_print("*** WARNING: String mismatch detected! ***", log_file)
+            log_print("BigInt result:  " + r2_str[:80], log_file)
+            log_print("Python result:   " + rp_str[:80], log_file)
 
         var t0 = perf_counter_ns()
         for _ in range(iterations):

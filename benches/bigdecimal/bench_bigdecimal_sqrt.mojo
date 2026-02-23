@@ -41,7 +41,7 @@ fn run_case(
         # Correctness check: exact string match with Python
         if rm_str != rp_str:
             log_print("*** WARNING: String mismatch detected! ***", log_file)
-            log_print("BigDecimal result: " + rm_str[:100], log_file)
+            log_print("DeciMojo result:   " + rm_str[:100], log_file)
             log_print("Python result:     " + rp_str[:100], log_file)
 
         var t0 = perf_counter_ns()

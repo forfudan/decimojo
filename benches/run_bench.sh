@@ -22,10 +22,10 @@ if [[ -z "$TYPE" ]]; then
     echo "Usage: pixi run bench <type> [operation]"
     echo ""
     echo "Types:"
-    echo "  bigint   (bint)    BigInt benchmarks (BigInt10 vs BigInt vs Python int)"
-    echo "  biguint  (buint)   BigUInt benchmarks (BigUInt vs Python int)"
-    echo "  decimal128 (dec)   Decimal128 benchmarks (Decimal128 vs Python decimal)"
-    echo "  bigdecimal (bdec)  BigDecimal benchmarks (BigDecimal vs Python decimal)"
+    echo "  bigint   (int)    BigInt benchmarks (BigInt10 vs BigInt vs Python int)"
+    echo "  biguint  (uint)   BigUInt benchmarks (BigUInt vs Python int)"
+    echo "  decimal128 (dec128)   Decimal128 benchmarks (Decimal128 vs Python decimal)"
+    echo "  bigdecimal (dec)  BigDecimal benchmarks (BigDecimal vs Python decimal)"
     echo ""
     echo "Omit operation to get interactive menu for that type."
     echo ""
@@ -38,17 +38,17 @@ fi
 
 # --- Map short names ---
 case "$TYPE" in
-    bint)  TYPE="bigint" ;;
-    buint) TYPE="biguint" ;;
-    dec)   TYPE="decimal128" ;;
-    bdec)  TYPE="bigdecimal" ;;
+    int)  TYPE="bigint" ;;
+    uint) TYPE="biguint" ;;
+    dec128)   TYPE="decimal128" ;;
+    dec)  TYPE="bigdecimal" ;;
 esac
 
 DIR="benches/$TYPE"
 
 if [[ ! -d "$DIR" ]]; then
     echo "Error: Unknown type '$TYPE'"
-    echo "Available: bigint (bint), biguint (buint), decimal128 (dec), bigdecimal (bdec)"
+    echo "Available: bigint (int), biguint (uint), decimal128 (dec128), bigdecimal (dec)"
     exit 1
 fi
 
