@@ -21,6 +21,8 @@ comptime ROUND_DOWN = RoundingMode.ROUND_DOWN
 comptime ROUND_HALF_UP = RoundingMode.ROUND_HALF_UP
 comptime ROUND_HALF_EVEN = RoundingMode.ROUND_HALF_EVEN
 comptime ROUND_UP = RoundingMode.ROUND_UP
+comptime ROUND_CEILING = RoundingMode.ROUND_CEILING
+comptime ROUND_FLOOR = RoundingMode.ROUND_FLOOR
 
 
 struct RoundingMode(Copyable, ImplicitlyCopyable, Movable, Stringable):
@@ -32,6 +34,8 @@ struct RoundingMode(Copyable, ImplicitlyCopyable, Movable, Stringable):
     - HALF_UP: Round away from zero if >= 0.5
     - HALF_EVEN: Round to nearest even digit if equidistant (banker's rounding)
     - UP: Round away from zero
+    - CEILING: Round toward positive infinity
+    - FLOOR: Round toward negative infinity
 
     Notes:
 
@@ -44,6 +48,8 @@ struct RoundingMode(Copyable, ImplicitlyCopyable, Movable, Stringable):
     comptime ROUND_HALF_UP = Self.half_up()
     comptime ROUND_HALF_EVEN = Self.half_even()
     comptime ROUND_UP = Self.up()
+    comptime ROUND_CEILING = Self.ceiling()
+    comptime ROUND_FLOOR = Self.floor()
 
     # Internal value
     var value: Int
@@ -70,6 +76,16 @@ struct RoundingMode(Copyable, ImplicitlyCopyable, Movable, Stringable):
         """Round away from zero."""
         return Self(3)
 
+    @staticmethod
+    fn ceiling() -> Self:
+        """Round toward positive infinity."""
+        return Self(4)
+
+    @staticmethod
+    fn floor() -> Self:
+        """Round toward negative infinity."""
+        return Self(5)
+
     fn __init__(out self, value: Int):
         self.value = value
 
@@ -88,5 +104,9 @@ struct RoundingMode(Copyable, ImplicitlyCopyable, Movable, Stringable):
             return "ROUND_HALF_EVEN"
         elif self == Self.up():
             return "ROUND_UP"
+        elif self == Self.ceiling():
+            return "ROUND_CEILING"
+        elif self == Self.floor():
+            return "ROUND_FLOOR"
         else:
             return "UNKNOWN_ROUNDING_MODE"

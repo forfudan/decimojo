@@ -662,6 +662,23 @@ struct BigDecimal(
             sign=not self.sign,
         )
 
+    @always_inline
+    fn __bool__(self) -> Bool:
+        """Returns True if the number is nonzero.
+
+        This enables `if x:` syntax, consistent with Python's `decimal.Decimal`.
+        """
+        return not self.coefficient.is_zero()
+
+    @always_inline
+    fn __pos__(self) -> Self:
+        """Returns the number unchanged (unary plus).
+
+        This enables `+x` syntax, consistent with Python's `decimal.Decimal`.
+        In Python, unary plus applies context rounding. Here it returns a copy.
+        """
+        return self.copy()
+
     # ===------------------------------------------------------------------=== #
     # Basic binary arithmetic operation dunders
     # These methods are called to implement the binary arithmetic operations
@@ -708,6 +725,36 @@ struct BigDecimal(
         return decimojo.bigdecimal.exponential.power(
             self, exponent, precision=PRECISION
         )
+
+    fn __divmod__(self, other: Self) raises -> Tuple[Self, Self]:
+        """Returns `(self // other, self % other)`.
+
+        This enables `divmod(a, b)` syntax, consistent with Python's
+        `decimal.Decimal`.
+
+        Notes:
+            Uses truncated division (toward zero), matching Python's
+            `decimal.Decimal.__divmod__()` behavior.
+        """
+        var quotient = decimojo.bigdecimal.arithmetics.truncate_divide(
+            self, other
+        )
+        var remainder = decimojo.bigdecimal.arithmetics.subtract(
+            self,
+            decimojo.bigdecimal.arithmetics.multiply(quotient, other),
+        )
+        return (quotient^, remainder^)
+
+    fn __rdivmod__(self, other: Self) raises -> Tuple[Self, Self]:
+        """Returns `divmod(other, self)` for right-side divmod."""
+        var quotient = decimojo.bigdecimal.arithmetics.truncate_divide(
+            other, self
+        )
+        var remainder = decimojo.bigdecimal.arithmetics.subtract(
+            other,
+            decimojo.bigdecimal.arithmetics.multiply(quotient, self),
+        )
+        return (quotient^, remainder^)
 
     # ===------------------------------------------------------------------=== #
     # Basic binary right-side arithmetic operation dunders
@@ -765,6 +812,16 @@ struct BigDecimal(
     @always_inline
     fn __itruediv__(mut self, other: Self) raises:
         self = decimojo.bigdecimal.arithmetics.true_divide(
+            self, other, precision=PRECISION
+        )
+
+    @always_inline
+    fn __ifloordiv__(mut self, other: Self) raises:
+        self = decimojo.bigdecimal.arithmetics.truncate_divide(self, other)
+
+    @always_inline
+    fn __imod__(mut self, other: Self) raises:
+        self = decimojo.bigdecimal.arithmetics.truncate_modulo(
             self, other, precision=PRECISION
         )
 
@@ -837,6 +894,52 @@ struct BigDecimal(
     # ===------------------------------------------------------------------=== #
     # Other dunders
     # ===------------------------------------------------------------------=== #
+
+    fn __ceil__(self) raises -> Self:
+        """Returns the smallest integer value >= self.
+
+        Equivalent to `math.ceil()` in Python. Returns a BigDecimal with
+        scale 0.
+        """
+        if self.scale <= 0:
+            return self.copy()
+        # Truncate toward zero first
+        var truncated = decimojo.bigdecimal.rounding.round(
+            self, ndigits=0, rounding_mode=RoundingMode.down()
+        )
+        # If positive and there was a fractional part, add 1
+        if not self.sign and truncated != self:
+            return truncated + Self(1)
+        return truncated^
+
+    fn __floor__(self) raises -> Self:
+        """Returns the largest integer value <= self.
+
+        Equivalent to `math.floor()` in Python. Returns a BigDecimal with
+        scale 0.
+        """
+        if self.scale <= 0:
+            return self.copy()
+        # Truncate toward zero first
+        var truncated = decimojo.bigdecimal.rounding.round(
+            self, ndigits=0, rounding_mode=RoundingMode.down()
+        )
+        # If negative and there was a fractional part, subtract 1
+        if self.sign and truncated != self:
+            return truncated - Self(1)
+        return truncated^
+
+    fn __trunc__(self) raises -> Self:
+        """Returns self truncated toward zero (removes fractional part).
+
+        Equivalent to `math.trunc()` in Python. Returns a BigDecimal
+        with scale 0.
+        """
+        if self.scale <= 0:
+            return self.copy()
+        return decimojo.bigdecimal.rounding.round(
+            self, ndigits=0, rounding_mode=RoundingMode.down()
+        )
 
     # ===------------------------------------------------------------------=== #
     # Mathematical methods that do not implement a trait (not a dunder)

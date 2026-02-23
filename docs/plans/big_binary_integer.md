@@ -1,7 +1,8 @@
 # Big Binary Integer plan
 
-First version: 2026-02-20
-Yuhao Zhu
+> Date of initial planning: 2026-02-20
+> Author: Yuhao Zhu
+> Scope: A new integer type with 2^32-based internal representation
 
 The current `BigInt10` is based on `BigUInt` which uses a decimal representation with a base of 10^9. This design choice is to re-use the same data structure for the buffers of `BigInt10` (as we implemented `BigUInt` initially for `BigDecimal`). However, when users use `BigInt10` for general integer arithmetic, a binary representation with a base of 2^32 (or 2^64) would be more efficient. Thus, it is nice to have a separate binary implementation of `BigInt2` as the core integer type, while keeping the current decimal implementation of `BigInt10` for some special use cases (e.g., as a intermediate type when printing `BigInt2`). The `BigUInt` will continue to serve as the base type for `BigDecimal`.
 
