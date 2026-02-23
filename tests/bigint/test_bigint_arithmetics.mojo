@@ -21,10 +21,18 @@ comptime file_path_biguint_arithmetics = "tests/biguint/test_data/biguint_arithm
 comptime file_path_biguint_truncate_divide = "tests/biguint/test_data/biguint_truncate_divide.toml"
 
 
+fn _set_max_str_digits(limit: Int) raises:
+    """Set Python's int-to-string digit limit (Python 3.11+). No-op if unavailable.
+    """
+    try:
+        Python.import_module("sys").set_int_max_str_digits(limit)
+    except:
+        pass
+
+
 fn test_bigint_addition() raises:
     """Test BigInt addition using shared TOML test data."""
-    var pysys = Python.import_module("sys")
-    pysys.set_int_max_str_digits(500000)
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_arithmetics)
     var test_cases = load_test_cases(toml, "addition_tests")
     var count_wrong = 0
@@ -51,8 +59,7 @@ fn test_bigint_addition() raises:
 
 fn test_bigint_subtraction() raises:
     """Test BigInt subtraction using shared TOML test data."""
-    var pysys = Python.import_module("sys")
-    pysys.set_int_max_str_digits(500000)
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_arithmetics)
     var test_cases = load_test_cases(toml, "subtraction_tests")
     var count_wrong = 0
@@ -79,8 +86,7 @@ fn test_bigint_subtraction() raises:
 
 fn test_bigint_negation() raises:
     """Test BigInt negation using shared TOML test data."""
-    var pysys = Python.import_module("sys")
-    pysys.set_int_max_str_digits(500000)
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_arithmetics)
     var test_cases = load_test_cases[unary=True](toml, "negation_tests")
     var count_wrong = 0
@@ -107,9 +113,8 @@ fn test_bigint_negation() raises:
 
 fn test_bigint_abs() raises:
     """Test BigInt absolute value using shared TOML test data."""
-    var pysys = Python.import_module("sys")
     var pybuiltins = Python.import_module("builtins")
-    pysys.set_int_max_str_digits(500000)
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_arithmetics)
     var test_cases = load_test_cases[unary=True](toml, "abs_tests")
     var count_wrong = 0
@@ -136,8 +141,7 @@ fn test_bigint_abs() raises:
 
 fn test_bigint_multiply() raises:
     """Test BigInt multiplication using shared TOML test data."""
-    var pysys = Python.import_module("sys")
-    pysys.set_int_max_str_digits(500000)
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_multiply)
     var test_cases = load_test_cases(toml, "multiplication_tests")
     var count_wrong = 0
@@ -164,8 +168,7 @@ fn test_bigint_multiply() raises:
 
 fn test_bigint_floor_divide() raises:
     """Test BigInt floor division using shared TOML test data."""
-    var pysys = Python.import_module("sys")
-    pysys.set_int_max_str_digits(500000)
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_floor_divide)
     var test_cases = load_test_cases(toml, "floor_divide_tests")
     var count_wrong = 0
@@ -192,9 +195,8 @@ fn test_bigint_floor_divide() raises:
 
 fn test_bigint_truncate_divide() raises:
     """Test BigInt truncate division using shared TOML test data."""
-    var pysys = Python.import_module("sys")
     var pybuiltins = Python.import_module("builtins")
-    pysys.set_int_max_str_digits(500000)
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_truncate_divide)
     var test_cases = load_test_cases(toml, "truncate_divide_tests")
     var count_wrong = 0
@@ -366,8 +368,7 @@ fn test_bigint_augmented_assignment() raises:
 
 fn test_bigint_biguint_addition() raises:
     """Test BigInt addition with BigUInt TOML test data (all positive)."""
-    var pysys = Python.import_module("sys")
-    pysys.set_int_max_str_digits(500000)
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_biguint_arithmetics)
     var test_cases = load_test_cases(toml, "addition_tests")
     var count_wrong = 0
@@ -394,8 +395,7 @@ fn test_bigint_biguint_addition() raises:
 
 fn test_bigint_biguint_subtraction() raises:
     """Test BigInt subtraction with BigUInt TOML test data (a >= b cases)."""
-    var pysys = Python.import_module("sys")
-    pysys.set_int_max_str_digits(500000)
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_biguint_arithmetics)
     var test_cases = load_test_cases(toml, "subtraction_tests")
     var count_wrong = 0
@@ -543,8 +543,7 @@ fn test_bigint_floor_divide_burnikel_ziegler() raises:
 
 fn test_bigint_biguint_multiplication() raises:
     """Test BigInt multiplication with BigUInt TOML test data (all positive)."""
-    var pysys = Python.import_module("sys")
-    pysys.set_int_max_str_digits(500000)
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_biguint_arithmetics)
     var test_cases = load_test_cases(toml, "multiplication_tests")
     var count_wrong = 0
@@ -572,8 +571,7 @@ fn test_bigint_biguint_multiplication() raises:
 fn test_bigint_biguint_truncate_divide() raises:
     """Test BigInt truncate division with BigUInt TOML test data (all positive).
     """
-    var pysys = Python.import_module("sys")
-    pysys.set_int_max_str_digits(500000)
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_biguint_truncate_divide)
     var test_cases = load_test_cases(toml, "truncate_divide_tests")
     var count_wrong = 0

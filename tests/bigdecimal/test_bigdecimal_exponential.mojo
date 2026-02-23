@@ -146,5 +146,46 @@ fn test_sqrt_multi_precision() raises:
     )
 
 
+fn test_negative_sqrt() raises:
+    """Test that square root of negative number raises an error."""
+    var negative_number = BDec("-1")
+
+    var exception_caught: Bool
+    try:
+        _ = negative_number.sqrt(precision=28)
+        exception_caught = False
+    except:
+        exception_caught = True
+
+    testing.assert_true(
+        exception_caught, "Square root of negative number should raise an error"
+    )
+
+
+fn test_ln_invalid_inputs() raises:
+    """Test that natural logarithm with invalid inputs raises appropriate errors.
+    """
+    # Test 1: ln of zero should raise an error
+    var zero = BDec("0")
+    var exception_caught: Bool
+    try:
+        _ = zero.ln()
+        exception_caught = False
+    except:
+        exception_caught = True
+    testing.assert_true(exception_caught, "ln(0) should raise an error")
+
+    # Test 2: ln of negative number should raise an error
+    var negative = BDec("-1")
+    try:
+        _ = negative.ln()
+        exception_caught = False
+    except:
+        exception_caught = True
+    testing.assert_true(
+        exception_caught, "ln of negative number should raise an error"
+    )
+
+
 fn main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

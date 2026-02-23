@@ -646,20 +646,33 @@ fn _true_divide_general_truncated(
     # zeros, strip them and verify by multiplying back against the original y.
     var tz = result.coefficient.number_of_trailing_zeros()
     if tz > 0:
-        var stripped_coef = (
-            decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
-                result.coefficient, tz
+        # Do not strip zeros that would reduce the scale below the natural
+        # quotient scale (x.scale - y.scale) when that value is non-negative.
+        # Stripping too far could produce e.g. "2E+1" instead of "20".
+        var min_scale = x.scale - y.scale
+        var allowed_tz = tz
+        if min_scale >= 0:
+            var max_strip = result.scale - min_scale
+            if max_strip <= 0:
+                allowed_tz = 0
+            elif tz > max_strip:
+                allowed_tz = max_strip
+
+        if allowed_tz > 0:
+            var stripped_coef = (
+                decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
+                    result.coefficient, allowed_tz
+                )
             )
-        )
-        var stripped = BigDecimal(
-            coefficient=stripped_coef^,
-            scale=result.scale - tz,
-            sign=result.sign,
-        )
-        # Verify: stripped * y == x (using original, untruncated operands)
-        var product = decimojo.bigdecimal.arithmetics.multiply(stripped, y)
-        if product == x:
-            return stripped^
+            var stripped = BigDecimal(
+                coefficient=stripped_coef^,
+                scale=result.scale - allowed_tz,
+                sign=result.sign,
+            )
+            # Verify: stripped * y == x (using original, untruncated operands)
+            var product = decimojo.bigdecimal.arithmetics.multiply(stripped, y)
+            if product == x:
+                return stripped^
 
     return result^
 

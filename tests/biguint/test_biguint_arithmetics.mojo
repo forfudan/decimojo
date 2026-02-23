@@ -15,10 +15,18 @@ comptime file_path_arithmetics = "tests/biguint/test_data/biguint_arithmetics.to
 comptime file_path_truncate_divide = "tests/biguint/test_data/biguint_truncate_divide.toml"
 
 
+fn _set_max_str_digits(limit: Int) raises:
+    """Set Python's int-to-string digit limit (Python 3.11+). No-op if unavailable.
+    """
+    try:
+        Python.import_module("sys").set_int_max_str_digits(limit)
+    except:
+        pass
+
+
 fn test_biguint_arithmetics() raises:
     # Load test cases from TOML file
-    var pysys = Python.import_module("sys")
-    pysys.set_int_max_str_digits(500000)
+    _set_max_str_digits(500000)
 
     var toml = parse_file(file_path_arithmetics)
     var test_cases: List[TestCase]
@@ -147,8 +155,7 @@ fn test_biguint_arithmetics() raises:
 
 fn test_biguint_truncate_divide() raises:
     # Load test cases from TOML file
-    var pysys = Python.import_module("sys")
-    pysys.set_int_max_str_digits(500000)
+    _set_max_str_digits(500000)
 
     var toml = parse_file(file_path_truncate_divide)
     var test_cases: List[TestCase]
@@ -185,8 +192,7 @@ fn test_biguint_truncate_divide_random_numbers_against_python() raises:
     # print("------------------------------------------------------")
     # print("Testing BigUInt truncate division on random numbers with python...")
 
-    var pysys = Python.import_module("sys")
-    pysys.set_int_max_str_digits(500000)
+    _set_max_str_digits(500000)
 
     var number_a: String
     var number_b: String

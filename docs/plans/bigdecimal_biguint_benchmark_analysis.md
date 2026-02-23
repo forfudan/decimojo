@@ -5,7 +5,7 @@
 > Scope: BigDecimal (Decimal) and BigUInt (BUInt)
 
 > [!IMPORTANT]
-> For v0.8.0, Tasks 1✓, 3a✓, 3b✓, 3c✓, 4✓, 7✓, 8✓ are the priority to be competitive at all sizes.
+> For v0.8.0, Tasks 1✓, 2✓, 3a✓, 3b✓, 3c✓, 4✓, 7✓, 8✓ are the priority to be competitive at all sizes.
 
 ## Optimization priority and planning
 
@@ -238,7 +238,10 @@ All benchmarks compare **DeciMojo BigDecimal** against **Python `decimal.Decimal
 > **Update (2026-02-23):** sqrt completely rewritten with CPython's exact integer
 > algorithm (`sqrt_exact`) for bit-perfect correctness, plus a hybrid `fast_isqrt`
 > accelerator (reciprocal sqrt approximation + exact integer Newton refinement).
-> `to_string()` boundary condition also fixed (`<= -6` → `< -6`). All 70 benchmark
+> `to_string()` fully rewritten to match CPython's `Decimal.__str__` logic exactly
+> (scientific notation when `_exp > 0` or `leftdigits <= -6`; removed the DeciMojo-specific
+> `precision` parameter). `root()` now strips trailing fractional zeros from exact results
+> (e.g., `cbrt(8) → "2"` instead of `"2.000…0"`). All 70 benchmark
 > cases now produce **identical** output to Python's `Decimal.sqrt()` with 0 warnings.
 
 #### BEFORE Task 4 (BigUInt.sqrt Newton only, v0.5.0)
@@ -276,16 +279,12 @@ Geometric mean: ~0.66× (heavily skewed by perfect square fast-paths).
 
 **Key improvements:**
 
-1. **100% correctness.** All 70 results match Python's `Decimal.sqrt()` string output
-   exactly. Zero warnings (was 50+ warnings before). Perfect squares produce exact
-   results (e.g., `sqrt(9) = "3"`, not `"2.999..."`) at all precisions including p=5000.
-2. **Consistently faster than Python.** Every case is ≥1.58× Python speed. No cases
-   slower than Python (was 0.55–0.72× for all irrationals before).
+1. **100% correctness.** All 70 results match Python's `Decimal.sqrt()` string output exactly. Zero warnings (was 50+ warnings before). Perfect squares produce exact results (e.g., `sqrt(9) = "3"`, not `"2.999..."`) at all precisions including p=5000.
+2. **Consistently faster than Python.** Every case is ≥1.58× Python speed. No cases slower than Python (was 0.55–0.72× for all irrationals before).
 3. **Algorithm:** CPython-style exact integer rescaling + `isqrt(c)` + `n*n==c` check. For large inputs (>20 BigUInt words), `fast_isqrt` provides a fast initial approximation via reciprocal sqrt with precision doubling, then refines with exact integer Newton iterations to converge to the true `isqrt(c)`.
 4. **Function hierarchy:** `sqrt()` (public API) → `sqrt_exact()` (CPython-style, for user-facing results) and `sqrt_reciprocal()` (fast, for internal use by `arctan`, `ln`, `pi`, etc. where exact perfect-square detection is unnecessary).
 
-**Why perfect squares are slower than before (8× vs 185×):** The old algorithm
-fast-pathed perfect squares with a trivial check before any Newton work. The CPython algorithm always rescales `c` and computes `isqrt(c)` before checking exactness. The ~630µs cost is the rescaling + isqrt of an ~5000-digit number. This trade-off is worth it: 8× Python is still fast, and correctness is guaranteed.
+**Why perfect squares are slower than before (8× vs 185×):** The old algorithm fast-pathed perfect squares with a trivial check before any Newton work. The CPython algorithm always rescales `c` and computes `isqrt(c)` before checking exactness. The ~630µs cost is the rescaling + isqrt of an ~5000-digit number. This trade-off is worth it: 8× Python is still fast, and correctness is guaranteed.
 
 **Why irrationals are much faster (1.6–3.5× vs 0.55–0.72×):** The old algorithm used pure `BigUInt.sqrt()` Newton (with division in every iteration). The new `fast_isqrt` uses reciprocal sqrt with precision doubling (division-free, O(M(n) log n)) to get a close approximation, then only 1–3 cheap integer Newton steps to converge exactly. This avoids the expensive ~15–20 Newton divisions of the old approach.
 
@@ -444,6 +443,8 @@ with 1–3 ULP last-digit difference, expected for compound `exp(ln(x)/n)`).
 
 **Analysis (updated after Task 7 ✓):** Square roots are fast-pathed via `BigUInt.sqrt()` and show excellent speedups (10–40×). General nth roots now use direct Newton's method ($r_{k+1} = ((n-1)r + x/r^{n-1})/n$), matching Python `libmpdec`'s approach. At precision=50, **integer roots improved from 0.14–0.49× to 1.2–9× Python**. Fractional roots (0.5th, 0.25th, 0.333rd) still use `exp(ln(x)/n)` path (0.2–0.4×).
 
+**Correctness:** `root()` now strips trailing fractional zeros from exact results via `_strip_trailing_fractional_zeros()` — e.g., `root(8, 3)` returns `"2"` instead of `"2.000000000000000000000000000"`, matching Python's behavior. The stripping uses a threshold (≥9 trailing zeros) to distinguish true exact results from coincidental trailing zeros in approximate results.
+
 **Before → After Task 7 (selected cases at p=50):**
 
 | Case              | Before | After | Improvement |
@@ -460,6 +461,8 @@ with 1–3 ULP last-digit difference, expected for compound `exp(ln(x)/n)`).
 ### Rounding (25 cases, precision=28)
 
 Avg 105.8×. This is dominated by the overhead of Python's `decimal.quantize()` vs Mojo's direct word-level truncation. Not a concern for optimization.
+
+**Bug fix (2026-02-23):** `round()` with `ROUND_UP` mode now correctly returns 1 (at the target scale) when all significant digits are removed from a non-zero value. Previously it returned 0 in this case.
 
 ---
 
@@ -1281,11 +1284,13 @@ All bench files now:
 
 ### Remaining Targets
 
-| Priority  | Task    |            Current            |   Target    | Approach                                            |
-| --------- | ------- | :---------------------------: | :---------: | --------------------------------------------------- |
-| HIGH      | Task 3b |           0.55× exp           |  0.8–1.0×   | Replace Taylor division with multiply-by-reciprocal |
-| ✓ DONE    | Task 4  | ~~0.55–0.72×~~ **17.9× sqrt** |   ✓ DONE    | Reciprocal sqrt Newton + precision doubling         |
-| ✓ DONE    | Task 7  |  ~~0.14–0.49×~~ **3.9–25×**   |   ✓ DONE    | Newton for nth root (was exp(ln(x)/n))              |
-| ✓ DONE    | Task 8  | **+15–27% exp/ln, +9% sqrt**  |   ✓ DONE    | In-place BigDecimal operations + uint32 quick paths |
-| MEDIUM    | Task 2  |          15–28× div           |   30–50×    | Reciprocal-Newton division                          |
-| LONG-TERM | Task 5  |               —               | 2–10× large | NTT multiplication                                  |
+| Priority  | Task    |                 Current                 |      Target       | Approach                                            |
+| --------- | ------- | :-------------------------------------: | :---------------: | --------------------------------------------------- |
+| ✓ DONE    | Task 2  | ~~0.78×~~ **avg 24.6×, up to 915× div** |      ✓ DONE       | Truncation optimization for oversized operands      |
+| ✓ DONE    | Task 4  | ~~0.55–0.72×~~ **3.53× geo-mean sqrt**  |      ✓ DONE       | CPython exact algorithm + reciprocal sqrt hybrid    |
+| ✓ DONE    | Task 7  |   ~~0.14–0.49×~~ **3.9–25× nth root**   |      ✓ DONE       | Newton for nth root (was exp(ln(x)/n))              |
+| ✓ DONE    | Task 8  |      **+15–27% exp/ln, +9% sqrt**       |      ✓ DONE       | In-place BigDecimal operations + uint32 quick paths |
+| MEDIUM    | Task 6  |                   N/A                   | ~1.5× over Karat. | Toom-3 multiplication                               |
+| LOW       | Task 3d |                0.55× exp                |     0.8–1.0×      | Binary splitting for Taylor series                  |
+| LONG-TERM | Task 5  |                    —                    |  2–10× large ops  | NTT multiplication                                  |
+| LOW       | Task 9  |                    —                    |      1.5–2×       | SIMD schoolbook multiply base                       |

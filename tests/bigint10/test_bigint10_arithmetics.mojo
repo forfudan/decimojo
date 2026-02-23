@@ -13,11 +13,19 @@ comptime file_path_floor_divide = "tests/bigint10/test_data/bigint10_floor_divid
 comptime file_path_truncate_divide = "tests/bigint10/test_data/bigint10_truncate_divide.toml"
 
 
+fn _set_max_str_digits(limit: Int) raises:
+    """Set Python's int-to-string digit limit (Python 3.11+). No-op if unavailable.
+    """
+    try:
+        Python.import_module("sys").set_int_max_str_digits(limit)
+    except:
+        pass
+
+
 fn test_bigint10_arithmetics() raises:
     # Load test cases from TOML file
-    var pysys = Python.import_module("sys")
     var pybuiltins = Python.import_module("builtins")
-    pysys.set_int_max_str_digits(500000)
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_arithmetics)
     var test_cases: List[TestCase]
 
@@ -128,8 +136,7 @@ fn test_bigint10_arithmetics() raises:
 
 fn test_bigint10_multiply() raises:
     # Load test cases from TOML file
-    var pysys = Python.import_module("sys")
-    pysys.set_int_max_str_digits(500000)
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_multiply)
     var test_cases: List[TestCase]
 
@@ -162,8 +169,7 @@ fn test_bigint10_multiply() raises:
 
 fn test_bigint10_floor_divide() raises:
     # Load test cases from TOML file
-    var pysys = Python.import_module("sys")
-    pysys.set_int_max_str_digits(500000)
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_floor_divide)
     var test_cases: List[TestCase]
 
@@ -196,9 +202,8 @@ fn test_bigint10_floor_divide() raises:
 
 fn test_bigint10_truncate_divide() raises:
     # Load test cases from TOML file
-    var pysys = Python.import_module("sys")
     var pybuiltins = Python.import_module("builtins")
-    pysys.set_int_max_str_digits(500000)
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_truncate_divide)
     var test_cases: List[TestCase]
 
