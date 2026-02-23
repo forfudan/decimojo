@@ -35,14 +35,14 @@ fn test_bigdecimal_rounding() raises:
         # Use string construction to preserve exponent for quantize template:
         # Decimal("1E-2") has exponent -2 (0.01), Decimal("1E2") has exponent 2.
         var template = pydecimal.Decimal("1E" + String(-precision))
-        var py_result = pydecimal.Decimal(test_case.a).quantize(template)
-        if pydecimal.Decimal(mojo_str) != py_result:
+        var py_str = String(pydecimal.Decimal(test_case.a).quantize(template))
+        if mojo_str != py_str:
             print(
                 test_case.description,
                 "\n  Mojo:   ",
                 mojo_str,
                 "\n  Python: ",
-                String(py_result),
+                py_str,
                 "\n",
             )
             count_wrong += 1
@@ -64,14 +64,14 @@ fn test_bigdecimal_rounding() raises:
         var result = BDec(test_case.a).round(precision, RoundingMode.up())
         var mojo_str = String(result)
         var template = pydecimal.Decimal("1E" + String(-precision))
-        var py_result = pydecimal.Decimal(test_case.a).quantize(template)
-        if pydecimal.Decimal(mojo_str) != py_result:
+        var py_str = String(pydecimal.Decimal(test_case.a).quantize(template))
+        if mojo_str != py_str:
             print(
                 test_case.description,
                 "\n  Mojo:   ",
                 mojo_str,
                 "\n  Python: ",
-                String(py_result),
+                py_str,
                 "\n",
             )
             count_wrong += 1
@@ -93,14 +93,14 @@ fn test_bigdecimal_rounding() raises:
         var result = BDec(test_case.a).round(precision, RoundingMode.half_up())
         var mojo_str = String(result)
         var template = pydecimal.Decimal("1E" + String(-precision))
-        var py_result = pydecimal.Decimal(test_case.a).quantize(template)
-        if pydecimal.Decimal(mojo_str) != py_result:
+        var py_str = String(pydecimal.Decimal(test_case.a).quantize(template))
+        if mojo_str != py_str:
             print(
                 test_case.description,
                 "\n  Mojo:   ",
                 mojo_str,
                 "\n  Python: ",
-                String(py_result),
+                py_str,
                 "\n",
             )
             count_wrong += 1
@@ -124,14 +124,14 @@ fn test_bigdecimal_rounding() raises:
         )
         var mojo_str = String(result)
         var template = pydecimal.Decimal("1E" + String(-precision))
-        var py_result = pydecimal.Decimal(test_case.a).quantize(template)
-        if pydecimal.Decimal(mojo_str) != py_result:
+        var py_str = String(pydecimal.Decimal(test_case.a).quantize(template))
+        if mojo_str != py_str:
             print(
                 test_case.description,
                 "\n  Mojo:   ",
                 mojo_str,
                 "\n  Python: ",
-                String(py_result),
+                py_str,
                 "\n",
             )
             count_wrong += 1
@@ -154,14 +154,14 @@ fn test_bigdecimal_rounding() raises:
         )
         var mojo_str = String(result)
         var template = pydecimal.Decimal("1E" + String(-precision))
-        var py_result = pydecimal.Decimal(test_case.a).quantize(template)
-        if pydecimal.Decimal(mojo_str) != py_result:
+        var py_str = String(pydecimal.Decimal(test_case.a).quantize(template))
+        if mojo_str != py_str:
             print(
                 test_case.description,
                 "\n  Mojo:   ",
                 mojo_str,
                 "\n  Python: ",
-                String(py_result),
+                py_str,
                 "\n",
             )
             count_wrong += 1
@@ -184,14 +184,14 @@ fn test_bigdecimal_rounding() raises:
         )
         var mojo_str = String(result)
         var template = pydecimal.Decimal("1E" + String(-precision))
-        var py_result = pydecimal.Decimal(test_case.a).quantize(template)
-        if pydecimal.Decimal(mojo_str) != py_result:
+        var py_str = String(pydecimal.Decimal(test_case.a).quantize(template))
+        if mojo_str != py_str:
             print(
                 test_case.description,
                 "\n  Mojo:   ",
                 mojo_str,
                 "\n  Python: ",
-                String(py_result),
+                py_str,
                 "\n",
             )
             count_wrong += 1
@@ -214,14 +214,14 @@ fn test_bigdecimal_rounding() raises:
         )
         var mojo_str = String(result)
         var template = pydecimal.Decimal("1E" + String(-precision))
-        var py_result = pydecimal.Decimal(test_case.a).quantize(template)
-        if pydecimal.Decimal(mojo_str) != py_result:
+        var py_str = String(pydecimal.Decimal(test_case.a).quantize(template))
+        if mojo_str != py_str:
             print(
                 test_case.description,
                 "\n  Mojo:   ",
                 mojo_str,
                 "\n  Python: ",
-                String(py_result),
+                py_str,
                 "\n",
             )
             count_wrong += 1
@@ -244,14 +244,14 @@ fn test_bigdecimal_rounding() raises:
         )
         var mojo_str = String(result)
         var template = pydecimal.Decimal("1E" + String(-precision))
-        var py_result = pydecimal.Decimal(test_case.a).quantize(template)
-        if pydecimal.Decimal(mojo_str) != py_result:
+        var py_str = String(pydecimal.Decimal(test_case.a).quantize(template))
+        if mojo_str != py_str:
             print(
                 test_case.description,
                 "\n  Mojo:   ",
                 mojo_str,
                 "\n  Python: ",
-                String(py_result),
+                py_str,
                 "\n",
             )
             count_wrong += 1

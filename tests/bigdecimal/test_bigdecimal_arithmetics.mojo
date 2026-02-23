@@ -35,18 +35,16 @@ fn test_bigdecimal_arithmetics() raises:
     for test_case in test_cases:
         var result = BDec(test_case.a) + BDec(test_case.b)
         var mojo_str = String(result)
-        var py_result = pydecimal.Decimal(test_case.a) + pydecimal.Decimal(
-            test_case.b
+        var py_str = String(
+            pydecimal.Decimal(test_case.a) + pydecimal.Decimal(test_case.b)
         )
-        # Compare numerically via Python Decimal to ignore formatting
-        # differences (e.g. scientific vs plain notation).
-        if pydecimal.Decimal(mojo_str) != py_result:
+        if mojo_str != py_str:
             print(
                 test_case.description,
                 "\n  Mojo:   ",
                 mojo_str,
                 "\n  Python: ",
-                String(py_result),
+                py_str,
                 "\n",
             )
             count_wrong += 1
@@ -65,16 +63,16 @@ fn test_bigdecimal_arithmetics() raises:
     for test_case in test_cases:
         var result = BDec(test_case.a) - BDec(test_case.b)
         var mojo_str = String(result)
-        var py_result = pydecimal.Decimal(test_case.a) - pydecimal.Decimal(
-            test_case.b
+        var py_str = String(
+            pydecimal.Decimal(test_case.a) - pydecimal.Decimal(test_case.b)
         )
-        if pydecimal.Decimal(mojo_str) != py_result:
+        if mojo_str != py_str:
             print(
                 test_case.description,
                 "\n  Mojo:   ",
                 mojo_str,
                 "\n  Python: ",
-                String(py_result),
+                py_str,
                 "\n",
             )
             count_wrong += 1
@@ -93,16 +91,16 @@ fn test_bigdecimal_arithmetics() raises:
     for test_case in test_cases:
         var result = BDec(test_case.a) * BDec(test_case.b)
         var mojo_str = String(result)
-        var py_result = pydecimal.Decimal(test_case.a) * pydecimal.Decimal(
-            test_case.b
+        var py_str = String(
+            pydecimal.Decimal(test_case.a) * pydecimal.Decimal(test_case.b)
         )
-        if pydecimal.Decimal(mojo_str) != py_result:
+        if mojo_str != py_str:
             print(
                 test_case.description,
                 "\n  Mojo:   ",
                 mojo_str,
                 "\n  Python: ",
-                String(py_result),
+                py_str,
                 "\n",
             )
             count_wrong += 1
@@ -125,16 +123,16 @@ fn test_bigdecimal_arithmetics() raises:
             BDec(test_case.b), precision=28
         )
         var mojo_str = String(result)
-        var py_result = pydecimal.Decimal(test_case.a) / pydecimal.Decimal(
-            test_case.b
+        var py_str = String(
+            pydecimal.Decimal(test_case.a) / pydecimal.Decimal(test_case.b)
         )
-        if pydecimal.Decimal(mojo_str) != py_result:
+        if mojo_str != py_str:
             print(
                 test_case.description,
                 "\n  Mojo:   ",
                 mojo_str,
                 "\n  Python: ",
-                String(py_result),
+                py_str,
                 "\n",
             )
             count_wrong += 1

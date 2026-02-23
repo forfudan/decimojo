@@ -1,5 +1,9 @@
 """
-Test BigDecimal exponential operations including square root and natural logarithm.
+Test BigDecimal exponential operations (sqrt and ln) against Python's decimal module.
+
+Root and power tests are in test_bigdecimal_exponential_toml.mojo (compared
+against TOML expected values), because Python's Decimal cannot compute most
+non-integer exponents.
 """
 
 from python import Python
@@ -27,15 +31,14 @@ fn test_bigdecimal_exponential() raises:
     for test_case in test_cases:
         var result = BDec(test_case.a).sqrt(precision=28)
         var mojo_str = String(result)
-        var py_result = pydecimal.Decimal(test_case.a).sqrt()
-        # Compare numerically to ignore formatting differences.
-        if pydecimal.Decimal(mojo_str) != py_result:
+        var py_str = String(pydecimal.Decimal(test_case.a).sqrt())
+        if mojo_str != py_str:
             print(
                 test_case.description,
                 "\n  Mojo:   ",
                 mojo_str,
                 "\n  Python: ",
-                String(py_result),
+                py_str,
                 "\n",
             )
             count_wrong += 1
@@ -54,15 +57,14 @@ fn test_bigdecimal_exponential() raises:
     for test_case in test_cases:
         var result = BDec(test_case.a).ln(precision=28)
         var mojo_str = String(result)
-        var py_result = pydecimal.Decimal(test_case.a).ln()
-        # Compare numerically to ignore formatting differences.
-        if pydecimal.Decimal(mojo_str) != py_result:
+        var py_str = String(pydecimal.Decimal(test_case.a).ln())
+        if mojo_str != py_str:
             print(
                 test_case.description,
                 "\n  Mojo:   ",
                 mojo_str,
                 "\n  Python: ",
-                String(py_result),
+                py_str,
                 "\n",
             )
             count_wrong += 1
@@ -71,241 +73,6 @@ fn test_bigdecimal_exponential() raises:
         0,
         "ln: Mojo and Python results differ. See above.",
     )
-
-    # -------------------------------------------------------
-    # Testing BigDecimal root function
-    # -------------------------------------------------------
-
-    test_cases = load_test_cases(toml, "root_tests")
-    count_wrong = 0
-    count_skipped = 0
-    var pybuiltins = Python.import_module("builtins")
-    # Allow small relative tolerance — both Mojo and Python are approximate
-    # for root computations and may differ in the last 1-2 digits at 28 sig
-    # digits, i.e. relative error up to ~1E-26.
-    var rel_tol = pydecimal.Decimal("1E-26")
-    for test_case in test_cases:
-        var result = BDec(test_case.a).root(BDec(test_case.b), precision=28)
-        var mojo_str = String(result)
-        # Python Decimal can't compute most non-integer exponents.
-        # Skip comparison when Python raises InvalidOperation.
-        try:
-            var py_result = pydecimal.Decimal(test_case.a) ** (
-                pydecimal.Decimal(1) / pydecimal.Decimal(test_case.b)
-            )
-            var diff = pybuiltins.abs(pydecimal.Decimal(mojo_str) - py_result)
-            var magnitude = pybuiltins.max(
-                pybuiltins.abs(py_result), pydecimal.Decimal(1)
-            )
-            if diff / magnitude > rel_tol:
-                print(
-                    test_case.description,
-                    "\n  Mojo:   ",
-                    mojo_str,
-                    "\n  Python: ",
-                    String(py_result),
-                    "\n  Diff:   ",
-                    String(diff),
-                    "\n",
-                )
-                count_wrong += 1
-        except:
-            count_skipped += 1
-    testing.assert_equal(
-        count_wrong,
-        0,
-        "root: Mojo and Python results differ. See above.",
-    )
-
-    # -------------------------------------------------------
-    # Testing BigDecimal power function
-    # -------------------------------------------------------
-
-    test_cases = load_test_cases(toml, "power_tests")
-    count_wrong = 0
-    count_skipped = 0
-    for test_case in test_cases:
-        var result = BDec(test_case.a).power(BDec(test_case.b), precision=28)
-        var mojo_str = String(result)
-        # Python Decimal can't compute most non-integer exponents.
-        # Skip comparison when Python raises InvalidOperation.
-        try:
-            var py_result = pydecimal.Decimal(test_case.a) ** pydecimal.Decimal(
-                test_case.b
-            )
-            var diff = pybuiltins.abs(pydecimal.Decimal(mojo_str) - py_result)
-            var magnitude = pybuiltins.max(
-                pybuiltins.abs(py_result), pydecimal.Decimal(1)
-            )
-            if diff / magnitude > rel_tol:
-                print(
-                    test_case.description,
-                    "\n  Mojo:   ",
-                    mojo_str,
-                    "\n  Python: ",
-                    String(py_result),
-                    "\n  Diff:   ",
-                    String(diff),
-                    "\n",
-                )
-                count_wrong += 1
-        except:
-            count_skipped += 1
-    testing.assert_equal(
-        count_wrong,
-        0,
-        "power: Mojo and Python results differ. See above.",
-    )
-
-
-fn test_negative_sqrt() raises:
-    """Test that square root of negative number raises an error."""
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal square root with negative input...")
-
-    var negative_number = BDec("-1")
-
-    var exception_caught: Bool
-    try:
-        _ = negative_number.sqrt(precision=28)
-        exception_caught = False
-    except:
-        exception_caught = True
-
-    testing.assert_true(
-        exception_caught, "Square root of negative number should raise an error"
-    )
-    # print("✓ Square root of negative number correctly raises an error")
-
-
-fn test_ln_invalid_inputs() raises:
-    """Test that natural logarithm with invalid inputs raises appropriate errors.
-    """
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal natural logarithm with invalid inputs...")
-
-    # Test 1: ln of zero should raise an error
-    var zero = BDec("0")
-    var exception_caught: Bool
-    try:
-        _ = zero.ln()
-        exception_caught = False
-    except:
-        exception_caught = True
-    testing.assert_true(exception_caught, "ln(0) should raise an error")
-    # print("✓ ln(0) correctly raises an error")
-
-    # Test 2: ln of negative number should raise an error
-    var negative = BDec("-1")
-    try:
-        _ = negative.ln()
-        exception_caught = False
-    except:
-        exception_caught = True
-    testing.assert_true(
-        exception_caught, "ln of negative number should raise an error"
-    )
-    # print("✓ ln of negative number correctly raises an error")
-
-
-fn test_root_invalid_inputs() raises:
-    """Test that root function with invalid inputs raises appropriate errors."""
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal root with invalid inputs...")
-
-    # Test 1: 0th root should raise an error
-    var a1 = BDec("16")
-    var n1 = BDec("0")
-    var exception_caught: Bool
-    try:
-        _ = a1.root(n1, precision=28)
-        exception_caught = False
-    except:
-        exception_caught = True
-    testing.assert_true(exception_caught, "0th root should raise an error")
-    # print("✓ 0th root correctly raises an error")
-
-    # Test 2: Even root of negative number should raise an error
-    var a2 = BDec("-16")
-    var n2 = BDec("2")
-    try:
-        _ = a2.root(n2, precision=28)
-        exception_caught = False
-    except:
-        exception_caught = True
-    testing.assert_true(
-        exception_caught, "Even root of negative number should raise an error"
-    )
-    # print("✓ Even root of negative number correctly raises an error")
-
-    # Test 3: Fractional root with even denominator of negative number should raise an error
-    var a3 = BDec("-16")
-    var n3 = BDec("2.5")  # 5/2, denominator is even
-    try:
-        _ = a3.root(n3, precision=28)
-        exception_caught = False
-    except:
-        exception_caught = True
-    testing.assert_true(
-        exception_caught,
-        (
-            "Fractional root with even denominator of negative number should"
-            " raise an error"
-        ),
-    )
-    # print(
-    #     "✓ Fractional root with even denominator of negative number correctly"
-    #     " raises an error"
-    # )
-
-
-fn test_power_invalid_inputs() raises:
-    """Test that power function with invalid inputs raises appropriate errors.
-    """
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal power with invalid inputs...")
-
-    # Test 1: 0^0 should raise an error (undefined)
-    var base1 = BDec("0")
-    var exp1 = BDec("0")
-    var exception_caught: Bool
-    try:
-        _ = base1.power(exp1, precision=28)
-        exception_caught = False
-    except:
-        exception_caught = True
-    testing.assert_true(exception_caught, "0^0 should raise an error")
-    # print("✓ 0^0 correctly raises an error")
-
-    # Test 2: 0^-1 should raise an error (division by zero)
-    var base2 = BDec("0")
-    var exp2 = BDec("-1")
-    try:
-        _ = base2.power(exp2, precision=28)
-        exception_caught = False
-    except:
-        exception_caught = True
-    testing.assert_true(
-        exception_caught, "0 raised to a negative power should raise an error"
-    )
-    # print("✓ 0 raised to a negative power correctly raises an error")
-
-    # Test 3: Negative number raised to a fractional power should raise an error
-    var base3 = BDec("-2")
-    var exp3 = BDec("0.5")
-    try:
-        _ = base3.power(exp3, precision=28)
-        exception_caught = False
-    except:
-        exception_caught = True
-    testing.assert_true(
-        exception_caught,
-        "Negative number raised to a fractional power should raise an error",
-    )
-    # print(
-    #     "✓ Fractional root with even denominator of negative number correctly"
-    #     " raises an error"
-    # )
 
 
 fn test_sqrt_multi_precision() raises:

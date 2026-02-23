@@ -365,6 +365,45 @@ fn integer_power(
     return result^
 
 
+fn _strip_trailing_fractional_zeros(mut number: BigDecimal):
+    """Strip trailing zeros that are after the decimal point only.
+
+    Unlike normalize(), this preserves integer trailing zeros. For example,
+    `100.0000` becomes `100` (not `1E+2`), and `2.000` becomes `2`.
+
+    Only strips when the number of trailing fractional zeros is large enough
+    to indicate an exact result (>= 9 zeros). This avoids stripping
+    coincidental trailing zeros from approximate results (e.g., a result like
+    1.395612425086089528628125320 has one trailing zero that is significant).
+
+    This is used by root() to match Python's behavior for exact results
+    (e.g., cbrt(8) = "2" instead of "2.000000000000000000000000000"),
+    without affecting the internal integer_root() hot path.
+    """
+    if number.scale <= 0 or number.coefficient.is_zero():
+        return
+
+    var n_trailing = number.number_of_trailing_zeros()
+    if n_trailing == 0:
+        return
+
+    # Only strip zeros up to scale (fractional part), never into the integer part.
+    var n_strip = min(n_trailing, number.scale)
+
+    # Use a threshold to distinguish exact results (many trailing zeros) from
+    # coincidental trailing zeros in approximate results. At precision N with
+    # BUFFER_DIGITS=9 guard digits, an exact result has >= N trailing fractional
+    # zeros, while a non-exact result has at most 1-2 by chance (prob ~10^-9
+    # for 9+ consecutive zeros).
+    if n_strip < 9:
+        return
+
+    number.coefficient = number.coefficient.floor_divide_by_power_of_ten(
+        n_strip
+    )
+    number.scale -= n_strip
+
+
 fn root(x: BigDecimal, n: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculate the nth root of a BigDecimal number.
 
@@ -383,6 +422,10 @@ fn root(x: BigDecimal, n: BigDecimal, precision: Int) raises -> BigDecimal:
     Notes:
         Uses the identity x^(1/n) = exp(ln(|x|)/n) for calculation.
         For integer roots, calls the specialized integer_root function.
+        Trailing fractional zeros are stripped from exact results (e.g.,
+        root(8, 3) returns "2" instead of "2.000...0") to match Python's
+        behavior. Internal functions like integer_root() skip this step
+        for performance.
     """
     comptime BUFFER_DIGITS = 9
     var working_precision = precision + BUFFER_DIGITS
@@ -394,13 +437,17 @@ fn root(x: BigDecimal, n: BigDecimal, precision: Int) raises -> BigDecimal:
     # Special case for integer roots - use more efficient implementation
     if not n.sign:
         if n.is_integer():
-            return integer_root(x, n, precision)
+            var result = integer_root(x, n, precision)
+            _strip_trailing_fractional_zeros(result)
+            return result^
         _tuple = is_integer_reciprocal_and_return(n)
         var is_integer_reciprocal: Bool = _tuple[0]
         var ref integer_reciprocal: BigDecimal = _tuple[1]
         if is_integer_reciprocal:
             # If m = 1/n is an integer, use integer_root
-            return integer_power(x, integer_reciprocal, precision)
+            var result = integer_power(x, integer_reciprocal, precision)
+            _strip_trailing_fractional_zeros(result)
+            return result^
 
     # Handle negative n as 1/(x^(1/|n|))
     if n.sign:
@@ -427,7 +474,9 @@ fn root(x: BigDecimal, n: BigDecimal, precision: Int) raises -> BigDecimal:
                 " negative number"
             )
         elif n_is_integer:
-            return integer_root(x, n, precision)
+            var result = integer_root(x, n, precision)
+            _strip_trailing_fractional_zeros(result)
+            return result^
 
     # Compute root using the identity: x^(1/n) = exp(ln(|x|)/n)
     var abs_x = abs(x)
@@ -446,6 +495,7 @@ fn root(x: BigDecimal, n: BigDecimal, precision: Int) raises -> BigDecimal:
         fill_zeros_to_precision=True,
     )
 
+    _strip_trailing_fractional_zeros(result)
     return result^
 
 
