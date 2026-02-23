@@ -36,6 +36,8 @@ from .rounding_mode import (
     ROUND_HALF_UP,
     ROUND_HALF_EVEN,
     ROUND_UP,
+    ROUND_CEILING,
+    ROUND_FLOOR,
 )
 
 # Core functions

@@ -110,34 +110,66 @@ fn compare(x1: BigDecimal, x2: BigDecimal) -> Int8:
         return abs_comparison
 
 
-fn equals(x1: BigDecimal, x2: BigDecimal) -> Bool:
+fn equal(x1: BigDecimal, x2: BigDecimal) -> Bool:
     """Returns whether x1 equals x2."""
     return compare(x1, x2) == 0
 
 
-fn not_equals(x1: BigDecimal, x2: BigDecimal) -> Bool:
+fn not_equal(x1: BigDecimal, x2: BigDecimal) -> Bool:
     """Returns whether x1 does not equal x2."""
     return compare(x1, x2) != 0
 
 
-fn less_than(x1: BigDecimal, x2: BigDecimal) -> Bool:
+fn less(x1: BigDecimal, x2: BigDecimal) -> Bool:
     """Returns whether x1 is less than x2."""
     return compare(x1, x2) < 0
 
 
-fn less_than_or_equal(x1: BigDecimal, x2: BigDecimal) -> Bool:
+fn less_equal(x1: BigDecimal, x2: BigDecimal) -> Bool:
     """Returns whether x1 is less than or equal to x2."""
     return compare(x1, x2) <= 0
 
 
-fn greater_than(x1: BigDecimal, x2: BigDecimal) -> Bool:
+fn greater(x1: BigDecimal, x2: BigDecimal) -> Bool:
     """Returns whether x1 is greater than x2."""
     return compare(x1, x2) > 0
 
 
-fn greater_than_or_equal(x1: BigDecimal, x2: BigDecimal) -> Bool:
+fn greater_equal(x1: BigDecimal, x2: BigDecimal) -> Bool:
     """Returns whether x1 is greater than or equal to x2."""
     return compare(x1, x2) >= 0
+
+
+# Backward-compatible aliases
+fn equals(x1: BigDecimal, x2: BigDecimal) -> Bool:
+    """Alias for `equal()`. Deprecated: use `equal()` instead."""
+    return equal(x1, x2)
+
+
+fn not_equals(x1: BigDecimal, x2: BigDecimal) -> Bool:
+    """Alias for `not_equal()`. Deprecated: use `not_equal()` instead."""
+    return not_equal(x1, x2)
+
+
+fn less_than(x1: BigDecimal, x2: BigDecimal) -> Bool:
+    """Alias for `less()`. Deprecated: use `less()` instead."""
+    return less(x1, x2)
+
+
+fn less_than_or_equal(x1: BigDecimal, x2: BigDecimal) -> Bool:
+    """Alias for `less_equal()`. Deprecated: use `less_equal()` instead."""
+    return less_equal(x1, x2)
+
+
+fn greater_than(x1: BigDecimal, x2: BigDecimal) -> Bool:
+    """Alias for `greater()`. Deprecated: use `greater()` instead."""
+    return greater(x1, x2)
+
+
+fn greater_than_or_equal(x1: BigDecimal, x2: BigDecimal) -> Bool:
+    """Alias for `greater_equal()`. Deprecated: use `greater_equal()` instead.
+    """
+    return greater_equal(x1, x2)
 
 
 fn max(x1: BigDecimal, x2: BigDecimal) -> BigDecimal:

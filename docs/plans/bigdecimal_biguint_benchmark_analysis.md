@@ -1,7 +1,8 @@
 # BigDecimal and BigUInt Benchmark Results & Optimization Roadmap
 
-First version: 2026-02-21  
-Yuhao Zhu
+> Date of initial planning: 2026-02-21
+> Author: Yuhao Zhu
+> Scope: BigDecimal (Decimal) and BigUInt (BUInt)
 
 > [!IMPORTANT]
 > For v0.8.0, Tasks 1✓, 3a✓, 3b✓, 3c✓, 4✓, 7✓, 8✓ are the priority to be competitive at all sizes.

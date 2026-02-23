@@ -710,6 +710,46 @@ struct BigInt(
         """Returns the absolute value of the BigInt."""
         return Self(raw_words=self.words.copy(), sign=False)
 
+    @always_inline
+    fn __bool__(self) -> Bool:
+        """Returns True if the number is nonzero.
+
+        This enables `if n:` syntax, consistent with Python's `int`.
+        """
+        return not self.is_zero()
+
+    @always_inline
+    fn __pos__(self) -> Self:
+        """Returns the number unchanged (unary plus).
+
+        This enables `+n` syntax, consistent with Python's `int`.
+        """
+        return Self(raw_words=self.words.copy(), sign=self.sign)
+
+    @always_inline
+    fn __ceil__(self) -> Self:
+        """Returns self unchanged. Integers are already integers.
+
+        This enables `math.ceil()` compatibility with Python's `int`.
+        """
+        return Self(raw_words=self.words.copy(), sign=self.sign)
+
+    @always_inline
+    fn __floor__(self) -> Self:
+        """Returns self unchanged. Integers are already integers.
+
+        This enables `math.floor()` compatibility with Python's `int`.
+        """
+        return Self(raw_words=self.words.copy(), sign=self.sign)
+
+    @always_inline
+    fn __trunc__(self) -> Self:
+        """Returns self unchanged. Integers are already integers.
+
+        This enables `math.trunc()` compatibility with Python's `int`.
+        """
+        return Self(raw_words=self.words.copy(), sign=self.sign)
+
     # ===------------------------------------------------------------------=== #
     # Basic binary arithmetic operation dunders
     # These methods are called to implement the binary arithmetic operations

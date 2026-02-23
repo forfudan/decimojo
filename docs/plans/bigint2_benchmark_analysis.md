@@ -1,7 +1,8 @@
 # BigInt2 Benchmark Results & Optimization Roadmap
 
-First version: 2026-02-20
-Yuhao Zhu
+> Date of initial planning: 2026-02-20
+> Author: Yuhao Zhu
+> Scope: A new integer type with 2^32-based internal representation
 
 > [!IMPORTANT]
 > For v0.8.0, Tasks 1✓, 2✓, 3✓, 4✓, 5✓, 6✓, 7✓, 8✓ are the priority to be competitive at all sizes. Task 9 will be left for future optimization of extreme sizes (50000+ digits).
