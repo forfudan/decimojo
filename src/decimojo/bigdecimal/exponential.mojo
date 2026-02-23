@@ -1113,14 +1113,17 @@ fn sqrt_exact(x: BigDecimal, precision: Int) raises -> BigDecimal:
     # Construct result: coefficient=n, scale=-e (since exponent=e means *10^e)
     var result = BigDecimal(n^, -e, False)
 
-    # Round to the requested precision using ROUND_HALF_EVEN (like CPython)
-    if not exact:
-        result.round_to_precision(
-            precision=precision,
-            rounding_mode=RoundingMode.half_even(),
-            remove_extra_digit_due_to_rounding=True,
-            fill_zeros_to_precision=False,
-        )
+    # Round to the requested precision using ROUND_HALF_EVEN (like CPython).
+    # Applied unconditionally: for exact results that already fit within
+    # `precision` digits this is a no-op, but when the natural digit count
+    # exceeds `precision` (e.g. sqrt(10000) at precision=1) it correctly
+    # truncates — matching CPython's `_fix(context)` behavior.
+    result.round_to_precision(
+        precision=precision,
+        rounding_mode=RoundingMode.half_even(),
+        remove_extra_digit_due_to_rounding=True,
+        fill_zeros_to_precision=False,
+    )
 
     return result^
 
