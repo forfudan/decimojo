@@ -5,9 +5,11 @@ This is a list of changes for the DeciMojo Package.
 <!-- 
 ## Unreleased (v0.8.0)
 
-DeciMojo v0.8.0 is a profound milestone in the development of DeciMojo, with re-implementation of the core `BigInt` type using 2^32-based internal representation. This replaces the previous 10^9-based implementation, significantly enhancing the performance of `BigInt` operations, especially for large integers. The new implementation is designed to be fully compatible with the existing API, ensuring a seamless transition for users.
+DeciMojo v0.8.0 is a profound milestone in the development of DeciMojo, i.e., "make it fast". There are two major improvements in this release:
 
-Benchmarks show that the new `BigInt` implementation can be up to 10x faster than the previous one for certain operations, particularly multiplication and division of large integers, and it also beats Python's built-in `int` type in most cases.
+First, it re-implements the core `BigInt` (alias `BInt`) type using 2^32-based internal representation. This replaces the previous 10^9-based implementation, significantly enhancing the performance of `BigInt` operations, especially for large integers. The new implementation is designed to be fully compatible with the existing API, ensuring a seamless transition for users. Benchmarks show that the new `BigInt` implementation can be up to 10x faster than the previous one for certain operations, particularly multiplication and division of large integers, and it also beats Python's built-in `int` type in most cases.
+
+Second, it optimizes the mathematical operations for `BigDecimal`, improving performance and accuracy. For example, the re-implementation of the `sqrt()` function for `BigDecimal` using the reciprocal square root method combined with Newton's method allows for faster convergence and better performance, especially for high-precision calculations. It also refines the `to_string()` method to align with the Python `decimal` module's string representation in terms of scientific notation and trailing zeros, ensuring better compatibility and consistency. Benchmarks indicate that the `BigDecimal` operations beat Python's `decimal` module in terms of speed, especially for high-precision calculations, while maintaining comparable accuracy.
 
 Besides... [to be finished at the release time]
 

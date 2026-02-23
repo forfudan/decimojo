@@ -293,25 +293,81 @@ fn test_power_invalid_inputs() raises:
         "Negative number raised to a fractional power should raise an error",
     )
     # print(
-    #     "✓ Negative number raised to a fractional power correctly raises an"
-    #     " error"
+    #     "✓ Fractional root with even denominator of negative number correctly"
+    #     " raises an error"
     # )
 
 
+fn test_sqrt_multi_precision() raises:
+    """Test sqrt at various precisions against Python's decimal module.
+
+    Exercises both perfect squares (whose natural digit count may exceed the
+    requested precision) and irrationals at precisions 1, 2, 3, 5, 10, 28, 50.
+    This catches the bug where exact results skip rounding and return more
+    significant digits than requested.
+    """
+    var pydecimal = Python.import_module("decimal")
+
+    # Inputs: perfect squares, decimal perfect squares, irrationals, sci notation
+    var inputs: List[String] = [
+        "0",
+        "1",
+        "4",
+        "9",
+        "25",
+        "100",
+        "10000",
+        "90000",
+        "0.25",
+        "0.01",
+        "2.25",
+        "2",
+        "3",
+        "5",
+        "10",
+        "0.5",
+        "1E+10",
+        "1E-10",
+        "1E+100",
+        "1E-100",
+    ]
+
+    var precisions: List[Int] = [1, 2, 3, 5, 10, 28, 50]
+
+    var count_wrong = 0
+    for i in range(len(inputs)):
+        for j in range(len(precisions)):
+            var prec = precisions[j]
+            pydecimal.getcontext().prec = prec
+            var our_result = String(BDec(inputs[i]).sqrt(precision=prec))
+            var py_result = String(pydecimal.Decimal(inputs[i]).sqrt())
+            try:
+                testing.assert_equal(
+                    lhs=our_result,
+                    rhs=py_result,
+                    msg="sqrt(" + inputs[i] + ") at precision=" + String(prec),
+                )
+            except e:
+                print(
+                    "FAIL: sqrt("
+                    + inputs[i]
+                    + ") at precision="
+                    + String(prec),
+                    "\n  Expected (Python):",
+                    py_result,
+                    "\n  Got (DeciMojo):   ",
+                    our_result,
+                )
+                count_wrong += 1
+
+    # Restore default precision
+    pydecimal.getcontext().prec = 28
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "Some multi-precision sqrt test cases failed. See above for details.",
+    )
+
+
 fn main() raises:
-    # print("Running BigDecimal exponential tests")
-
-    # Run all tests
-    # test_bigdecimal_exponential()
-    # Test sqrt of negative number
-    # test_negative_sqrt()
-    # Test root with invalid inputs
-    # test_root_invalid_inputs()
-    # Test power with invalid inputs
-    # test_power_invalid_inputs()
-    # Test ln with invalid inputs
-    # test_ln_invalid_inputs()
-
     testing.TestSuite.discover_tests[__functions_in_module()]().run()
-
-    # print("All BigDecimal exponential tests passed!")

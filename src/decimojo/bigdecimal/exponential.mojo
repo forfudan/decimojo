@@ -28,7 +28,12 @@ from decimojo.rounding_mode import RoundingMode
 # - integer_root(x: BigDecimal, n: BigDecimal, precision: Int) -> BigDecimal
 # - is_integer_reciprocal_and_return(n: BigDecimal) -> Tuple[Bool, BigDecimal]
 # - is_odd_reciprocal(n: BigDecimal) -> Bool
-# - sqrt(x: BigDecimal, precision: Int) -> BigDecimal
+# - fast_isqrt(c: BigUInt, working_digits: Int) -> BigUInt
+# - sqrt(x: BigDecimal, precision: Int) -> BigDecimal  [public API]
+# - sqrt_exact(x: BigDecimal, precision: Int) -> BigDecimal  [CPython-style]
+# - sqrt_reciprocal(x: BigDecimal, precision: Int) -> BigDecimal  [fast, for internal use]
+# - sqrt_decimal_approach(x: BigDecimal, precision: Int) -> BigDecimal  [legacy]
+# - sqrt_newton(x: BigDecimal, precision: Int) -> BigDecimal  [legacy]
 # - exp(x: BigDecimal, precision: Int) -> BigDecimal
 # - exp_taylor_series(x: BigDecimal, minimum_precision: Int) -> BigDecimal
 # - ln(x: BigDecimal, precision: Int) -> BigDecimal
@@ -782,12 +787,616 @@ fn is_odd_reciprocal(n: BigDecimal) raises -> Bool:
 # efficient because it requires a lot of calculations to ensure that the scales
 # and the precisions in the intermediate results are correct. It is also error-
 # prone when scales are negative or there are two many significant digits.
+#
 # In DeciMojo v0.5.0, `sqrt` is re-implemented by using the BigUInt.sqrt()
 # function. It first calculates the square root of the coefficient of x, and
 # then adjust the scale based on the input scale, which is more efficient and
 # error-free.
-# The old implementation is still available as `sqrt_decimal_approach`.
+#
+# In DeciMojo v0.6.0, `sqrt` is re-implemented as `sqrt_exact`, using the
+# CPython _pydecimal.py algorithm for bit-perfect results matching Python's
+# Decimal.sqrt() output. For large numbers (>20 words), `fast_isqrt` uses
+# reciprocal sqrt with precision doubling for a fast initial approximation,
+# then exact integer Newton iterations to converge to isqrt(c).
+#
+# Function hierarchy:
+# - sqrt()                : Public API, delegates to sqrt_exact().
+# - sqrt_exact()          : CPython-style exact integer algorithm. Produces
+#                           results identical to Python's Decimal.sqrt().
+# - sqrt_reciprocal()     : Fast reciprocal sqrt iteration. For use as an
+#                           intermediate function by other functions (e.g.,
+#                           arctan, ln) where exact perfect square detection
+#                           is unnecessary.
+# - fast_isqrt()          : Hybrid isqrt: reciprocal sqrt approximation +
+#                           exact integer Newton refinement. Used by
+#                           sqrt_exact() for large numbers.
+# - sqrt_decimal_approach() : Legacy implementation (v0.3.0).
+# - sqrt_newton()           : Legacy implementation (v0.5.0).
 # ===----------------------------------------------------------------------=== #
+
+
+fn sqrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
+    """Calculate the square root of a BigDecimal number.
+
+    This is the public API for square root. It delegates to `sqrt_exact()`,
+    which uses the CPython _pydecimal.py algorithm for bit-perfect results
+    that match Python's `Decimal.sqrt()` output exactly.
+
+    Use this function when the result is returned directly to users.
+    For intermediate computations inside other functions (e.g., arctan, ln),
+    prefer `sqrt_reciprocal()` for better performance.
+
+    Args:
+        x: The number to calculate the square root of.
+        precision: The desired precision (number of significant digits) of the
+            result.
+
+    Returns:
+        The square root of x with the specified precision.
+
+    Raises:
+        Error: If x is negative.
+    """
+    return sqrt_exact(x, precision)
+
+
+fn fast_isqrt(c: BigUInt, working_digits: Int) raises -> BigUInt:
+    """Compute isqrt(c) using reciprocal sqrt with precision doubling for speed,
+    then verify/correct with exact integer Newton iterations.
+
+    This is a hybrid approach:
+    1. Use reciprocal sqrt Newton (division-free, precision doubling) to get
+       a close approximation of sqrt(c) — typically within ±1 of isqrt(c).
+    2. Refine with 1-3 exact integer Newton iterations to converge to isqrt(c).
+
+    Args:
+        c: The BigUInt to compute isqrt of (must be > 0).
+        working_digits: Number of significant digits for the reciprocal sqrt
+            approximation. Should be at least number_of_digits(c)/2 + 10.
+
+    Returns:
+        The integer square root floor(sqrt(c)).
+    """
+    # Convert c to BigDecimal for the reciprocal sqrt approximation
+    var c_bd = BigDecimal(c.copy(), 0, False)
+
+    # --- Normalization ---
+    var c_exp = c_bd.exponent()
+    var norm_shift: Int
+    if c_exp >= 0:
+        norm_shift = (c_exp // 2) * 2
+    else:
+        norm_shift = -((-c_exp + 1) // 2) * 2
+    var c_norm = c_bd.copy()
+    c_norm.scale += norm_shift
+
+    # --- Float64 initial guess for 1/sqrt(c_norm) ---
+    var top_word = Float64(c_norm.coefficient.words[-1])
+    var digits_in_top: Int = 0
+    var temp_val = c_norm.coefficient.words[-1]
+    while temp_val > 0:
+        temp_val //= 10
+        digits_in_top += 1
+    if digits_in_top == 0:
+        digits_in_top = 1
+
+    var mantissa = top_word / Float64(10.0) ** Float64(digits_in_top - 1)
+    if len(c_norm.coefficient.words) > 1:
+        mantissa += Float64(c_norm.coefficient.words[-2]) / (
+            Float64(10.0) ** Float64(digits_in_top + 8)
+        )
+
+    var c_norm_exp = c_norm.exponent()
+    var c_norm_f64 = mantissa * Float64(10.0) ** Float64(c_norm_exp)
+    var r_f64 = c_norm_f64 ** (-0.5)
+    if r_f64 != r_f64 or r_f64 <= 0.0:
+        r_f64 = 1.0
+
+    var r = BigDecimal(String(r_f64))
+
+    # --- Precision doubling schedule ---
+    var prec_schedule = List[Int]()
+    var p = working_digits
+    while p > 20:
+        prec_schedule.append(p)
+        p = (p + 1) // 2
+
+    # Constant 3
+    var three = BigDecimal(BigUInt(raw_words=[3]), 0, False)
+
+    # --- Reciprocal sqrt Newton iterations ---
+    for i in range(len(prec_schedule) - 1, -1, -1):
+        var ip = prec_schedule[i] + 10
+
+        var r_sq = r * r
+        r_sq.round_to_precision(
+            precision=ip,
+            rounding_mode=RoundingMode.half_up(),
+            remove_extra_digit_due_to_rounding=True,
+            fill_zeros_to_precision=False,
+        )
+
+        decimojo.bigdecimal.arithmetics.multiply_inplace(r_sq, c_norm)
+        r_sq.round_to_precision(
+            precision=ip,
+            rounding_mode=RoundingMode.half_up(),
+            remove_extra_digit_due_to_rounding=True,
+            fill_zeros_to_precision=False,
+        )
+
+        var correction = three - r_sq
+
+        decimojo.bigdecimal.arithmetics.multiply_inplace(r, correction)
+        r.round_to_precision(
+            precision=ip,
+            rounding_mode=RoundingMode.half_up(),
+            remove_extra_digit_due_to_rounding=True,
+            fill_zeros_to_precision=False,
+        )
+
+        r = r.true_divide_inexact_by_uint32(UInt32(2), ip)
+
+    # --- Compute sqrt(c) = c_norm * r * 10^(norm_shift/2) ---
+    var result_bd = c_norm * r
+    result_bd.scale -= norm_shift // 2
+
+    # Round to enough digits to get an accurate integer
+    result_bd.round_to_precision(
+        precision=working_digits,
+        rounding_mode=RoundingMode.half_up(),
+        remove_extra_digit_due_to_rounding=True,
+        fill_zeros_to_precision=False,
+    )
+
+    # --- Convert to BigUInt integer approximation ---
+    # result_bd is approximately sqrt(c), which should be an integer
+    # (since c was rescaled to make isqrt(c) have specific number of digits).
+    # Extract the integer part.
+    var n: BigUInt
+    if result_bd.scale <= 0:
+        # Integer or with trailing zeros
+        n = result_bd.coefficient.copy()
+        if result_bd.scale < 0:
+            n = decimojo.biguint.arithmetics.multiply_by_power_of_ten(
+                n, -result_bd.scale
+            )
+    else:
+        # Has decimal places — truncate to integer
+        n = decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
+            result_bd.coefficient, result_bd.scale
+        )
+
+    # --- Exact integer Newton refinement ---
+    # The reciprocal sqrt approximation may be above or below isqrt(c).
+    # Use standard integer Newton convergence (same as BigUInt.sqrt):
+    # iterate n = (n + c/n) / 2 until convergence (n stops changing or
+    # oscillates by 1).
+    for _ in range(20):  # Generous limit; typically converges in 1-3 steps
+        var prev_n = n.copy()
+        # Newton step: n = (n + c/n) / 2
+        var q = c.floor_divide(n)
+        n += q
+        decimojo.biguint.arithmetics.floor_divide_inplace_by_2(n)
+        if n == prev_n:
+            break
+        if prev_n == n + BigUInt.one():
+            # prev was one more than new — converged
+            break
+        if n == prev_n + BigUInt.one():
+            # new is one more than prev — prev was the answer (floor)
+            n = prev_n^
+            break
+
+    return n^
+
+
+fn sqrt_exact(x: BigDecimal, precision: Int) raises -> BigDecimal:
+    """Calculate the square root of a BigDecimal number using CPython's
+    exact integer algorithm.
+
+    Uses the same algorithm as CPython's _pydecimal.py to produce identical
+    results. The algorithm works on exact integer arithmetic:
+
+    1. Express x as c * 10^e where c is an integer
+    2. Rescale c so that isqrt(c) has exactly (precision+1) digits
+    3. Compute n = isqrt(c) using BigUInt integer Newton's method
+    4. Check if n*n == c (exact perfect square detection)
+    5. For exact results: undo rescaling to get natural representation
+    6. For inexact results: perturb n if n%5==0 to avoid rounding ties
+    7. Round to precision digits using ROUND_HALF_EVEN
+
+    This function produces results identical to Python's `Decimal.sqrt()`.
+    For better performance in intermediate computations where exact perfect
+    square detection is not needed, use `sqrt_reciprocal()` instead.
+
+    Args:
+        x: The number to calculate the square root of.
+        precision: The desired precision (number of significant digits) of the
+            result.
+
+    Returns:
+        The square root of x with the specified precision.
+
+    Raises:
+        Error: If x is negative.
+    """
+
+    # Handle special cases
+    if x.sign:
+        raise Error(
+            "Error in `sqrt`: Cannot compute square root of negative number"
+        )
+
+    if x.coefficient.is_zero():
+        # sqrt(0) — preserve exponent like CPython: e = x_exp // 2
+        # x_exp = -x.scale, so result exponent = (-x.scale) // 2
+        # result scale = -((-x.scale) // 2)
+        var x_exp = -x.scale
+        var result_exp = x_exp >> 1  # floor division toward -inf for >>
+        return BigDecimal(BigUInt.zero(), -result_exp, False)
+
+    # --- CPython _pydecimal.py sqrt algorithm ---
+    # prec = precision + 1 (one guard digit for rounding)
+    var prec = precision + 1
+
+    # x = coefficient * 10^(-scale), so the "decimal exponent" is:
+    # x_exp = -scale  (CPython's op.exp)
+    var x_exp = -x.scale  # The decimal exponent
+    var c = x.coefficient.copy()  # The integer coefficient
+
+    # e = ideal exponent for result = x_exp // 2  (floored)
+    var e = x_exp >> 1  # arithmetic right-shift = floor division by 2
+
+    # If x_exp is odd, multiply c by 10 so c becomes "even-exponent" form
+    # This ensures sqrt(c) * 10^e = sqrt(x)
+    var num_digits = c.number_of_digits()
+    var l: Int  # number of base-100 "digits" of c
+
+    if x_exp & 1:
+        # Odd exponent: c = c * 10
+        c = decimojo.biguint.arithmetics.multiply_by_power_of_ten(c, 1)
+        l = (num_digits >> 1) + 1
+    else:
+        # Even exponent
+        l = (num_digits + 1) >> 1
+
+    # Rescale c so that isqrt(c) has exactly `prec` digits.
+    # After rescaling: 10^(2*(prec-1)) <= c < 10^(2*prec)
+    # so isqrt(c) has exactly `prec` digits.
+    var shift = prec - l
+    var exact = True
+
+    if shift >= 0:
+        # Pad c with 2*shift zeros: c = c * 100^shift
+        c = decimojo.biguint.arithmetics.multiply_by_power_of_ten(c, 2 * shift)
+    else:
+        # Truncate c: c, remainder = divmod(c, 100^(-shift))
+        var divisor = decimojo.biguint.arithmetics.multiply_by_power_of_ten(
+            BigUInt.one(), -2 * shift
+        )
+        var qr = c.__divmod__(divisor)
+        c = qr[0].copy()
+        exact = qr[1].is_zero()
+    e -= shift
+
+    # --- Integer square root: n = isqrt(c) ---
+    # For large c, use reciprocal sqrt with precision doubling to get a fast
+    # initial approximation, then verify/correct with exact integer arithmetic.
+    # For small c (≤ 180 digits), BigUInt.sqrt() is fast enough directly.
+    var n: BigUInt
+    if len(c.words) <= 20:
+        n = decimojo.biguint.exponential.sqrt(c)
+    else:
+        n = fast_isqrt(c, prec + 10)
+
+    # Check for exact perfect square
+    exact = exact and (n * n == c)
+
+    if exact:
+        # Undo the rescaling to get the natural number of significant digits.
+        # This naturally strips artificial trailing zeros.
+        if shift >= 0:
+            n = decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
+                n, shift
+            )
+        else:
+            n = decimojo.biguint.arithmetics.multiply_by_power_of_ten(n, -shift)
+        e += shift
+    else:
+        # For inexact results, if n ends in 0 or 5, perturb by +1.
+        # This avoids exact midpoint ties when rounding to `precision` digits.
+        # Check: n % 5 == 0
+        # Since our BigUInt base is 10^9, n % 5 == (last_word % 5)
+        if n.words[0] % 5 == 0:
+            decimojo.biguint.arithmetics.add_inplace_by_uint32(n, 1)
+
+    # Construct result: coefficient=n, scale=-e (since exponent=e means *10^e)
+    var result = BigDecimal(n^, -e, False)
+
+    # Round to the requested precision using ROUND_HALF_EVEN (like CPython).
+    # Applied unconditionally: for exact results that already fit within
+    # `precision` digits this is a no-op, but when the natural digit count
+    # exceeds `precision` (e.g. sqrt(10000) at precision=1) it correctly
+    # truncates — matching CPython's `_fix(context)` behavior.
+    result.round_to_precision(
+        precision=precision,
+        rounding_mode=RoundingMode.half_even(),
+        remove_extra_digit_due_to_rounding=True,
+        fill_zeros_to_precision=False,
+    )
+
+    return result^
+
+
+fn sqrt_reciprocal(x: BigDecimal, precision: Int) raises -> BigDecimal:
+    """Calculate the square root of a BigDecimal number using reciprocal square
+    root iteration.
+
+    Uses reciprocal square root Newton iteration with precision doubling:
+        r_{k+1} = r_k * (3 - x * r_k^2) / 2   (computes 1/sqrt(x))
+    Then sqrt(x) = x * r.
+
+    This avoids division entirely — each Newton iteration uses only
+    multiplication, subtraction, and trivial divide-by-2. Combined with
+    precision doubling (starting at Float64 precision and doubling each
+    iteration), total work is approximately 3x the cost of one
+    full-precision iteration.
+
+    Args:
+        x: The number to calculate the square root of.
+        precision: The desired precision (number of significant digits) of the
+            result.
+
+    Returns:
+        The square root of x with the specified precision.
+
+    Raises:
+        Error: If x is negative.
+    """
+
+    # Handle special cases
+    if x.sign:
+        raise Error(
+            "Error in `sqrt`: Cannot compute square root of negative number"
+        )
+
+    if x.coefficient.is_zero():
+        return BigDecimal(BigUInt.zero(), (x.scale + 1) // 2, False)
+
+    # For x = 1, return 1
+    if x.is_one():
+        return BigDecimal(BigUInt.one(), 0, False)
+
+    comptime BUFFER_DIGITS = 25
+    var working_precision = precision + BUFFER_DIGITS
+
+    # --- Normalization ---
+    # Shift x by an even power of 10 to bring it into [0.1, 100) for a
+    # stable Float64 initial guess. Then sqrt(x) = sqrt(x_norm) * 10^(shift/2).
+    var x_norm = x.copy()
+    var x_exp = x_norm.exponent()  # floor(log10(x))
+
+    # Make shift even and bring x_norm near 1
+    var shift: Int
+    if x_exp >= 0:
+        shift = (x_exp // 2) * 2  # round down to even
+    else:
+        shift = -((-x_exp + 1) // 2) * 2  # round up magnitude to even
+    x_norm.scale += shift  # x_norm = x * 10^(-shift)
+
+    # --- Float64 initial guess for 1/sqrt(x_norm) ---
+    var top_word = Float64(x_norm.coefficient.words[-1])
+    var digits_in_top: Int = 0
+    var temp_val = x_norm.coefficient.words[-1]
+    while temp_val > 0:
+        temp_val //= 10
+        digits_in_top += 1
+    if digits_in_top == 0:
+        digits_in_top = 1
+
+    var mantissa = top_word / Float64(10.0) ** Float64(digits_in_top - 1)
+    if len(x_norm.coefficient.words) > 1:
+        mantissa += Float64(x_norm.coefficient.words[-2]) / (
+            Float64(10.0) ** Float64(digits_in_top + 8)
+        )
+
+    var x_norm_exp = x_norm.exponent()
+    var x_norm_f64 = mantissa * Float64(10.0) ** Float64(x_norm_exp)
+    var r_f64 = x_norm_f64 ** (-0.5)  # 1/sqrt(x_norm)
+    if r_f64 != r_f64 or r_f64 <= 0.0:  # NaN or degenerate
+        r_f64 = 1.0
+
+    var r = BigDecimal(String(r_f64))
+
+    # --- Precision doubling schedule ---
+    # Build list from working_precision down to ~20, iterate in reverse.
+    # Float64 gives ~15 correct digits; each Newton iteration doubles that.
+    var prec_schedule = List[Int]()
+    var p = working_precision
+    while p > 20:
+        prec_schedule.append(p)
+        p = (p + 1) // 2
+
+    # Constant 3
+    var three = BigDecimal(BigUInt(raw_words=[3]), 0, False)
+
+    # --- Newton iterations: r_{k+1} = r_k * (3 - x_norm * r_k^2) / 2 ---
+    for i in range(len(prec_schedule) - 1, -1, -1):
+        var ip = prec_schedule[i] + 10  # iteration precision with guard
+
+        # r^2 (self-squaring, cannot use multiply_inplace)
+        var r_sq = r * r
+        r_sq.round_to_precision(
+            precision=ip,
+            rounding_mode=RoundingMode.half_up(),
+            remove_extra_digit_due_to_rounding=True,
+            fill_zeros_to_precision=False,
+        )
+
+        # x_norm * r^2 (inplace to avoid allocation: r_sq becomes x_norm * r^2)
+        decimojo.bigdecimal.arithmetics.multiply_inplace(r_sq, x_norm)
+        r_sq.round_to_precision(
+            precision=ip,
+            rounding_mode=RoundingMode.half_up(),
+            remove_extra_digit_due_to_rounding=True,
+            fill_zeros_to_precision=False,
+        )
+
+        # 3 - x_norm * r^2 (should be close to 2 when converged)
+        var correction = three - r_sq
+
+        # r * (3 - x_norm * r^2) (inplace)
+        decimojo.bigdecimal.arithmetics.multiply_inplace(r, correction)
+        r.round_to_precision(
+            precision=ip,
+            rounding_mode=RoundingMode.half_up(),
+            remove_extra_digit_due_to_rounding=True,
+            fill_zeros_to_precision=False,
+        )
+
+        # / 2
+        r = r.true_divide_inexact_by_uint32(UInt32(2), ip)
+
+    # --- Final: sqrt(x_norm) = x_norm * r ---
+    var result = x_norm * r
+
+    # --- Un-normalize: sqrt(x) = sqrt(x_norm) * 10^(shift/2) ---
+    result.scale -= shift // 2
+
+    # --- Round to desired precision ---
+    result.round_to_precision(
+        precision=precision,
+        rounding_mode=RoundingMode.half_up(),
+        remove_extra_digit_due_to_rounding=True,
+        fill_zeros_to_precision=False,
+    )
+
+    # --- Strip trailing zeros for exact results (e.g., sqrt(4) = 2, not 2.000...) ---
+    # Only strip if the stripped result is a verified perfect square.
+    var n_trailing = result.coefficient.number_of_trailing_zeros()
+    if n_trailing > 0:
+        var stripped_coef = (
+            decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
+                result.coefficient, n_trailing
+            )
+        )
+        var stripped_scale = result.scale - n_trailing
+        var candidate = BigDecimal(stripped_coef^, stripped_scale, False)
+        # Verify: candidate * candidate == x?
+        var check = candidate * candidate
+        if check == x:
+            # If the scale went negative but the input had non-negative scale,
+            # normalize back to scale=0 to preserve integer representation.
+            # E.g., sqrt(100) should return "10" (scale=0), not "1E+1" (scale=-1).
+            # But sqrt(1e10) should return "1E+5" (scale=-5) since input has scale=-10.
+            if candidate.scale < 0 and x.scale >= 0:
+                candidate.coefficient = (
+                    decimojo.biguint.arithmetics.multiply_by_power_of_ten(
+                        candidate.coefficient, -candidate.scale
+                    )
+                )
+                candidate.scale = 0
+            return candidate^
+
+    return result^
+
+
+fn sqrt_newton(x: BigDecimal, precision: Int) raises -> BigDecimal:
+    """Calculates the square root of a BigDecimal number using Newton's method.
+
+    Args:
+        x: The number to calculate the square root of.
+        precision: The desired precision (number of significant digits) of the
+            result.
+
+    Returns:
+        The square root of x with the specified precision.
+
+    Raises:
+        Error: If x is negative.
+
+    Notes:
+
+    This function uses BigUInt.sqrt() to calculate the square root of the
+    coefficient of x, and then adjusts the scale based on the input scale.
+    """
+
+    # Yuhao ZHU:
+    # I am using the following tricks to ensure that the scales are correct
+    # during scale up and scale down operations.
+    # A BigDecimal has a coefficient (c) and a scale (s) -> c*10^(-s).
+    # Let the final targeted scale to be t. So the result should have
+    # (c*10^(-s))^(1/2) = (c*10^(2t-s)*10^(-2t+s)*10^(-s))^(1/2)
+    #                   = (c*10^(2t-s))^(1/2) * 10^(-t)
+    #                   = c_0 * 10^(-t)
+    # where c_0 is the new coefficient after taking the square root and
+    # t is the new scale.
+    # So we first need to extend the coefficient by 10^(2t-s) to ensure
+    # the square root has enough precision. Let's denote the precision as p.
+    # Thus, the number of digits of c*10^(2t-s) should be at least 2p.
+    # That is t > p + (s - d(c)) // 2
+
+    # Handle special cases
+    if x.sign:
+        raise Error(
+            "Error in `sqrt`: Cannot compute square root of negative number"
+        )
+
+    if x.coefficient.is_zero():
+        return BigDecimal(BigUInt.zero(), (x.scale + 1) // 2, False)
+
+    # STEP 1: Extend the coefficient by 10^(2p-s)
+    var working_precision = precision + 9  # p
+    var n_digits_coef = x.coefficient.number_of_digits()  # d(c)
+    var new_scale = working_precision + (x.scale - n_digits_coef) // 2 + 1  # t
+    var n_digits_to_extend = new_scale * 2 - x.scale  # 2t - s
+    var half_n_digits_to_extend = n_digits_to_extend // 2
+    var extended_coefficient: BigUInt
+    if n_digits_to_extend > 0:
+        extended_coefficient = (
+            decimojo.biguint.arithmetics.multiply_by_power_of_ten(
+                x.coefficient, n_digits_to_extend
+            )
+        )
+    elif n_digits_to_extend == 0:
+        extended_coefficient = x.coefficient.copy()
+    else:  # n_digits_to_extend < 0
+        extended_coefficient = (
+            decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
+                x.coefficient, -n_digits_to_extend
+            )
+        )
+
+    # STEP 2: Calculate the square root of the extended coefficient
+    var sqrt_coefficient = decimojo.biguint.exponential.sqrt(
+        extended_coefficient
+    )
+
+    # If the last p digits of the coefficient are zeros, this means that
+    # we have a perfect square, so we can scale down the coefficient
+    # and the scale.
+    if (
+        sqrt_coefficient.number_of_trailing_zeros() >= half_n_digits_to_extend
+    ) and (half_n_digits_to_extend > 0):
+        sqrt_coefficient = (
+            decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
+                sqrt_coefficient, half_n_digits_to_extend
+            )
+        )
+        new_scale -= half_n_digits_to_extend
+
+    var result = BigDecimal(
+        sqrt_coefficient^,
+        new_scale,
+        False,
+    )
+    result.round_to_precision(
+        precision=precision,
+        rounding_mode=RoundingMode.half_up(),
+        remove_extra_digit_due_to_rounding=True,
+        fill_zeros_to_precision=False,
+    )
+    return result^
 
 
 fn sqrt_decimal_approach(x: BigDecimal, precision: Int) raises -> BigDecimal:
@@ -912,8 +1521,6 @@ fn sqrt_decimal_approach(x: BigDecimal, precision: Int) raises -> BigDecimal:
         guess.scale -= ndigits_to_remove
 
     # Remove trailing zeros for exact results
-    # TODO: This can be done even earlier in the process
-    # TODO: Implement a method that remove trailing zeros
     if guess.coefficient.ith_digit(0) == 0:
         var guess_coefficient_without_trailing_zeros = (
             guess.coefficient.remove_trailing_digits_with_rounding(
@@ -945,103 +1552,6 @@ fn sqrt_decimal_approach(x: BigDecimal, precision: Int) raises -> BigDecimal:
             guess.scale = (x.scale + 1) // 2
 
     return guess^
-
-
-fn sqrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
-    """Calculate the square root of a BigDecimal number.
-
-    Args:
-        x: The number to calculate the square root of.
-        precision: The desired precision (number of significant digits) of the
-            result.
-
-    Returns:
-        The square root of x with the specified precision.
-
-    Raises:
-        Error: If x is negative.
-
-    Notes:
-        This function uses BigUInt.sqrt() to calculate the square root of the
-        coefficient of x, and then adjusts the scale based on the input scale.
-    """
-
-    # Yuhao ZHU:
-    # I am using the following tricks to ensure that the scales are correct
-    # during scale up and scale down operations.
-    # A BigDecimal has a coefficient (c) and a scale (s) -> c*10^(-s).
-    # Let the final targeted scale to be t. So the result should have
-    # (c*10^(-s))^(1/2) = (c*10^(2t-s)*10^(-2t+s)*10^(-s))^(1/2)
-    #                   = (c*10^(2t-s))^(1/2) * 10^(-t)
-    #                   = c_0 * 10^(-t)
-    # where c_0 is the new coefficient after taking the square root and
-    # t is the new scale.
-    # So we first need to extend the coefficient by 10^(2t-s) to ensure
-    # the square root has enough precision. Let's denote the precision as p.
-    # Thus, the number of digits of c*10^(2t-s) should be at least 2p.
-    # That is t > p + (s - d(c)) // 2
-
-    # Handle special cases
-    if x.sign:
-        raise Error(
-            "Error in `sqrt`: Cannot compute square root of negative number"
-        )
-
-    if x.coefficient.is_zero():
-        return BigDecimal(BigUInt.zero(), (x.scale + 1) // 2, False)
-
-    # STEP 1: Extend the coefficient by 10^(2p-s)
-    var working_precision = precision + 9  # p
-    var n_digits_coef = x.coefficient.number_of_digits()  # d(c)
-    var new_scale = working_precision + (x.scale - n_digits_coef) // 2 + 1  # t
-    var n_digits_to_extend = new_scale * 2 - x.scale  # 2t - s
-    var half_n_digits_to_extend = n_digits_to_extend // 2
-    var extended_coefficient: BigUInt
-    if n_digits_to_extend > 0:
-        extended_coefficient = (
-            decimojo.biguint.arithmetics.multiply_by_power_of_ten(
-                x.coefficient, n_digits_to_extend
-            )
-        )
-    elif n_digits_to_extend == 0:
-        extended_coefficient = x.coefficient.copy()
-    else:  # n_digits_to_extend < 0
-        extended_coefficient = (
-            decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
-                x.coefficient, -n_digits_to_extend
-            )
-        )
-
-    # STEP 2: Calculate the square root of the extended coefficient
-    var sqrt_coefficient = decimojo.biguint.exponential.sqrt(
-        extended_coefficient
-    )
-
-    # If the last p digits of the coefficient are zeros, this means that
-    # we have a perfect square, so we can scale down the coefficient
-    # and the scale.
-    if (
-        sqrt_coefficient.number_of_trailing_zeros() >= half_n_digits_to_extend
-    ) and (half_n_digits_to_extend > 0):
-        sqrt_coefficient = (
-            decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
-                sqrt_coefficient, half_n_digits_to_extend
-            )
-        )
-        new_scale -= half_n_digits_to_extend
-
-    var result = BigDecimal(
-        sqrt_coefficient^,
-        new_scale,
-        False,
-    )
-    result.round_to_precision(
-        precision=precision,
-        rounding_mode=RoundingMode.half_up(),
-        remove_extra_digit_due_to_rounding=True,
-        fill_zeros_to_precision=False,
-    )
-    return result^
 
 
 fn cbrt(x: BigDecimal, precision: Int) raises -> BigDecimal:

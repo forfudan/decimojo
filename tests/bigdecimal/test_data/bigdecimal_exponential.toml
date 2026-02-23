@@ -127,7 +127,7 @@ expected = "0.01"
 a = "0.{0,11}1"
 b = ""
 description = "Square root of very small number"
-expected = "1E-6"
+expected = "0.000001"
 
 [[sqrt_tests]]
 a = "0.{0,27}1"
@@ -316,7 +316,7 @@ expected = "0.09531017980432486004395212328"
 a = "0.999999"
 b = ""
 description = "Natural logarithm very close to 0 (0.999999)"
-expected = "-1.000000500000333333583333533E-6"
+expected = "-0.000001000000500000333333583333533"
 
 [[ln_tests]]
 a = "1.000001"
