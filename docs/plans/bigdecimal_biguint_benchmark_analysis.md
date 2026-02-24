@@ -9,17 +9,17 @@
 
 ## Optimization priority and planning
 
-| Task       | Operation(s) Improved     |            Current vs Python             |  Expected After  |  Effort   | Priority     |
-| ---------- | ------------------------- | :--------------------------------------: | :--------------: | :-------: | ------------ |
-| **Task 1** | Asymmetric division       |               ✓ **31–79×**               |   ✓ COMPLETED    |   Done    | High         |
-| **Task 2** | Division (large operands) | ✓ **avg 24.6× (was 0.78×), up to 915×**  |   ✓ COMPLETED    |   Done    | High         |
-| **Task 3** | Exp, ln                   |  Exp: **0.87×@p50→5.3×@p2000** (3d done)  | 3a✓,3b✓,3c✓,3d✓ |  Medium   | **Critical** |
-| **Task 4** | Sqrt                      |    ✓ **3.53× geo (was 0.66×@p5000)**     |   ✓ COMPLETED    |   Done    | High         |
-| **Task 5** | ALL large operations      |                  varies                  |    2–10× gain    | Very High | Low          |
-| **Task 6** | Large multiplication      | ✓ **+14–29% over Karatsuba (256–4096w)** |   ✓ COMPLETED    |   Done    | Medium       |
-| **Task 7** | Nth root                  |      ✓ **3.9–25× (was 0.14–0.49×)**      |   ✓ COMPLETED    |   Done    | High         |
-| **Task 8** | All (allocation overhead) |           ✓ **+15–27% exp/ln**           |   ✓ COMPLETED    |   Done    | High         |
-| **Task 9** | Schoolbook multiply base  |                    —                     |      1.5–2×      |    Low    | Medium       |
+| Task       | Operation(s) Improved     |            Current vs Python             | Expected After  |  Effort   | Priority     |
+| ---------- | ------------------------- | :--------------------------------------: | :-------------: | :-------: | ------------ |
+| **Task 1** | Asymmetric division       |               ✓ **31–79×**               |   ✓ COMPLETED   |   Done    | High         |
+| **Task 2** | Division (large operands) | ✓ **avg 24.6× (was 0.78×), up to 915×**  |   ✓ COMPLETED   |   Done    | High         |
+| **Task 3** | Exp, ln                   | Exp: **0.87×@p50→5.3×@p2000** (3d done)  | 3a✓,3b✓,3c✓,3d✓ |  Medium   | **Critical** |
+| **Task 4** | Sqrt                      |    ✓ **3.53× geo (was 0.66×@p5000)**     |   ✓ COMPLETED   |   Done    | High         |
+| **Task 5** | ALL large operations      |                  varies                  |   2–10× gain    | Very High | Low          |
+| **Task 6** | Large multiplication      | ✓ **+14–29% over Karatsuba (256–4096w)** |   ✓ COMPLETED   |   Done    | Medium       |
+| **Task 7** | Nth root                  |      ✓ **3.9–25× (was 0.14–0.49×)**      |   ✓ COMPLETED   |   Done    | High         |
+| **Task 8** | All (allocation overhead) |           ✓ **+15–27% exp/ln**           |   ✓ COMPLETED   |   Done    | High         |
+| **Task 9** | Schoolbook multiply base  |                    —                     |     1.5–2×      |    Low    | Medium       |
 
 ### Planned Execution Order
 
@@ -955,14 +955,14 @@ Replaced the weak halving strategy (divide by $2^k$ until $x < 1$) with **aggres
 
 **Results (before → after, excluding exp(0) anomaly):**
 
-| Precision | Before | After | Improvement |
-|-----------|--------|-------|-------------|
-| p=50      | 0.79×  | 0.87× | +10%       |
-| p=100     | 0.58×  | 0.87× | +50%       |
-| p=200     | 0.74×  | 1.08× | +46%       |
-| p=500     | ~1.1×  | 1.95× | +77%       |
-| p=1000    | ~1.0×  | **2.6×** | +160%   |
-| p=2000    | ~1.7×  | **5.3×** | +212%   |
+| Precision | Before | After    | Improvement |
+| --------- | ------ | -------- | ----------- |
+| p=50      | 0.79×  | 0.87×    | +10%        |
+| p=100     | 0.58×  | 0.87×    | +50%        |
+| p=200     | 0.74×  | 1.08×    | +46%        |
+| p=500     | ~1.1×  | 1.95×    | +77%        |
+| p=1000    | ~1.0×  | **2.6×** | +160%       |
+| p=2000    | ~1.7×  | **5.3×** | +212%       |
 
 At p≥200, DeciMojo now consistently beats Python. At p=2000, exp is 5.3× faster than Python's C-based `libmpdec`.
 
