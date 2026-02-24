@@ -5,21 +5,21 @@
 > Scope: BigDecimal (Decimal) and BigUInt (BUInt)
 
 > [!IMPORTANT]
-> For v0.8.0, Tasks 1✓, 2✓, 3a✓, 3b✓, 3c✓, 4✓, 7✓, 8✓ are the priority to be competitive at all sizes.
+> For v0.8.0, Tasks 1✓, 2✓, 3a✓, 3b✓, 3c✓, 4✓, 6✓, 7✓, 8✓ are the priority to be competitive at all sizes.
 
 ## Optimization priority and planning
 
-| Task       | Operation(s) Improved     |            Current vs Python            |    Expected After    |  Effort   | Priority     |
-| ---------- | ------------------------- | :-------------------------------------: | :------------------: | :-------: | ------------ |
-| **Task 1** | Asymmetric division       |              ✓ **31–79×**               |     ✓ COMPLETED      |   Done    | High         |
-| **Task 2** | Division (large operands) | ✓ **avg 24.6× (was 0.78×), up to 915×** |     ✓ COMPLETED      |   Done    | High         |
-| **Task 3** | Exp, ln                   |       Exp: 0.60×@p50→1.62×@p2000        |   3a ✓, 3b ✓, 3c ✓   |  Medium   | **Critical** |
-| **Task 4** | Sqrt                      |    ✓ **3.53× geo (was 0.66×@p5000)**    |     ✓ COMPLETED      |   Done    | High         |
-| **Task 5** | ALL large operations      |                 varies                  |      2–10× gain      | Very High | Low          |
-| **Task 6** | Large multiplication      |                   N/A                   | ~1.5× over Karatsuba |  Medium   | Medium       |
-| **Task 7** | Nth root                  |     ✓ **3.9–25× (was 0.14–0.49×)**      |     ✓ COMPLETED      |   Done    | High         |
-| **Task 8** | All (allocation overhead) |          ✓ **+15–27% exp/ln**           |     ✓ COMPLETED      |   Done    | High         |
-| **Task 9** | Schoolbook multiply base  |                    —                    |        1.5–2×        |    Low    | Medium       |
+| Task       | Operation(s) Improved     |            Current vs Python             |  Expected After  |  Effort   | Priority     |
+| ---------- | ------------------------- | :--------------------------------------: | :--------------: | :-------: | ------------ |
+| **Task 1** | Asymmetric division       |               ✓ **31–79×**               |   ✓ COMPLETED    |   Done    | High         |
+| **Task 2** | Division (large operands) | ✓ **avg 24.6× (was 0.78×), up to 915×**  |   ✓ COMPLETED    |   Done    | High         |
+| **Task 3** | Exp, ln                   |        Exp: 0.60×@p50→1.62×@p2000        | 3a ✓, 3b ✓, 3c ✓ |  Medium   | **Critical** |
+| **Task 4** | Sqrt                      |    ✓ **3.53× geo (was 0.66×@p5000)**     |   ✓ COMPLETED    |   Done    | High         |
+| **Task 5** | ALL large operations      |                  varies                  |    2–10× gain    | Very High | Low          |
+| **Task 6** | Large multiplication      | ✓ **+14–29% over Karatsuba (256–4096w)** |   ✓ COMPLETED    |   Done    | Medium       |
+| **Task 7** | Nth root                  |      ✓ **3.9–25× (was 0.14–0.49×)**      |   ✓ COMPLETED    |   Done    | High         |
+| **Task 8** | All (allocation overhead) |           ✓ **+15–27% exp/ln**           |   ✓ COMPLETED    |   Done    | High         |
+| **Task 9** | Schoolbook multiply base  |                    —                     |      1.5–2×      |    Low    | Medium       |
 
 ### Planned Execution Order
 
@@ -31,8 +31,8 @@
 1. ~~**Task 8** (in-place operations) — broad improvement~~ ✓ DONE — exp +15–21%, ln +15–27%, sqrt +9%
 1. ~~**Task 4** (CPython-style exact sqrt + reciprocal sqrt hybrid)~~ ✓ DONE — 3.53× geometric mean (was 0.66×), 0 correctness warnings, bit-perfect Python match
 1. ~~**Task 2** (truncation optimization for large-operand division)~~ ✓ DONE — avg 24.6× (was 0.78×), large balanced up to 915× Python, asymmetric up to 124×
-1. **Task 6** (Toom-3) — medium complexity, medium gain
-1. **Task 3c** (binary splitting for series) — complex but transformative
+1. ~~**Task 6** (Toom-3) — medium complexity, medium gain~~ ✓ DONE — +14% at 256–1024w, +28–29% at 2048–4096w
+1. **Task 3e** (binary splitting for series) — complex but transformative
 1. **Task 5** (NTT) — less urgent than thought; Karatsuba competitive up to p=1000
 1. **Task 9** (SIMD multiply) — polish
 
@@ -793,7 +793,7 @@ This is the strongest evidence that **staying with base-$10^9$ is correct** for 
 
 Java stores the coefficient as a **binary** `BigInteger` internally, paying the conversion cost at construction and `toString()`. This gives fast arithmetic but slow I/O. For computation-heavy uses (scientific computing), this is a good tradeoff.
 
-### Recommendation
+### Approach for DeciMojo
 
 **Stay with base-$10^9$, but implement NTT for large multiplication.**
 
@@ -940,6 +940,12 @@ Exp improved 5–25% at p≤200 (e.g., exp(1): 0.48→0.60× at p=50).
 
 **Design decision:** The `ln()` function itself decomposes `power_of_10 * ln(10)` into `3*power_of_10*ln(2) + power_of_10*ln(1.25)` rather than calling `get_ln10()`. This avoids computing `ln(1.25)` unnecessarily for inputs like `ln(2)` that only need `ln(2)`. The cached `ln(10)` benefits `log10()`/`log()` where both constants are always needed anyway.
 
+#### Task 3d: Better Range Reduction for Exp
+
+**Current:** Halving strategy — divide by $2^k$ until $x < 1$, then square $k$ times. Each squaring is a full-precision multiplication.
+
+**Better:** Reduce $x$ modulo $\ln(10)$ so the reduced argument is much smaller, requiring fewer Taylor terms. Then reconstruct using $e^{k\ln 10} = 10^k$ (trivial in base-$10^9$).
+
 #### Task 3e: Binary Splitting for Exp/Ln Series
 
 **Current:** Sequential Taylor series, one term at a time. Each term depends on the previous term.
@@ -949,12 +955,6 @@ Exp improved 5–25% at p≤200 (e.g., exp(1): 0.48→0.60× at p=50).
 **Benefit:** Reduces $O(p)$ BigDecimal divisions to $O(1)$ final division + $O(p \log p)$ BigUInt multiplications. At large precision, this is dramatically faster.
 
 **Note:** This is how `libmpdec` internally handles the series. It's the main reason Python exp is 3× faster.
-
-#### Task 3d: Better Range Reduction for Exp
-
-**Current:** Halving strategy — divide by $2^k$ until $x < 1$, then square $k$ times. Each squaring is a full-precision multiplication.
-
-**Better:** Reduce $x$ modulo $\ln(10)$ so the reduced argument is much smaller, requiring fewer Taylor terms. Then reconstruct using $e^{k\ln 10} = 10^k$ (trivial in base-$10^9$).
 
 ---
 
@@ -1062,9 +1062,9 @@ Total work ≈ $2 \times$ cost of the final iteration, instead of $k \times$ ful
 
 ---
 
-### Task 6: Toom-3 Multiplication (Intermediate Step Before NTT)
+### Task 6: Toom-3 Multiplication (Intermediate Step Before NTT) — ✓ COMPLETED (2026-02-24)
 
-**Priority: MEDIUM** — Useful if NTT implementation is delayed
+**Status: COMPLETED** — Large multiply improved +14% at 256–1024 words, +28–29% at 2048–4096 words
 
 **Algorithm:** Toom-3 splits each operand into 3 parts instead of Karatsuba's 2. Requires 5 recursive multiplications instead of Karatsuba's 3, but reduces the sub-problem size to $n/3$ instead of $n/2$.
 
@@ -1072,10 +1072,38 @@ Total work ≈ $2 \times$ cost of the final iteration, instead of $k \times$ ful
 
 **Integration:**
 
-- Current: Schoolbook → Karatsuba (cutoff=64 words)
-- After: Schoolbook → Karatsuba (cutoff=64) → Toom-3 (cutoff=256) → NTT (cutoff=1024)
+- Before: Schoolbook → Karatsuba (cutoff=64 words)
+- After: Schoolbook → Karatsuba (cutoff=64) → Toom-3 (cutoff=128) → NTT (future)
 
-**Expected gain:** ~1.5× at 10000 digits over Karatsuba alone.
+**Implementation details:**
+
+- `CUTOFF_TOOM3 = 128` (words). Below 128, Karatsuba is used.
+- 5-point evaluation at $p(0), p(1), p(-1), p(2), p(\infty)$
+- Signed intermediate handling for $v_{-1}$ via boolean sign tracking (avoids signed BigUInt type)
+- Shared `x0+x2` / `y0+y2` subexpressions for $p(1)$/$p(-1)$ and $q(1)$/$q(-1)$
+- Horner evaluation for $p(2)$: $(x_2 \cdot 2 + x_1) \cdot 2 + x_0$
+- Helper functions: `_exact_divide_by_2_inplace`, `_exact_divide_by_3_inplace`, `_exact_divide_by_6_inplace` (carry-based, no BigUInt division)
+- Interpolation optimized: in-place variable reuse ($t_3 \to w_3$, $t_1 \to w_1$), avoids extra BigUInt copies
+- Recomposition via parametric `_add_at_offset` helper
+
+**Benchmark results (BigUInt multiply vs Python `int`, 100 iterations):**
+
+| Word Size | Before (ns) | After (ns) | BigUInt Improvement | vs Python Before | vs Python After |
+| --------- | ----------: | ---------: | :-----------------: | :--------------: | :-------------: |
+| 32w       |       1,310 |      1,380 |    — (Karatsuba)    |      0.53×       |      0.62×      |
+| 64w       |       5,560 |      5,610 |    — (Karatsuba)    |      0.45×       |      0.48×      |
+| 128w      |      16,660 |     18,540 |    — (Karatsuba)    |      0.45×       |      0.42×      |
+| 256w      |      51,950 |     44,670 |      **+14%**       |      0.44×       |    **0.60×**    |
+| 512w      |     167,310 |    143,020 |      **+14%**       |      0.47×       |    **0.51×**    |
+| 1024w     |     478,830 |    409,020 |      **+15%**       |      0.46×       |    **0.54×**    |
+| 2048w     |   1,401,370 |    991,490 |      **+29%**       |      0.49×       |    **0.69×**    |
+| 4096w     |   4,207,650 |  3,014,910 |      **+28%**       |      0.48×       |    **0.68×**    |
+
+Note: "vs Python" compares BigUInt to CPython `int` (GMP-backed). Run-to-run Python times vary slightly.
+
+**Analysis:** Toom-3 provides meaningful improvement at ≥256 words, with increasing benefit at larger sizes. The asymptotic $O(n^{1.465})$ vs $O(n^{1.585})$ advantage becomes dominant above ~2048 words. At 512–1024 words, the improvement is modest (~14%) because the recursive Toom-3 subproblems at ~171 words produce ~57-word sub-sub-problems that fall just below the Karatsuba threshold (schoolbook at 57 words), limiting the recursive benefit. The 2048–4096 word range sees the full advantage as deeper recursion levels all land in efficient algorithm tiers.
+
+**Why still slower than Python:** CPython's `int` uses GMP with base-$2^{64}$ limbs (64-bit native multiply), while DeciMojo uses base-$10^9$ with `UInt32` limbs. Each GMP limb holds ~19.3 digits vs our ~9 digits, so GMP processes ≈2× fewer limbs for the same number. GMP's schoolbook base case also uses hardware `UMULL` (64×64→128 bit), while our base case is `UInt32×UInt32→UInt64` with a `divmod(10^9)` carry step.
 
 ---
 
@@ -1284,13 +1312,13 @@ All bench files now:
 
 ### Remaining Targets
 
-| Priority  | Task    |                 Current                 |      Target       | Approach                                            |
-| --------- | ------- | :-------------------------------------: | :---------------: | --------------------------------------------------- |
-| ✓ DONE    | Task 2  | ~~0.78×~~ **avg 24.6×, up to 915× div** |      ✓ DONE       | Truncation optimization for oversized operands      |
-| ✓ DONE    | Task 4  | ~~0.55–0.72×~~ **3.53× geo-mean sqrt**  |      ✓ DONE       | CPython exact algorithm + reciprocal sqrt hybrid    |
-| ✓ DONE    | Task 7  |   ~~0.14–0.49×~~ **3.9–25× nth root**   |      ✓ DONE       | Newton for nth root (was exp(ln(x)/n))              |
-| ✓ DONE    | Task 8  |      **+15–27% exp/ln, +9% sqrt**       |      ✓ DONE       | In-place BigDecimal operations + uint32 quick paths |
-| MEDIUM    | Task 6  |                   N/A                   | ~1.5× over Karat. | Toom-3 multiplication                               |
-| LOW       | Task 3d |                0.55× exp                |     0.8–1.0×      | Binary splitting for Taylor series                  |
-| LONG-TERM | Task 5  |                    —                    |  2–10× large ops  | NTT multiplication                                  |
-| LOW       | Task 9  |                    —                    |      1.5–2×       | SIMD schoolbook multiply base                       |
+| Priority  | Task    |                 Current                  |     Target      | Approach                                            |
+| --------- | ------- | :--------------------------------------: | :-------------: | --------------------------------------------------- |
+| ✓ DONE    | Task 2  | ~~0.78×~~ **avg 24.6×, up to 915× div**  |     ✓ DONE      | Truncation optimization for oversized operands      |
+| ✓ DONE    | Task 4  |  ~~0.55–0.72×~~ **3.53× geo-mean sqrt**  |     ✓ DONE      | CPython exact algorithm + reciprocal sqrt hybrid    |
+| ✓ DONE    | Task 7  |   ~~0.14–0.49×~~ **3.9–25× nth root**    |     ✓ DONE      | Newton for nth root (was exp(ln(x)/n))              |
+| ✓ DONE    | Task 8  |       **+15–27% exp/ln, +9% sqrt**       |     ✓ DONE      | In-place BigDecimal operations + uint32 quick paths |
+| ✓ DONE    | Task 6  | ✓ **+14–29% over Karatsuba (256–4096w)** |   ✓ COMPLETED   | Toom-3 multiplication                               |
+| LOW       | Task 3d |                0.55× exp                 |    0.8–1.0×     | Binary splitting for Taylor series                  |
+| LONG-TERM | Task 5  |                    —                     | 2–10× large ops | NTT multiplication                                  |
+| LOW       | Task 9  |                    —                     |     1.5–2×      | SIMD schoolbook multiply base                       |
