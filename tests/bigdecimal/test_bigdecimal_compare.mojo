@@ -2,6 +2,7 @@
 Test BigDecimal comparison operations.
 """
 
+from python import Python
 import testing
 
 from decimojo import BDec
@@ -13,93 +14,203 @@ comptime file_path = "tests/bigdecimal/test_data/bigdecimal_compare.toml"
 
 fn test_bigdecimal_compare() raises:
     # Load test cases from TOML file
+    var pydecimal = Python.import_module("decimal")
     var toml = parse_file(file_path)
     var test_cases: List[TestCase]
+    var count_wrong: Int
 
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal compare_absolute...")
-    # print("------------------------------------------------------")
+    # -------------------------------------------------------
+    # Testing BigDecimal compare_absolute
+    # -------------------------------------------------------
 
     test_cases = load_test_cases(toml, "compare_absolute_tests")
+    count_wrong = 0
     for test_case in test_cases:
         var result = compare_absolute(BDec(test_case.a), BDec(test_case.b))
-        testing.assert_equal(
-            lhs=result,
-            rhs=Int8(Int(test_case.expected)),
-            msg=test_case.description,
+        var mojo_val = Int(result)
+        var py_cmp = (
+            pydecimal.Decimal(test_case.a)
+            .copy_abs()
+            .compare(pydecimal.Decimal(test_case.b).copy_abs())
         )
+        var py_val = Int(py=py_cmp)
+        if mojo_val != py_val:
+            print(
+                test_case.description,
+                "\n  Mojo:   ",
+                mojo_val,
+                "\n  Python: ",
+                py_val,
+                "\n",
+            )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "compare_absolute: Mojo and Python results differ. See above.",
+    )
 
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal > operator...")
-    # print("------------------------------------------------------")
+    # -------------------------------------------------------
+    # Testing BigDecimal > operator
+    # -------------------------------------------------------
+
     test_cases = load_test_cases(toml, "greater_than_tests")
+    count_wrong = 0
     for test_case in test_cases:
         var result = BDec(test_case.a) > BDec(test_case.b)
-        testing.assert_equal(
-            lhs=result,
-            rhs=Bool(Int(test_case.expected)),
-            msg=test_case.description,
+        var py_result = Bool(
+            pydecimal.Decimal(test_case.a) > pydecimal.Decimal(test_case.b)
         )
+        if result != py_result:
+            print(
+                test_case.description,
+                "\n  Mojo:   ",
+                result,
+                "\n  Python: ",
+                py_result,
+                "\n",
+            )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        ">: Mojo and Python results differ. See above.",
+    )
 
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal < operator...")
-    # print("------------------------------------------------------")
+    # -------------------------------------------------------
+    # Testing BigDecimal < operator
+    # -------------------------------------------------------
+
     test_cases = load_test_cases(toml, "less_than_tests")
+    count_wrong = 0
     for test_case in test_cases:
         var result = BDec(test_case.a) < BDec(test_case.b)
-        testing.assert_equal(
-            lhs=result,
-            rhs=Bool(Int(test_case.expected)),
-            msg=test_case.description,
+        var py_result = Bool(
+            pydecimal.Decimal(test_case.a) < pydecimal.Decimal(test_case.b)
         )
+        if result != py_result:
+            print(
+                test_case.description,
+                "\n  Mojo:   ",
+                result,
+                "\n  Python: ",
+                py_result,
+                "\n",
+            )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "<: Mojo and Python results differ. See above.",
+    )
 
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal >= operator...")
-    # print("------------------------------------------------------")
+    # -------------------------------------------------------
+    # Testing BigDecimal >= operator
+    # -------------------------------------------------------
+
     test_cases = load_test_cases(toml, "greater_than_or_equal_tests")
+    count_wrong = 0
     for test_case in test_cases:
         var result = BDec(test_case.a) >= BDec(test_case.b)
-        testing.assert_equal(
-            lhs=result,
-            rhs=Bool(Int(test_case.expected)),
-            msg=test_case.description,
+        var py_result = Bool(
+            pydecimal.Decimal(test_case.a) >= pydecimal.Decimal(test_case.b)
         )
+        if result != py_result:
+            print(
+                test_case.description,
+                "\n  Mojo:   ",
+                result,
+                "\n  Python: ",
+                py_result,
+                "\n",
+            )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        ">=: Mojo and Python results differ. See above.",
+    )
 
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal <= operator...")
-    # print("------------------------------------------------------")
+    # -------------------------------------------------------
+    # Testing BigDecimal <= operator
+    # -------------------------------------------------------
+
     test_cases = load_test_cases(toml, "less_than_or_equal_tests")
+    count_wrong = 0
     for test_case in test_cases:
         var result = BDec(test_case.a) <= BDec(test_case.b)
-        testing.assert_equal(
-            lhs=result,
-            rhs=Bool(Int(test_case.expected)),
-            msg=test_case.description,
+        var py_result = Bool(
+            pydecimal.Decimal(test_case.a) <= pydecimal.Decimal(test_case.b)
         )
+        if result != py_result:
+            print(
+                test_case.description,
+                "\n  Mojo:   ",
+                result,
+                "\n  Python: ",
+                py_result,
+                "\n",
+            )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "<=: Mojo and Python results differ. See above.",
+    )
 
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal == operator...")
-    # print("------------------------------------------------------")
+    # -------------------------------------------------------
+    # Testing BigDecimal == operator
+    # -------------------------------------------------------
+
     test_cases = load_test_cases(toml, "equal_tests")
+    count_wrong = 0
     for test_case in test_cases:
         var result = BDec(test_case.a) == BDec(test_case.b)
-        testing.assert_equal(
-            lhs=result,
-            rhs=Bool(Int(test_case.expected)),
-            msg=test_case.description,
+        var py_result = Bool(
+            pydecimal.Decimal(test_case.a) == pydecimal.Decimal(test_case.b)
         )
+        if result != py_result:
+            print(
+                test_case.description,
+                "\n  Mojo:   ",
+                result,
+                "\n  Python: ",
+                py_result,
+                "\n",
+            )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "==: Mojo and Python results differ. See above.",
+    )
 
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal != operator...")
-    # print("------------------------------------------------------")
+    # -------------------------------------------------------
+    # Testing BigDecimal != operator
+    # -------------------------------------------------------
+
     test_cases = load_test_cases(toml, "not_equal_tests")
+    count_wrong = 0
     for test_case in test_cases:
         var result = BDec(test_case.a) != BDec(test_case.b)
-        testing.assert_equal(
-            lhs=result,
-            rhs=Bool(Int(test_case.expected)),
-            msg=test_case.description,
+        var py_result = Bool(
+            pydecimal.Decimal(test_case.a) != pydecimal.Decimal(test_case.b)
         )
+        if result != py_result:
+            print(
+                test_case.description,
+                "\n  Mojo:   ",
+                result,
+                "\n  Python: ",
+                py_result,
+                "\n",
+            )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "!=: Mojo and Python results differ. See above.",
+    )
 
 
 fn main() raises:

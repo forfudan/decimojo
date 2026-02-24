@@ -22,146 +22,124 @@ fn test_bigdecimal_arithmetics() raises:
     var toml = parse_file(file_path)
     var test_cases: List[TestCase]
 
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal addition...")
-    # print("------------------------------------------------------")
+    # BigDecimal add/sub/mul are exact (unlimited precision).
+    # Set Python context precision high so Python doesn't round.
+    pydecimal.getcontext().prec = 500
+
+    # -------------------------------------------------------
+    # Testing BigDecimal addition
+    # -------------------------------------------------------
 
     test_cases = load_test_cases(toml, "addition_tests")
     count_wrong = 0
     for test_case in test_cases:
         var result = BDec(test_case.a) + BDec(test_case.b)
-        try:
-            testing.assert_equal(
-                lhs=String(result),
-                rhs=test_case.expected,
-                msg=test_case.description,
-            )
-        except e:
+        var mojo_str = String(result)
+        var py_str = String(
+            pydecimal.Decimal(test_case.a) + pydecimal.Decimal(test_case.b)
+        )
+        if mojo_str != py_str:
             print(
                 test_case.description,
-                "\n  Expected:",
-                test_case.expected,
-                "\n  Got:",
-                String(result),
-                "\n  Python decimal result (for reference):",
-                String(
-                    pydecimal.Decimal(test_case.a)
-                    + pydecimal.Decimal(test_case.b)
-                ),
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
                 "\n",
             )
             count_wrong += 1
     testing.assert_equal(
         count_wrong,
         0,
-        "Some test cases failed. See above for details.",
+        "Addition: Mojo and Python results differ. See above.",
     )
 
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal subtraction...")
-    # print("------------------------------------------------------")
+    # -------------------------------------------------------
+    # Testing BigDecimal subtraction
+    # -------------------------------------------------------
 
     test_cases = load_test_cases(toml, "subtraction_tests")
     count_wrong = 0
     for test_case in test_cases:
         var result = BDec(test_case.a) - BDec(test_case.b)
-        try:
-            testing.assert_equal(
-                lhs=String(result),
-                rhs=test_case.expected,
-                msg=test_case.description,
-            )
-        except e:
+        var mojo_str = String(result)
+        var py_str = String(
+            pydecimal.Decimal(test_case.a) - pydecimal.Decimal(test_case.b)
+        )
+        if mojo_str != py_str:
             print(
                 test_case.description,
-                "\n  Expected:",
-                test_case.expected,
-                "\n  Got:",
-                String(result),
-                "\n  Python decimal result (for reference):",
-                String(
-                    pydecimal.Decimal(test_case.a)
-                    - pydecimal.Decimal(test_case.b)
-                ),
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
                 "\n",
             )
             count_wrong += 1
     testing.assert_equal(
         count_wrong,
         0,
-        "Some test cases failed. See above for details.",
+        "Subtraction: Mojo and Python results differ. See above.",
     )
 
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal multiplication...")
-    # print("------------------------------------------------------")
+    # -------------------------------------------------------
+    # Testing BigDecimal multiplication
+    # -------------------------------------------------------
 
     test_cases = load_test_cases(toml, "multiplication_tests")
     count_wrong = 0
     for test_case in test_cases:
         var result = BDec(test_case.a) * BDec(test_case.b)
-        try:
-            testing.assert_equal(
-                lhs=String(result),
-                rhs=test_case.expected,
-                msg=test_case.description,
-            )
-        except e:
+        var mojo_str = String(result)
+        var py_str = String(
+            pydecimal.Decimal(test_case.a) * pydecimal.Decimal(test_case.b)
+        )
+        if mojo_str != py_str:
             print(
                 test_case.description,
-                "\n  Expected:",
-                test_case.expected,
-                "\n  Got:",
-                String(result),
-                "\n  Python decimal result (for reference):",
-                String(
-                    pydecimal.Decimal(test_case.a)
-                    * pydecimal.Decimal(test_case.b)
-                ),
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
                 "\n",
             )
             count_wrong += 1
     testing.assert_equal(
         count_wrong,
         0,
-        "Some test cases failed. See above for details.",
+        "Multiplication: Mojo and Python results differ. See above.",
     )
 
-    # print("------------------------------------------------------")
-    # print("Testing BigDecimal division...")
-    # print("------------------------------------------------------")
+    # -------------------------------------------------------
+    # Testing BigDecimal division
+    # -------------------------------------------------------
 
+    # Division uses precision=28, so match Python's context.
+    pydecimal.getcontext().prec = 28
     test_cases = load_test_cases(toml, "division_tests")
     count_wrong = 0
     for test_case in test_cases:
         var result = BDec(test_case.a).true_divide(
             BDec(test_case.b), precision=28
         )
-        try:
-            testing.assert_equal(
-                lhs=String(result),
-                rhs=test_case.expected,
-                msg=test_case.description,
-            )
-        except e:
+        var mojo_str = String(result)
+        var py_str = String(
+            pydecimal.Decimal(test_case.a) / pydecimal.Decimal(test_case.b)
+        )
+        if mojo_str != py_str:
             print(
                 test_case.description,
-                "\n  Expected:",
-                test_case.expected,
-                "\n  Got:",
-                String(result),
-                "\n  Python decimal result (for reference):",
-                String(
-                    pydecimal.Decimal(test_case.a)
-                    / pydecimal.Decimal(test_case.b)
-                ),
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
                 "\n",
             )
             count_wrong += 1
     testing.assert_equal(
         count_wrong,
         0,
-        "Some test cases failed. See above for details.",
+        "Division: Mojo and Python results differ. See above.",
     )
 
 

@@ -44,7 +44,7 @@ fn run_case(
         var rm = m_a.root(m_n, precision)
         var rp = pa.__pow__(py_reciprocal)
 
-        var rm_str = rm.to_string(precision=100000)
+        var rm_str = rm.to_string()
         var rp_str = String(rp)
 
         # Correctness check: exact string match with Python

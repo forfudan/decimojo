@@ -100,13 +100,13 @@ expected = "-12.4"
 a = "0.001"
 b = "0"
 description = "Round up small positive value to integer"
-expected = "0"
+expected = "1"
 
 [[round_up_tests]]
 a = "-0.001"
 b = "0"
 description = "Round up small negative value to integer"
-expected = "-0"
+expected = "-1"
 
 # === ROUND HALF UP TESTS ===
 [[round_half_up_tests]]

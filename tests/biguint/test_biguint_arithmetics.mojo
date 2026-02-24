@@ -15,68 +15,132 @@ comptime file_path_arithmetics = "tests/biguint/test_data/biguint_arithmetics.to
 comptime file_path_truncate_divide = "tests/biguint/test_data/biguint_truncate_divide.toml"
 
 
+fn _set_max_str_digits(limit: Int) raises:
+    """Set Python's int-to-string digit limit (Python 3.11+). No-op if unavailable.
+    """
+    try:
+        Python.import_module("sys").set_int_max_str_digits(limit)
+    except:
+        pass
+
+
 fn test_biguint_arithmetics() raises:
     # Load test cases from TOML file
+    _set_max_str_digits(500000)
+
     var toml = parse_file(file_path_arithmetics)
     var test_cases: List[TestCase]
 
-    # print("------------------------------------------------------")
-    # print("Testing BigUInt addition...")
+    # -------------------------------------------------------
+    # Testing BigUInt addition
+    # -------------------------------------------------------
+
     test_cases = load_test_cases(toml, "addition_tests")
     assert_true(len(test_cases) > 0, "No addition test cases found")
+    count_wrong = 0
     for test_case in test_cases:
         var result = BigUInt(test_case.a) + BigUInt(test_case.b)
-        assert_equal(
-            lhs=String(result),
-            rhs=test_case.expected,
-            msg=test_case.description,
-        )
-    # print("BigUInt addition tests passed!")
+        var mojo_str = String(result)
+        var py_str = String(Python.int(test_case.a) + Python.int(test_case.b))
+        if mojo_str != py_str:
+            print(
+                test_case.description,
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
+            )
+            count_wrong += 1
+    assert_equal(
+        count_wrong,
+        0,
+        "Addition: Mojo and Python results differ. See above.",
+    )
 
-    # print("------------------------------------------------------")
-    # print("Testing BigUInt inplace addition...")
+    # -------------------------------------------------------
+    # Testing BigUInt inplace addition
+    # -------------------------------------------------------
+
     test_cases = load_test_cases(toml, "addition_tests")
     assert_true(len(test_cases) > 0, "No inplace addition test cases found")
+    count_wrong = 0
     for test_case in test_cases:
         var result = BigUInt(test_case.a)
         result += BigUInt(test_case.b)
-        assert_equal(
-            lhs=String(result),
-            rhs=test_case.expected,
-            msg=test_case.description,
-        )
-    # print("BigUInt addition tests passed!")
+        var mojo_str = String(result)
+        var py_str = String(Python.int(test_case.a) + Python.int(test_case.b))
+        if mojo_str != py_str:
+            print(
+                test_case.description,
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
+            )
+            count_wrong += 1
+    assert_equal(
+        count_wrong,
+        0,
+        "Inplace addition: Mojo and Python results differ. See above.",
+    )
 
-    # print("------------------------------------------------------")
-    # print("Testing BigUInt subtraction...")
+    # -------------------------------------------------------
+    # Testing BigUInt subtraction
+    # -------------------------------------------------------
+
     test_cases = load_test_cases(toml, "subtraction_tests")
     assert_true(len(test_cases) > 0, "No subtraction test cases found")
+    count_wrong = 0
     for test_case in test_cases:
         var result = BigUInt(test_case.a) - BigUInt(test_case.b)
-        assert_equal(
-            lhs=String(result),
-            rhs=test_case.expected,
-            msg=test_case.description,
-        )
-    # print("BigUInt subtraction tests passed!")
+        var mojo_str = String(result)
+        var py_str = String(Python.int(test_case.a) - Python.int(test_case.b))
+        if mojo_str != py_str:
+            print(
+                test_case.description,
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
+            )
+            count_wrong += 1
+    assert_equal(
+        count_wrong,
+        0,
+        "Subtraction: Mojo and Python results differ. See above.",
+    )
 
-    # print("------------------------------------------------------")
-    # print("Testing BigUInt multiplication...")
+    # -------------------------------------------------------
+    # Testing BigUInt multiplication
+    # -------------------------------------------------------
 
-    # Load test cases from TOML file
     test_cases = load_test_cases(toml, "multiplication_tests")
     assert_true(len(test_cases) > 0, "No multiplication test cases found")
+    count_wrong = 0
     for test_case in test_cases:
         var result = BigUInt(test_case.a) * BigUInt(test_case.b)
-        assert_equal(
-            lhs=String(result),
-            rhs=test_case.expected,
-            msg=test_case.description,
-        )
-    # print("BigUInt multiplication tests passed!")
+        var mojo_str = String(result)
+        var py_str = String(Python.int(test_case.a) * Python.int(test_case.b))
+        if mojo_str != py_str:
+            print(
+                test_case.description,
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
+            )
+            count_wrong += 1
+    assert_equal(
+        count_wrong,
+        0,
+        "Multiplication: Mojo and Python results differ. See above.",
+    )
 
     # Special case: Test underflow handling
-    # print("Testing underflow behavior (smaller - larger)...")
     test_cases = load_test_cases(toml, "subtraction_underflow")
     assert_true(len(test_cases) > 0, "No underflow test cases found")
     for test_case in test_cases:
@@ -87,34 +151,48 @@ fn test_biguint_arithmetics() raises:
             )
         except:
             print("Implementation correctly throws error on underflow")
-    # print("BigUInt multiplication tests passed!")
 
 
 fn test_biguint_truncate_divide() raises:
     # Load test cases from TOML file
+    _set_max_str_digits(500000)
+
     var toml = parse_file(file_path_truncate_divide)
     var test_cases: List[TestCase]
 
-    # print("------------------------------------------------------")
-    # print("Testing BigUInt truncate division...")
+    # -------------------------------------------------------
+    # Testing BigUInt truncate division
+    # -------------------------------------------------------
+
     test_cases = load_test_cases(toml, "truncate_divide_tests")
     assert_true(len(test_cases) > 0, "No truncate division test cases found")
+    count_wrong = 0
     for test_case in test_cases:
         var result = BigUInt(test_case.a) // BigUInt(test_case.b)
-        assert_equal(
-            lhs=String(result),
-            rhs=test_case.expected,
-            msg=test_case.description,
-        )
-    # print("BigUInt truncate division tests passed!")
+        var mojo_str = String(result)
+        var py_str = String(Python.int(test_case.a) // Python.int(test_case.b))
+        if mojo_str != py_str:
+            print(
+                test_case.description,
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
+            )
+            count_wrong += 1
+    assert_equal(
+        count_wrong,
+        0,
+        "Truncate divide: Mojo and Python results differ. See above.",
+    )
 
 
 fn test_biguint_truncate_divide_random_numbers_against_python() raises:
     # print("------------------------------------------------------")
     # print("Testing BigUInt truncate division on random numbers with python...")
 
-    var pysys = Python.import_module("sys")
-    pysys.set_int_max_str_digits(500000)
+    _set_max_str_digits(500000)
 
     var number_a: String
     var number_b: String

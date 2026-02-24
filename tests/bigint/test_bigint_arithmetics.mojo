@@ -6,6 +6,7 @@ Reuses TOML test data from the BigInt10 test suite, since the test cases
 use decimal string representations that are valid for both BigInt10 and BigInt.
 """
 
+from python import Python
 import testing
 from decimojo.bigint.bigint import BigInt
 from decimojo.tests import TestCase, parse_file, load_test_cases
@@ -20,95 +21,211 @@ comptime file_path_biguint_arithmetics = "tests/biguint/test_data/biguint_arithm
 comptime file_path_biguint_truncate_divide = "tests/biguint/test_data/biguint_truncate_divide.toml"
 
 
+fn _set_max_str_digits(limit: Int) raises:
+    """Set Python's int-to-string digit limit (Python 3.11+). No-op if unavailable.
+    """
+    try:
+        Python.import_module("sys").set_int_max_str_digits(limit)
+    except:
+        pass
+
+
 fn test_bigint_addition() raises:
     """Test BigInt addition using shared TOML test data."""
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_arithmetics)
     var test_cases = load_test_cases(toml, "addition_tests")
+    var count_wrong = 0
     for test_case in test_cases:
         var result = BigInt(test_case.a) + BigInt(test_case.b)
-        testing.assert_equal(
-            lhs=String(result),
-            rhs=test_case.expected,
-            msg=test_case.description,
-        )
+        var mojo_str = String(result)
+        var py_str = String(Python.int(test_case.a) + Python.int(test_case.b))
+        if mojo_str != py_str:
+            print(
+                test_case.description,
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
+            )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "Addition: Mojo and Python results differ. See above.",
+    )
 
 
 fn test_bigint_subtraction() raises:
     """Test BigInt subtraction using shared TOML test data."""
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_arithmetics)
     var test_cases = load_test_cases(toml, "subtraction_tests")
+    var count_wrong = 0
     for test_case in test_cases:
         var result = BigInt(test_case.a) - BigInt(test_case.b)
-        testing.assert_equal(
-            lhs=String(result),
-            rhs=test_case.expected,
-            msg=test_case.description,
-        )
+        var mojo_str = String(result)
+        var py_str = String(Python.int(test_case.a) - Python.int(test_case.b))
+        if mojo_str != py_str:
+            print(
+                test_case.description,
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
+            )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "Subtraction: Mojo and Python results differ. See above.",
+    )
 
 
 fn test_bigint_negation() raises:
     """Test BigInt negation using shared TOML test data."""
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_arithmetics)
     var test_cases = load_test_cases[unary=True](toml, "negation_tests")
+    var count_wrong = 0
     for test_case in test_cases:
         var result = -BigInt(test_case.a)
-        testing.assert_equal(
-            lhs=String(result),
-            rhs=test_case.expected,
-            msg=test_case.description,
-        )
+        var mojo_str = String(result)
+        var py_str = String(-Python.int(test_case.a))
+        if mojo_str != py_str:
+            print(
+                test_case.description,
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
+            )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "Negation: Mojo and Python results differ. See above.",
+    )
 
 
 fn test_bigint_abs() raises:
     """Test BigInt absolute value using shared TOML test data."""
+    var pybuiltins = Python.import_module("builtins")
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_arithmetics)
     var test_cases = load_test_cases[unary=True](toml, "abs_tests")
+    var count_wrong = 0
     for test_case in test_cases:
         var result = abs(BigInt(test_case.a))
-        testing.assert_equal(
-            lhs=String(result),
-            rhs=test_case.expected,
-            msg=test_case.description,
-        )
+        var mojo_str = String(result)
+        var py_str = String(pybuiltins.abs(Python.int(test_case.a)))
+        if mojo_str != py_str:
+            print(
+                test_case.description,
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
+            )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "Abs: Mojo and Python results differ. See above.",
+    )
 
 
 fn test_bigint_multiply() raises:
     """Test BigInt multiplication using shared TOML test data."""
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_multiply)
     var test_cases = load_test_cases(toml, "multiplication_tests")
+    var count_wrong = 0
     for test_case in test_cases:
         var result = BigInt(test_case.a) * BigInt(test_case.b)
-        testing.assert_equal(
-            lhs=String(result),
-            rhs=test_case.expected,
-            msg=test_case.description,
-        )
+        var mojo_str = String(result)
+        var py_str = String(Python.int(test_case.a) * Python.int(test_case.b))
+        if mojo_str != py_str:
+            print(
+                test_case.description,
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
+            )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "Multiplication: Mojo and Python results differ. See above.",
+    )
 
 
 fn test_bigint_floor_divide() raises:
     """Test BigInt floor division using shared TOML test data."""
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_floor_divide)
     var test_cases = load_test_cases(toml, "floor_divide_tests")
+    var count_wrong = 0
     for test_case in test_cases:
         var result = BigInt(test_case.a) // BigInt(test_case.b)
-        testing.assert_equal(
-            lhs=String(result),
-            rhs=test_case.expected,
-            msg=test_case.description,
-        )
+        var mojo_str = String(result)
+        var py_str = String(Python.int(test_case.a) // Python.int(test_case.b))
+        if mojo_str != py_str:
+            print(
+                test_case.description,
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
+            )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "Floor divide: Mojo and Python results differ. See above.",
+    )
 
 
 fn test_bigint_truncate_divide() raises:
     """Test BigInt truncate division using shared TOML test data."""
+    var pybuiltins = Python.import_module("builtins")
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_truncate_divide)
     var test_cases = load_test_cases(toml, "truncate_divide_tests")
+    var count_wrong = 0
     for test_case in test_cases:
         var result = BigInt(test_case.a).truncate_divide(BigInt(test_case.b))
-        testing.assert_equal(
-            lhs=String(result),
-            rhs=test_case.expected,
-            msg=test_case.description,
-        )
+        var mojo_str = String(result)
+        # Truncation division: sign(a/b) * (|a| // |b|)
+        var pa = Python.int(test_case.a)
+        var pb = Python.int(test_case.b)
+        var abs_q = pybuiltins.abs(pa) // pybuiltins.abs(pb)
+        var py_q = abs_q
+        if Bool(pa < 0) != Bool(pb < 0):
+            py_q = -abs_q
+        var py_str = String(py_q)
+        if mojo_str != py_str:
+            print(
+                test_case.description,
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
+            )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "Truncate divide: Mojo and Python results differ. See above.",
+    )
 
 
 fn test_bigint_comparison() raises:
@@ -251,38 +368,73 @@ fn test_bigint_augmented_assignment() raises:
 
 fn test_bigint_biguint_addition() raises:
     """Test BigInt addition with BigUInt TOML test data (all positive)."""
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_biguint_arithmetics)
     var test_cases = load_test_cases(toml, "addition_tests")
+    var count_wrong = 0
     for test_case in test_cases:
         var result = BigInt(test_case.a) + BigInt(test_case.b)
-        testing.assert_equal(
-            lhs=String(result),
-            rhs=test_case.expected,
-            msg="[biguint] " + test_case.description,
-        )
+        var mojo_str = String(result)
+        var py_str = String(Python.int(test_case.a) + Python.int(test_case.b))
+        if mojo_str != py_str:
+            print(
+                "[biguint] " + test_case.description,
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
+            )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "[biguint] Addition: Mojo and Python results differ. See above.",
+    )
 
 
 fn test_bigint_biguint_subtraction() raises:
     """Test BigInt subtraction with BigUInt TOML test data (a >= b cases)."""
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_biguint_arithmetics)
     var test_cases = load_test_cases(toml, "subtraction_tests")
+    var count_wrong = 0
     for test_case in test_cases:
         var result = BigInt(test_case.a) - BigInt(test_case.b)
-        testing.assert_equal(
-            lhs=String(result),
-            rhs=test_case.expected,
-            msg="[biguint] " + test_case.description,
-        )
+        var mojo_str = String(result)
+        var py_str = String(Python.int(test_case.a) - Python.int(test_case.b))
+        if mojo_str != py_str:
+            print(
+                "[biguint] " + test_case.description,
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
+            )
+            count_wrong += 1
 
     # Also test the extreme_subtraction_tests section
     var extreme_cases = load_test_cases(toml, "extreme_subtraction_tests")
     for test_case in extreme_cases:
         var result = BigInt(test_case.a) - BigInt(test_case.b)
-        testing.assert_equal(
-            lhs=String(result),
-            rhs=test_case.expected,
-            msg="[biguint extreme] " + test_case.description,
-        )
+        var mojo_str = String(result)
+        var py_str = String(Python.int(test_case.a) - Python.int(test_case.b))
+        if mojo_str != py_str:
+            print(
+                "[biguint extreme] " + test_case.description,
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
+            )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "[biguint] Subtraction: Mojo and Python results differ. See above.",
+    )
 
 
 fn test_bigint_biguint_subtraction_underflow() raises:
@@ -391,29 +543,57 @@ fn test_bigint_floor_divide_burnikel_ziegler() raises:
 
 fn test_bigint_biguint_multiplication() raises:
     """Test BigInt multiplication with BigUInt TOML test data (all positive)."""
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_biguint_arithmetics)
     var test_cases = load_test_cases(toml, "multiplication_tests")
+    var count_wrong = 0
     for test_case in test_cases:
         var result = BigInt(test_case.a) * BigInt(test_case.b)
-        testing.assert_equal(
-            lhs=String(result),
-            rhs=test_case.expected,
-            msg="[biguint] " + test_case.description,
-        )
+        var mojo_str = String(result)
+        var py_str = String(Python.int(test_case.a) * Python.int(test_case.b))
+        if mojo_str != py_str:
+            print(
+                "[biguint] " + test_case.description,
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
+            )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "[biguint] Multiplication: Mojo and Python differ. See above.",
+    )
 
 
 fn test_bigint_biguint_truncate_divide() raises:
     """Test BigInt truncate division with BigUInt TOML test data (all positive).
     """
+    _set_max_str_digits(500000)
     var toml = parse_file(file_path_biguint_truncate_divide)
     var test_cases = load_test_cases(toml, "truncate_divide_tests")
+    var count_wrong = 0
     for test_case in test_cases:
         var result = BigInt(test_case.a).truncate_divide(BigInt(test_case.b))
-        testing.assert_equal(
-            lhs=String(result),
-            rhs=test_case.expected,
-            msg="[biguint] " + test_case.description,
-        )
+        var mojo_str = String(result)
+        var py_str = String(Python.int(test_case.a) // Python.int(test_case.b))
+        if mojo_str != py_str:
+            print(
+                "[biguint] " + test_case.description,
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
+            )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "[biguint] Truncate divide: Mojo and Python differ. See above.",
+    )
 
 
 fn main() raises:

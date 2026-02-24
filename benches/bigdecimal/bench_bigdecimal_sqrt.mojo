@@ -35,7 +35,7 @@ fn run_case(
         var rm = m_a.sqrt(precision=precision)
         var rp = pa.sqrt()
 
-        var rm_str = rm.to_string(precision=100000)
+        var rm_str = rm.to_string()
         var rp_str = String(rp)
 
         # Correctness check: exact string match with Python

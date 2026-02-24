@@ -372,6 +372,22 @@ fn true_divide_fast(
         "Minimum precision should be greater than 0",
     )
 
+    # --- Truncation optimization for oversized operands ---
+    # When the divisor is much larger than needed for the requested precision,
+    # truncate both operands to avoid expensive division on huge numbers.
+    # x/y ≈ (x/10^k) / (y/10^k) — the low-order digits cancel.
+    # Early-return to avoid extra copies on the common (small-operand) path.
+    comptime TRUNCATION_GUARD = 4
+    var needed_divisor_words = (
+        math.ceildiv(minimum_precision, 9) + 2 + TRUNCATION_GUARD
+    )
+
+    if len(y.coefficient.words) > needed_divisor_words:
+        return _true_divide_fast_truncated(
+            x, y, minimum_precision, needed_divisor_words
+        )
+
+    # --- Standard path (no truncation, no extra copies) ---
     var diff_n_words = len(x.coefficient.words) - len(y.coefficient.words)
     var extra_words = math.ceildiv(minimum_precision, 9) + 2 - diff_n_words
     var extra_digits = extra_words * 9
@@ -389,6 +405,61 @@ fn true_divide_fast(
         coef_x = x.coefficient.copy()
 
     var coef = coef_x // y.coefficient
+    var scale = x.scale + extra_digits - y.scale
+    return BigDecimal(
+        coefficient=coef^,
+        scale=scale,
+        sign=x.sign != y.sign,
+    )
+
+
+fn _true_divide_fast_truncated(
+    x: BigDecimal,
+    y: BigDecimal,
+    minimum_precision: Int,
+    needed_divisor_words: Int,
+) raises -> BigDecimal:
+    """Internal: fast division with truncated oversized operands."""
+    var total_y_remove = len(y.coefficient.words) - needed_divisor_words
+    var common_remove = min(
+        total_y_remove, max(len(x.coefficient.words) - 1, 0)
+    )
+    var y_only_remove = total_y_remove - common_remove
+
+    var y_coef_tr = (
+        decimojo.biguint.arithmetics.floor_divide_by_power_of_billion(
+            y.coefficient, total_y_remove
+        )
+    )
+    var x_coef_tr: BigUInt
+    if common_remove > 0:
+        x_coef_tr = (
+            decimojo.biguint.arithmetics.floor_divide_by_power_of_billion(
+                x.coefficient, common_remove
+            )
+        )
+    else:
+        x_coef_tr = x.coefficient.copy()
+
+    var scale_adjust_digits = y_only_remove * 9
+
+    var diff_n_words = len(x_coef_tr.words) - len(y_coef_tr.words)
+    var extra_words = math.ceildiv(minimum_precision, 9) + 2 - diff_n_words
+    var extra_digits = extra_words * 9 + scale_adjust_digits
+
+    var coef_x: BigUInt
+    if extra_words > 0:
+        coef_x = decimojo.biguint.arithmetics.multiply_by_power_of_billion(
+            x_coef_tr, extra_words
+        )
+    elif extra_words < 0:
+        coef_x = decimojo.biguint.arithmetics.floor_divide_by_power_of_billion(
+            x_coef_tr, -extra_words
+        )
+    else:
+        coef_x = x_coef_tr^
+
+    var coef = coef_x // y_coef_tr
     var scale = x.scale + extra_digits - y.scale
     return BigDecimal(
         coefficient=coef^,
@@ -436,6 +507,22 @@ fn true_divide_general(
         "Precision should be greater than 0",
     )
 
+    # --- Truncation optimization for oversized operands ---
+    # When the divisor is much larger than needed for the requested precision,
+    # truncate both operands to avoid expensive division on huge numbers.
+    # Example: 262144w / 262144w at precision=50 only needs ~14-word operands.
+    # Correctness: x/y ≈ (x/10^k) / (y/10^k); the low-order digits cancel,
+    # with relative error < 10^(-9*remaining_words), well below precision+guard.
+    # Early-return to avoid extra copies on the common (small-operand) path.
+    comptime TRUNCATION_GUARD = 4
+    var needed_divisor_words = math.ceildiv(precision, 9) + 2 + TRUNCATION_GUARD
+
+    if len(y.coefficient.words) > needed_divisor_words:
+        return _true_divide_general_truncated(
+            x, y, precision, needed_divisor_words
+        )
+
+    # --- Standard path (no truncation, no extra copies) ---
     var diff_n_words = len(x.coefficient.words) - len(y.coefficient.words)
     var extra_words = math.ceildiv(precision, 9) + 2 - diff_n_words
     var extra_digits = extra_words * 9
@@ -488,6 +575,108 @@ fn true_divide_general(
     return result^
 
 
+fn _true_divide_general_truncated(
+    x: BigDecimal,
+    y: BigDecimal,
+    precision: Int,
+    needed_divisor_words: Int,
+) raises -> BigDecimal:
+    """Internal: division with truncated oversized operands."""
+    var total_y_remove = len(y.coefficient.words) - needed_divisor_words
+    var common_remove = min(
+        total_y_remove, max(len(x.coefficient.words) - 1, 0)
+    )
+    var y_only_remove = total_y_remove - common_remove
+
+    var y_coef_tr = (
+        decimojo.biguint.arithmetics.floor_divide_by_power_of_billion(
+            y.coefficient, total_y_remove
+        )
+    )
+    var x_coef_tr: BigUInt
+    if common_remove > 0:
+        x_coef_tr = (
+            decimojo.biguint.arithmetics.floor_divide_by_power_of_billion(
+                x.coefficient, common_remove
+            )
+        )
+    else:
+        x_coef_tr = x.coefficient.copy()
+
+    var scale_adjust_digits = y_only_remove * 9
+
+    var diff_n_words = len(x_coef_tr.words) - len(y_coef_tr.words)
+    var extra_words = math.ceildiv(precision, 9) + 2 - diff_n_words
+    var extra_digits = extra_words * 9 + scale_adjust_digits
+
+    var coef_x: BigUInt
+    if extra_words > 0:
+        coef_x = decimojo.biguint.arithmetics.multiply_by_power_of_billion(
+            x_coef_tr, extra_words
+        )
+    elif extra_words < 0:
+        coef_x = decimojo.biguint.arithmetics.floor_divide_by_power_of_billion(
+            x_coef_tr, -extra_words
+        )
+    else:
+        coef_x = x_coef_tr^
+
+    var coef = coef_x // y_coef_tr
+
+    # Truncation discards low-order digits, so we cannot detect exact division
+    # by checking coef * y_coef_tr == coef_x (the truncated values).
+    # Instead, after rounding, we verify exactness by multiplying the stripped
+    # candidate back by the ORIGINAL y and comparing with the ORIGINAL x.
+    # This is O(n) for small_quotient × large_y + O(n) comparison.
+
+    var scale = x.scale + extra_digits - y.scale
+    var result = BigDecimal(
+        coefficient=coef^,
+        scale=scale,
+        sign=x.sign != y.sign,
+    )
+    result.round_to_precision(
+        precision,
+        RoundingMode.half_even(),
+        remove_extra_digit_due_to_rounding=True,
+        fill_zeros_to_precision=False,
+    )
+
+    # Post-rounding exact division check: if the rounded result has trailing
+    # zeros, strip them and verify by multiplying back against the original y.
+    var tz = result.coefficient.number_of_trailing_zeros()
+    if tz > 0:
+        # Do not strip zeros that would reduce the scale below the natural
+        # quotient scale (x.scale - y.scale) when that value is non-negative.
+        # Stripping too far could produce e.g. "2E+1" instead of "20".
+        var min_scale = x.scale - y.scale
+        var allowed_tz = tz
+        if min_scale >= 0:
+            var max_strip = result.scale - min_scale
+            if max_strip <= 0:
+                allowed_tz = 0
+            elif tz > max_strip:
+                allowed_tz = max_strip
+
+        if allowed_tz > 0:
+            var stripped_coef = (
+                decimojo.biguint.arithmetics.floor_divide_by_power_of_ten(
+                    result.coefficient, allowed_tz
+                )
+            )
+            var stripped = BigDecimal(
+                coefficient=stripped_coef^,
+                scale=result.scale - allowed_tz,
+                sign=result.sign,
+            )
+            # Verify: stripped * y == x (using original, untruncated operands)
+            var product = decimojo.bigdecimal.arithmetics.multiply(stripped, y)
+            if product == x:
+                return stripped^
+
+    return result^
+
+
 fn true_divide_inexact(
     x1: BigDecimal, x2: BigDecimal, number_of_significant_digits: Int
 ) raises -> BigDecimal:
@@ -521,6 +710,18 @@ fn true_divide_inexact(
             sign=x1.sign != x2.sign,
         )
 
+    # --- Truncation optimization for oversized operands ---
+    comptime TRUNCATION_GUARD = 4
+    var needed_divisor_words = (
+        math.ceildiv(number_of_significant_digits, 9) + 2 + TRUNCATION_GUARD
+    )
+
+    if len(x2.coefficient.words) > needed_divisor_words:
+        return _true_divide_inexact_truncated(
+            x1, x2, number_of_significant_digits, needed_divisor_words
+        )
+
+    # --- Standard path (no truncation, no extra copies) ---
     # First estimate the number of significant digits needed in the dividend
     # to produce a result with precision significant digits
     var x1_digits = x1.coefficient.number_of_digits()
@@ -549,6 +750,66 @@ fn true_divide_inexact(
             remove_extra_digit_due_to_rounding=False,
         )
         # Adjust the scale accordingly
+        result_scale -= digits_to_remove
+
+    return BigDecimal(
+        coefficient=quotient^,
+        scale=result_scale,
+        sign=x1.sign != x2.sign,
+    )
+
+
+fn _true_divide_inexact_truncated(
+    x1: BigDecimal,
+    x2: BigDecimal,
+    number_of_significant_digits: Int,
+    needed_divisor_words: Int,
+) raises -> BigDecimal:
+    """Internal: inexact division with truncated oversized operands."""
+    var total_y_remove = len(x2.coefficient.words) - needed_divisor_words
+    var common_remove = min(
+        total_y_remove, max(len(x1.coefficient.words) - 1, 0)
+    )
+    var y_only_remove = total_y_remove - common_remove
+
+    var x2_coef_tr = (
+        decimojo.biguint.arithmetics.floor_divide_by_power_of_billion(
+            x2.coefficient, total_y_remove
+        )
+    )
+    var x1_coef_tr: BigUInt
+    if common_remove > 0:
+        x1_coef_tr = (
+            decimojo.biguint.arithmetics.floor_divide_by_power_of_billion(
+                x1.coefficient, common_remove
+            )
+        )
+    else:
+        x1_coef_tr = x1.coefficient.copy()
+
+    var scale_adjust_digits = y_only_remove * 9
+
+    var x1_digits = x1_coef_tr.number_of_digits()
+    var x2_digits = x2_coef_tr.number_of_digits()
+
+    var buffer_digits = number_of_significant_digits - (x1_digits - x2_digits)
+    buffer_digits = max(0, buffer_digits)
+
+    var scaled_x1 = x1_coef_tr^
+    if buffer_digits > 0:
+        scaled_x1.multiply_inplace_by_power_of_ten(buffer_digits)
+
+    var quotient: BigUInt = scaled_x1 // x2_coef_tr
+    var result_scale = buffer_digits + scale_adjust_digits + x1.scale - x2.scale
+
+    var result_digits = quotient.number_of_digits()
+    if result_digits > number_of_significant_digits:
+        var digits_to_remove = result_digits - number_of_significant_digits
+        quotient = quotient.remove_trailing_digits_with_rounding(
+            digits_to_remove,
+            RoundingMode.down(),
+            remove_extra_digit_due_to_rounding=False,
+        )
         result_scale -= digits_to_remove
 
     return BigDecimal(
