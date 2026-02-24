@@ -60,7 +60,6 @@ comptime CUTOFF_BURNIKEL_ZIEGLER = 32
 # multiply_inplace_by_power_of_billion(mut x: BigUInt, n: Int)
 # exact_divide_by_2_inplace(mut x: BigUInt)
 # exact_divide_by_3_inplace(mut x: BigUInt)
-# exact_divide_by_6_inplace(mut x: BigUInt)
 #
 # floor_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
 # floor_divide_school(x1: BigUInt, x2: BigUInt) -> BigUInt
@@ -831,11 +830,10 @@ fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
         The product of the two BigUInt numbers.
 
     Notes:
-        This function will adopts the Karatsuba multiplication algorithm
-        for larger numbers, and the school multiplication algorithm for smaller
-        numbers. The cutoff number of words is used to determine which algorithm
-        to use. If the number of words in either operand is less than or equal
-        to the cutoff number, the school multiplication algorithm is used.
+        This function uses a three-tier dispatch based on operand size:
+        schoolbook multiplication for small numbers (≤64 words), Karatsuba
+        multiplication for medium numbers (64–128 words), and Toom-3
+        multiplication for large numbers (>128 words).
     """
 
     debug_assert[assert_mode="none"](
@@ -913,11 +911,10 @@ fn multiply_slices(
         The product of the two BigUInt numbers.
 
     Notes:
-        This function will adopts the Karatsuba multiplication algorithm
-        for larger numbers, and the school multiplication algorithm for smaller
-        numbers. The cutoff number of words is used to determine which algorithm
-        to use. If the number of words in either operand is less than or equal
-        to the cutoff number, the school multiplication algorithm is used.
+        This function uses a three-tier dispatch based on operand size:
+        schoolbook multiplication for small numbers (≤64 words), Karatsuba
+        multiplication for medium numbers (64–128 words), and Toom-3
+        multiplication for large numbers (>128 words).
     """
     n_words_x_slice = bounds_x[1] - bounds_x[0]
     n_words_y_slice = bounds_y[1] - bounds_y[0]
@@ -1905,22 +1902,6 @@ fn exact_divide_by_3_inplace(mut x: BigUInt):
         var val = carry * UInt32(BigUInt.BASE) + x.words[i]
         x.words[i] = val // 3
         carry = val % 3
-    x.remove_leading_empty_words()
-
-
-fn exact_divide_by_6_inplace(mut x: BigUInt):
-    """Divides a BigUInt by 6 exactly, in-place.
-
-    The caller must ensure that x is divisible by 6.
-    Uses base-10^9 long division from MSB to LSB with UInt64 arithmetic.
-    """
-    var carry: UInt64 = 0
-    for i in range(len(x.words) - 1, -1, -1):
-        # carry is 0..5; carry * BASE + words[i] max = 5*10^9 + 999_999_999
-        # = 5_999_999_999, fits in UInt64
-        var val = carry * UInt64(BigUInt.BASE) + UInt64(x.words[i])
-        x.words[i] = UInt32(val // 6)
-        carry = val % 6
     x.remove_leading_empty_words()
 
 
