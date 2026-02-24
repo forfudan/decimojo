@@ -1,4 +1,4 @@
-# DeciMojo <!-- omit in toc -->
+# DeciMojo <!-- omit from toc -->
 
 由 [Mojo 程序設計語言 🔥](https://www.modular.com/mojo) 實現的任意精度小數和整數運算庫。
 

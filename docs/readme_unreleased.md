@@ -1,4 +1,4 @@
-# DeciMojo <!-- omit in toc -->
+# DeciMojo <!-- omit from toc -->
 
 An arbitrary-precision integer and decimal library for [Mojo](https://www.modular.com/mojo), inspired by Python's `int` and `Decimal`.
 

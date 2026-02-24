@@ -1,4 +1,4 @@
-# TOMLMojo <!-- omit in toc -->
+# TOMLMojo <!-- omit from toc -->
 
 A native TOML v1.0 parser for [Mojo](https://www.modular.com/mojo).
 

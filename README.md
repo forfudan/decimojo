@@ -1,4 +1,4 @@
-# DeciMojo <!-- omit in toc -->
+# DeciMojo <!-- omit from toc -->
 
 An arbitrary-precision integer and decimal mathematics library for [Mojo](https://www.modular.com/mojo), a drop-in replacement for Python's `int` and `Decimal` types.
 

@@ -451,6 +451,27 @@ fn root(x: BigDecimal, n: BigDecimal, precision: Int) raises -> BigDecimal:
             _strip_trailing_fractional_zeros(result)
             return result^
 
+        # Rational root decomposition
+        # If n = a/b (reduced fraction), then x^(1/n) = x^(b/a)
+        #   = integer_power(integer_root(x, a), b).
+        # This avoids the expensive exp(ln(x)/n) path for fractional n.
+        # Only for non-negative x: fractional roots of negative numbers
+        # are disallowed (consistent with Python Decimal behavior).
+        if not x.sign:
+            _rtuple = _rational_root_decomposition(n)
+            var is_rational: Bool = _rtuple[0]
+            var root_order: Int = _rtuple[1]
+            var power_order: Int = _rtuple[2]
+            if is_rational:
+                # x^(b/a) = integer_power(integer_root(x, a), b)
+                var a_bd = BigDecimal(root_order)
+                var b_bd = BigDecimal(power_order)
+                # Use extra precision for the intermediate integer_root
+                var root_result = integer_root(x, a_bd, working_precision)
+                var result = integer_power(root_result, b_bd, precision)
+                _strip_trailing_fractional_zeros(result)
+                return result^
+
     # Handle negative n as 1/(x^(1/|n|))
     if n.sign:
         var positive_root = root(x, -n, working_precision)
@@ -828,6 +849,77 @@ fn is_odd_reciprocal(n: BigDecimal) raises -> Bool:
             return False
     else:
         return False
+
+
+fn _gcd(var a: Int, var b: Int) -> Int:
+    """Compute the greatest common divisor of two non-negative integers."""
+    while b != 0:
+        var temp = b
+        b = a % b
+        a = temp
+    return a
+
+
+fn _rational_root_decomposition(
+    n: BigDecimal,
+) raises -> Tuple[Bool, Int, Int]:
+    """Try to decompose a positive fractional n into a/b in lowest terms.
+
+    If n = a/b (reduced), then root(x, n) = x^(1/n) = x^(b/a), which can be
+    computed as integer_power(integer_root(x, a), b). This avoids the
+    expensive exp(ln(x)/n) path.
+
+    Args:
+        n: A positive, non-integer BigDecimal value.
+
+    Returns:
+        A tuple (success, a, b) where:
+        - success: True if decomposition succeeded and is practical.
+        - a: The numerator (root order for integer_root).
+        - b: The denominator (power for integer_power).
+        x^(1/n) = x^(b/a) = integer_power(integer_root(x, a), b).
+
+    Notes:
+        Returns (False, 0, 0) if:
+        - n.scale <= 0 (integer or no fractional part),
+        - n.coefficient or 10^scale overflows Int,
+        - a or b is 1 (already handled by earlier checks),
+        - a > 1000 (integer_root would be too slow or fall back to exp/ln).
+    """
+    # n must have a fractional part (scale > 0)
+    if n.scale <= 0:
+        return Tuple(False, 0, 0)
+
+    # Avoid overflow: 10^scale must fit in Int (scale <= 18 for 64-bit)
+    if n.scale > 18:
+        return Tuple(False, 0, 0)
+
+    # Coefficient must be small enough to fit in Int.
+    # BigUInt uses base-10^9 words. With at most 2 words (18 digits), fits Int.
+    if len(n.coefficient.words) > 2:
+        return Tuple(False, 0, 0)
+
+    var numerator: Int = Int(n.coefficient.words[0])
+    if len(n.coefficient.words) == 2:
+        numerator += Int(n.coefficient.words[1]) * 1_000_000_000
+
+    var denominator = Int(10) ** n.scale
+
+    # Reduce to lowest terms
+    var g = _gcd(numerator, denominator)
+    var a = numerator // g  # root order
+    var b = denominator // g  # power order
+
+    # a=1 or b=1 cases are already handled by prior checks
+    # (integer reciprocal or integer root respectively)
+    if a <= 1 or b <= 1:
+        return Tuple(False, 0, 0)
+
+    # Large root orders would be slow; fall through to exp/ln
+    if a > 1000:
+        return Tuple(False, 0, 0)
+
+    return Tuple(True, a, b)
 
 
 # ===----------------------------------------------------------------------=== #
@@ -2053,57 +2145,134 @@ fn log10(x: BigDecimal, precision: Int) raises -> BigDecimal:
 fn ln_series_expansion(
     z: BigDecimal, working_precision: Int
 ) raises -> BigDecimal:
-    """Calculate ln(1+z) using optimized series expansion.
+    """Calculate ln(1+z) using a hybrid Taylor / atanh series.
+
+    For small |z| (few significant digits), uses the direct Taylor series:
+        ln(1+z) = z - z²/2 + z³/3 - z⁴/4 + ...
+    because multiplying by a small z is nearly free (few-digit coefficient).
+
+    For larger |z|, uses the atanh (inverse hyperbolic tangent) identity:
+        ln(1+z) = 2 * atanh(u),  where u = z / (2 + z)
+        = 2 * (u + u³/3 + u⁵/5 + u⁷/7 + ...)
+    which converges at rate u² ≤ 1/9 instead of |z| ≤ 1/2, giving ~3×
+    fewer iterations at the cost of one upfront division.
 
     Args:
-        z: The input value, should be |z| < 1 for fast convergence.
+        z: The input value, should be |z| < 1 for convergence.
         working_precision: Desired working precision in significant digits.
 
     Returns:
         The ln(1+z) computed to the specified working precision.
 
     Notes:
-
-    The last few digits of result are not accurate as there is no buffer for
-    precision. You need to use a larger precision to get the last few digits
-    accurate. The precision is only used to determine the number of terms in
-    the series expansion, not for the final result.
+        The last few digits of result are not accurate as there is no buffer
+        for precision. You need to use a larger precision to get the last few
+        digits accurate.
     """
-
-    # print("DEBUG: ln_series_expansion for z =", z)
 
     if z.is_zero():
         return BigDecimal(BigUInt.zero(), 0, False)
 
-    var max_terms = Int(working_precision * 2.5) + 1
-    var result = BigDecimal(BigUInt.zero(), working_precision, False)
-    var term = z.copy()
-    var k: UInt32 = 1
+    # Decide strategy based on z's coefficient digit count.
+    # When z has few significant digits (e.g. z = -0.01 for ln(0.99)),
+    # the multiply-by-z is O(n × d) with d << n, making Taylor cheaper.
+    # When z has many digits (after range reduction), the multiply cost
+    # is similar for both, but atanh needs ~3× fewer terms.
+    # The coefficient grows by ~z_digits each iteration in the Taylor
+    # recurrence; we truncate it periodically to keep it bounded.
+    var z_digits = z.coefficient.number_of_digits()
+    if z_digits <= working_precision // 10:
+        # ---- Taylor path (optimal for small/simple z) ----
+        var max_terms = Int(working_precision * 2.5) + 1
+        var result = BigDecimal(BigUInt.zero(), working_precision, False)
+        var term = z.copy()
+        var k: UInt32 = 1
 
-    # Use the series ln(1+z) = z - z²/2 + z³/3 - z⁴/4 + ...
-    result += term  # First term is just z
+        # ln(1+z) = z - z²/2 + z³/3 - z⁴/4 + ...
+        result += term  # first term is z
 
-    for _ in range(2, max_terms):
-        # Update for next iteration - multiply by z and divide by k
-        # Use inplace multiply to avoid BigDecimal allocation
-        decimojo.bigdecimal.arithmetics.multiply_inplace(term, z)
-        k += 1
+        for _ in range(2, max_terms):
+            decimojo.bigdecimal.arithmetics.multiply_inplace(term, z)
+            # Truncate to prevent unbounded coefficient growth.
+            # The coefficient grows by z_digits each iteration; without
+            # this, after k iterations it has ~k×z_digits digits, making
+            # each subsequent multiply O(k×d×n) — quadratic in k.
+            if (
+                term.coefficient.number_of_digits()
+                > working_precision + z_digits
+            ):
+                term.round_to_precision(
+                    working_precision,
+                    RoundingMode.down(),
+                    remove_extra_digit_due_to_rounding=False,
+                    fill_zeros_to_precision=False,
+                )
+            k += 1
 
-        # Alternate sign: -1^(k+1) = -1 when k is even, 1 when k is odd
-        var is_even = k % 2 == 0
-        # Use O(n) single-word division instead of full BigDecimal div
-        var next_term = term.true_divide_inexact_by_uint32(k, working_precision)
+            var is_even = k % 2 == 0
+            var next_term = term.true_divide_inexact_by_uint32(
+                k, working_precision
+            )
 
-        if is_even:
-            result -= next_term
-        else:
-            result += next_term
+            if is_even:
+                result -= next_term
+            else:
+                result += next_term
 
-        # Check for convergence
-        if next_term.exponent() < -working_precision:
+            if next_term.exponent() < -working_precision:
+                break
+
+        result.round_to_precision(
+            precision=working_precision,
+            rounding_mode=RoundingMode.down(),
+            remove_extra_digit_due_to_rounding=False,
+            fill_zeros_to_precision=False,
+        )
+        return result^
+
+    # ---- atanh path (optimal for larger z with many digits) ----
+    # Compute u = z / (2 + z)
+    var two = BigDecimal(BigUInt(raw_words=[2]), 0, False)
+    var two_plus_z = z + two
+    var u = z.true_divide(two_plus_z, working_precision)
+
+    # Compute u² (cached for the recurrence)
+    var u_squared = u * u
+    u_squared.round_to_precision(
+        working_precision,
+        RoundingMode.down(),
+        remove_extra_digit_due_to_rounding=False,
+        fill_zeros_to_precision=False,
+    )
+
+    # Series: 2*atanh(u) = 2u + 2u³/3 + 2u⁵/5 + ...
+    # First term: t₀ = 2u
+    # Recurrence: t_k = t_{k-1} * u² * (2k-1) / (2k+1)
+    decimojo.bigdecimal.arithmetics.multiply_inplace(u, two)
+    var term = u^  # term = 2u (first term, k=0)
+    var result = term.copy()
+
+    # Convergence: u² ≤ 1/9, so ~1.05*p terms suffice (vs 3.3*p Taylor)
+    var max_terms = Int(working_precision * 1.2) + 10
+
+    for k in range(1, max_terms):
+        var old_denom = UInt32(2 * k - 1)
+        var new_denom = UInt32(2 * k + 1)
+
+        # Step 1: Undo previous denominator: multiply by (2k-1)
+        decimojo.biguint.arithmetics.multiply_inplace_by_uint32(
+            term.coefficient, old_denom
+        )
+        # Step 2: Multiply by u²
+        decimojo.bigdecimal.arithmetics.multiply_inplace(term, u_squared)
+        # Step 3: Divide by (2k+1) — also truncates to working_precision
+        term = term.true_divide_inexact_by_uint32(new_denom, working_precision)
+
+        result += term
+
+        if term.exponent() < -working_precision:
             break
 
-    # print("DEBUG: ln_series_expansion result:", result)
     result.round_to_precision(
         precision=working_precision,
         rounding_mode=RoundingMode.down(),
