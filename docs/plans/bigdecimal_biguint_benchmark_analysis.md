@@ -5,7 +5,7 @@
 > Scope: BigDecimal (Decimal) and BigUInt (BUInt)
 
 > [!IMPORTANT]
-> For v0.8.0, Tasks 1✓, 2✓, 3a✓, 3b✓, 3c✓, 4✓, 6✓, 7✓, 8✓ are the priority to be competitive at all sizes.
+> For v0.8.0, Tasks 1✓, 2✓, 3a✓, 3b✓, 3c✓, 3d✓, 4✓, 6✓, 7✓, 8✓ are the priority to be competitive at all sizes.
 
 ## Optimization priority and planning
 
@@ -13,7 +13,7 @@
 | ---------- | ------------------------- | :--------------------------------------: | :--------------: | :-------: | ------------ |
 | **Task 1** | Asymmetric division       |               ✓ **31–79×**               |   ✓ COMPLETED    |   Done    | High         |
 | **Task 2** | Division (large operands) | ✓ **avg 24.6× (was 0.78×), up to 915×**  |   ✓ COMPLETED    |   Done    | High         |
-| **Task 3** | Exp, ln                   |        Exp: 0.60×@p50→1.62×@p2000        | 3a ✓, 3b ✓, 3c ✓ |  Medium   | **Critical** |
+| **Task 3** | Exp, ln                   |  Exp: **0.87×@p50→5.3×@p2000** (3d done)  | 3a✓,3b✓,3c✓,3d✓ |  Medium   | **Critical** |
 | **Task 4** | Sqrt                      |    ✓ **3.53× geo (was 0.66×@p5000)**     |   ✓ COMPLETED    |   Done    | High         |
 | **Task 5** | ALL large operations      |                  varies                  |    2–10× gain    | Very High | Low          |
 | **Task 6** | Large multiplication      | ✓ **+14–29% over Karatsuba (256–4096w)** |   ✓ COMPLETED    |   Done    | Medium       |
@@ -32,7 +32,8 @@
 1. ~~**Task 4** (CPython-style exact sqrt + reciprocal sqrt hybrid)~~ ✓ DONE — 3.53× geometric mean (was 0.66×), 0 correctness warnings, bit-perfect Python match
 1. ~~**Task 2** (truncation optimization for large-operand division)~~ ✓ DONE — avg 24.6× (was 0.78×), large balanced up to 915× Python, asymmetric up to 124×
 1. ~~**Task 6** (Toom-3) — medium complexity, medium gain~~ ✓ DONE — +14% at 256–1024w, +28–29% at 2048–4096w
-1. **Task 3e** (binary splitting for series) — complex but transformative
+1. ~~**Task 3d** (aggressive range reduction for exp)~~ ✓ DONE — exp 0.87×@p50→5.3×@p2000, beats Python at p≥200
+1. **Task 3e** (binary splitting for series) — mainly benefits ln now (exp already fast with 3d)
 1. **Task 5** (NTT) — less urgent than thought; Karatsuba competitive up to p=1000
 1. **Task 9** (SIMD multiply) — polish
 
@@ -940,11 +941,30 @@ Exp improved 5–25% at p≤200 (e.g., exp(1): 0.48→0.60× at p=50).
 
 **Design decision:** The `ln()` function itself decomposes `power_of_10 * ln(10)` into `3*power_of_10*ln(2) + power_of_10*ln(1.25)` rather than calling `get_ln10()`. This avoids computing `ln(1.25)` unnecessarily for inputs like `ln(2)` that only need `ln(2)`. The cached `ln(10)` benefits `log10()`/`log()` where both constants are always needed anyway.
 
-#### Task 3d: Better Range Reduction for Exp
+#### Task 3d: Better Range Reduction for Exp ✓ DONE
 
-**Current:** Halving strategy — divide by $2^k$ until $x < 1$, then square $k$ times. Each squaring is a full-precision multiplication.
+**Implementation (2026-02-24):**
 
-**Better:** Reduce $x$ modulo $\ln(10)$ so the reduced argument is much smaller, requiring fewer Taylor terms. Then reconstruct using $e^{k\ln 10} = 10^k$ (trivial in base-$10^9$).
+Replaced the weak halving strategy (divide by $2^k$ until $x < 1$) with **aggressive/optimal halving**: divide by $2^M$ where $M \approx \sqrt{3.322 \cdot p}$, making the reduced argument $x / 2^M \approx 10^{-\sqrt{p}}$ (tiny). The Taylor series then converges in only $\sim M$ terms instead of $\sim 2.5p$ terms, and we need $M$ squarings to recover. Total multiplications: $\sim 2\sqrt{3.322p}$ instead of $\sim 2.5p$.
+
+**Key optimizations:**
+
+- **Exact division by $2^M$**: multiply coefficient by $5^M$ and add $M$ to scale (no rounding error)
+- **Adaptive guard digits**: $\lfloor 0.35M \rfloor + 3$ extra digits to compensate for squaring error amplification ($2^M$ amplification of relative error)
+- **Input-aware $M$**: for small $|x|$, the natural smallness reduces the optimal $M$, automatically falling back to fewer halvings
+
+**Results (before → after, excluding exp(0) anomaly):**
+
+| Precision | Before | After | Improvement |
+|-----------|--------|-------|-------------|
+| p=50      | 0.79×  | 0.87× | +10%       |
+| p=100     | 0.58×  | 0.87× | +50%       |
+| p=200     | 0.74×  | 1.08× | +46%       |
+| p=500     | ~1.1×  | 1.95× | +77%       |
+| p=1000    | ~1.0×  | **2.6×** | +160%   |
+| p=2000    | ~1.7×  | **5.3×** | +212%   |
+
+At p≥200, DeciMojo now consistently beats Python. At p=2000, exp is 5.3× faster than Python's C-based `libmpdec`.
 
 #### Task 3e: Binary Splitting for Exp/Ln Series
 
@@ -954,7 +974,10 @@ Exp improved 5–25% at p≤200 (e.g., exp(1): 0.48→0.60× at p=50).
 
 **Benefit:** Reduces $O(p)$ BigDecimal divisions to $O(1)$ final division + $O(p \log p)$ BigUInt multiplications. At large precision, this is dramatically faster.
 
-**Note:** This is how `libmpdec` internally handles the series. It's the main reason Python exp is 3× faster.
+**Note:** With Task 3d done, the Taylor series now only has $\sim\sqrt{p}$ terms, so binary splitting would provide diminishing returns. The main remaining opportunity is for `ln()` where the sequential series still runs $\sim 2.5p$ terms.
+
+> **Attempted: Repeated-sqrt range reduction for ln (REVERTED)**
+> Analogous to 3d for exp: take $M$ square roots to bring argument near 1, evaluate Taylor with fewer terms, then multiply result by $2^M$. **Result: catastrophic regression (0.01–0.1× Python).** Root cause: each `sqrt_reciprocal` call involves multiple full-precision Newton iterations (each with 2+ $O(p^2)$ multiplications), far more expensive than the cheap sequential Taylor terms it saves (one multiply + one single-word divide per term). The overhead of $M$ sqrt calls dwarfs the savings from fewer series terms. Sequential Taylor remains optimal for ln until binary splitting (Task 3e) is implemented.
 
 ---
 

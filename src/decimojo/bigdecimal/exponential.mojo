@@ -16,6 +16,8 @@
 
 """Implements exponential functions for the BigDecimal type."""
 
+import math
+
 from decimojo.bigdecimal.bigdecimal import BigDecimal
 from decimojo.rounding_mode import RoundingMode
 
@@ -1642,15 +1644,13 @@ fn exp(x: BigDecimal, precision: Int) raises -> BigDecimal:
         The natural exponential of x (e^x) to the specified precision.
 
     Notes:
-        Uses optimized algorithm combining:
-        - Range reduction.
-        - Taylor series.
-        - Precision tracking.
-    """
-    # Extra working precision to ensure final result accuracy
-    comptime BUFFER_DIGITS = 9
-    var working_precision = precision + BUFFER_DIGITS
+        Uses aggressive range reduction for optimal performance:
+        1. Divide x by 2^M where M ≈ √(3.322·precision) to make x tiny
+        2. Evaluate Taylor series (converges in ~M terms since x/2^M is small)
+        3. Square the result M times to recover exp(x)
 
+        This minimizes total multiplications: ~2·√(3.322·p) instead of ~2.5·p.
+    """
     # Handle special cases
     if x.coefficient.is_zero():
         return BigDecimal(
@@ -1658,7 +1658,6 @@ fn exp(x: BigDecimal, precision: Int) raises -> BigDecimal:
         )  # e^0 = 1, return with same scale and sign
 
     # For very large positive values, result will overflow BigDecimal capacity
-    # Calculate rough estimate to detect overflow early
     # TODO: Use BigInt10 as scale can avoid overflow in this case
     if not x.sign and x.exponent() >= 20:  # x > 10^20
         raise Error("Error in `exp`: Result too large to represent")
@@ -1674,30 +1673,46 @@ fn exp(x: BigDecimal, precision: Int) raises -> BigDecimal:
             pos_result, precision
         )
 
-    # Range reduction for faster convergence
-    # If x >= 0.1, use exp(x) = exp(x/2)²
-    if x >= BigDecimal(BigUInt.one(), 1, False):
-        # var t_before_range_reduction = time.perf_counter_ns()
-        var k = 0
-        var threshold = BigDecimal(BigUInt.one(), 0, False)
-        while threshold.exponent() <= x.exponent() + 1:
-            # Use inplace multiply by 2 instead of allocating add
-            decimojo.biguint.arithmetics.multiply_inplace_by_uint32_le_4(
-                threshold.coefficient, 2
+    # --- Aggressive range reduction ---
+    # We want to divide x by 2^M to make it tiny, so that the Taylor series
+    # converges in very few terms. Then we square the result M times.
+    #
+    # Total cost = (Taylor terms) + (M squarings).
+    # Taylor terms ≈ p·ln(10) / (M·ln(2) + ln(1/|x|)).
+    # Optimal M minimizes total cost:
+    #   M = max(0, ⌈(√(1.596·p) + log₁₀(|x|)·2.303) / 0.693⌉)
+    #
+    # For |x| ≈ 1: M ≈ √(3.322·p), giving ~2·√(3.322·p) total multiplications
+    # vs the old approach of ~2.5·p multiplications.
+    var x_exp = x.exponent()  # floor(log10(x))
+    var p_float = Float64(precision)
+
+    # Compute optimal number of halvings
+    var optimal_total = math.sqrt(1.596 * p_float)
+    var ln_inv_x = Float64(-x_exp) * 2.303  # ≈ ln(1/|x|), positive when x < 1
+    var m = max(0, Int(math.ceil((optimal_total - ln_inv_x) / 0.693)))
+
+    # Extra guard digits to compensate for error amplification during squaring.
+    # After M squarings, relative error is amplified by ~2^M, requiring
+    # M·log₁₀(2) ≈ 0.301·M extra significant digits.
+    var squaring_guard = Int(Float64(m) * 0.35) + 3
+    var working_precision = precision + squaring_guard + 9
+
+    if m > 0:
+        # Divide x by 2^M exactly: x / 2^M = (coeff · 5^M) · 10^(-(scale+M))
+        # This is exact — no rounding needed.
+        var reduced_coeff = x.coefficient.copy()
+        for _ in range(m):
+            decimojo.biguint.arithmetics.multiply_inplace_by_uint32(
+                reduced_coeff, 5
             )
-            k += 1
+        var reduced_x = BigDecimal(reduced_coeff^, x.scale + m, False)
 
-        # Calculate exp(x/2^k)
-        var reduced_x = x.true_divide_inexact(threshold, working_precision)
-
-        # var t_after_range_reduction = time.perf_counter_ns()
-
+        # Compute exp(x/2^M) via Taylor series (converges in ~√(3.3·p) terms)
         var result = exp_taylor_series(reduced_x, working_precision)
 
-        # var t_after_taylor_series = time.perf_counter_ns()
-
-        # Square result k times: exp(x) = exp(x/2^k)^(2^k)
-        for _ in range(k):
+        # Square result M times: exp(x) = exp(x/2^M)^(2^M)
+        for _ in range(m):
             result = result * result
             result.round_to_precision(
                 precision=working_precision,
@@ -1713,28 +1728,11 @@ fn exp(x: BigDecimal, precision: Int) raises -> BigDecimal:
             fill_zeros_to_precision=False,
         )
 
-        # var t_after_scale_up = time.perf_counter_ns()
-
-        # print(
-        #     "TIME: range reduction: {}ns".format(
-        #         t_after_range_reduction - t_before_range_reduction
-        #     )
-        # )
-        # print(
-        #     "TIME: taylor series: {}ns".format(
-        #         t_after_taylor_series - t_after_range_reduction
-        #     )
-        # )
-        # print(
-        #     "TIME: scale up: {}ns".format(
-        #         t_after_scale_up - t_after_taylor_series
-        #     )
-        # )
-
         return result^
 
-    # For small values, use Taylor series directly
-    var result = exp_taylor_series(x, working_precision)
+    # For very small x where M=0 (|x| is already tiny), use Taylor directly
+    var working_precision_basic = precision + 9
+    var result = exp_taylor_series(x, working_precision_basic)
 
     result.round_to_precision(
         precision=precision,
