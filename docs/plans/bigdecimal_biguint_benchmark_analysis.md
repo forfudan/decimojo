@@ -17,7 +17,7 @@
 | **Task 4** | Sqrt                      |    ✓ **3.53× geo (was 0.66×@p5000)**     |   ✓ COMPLETED   |   Done    | High         |
 | **Task 5** | ALL large operations      |                  varies                  |   2–10× gain    | Very High | Low          |
 | **Task 6** | Large multiplication      | ✓ **+14–29% over Karatsuba (256–4096w)** |   ✓ COMPLETED   |   Done    | Medium       |
-| **Task 7** | Nth root                  |      ✓ **3.9–25× (was 0.14–0.49×)**      |   ✓ COMPLETED   |   Done    | High         |
+| **Task 7** | Nth root                  |   7a✓ **3.9–25×**; frac roots 0.2–0.4×   | 7b,7c remaining |  Medium   | High         |
 | **Task 8** | All (allocation overhead) |           ✓ **+15–27% exp/ln**           |   ✓ COMPLETED   |   Done    | High         |
 | **Task 9** | Schoolbook multiply base  |                    —                     |     1.5–2×      |    Low    | Medium       |
 
@@ -27,13 +27,17 @@
 1. ~~**Task 3a** (cache ln(2)/ln(1.25) via MathCache struct)~~ ✓ DONE
 1. ~~**Task 3b** (exp/ln cheap integer division)~~ ✓ DONE — ln near-1 improved 30–100%, exp improved 5–30% at p≤200
 1. ~~**Task 3c** (cache `ln(10)` in MathCache)~~ ✓ DONE — `get_ln10()` used by `log10()`/`log()` directly; ln() decomposes into ln(2)+ln(1.25) for generality
-1. ~~**Task 7** (direct nth root) — Newton's method replaces exp(ln(x)/n)~~ ✓ DONE — integer roots 1.2–50× Python (was 0.14–0.49×)
+1. ~~**Task 7** (direct nth root) — Newton's method replaces exp(ln(x)/n)~~ ✓ DONE (7a) — integer roots 1.2–50× Python (was 0.14–0.49×)
 1. ~~**Task 8** (in-place operations) — broad improvement~~ ✓ DONE — exp +15–21%, ln +15–27%, sqrt +9%
 1. ~~**Task 4** (CPython-style exact sqrt + reciprocal sqrt hybrid)~~ ✓ DONE — 3.53× geometric mean (was 0.66×), 0 correctness warnings, bit-perfect Python match
 1. ~~**Task 2** (truncation optimization for large-operand division)~~ ✓ DONE — avg 24.6× (was 0.78×), large balanced up to 915× Python, asymmetric up to 124×
 1. ~~**Task 6** (Toom-3) — medium complexity, medium gain~~ ✓ DONE — +14% at 256–1024w, +28–29% at 2048–4096w
 1. ~~**Task 3d** (aggressive range reduction for exp)~~ ✓ DONE — exp 0.87×@p50→5.3×@p2000, beats Python at p≥200
-1. **Task 3e** (binary splitting for series) — mainly benefits ln now (exp already fast with 3d)
+1. **Task 3f** (atanh reformulation for ln) — 3× fewer terms for far-from-1 inputs, medium effort
+1. **Task 7c** (rational root decomposition) — 5–10× for fractional roots, low effort
+1. **Task 7b** (reciprocal Newton for integer_root) — 1.5–2× per iteration, medium effort
+1. **Task 3e** (binary splitting for ln series) — mainly benefits ln now (exp already fast with 3d)
+1. **Task 3g** (AGM-based ln for p>1000) — 10–50× at large p, high effort
 1. **Task 5** (NTT) — less urgent than thought; Karatsuba competitive up to p=1000
 1. **Task 9** (SIMD multiply) — polish
 
@@ -442,11 +446,11 @@ with 1–3 ULP last-digit difference, expected for compound `exp(ln(x)/n)`).
 | ∛10           |     0.20×      |     0.14×     | ↓ Slightly worse (Python was undercounted before) |
 | ⁵√32          |     0.27×      |     0.26×     | ≈ Same                                            |
 
-**Analysis (updated after Task 7 ✓):** Square roots are fast-pathed via `BigUInt.sqrt()` and show excellent speedups (10–40×). General nth roots now use direct Newton's method ($r_{k+1} = ((n-1)r + x/r^{n-1})/n$), matching Python `libmpdec`'s approach. At precision=50, **integer roots improved from 0.14–0.49× to 1.2–9× Python**. Fractional roots (0.5th, 0.25th, 0.333rd) still use `exp(ln(x)/n)` path (0.2–0.4×).
+**Analysis (updated after Task 7a ✓):** Square roots are fast-pathed via `BigUInt.sqrt()` and show excellent speedups (10–40×). General nth roots now use direct Newton's method ($r_{k+1} = ((n-1)r + x/r^{n-1})/n$), matching Python `libmpdec`'s approach. At precision=50, **integer roots improved from 0.14–0.49× to 1.2–9× Python**. Fractional roots (0.5th, 0.25th, 0.333rd) still use `exp(ln(x)/n)` path (0.2–0.4×) — see Task 7c for fix.
 
 **Correctness:** `root()` now strips trailing fractional zeros from exact results via `_strip_trailing_fractional_zeros()` — e.g., `root(8, 3)` returns `"2"` instead of `"2.000000000000000000000000000"`, matching Python's behavior. The stripping uses a threshold (≥9 trailing zeros) to distinguish true exact results from coincidental trailing zeros in approximate results.
 
-**Before → After Task 7 (selected cases at p=50):**
+**Before → After Task 7a (selected cases at p=50):**
 
 | Case              | Before | After | Improvement |
 | ----------------- | :----: | :---: | :---------: |
@@ -621,7 +625,7 @@ The multi-precision data reveals that **the optimization landscape depends heavi
 3. **Task 2** (reciprocal-Newton division) — requires careful implementation
 4. **Task 5** (NTT) — less urgent; Karatsuba competitive up to p=2000
 
-### Root — Multi-Precision Scaling (after Task 7 ✓)
+### Root — Multi-Precision Scaling (after Task 7a ✓)
 
 Benchmarked 10 representative root cases (cbrt, 5th root, 10th root, sqrt) at 5 precision levels.
 Newton's method scales better than Python's approach at larger precisions:
@@ -974,10 +978,52 @@ At p≥200, DeciMojo now consistently beats Python. At p=2000, exp is 5.3× fast
 
 **Benefit:** Reduces $O(p)$ BigDecimal divisions to $O(1)$ final division + $O(p \log p)$ BigUInt multiplications. At large precision, this is dramatically faster.
 
-**Note:** With Task 3d done, the Taylor series now only has $\sim\sqrt{p}$ terms, so binary splitting would provide diminishing returns. The main remaining opportunity is for `ln()` where the sequential series still runs $\sim 2.5p$ terms.
+**Note:** With Task 3d done, the exp Taylor series now only has $\sim\sqrt{p}$ terms, so binary splitting for exp would provide diminishing returns. The main remaining opportunity is for `ln()` where the sequential series still runs $\sim 2.5p$ terms.
 
 > **Attempted: Repeated-sqrt range reduction for ln (REVERTED)**
 > Analogous to 3d for exp: take $M$ square roots to bring argument near 1, evaluate Taylor with fewer terms, then multiply result by $2^M$. **Result: catastrophic regression (0.01–0.1× Python).** Root cause: each `sqrt_reciprocal` call involves multiple full-precision Newton iterations (each with 2+ $O(p^2)$ multiplications), far more expensive than the cheap sequential Taylor terms it saves (one multiply + one single-word divide per term). The overhead of $M$ sqrt calls dwarfs the savings from fewer series terms. Sequential Taylor remains optimal for ln until binary splitting (Task 3e) is implemented.
+
+#### Task 3f: atanh Reformulation for Ln Series
+
+**Priority: HIGH** — Estimated **3× speedup** for far-from-1 inputs, easy to implement.
+
+**Problem:** The current `ln_series_expansion()` uses the standard Taylor series $\ln(1+z) = z - z^2/2 + z^3/3 - \ldots$ After range reduction, $z \in [-0.5, 0.5)$, so the series converges at rate $|z| \leq 0.5$, requiring $\sim 3.3p$ terms in the worst case.
+
+**Fix:** Use the identity:
+$$\ln(x) = 2 \cdot \text{atanh}\left(\frac{x-1}{x+1}\right) = 2 \sum_{k=0}^{\infty} \frac{u^{2k+1}}{2k+1}, \quad u = \frac{x-1}{x+1}$$
+
+For $x \in [0.5, 1.5)$ (the range after current reduction): $u = (x-1)/(x+1) \in [-1/3, 1/5)$, so $u^2 \in [0, 1/9)$. The series converges at rate $1/9$ instead of $1/2$, needing $\sim 1.05p$ terms instead of $\sim 3.3p$ — a **3× reduction in term count**.
+
+**Also benefits `compute_ln1d25()`:** Currently `ln(1.25)` uses Taylor with $z = 0.25$ (rate $1/4$, $\sim 1.66p$ terms). With atanh, $u = 0.25/2.25 = 1/9$ (rate $1/81$, $\sim 0.52p$ terms) — a **3.2× reduction**.
+
+**Cost:** One extra BigDecimal division to compute $u = (m-1)/(m+1)$, amortized over the $3\times$ fewer iterations. Net win for $|z| > 0.05$.
+
+**Implementation:** Replace `ln_series_expansion(z, precision)` internals with the atanh series. The function signature and range reduction in `ln()` can stay the same — just compute $u$ from $z$ inside the series function.
+
+#### Task 3g: AGM-Based Ln for Large Precision (p > 1000)
+
+**Priority: MEDIUM** — Estimated **10–50× speedup at p=5000**, but complex to implement.
+
+**Problem:** Even with atanh (Task 3f), ln still requires $O(p)$ series terms, each costing $O(M(p))$, for total $O(p \cdot M(p))$. At p=5000+, this is extremely slow.
+
+**Fix:** Use the AGM (Arithmetic-Geometric Mean) method:
+$$\ln(x) = \frac{\pi}{2 \cdot \text{AGM}(1, 4/s)} - M \ln 2$$
+where $s = x \cdot 2^M$ with $M$ chosen so $s \gg 1$. The AGM converges in $O(\log p)$ iterations, each costing one multiplication + one sqrt. Total: $O(M(p) \log p)$.
+
+**Comparison:**
+
+| Method         | Cost                   | At p=5000               |
+| -------------- | ---------------------- | ----------------------- |
+| Taylor (current) | $O(p \cdot M(p))$    | ~16,600 multiplications |
+| atanh (Task 3f)  | $O(p \cdot M(p)) / 3$ | ~5,250 multiplications  |
+| AGM            | $O(M(p) \cdot \log p)$ | ~13 iterations (each: 1 mul + 1 sqrt) |
+
+**Prerequisites:**
+- Fast `sqrt` (already have `sqrt_reciprocal` with precision doubling — ✓)
+- Fast `π` computation (already have `pi()` via Chudnovsky — ✓, but should be cached in `MathCache`)
+- Cached `ln(2)` (already in `MathCache` — ✓)
+
+**Note:** This is what MPFR/GMP use for `mpfr_log` at large precision. Best suited as a "large p" fast-path that coexists with the series approach for small p.
 
 ---
 
@@ -1130,7 +1176,9 @@ Note: "vs Python" compares BigUInt to CPython `int` (GMP-backed). Run-to-run Pyt
 
 ---
 
-### Task 7: Nth Root via Newton's Method (Avoid exp(ln(x)/n)) — ✓ COMPLETED (2026-02-22)
+### Task 7: Nth Root Optimization
+
+#### Task 7a: Newton's Method (Avoid exp(ln(x)/n)) — ✓ COMPLETED (2026-02-22)
 
 **Status: COMPLETED** — Integer roots improved from 0.14–0.49× to **1.2–50× Python**
 
@@ -1158,9 +1206,46 @@ Note: "vs Python" compares BigUInt to CPython `int` (GMP-backed). Run-to-run Pyt
 
 **Peak speedups at p=1000:** cbrt(2) = 43.8×, 5th_root(2) = 40.4×, cbrt(PI) = 30.2×
 
-**Remaining:** Fractional roots (0.5th, 0.25th, 0.333rd) still use `exp(ln(x)/n)` (~0.2–0.4×). Could be improved by converting to integer root + integer power combination.
+#### Task 7b: Reciprocal Newton Iteration (Eliminate Division)
 
-**Future:** Reciprocal-Newton for $r = x^{-1/n}$ (after Task 2): $$r_{k+1} = r_k \cdot \frac{n+1 - x \cdot r_k^n}{n}$$ Then $x^{1/n} = x \cdot r$. Uses only multiplications (no division).
+**Priority: MEDIUM** — Estimated **1.5–2× speedup** per Newton iteration for integer roots.
+
+**Problem:** The current Newton iteration $r_{k+1} = ((n-1)r + x/r^{n-1})/n$ requires one full BigDecimal division ($x / r^{n-1}$) per iteration. Division is ~2–3× slower than multiplication for large operands (Burnikel-Ziegler overhead).
+
+**Fix:** Iterate for the reciprocal $r = x^{-1/n}$ instead:
+$$r_{k+1} = r_k + \frac{r_k}{n}\left(1 - x \cdot r_k^n\right)$$
+Then recover $x^{1/n} = x \cdot r$ with one final multiply. Each iteration costs:
+- One `integer_power(r, n)` — same asymptotic as current `integer_power(r, n-1)`
+- One multiply $x \cdot r_k^n$ — comparable cost to current division
+- One UInt32 divide by $n$ — already cheap
+- **No full BigDecimal division**
+
+This is analogous to how Task 4 (sqrt) uses reciprocal sqrt $r_{k+1} = r_k(3 - xr_k^2)/2$ — which achieved **20× improvement**. The same principle applies to general nth roots.
+
+**Caveat:** Convergence requires $r_0$ close enough to $x^{-1/n}$. The Float64 initial guess provides ~15 digits, sufficient with precision doubling. May need a guard condition if $|1 - x \cdot r_k^n|$ overshoots.
+
+**Estimated impact:** Since Task 7a already uses precision doubling, the total work is dominated by the last 1–2 iterations at full precision. Replacing division with multiplication in those iterations should yield ~1.5–2× per iteration, i.e., ~1.5× overall for `integer_root()`.
+
+#### Task 7c: Rational Root Decomposition (Fractional Roots via Integer Root + Power)
+
+**Priority: HIGH** — Estimated **5–10× speedup** for fractional roots, low implementation effort.
+
+**Problem:** Fractional roots like $x^{2/3}$, $x^{0.4}$, $x^{1.5}$ currently fall through to the `exp(ln(x)/n)` path, which is **0.2–0.4× Python** because it chains three expensive operations: `ln()` + division + `exp()`.
+
+**Fix:** Any rational root $x^{a/b}$ (with $a, b \in \mathbb{Z}$, $\gcd(a,b)=1$) can be decomposed as:
+$$x^{a/b} = \text{integer\_power}\!\big(\text{integer\_root}(x, b),\; a\big)$$
+
+Both `integer_root()` (Task 7a, 3.9–25× Python) and `integer_power()` (fast binary exponentiation) are already fast paths.
+
+**Examples:**
+- $x^{2/3}$ → `integer_power(integer_root(x, 3), 2)` — cbrt + 1 squaring
+- $x^{0.4} = x^{2/5}$ → `integer_power(integer_root(x, 5), 2)`
+- $x^{1.5} = x^{3/2}$ → `integer_power(sqrt(x), 3)` — sqrt + 2 multiplies
+- $x^{0.333...} = x^{1/3}$ → `integer_root(x, 3)` — already handled (exact reciprocal)
+
+**Implementation:** After the existing `is_integer_reciprocal_and_return(n)` check in `root()`, add a rational decomposition step: extract $a/b = 1/n$ in lowest terms (since $n$ is a finite decimal, it's always rational). This is straightforward because BigDecimal already has exact coefficient and scale.
+
+**Scope:** Covers all cases where the root exponent is a terminating decimal. The only remaining `exp(ln(x)/n)` cases would be irrational exponents (rare in practice).
 
 ---
 
@@ -1313,7 +1398,7 @@ All bench files now:
 | Sqrt (irrat)    |     0.55–0.72×      |     0.55–0.72×     | (no change, sqrt bench was already fair) |
 | **Exp**         |       ~0.34×*       |   **0.69–0.85×**   | ↑ Task 3b + **Task 8** inplace ops       |
 | **Ln (mixed)**  |      (no data)      |   **0.44–3.00×**   | ↑ Task 3a–3c + **Task 8** inplace ops    |
-| **Root (nth)**  |     0.18–0.33×*     |   **3.3–28.5×**    | ↑ **Task 7** Newton + **Task 8** inplace |
+| **Root (nth)**  |     0.18–0.33×*     |   **3.3–28.5×**    | ↑ **Task 7a** Newton + **Task 8** inplace |
 | Root (√)        |        27.1×        |      **432×**      | ↑ Task 1 + **Task 8** divide-by-2 uint32 |
 | Rounding        |       105.8×        |       105.8×       | (no change)                              |
 
@@ -1327,7 +1412,7 @@ All bench files now:
 
 3. **Ln: first real data** — Reveals two regimes. Near 1: nearly competitive (0.97×). Far from 1: Python's cached `ln(10)` is game-changing. `MathCache` (Task 3a) helps with repeated calls but can't eliminate first-call cost without global variables.
 
-4. **Root: 0.18× → 0.14× (corrected)** — The previous 0.18× was actually optimistic because Python was doing 357× more precision. With fair comparison, nth root is 0.14–0.49× Python. ~~Task 7 (direct Newton) is the fix.~~ ✓ FIXED: now 1.2–50× Python.
+4. **Root: 0.18× → 0.14× (corrected)** — The previous 0.18× was actually optimistic because Python was doing 357× more precision. With fair comparison, nth root is 0.14–0.49× Python. ~~Task 7 (direct Newton) is the fix.~~ ✓ FIXED (Task 7a): now 1.2–50× Python for integer roots. Fractional roots still 0.2–0.4× (see Task 7c).
 
 5. **Task 8 (in-place operations): +15–27% exp/ln, +9% sqrt** — Added BigDecimal-level `multiply_inplace`, `add_inplace`, `subtract_inplace`; applied in all Taylor series loops. Also replaced full BigDecimal divisions with `true_divide_inexact_by_uint32` in sin/cos/arctan/sqrt/compute_ln2. Biggest wins at low-to-medium precision where allocation overhead is a larger fraction of total cost.
 
@@ -1339,9 +1424,13 @@ All bench files now:
 | --------- | ------- | :--------------------------------------: | :-------------: | --------------------------------------------------- |
 | ✓ DONE    | Task 2  | ~~0.78×~~ **avg 24.6×, up to 915× div**  |     ✓ DONE      | Truncation optimization for oversized operands      |
 | ✓ DONE    | Task 4  |  ~~0.55–0.72×~~ **3.53× geo-mean sqrt**  |     ✓ DONE      | CPython exact algorithm + reciprocal sqrt hybrid    |
-| ✓ DONE    | Task 7  |   ~~0.14–0.49×~~ **3.9–25× nth root**    |     ✓ DONE      | Newton for nth root (was exp(ln(x)/n))              |
+| ✓ DONE    | Task 7a |  ~~0.14–0.49×~~ **3.9–25× int nth root**  |     ✓ DONE      | Newton for nth root (was exp(ln(x)/n))              |
 | ✓ DONE    | Task 8  |       **+15–27% exp/ln, +9% sqrt**       |     ✓ DONE      | In-place BigDecimal operations + uint32 quick paths |
 | ✓ DONE    | Task 6  | ✓ **+14–29% over Karatsuba (256–4096w)** |   ✓ COMPLETED   | Toom-3 multiplication                               |
-| LOW       | Task 3d |                0.55× exp                 |    0.8–1.0×     | Binary splitting for Taylor series                  |
-| LONG-TERM | Task 5  |                    —                     | 2–10× large ops | NTT multiplication                                  |
+| **HIGH**  | Task 3f |    Ln far-from-1: 0.001–0.18× Python    |  3× fewer terms  | atanh reformulation for ln series                   |
+| **HIGH**  | Task 7c |      Frac roots: 0.2–0.4× Python       |  5–10× speedup  | Rational root decomposition (a/b → root+power)    |
+| MEDIUM    | Task 7b |        Integer roots: 3.9–25×          |  1.5–2× further | Reciprocal Newton (eliminate division)              |
+| MEDIUM    | Task 3e |          Ln: O(p) series terms           | O(p log p) muls | Binary splitting for ln Taylor series               |
+| MEDIUM    | Task 3g |        Ln at p>1000: 0.08–0.28×        | 10–50× at p>1k | AGM-based ln (O(M(p) log p))                       |
+| LOW       | Task 5  |                  varies                  |   2–10× gain    | NTT multiplication                                  |
 | LOW       | Task 9  |                    —                     |     1.5–2×      | SIMD schoolbook multiply base                       |
