@@ -1653,9 +1653,9 @@ fn exp(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """
     # Handle special cases
     if x.coefficient.is_zero():
-        return BigDecimal(
-            BigUInt.one(), x.scale, x.sign
-        )  # e^0 = 1, return with same scale and sign
+        # e^0 = 1 always, regardless of how zero is represented.
+        # BigDecimal("0.00") has scale=2 — we must NOT propagate that.
+        return BigDecimal(BigUInt.one(), 0, False)
 
     # For very large positive values, result will overflow BigDecimal capacity
     # TODO: Use BigInt10 as scale can avoid overflow in this case
@@ -1691,6 +1691,14 @@ fn exp(x: BigDecimal, precision: Int) raises -> BigDecimal:
     var optimal_total = math.sqrt(1.596 * p_float)
     var ln_inv_x = Float64(-x_exp) * 2.303  # ≈ ln(1/|x|), positive when x < 1
     var m = max(0, Int(math.ceil((optimal_total - ln_inv_x) / 0.693)))
+
+    # Correctness guard: exp_taylor_series() converges best for |x| <= 1.
+    # Our heuristic m may be too small at low precisions, leaving |x/2^m| > 1.
+    # Enforce minimum m so that 2^m >= 10^(x_exp+1) > |x|, i.e. |x/2^m| < 1.
+    if x_exp >= 0:
+        var min_m = Int(math.ceil(Float64(x_exp + 1) * 3.3219280948874))
+        if m < min_m:
+            m = min_m
 
     # Extra guard digits to compensate for error amplification during squaring.
     # After M squarings, relative error is amplified by ~2^M, requiring
