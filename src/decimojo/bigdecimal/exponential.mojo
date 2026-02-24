@@ -852,7 +852,12 @@ fn is_odd_reciprocal(n: BigDecimal) raises -> Bool:
 
 
 fn _gcd(var a: Int, var b: Int) -> Int:
-    """Compute the greatest common divisor of two non-negative integers."""
+    """Compute the greatest common divisor of two integers.
+
+    Handles negative inputs by taking absolute values first.
+    """
+    a = abs(a)
+    b = abs(b)
     while b != 0:
         var temp = b
         b = a % b
@@ -884,7 +889,15 @@ fn _rational_root_decomposition(
         - n.scale <= 0 (integer or no fractional part),
         - n.coefficient or 10^scale overflows Int,
         - a or b is 1 (already handled by earlier checks),
-        - a > 1000 (integer_root would be too slow or fall back to exp/ln).
+        - a > 1000 (integer_root would be too slow or fall back to exp/ln),
+        - b > 1000 (integer_power with O(log b) big-number multiplications
+          would be too expensive).
+
+        Overflow safety: scale <= 18 ensures 10^scale fits in Int64
+        (max 10^18 < 2^63-1). After GCD reduction, both a and b are
+        bounded by their pre-reduction values which fit in Int, and the
+        subsequent a <= 1000 / b <= 1000 guards ensure the values stay
+        in a practical range for integer_root and integer_power.
     """
     # n must have a fractional part (scale > 0)
     if n.scale <= 0:
@@ -915,8 +928,10 @@ fn _rational_root_decomposition(
     if a <= 1 or b <= 1:
         return Tuple(False, 0, 0)
 
-    # Large root orders would be slow; fall through to exp/ln
-    if a > 1000:
+    # Large root or power orders would be slow; fall through to exp/ln.
+    # a > 1000: integer_root with Newton iteration is too slow.
+    # b > 1000: integer_power needs O(log b) big-number multiplications.
+    if a > 1000 or b > 1000:
         return Tuple(False, 0, 0)
 
     return Tuple(True, a, b)
@@ -2181,7 +2196,16 @@ fn ln_series_expansion(
     # The coefficient grows by ~z_digits each iteration in the Taylor
     # recurrence; we truncate it periodically to keep it bounded.
     var z_digits = z.coefficient.number_of_digits()
-    if z_digits <= working_precision // 10:
+
+    # Threshold: use Taylor when z has ≤ 1/10 of the working precision
+    # in digits.  Rationale (from benchmarks): when d = z_digits is small
+    # relative to n = working_precision, each Taylor multiply costs O(n×d)
+    # which is essentially O(n).  The atanh path trades 3× fewer iterations
+    # for a heavier per-iteration cost (full n×n multiply by u²), so it
+    # only wins when d ≈ n.  The 1/10 ratio was chosen empirically:
+    # at p=100 the crossover is around d=10; at p=1000 around d=100.
+    comptime _TAYLOR_ATANH_DIGIT_RATIO = 10
+    if z_digits <= working_precision // _TAYLOR_ATANH_DIGIT_RATIO:
         # ---- Taylor path (optimal for small/simple z) ----
         var max_terms = Int(working_precision * 2.5) + 1
         var result = BigDecimal(BigUInt.zero(), working_precision, False)
@@ -2259,7 +2283,9 @@ fn ln_series_expansion(
         var old_denom = UInt32(2 * k - 1)
         var new_denom = UInt32(2 * k + 1)
 
-        # Step 1: Undo previous denominator: multiply by (2k-1)
+        # Step 1: Undo previous denominator: multiply by (2k-1).
+        # Note: when k=1, old_denom=1, so this is a no-op by design;
+        # the first term (k=0) has denominator 1, which needs no undoing.
         decimojo.biguint.arithmetics.multiply_inplace_by_uint32(
             term.coefficient, old_denom
         )
