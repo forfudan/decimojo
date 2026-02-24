@@ -1012,13 +1012,14 @@ where $s = x \cdot 2^M$ with $M$ chosen so $s \gg 1$. The AGM converges in $O(\l
 
 **Comparison:**
 
-| Method         | Cost                   | At p=5000               |
-| -------------- | ---------------------- | ----------------------- |
-| Taylor (current) | $O(p \cdot M(p))$    | ~16,600 multiplications |
-| atanh (Task 3f)  | $O(p \cdot M(p)) / 3$ | ~5,250 multiplications  |
-| AGM            | $O(M(p) \cdot \log p)$ | ~13 iterations (each: 1 mul + 1 sqrt) |
+| Method           | Cost                   | At p=5000                             |
+| ---------------- | ---------------------- | ------------------------------------- |
+| Taylor (current) | $O(p \cdot M(p))$      | ~16,600 multiplications               |
+| atanh (Task 3f)  | $O(p \cdot M(p)) / 3$  | ~5,250 multiplications                |
+| AGM              | $O(M(p) \cdot \log p)$ | ~13 iterations (each: 1 mul + 1 sqrt) |
 
 **Prerequisites:**
+
 - Fast `sqrt` (already have `sqrt_reciprocal` with precision doubling — ✓)
 - Fast `π` computation (already have `pi()` via Chudnovsky — ✓, but should be cached in `MathCache`)
 - Cached `ln(2)` (already in `MathCache` — ✓)
@@ -1215,6 +1216,7 @@ Note: "vs Python" compares BigUInt to CPython `int` (GMP-backed). Run-to-run Pyt
 **Fix:** Iterate for the reciprocal $r = x^{-1/n}$ instead:
 $$r_{k+1} = r_k + \frac{r_k}{n}\left(1 - x \cdot r_k^n\right)$$
 Then recover $x^{1/n} = x \cdot r$ with one final multiply. Each iteration costs:
+
 - One `integer_power(r, n)` — same asymptotic as current `integer_power(r, n-1)`
 - One multiply $x \cdot r_k^n$ — comparable cost to current division
 - One UInt32 divide by $n$ — already cheap
@@ -1238,6 +1240,7 @@ $$x^{a/b} = \text{integer\_power}\!\big(\text{integer\_root}(x, b),\; a\big)$$
 Both `integer_root()` (Task 7a, 3.9–25× Python) and `integer_power()` (fast binary exponentiation) are already fast paths.
 
 **Examples:**
+
 - $x^{2/3}$ → `integer_power(integer_root(x, 3), 2)` — cbrt + 1 squaring
 - $x^{0.4} = x^{2/5}$ → `integer_power(integer_root(x, 5), 2)`
 - $x^{1.5} = x^{3/2}$ → `integer_power(sqrt(x), 3)` — sqrt + 2 multiplies
@@ -1388,19 +1391,19 @@ All bench files now:
 
 ### Updated Performance Scorecard
 
-| Operation       | Before Optimization | After Optimization | Change                                   |
-| --------------- | :-----------------: | :----------------: | ---------------------------------------- |
-| Addition        |        2.22×        |       2.22×        | (no change)                              |
-| Subtraction     |        9.79×        |       9.79×        | (no change)                              |
-| Multiplication  |        3.44×        |       3.44×        | (no change)                              |
-| Division (sym)  |       15–28×        |       15–28×       | (no change)                              |
-| Division (asym) |     0.11–0.62×      |     **31–79×**     | ↑ **Task 1** — 74–724× raw improvement   |
-| Sqrt (irrat)    |     0.55–0.72×      |     0.55–0.72×     | (no change, sqrt bench was already fair) |
-| **Exp**         |       ~0.34×*       |   **0.69–0.85×**   | ↑ Task 3b + **Task 8** inplace ops       |
-| **Ln (mixed)**  |      (no data)      |   **0.44–3.00×**   | ↑ Task 3a–3c + **Task 8** inplace ops    |
+| Operation       | Before Optimization | After Optimization | Change                                    |
+| --------------- | :-----------------: | :----------------: | ----------------------------------------- |
+| Addition        |        2.22×        |       2.22×        | (no change)                               |
+| Subtraction     |        9.79×        |       9.79×        | (no change)                               |
+| Multiplication  |        3.44×        |       3.44×        | (no change)                               |
+| Division (sym)  |       15–28×        |       15–28×       | (no change)                               |
+| Division (asym) |     0.11–0.62×      |     **31–79×**     | ↑ **Task 1** — 74–724× raw improvement    |
+| Sqrt (irrat)    |     0.55–0.72×      |     0.55–0.72×     | (no change, sqrt bench was already fair)  |
+| **Exp**         |       ~0.34×*       |   **0.69–0.85×**   | ↑ Task 3b + **Task 8** inplace ops        |
+| **Ln (mixed)**  |      (no data)      |   **0.44–3.00×**   | ↑ Task 3a–3c + **Task 8** inplace ops     |
 | **Root (nth)**  |     0.18–0.33×*     |   **3.3–28.5×**    | ↑ **Task 7a** Newton + **Task 8** inplace |
-| Root (√)        |        27.1×        |      **432×**      | ↑ Task 1 + **Task 8** divide-by-2 uint32 |
-| Rounding        |       105.8×        |       105.8×       | (no change)                              |
+| Root (√)        |        27.1×        |      **432×**      | ↑ Task 1 + **Task 8** divide-by-2 uint32  |
+| Rounding        |       105.8×        |       105.8×       | (no change)                               |
 
 \* Previous values were measured with mismatched precision (Mojo 28–36 digits vs Python 10000 digits) and were not valid benchmarks. The "Before" column shows the originally reported numbers for historical reference.
 
@@ -1420,17 +1423,17 @@ All bench files now:
 
 ### Remaining Targets
 
-| Priority  | Task    |                 Current                  |     Target      | Approach                                            |
-| --------- | ------- | :--------------------------------------: | :-------------: | --------------------------------------------------- |
-| ✓ DONE    | Task 2  | ~~0.78×~~ **avg 24.6×, up to 915× div**  |     ✓ DONE      | Truncation optimization for oversized operands      |
-| ✓ DONE    | Task 4  |  ~~0.55–0.72×~~ **3.53× geo-mean sqrt**  |     ✓ DONE      | CPython exact algorithm + reciprocal sqrt hybrid    |
-| ✓ DONE    | Task 7a |  ~~0.14–0.49×~~ **3.9–25× int nth root**  |     ✓ DONE      | Newton for nth root (was exp(ln(x)/n))              |
-| ✓ DONE    | Task 8  |       **+15–27% exp/ln, +9% sqrt**       |     ✓ DONE      | In-place BigDecimal operations + uint32 quick paths |
-| ✓ DONE    | Task 6  | ✓ **+14–29% over Karatsuba (256–4096w)** |   ✓ COMPLETED   | Toom-3 multiplication                               |
-| **HIGH**  | Task 3f |    Ln far-from-1: 0.001–0.18× Python    |  3× fewer terms  | atanh reformulation for ln series                   |
-| **HIGH**  | Task 7c |      Frac roots: 0.2–0.4× Python       |  5–10× speedup  | Rational root decomposition (a/b → root+power)    |
-| MEDIUM    | Task 7b |        Integer roots: 3.9–25×          |  1.5–2× further | Reciprocal Newton (eliminate division)              |
-| MEDIUM    | Task 3e |          Ln: O(p) series terms           | O(p log p) muls | Binary splitting for ln Taylor series               |
-| MEDIUM    | Task 3g |        Ln at p>1000: 0.08–0.28×        | 10–50× at p>1k | AGM-based ln (O(M(p) log p))                       |
-| LOW       | Task 5  |                  varies                  |   2–10× gain    | NTT multiplication                                  |
-| LOW       | Task 9  |                    —                     |     1.5–2×      | SIMD schoolbook multiply base                       |
+| Priority | Task    |                 Current                  |     Target      | Approach                                            |
+| -------- | ------- | :--------------------------------------: | :-------------: | --------------------------------------------------- |
+| ✓ DONE   | Task 2  | ~~0.78×~~ **avg 24.6×, up to 915× div**  |     ✓ DONE      | Truncation optimization for oversized operands      |
+| ✓ DONE   | Task 4  |  ~~0.55–0.72×~~ **3.53× geo-mean sqrt**  |     ✓ DONE      | CPython exact algorithm + reciprocal sqrt hybrid    |
+| ✓ DONE   | Task 7a | ~~0.14–0.49×~~ **3.9–25× int nth root**  |     ✓ DONE      | Newton for nth root (was exp(ln(x)/n))              |
+| ✓ DONE   | Task 8  |       **+15–27% exp/ln, +9% sqrt**       |     ✓ DONE      | In-place BigDecimal operations + uint32 quick paths |
+| ✓ DONE   | Task 6  | ✓ **+14–29% over Karatsuba (256–4096w)** |   ✓ COMPLETED   | Toom-3 multiplication                               |
+| **HIGH** | Task 3f |    Ln far-from-1: 0.001–0.18× Python     | 3× fewer terms  | atanh reformulation for ln series                   |
+| **HIGH** | Task 7c |       Frac roots: 0.2–0.4× Python        |  5–10× speedup  | Rational root decomposition (a/b → root+power)      |
+| MEDIUM   | Task 7b |          Integer roots: 3.9–25×          | 1.5–2× further  | Reciprocal Newton (eliminate division)              |
+| MEDIUM   | Task 3e |          Ln: O(p) series terms           | O(p log p) muls | Binary splitting for ln Taylor series               |
+| MEDIUM   | Task 3g |         Ln at p>1000: 0.08–0.28×         | 10–50× at p>1k  | AGM-based ln (O(M(p) log p))                        |
+| LOW      | Task 5  |                  varies                  |   2–10× gain    | NTT multiplication                                  |
+| LOW      | Task 9  |                    —                     |     1.5–2×      | SIMD schoolbook multiply base                       |
