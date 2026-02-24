@@ -13,11 +13,11 @@
 | ---------- | ------------------------- | :--------------------------------------: | :-------------: | :-------: | ------------ |
 | **Task 1** | Asymmetric division       |               ✓ **31–79×**               |   ✓ COMPLETED   |   Done    | High         |
 | **Task 2** | Division (large operands) | ✓ **avg 24.6× (was 0.78×), up to 915×**  |   ✓ COMPLETED   |   Done    | High         |
-| **Task 3** | Exp, ln                   | Exp: **0.87×@p50→5.3×@p2000** (3d done)  | 3a✓,3b✓,3c✓,3d✓ |  Medium   | **Critical** |
+| **Task 3** | Exp, ln                   | Exp: **0.87×@p50→5.3×@p2000** (3d done)  | 3a✓,3b✓,3c✓,3d✓,3f✓ |  Medium   | **Critical** |
 | **Task 4** | Sqrt                      |    ✓ **3.53× geo (was 0.66×@p5000)**     |   ✓ COMPLETED   |   Done    | High         |
 | **Task 5** | ALL large operations      |                  varies                  |   2–10× gain    | Very High | Low          |
 | **Task 6** | Large multiplication      | ✓ **+14–29% over Karatsuba (256–4096w)** |   ✓ COMPLETED   |   Done    | Medium       |
-| **Task 7** | Nth root                  |   7a✓ **3.9–25×**; frac roots 0.2–0.4×   | 7b,7c remaining |  Medium   | High         |
+| **Task 7** | Nth root                  |   7a✓ **3.9–25×**; 7c✓ frac roots fast   | 7b remaining    |  Medium   | High         |
 | **Task 8** | All (allocation overhead) |           ✓ **+15–27% exp/ln**           |   ✓ COMPLETED   |   Done    | High         |
 | **Task 9** | Schoolbook multiply base  |                    —                     |     1.5–2×      |    Low    | Medium       |
 
@@ -33,8 +33,8 @@
 1. ~~**Task 2** (truncation optimization for large-operand division)~~ ✓ DONE — avg 24.6× (was 0.78×), large balanced up to 915× Python, asymmetric up to 124×
 1. ~~**Task 6** (Toom-3) — medium complexity, medium gain~~ ✓ DONE — +14% at 256–1024w, +28–29% at 2048–4096w
 1. ~~**Task 3d** (aggressive range reduction for exp)~~ ✓ DONE — exp 0.87×@p50→5.3×@p2000, beats Python at p≥200
-1. **Task 3f** (atanh reformulation for ln) — 3× fewer terms for far-from-1 inputs, medium effort
-1. **Task 7c** (rational root decomposition) — 5–10× for fractional roots, low effort
+1. ~~**Task 3f** (atanh reformulation for ln)~~ ✓ DONE — ln_series_expansion uses 2·atanh(z/(2+z)) identity, ~3× fewer terms (rate 1/9 vs 1/2), exact Python match at p=50 and p=100
+1. ~~**Task 7c** (rational root decomposition)~~ ✓ DONE — fractional n=a/b decomposed to integer_power(integer_root(x,a),b), exact results for perfect cases (8^(2/3)=4, 27^(2/3)=9, etc.)
 1. **Task 7b** (reciprocal Newton for integer_root) — 1.5–2× per iteration, medium effort
 1. **Task 3e** (binary splitting for ln series) — mainly benefits ln now (exp already fast with 3d)
 1. **Task 3g** (AGM-based ln for p>1000) — 10–50× at large p, high effort
