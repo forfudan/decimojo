@@ -55,11 +55,12 @@ comptime CUTOFF_BURNIKEL_ZIEGLER = 32
 # multiply_slices_school(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int) -> BigUInt
 # multiply_slices_karatsuba(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int, cutoff_number_of_words: Int) -> BigUInt
 # multiply_slices_toom3(x: BigUInt, y: BigUInt, bounds_x: Tuple[Int, Int], bounds_y: Tuple[Int, Int]) -> BigUInt
-# _exact_divide_by_2_inplace(mut x: BigUInt)
-# _exact_divide_by_3_inplace(mut x: BigUInt)
 # multiply_inplace_by_uint32(x: BigUInt, y: UInt32) -> None
 # multiply_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt
 # multiply_inplace_by_power_of_billion(mut x: BigUInt, n: Int)
+# exact_divide_by_2_inplace(mut x: BigUInt)
+# exact_divide_by_3_inplace(mut x: BigUInt)
+# exact_divide_by_6_inplace(mut x: BigUInt)
 #
 # floor_divide(x1: BigUInt, x2: BigUInt) -> BigUInt
 # floor_divide_school(x1: BigUInt, x2: BigUInt) -> BigUInt
@@ -1210,54 +1211,6 @@ fn multiply_slices_karatsuba(
         return z2^
 
 
-fn _exact_divide_by_2_inplace(mut x: BigUInt):
-    """Divides a BigUInt by 2 exactly, in-place.
-
-    The caller must ensure that x is even (divisible by 2).
-    Uses base-10^9 long division from MSB to LSB.
-    """
-    var carry: UInt32 = 0
-    for i in range(len(x.words) - 1, -1, -1):
-        # carry is 0 or 1; carry * BASE + words[i] fits in UInt32
-        # because max = 1 * 10^9 + 999_999_999 = 1_999_999_999 < 2^32
-        var val = carry * UInt32(BigUInt.BASE) + x.words[i]
-        x.words[i] = val // 2
-        carry = val % 2
-    x.remove_leading_empty_words()
-
-
-fn _exact_divide_by_3_inplace(mut x: BigUInt):
-    """Divides a BigUInt by 3 exactly, in-place.
-
-    The caller must ensure that x is divisible by 3.
-    Uses base-10^9 long division from MSB to LSB.
-    """
-    var carry: UInt32 = 0
-    for i in range(len(x.words) - 1, -1, -1):
-        # carry is 0..2; carry * BASE + words[i] fits in UInt32
-        # because max = 2 * 10^9 + 999_999_999 = 2_999_999_999 < 2^32
-        var val = carry * UInt32(BigUInt.BASE) + x.words[i]
-        x.words[i] = val // 3
-        carry = val % 3
-    x.remove_leading_empty_words()
-
-
-fn _exact_divide_by_6_inplace(mut x: BigUInt):
-    """Divides a BigUInt by 6 exactly, in-place.
-
-    The caller must ensure that x is divisible by 6.
-    Uses base-10^9 long division from MSB to LSB with UInt64 arithmetic.
-    """
-    var carry: UInt64 = 0
-    for i in range(len(x.words) - 1, -1, -1):
-        # carry is 0..5; carry * BASE + words[i] max = 5*10^9 + 999_999_999
-        # = 5_999_999_999, fits in UInt64
-        var val = carry * UInt64(BigUInt.BASE) + UInt64(x.words[i])
-        x.words[i] = UInt32(val // 6)
-        carry = val % 6
-    x.remove_leading_empty_words()
-
-
 fn multiply_slices_toom3(
     read x: BigUInt,
     read y: BigUInt,
@@ -1490,7 +1443,7 @@ fn multiply_slices_toom3(
         # v1 - vm1 = 2*(w1 + w3) >= 0
         t1 = v1.copy()
         subtract_inplace_no_check(t1, vm1)
-    _exact_divide_by_2_inplace(t1)
+    exact_divide_by_2_inplace(t1)
 
     # --- Compute w2 = (v1 + vm1_signed) / 2 - w0 - w4 ---
     # v1 + vm1_signed:
@@ -1502,7 +1455,7 @@ fn multiply_slices_toom3(
         subtract_inplace_no_check(w2, vm1)
     else:
         w2 = add(v1, vm1)
-    _exact_divide_by_2_inplace(w2)
+    exact_divide_by_2_inplace(w2)
     # w2 = w2 - w0 - w4 (both subtractions are safe: result = w2 >= 0)
     subtract_inplace_no_check(w2, v0)
     subtract_inplace_no_check(w2, vinf)
@@ -1515,14 +1468,14 @@ fn multiply_slices_toom3(
         var vinf_16 = vinf.copy()
         multiply_inplace_by_uint32(vinf_16, UInt32(16))
         subtract_inplace_no_check(t3, vinf_16)
-    _exact_divide_by_2_inplace(t3)
+    exact_divide_by_2_inplace(t3)
 
     # --- Compute w3 = (t3 - 2*w2 - t1) / 3 ---
     # Avoid copy: subtract w2 twice instead of creating w2*2
     subtract_inplace_no_check(t3, w2)
     subtract_inplace_no_check(t3, w2)
     subtract_inplace_no_check(t3, t1)
-    _exact_divide_by_3_inplace(t3)
+    exact_divide_by_3_inplace(t3)
     # t3 now holds w3
 
     # --- Compute w1 = t1 - w3 ---
@@ -1921,6 +1874,54 @@ fn multiply_inplace_by_power_of_billion(mut x: BigUInt, n: Int):
 
     x.remove_leading_empty_words()
     return
+
+
+fn exact_divide_by_2_inplace(mut x: BigUInt):
+    """Divides a BigUInt by 2 exactly, in-place.
+
+    The caller must ensure that x is even (divisible by 2).
+    Uses base-10^9 long division from MSB to LSB.
+    """
+    var carry: UInt32 = 0
+    for i in range(len(x.words) - 1, -1, -1):
+        # carry is 0 or 1; carry * BASE + words[i] fits in UInt32
+        # because max = 1 * 10^9 + 999_999_999 = 1_999_999_999 < 2^32
+        var val = carry * UInt32(BigUInt.BASE) + x.words[i]
+        x.words[i] = val // 2
+        carry = val % 2
+    x.remove_leading_empty_words()
+
+
+fn exact_divide_by_3_inplace(mut x: BigUInt):
+    """Divides a BigUInt by 3 exactly, in-place.
+
+    The caller must ensure that x is divisible by 3.
+    Uses base-10^9 long division from MSB to LSB.
+    """
+    var carry: UInt32 = 0
+    for i in range(len(x.words) - 1, -1, -1):
+        # carry is 0..2; carry * BASE + words[i] fits in UInt32
+        # because max = 2 * 10^9 + 999_999_999 = 2_999_999_999 < 2^32
+        var val = carry * UInt32(BigUInt.BASE) + x.words[i]
+        x.words[i] = val // 3
+        carry = val % 3
+    x.remove_leading_empty_words()
+
+
+fn exact_divide_by_6_inplace(mut x: BigUInt):
+    """Divides a BigUInt by 6 exactly, in-place.
+
+    The caller must ensure that x is divisible by 6.
+    Uses base-10^9 long division from MSB to LSB with UInt64 arithmetic.
+    """
+    var carry: UInt64 = 0
+    for i in range(len(x.words) - 1, -1, -1):
+        # carry is 0..5; carry * BASE + words[i] max = 5*10^9 + 999_999_999
+        # = 5_999_999_999, fits in UInt64
+        var val = carry * UInt64(BigUInt.BASE) + UInt64(x.words[i])
+        x.words[i] = UInt32(val // 6)
+        carry = val % 6
+    x.remove_leading_empty_words()
 
 
 # ===----------------------------------------------------------------------=== #
