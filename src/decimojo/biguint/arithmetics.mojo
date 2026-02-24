@@ -29,6 +29,8 @@ from decimojo.rounding_mode import RoundingMode
 
 comptime CUTOFF_KARATSUBA = 64
 """The cutoff number of words for using Karatsuba multiplication."""
+comptime CUTOFF_TOOM3 = 128
+"""The cutoff number of words for using Toom-3 multiplication."""
 comptime CUTOFF_BURNIKEL_ZIEGLER = 32
 """The cutoff number of words for using Burnikel-Ziegler division."""
 
@@ -52,6 +54,9 @@ comptime CUTOFF_BURNIKEL_ZIEGLER = 32
 # multiply(x1: BigUInt, x2: BigUInt) -> BigUInt
 # multiply_slices_school(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int) -> BigUInt
 # multiply_slices_karatsuba(x: BigUInt, y: BigUInt, start_x: Int, end_x: Int, start_y: Int, end_y: Int, cutoff_number_of_words: Int) -> BigUInt
+# multiply_slices_toom3(x: BigUInt, y: BigUInt, bounds_x: Tuple[Int, Int], bounds_y: Tuple[Int, Int]) -> BigUInt
+# _exact_divide_by_2_inplace(mut x: BigUInt)
+# _exact_divide_by_3_inplace(mut x: BigUInt)
 # multiply_inplace_by_uint32(x: BigUInt, y: UInt32) -> None
 # multiply_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt
 # multiply_inplace_by_power_of_billion(mut x: BigUInt, n: Int)
@@ -877,7 +882,12 @@ fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
         # multiply_slices_school can also takes in x, y, and indices
 
     # CASE 2
-    # Use Karatsuba multiplication for larger numbers
+    # Use Toom-3 multiplication for very large numbers
+    elif max_words > CUTOFF_TOOM3:
+        return multiply_slices_toom3(x, y, (0, len(x.words)), (0, len(y.words)))
+
+    # CASE 3
+    # Use Karatsuba multiplication for medium-sized numbers
     else:
         return multiply_slices_karatsuba(
             x, y, (0, len(x.words)), (0, len(y.words)), CUTOFF_KARATSUBA
@@ -921,7 +931,12 @@ fn multiply_slices(
         # multiply_slices_school can also takes in x, y, and indices
 
     # CASE 2
-    # Use Karatsuba multiplication for larger numbers
+    # Use Toom-3 multiplication for very large numbers
+    elif max_words > CUTOFF_TOOM3:
+        return multiply_slices_toom3(x, y, bounds_x, bounds_y)
+
+    # CASE 3
+    # Use Karatsuba multiplication for medium-sized numbers
     else:
         return multiply_slices_karatsuba(
             x, y, bounds_x, bounds_y, CUTOFF_KARATSUBA
@@ -1193,6 +1208,367 @@ fn multiply_slices_karatsuba(
 
         z2.remove_leading_empty_words()
         return z2^
+
+
+fn _exact_divide_by_2_inplace(mut x: BigUInt):
+    """Divides a BigUInt by 2 exactly, in-place.
+
+    The caller must ensure that x is even (divisible by 2).
+    Uses base-10^9 long division from MSB to LSB.
+    """
+    var carry: UInt32 = 0
+    for i in range(len(x.words) - 1, -1, -1):
+        # carry is 0 or 1; carry * BASE + words[i] fits in UInt32
+        # because max = 1 * 10^9 + 999_999_999 = 1_999_999_999 < 2^32
+        var val = carry * UInt32(BigUInt.BASE) + x.words[i]
+        x.words[i] = val // 2
+        carry = val % 2
+    x.remove_leading_empty_words()
+
+
+fn _exact_divide_by_3_inplace(mut x: BigUInt):
+    """Divides a BigUInt by 3 exactly, in-place.
+
+    The caller must ensure that x is divisible by 3.
+    Uses base-10^9 long division from MSB to LSB.
+    """
+    var carry: UInt32 = 0
+    for i in range(len(x.words) - 1, -1, -1):
+        # carry is 0..2; carry * BASE + words[i] fits in UInt32
+        # because max = 2 * 10^9 + 999_999_999 = 2_999_999_999 < 2^32
+        var val = carry * UInt32(BigUInt.BASE) + x.words[i]
+        x.words[i] = val // 3
+        carry = val % 3
+    x.remove_leading_empty_words()
+
+
+fn _exact_divide_by_6_inplace(mut x: BigUInt):
+    """Divides a BigUInt by 6 exactly, in-place.
+
+    The caller must ensure that x is divisible by 6.
+    Uses base-10^9 long division from MSB to LSB with UInt64 arithmetic.
+    """
+    var carry: UInt64 = 0
+    for i in range(len(x.words) - 1, -1, -1):
+        # carry is 0..5; carry * BASE + words[i] max = 5*10^9 + 999_999_999
+        # = 5_999_999_999, fits in UInt64
+        var val = carry * UInt64(BigUInt.BASE) + UInt64(x.words[i])
+        x.words[i] = UInt32(val // 6)
+        carry = val % 6
+    x.remove_leading_empty_words()
+
+
+fn multiply_slices_toom3(
+    read x: BigUInt,
+    read y: BigUInt,
+    bounds_x: Tuple[Int, Int],
+    bounds_y: Tuple[Int, Int],
+) -> BigUInt:
+    """Multiplies two BigUInt slices using the Toom-Cook 3-way algorithm.
+
+    This algorithm splits each operand into 3 parts of roughly equal size,
+    evaluates at 5 points (0, 1, -1, 2, inf), performs 5 recursive
+    multiplications, and interpolates to recover the result.
+
+    Complexity: O(n^log_3(5)) ≈ O(n^1.465), better than Karatsuba's O(n^1.585).
+
+    Args:
+        x: The first BigUInt operand.
+        y: The second BigUInt operand.
+        bounds_x: Slice bounds for x (start inclusive, end exclusive).
+        bounds_y: Slice bounds for y (start inclusive, end exclusive).
+
+    Returns:
+        The product of the two BigUInt slices.
+    """
+
+    var nx = bounds_x[1] - bounds_x[0]
+    var ny = bounds_y[1] - bounds_y[0]
+
+    # Fall back to Karatsuba for small or very asymmetric operands
+    var n_max = max(nx, ny)
+    var n_min = min(nx, ny)
+    if n_max <= CUTOFF_TOOM3 or n_min <= CUTOFF_KARATSUBA:
+        return multiply_slices_karatsuba(
+            x, y, bounds_x, bounds_y, CUTOFF_KARATSUBA
+        )
+
+    # Split into 3 parts of size m (last part may be smaller)
+    # x = x2 * B^(2m) + x1 * B^m + x0
+    # y = y2 * B^(2m) + y1 * B^m + y0
+    var m = (n_max + 2) // 3  # ceil(n/3)
+
+    # Define slice bounds for x parts: x0, x1, x2
+    var sx0_start = bounds_x[0]
+    var sx0_end = min(sx0_start + m, bounds_x[1])
+    var sx1_start = sx0_end
+    var sx1_end = min(sx1_start + m, bounds_x[1])
+    var sx2_start = sx1_end
+    var sx2_end = bounds_x[1]
+
+    # Define slice bounds for y parts: y0, y1, y2
+    var sy0_start = bounds_y[0]
+    var sy0_end = min(sy0_start + m, bounds_y[1])
+    var sy1_start = sy0_end
+    var sy1_end = min(sy1_start + m, bounds_y[1])
+    var sy2_start = sy1_end
+    var sy2_end = bounds_y[1]
+
+    # Check if parts exist (slices may be empty for shorter operands)
+    var has_x1 = sx1_start < sx1_end
+    var has_x2 = sx2_start < sx2_end
+    var has_y1 = sy1_start < sy1_end
+    var has_y2 = sy2_start < sy2_end
+
+    # ===================================================================
+    # EVALUATION: Compute p(t) and q(t) at t = 0, 1, -1, 2, ∞
+    #
+    # Shared subexpression: x0+x2 is used for both p(1) and p(-1).
+    # Similarly y0+y2 for q(1) and q(-1).
+    # ===================================================================
+
+    # --- Compute x0+x2 (shared between p(1) and p(-1)) ---
+    var x0_plus_x2: BigUInt
+    if has_x2:
+        x0_plus_x2 = add_slices(
+            x, x, (sx0_start, sx0_end), (sx2_start, sx2_end)
+        )
+    else:
+        x0_plus_x2 = BigUInt.from_slice(x, (sx0_start, sx0_end))
+
+    # --- Compute y0+y2 (shared between q(1) and q(-1)) ---
+    var y0_plus_y2: BigUInt
+    if has_y2:
+        y0_plus_y2 = add_slices(
+            y, y, (sy0_start, sy0_end), (sy2_start, sy2_end)
+        )
+    else:
+        y0_plus_y2 = BigUInt.from_slice(y, (sy0_start, sy0_end))
+
+    # --- Evaluate p(1) = x0 + x1 + x2 = (x0+x2) + x1 ---
+    var px1: BigUInt
+    if has_x1:
+        px1 = add_slices(
+            x0_plus_x2, x, (0, len(x0_plus_x2.words)), (sx1_start, sx1_end)
+        )
+    else:
+        px1 = x0_plus_x2.copy()
+
+    # --- Evaluate q(1) = y0 + y1 + y2 = (y0+y2) + y1 ---
+    var qy1: BigUInt
+    if has_y1:
+        qy1 = add_slices(
+            y0_plus_y2, y, (0, len(y0_plus_y2.words)), (sy1_start, sy1_end)
+        )
+    else:
+        qy1 = y0_plus_y2.copy()
+
+    # --- Evaluate p(-1) = (x0+x2) - x1 (signed) ---
+    var pxm1: BigUInt
+    var pxm1_neg: Bool
+    if has_x1:
+        var x1_val = BigUInt.from_slice(x, (sx1_start, sx1_end))
+        var cmp = decimojo.biguint.comparison.compare(x0_plus_x2, x1_val)
+        if cmp >= 0:
+            pxm1 = x0_plus_x2.copy()
+            subtract_inplace_no_check(pxm1, x1_val)
+            pxm1_neg = False
+        else:
+            pxm1 = x1_val^
+            subtract_inplace_no_check(pxm1, x0_plus_x2)
+            pxm1_neg = True
+    else:
+        pxm1 = x0_plus_x2.copy()
+        pxm1_neg = False
+
+    # --- Evaluate q(-1) = (y0+y2) - y1 (signed) ---
+    var qym1: BigUInt
+    var qym1_neg: Bool
+    if has_y1:
+        var y1_val = BigUInt.from_slice(y, (sy1_start, sy1_end))
+        var cmp = decimojo.biguint.comparison.compare(y0_plus_y2, y1_val)
+        if cmp >= 0:
+            qym1 = y0_plus_y2.copy()
+            subtract_inplace_no_check(qym1, y1_val)
+            qym1_neg = False
+        else:
+            qym1 = y1_val^
+            subtract_inplace_no_check(qym1, y0_plus_y2)
+            qym1_neg = True
+    else:
+        qym1 = y0_plus_y2.copy()
+        qym1_neg = False
+
+    # --- Evaluate p(2) = x0 + 2*x1 + 4*x2 using Horner: (x2*2 + x1)*2 + x0
+    var px2: BigUInt
+    if has_x2:
+        px2 = BigUInt.from_slice(x, (sx2_start, sx2_end))
+        multiply_inplace_by_uint32(px2, UInt32(2))
+    else:
+        px2 = BigUInt.zero()
+    if has_x1:
+        var x1_slice = BigUInt.from_slice(x, (sx1_start, sx1_end))
+        add_inplace(px2, x1_slice)
+    multiply_inplace_by_uint32(px2, UInt32(2))
+    var x0_slice = BigUInt.from_slice(x, (sx0_start, sx0_end))
+    add_inplace(px2, x0_slice)
+
+    # --- Evaluate q(2) = y0 + 2*y1 + 4*y2 using Horner: (y2*2 + y1)*2 + y0
+    var qy2: BigUInt
+    if has_y2:
+        qy2 = BigUInt.from_slice(y, (sy2_start, sy2_end))
+        multiply_inplace_by_uint32(qy2, UInt32(2))
+    else:
+        qy2 = BigUInt.zero()
+    if has_y1:
+        var y1_slice = BigUInt.from_slice(y, (sy1_start, sy1_end))
+        add_inplace(qy2, y1_slice)
+    multiply_inplace_by_uint32(qy2, UInt32(2))
+    var y0_slice = BigUInt.from_slice(y, (sy0_start, sy0_end))
+    add_inplace(qy2, y0_slice)
+
+    # ===================================================================
+    # POINTWISE MULTIPLICATION: 5 recursive multiplications
+    # ===================================================================
+
+    # v0 = p(0) * q(0) = x0 * y0 (use original bounds, no copy)
+    var v0 = multiply_slices(x, y, (sx0_start, sx0_end), (sy0_start, sy0_end))
+
+    # vinf = p(∞) * q(∞) = x2 * y2 (use original bounds, no copy)
+    var vinf: BigUInt
+    if has_x2 and has_y2:
+        vinf = multiply_slices(x, y, (sx2_start, sx2_end), (sy2_start, sy2_end))
+    else:
+        vinf = BigUInt.zero()
+
+    # v1 = p(1) * q(1)
+    var v1 = multiply(px1, qy1)
+
+    # vm1 = p(-1) * q(-1), sign = pxm1_neg XOR qym1_neg
+    var vm1 = multiply(pxm1, qym1)
+    var vm1_neg = pxm1_neg != qym1_neg  # XOR
+
+    # v2 = p(2) * q(2)
+    var v2 = multiply(px2, qy2)
+
+    # ===================================================================
+    # INTERPOLATION: Recover w0, w1, w2, w3, w4
+    # Result = w0 + w1*B^m + w2*B^(2m) + w3*B^(3m) + w4*B^(4m)
+    #
+    # The product polynomial is:
+    #   r(t) = w0 + w1*t + w2*t^2 + w3*t^3 + w4*t^4
+    # where:
+    #   v0 = r(0) = w0
+    #   v1 = r(1) = w0 + w1 + w2 + w3 + w4
+    #   vm1 = r(-1) = w0 - w1 + w2 - w3 + w4
+    #   v2 = r(2) = w0 + 2*w1 + 4*w2 + 8*w3 + 16*w4
+    #   vinf = r(∞) = w4
+    #
+    # Interpolation formulas:
+    #   w0 = v0
+    #   w4 = vinf
+    #   t1 = (v1 - vm1_signed) / 2    = w1 + w3
+    #   w2 = (v1 + vm1_signed) / 2 - w0 - w4
+    #   t3 = (v2 - w0 - 16*w4) / 2    = w1 + 2*w2 + 4*w3
+    #   w3 = (t3 - 2*w2 - t1) / 3
+    #   w1 = t1 - w3
+    #
+    # All w0..w4 and intermediates t1, t3 are non-negative.
+    # ===================================================================
+
+    # w0 = v0 (will use directly)
+    # w4 = vinf (will use directly)
+
+    # --- Compute t1 = (v1 - vm1_signed) / 2 = w1 + w3 ---
+    # v1 - vm1_signed:
+    #   if vm1_neg: v1 - (-|vm1|) = v1 + |vm1|
+    #   else:       v1 - |vm1|
+    var t1: BigUInt
+    if vm1_neg:
+        t1 = add(v1, vm1)
+    else:
+        # v1 - vm1 = 2*(w1 + w3) >= 0
+        t1 = v1.copy()
+        subtract_inplace_no_check(t1, vm1)
+    _exact_divide_by_2_inplace(t1)
+
+    # --- Compute w2 = (v1 + vm1_signed) / 2 - w0 - w4 ---
+    # v1 + vm1_signed:
+    #   if vm1_neg: v1 - |vm1|
+    #   else:       v1 + |vm1|
+    var w2: BigUInt
+    if vm1_neg:
+        w2 = v1.copy()
+        subtract_inplace_no_check(w2, vm1)
+    else:
+        w2 = add(v1, vm1)
+    _exact_divide_by_2_inplace(w2)
+    # w2 = w2 - w0 - w4 (both subtractions are safe: result = w2 >= 0)
+    subtract_inplace_no_check(w2, v0)
+    subtract_inplace_no_check(w2, vinf)
+
+    # --- Compute t3 = (v2 - w0 - 16*w4) / 2 = w1 + 2*w2 + 4*w3 ---
+    var t3 = v2^  # move v2, no longer needed
+    subtract_inplace_no_check(t3, v0)
+    # Subtract 16 * vinf
+    if not vinf.is_zero():
+        var vinf_16 = vinf.copy()
+        multiply_inplace_by_uint32(vinf_16, UInt32(16))
+        subtract_inplace_no_check(t3, vinf_16)
+    _exact_divide_by_2_inplace(t3)
+
+    # --- Compute w3 = (t3 - 2*w2 - t1) / 3 ---
+    # Avoid copy: subtract w2 twice instead of creating w2*2
+    subtract_inplace_no_check(t3, w2)
+    subtract_inplace_no_check(t3, w2)
+    subtract_inplace_no_check(t3, t1)
+    _exact_divide_by_3_inplace(t3)
+    # t3 now holds w3
+
+    # --- Compute w1 = t1 - w3 ---
+    subtract_inplace_no_check(t1, t3)
+    # t1 now holds w1
+
+    # ===================================================================
+    # RECOMPOSITION: result = w0 + w1*B^m + w2*B^(2m) + w3*B^(3m) + w4*B^(4m)
+    # ===================================================================
+
+    # Pre-allocate the result array.
+    # Maximum result length: nx + ny words (product of two numbers).
+    var result_len = nx + ny
+    var result = BigUInt(unsafe_uninit_length=result_len)
+    memset_zero(ptr=result.words._data, count=result_len)
+
+    # Helper: add a BigUInt value at a word offset into result
+    @parameter
+    fn _add_at_offset(mut result: BigUInt, value: BigUInt, offset: Int):
+        """Adds value into result starting at the given word offset."""
+        if value.is_zero():
+            return
+        var carry: UInt64 = 0
+        for i in range(len(value.words)):
+            var pos = offset + i
+            if pos >= len(result.words):
+                break
+            var s = UInt64(result.words[pos]) + UInt64(value.words[i]) + carry
+            result.words[pos] = UInt32(s % UInt64(BigUInt.BASE))
+            carry = s // UInt64(BigUInt.BASE)
+        # Propagate remaining carry
+        var pos = offset + len(value.words)
+        while carry > 0 and pos < len(result.words):
+            var s = UInt64(result.words[pos]) + carry
+            result.words[pos] = UInt32(s % UInt64(BigUInt.BASE))
+            carry = s // UInt64(BigUInt.BASE)
+            pos += 1
+
+    _add_at_offset(result, v0, 0)  # w0 at offset 0
+    _add_at_offset(result, t1, m)  # w1 at offset m (stored in t1)
+    _add_at_offset(result, w2, 2 * m)  # w2 at offset 2m
+    _add_at_offset(result, t3, 3 * m)  # w3 at offset 3m (stored in t3)
+    _add_at_offset(result, vinf, 4 * m)  # w4 at offset 4m
+
+    result.remove_leading_empty_words()
+    return result^
 
 
 fn multiply_inplace_by_uint32(mut x: BigUInt, y: UInt32):
