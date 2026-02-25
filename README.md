@@ -95,7 +95,7 @@ This will import the following types or aliases into your namespace:
 
 ---
 
-Here are some examples showcasing the arbitrary-precision feature of the `Decimal` type. For some mathematical operations, the default precision (number of significant digits) is set to `36`. You can change the precision by passing the `precision` argument to the function. This default precision will be configurable globally in future when Mojo supports global variables.
+Here are some examples showcasing the arbitrary-precision feature of the `Decimal` type. For some mathematical operations, the default precision (number of significant digits) is set to `28`. You can change the precision by passing the `precision` argument to the function. This default precision will be configurable globally in future when Mojo supports global variables.
 
 ```mojo
 from decimo.prelude import *
@@ -111,7 +111,7 @@ fn main() raises:
     print(a + b)  # 123458023.691346789
     print(a - b)  # 123455554.555566789
     print(a * b)  # 152415787654.32099750190521
-    print(a.true_divide(b + 1))  # 99919.0656560820700835791386582569736
+    print(a.true_divide(b + 1))  # 99919.06565608207008357913866
 
     # === Exponential Functions === #
     print(a.sqrt(precision=80))

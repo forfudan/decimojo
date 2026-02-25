@@ -37,7 +37,7 @@ comptime BDec = BigDecimal
 comptime Decimal = BigDecimal
 """An arbitrary-precision decimal, similar to Python's `decimal.Decimal`."""
 
-comptime PRECISION = 36
+comptime PRECISION = 28  # Same as Python's decimal module default precision of 28 places.
 """Default precision for BigDecimal operations.
 This will be configurable in future when Mojo supports global variables.
 """

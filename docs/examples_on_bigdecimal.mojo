@@ -11,7 +11,7 @@ fn main() raises:
     print(a + b)  # 123458023.691346789
     print(a - b)  # 123455554.555566789
     print(a * b)  # 152415787654.32099750190521
-    print(a.true_divide(b + 1))  # 99919.0656560820700835791386582569736
+    print(a.true_divide(b + 1))  # 99919.06565608207008357913866
 
     # === Exponential Functions === #
     print(a.sqrt(precision=80))

@@ -35,6 +35,7 @@ from decimo.rounding_mode import RoundingMode
 import decimo.decimal128.utility
 
 comptime Dec128 = Decimal128
+"""A 128-bit fixed-point decimal number."""
 
 
 @register_passable("trivial")
@@ -48,7 +49,7 @@ struct Decimal128(
     Stringable,
     Writable,
 ):
-    """Represents a 128-bit fixed-point decimal number.
+    """A 128-bit fixed-point decimal number.
 
     Notes:
 

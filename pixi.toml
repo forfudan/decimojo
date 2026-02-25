@@ -10,6 +10,7 @@ version = "0.8.0"
 
 [dependencies]
 mojo = "==0.26.1"
+argmojo = ">=0.1.0,<0.2"
 
 [tasks]
 # format the code

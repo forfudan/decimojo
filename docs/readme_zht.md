@@ -98,7 +98,7 @@ from decimo import *
 
 ---
 
-以下是一些展示 `BigDecimal` 類型（別名：`BDec` 和 `Decimal`）任意精度特性的例子。對於某些數學運算，默認精度（有效數字位數）設為 `36`。您可以通過向函數傳遞 `precision` 參數來更改精度。當 Mojo 支持全局變量時，此默認精度將可以全局配置。
+以下是一些展示 `BigDecimal` 類型（別名：`BDec` 和 `Decimal`）任意精度特性的例子。對於某些數學運算，默認精度（有效數字位數）設為 `28`。您可以通過向函數傳遞 `precision` 參數來更改精度。當 Mojo 支持全局變量時，此默認精度將可以全局配置。
 
 ```mojo
 from decimo.prelude import *
@@ -114,7 +114,7 @@ fn main() raises:
     print(a + b)  # 123458023.691346789
     print(a - b)  # 123455554.555566789
     print(a * b)  # 152415787654.32099750190521
-    print(a.true_divide(b + 1))  # 99919.0656560820700835791386582569736
+    print(a.true_divide(b + 1))  # 99919.06565608207008357913866
 
     # === 指數函數 === #
     print(a.sqrt(precision=80))

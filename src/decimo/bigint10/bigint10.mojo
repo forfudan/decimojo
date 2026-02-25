@@ -346,7 +346,7 @@ struct BigInt10(
         Examples:
         ```mojo
         from python import Python
-        from decimo.prelude import *
+        from decimo.bigint10.bigint10 import BigInt10
 
         fn main() raises:
             var py = Python.import_module("builtins")

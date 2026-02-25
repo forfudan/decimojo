@@ -29,7 +29,6 @@ from .decimal128.decimal128 import Decimal128, Dec128
 from .bigint.bigint import BigInt, BInt
 from .biguint.biguint import BigUInt, BUInt
 from .bigdecimal.bigdecimal import BigDecimal, BDec, Decimal
-from .bigdecimal.exponential import MathCache
 from .rounding_mode import (
     RoundingMode,
     ROUND_DOWN,

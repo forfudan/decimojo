@@ -10,6 +10,7 @@ environments:
       linux-64:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_libgcc_mutex-0.1-conda_forge.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-2_gnu.tar.bz2
+      - conda: https://repo.prefix.dev/modular-community/linux-64/argmojo-0.1.0-hb0f4dca_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/bzip2-1.0.8-h4bc722e_7.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ca-certificates-2025.7.14-hbd8a1cb_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/click-8.2.1-pyh707e725_0.conda
@@ -58,6 +59,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zeromq-4.3.5-h3b0a872_7.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhd8ed1ab_0.conda
       osx-arm64:
+      - conda: https://repo.prefix.dev/modular-community/osx-arm64/argmojo-0.1.0-h60d57d3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/bzip2-1.0.8-h99b78c6_7.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ca-certificates-2025.7.14-hbd8a1cb_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/click-8.2.1-pyh707e725_0.conda
@@ -118,6 +120,22 @@ packages:
   license_family: BSD
   size: 23621
   timestamp: 1650670423406
+- conda: https://repo.prefix.dev/modular-community/linux-64/argmojo-0.1.0-hb0f4dca_0.conda
+  sha256: d8079bdcc2ed18af5df87b08e9de07bc6815b0999e721f2b1f18d404b0556a36
+  md5: 371575b6d132a0b34da84cdacb3558e7
+  depends:
+  - mojo-compiler 0.26.1.*
+  license: Apache-2.0
+  size: 1246432
+  timestamp: 1772049474332
+- conda: https://repo.prefix.dev/modular-community/osx-arm64/argmojo-0.1.0-h60d57d3_0.conda
+  sha256: 9f7453f4b4cc393f95782719cba7cb4361d6a9a83fab471d33566d280c879c7c
+  md5: 6d72608b39e7d4a83594ffbac14a87d1
+  depends:
+  - mojo-compiler 0.26.1.*
+  license: Apache-2.0
+  size: 1245438
+  timestamp: 1772049389471
 - conda: https://conda.anaconda.org/conda-forge/linux-64/bzip2-1.0.8-h4bc722e_7.conda
   sha256: 5ced96500d945fb286c9c838e54fa759aa04a7129c59800f0846b4335cee770d
   md5: 62ee74e96c5ebb0af99386de58cf9553

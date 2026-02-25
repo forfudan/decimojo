@@ -18,11 +18,17 @@
 """
 
 comptime ROUND_DOWN = RoundingMode.ROUND_DOWN
+"""Rounding mode: Truncate (toward zero)."""
 comptime ROUND_HALF_UP = RoundingMode.ROUND_HALF_UP
+"""Rounding mode: Round away from zero if >= 0.5."""
 comptime ROUND_HALF_EVEN = RoundingMode.ROUND_HALF_EVEN
+"""Rounding mode: Round to nearest even digit if equidistant (banker's rounding)."""
 comptime ROUND_UP = RoundingMode.ROUND_UP
+"""Rounding mode: Round away from zero."""
 comptime ROUND_CEILING = RoundingMode.ROUND_CEILING
+"""Rounding mode: Round toward positive infinity."""
 comptime ROUND_FLOOR = RoundingMode.ROUND_FLOOR
+"""Rounding mode: Round toward negative infinity."""
 
 
 struct RoundingMode(Copyable, ImplicitlyCopyable, Movable, Stringable):
