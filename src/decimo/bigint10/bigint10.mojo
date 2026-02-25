@@ -807,29 +807,43 @@ struct BigInt10(
     # Internal methods
     # ===------------------------------------------------------------------=== #
 
+    fn internal_representation(self) raises -> String:
+        """Returns the internal representation details as a String."""
+        # Collect all labels to find max width
+        var max_label_len = len("number:")
+        for i in range(len(self.magnitude.words)):
+            var label_len = len("word :") + len(String(i))
+            if label_len > max_label_len:
+                max_label_len = label_len
+
+        var col = max_label_len + 4  # 4 spaces after longest label
+        var value_width = 30
+        var sep_line = String("-") * (col + value_width)
+
+        var result = String("\nInternal Representation Details of BigInt10\n")
+        result += sep_line + "\n"
+
+        # number line
+        var string_of_number = self.to_string(line_width=value_width).split(
+            "\n"
+        )
+        result += "number:" + String(" ") * (col - len("number:"))
+        for i in range(len(string_of_number)):
+            if i > 0:
+                result += String(" ") * col
+            result += string_of_number[i] + "\n"
+
+        # word lines
+        for i in range(len(self.magnitude.words)):
+            var label = "word " + String(i) + ":"
+            result += label + String(" ") * (col - len(label))
+            result += (
+                String(self.magnitude.words[i]).rjust(9, fillchar="0") + "\n"
+            )
+
+        result += sep_line
+        return result^
+
     fn print_internal_representation(self) raises:
         """Prints the internal representation details of a BigInt10."""
-        var string_of_number = self.to_string(line_width=30).split("\n")
-        print("\nInternal Representation Details of BigInt10")
-        print("----------------------------------------------")
-        print("number:         ", end="")
-        for i in range(0, len(string_of_number)):
-            if i > 0:
-                print(" " * 16, end="")
-            print(string_of_number[i])
-        for i in range(len(self.magnitude.words)):
-            var ndigits = 1
-            if i < 10:
-                pass
-            elif i < 100:
-                ndigits = 2
-            else:
-                ndigits = 3
-            print(
-                String("word {}:{}{}")
-                .format(
-                    i, " " * (10 - ndigits), String(self.magnitude.words[i])
-                )
-                .rjust(9, fillchar="0")
-            )
-        print("----------------------------------------------")
+        print(self.internal_representation())

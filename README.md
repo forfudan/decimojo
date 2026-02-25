@@ -35,7 +35,7 @@ The auxiliary types include a base-10 arbitrary-precision signed integer type (`
 
 ---
 
-**Decimo** combines "**De**cimal" and "**Mo**jo" - reflecting its purpose and implementation language. "Decimo" is also a Latin word meaning "tenth" and is the root of the word "decimal".
+**Decimo** combines "**Deci**mal" and "**Mo**jo" - reflecting its purpose and implementation language. "Decimo" is also a Latin word meaning "tenth" and is the root of the word "decimal".
 
 ---
 

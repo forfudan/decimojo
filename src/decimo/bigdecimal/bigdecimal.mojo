@@ -33,9 +33,9 @@ from decimo.bigdecimal.rounding import round_to_precision
 from decimo.bigint10.bigint10 import BigInt10
 
 comptime BDec = BigDecimal
-"""Short alias for `BigDecimal`."""
+"""An arbitrary-precision decimal, similar to Python's `decimal.Decimal`."""
 comptime Decimal = BigDecimal
-"""Python-like alias for `BigDecimal`."""
+"""An arbitrary-precision decimal, similar to Python's `decimal.Decimal`."""
 
 comptime PRECISION = 36
 """Default precision for BigDecimal operations.
@@ -56,7 +56,7 @@ struct BigDecimal(
     Stringable,
     Writable,
 ):
-    """Represents a arbitrary-precision decimal.
+    """An arbitrary-precision decimal, similar to Python's `decimal.Decimal`.
 
     Notes:
 
@@ -1325,45 +1325,73 @@ struct BigDecimal(
         )
         self.scale += precision_diff
 
+    fn internal_representation(self) -> String:
+        """Returns the internal representation of the BigDecimal as a String."""
+        # Collect all labels to find max width
+        var fixed_labels = List[String]()
+        fixed_labels.append("number:")
+        fixed_labels.append("coefficient:")
+        fixed_labels.append("negative:")
+        fixed_labels.append("scale:")
+        var max_label_len = 0
+        for i in range(len(fixed_labels)):
+            if len(fixed_labels[i]) > max_label_len:
+                max_label_len = len(fixed_labels[i])
+        for i in range(len(self.coefficient.words)):
+            var label_len = len("word :") + len(String(i))
+            if label_len > max_label_len:
+                max_label_len = label_len
+
+        var col = max_label_len + 4  # 4 spaces after longest label
+        var value_width = 30
+        var sep_line = String("-") * (col + value_width)
+
+        var result = String("\nInternal Representation Details of BigDecimal\n")
+        result += sep_line + "\n"
+
+        # number line
+        var string_of_number = self.to_string(line_width=value_width).split(
+            "\n"
+        )
+        result += "number:" + String(" ") * (col - len("number:"))
+        for i in range(len(string_of_number)):
+            if i > 0:
+                result += String(" ") * col
+            result += string_of_number[i] + "\n"
+
+        # coefficient line
+        var string_of_coefficient = self.coefficient.to_string(
+            line_width=value_width
+        ).split("\n")
+        var coeff_label = String("coefficient:")
+        result += coeff_label + String(" ") * (col - len(coeff_label))
+        for i in range(len(string_of_coefficient)):
+            if i > 0:
+                result += String(" ") * col
+            result += string_of_coefficient[i] + "\n"
+
+        # negative line
+        result += "negative:" + String(" ") * (col - len("negative:"))
+        result += String(self.sign) + "\n"
+
+        # scale line
+        result += "scale:" + String(" ") * (col - len("scale:"))
+        result += String(self.scale) + "\n"
+
+        # word lines
+        for i in range(len(self.coefficient.words)):
+            var label = "word " + String(i) + ":"
+            result += label + String(" ") * (col - len(label))
+            result += (
+                String(self.coefficient.words[i]).rjust(9, fillchar="0") + "\n"
+            )
+
+        result += sep_line
+        return result^
+
     fn print_internal_representation(self):
         """Prints the internal representation of the BigDecimal."""
-        var line_width = 30
-        var string_of_number = self.to_string(line_width=line_width).split("\n")
-        var string_of_coefficient = self.coefficient.to_string(
-            line_width=line_width
-        ).split("\n")
-        print("\nInternal Representation Details of BigDecimal")
-        print("----------------------------------------------")
-        print("number:         ", end="")
-        for i in range(0, len(string_of_number)):
-            if i > 0:
-                print(" " * 16, end="")
-            print(string_of_number[i])
-        print("coefficient:    ", end="")
-        for i in range(0, len(string_of_coefficient)):
-            if i > 0:
-                print(" " * 16, end="")
-            print(String(string_of_coefficient[i]))
-        print("negative:      ", self.sign)
-        print("scale:         ", self.scale)
-        for i in range(len(self.coefficient.words)):
-            var ndigits = 1
-            if i < 10:
-                pass
-            elif i < 100:
-                ndigits = 2
-            else:
-                ndigits = 3
-            print(
-                String(
-                    "word ",
-                    i,
-                    ":",
-                    " " * (10 - ndigits),
-                    self.coefficient.words[i],
-                ).rjust(9, fillchar="0")
-            )
-        print("----------------------------------------------")
+        print(self.internal_representation())
 
     fn print_representation_as_components(self):
         """Prints the representation of the BigDecimal as components."""

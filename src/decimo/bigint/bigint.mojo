@@ -25,9 +25,6 @@ mathematical methods that do not implement a trait.
 BigInt is the core binary-represented arbitrary-precision signed integer
 for the Decimo library. It uses base-2^32 representation with UInt32 words
 in little-endian order, and a separate sign bit.
-
-Once BigInt is stable and performant, the alias `BInt` will be
-reassigned from BigInt10 to BigInt, making BigInt the primary integer type.
 """
 
 from memory import UnsafePointer, memcpy
@@ -44,7 +41,7 @@ from decimo.errors import DecimoError, ConversionError
 
 # Type aliases
 comptime BInt = BigInt
-"""A shorter comptime for BigInt."""
+"""An arbitrary-precision signed integer, similar to Python's `int`."""
 
 
 struct BigInt(
@@ -57,7 +54,7 @@ struct BigInt(
     Stringable,
     Writable,
 ):
-    """Represents an arbitrary-precision binary signed integer.
+    """An arbitrary-precision signed integer, similar to Python's `int`.
 
     Notes:
 
@@ -1270,36 +1267,75 @@ struct BigInt(
         if self.is_zero():
             self.sign = False
 
+    fn internal_representation(self) -> String:
+        """Returns the internal representation details as a String."""
+        # Collect all labels to find max width
+        var fixed_labels = List[String]()
+        fixed_labels.append("number:")
+        fixed_labels.append("number (hex):")
+        fixed_labels.append("sign:")
+        var max_label_len = 0
+        for i in range(len(fixed_labels)):
+            if len(fixed_labels[i]) > max_label_len:
+                max_label_len = len(fixed_labels[i])
+        # Check word labels
+        for i in range(len(self.words)):
+            var label_len = len("word :") + len(String(i))
+            if label_len > max_label_len:
+                max_label_len = label_len
+
+        var col = max_label_len + 4  # 4 spaces after longest label
+        var value_width = 30
+        var sep_line = String("-") * (col + value_width)
+
+        var result = String("\nInternal Representation Details of BigInt\n")
+        result += sep_line + "\n"
+
+        # number line
+        var string_of_number = self.to_decimal_string(
+            line_width=value_width
+        ).split("\n")
+        result += "number:" + String(" ") * (col - len("number:"))
+        for i in range(len(string_of_number)):
+            if i > 0:
+                result += String(" ") * col
+            result += string_of_number[i] + "\n"
+
+        # number (hex) line
+        var hex_str = self.to_hex_string()
+        var hex_label = String("number (hex):")
+        result += hex_label + String(" ") * (col - len(hex_label))
+        var hex_start = 0
+        var first_hex_line = True
+        while hex_start + value_width < len(hex_str):
+            if not first_hex_line:
+                result += String(" ") * col
+            result += (
+                String(hex_str[hex_start : hex_start + value_width]) + "\n"
+            )
+            hex_start += value_width
+            first_hex_line = False
+        if not first_hex_line:
+            result += String(" ") * col
+        result += String(hex_str[hex_start:]) + "\n"
+
+        # sign line
+        result += "sign:" + String(" ") * (col - len("sign:"))
+        result += String("negative" if self.sign else "non-negative") + "\n"
+
+        # word lines
+        for i in range(len(self.words)):
+            var label = "word " + String(i) + ":"
+            result += label + String(" ") * (col - len(label))
+            result += "0x" + hex(self.words[i])[2:].rjust(8, fillchar="0")
+            result += "  (" + String(self.words[i]) + ")\n"
+
+        result += sep_line
+        return result^
+
     fn print_internal_representation(self):
         """Prints the internal representation details."""
-        print("\nInternal Representation Details of BigInt")
-        print("------------------------------------------------")
-        print("decimal:        " + self.to_decimal_string())
-        print("hex:            " + self.to_hex_string())
-        print(
-            "sign:           "
-            + String("negative" if self.sign else "non-negative")
-        )
-        print("words:          " + String(len(self.words)))
-        for i in range(len(self.words)):
-            var ndigits = 1
-            if i >= 100:
-                ndigits = 3
-            elif i >= 10:
-                ndigits = 2
-            print(
-                "  word ",
-                i,
-                ":",
-                " " * (6 - ndigits),
-                "0x",
-                hex(self.words[i])[2:].rjust(8, fillchar="0"),
-                "  (",
-                self.words[i],
-                ")",
-                sep="",
-            )
-        print("------------------------------------------------")
+        print(self.internal_representation())
 
 
 # ===----------------------------------------------------------------------=== #
