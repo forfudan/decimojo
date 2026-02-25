@@ -2,7 +2,7 @@
 
 This is a list of changes for the Decimo package (formerly DeciMojo).
 
-## 20260303 (v0.8.0)
+## 20260225 (v0.8.0)
 
 > **Library renamed from `decimojo` to `decimo`.** The package name, import path, and all public references have been updated. GitHub repository will be renamed to `forfudan/decimo` (GitHub auto-redirects the old URL).
 

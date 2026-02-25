@@ -1576,23 +1576,55 @@ struct Decimal128(
 
         return result
 
+    fn internal_representation(self) -> String:
+        """Returns the internal representation details as a String."""
+        # All labels
+        var labels = List[String]()
+        labels.append("Decimal128:")
+        labels.append("coefficient:")
+        labels.append("scale:")
+        labels.append("is negative:")
+        labels.append("is zero:")
+        labels.append("low:")
+        labels.append("mid:")
+        labels.append("high:")
+        labels.append("low byte:")
+        labels.append("mid byte:")
+        labels.append("high byte:")
+        labels.append("flags byte:")
+
+        var max_label_len = 0
+        for i in range(len(labels)):
+            if len(labels[i]) > max_label_len:
+                max_label_len = len(labels[i])
+
+        var col = max_label_len + 4  # 4 spaces after longest label
+
+        fn pad(label: String) -> String:
+            return label + String(" ") * (col - len(label))
+
+        var sep_line = String("-") * (col + 30)
+
+        var result = String("\nInternal Representation Details of Decimal128\n")
+        result += sep_line + "\n"
+        result += pad("Decimal128:") + String(self) + "\n"
+        result += pad("coefficient:") + String(self.coefficient()) + "\n"
+        result += pad("scale:") + String(self.scale()) + "\n"
+        result += pad("is negative:") + String(self.is_negative()) + "\n"
+        result += pad("is zero:") + String(self.is_zero()) + "\n"
+        result += pad("low:") + String(self.low) + "\n"
+        result += pad("mid:") + String(self.mid) + "\n"
+        result += pad("high:") + String(self.high) + "\n"
+        result += pad("low byte:") + hex(self.low) + "\n"
+        result += pad("mid byte:") + hex(self.mid) + "\n"
+        result += pad("high byte:") + hex(self.high) + "\n"
+        result += pad("flags byte:") + hex(self.flags) + "\n"
+        result += sep_line
+        return result^
+
     fn print_internal_representation(self):
         """Prints the internal representation details of a Decimal128."""
-        print("\nInternal Representation Details:")
-        print("--------------------------------")
-        print("Decimal128:    ", self)
-        print("coefficient:   ", self.coefficient())
-        print("scale:         ", self.scale())
-        print("is negative:   ", self.is_negative())
-        print("is zero:       ", self.is_zero())
-        print("low:           ", self.low)
-        print("mid:           ", self.mid)
-        print("high:          ", self.high)
-        print("low byte:      ", hex(self.low))
-        print("mid byte:      ", hex(self.mid))
-        print("high byte:     ", hex(self.high))
-        print("flags byte:    ", hex(self.flags))
-        print("--------------------------------")
+        print(self.internal_representation())
 
     @always_inline
     fn is_integer(self) -> Bool:
