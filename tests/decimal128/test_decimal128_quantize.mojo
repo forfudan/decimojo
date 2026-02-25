@@ -6,8 +6,8 @@ with Python's decimal module implementation.
 
 import testing
 from python import Python, PythonObject
-from decimojo.decimal128.decimal128 import Decimal128
-from decimojo.rounding_mode import RoundingMode
+from decimo.decimal128.decimal128 import Decimal128
+from decimo.rounding_mode import RoundingMode
 
 
 fn test_basic_quantization() raises:
@@ -15,7 +15,7 @@ fn test_basic_quantization() raises:
     # print("Testing basic quantization...")
 
     var pydecimal = Python.import_module("decimal")
-    pydecimal.getcontext().prec = 28  # Match DeciMojo's precision
+    pydecimal.getcontext().prec = 28  # Match Decimo's precision
 
     var value1 = Decimal128("3.14159")
     var quant1 = Decimal128("0.01")
@@ -362,7 +362,7 @@ fn test_comprehensive_comparison() raises:
 
     # Set up Python decimal
     var pydecimal = Python.import_module("decimal")
-    pydecimal.getcontext().prec = 28  # Match DeciMojo's precision
+    pydecimal.getcontext().prec = 28  # Match Decimo's precision
 
     # Define rounding modes to test
     var mojo_round_half_even = RoundingMode.half_even()

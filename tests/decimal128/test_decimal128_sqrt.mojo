@@ -7,9 +7,9 @@ inline for startswith, tolerance, identity, and exception tests.
 import testing
 import tomlmojo
 
-from decimojo.decimal128.decimal128 import Decimal128, Dec128
-from decimojo.rounding_mode import RoundingMode
-from decimojo.tests import parse_file, load_test_cases
+from decimo.decimal128.decimal128 import Decimal128, Dec128
+from decimo.rounding_mode import RoundingMode
+from decimo.tests import parse_file, load_test_cases
 
 comptime data_path = "tests/decimal128/test_data/decimal128_sqrt.toml"
 
@@ -77,7 +77,7 @@ fn test_sqrt_edge_special() raises:
 
     # sqrt(10^27) — startswith check
     var very_large = Decimal128.from_uint128(
-        decimojo.decimal128.utility.power_of_10[DType.uint128](27)
+        decimo.decimal128.utility.power_of_10[DType.uint128](27)
     )
     testing.assert_true(
         String(very_large.sqrt()).startswith("31622776601683.79331998893544"),

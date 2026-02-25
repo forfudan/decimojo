@@ -2,7 +2,7 @@
 
 A native TOML v1.0 parser for [Mojo](https://www.modular.com/mojo).
 
-**[Repository on GitHub»](https://github.com/forfudan/decimojo/tree/main/src/tomlmojo)**　|　**[DeciMojo»](https://github.com/forfudan/decimojo)**
+**[Repository on GitHub»](https://github.com/forfudan/decimo/tree/main/src/tomlmojo)**　|　**[Decimo»](https://github.com/forfudan/decimo)**
 
 - [Overview](#overview)
 - [History](#history)
@@ -28,13 +28,13 @@ TOMLMojo is a lightweight, pure-Mojo TOML parser (~1,500 LOC) that implements th
 
 ## History
 
-TOMLMojo was initially developed in **April 2025** alongside [DeciMojo](https://github.com/forfudan/decimojo) v0.3.0 to support DeciMojo's TOML-based test data system. At that time, no TOML parser existed in the Mojo ecosystem, so I wrote one from scratch.
+TOMLMojo was initially developed in **April 2025** alongside [Decimo](https://github.com/forfudan/decimo) v0.3.0 to support Decimo's TOML-based test data system. At that time, no TOML parser existed in the Mojo ecosystem, so I wrote one from scratch.
 
-Currently, **DeciMojo heavily depends on TOMLMojo** for its entire testing and benchmarking infrastructure. All test cases and benchmark configurations are stored as TOML files and loaded via TOMLMojo's `parse_file()` API.
+Currently, **Decimo heavily depends on TOMLMojo** for its entire testing and benchmarking infrastructure. All test cases and benchmark configurations are stored as TOML files and loaded via TOMLMojo's `parse_file()` API.
 
 While originally built for internal use, TOMLMojo has grown into a general-purpose TOML library suitable for any Mojo project that needs to parse configuration files or structured data.
 
-The version number of TOMLMojo is aligned with the latest version of DeciMojo.
+The version number of TOMLMojo is aligned with the latest version of Decimo.
 
 ## Installation
 
@@ -266,4 +266,4 @@ Constants: `NULL`, `STRING`, `INTEGER`, `FLOAT`, `BOOLEAN`, `ARRAY`, `TABLE`.
 
 ## License
 
-TOMLMojo is part of the [DeciMojo](https://github.com/forfudan/decimojo) project and is licensed under the Apache License v2.0.
+TOMLMojo is part of the [Decimo](https://github.com/forfudan/decimo) project and is licensed under the Apache License v2.0.

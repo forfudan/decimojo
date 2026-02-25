@@ -5,9 +5,9 @@ Cases are generated programmatically — no TOML data file.
 """
 
 from time import perf_counter_ns
-from decimojo import BigUInt
-from decimojo.biguint.arithmetics import floor_divide
-from decimojo.tests import open_log_file, log_print, print_header
+from decimo import BigUInt
+from decimo.biguint.arithmetics import floor_divide
+from decimo.tests import open_log_file, log_print, print_header
 from python import Python, PythonObject
 from collections import List
 
@@ -74,9 +74,7 @@ fn benchmark_divide_at_size(
 
 fn main() raises:
     var log_file = open_log_file("benchmark_divide_complexity")
-    print_header(
-        "DeciMojo BigUInt Division Time Complexity Benchmark", log_file
-    )
+    print_header("Decimo BigUInt Division Time Complexity Benchmark", log_file)
 
     log_print("", log_file)
     log_print(

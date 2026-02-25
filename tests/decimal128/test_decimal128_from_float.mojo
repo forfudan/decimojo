@@ -5,7 +5,7 @@ inline rather than TOML-driven.
 """
 
 import testing
-from decimojo import Dec128
+from decimo import Dec128
 
 
 fn test_simple_integers() raises:

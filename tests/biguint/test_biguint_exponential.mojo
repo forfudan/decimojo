@@ -7,8 +7,8 @@ from python import Python
 from random import random_ui64
 import testing
 from testing import assert_equal, assert_true
-from decimojo.biguint.biguint import BigUInt
-from decimojo.tests import TestCase, parse_file, load_test_cases
+from decimo.biguint.biguint import BigUInt
+from decimo.tests import TestCase, parse_file, load_test_cases
 
 comptime file_path_sqrt = "tests/biguint/test_data/biguint_sqrt.toml"
 
@@ -71,16 +71,16 @@ fn test_biguint_sqrt_random_numbers_against_python() raises:
         number_a = String("")
         for _i in range(666):
             number_a += String(random_ui64(0, 999_999_999_999_999_999))
-        decimojo_result = String(BigUInt(number_a).sqrt())
+        decimo_result = String(BigUInt(number_a).sqrt())
         python_result = String(pymath.isqrt(Python.int(number_a)))
         assert_equal(
-            lhs=decimojo_result,
+            lhs=decimo_result,
             rhs=python_result,
             msg="Python int isqrt does not match BigUInt sqrt\n"
             + "number a: \n"
             + number_a
-            + "\n\nDeciMojo BigUInt sqrt: \n"
-            + decimojo_result
+            + "\n\nDecimo BigUInt sqrt: \n"
+            + decimo_result
             + "\n\nPython int sqrt: \n"
             + python_result,
         )

@@ -4,7 +4,7 @@ with positive, negative, mixed-sign, and consistency checks.
 """
 
 import testing
-from decimojo.bigint.bigint import BigInt
+from decimo.bigint.bigint import BigInt
 
 
 # ===----------------------------------------------------------------------=== #

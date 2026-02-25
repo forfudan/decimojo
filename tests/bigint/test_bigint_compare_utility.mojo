@@ -4,7 +4,7 @@ is_one_or_minus_one, and __iadd__(Int).
 """
 
 import testing
-from decimojo.bigint.bigint import BigInt
+from decimo.bigint.bigint import BigInt
 
 
 # ===----------------------------------------------------------------------=== #

@@ -4,8 +4,8 @@ This file loads TOML cases with an extra `op` field (==, <, >, <=, >=, !=)
 not handled by the standard BenchCase loader.
 """
 
-from decimojo import Decimal128
-from decimojo.tests import (
+from decimo import Decimal128
+from decimo.tests import (
     parse_file,
     expand_value,
     open_log_file,
@@ -20,7 +20,7 @@ from collections import List
 
 fn main() raises:
     var log_file = open_log_file("benchmark_comparison")
-    print_header("DeciMojo Decimal128 Comparison Benchmark", log_file)
+    print_header("Decimo Decimal128 Comparison Benchmark", log_file)
 
     var pydecimal = Python.import_module("decimal")
     pydecimal.getcontext().prec = 28

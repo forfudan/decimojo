@@ -47,7 +47,7 @@ Direct memcpy is theoretically possible because:
 However, this approach is **NOT** used due to significant practical issues:
 
 1. No mature API for direct access.
-1. Using direct memory access would require unsafe pointer manipulation, breaking DeciMojo's current design principles of using safe Mojo as much as possible.
+1. Using direct memory access would require unsafe pointer manipulation, breaking Decimo's current design principles of using safe Mojo as much as possible.
 1. Platform dependency. 32-bit systems use base 10^4 (incompatible with BigDecimal's 10^9). This would require runtime platform detection.
 1. Maintenance burden. CPython internal structure (`mpd_t`) may change between versions.
 1. Marginal performance gain. `as_tuple()` overhead: O(n) where n = number of digits. Direct memcpy: O(m) where m = number of limbs. Theoretical speedup: ~10x. But how often are users really converting Python decimals to BigDecimal?

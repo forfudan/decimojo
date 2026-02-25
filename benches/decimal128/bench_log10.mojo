@@ -1,7 +1,7 @@
 """Benchmarks for Decimal128 log10() function. Compares against Python decimal."""
 
-from decimojo import Decimal128
-from decimojo.tests import (
+from decimo import Decimal128
+from decimo.tests import (
     BenchCase,
     load_bench_cases,
     open_log_file,
@@ -59,7 +59,7 @@ fn run_case(
 
 fn main() raises:
     var log_file = open_log_file("benchmark_log10")
-    print_header("DeciMojo Decimal128 log10 Benchmark", log_file)
+    print_header("Decimo Decimal128 log10 Benchmark", log_file)
 
     var pydecimal = Python.import_module("decimal")
     pydecimal.getcontext().prec = 28

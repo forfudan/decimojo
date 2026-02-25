@@ -16,8 +16,8 @@ Test Decimal128.from_string() constructor including:
 import testing
 import tomlmojo
 
-from decimojo import Dec128
-from decimojo.tests import TestCase, parse_file, load_test_cases
+from decimo import Dec128
+from decimo.tests import TestCase, parse_file, load_test_cases
 
 comptime file_path = "tests/decimal128/test_data/decimal128_from_string.toml"
 

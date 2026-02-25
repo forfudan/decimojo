@@ -10,8 +10,8 @@ mathematical relationship verification.
 import testing
 import tomlmojo
 
-from decimojo import Decimal128, RoundingMode
-from decimojo.tests import parse_file, load_test_cases
+from decimo import Decimal128, RoundingMode
+from decimo.tests import parse_file, load_test_cases
 
 comptime data_path = "tests/decimal128/test_data/decimal128_divide.toml"
 

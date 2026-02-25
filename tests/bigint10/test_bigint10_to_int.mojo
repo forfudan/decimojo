@@ -5,8 +5,8 @@ for different numerical cases.
 
 import testing
 
-from decimojo.bigint10.bigint10 import BigInt10
-import decimojo.bigint10.arithmetics as arithmetics
+from decimo.bigint10.bigint10 import BigInt10
+import decimo.bigint10.arithmetics as arithmetics
 
 
 fn test_int_conversion() raises:

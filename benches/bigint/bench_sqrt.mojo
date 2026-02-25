@@ -1,10 +1,10 @@
 """Benchmarks for BigInt integer square root. Compares BigUInt, BigInt, and Python isqrt."""
 
-from decimojo.biguint.biguint import BigUInt
-from decimojo.bigint.bigint import BigInt
-import decimojo.bigint.arithmetics
-import decimojo.bigint.exponential
-from decimojo.tests import (
+from decimo.biguint.biguint import BigUInt
+from decimo.bigint.bigint import BigInt
+import decimo.bigint.arithmetics
+import decimo.bigint.exponential
+from decimo.tests import (
     BenchCase,
     load_bench_cases,
     load_bench_iterations,
@@ -89,7 +89,7 @@ fn main() raises:
     pysys.set_int_max_str_digits(10000000)
 
     var log_file = open_log_file("benchmark_bigint_sqrt")
-    print_header("DeciMojo BigInt Square Root Benchmark", log_file)
+    print_header("Decimo BigInt Square Root Benchmark", log_file)
 
     var cases = load_bench_cases("bench_data/sqrt.toml")
     var iterations = load_bench_iterations("bench_data/sqrt.toml")

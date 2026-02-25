@@ -1,8 +1,8 @@
 """Benchmarks for BigUInt subtraction. Compares BigUInt and Python int."""
 
-from decimojo.biguint.biguint import BigUInt
-import decimojo.biguint.arithmetics
-from decimojo.tests import (
+from decimo.biguint.biguint import BigUInt
+import decimo.biguint.arithmetics
+from decimo.tests import (
     BenchCase,
     load_bench_cases,
     load_bench_iterations,
@@ -74,7 +74,7 @@ fn main() raises:
 
     var toml_path = "bench_data/subtraction.toml"
     var log_file = open_log_file("benchmark_biguint_subtraction")
-    print_header("DeciMojo BigUInt Subtraction Benchmark", log_file)
+    print_header("Decimo BigUInt Subtraction Benchmark", log_file)
 
     var cases = load_bench_cases(toml_path)
     var iterations = load_bench_iterations(toml_path)

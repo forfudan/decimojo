@@ -7,7 +7,7 @@
 
 ## Background
 
-Benchmarks against `mpmath` (Python, backed by GMP/MPIR) show DeciMojo's trig and pi functions are significantly slower — ranging from ~200× slower (sin at low precision) to ~500,000× slower (pi at 10,000 digits). This is expected given DeciMojo's pure-Mojo base-10^9 arithmetic vs. GMP's highly optimized base-2^64 assembly core. The accuracy is excellent (full precision digits match WolframAlpha); this document is purely about performance.
+Benchmarks against `mpmath` (Python, backed by GMP/MPIR) show Decimo's trig and pi functions are significantly slower — ranging from ~200× slower (sin at low precision) to ~500,000× slower (pi at 10,000 digits). This is expected given Decimo's pure-Mojo base-10^9 arithmetic vs. GMP's highly optimized base-2^64 assembly core. The accuracy is excellent (full precision digits match WolframAlpha); this document is purely about performance.
 
 ## Identified Optimization Opportunities
 
@@ -66,13 +66,13 @@ This is the standard formulation used by y-cruncher, GMP's `mpfr_const_pi`, and 
 
 ### 8. Base Representation
 
-**Current:** DeciMojo uses base 10^9 with UInt32 words. GMP uses base 2^64 with native 64-bit words, which is inherently more efficient for binary hardware (full use of 64-bit multiply/divide, double the digits per word).
+**Current:** Decimo uses base 10^9 with UInt32 words. GMP uses base 2^64 with native 64-bit words, which is inherently more efficient for binary hardware (full use of 64-bit multiply/divide, double the digits per word).
 
-**Decision:** Changing to base 2^64 would fundamentally alter the library architecture (input/output conversion, all arithmetic routines, decimal scaling logic). **This is not planned** — DeciMojo is a decimal arithmetic library and the base-10^9 representation aligns with its purpose.
+**Decision:** Changing to base 2^64 would fundamentally alter the library architecture (input/output conversion, all arithmetic routines, decimal scaling logic). **This is not planned** — Decimo is a decimal arithmetic library and the base-10^9 representation aligns with its purpose.
 
 ### 9. GMP Backend Option (Long-Term Consideration)
 
-For users who need high-performance transcendental functions and are willing to accept a native dependency, a future option is to provide a GMP-backed implementation of sin, cos, pi, etc. at the lower level (similar to how mpmath delegates to GMP). DeciMojo would also continue to provide pure-Mojo fallbacks for environments where GMP is not available or where a dependency-free build is preferred.
+For users who need high-performance transcendental functions and are willing to accept a native dependency, a future option is to provide a GMP-backed implementation of sin, cos, pi, etc. at the lower level (similar to how mpmath delegates to GMP). Decimo would also continue to provide pure-Mojo fallbacks for environments where GMP is not available or where a dependency-free build is preferred.
 
 This would be a separate module or compile-time feature flag, not a replacement for the existing pure-Mojo code.
 

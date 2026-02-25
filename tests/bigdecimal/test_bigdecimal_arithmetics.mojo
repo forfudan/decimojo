@@ -10,8 +10,8 @@ Test BigDecimal arithmetic operations including:
 from python import Python
 import testing
 
-from decimojo import BDec
-from decimojo.tests import TestCase, parse_file, load_test_cases
+from decimo import BDec
+from decimo.tests import TestCase, parse_file, load_test_cases
 
 comptime file_path = "tests/bigdecimal/test_data/bigdecimal_arithmetics.toml"
 

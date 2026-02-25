@@ -5,9 +5,9 @@ Cases are generated programmatically — no TOML data file.
 """
 
 from time import perf_counter_ns
-from decimojo import BigUInt
-from decimojo.biguint.arithmetics import multiply
-from decimojo.tests import open_log_file, log_print, print_header
+from decimo import BigUInt
+from decimo.biguint.arithmetics import multiply
+from decimo.tests import open_log_file, log_print, print_header
 from python import Python, PythonObject
 from collections import List
 
@@ -63,7 +63,7 @@ fn benchmark_multiply_at_size(
 fn main() raises:
     var log_file = open_log_file("benchmark_multiply_complexity")
     print_header(
-        "DeciMojo BigUInt Multiplication Time Complexity Benchmark", log_file
+        "Decimo BigUInt Multiplication Time Complexity Benchmark", log_file
     )
 
     log_print("", log_file)

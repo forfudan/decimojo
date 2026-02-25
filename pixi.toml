@@ -1,9 +1,9 @@
 [workspace]
 authors = ["ZHU Yuhao 朱宇浩 <dr.yuhao.zhu@outlook.com>"]
 channels = ["https://conda.modular.com/max-nightly", "https://conda.modular.com/max", "https://repo.prefix.dev/modular-community", "conda-forge"]
-description = "An arbitrary-precision decimal and integer mathematics library for Mojo"
+description = "An arbitrary-precision decimal and integer library for Mojo"
 license = "Apache-2.0"
-name = "decimojo"
+name = "decimo"
 platforms = ["osx-arm64", "linux-64"]
 readme = "README.md"
 version = "0.8.0"
@@ -17,13 +17,13 @@ format = "pixi run mojo format ./src && pixi run mojo format ./benches && pixi r
 
 # compile the package
 p = "clear && pixi run package"
-package = "pixi run format && pixi run package_decimojo && pixi run package_tomlmojo"
-package_decimojo = "pixi run mojo package src/decimojo && cp decimojo.mojopkg tests/ && cp decimojo.mojopkg benches/ && rm decimojo.mojopkg"
+package = "pixi run format && pixi run package_decimo && pixi run package_tomlmojo"
+package_decimo = "pixi run mojo package src/decimo && cp decimo.mojopkg tests/ && cp decimo.mojopkg benches/ && rm decimo.mojopkg"
 package_tomlmojo = "pixi run mojo package src/tomlmojo && cp tomlmojo.mojopkg tests/ && cp tomlmojo.mojopkg benches/ && rm tomlmojo.mojopkg"
 
 # clean the package files in tests folder
 c = "clear && pixi run clean"
-clean = "rm tests/decimojo.mojopkg && rm benches/decimojo.mojopkg && rm tests/tomlmojo.mojopkg && rm benches/tomlmojo.mojopkg"
+clean = "rm tests/decimo.mojopkg && rm benches/decimo.mojopkg && rm tests/tomlmojo.mojopkg && rm benches/tomlmojo.mojopkg"
 
 # tests (use the mojo testing tool)
 b = "clear && pixi run package && bash ./tests/test_big.sh"
@@ -43,4 +43,4 @@ buint_debug = "clear && pixi run package && cd benches/biguint && pixi run mojo 
 dec_debug = "clear && pixi run package && cd benches/decimal128 && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
 
 # doc
-doc = "clear && pixi run mojo doc -o docs/doc.json --diagnose-missing-doc-strings --validate-doc-strings src/decimojo"
+doc = "clear && pixi run mojo doc -o docs/doc.json --diagnose-missing-doc-strings --validate-doc-strings src/decimo"

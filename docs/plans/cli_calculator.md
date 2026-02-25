@@ -1,14 +1,14 @@
-# DeciMojo CLI Calculator (`deci`)
+# Decimo CLI Calculator (`deci`)
 
-> A native arbitrary-precision command-line calculator powered by DeciMojo and ArgMojo.
+> A native arbitrary-precision command-line calculator powered by Decimo and ArgMojo.
 
 ## Motivation
 
-DeciMojo provides arbitrary-precision decimal arithmetic in Mojo, but currently lacks a quick way for users to interact with it outside of writing Mojo programs. A CLI calculator would:
+Decimo provides arbitrary-precision decimal arithmetic in Mojo, but currently lacks a quick way for users to interact with it outside of writing Mojo programs. A CLI calculator would:
 
-- Serve as the primary demo/showcase for DeciMojo's capabilities.
+- Serve as the primary demo/showcase for Decimo's capabilities.
 - Provide a practical tool that outperforms `bc` (limited precision) and `python3 -c` (slow startup) for ad-hoc calculations.
-- Act as a real-world integration test for both [DeciMojo](https://github.com/forfudan/decimojo) and [ArgMojo](https://github.com/forfudan/argmojo).
+- Act as a real-world integration test for both [Decimo](https://github.com/forfudan/decimo) and [ArgMojo](https://github.com/forfudan/argmojo).
 - Compile to a single native binary with zero dependencies.
 
 ## Usage Design
@@ -49,7 +49,7 @@ deci --version
 ```txt
 ┌─────────────┐     ┌──────────┐     ┌────────────┐     ┌──────────┐     ┌──────────┐
 │    Shell    │────▶│ ArgMojo  │────▶│ Tokenizer  │────▶│  Parser  │────▶│ Evaluator│
-│   (argv)    │     │ (CLI)    │     │            │     │ (Shunt.) │     │(DeciMojo)│
+│   (argv)    │     │ (CLI)    │     │            │     │ (Shunt.) │     │(Decimo)│
 └─────────────┘     └──────────┘     └────────────┘     └──────────┘     └──────────┘
        │                  │                │                  │                │
   "100*2+1"         extract expr      [100,*,2,+,1]    RPN: [100,2,*,1,+]  BigDecimal
@@ -102,7 +102,7 @@ Operator precedence and associativity:
 
 Functions are pushed onto the operator stack and popped when their closing `)` is encountered.
 
-### Layer 4: Evaluator — DeciMojo Computation
+### Layer 4: Evaluator — Decimo Computation
 
 Walk the RPN queue with a `BigDecimal` stack:
 
@@ -110,11 +110,11 @@ Walk the RPN queue with a `BigDecimal` stack:
 - **Constant token** → push precomputed value (e.g., `compute_pi(precision)`).
 - **Binary operator** → pop two operands, compute, push result.
 - **Unary operator** → pop one operand, compute, push result.
-- **Function** → pop argument(s), call corresponding DeciMojo function, push result.
+- **Function** → pop argument(s), call corresponding Decimo function, push result.
 
-Mapping to DeciMojo API:
+Mapping to Decimo API:
 
-| Expression  | DeciMojo call                     |
+| Expression  | Decimo call                     |
 | ----------- | --------------------------------- |
 | `a + b`     | `a + b`                           |
 | `a - b`     | `a - b`                           |
@@ -146,7 +146,7 @@ Format the final `BigDecimal` result based on CLI flags:
 
 ### Phase 1: MVP — Four Operations
 
-1. Set up project structure (new repo or subdirectory under DeciMojo).
+1. Set up project structure (new repo or subdirectory under Decimo).
 2. Implement the tokenizer for numbers and `+ - * /` operators.
 3. Implement the shunting-yard parser with parentheses support.
 4. Implement the RPN evaluator using `BigDecimal`.

@@ -1,5 +1,5 @@
 #!/bin/bash
-# CLI dispatch for DeciMojo benchmarks
+# CLI dispatch for Decimo benchmarks
 # Usage: pixi run bench <type> [operation]
 #
 # Types: bigint (bint), biguint (buint), decimal128 (dec), bigdecimal (bdec)

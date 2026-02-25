@@ -11,8 +11,8 @@ Test Decimal128 arithmetic operations including:
 from python import Python
 import testing
 
-from decimojo import Dec128
-from decimojo.tests import TestCase, parse_file, load_test_cases
+from decimo import Dec128
+from decimo.tests import TestCase, parse_file, load_test_cases
 
 comptime file_path = "tests/decimal128/test_data/decimal128_arithmetics.toml"
 

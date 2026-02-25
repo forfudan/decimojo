@@ -100,7 +100,7 @@ entirely determined by BigUInt's performance, because:
 
 ## Benchmark Summary (latest results, macOS arm64, Apple Silicon)
 
-All benchmarks compare **DeciMojo BigDecimal** against **Python `decimal.Decimal`** (CPython 3.13, backed by `libmpdec`). Speedup = Python time / Mojo time. Values >1× mean Mojo is faster; <1× mean Python is faster.
+All benchmarks compare **Decimo BigDecimal** against **Python `decimal.Decimal`** (CPython 3.13, backed by `libmpdec`). Speedup = Python time / Mojo time. Values >1× mean Mojo is faster; <1× mean Python is faster.
 
 ### Overall Results by Operation
 
@@ -244,7 +244,7 @@ All benchmarks compare **DeciMojo BigDecimal** against **Python `decimal.Decimal
 > algorithm (`sqrt_exact`) for bit-perfect correctness, plus a hybrid `fast_isqrt`
 > accelerator (reciprocal sqrt approximation + exact integer Newton refinement).
 > `to_string()` fully rewritten to match CPython's `Decimal.__str__` logic exactly
-> (scientific notation when `_exp > 0` or `leftdigits <= -6`; removed the DeciMojo-specific
+> (scientific notation when `_exp > 0` or `leftdigits <= -6`; removed the Decimo-specific
 > `precision` parameter). `root()` now strips trailing fractional zeros from exact results
 > (e.g., `cbrt(8) → "2"` instead of `"2.000…0"`). All 70 benchmark
 > cases now produce **identical** output to Python's `Decimal.sqrt()` with 0 warnings.
@@ -692,11 +692,11 @@ BigUInt's SIMD vectorized addition (width=4) is fast but scale alignment (`multi
 
 ### 1. Python `decimal` → `libmpdec` (Stefan Krah)
 
-**Internal representation:** base-$10^9$ (`uint32_t` limbs), optionally base-$10^{19}$ (`uint64_t`) on 64-bit platforms. Sign + exponent + coefficient (similar to DeciMojo).
+**Internal representation:** base-$10^9$ (`uint32_t` limbs), optionally base-$10^{19}$ (`uint64_t`) on 64-bit platforms. Sign + exponent + coefficient (similar to Decimo).
 
 **Key algorithms:**
 
-- **Multiplication:** Schoolbook for small, Karatsuba for medium, **Number Theoretic   Transform (NTT)** for large (>1024 limbs). NTT is in-place, uses three primes   (MPD_PRIMES) enabling Chinese Remainder Theorem reconstruction for exact results. $O(n \log n)$ — this is the primary advantage over DeciMojo's $O(n^{1.585})$ Karatsuba.
+- **Multiplication:** Schoolbook for small, Karatsuba for medium, **Number Theoretic   Transform (NTT)** for large (>1024 limbs). NTT is in-place, uses three primes   (MPD_PRIMES) enabling Chinese Remainder Theorem reconstruction for exact results. $O(n \log n)$ — this is the primary advantage over Decimo's $O(n^{1.585})$ Karatsuba.
 - **Division:** Schoolbook for small, then balanced division via Newton's method for the reciprocal (`1/y`), computed using *NTT-multiplied** Newton iterations: $r_{k+1} = r_k(2 - yr_k)$. This avoids explicit long division entirely for large operands. $O(M(n))$ where $M(n)$ is the cost of multiplication.
 - **Sqrt:** Reciprocal square root via Newton ($r_{k+1} = r_k(3 - yr_k^2)/2$) then multiply ($\sqrt{y} = y \cdot r$). Again uses NTT multiplication, never divides.
 - **Exp/Ln:** Correct rounding via Ziv's method. Range reduction + Taylor/Maclaurin series, with all multiplications done via NTT at large precision.
@@ -717,7 +717,7 @@ BigUInt's SIMD vectorized addition (width=4) is fast but scale alignment (`multi
 
 **Note:** MPFR is a **binary** floating-point library. It provides exact rounding for mathematical functions (exp, ln, sin, etc.) using Ziv's method. Not directly comparable to decimal arithmetic, but the algorithms translate.
 
-**DeciMojo relevance:** GMP's chain Schoolbook → Karatsuba → Toom-3 → FFT suggests DeciMojo should implement Toom-3 as the next multiplication tier before
+**Decimo relevance:** GMP's chain Schoolbook → Karatsuba → Toom-3 → FFT suggests Decimo should implement Toom-3 as the next multiplication tier before
 considering NTT.
 
 ### 3. mpdecimal (Rust) / `rust_decimal`
@@ -798,14 +798,14 @@ This is the strongest evidence that **staying with base-$10^9$ is correct** for 
 
 Java stores the coefficient as a **binary** `BigInteger` internally, paying the conversion cost at construction and `toString()`. This gives fast arithmetic but slow I/O. For computation-heavy uses (scientific computing), this is a good tradeoff.
 
-### Approach for DeciMojo
+### Approach for Decimo
 
 **Stay with base-$10^9$, but implement NTT for large multiplication.**
 
 The reasoning:
 
 1. **For a decimal library**, I/O speed matters. Financial and engineering users frequently create decimals from strings and print them. A 34× advantage on `to_string()` at 10000 digits is significant.
-2. The current performance gap vs Python is **not because of the base**. It's because `libmpdec` has NTT and DeciMojo doesn't. Once NTT is implemented (Task 5), the multiplication gap closes.
+2. The current performance gap vs Python is **not because of the base**. It's because `libmpdec` has NTT and Decimo doesn't. Once NTT is implemented (Task 5), the multiplication gap closes.
 3. Division and sqrt performance will improve dramatically once they're reformulated to use reciprocal-Newton methods (avoiding explicit division), which requires fast multiplication (NTT) to be worthwhile.
 4. For specific operations where binary arithmetic is vastly superior (e.g., integer sqrt at intermediate precision), it's possible to **use BigInt2 as a transit format**: convert to BigInt2, compute, convert back. But this should be the exception, not the default.
 
@@ -907,7 +907,7 @@ Balanced cases unchanged (15–24× Python). Overall average speedup: **12.4× P
 - Original `fn ln(x, precision)` delegates to cached version with a local cache (100% backward compatible)
 - `log()` and `log10()` now create a local `MathCache` so their 2 internal `ln()` calls share cached constants
 - Added `BigDecimal.ln(precision, cache)` method overload
-- Exported `MathCache` from `decimojo` top-level
+- Exported `MathCache` from `decimo` top-level
 
 **Measured speedup (10× ln() calls at same precision, with shared MathCache):**
 
@@ -968,7 +968,7 @@ Replaced the weak halving strategy (divide by $2^k$ until $x < 1$) with **aggres
 | p=1000    | ~1.0×  | **2.6×** | +160%       |
 | p=2000    | ~1.7×  | **5.3×** | +212%       |
 
-At p≥200, DeciMojo now consistently beats Python. At p=2000, exp is 5.3× faster than Python's C-based `libmpdec`.
+At p≥200, Decimo now consistently beats Python. At p=2000, exp is 5.3× faster than Python's C-based `libmpdec`.
 
 #### Task 3e: Binary Splitting for Exp/Ln Series
 
@@ -1173,7 +1173,7 @@ Note: "vs Python" compares BigUInt to CPython `int` (GMP-backed). Run-to-run Pyt
 
 **Analysis:** Toom-3 provides meaningful improvement at ≥256 words, with increasing benefit at larger sizes. The asymptotic $O(n^{1.465})$ vs $O(n^{1.585})$ advantage becomes dominant above ~2048 words. At 512–1024 words, the improvement is modest (~14%) because the recursive Toom-3 subproblems at ~171 words produce ~57-word sub-sub-problems that fall just below the Karatsuba threshold (schoolbook at 57 words), limiting the recursive benefit. The 2048–4096 word range sees the full advantage as deeper recursion levels all land in efficient algorithm tiers.
 
-**Why still slower than Python:** CPython's `int` uses GMP with base-$2^{64}$ limbs (64-bit native multiply), while DeciMojo uses base-$10^9$ with `UInt32` limbs. Each GMP limb holds ~19.3 digits vs our ~9 digits, so GMP processes ≈2× fewer limbs for the same number. GMP's schoolbook base case also uses hardware `UMULL` (64×64→128 bit), while our base case is `UInt32×UInt32→UInt64` with a `divmod(10^9)` carry step.
+**Why still slower than Python:** CPython's `int` uses GMP with base-$2^{64}$ limbs (64-bit native multiply), while Decimo uses base-$10^9$ with `UInt32` limbs. Each GMP limb holds ~19.3 digits vs our ~9 digits, so GMP processes ≈2× fewer limbs for the same number. GMP's schoolbook base case also uses hardware `UMULL` (64×64→128 bit), while our base case is `UInt32×UInt32→UInt64` with a `divmod(10^9)` carry step.
 
 ---
 
@@ -1322,7 +1322,7 @@ Biggest wins: exp/ln Taylor series loops (many iterations, each saving 1–2 all
 
 ## Appendix: Comparison with Python `libmpdec` Architecture
 
-| Feature              |     DeciMojo BigDecimal      |            Python `libmpdec`             |                 Gap                  |
+| Feature              |     Decimo BigDecimal      |            Python `libmpdec`             |                 Gap                  |
 | -------------------- | :--------------------------: | :--------------------------------------: | :----------------------------------: |
 | Base                 |       $10^9$ (UInt32)        | $10^9$ (uint32_t) / $10^{19}$ (uint64_t) | Minor — 64-bit limbs give 2× density |
 | Small multiply       |          Schoolbook          |                Schoolbook                |                Parity                |

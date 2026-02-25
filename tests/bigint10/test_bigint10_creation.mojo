@@ -5,7 +5,7 @@ Tests conversion from Python integers to Mojo BigInt10.
 
 import testing
 from python import Python
-from decimojo.bigint10.bigint10 import BigInt10
+from decimo.bigint10.bigint10 import BigInt10
 
 
 fn test_from_python_int_basic() raises:

@@ -8,8 +8,8 @@ from python import Python
 from random import random_ui64
 import testing
 from testing import assert_equal, assert_true
-from decimojo.biguint.biguint import BigUInt
-from decimojo.tests import TestCase, parse_file, load_test_cases
+from decimo.biguint.biguint import BigUInt
+from decimo.tests import TestCase, parse_file, load_test_cases
 
 comptime file_path_arithmetics = "tests/biguint/test_data/biguint_arithmetics.toml"
 comptime file_path_truncate_divide = "tests/biguint/test_data/biguint_truncate_divide.toml"
@@ -204,18 +204,18 @@ fn test_biguint_truncate_divide_random_numbers_against_python() raises:
             number_a += String(random_ui64(0, 999_999_999_999_999_999))
         for _i in range(789):
             number_b += String(random_ui64(0, 999_999_999_999_999_999))
-        decimojo_result = String(BigUInt(number_a) // BigUInt(number_b))
+        decimo_result = String(BigUInt(number_a) // BigUInt(number_b))
         python_result = String(Python.int(number_a) // Python.int(number_b))
         assert_equal(
-            lhs=decimojo_result,
+            lhs=decimo_result,
             rhs=python_result,
             msg="Python int division does not match BigUInt division\n"
             + "number a: \n"
             + number_a
             + "\n\nnumber b: \n"
             + number_b
-            + "\n\nDeciMojo BigUInt division: \n"
-            + decimojo_result
+            + "\n\nDecimo BigUInt division: \n"
+            + decimo_result
             + "\n\nPython int division: \n"
             + python_result,
         )

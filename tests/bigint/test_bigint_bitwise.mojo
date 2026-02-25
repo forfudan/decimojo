@@ -5,7 +5,7 @@ arbitrary-precision integer bitwise semantics.
 """
 
 import testing
-from decimojo.bigint.bigint import BigInt
+from decimo.bigint.bigint import BigInt
 
 
 # ===----------------------------------------------------------------------=== #

@@ -1,8 +1,8 @@
 """Benchmarks for BigInt left shift. Compares BigInt vs Python int."""
 
-from decimojo.bigint.bigint import BigInt
-import decimojo.bigint.arithmetics
-from decimojo.tests import (
+from decimo.bigint.bigint import BigInt
+import decimo.bigint.arithmetics
+from decimo.tests import (
     BenchCase,
     load_bench_cases,
     load_bench_iterations,
@@ -73,7 +73,7 @@ fn main() raises:
     pysys.set_int_max_str_digits(10000000)
 
     var log_file = open_log_file("benchmark_bigint_shift")
-    print_header("DeciMojo BigInt Left Shift Benchmark", log_file)
+    print_header("Decimo BigInt Left Shift Benchmark", log_file)
 
     var cases = load_bench_cases("bench_data/shift.toml")
     var iterations = load_bench_iterations("bench_data/shift.toml")

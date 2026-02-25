@@ -1,9 +1,9 @@
 """Benchmarks for BigInt exponentiation. Compares BigInt10, BigInt, and Python int."""
 
-from decimojo.bigint10.bigint10 import BigInt10
-from decimojo.bigint.bigint import BigInt
-import decimojo.bigint.arithmetics
-from decimojo.tests import (
+from decimo.bigint10.bigint10 import BigInt10
+from decimo.bigint.bigint import BigInt
+import decimo.bigint.arithmetics
+from decimo.tests import (
     BenchCase,
     load_bench_cases,
     load_bench_iterations,
@@ -90,7 +90,7 @@ fn main() raises:
     pysys.set_int_max_str_digits(10000000)
 
     var log_file = open_log_file("benchmark_bigint_power")
-    print_header("DeciMojo BigInt Power Benchmark", log_file)
+    print_header("Decimo BigInt Power Benchmark", log_file)
 
     var cases = load_bench_cases("bench_data/power.toml")
     var iterations = load_bench_iterations("bench_data/power.toml")

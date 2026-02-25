@@ -5,9 +5,9 @@ Test BigDecimal comparison operations.
 from python import Python
 import testing
 
-from decimojo import BDec
-from decimojo.bigdecimal.comparison import compare_absolute, compare
-from decimojo.tests import TestCase, parse_file, load_test_cases
+from decimo import BDec
+from decimo.bigdecimal.comparison import compare_absolute, compare
+from decimo.tests import TestCase, parse_file, load_test_cases
 
 comptime file_path = "tests/bigdecimal/test_data/bigdecimal_compare.toml"
 

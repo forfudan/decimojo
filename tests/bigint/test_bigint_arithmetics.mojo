@@ -8,8 +8,8 @@ use decimal string representations that are valid for both BigInt10 and BigInt.
 
 from python import Python
 import testing
-from decimojo.bigint.bigint import BigInt
-from decimojo.tests import TestCase, parse_file, load_test_cases
+from decimo.bigint.bigint import BigInt
+from decimo.tests import TestCase, parse_file, load_test_cases
 
 comptime file_path_arithmetics = "tests/bigint10/test_data/bigint10_arithmetics.toml"
 comptime file_path_multiply = "tests/bigint10/test_data/bigint10_multiply.toml"

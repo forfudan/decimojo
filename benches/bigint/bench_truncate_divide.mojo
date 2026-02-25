@@ -1,10 +1,10 @@
 """Benchmarks for BigInt truncate division. Compares BigInt10, BigInt, and Python int."""
 
-from decimojo.bigint10.bigint10 import BigInt10
-import decimojo.bigint10.arithmetics
-from decimojo.bigint.bigint import BigInt
-import decimojo.bigint.arithmetics
-from decimojo.tests import (
+from decimo.bigint10.bigint10 import BigInt10
+import decimo.bigint10.arithmetics
+from decimo.bigint.bigint import BigInt
+import decimo.bigint.arithmetics
+from decimo.tests import (
     BenchCase,
     load_bench_cases,
     load_bench_iterations,
@@ -92,7 +92,7 @@ fn main() raises:
     pysys.set_int_max_str_digits(10000000)
 
     var log_file = open_log_file("benchmark_bigint_truncate_divide")
-    print_header("DeciMojo BigInt Truncate Division Benchmark", log_file)
+    print_header("Decimo BigInt Truncate Division Benchmark", log_file)
 
     var cases = load_bench_cases("bench_data/truncate_divide.toml")
     var iterations = load_bench_iterations("bench_data/truncate_divide.toml")

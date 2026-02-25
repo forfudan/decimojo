@@ -1,4 +1,4 @@
-"""DeciMojo Decimal128 Benchmark Suite — dispatches to all individual benchmarks."""
+"""Decimo Decimal128 Benchmark Suite — dispatches to all individual benchmarks."""
 
 from bench_add import main as bench_add
 from bench_subtract import main as bench_subtract

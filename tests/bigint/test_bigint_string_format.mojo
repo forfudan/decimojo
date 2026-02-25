@@ -4,7 +4,7 @@ to_decimal_string with line_width, number_of_digits, and __repr__.
 """
 
 import testing
-from decimojo.bigint.bigint import BigInt
+from decimo.bigint.bigint import BigInt
 
 
 # ===----------------------------------------------------------------------=== #

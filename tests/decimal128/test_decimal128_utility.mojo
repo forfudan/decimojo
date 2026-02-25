@@ -6,9 +6,9 @@ round_to_keep_first_n_digits, and bitcast.
 import testing
 from testing import assert_equal, assert_true
 
-from decimojo.decimal128.decimal128 import Decimal128
-from decimojo.rounding_mode import RoundingMode
-from decimojo.decimal128.utility import (
+from decimo.decimal128.decimal128 import Decimal128
+from decimo.rounding_mode import RoundingMode
+from decimo.decimal128.utility import (
     truncate_to_max,
     number_of_digits,
     round_to_keep_first_n_digits,

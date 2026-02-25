@@ -1,8 +1,8 @@
 """Benchmarks for BigInt from_string construction. Compares BigInt10, BigInt, and Python int."""
 
-from decimojo.bigint10.bigint10 import BigInt10
-from decimojo.bigint.bigint import BigInt
-from decimojo.tests import (
+from decimo.bigint10.bigint10 import BigInt10
+from decimo.bigint.bigint import BigInt
+from decimo.tests import (
     BenchCase,
     load_bench_cases,
     load_bench_iterations,
@@ -69,7 +69,7 @@ fn main() raises:
     pysys.set_int_max_str_digits(10000000)
 
     var log_file = open_log_file("benchmark_bigint_from_string")
-    print_header("DeciMojo BigInt from_string Benchmark", log_file)
+    print_header("Decimo BigInt from_string Benchmark", log_file)
 
     var cases = load_bench_cases("bench_data/from_string.toml")
     var iterations = load_bench_iterations("bench_data/from_string.toml")

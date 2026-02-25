@@ -4,8 +4,8 @@ Test BigInt10 arithmetic operations including addition, subtraction, and negatio
 
 from python import Python
 import testing
-from decimojo.bigint10.bigint10 import BigInt10
-from decimojo.tests import TestCase, parse_file, load_test_cases
+from decimo.bigint10.bigint10 import BigInt10
+from decimo.tests import TestCase, parse_file, load_test_cases
 
 comptime file_path_arithmetics = "tests/bigint10/test_data/bigint10_arithmetics.toml"
 comptime file_path_multiply = "tests/bigint10/test_data/bigint10_multiply.toml"

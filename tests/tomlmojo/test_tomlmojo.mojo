@@ -367,7 +367,7 @@ fn test_our_pixi_toml() raises:
     var doc = tomlmojo.parse_file("pixi.toml")
     var ws = doc.get_table("workspace")
     assert_true(len(ws) > 0, "pixi.toml workspace table non-empty")
-    assert_true(ws["name"].as_string() == "decimojo", "pixi.toml name")
+    assert_true(ws["name"].as_string() == "decimo", "pixi.toml name")
     var tasks = doc.get_table("tasks")
     assert_true(len(tasks) > 0, "pixi.toml tasks table non-empty")
     print("  PASS  test_our_pixi_toml")

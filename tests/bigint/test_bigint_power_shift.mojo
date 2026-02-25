@@ -4,7 +4,7 @@ augmented assignment (<<=, >>=), and power-of-2 vs shift cross-checks.
 """
 
 import testing
-from decimojo.bigint.bigint import BigInt
+from decimo.bigint.bigint import BigInt
 
 
 # ===----------------------------------------------------------------------=== #

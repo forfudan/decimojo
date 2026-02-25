@@ -1,9 +1,9 @@
 """Benchmarks for BigDecimal sqrt. Compares against Python decimal."""
 
-from decimojo.bigdecimal.bigdecimal import BigDecimal
-import decimojo.bigdecimal.arithmetics
-import decimojo.bigdecimal.exponential
-from decimojo.tests import (
+from decimo.bigdecimal.bigdecimal import BigDecimal
+import decimo.bigdecimal.arithmetics
+import decimo.bigdecimal.exponential
+from decimo.tests import (
     BenchCase,
     load_bench_cases,
     load_bench_precision,
@@ -41,7 +41,7 @@ fn run_case(
         # Correctness check: exact string match with Python
         if rm_str != rp_str:
             log_print("*** WARNING: String mismatch detected! ***", log_file)
-            log_print("DeciMojo result:   " + rm_str[:100], log_file)
+            log_print("Decimo result:   " + rm_str[:100], log_file)
             log_print("Python result:     " + rp_str[:100], log_file)
 
         var t0 = perf_counter_ns()
@@ -69,7 +69,7 @@ fn run_case(
 
 fn main() raises:
     var log_file = open_log_file("benchmark_bigdecimal_sqrt")
-    print_header("DeciMojo BigDecimal Square Root Benchmark", log_file)
+    print_header("Decimo BigDecimal Square Root Benchmark", log_file)
 
     var pydecimal = Python.import_module("decimal")
     var toml_path = "bench_data/sqrt.toml"

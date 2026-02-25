@@ -1,4 +1,4 @@
-# DeciMojo API Roadmap
+# Decimo API Roadmap
 
 > Date of initial planning: 2026-02-23  
 > Author: Yuhao Zhu
@@ -6,7 +6,7 @@
 
 ## Summary
 
-The functional core of DeciMojo is solid after a series of optimizations and improvements. Now I am back to think about the API surface and usability. My main goal is to provide Pythonistas a familiar and intuitive experience when using DeciMojo types, while incorporating some new and modern features that leverage the strengths of the Mojo programming language (note that it is a static language).
+The functional core of Decimo is solid after a series of optimizations and improvements. Now I am back to think about the API surface and usability. My main goal is to provide Pythonistas a familiar and intuitive experience when using Decimo types, while incorporating some new and modern features that leverage the strengths of the Mojo programming language (note that it is a static language).
 
 The main areas for further improvement are:
 

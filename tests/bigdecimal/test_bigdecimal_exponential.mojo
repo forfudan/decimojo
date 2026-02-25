@@ -9,8 +9,8 @@ non-integer exponents.
 from python import Python
 import testing
 
-from decimojo import BDec
-from decimojo.tests import TestCase, parse_file, load_test_cases
+from decimo import BDec
+from decimo.tests import TestCase, parse_file, load_test_cases
 
 comptime file_path = "tests/bigdecimal/test_data/bigdecimal_exponential.toml"
 
@@ -132,7 +132,7 @@ fn test_sqrt_multi_precision() raises:
                     + String(prec),
                     "\n  Expected (Python):",
                     py_result,
-                    "\n  Got (DeciMojo):   ",
+                    "\n  Got (Decimo):   ",
                     our_result,
                 )
                 count_wrong += 1

@@ -1,10 +1,12 @@
-# DeciMojo changelog
+# Decimo changelog
 
-This is a list of changes for the DeciMojo Package.
+This is a list of changes for the Decimo package (formerly DeciMojo).
 
-## 20260225 (v0.8.0)
+## 20260303 (v0.8.0)
 
-DeciMojo v0.8.0 is a profound milestone in the development of DeciMojo, marking the **"make it fast"** phase. There are two major improvements in this release:
+> **Library renamed from `decimojo` to `decimo`.** The package name, import path, and all public references have been updated. GitHub repository will be renamed to `forfudan/decimo` (GitHub auto-redirects the old URL).
+
+Decimo v0.8.0 is a profound milestone in the development of Decimo, marking the **"make it fast"** phase. There are two major improvements in this release:
 
 First, it introduces a completely new `BigInt` (`BInt`) type using a **base-2^32 internal representation**. This replaces the previous base-10^9 implementation (now available as `BigInt10`) with a little-endian format using `UInt32` words, dramatically improving the performance of all integer operations. The new `BigInt` implements the **Karatsuba multiplication algorithm** and the **Burnikel-Ziegler division algorithm** for sub-quadratic performance on large integers, and includes **divide-and-conquer base conversion** for fast string I/O. It also adds **bitwise operations**, **GCD and modular arithmetic**, and an optimized **integer square root**. Benchmarks show that the new `BigInt` outperforms Python's built-in `int` type in most cases, with up to 11× speedup for power operations and 5× for shift operations.
 

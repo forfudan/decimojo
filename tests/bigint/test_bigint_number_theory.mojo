@@ -2,8 +2,8 @@
 modular exponentiation, and modular inverse."""
 
 import testing
-from decimojo.bigint.bigint import BigInt
-from decimojo.bigint.number_theory import (
+from decimo.bigint.bigint import BigInt
+from decimo.bigint.number_theory import (
     gcd,
     extended_gcd,
     lcm,

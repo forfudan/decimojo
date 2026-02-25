@@ -1,8 +1,8 @@
 """Benchmarks for BigUInt from_string constructor. Compares BigUInt and Python int."""
 
-from decimojo.biguint.biguint import BigUInt
-import decimojo.biguint.arithmetics
-from decimojo.tests import (
+from decimo.biguint.biguint import BigUInt
+import decimo.biguint.arithmetics
+from decimo.tests import (
     BenchCase,
     load_bench_cases,
     load_bench_iterations,
@@ -69,7 +69,7 @@ fn main() raises:
 
     var toml_path = "bench_data/from_string.toml"
     var log_file = open_log_file("benchmark_biguint_from_string")
-    print_header("DeciMojo BigUInt from_string Benchmark", log_file)
+    print_header("Decimo BigUInt from_string Benchmark", log_file)
 
     var cases = load_bench_cases(toml_path)
     var iterations = load_bench_iterations(toml_path)

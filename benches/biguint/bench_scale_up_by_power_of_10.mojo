@@ -1,8 +1,8 @@
 """Benchmarks for BigUInt scale_up_by_power_of_10. No Python comparison (Mojo-only)."""
 
-from decimojo.biguint.biguint import BigUInt
-import decimojo.biguint.arithmetics
-from decimojo.tests import (
+from decimo.biguint.biguint import BigUInt
+import decimo.biguint.arithmetics
+from decimo.tests import (
     BenchCase,
     load_bench_cases,
     load_bench_iterations,
@@ -30,7 +30,7 @@ fn run_case(
 
     var t0 = perf_counter_ns()
     for _ in range(iterations):
-        _ = decimojo.biguint.arithmetics.multiply_by_power_of_ten(m_a, power)
+        _ = decimo.biguint.arithmetics.multiply_by_power_of_ten(m_a, power)
     var tm = (perf_counter_ns() - t0) / iterations
     times.append(Float64(tm))
 
@@ -40,7 +40,7 @@ fn run_case(
 fn main() raises:
     var toml_path = "bench_data/scale_up_by_power_of_10.toml"
     var log_file = open_log_file("benchmark_biguint_scale_up")
-    print_header("DeciMojo BigUInt scale_up_by_power_of_10 Benchmark", log_file)
+    print_header("Decimo BigUInt scale_up_by_power_of_10 Benchmark", log_file)
 
     var cases = load_bench_cases(toml_path)
     var iterations = load_bench_iterations(toml_path)

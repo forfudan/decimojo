@@ -1,11 +1,11 @@
-from decimojo.prelude import *
+from decimo.prelude import *
 
 
 fn main() raises:
-    var a = BDec("123456789.123456789")  # BDec is an alias for BigDecimal
     var b = Decimal(
         "1234.56789"
     )  # Decimal is a Python-like alias for BigDecimal
+    var a = BDec("123456789.123456789")  # BDec is another alias for BigDecimal
 
     # === Basic Arithmetic === #
     print(a + b)  # 123458023.691346789

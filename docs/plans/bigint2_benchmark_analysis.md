@@ -705,7 +705,7 @@ fn __iadd__(mut self, other: Self):
 
 Renamed `BigInt2` → `BigInt` and bound the `BInt` alias to it. The old `BigInt`
 was renamed to `BigInt10` (commit `a77d2b4`, PR #143) earlier in the process.
-This makes `BigInt` (base-2^32) the default big integer type in DeciMojo.
+This makes `BigInt` (base-2^32) the default big integer type in Decimo.
 
 ---
 

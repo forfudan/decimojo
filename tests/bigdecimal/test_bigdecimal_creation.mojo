@@ -5,7 +5,7 @@ Tests conversion from Python Decimal to Mojo BigDecimal.
 
 import testing
 from python import Python
-from decimojo.bigdecimal.bigdecimal import BigDecimal
+from decimo.bigdecimal.bigdecimal import BigDecimal
 
 
 fn test_from_python_decimal_basic() raises:

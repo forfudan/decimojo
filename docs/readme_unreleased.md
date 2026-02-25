@@ -1,8 +1,8 @@
-# DeciMojo <!-- omit from toc -->
+# Decimo <!-- omit from toc -->
 
 An arbitrary-precision integer and decimal library for [Mojo](https://www.modular.com/mojo), inspired by Python's `int` and `Decimal`.
 
-**[中文·漢字](https://github.com/forfudan/decimojo/blob/main/docs/readme_zht.md)**　|　**[Changelog](https://github.com/forfudan/decimojo/blob/main/docs/changelog.md)**　|　**[Repository on GitHub»](https://github.com/forfudan/decimojo)**　|　**[Discord channel»](https://discord.gg/3rGH87uZTk)**
+**[中文·漢字](https://github.com/forfudan/decimo/blob/main/docs/readme_zht.md)**　|　**[Changelog](https://github.com/forfudan/decimo/blob/main/docs/changelog.md)**　|　**[Repository on GitHub»](https://github.com/forfudan/decimo)**　|　**[Discord channel»](https://discord.gg/3rGH87uZTk)**
 
 - [Overview](#overview)
 - [Installation](#installation)
@@ -16,9 +16,9 @@ An arbitrary-precision integer and decimal library for [Mojo](https://www.modula
 
 ## Overview
 
-DeciMojo provides an arbitrary-precision integer and decimal library for Mojo. It delivers exact calculations for financial modeling, scientific computing, and applications where floating-point approximation errors are unacceptable. Beyond basic arithmetic, the library includes advanced mathematical functions with guaranteed precision.
+Decimo provides an arbitrary-precision integer and decimal library for Mojo. It delivers exact calculations for financial modeling, scientific computing, and applications where floating-point approximation errors are unacceptable. Beyond basic arithmetic, the library includes advanced mathematical functions with guaranteed precision.
 
-For Pythonistas, `decimojo.BInt` to Mojo is like `int` to Python, and `decimojo.Decimal` to Mojo is like `decimal.Decimal` to Python.
+For Pythonistas, `decimo.BInt` to Mojo is like `int` to Python, and `decimo.Decimal` to Mojo is like `decimal.Decimal` to Python.
 
 The core types are:
 
@@ -36,33 +36,33 @@ The auxiliary types include a base-10 arbitrary-precision signed integer type (`
 
 ---
 
-This repository includes [TOMLMojo](./docs/readme_tomlmojo.md), a lightweight TOML parser in pure Mojo. It parses configuration files and test data, supporting basic types, arrays, and nested tables. While created for DeciMojo's testing framework, it offers general-purpose structured data parsing with a clean, simple API.
+This repository includes [TOMLMojo](./docs/readme_tomlmojo.md), a lightweight TOML parser in pure Mojo. It parses configuration files and test data, supporting basic types, arrays, and nested tables. While created for Decimo's testing framework, it offers general-purpose structured data parsing with a clean, simple API.
 
 ## Installation
 
-DeciMojo is available in the modular-community `https://repo.prefix.dev/modular-community` package repository. To access this repository, add it to your `channels` list in your `pixi.toml` file:
+Decimo is available in the modular-community `https://repo.prefix.dev/modular-community` package repository. To access this repository, add it to your `channels` list in your `pixi.toml` file:
 
 ```toml
 channels = ["https://conda.modular.com/max", "https://repo.prefix.dev/modular-community", "conda-forge"]
 ```
 
-Then, you can install DeciMojo using any of these methods:
+Then, you can install Decimo using any of these methods:
 
-1. From the `pixi` CLI, run the command ```pixi add decimojo```. This fetches the latest version and makes it immediately available for import.
+1. From the `pixi` CLI, run the command ```pixi add decimo```. This fetches the latest version and makes it immediately available for import.
 
 1. In the `mojoproject.toml` file of your project, add the following dependency:
 
     ```toml
-    decimojo = "==0.8.0"
+    decimo = "==0.8.0"
     ```
 
     Then run `pixi install` to download and install the package.
 
-1. For the latest development version in the `main` branch, clone [this GitHub repository](https://github.com/forfudan/decimojo) and build the package locally using the command `pixi run package`.
+1. For the latest development version in the `main` branch, clone [this GitHub repository](https://github.com/forfudan/decimo) and build the package locally using the command `pixi run package`.
 
 The following table summarizes the package versions and their corresponding Mojo versions:
 
-| `decimojo` | `mojo`        | package manager |
+| `decimo` | `mojo`        | package manager |
 | ---------- | ------------- | --------------- |
 | v0.1.0     | ==25.1        | magic           |
 | v0.2.0     | ==25.2        | magic           |
@@ -76,10 +76,10 @@ The following table summarizes the package versions and their corresponding Mojo
 
 ## Quick start
 
-You can start using DeciMojo by importing the `decimojo` module. An easy way to do this is to import everything from the `prelude` module, which provides the most commonly used types.
+You can start using Decimo by importing the `decimo` module. An easy way to do this is to import everything from the `prelude` module, which provides the most commonly used types.
 
 ```mojo
-from decimojo import *
+from decimo import *
 ```
 
 This will import the following types or aliases into your namespace:
@@ -95,7 +95,7 @@ This will import the following types or aliases into your namespace:
 Here are some examples showcasing the arbitrary-precision feature of the `Decimal` type. For some mathematical operations, the default precision (number of significant digits) is set to `36`. You can change the precision by passing the `precision` argument to the function. This default precision will be configurable globally in future when Mojo supports global variables.
 
 ```mojo
-from decimojo.prelude import *
+from decimo.prelude import *
 
 
 fn main() raises:
@@ -174,7 +174,7 @@ fn main() raises:
 Here is a comprehensive quick-start guide showcasing each major function of the `BInt` type.
 
 ```mojo
-from decimojo.prelude import *
+from decimo.prelude import *
 
 
 fn main() raises:
@@ -227,7 +227,7 @@ fn main() raises:
 Here is a comprehensive quick-start guide showcasing each major function of the `Dec128` type.
 
 ```mojo
-from decimojo.prelude import *
+from decimo.prelude import *
 
 fn main() raises:
     # === Construction ===
@@ -297,17 +297,17 @@ This project draws inspiration from several established decimal implementations 
 
 ## Nomenclature
 
-DeciMojo combines "Deci" and "Mojo" - reflecting its purpose and implementation language. "Deci" (from Latin "decimus" meaning "tenth") highlights our focus on the decimal numeral system that humans naturally use for counting and calculations.
+Decimo combines "Deci" and "Mojo" - reflecting its purpose and implementation language. "Deci" (from Latin "decimus" meaning "tenth") highlights our focus on the decimal numeral system that humans naturally use for counting and calculations.
 
 The name ultimately emphasizes our mission: bringing precise, reliable decimal calculations to the Mojo ecosystem, addressing the fundamental need for exact arithmetic that floating-point representations cannot provide.
 
 ## Status
 
-Rome wasn't built in a day. DeciMojo is currently under active development. It has successfully progressed through the **"make it work"** phase and the **"make it right"**, and is now well into the **"make it fast"** phase.
+Rome wasn't built in a day. Decimo is currently under active development. It has successfully progressed through the **"make it work"** phase and the **"make it right"**, and is now well into the **"make it fast"** phase.
 
 The `BInt` type is fully implemented and optimized. It has been benchmarked against Python's `int` and demonstrates superior performance in most cases.
 
-Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/forfudan/decimojo/issues).
+Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/forfudan/decimo/issues).
 
 ## Tests and benches
 
@@ -318,14 +318,14 @@ After cloning the repo onto your local disk, you can:
 
 ## Citation
 
-If you find DeciMojo useful, consider listing it in your citations.
+If you find Decimo useful, consider listing it in your citations.
 
 ```tex
 @software{Zhu.2026,
     author       = {Zhu, Yuhao},
     year         = {2026},
     title        = {An arbitrary-precision integer and decimal mathematics library for Mojo},
-    url          = {https://github.com/forfudan/decimojo},
+    url          = {https://github.com/forfudan/decimo},
     version      = {0.8.0},
     note         = {Computer Software}
 }
@@ -335,7 +335,7 @@ If you find DeciMojo useful, consider listing it in your citations.
 
 This repository and its contributions are licensed under the Apache License v2.0.
 
-[^fixed]: The `Decimal128` type can represent values with up to 29 significant digits and a maximum of 28 digits after the decimal point. When a value exceeds the maximum representable value (`2^96 - 1`), DeciMojo either raises an error or rounds the value to fit within these constraints. For example, the significant digits of `8.8888888888888888888888888888` (29 eights total with 28 after the decimal point) exceeds the maximum representable value (`2^96 - 1`) and is automatically rounded to `8.888888888888888888888888889` (28 eights total with 27 after the decimal point). DeciMojo's `Decimal128` type is similar to `System.Decimal` (C#/.NET), `rust_decimal` in Rust, `DECIMAL/NUMERIC` in SQL Server, etc.
+[^fixed]: The `Decimal128` type can represent values with up to 29 significant digits and a maximum of 28 digits after the decimal point. When a value exceeds the maximum representable value (`2^96 - 1`), Decimo either raises an error or rounds the value to fit within these constraints. For example, the significant digits of `8.8888888888888888888888888888` (29 eights total with 28 after the decimal point) exceeds the maximum representable value (`2^96 - 1`) and is automatically rounded to `8.888888888888888888888888889` (28 eights total with 27 after the decimal point). Decimo's `Decimal128` type is similar to `System.Decimal` (C#/.NET), `rust_decimal` in Rust, `DECIMAL/NUMERIC` in SQL Server, etc.
 [^bigint]: The `BigInt` implementation uses a base-2^32 representation with a little-endian format, where the least significant word is stored at index 0. Each word is a `UInt32`, allowing for efficient storage and arithmetic operations on large integers. This design choice optimizes performance for binary computations while still supporting arbitrary precision.
 [^bigint10]: The BigInt10 implementation uses a base-10 representation for users (maintaining decimal semantics), while internally using an optimized base-10^9 storage system for efficient calculations. This approach balances human-readable decimal operations with high-performance computing. It provides both floor division (round toward negative infinity) and truncate division (round toward zero) semantics, enabling precise handling of division operations with correct mathematical behavior regardless of operand signs.
 [^arbitrary]: Built on top of our completed BigInt10 implementation, BigDecimal will support arbitrary precision for both the integer and fractional parts, similar to `decimal` and `mpmath` in Python, `java.math.BigDecimal` in Java, etc.

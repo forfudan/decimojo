@@ -1,7 +1,7 @@
 """Benchmarks for Decimal128 nth root function. Compares against Python decimal."""
 
-from decimojo.decimal128.decimal128 import Decimal128
-from decimojo.tests import (
+from decimo.decimal128.decimal128 import Decimal128
+from decimo.tests import (
     BenchCase,
     load_bench_cases,
     open_log_file,
@@ -81,7 +81,7 @@ fn run_case(
 
 fn main() raises:
     var log_file = open_log_file("benchmark_root")
-    print_header("DeciMojo Decimal128 Root Benchmark", log_file)
+    print_header("Decimo Decimal128 Root Benchmark", log_file)
 
     var pydecimal = Python.import_module("decimal")
     pydecimal.getcontext().prec = 28

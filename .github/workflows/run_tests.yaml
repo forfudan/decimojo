@@ -1,4 +1,4 @@
-name: DeciMojo Unit Tests
+name: Decimo Unit Tests
 on:
   pull_request:
   workflow_dispatch:
@@ -8,7 +8,7 @@ permissions:
   pull-requests: read
 
 jobs:
-  testing-decimojo:
+  testing-decimo:
     name: with ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -50,10 +50,10 @@ jobs:
 
       - name: Build package
         run: |
-          pixi run mojo package src/decimojo
+          pixi run mojo package src/decimo
           pixi run mojo package src/tomlmojo
-          cp decimojo.mojopkg tests/
-          cp decimojo.mojopkg benches/
+          cp decimo.mojopkg tests/
+          cp decimo.mojopkg benches/
           mv tomlmojo.mojopkg tests/
 
       - name: Run tests

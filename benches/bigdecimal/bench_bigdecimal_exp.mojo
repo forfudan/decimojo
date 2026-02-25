@@ -4,10 +4,10 @@ Multi-precision benchmark: runs each case at multiple precision levels
 (50, 100, 200, 500, 1000) to show how performance scales with precision.
 """
 
-from decimojo.bigdecimal.bigdecimal import BigDecimal
-import decimojo.bigdecimal.arithmetics
-import decimojo.bigdecimal.exponential
-from decimojo.tests import (
+from decimo.bigdecimal.bigdecimal import BigDecimal
+import decimo.bigdecimal.arithmetics
+import decimo.bigdecimal.exponential
+from decimo.tests import (
     BenchCase,
     PrecisionLevel,
     load_bench_cases,
@@ -46,7 +46,7 @@ fn run_case(
         # Correctness check: exact string match with Python
         if rm_str != rp_str:
             log_print("*** WARNING: String mismatch detected! ***", log_file)
-            log_print("DeciMojo result:   " + rm_str[:100], log_file)
+            log_print("Decimo result:   " + rm_str[:100], log_file)
             log_print("Python result:     " + rp_str[:100], log_file)
 
         var t0 = perf_counter_ns()
@@ -75,7 +75,7 @@ fn run_case(
 fn main() raises:
     var log_file = open_log_file("benchmark_bigdecimal_exp")
     print_header(
-        "DeciMojo BigDecimal Exponential (exp) Multi-Precision Benchmark",
+        "Decimo BigDecimal Exponential (exp) Multi-Precision Benchmark",
         log_file,
     )
 

@@ -1,4 +1,4 @@
-from decimojo.prelude import *
+from decimo.prelude import *
 
 
 fn main() raises:

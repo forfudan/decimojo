@@ -5,9 +5,9 @@ Test BigDecimal rounding operations with various rounding modes and precision va
 from python import Python
 import testing
 
-from decimojo.bigdecimal.bigdecimal import BDec
-from decimojo.rounding_mode import RoundingMode
-from decimojo.tests import TestCase, parse_file, load_test_cases
+from decimo.bigdecimal.bigdecimal import BDec
+from decimo.rounding_mode import RoundingMode
+from decimo.tests import TestCase, parse_file, load_test_cases
 
 comptime file_path = "tests/bigdecimal/test_data/bigdecimal_rounding.toml"
 

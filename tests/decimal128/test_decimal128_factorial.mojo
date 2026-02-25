@@ -7,10 +7,10 @@ edge cases, and reciprocal tests.
 import testing
 import tomlmojo
 
-from decimojo.decimal128.decimal128 import Decimal128, Dec128
-from decimojo.rounding_mode import RoundingMode
-from decimojo.decimal128.special import factorial, factorial_reciprocal
-from decimojo.tests import parse_file, load_test_cases
+from decimo.decimal128.decimal128 import Decimal128, Dec128
+from decimo.rounding_mode import RoundingMode
+from decimo.decimal128.special import factorial, factorial_reciprocal
+from decimo.tests import parse_file, load_test_cases
 
 comptime data_path = "tests/decimal128/test_data/decimal128_factorial.toml"
 

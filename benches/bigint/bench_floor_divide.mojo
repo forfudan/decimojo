@@ -1,10 +1,10 @@
 """Benchmarks for BigInt floor division. Compares BigInt10, BigInt, and Python int."""
 
-from decimojo.bigint10.bigint10 import BigInt10
-import decimojo.bigint10.arithmetics
-from decimojo.bigint.bigint import BigInt
-import decimojo.bigint.arithmetics
-from decimojo.tests import (
+from decimo.bigint10.bigint10 import BigInt10
+import decimo.bigint10.arithmetics
+from decimo.bigint.bigint import BigInt
+import decimo.bigint.arithmetics
+from decimo.tests import (
     BenchCase,
     load_bench_cases,
     load_bench_iterations,
@@ -38,8 +38,8 @@ fn run_case(
     var pb = py.int(bc.b)
 
     try:
-        var r1 = decimojo.bigint10.arithmetics.floor_divide(m1a, m1b)
-        var r2 = decimojo.bigint.arithmetics.floor_divide(m2a, m2b)
+        var r1 = decimo.bigint10.arithmetics.floor_divide(m1a, m1b)
+        var r2 = decimo.bigint.arithmetics.floor_divide(m2a, m2b)
         var rp = pa // pb
 
         var r1_str = String(r1)
@@ -55,14 +55,14 @@ fn run_case(
 
         var t0 = perf_counter_ns()
         for _ in range(iterations):
-            _ = decimojo.bigint10.arithmetics.floor_divide(m1a, m1b)
+            _ = decimo.bigint10.arithmetics.floor_divide(m1a, m1b)
         var t1 = (perf_counter_ns() - t0) / iterations
         if t1 == 0:
             t1 = 1
 
         t0 = perf_counter_ns()
         for _ in range(iterations):
-            _ = decimojo.bigint.arithmetics.floor_divide(m2a, m2b)
+            _ = decimo.bigint.arithmetics.floor_divide(m2a, m2b)
         var t2 = (perf_counter_ns() - t0) / iterations
         if t2 == 0:
             t2 = 1
@@ -92,7 +92,7 @@ fn main() raises:
     pysys.set_int_max_str_digits(10000000)
 
     var log_file = open_log_file("benchmark_bigint_floor_divide")
-    print_header("DeciMojo BigInt Floor Division Benchmark", log_file)
+    print_header("Decimo BigInt Floor Division Benchmark", log_file)
 
     var cases = load_bench_cases("bench_data/floor_divide.toml")
     var iterations = load_bench_iterations("bench_data/floor_divide.toml")

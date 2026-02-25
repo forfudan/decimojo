@@ -1,8 +1,8 @@
 """Benchmarks for BigUInt sqrt. Compares BigUInt and Python math.isqrt."""
 
-from decimojo.biguint.biguint import BigUInt
-import decimojo.biguint.exponential
-from decimojo.tests import (
+from decimo.biguint.biguint import BigUInt
+import decimo.biguint.exponential
+from decimo.tests import (
     BenchCase,
     load_bench_cases,
     load_bench_iterations,
@@ -31,7 +31,7 @@ fn run_case(
     var pa = py.int(bc.a)
 
     try:
-        var rm = decimojo.biguint.exponential.sqrt(m_a)
+        var rm = decimo.biguint.exponential.sqrt(m_a)
         var rp = math.isqrt(pa)
 
         var rm_str = String(rm)
@@ -45,7 +45,7 @@ fn run_case(
 
         var t0 = perf_counter_ns()
         for _ in range(iterations):
-            _ = String(decimojo.biguint.exponential.sqrt(m_a))
+            _ = String(decimo.biguint.exponential.sqrt(m_a))
         var tm = (perf_counter_ns() - t0) / iterations
         if tm == 0:
             tm = 1
@@ -72,7 +72,7 @@ fn main() raises:
 
     var toml_path = "bench_data/sqrt.toml"
     var log_file = open_log_file("benchmark_biguint_sqrt")
-    print_header("DeciMojo BigUInt Square Root Benchmark", log_file)
+    print_header("Decimo BigUInt Square Root Benchmark", log_file)
 
     var cases = load_bench_cases(toml_path)
     var iterations = load_bench_iterations(toml_path)
