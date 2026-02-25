@@ -1,6 +1,6 @@
 # DeciMojo <!-- omit from toc -->
 
-由 [Mojo 程序設計語言 🔥](https://www.modular.com/mojo) 實現的任意精度小數和整數運算庫。
+由 [Mojo 程序設計語言 🔥](https://www.modular.com/mojo) 實現的任意精度整數和小數運算庫，靈感來源自 Python 的 `int` 和 `Decimal`。
 
 **[English](https://zhuyuhao.com/decimojo/)**　|　**[更新日誌](https://github.com/forfudan/decimojo/blob/main/docs/changelog.md)**　|　**[GitHub 倉庫»](https://github.com/forfudan/decimojo)**　|　**[Discord 頻道»](https://discord.gg/3rGH87uZTk)**
 
@@ -11,26 +11,32 @@
 - [命名](#命名)
 - [狀態](#狀態)
 - [測試與基準](#測試與基準)
+- [引用](#引用)
 - [許可證](#許可證)
 
 ## 概述
 
-DeciMojo 爲 Mojo 提供任意精度小數和整數運算庫，爲金融建模、科學計算以及浮點近似誤差不可接受的應用提供精確計算。除了基本算術運算外，該庫還包括具有保證精度的高級數學函數。
+DeciMojo 爲 Mojo 提供任意精度整數和小數運算庫，爲金融建模、科學計算以及浮點近似誤差不可接受的應用提供精確計算。除了基本算術運算外，該庫還包括具有保證精度的高級數學函數。
+
+對於 Python 用戶，`decimojo.BInt` 之於 Mojo 就如同 `int` 之於 Python，`decimojo.Decimal` 之於 Mojo 就如同 `decimal.Decimal` 之於 Python。
 
 核心類型包括:
 
-- 基於 10 進制的任意精度有符號整數類型 (`BigInt10`) 和任意精度無符號整數類型 (`BigUInt`)，支持無限位數[^integer]。它具有全面的算術運算、比較功能，並能高效支持超大整數計算。
-- 任意精度小數實現 (`BigDecimal`)，允許進行無限位數和小數位的計算[^arbitrary]。它提供完整的算術運算、比較以及數學函數集合，如對數、指數、根、三角函數等。它還支持捨入模式以及與內建類型的轉換。
-- 128 位定點小數實現 (`Decimal128`)，支持最多 29 位有效數字，小數點後最多 28 位數字[^fixed]。它具有完整的數學函數集合，包括對數、指數、根等。
+- 任意精度有符號整數類型 `BInt`[^bigint]，是 Python `int` 的 Mojo 原生等價實現。
+- 任意精度小數實現 (`Decimal`)，允許進行無限位數和小數位的計算[^arbitrary]，是 Python `decimal.Decimal` 的 Mojo 原生等價實現。
+- 128 位定點小數實現 (`Dec128`)，支持最多 29 位有效數字，小數點後最多 28 位數字[^fixed]。
 
-此倉庫包含 [TOMLMojo](https://github.com/forfudan/decimojo/tree/main/src/tomlmojo)，一個純 Mojo 實現的輕量級 TOML 解析器。它解析配置文件和測試數據，支持基本類型、數組和嵌套表。雖然爲 DeciMojo 的測試框架而創建，但它提供通用的結構化數據解析，具有簡潔的 API。
+| 類型      | 別名                 | 信息                               | 內部表示     |
+| --------- | -------------------- | ---------------------------------- | ------------ |
+| `BInt`    | `BigInt`             | 等價於 Python 的 `int`             | Base-2^32    |
+| `Decimal` | `BDec`, `BigDecimal` | 等價於 Python 的 `decimal.Decimal` | Base-10^9    |
+| `Dec128`  | `Decimal128`         | 128 位定點精度小數類型             | 三個 32 位字 |
 
-| 類型         | 別名              | 信息               | 內部表示                            |
-| ------------ | ----------------- | ------------------ | ----------------------------------- |
-| `BigUInt`    | `BUInt`           | 任意精度無符號整數 | `List[UInt32]`                      |
-| `BigInt10`   | `BInt`            | 任意精度整數       | `BigUInt`, `Bool`                   |
-| `BigDecimal` | `BDec`, `Decimal` | 任意精度小數       | `BigUInt`, `Int`, `Bool`            |
-| `Decimal128` | `Dec128`          | 128 位定點精度小數 | `UInt32`,`UInt32`,`UInt32`,`UInt32` |
+輔助類型包括基於 10 進制的任意精度有符號整數類型 (`BigInt10`) 和任意精度無符號整數類型 (`BigUInt`)，支持無限位數[^bigint10]。`BigUInt` 是 `BigInt10` 和 `Decimal` 的內部表示。
+
+---
+
+此倉庫包含 [TOMLMojo](./docs/readme_tomlmojo.md)，一個純 Mojo 實現的輕量級 TOML 解析器。它解析配置文件和測試數據，支持基本類型、數組和嵌套表。雖然爲 DeciMojo 的測試框架而創建，但它提供通用的結構化數據解析，具有簡潔的 API。
 
 ## 安裝
 
@@ -47,7 +53,7 @@ channels = ["https://conda.modular.com/max", "https://repo.prefix.dev/modular-co
 1. 在您項目的 `mojoproject.toml` 文件中，添加以下依賴：
 
     ```toml
-    decimojo = "==0.7.0"
+    decimojo = "==0.8.0"
     ```
 
     然後運行 `pixi install` 來下載並安裝包。
@@ -56,16 +62,17 @@ channels = ["https://conda.modular.com/max", "https://repo.prefix.dev/modular-co
 
 下表總結了包版本及其對應的 Mojo 版本：
 
-| `decimojo` | `mojo`        | 包管理器 |
-| ---------- | ------------- | -------- |
-| v0.1.0     | ==25.1        | magic    |
-| v0.2.0     | ==25.2        | magic    |
-| v0.3.0     | ==25.2        | magic    |
-| v0.3.1     | >=25.2, <25.4 | pixi     |
-| v0.4.x     | ==25.4        | pixi     |
-| v0.5.0     | ==25.5        | pixi     |
-| v0.6.0     | ==0.25.7      | pixi     |
-| v0.7.0     | ==0.26.1      | pixi     |
+| 包名       | 版本   | Mojo 版本     | 包管理器 |
+| ---------- | ------ | ------------- | -------- |
+| `decimojo` | v0.1.0 | ==25.1        | magic    |
+| `decimojo` | v0.2.0 | ==25.2        | magic    |
+| `decimojo` | v0.3.0 | ==25.2        | magic    |
+| `decimojo` | v0.3.1 | >=25.2, <25.4 | pixi     |
+| `decimojo` | v0.4.x | ==25.4        | pixi     |
+| `decimojo` | v0.5.0 | ==25.5        | pixi     |
+| `decimojo` | v0.6.0 | ==0.25.7      | pixi     |
+| `decimojo` | v0.7.0 | ==0.26.1      | pixi     |
+| `decimojo` | v0.8.0 | ==0.26.1      | pixi     |
 
 ## 快速開始
 
@@ -77,10 +84,9 @@ from decimojo import *
 
 這將導入以下類型或別名到您的命名空間：
 
-- `dm`: `decimojo` 模塊的別名。
-- `BigInt10`（別名 `BInt`）：任意精度有符號整數類型。
-- `BigDecimal`（別名 `BDec` 和 `Decimal`）：任意精度小數類型。
-- `Decimal128`（別名 `Dec128`）：128 位定點精度小數類型。
+- `BInt`（`BigInt` 的別名）：任意精度有符號整數類型，等價於 Python 的 `int`。
+- `Decimal` 或 `BDec`（`BigDecimal` 的別名）：任意精度小數類型，等價於 Python 的 `decimal.Decimal`。
+- `Dec128`（`Decimal128` 的別名）：128 位定點精度小數類型。
 - `RoundingMode`：捨入模式的枚舉。
 - `ROUND_DOWN`、`ROUND_HALF_UP`、`ROUND_HALF_EVEN`、`ROUND_UP`：常用捨入模式的常量。
 
@@ -165,46 +171,55 @@ fn main() raises:
 
 ---
 
-以下是展示 `BigInt10` 類型（`BInt`）每個主要功能的綜合快速入門指南。
+以下是展示 `BInt` 類型（`BigInt` 的別名）每個主要功能的綜合快速入門指南。
 
 ```mojo
 from decimojo.prelude import *
 
+
 fn main() raises:
     # === 構造 ===
-    var a = BigInt10("12345678901234567890")         # 從字符串
-    var b = BInt(12345)                            # 從整數
-    
+    var a = BInt("12345678901234567890")  # 從字符串
+    var b = BInt(12345)  # 從整數
+    var c = BInt("1991_10,18")  # 從帶分隔符的字符串
+    print(a, b, c)
+
     # === 基本算術 ===
-    print(a + b)                                   # 加法: 12345678901234580235
-    print(a - b)                                   # 減法: 12345678901234555545
-    print(a * b)                                   # 乘法: 152415787814108380241050
-    
+    print(a + b)  # 加法: 12345678901234580235
+    print(a - b)  # 減法: 12345678901234555545
+    print(a * b)  # 乘法: 152415787814108380241050
+
     # === 除法運算 ===
-    print(a // b)                                  # 向下整除: 999650944609516
-    print(a.truncate_divide(b))                    # 截斷除法: 999650944609516
-    print(a % b)                                   # 取模: 9615
-    
+    print(a // b)  # 向下整除: 999650944609516
+    print(a.truncate_divide(b))  # 截斷除法: 999650944609516
+    print(a % b)  # 取模: 9615
+
     # === 冪運算 ===
-    print(BInt(2).power(10))                     # 冪: 1024
-    print(BInt(2) ** 10)                         # 冪（使用 ** 運算符）: 1024
-    
+    print(BInt(2).power(10))  # 冪: 1024
+    print(BInt(2) ** 10)  # 冪（使用 ** 運算符）: 1024
+
     # === 比較 ===
-    print(a > b)                                   # 大於: True
-    print(a == BInt("12345678901234567890"))     # 相等: True
-    print(a.is_zero())                             # 檢查是否爲零: False
-    
+    print(a > b)  # 大於: True
+    print(a == BInt("12345678901234567890"))  # 相等: True
+    print(a.is_zero())  # 檢查是否爲零: False
+
     # === 類型轉換 ===
-    print(String(a))                               # 轉換爲字符串: "12345678901234567890"
-    
+    print(String(a))  # 轉換爲字符串: "12345678901234567890"
+
     # === 符號處理 ===
-    print(-a)                                      # 取負: -12345678901234567890
-    print(abs(BInt("-12345678901234567890")))    # 絕對值: 12345678901234567890
-    print(a.is_negative())                         # 檢查是否爲負: False
+    print(-a)  # 取負: -12345678901234567890
+    print(
+        abs(BInt("-12345678901234567890"))
+    )  # 絕對值: 12345678901234567890
+    print(a.is_negative())  # 檢查是否爲負: False
 
     # === 超大數字 ===
     # 3600 位數 // 1800 位數
     print(BInt("123456789" * 400) // BInt("987654321" * 200))
+
+    # === 最大公因數 ===
+    print(a.gcd(b))  # 最大公因數: 15
+    print(a.gcd(c))  # 最大公因數: 6
 ```
 
 ---
@@ -287,44 +302,43 @@ fn main() raises:
 
 DeciMojo 結合了 "Deci" 和 "Mojo" 兩詞，反映了其目的和實現語言。"Deci"（源自拉丁詞根"decimus"，意爲"十分之一"）強調了我們對人類自然用於計數和計算的十進制數字系統的關注。
 
-雖然名稱強調了帶小數部分的十進制數，但 DeciMojo 涵蓋了十進制數學的全部範圍。我們的 `BigInt10` 類型雖然只處理整數，但專爲十進制數字系統設計，採用以 10 爲基數的内部表示。這種方法在保持人類可讀的十進制語義的同時提供最佳性能，與專注於二進制的庫形成對比。此外，`BigInt10` 作爲我們 `BigDecimal` 實現的基礎，使得在整數和小數領域都能進行任意精度的計算。
-
 這個名稱最終強調了我們的使命：爲 Mojo 生態系統帶來精確、可靠的十進制計算，滿足浮點表示無法提供的精確算術的基本需求。
 
 ## 狀態
 
-羅馬不是一日建成的。DeciMojo 目前正在積極開發中。它已成功通過 **"讓它工作"** 階段，並已深入 **"讓它正確"** 階段，同時已實施多項優化。歡迎錯誤報告和功能請求！如果您遇到問題，請[在此提交](https://github.com/forfudan/decimojo/issues)。
+羅馬不是一日建成的。DeciMojo 目前正在積極開發中。它已成功通過 **"讓它工作"** 階段和 **"讓它正確"** 階段，現已深入 **"讓它快速"** 階段。
 
-定期對比 Python 的 `decimal` 模塊的基準測試可在 `bench/` 文件夾中找到，記錄了性能優勢以及需要不同方法的少數特定操作。
+`BInt` 類型已經完全實現並優化。它已經與 Python 的 `int` 進行了基準測試，並在大多數情況下表現出優越的性能。
+
+歡迎錯誤報告和功能請求！如果您遇到問題，請[在此提交](https://github.com/forfudan/decimojo/issues)。
 
 ## 測試與基準
 
 在將倉庫克隆到本地磁盤後，您可以：
 
 - 使用 `pixi run test` 運行測試。
-- 使用 `pixi run bdec` 生成對比 `python.decimal` 模塊的基準測試日誌。日誌文件保存在 `benches/bigdecimal/logs/` 中。
+- 使用 `pixi run bench` 運行基準測試。
 
-<!-- 
 ## 引用
 
 如果您發現 DeciMojo 對您的研究有用，請考慮將它加入您的引用中。
 
 ```tex
-@software{Zhu.2025,
+@software{Zhu.2026,
     author       = {Zhu, Yuhao},
-    year         = {2025},
-    title        = {An arbitrary-precision decimal and integer mathematics library for Mojo},
+    year         = {2026},
+    title        = {An arbitrary-precision integer and decimal library for Mojo},
     url          = {https://github.com/forfudan/decimojo},
-    version      = {0.6.0},
+    version      = {0.8.0},
     note         = {Computer Software}
 }
-``` 
--->
+```
 
 ## 許可證
 
 本倉庫及其所有貢獻内容均採用 Apache 許可證 2.0 版本授權。
 
 [^fixed]: `Decimal128` 類型可以表示最多 29 位有效數字，小數點後最多 28 位數字的值。當數值超過最大可表示值（`2^96 - 1`）時，DeciMojo 會拋出錯誤或將數值捨入以符合這些約束。例如，`8.8888888888888888888888888888`（總共 29 個 8，小數點後 28 位）的有效數字超過了最大可表示值（`2^96 - 1`），會自動捨入爲 `8.888888888888888888888888889`（總共 28 個 8，小數點後 27 位）。DeciMojo 的 `Decimal128` 類型類似於 `System.Decimal`（C#/.NET）、Rust 中的 `rust_decimal`、SQL Server 中的 `DECIMAL/NUMERIC` 等。
-[^integer]: BigInt10 實現對用戶使用基於 10 的表示（保持十進制語義），而內部使用優化的基於 10^9 的存儲系統進行高效計算。這種方法在人類可讀的十進制操作與高性能計算之間取得平衡。它提供向下整除（向負無窮舍入）和截斷除法（向零舍入）語義，無論操作數符號如何，都能確保除法操作具有正確的數學行爲。
-[^arbitrary]: 建立在我們已完成的 BigInt10 實現之上，BigDecimal 將支持整數和小數部分的任意精度，類似於 Python 中的 `decimal` 和 `mpmath`、Java 中的 `java.math.BigDecimal` 等。
+[^bigint]: `BigInt` 使用 base-2^32 表示，採用小端格式，最低有效字存儲在索引 0。每個字是一個 `UInt32`，允許對大整數進行高效存儲和算術運算。這種設計優化了二進制計算的性能，同時支持任意精度。
+[^bigint10]: BigInt10 使用基於 10 的表示（保持十進制語義），而內部使用優化的基於 10^9 的存儲系統進行高效計算。這種方法在人類可讀的十進制操作與高性能計算之間取得平衡。它提供向下整除（向負無窮舍入）和截斷除法（向零舍入）語義，無論操作數符號如何，都能確保除法操作具有正確的數學行爲。
+[^arbitrary]: 建立在已完成的 BigInt10 實現之上，BigDecimal 支持整數和小數部分的任意精度，類似於 Python 中的 `decimal` 和 `mpmath`、Java 中的 `java.math.BigDecimal` 等。

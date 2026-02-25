@@ -8,7 +8,7 @@ This is a to-do list for DeciMojo.
 - [ ] Implement different methods for adding decimojo types with `Int` types so that an implicit conversion is not required.
 - [ ] Use debug mode to check for unnecessary zero words before all arithmetic operations. This will help ensure that there are no zero words, which can simplify the speed of checking for zero because we only need to check the first word.
 - [ ] Check the `floor_divide()` function of `BigUInt`. Currently, the speed of division between imilar-sized numbers are okay, but the speed of 2n-by-n, 4n-by-n, and 8n-by-n divisions decreases unproportionally. This is likely due to the segmentation of the dividend in the Burnikel-Ziegler algorithm.
-- [ ] Make all default constructor "safe", which means that the words are checked and normalized to ensure that there are no zero words and that the number is in a valid state. This will help prevent bugs and ensure that all `BigUInt` instances are in a consistent state. Also allow users to create "unsafe" `BigUInt` instances if they want to, but there must be a key-word only argument, e.g., `raw_words`.
+- [x] (PR #127, #128, #131) Make all default constructor "safe", which means that the words are checked and normalized to ensure that there are no zero words and that the number is in a valid state. This will help prevent bugs and ensure that all `BigUInt` instances are in a consistent state. Also allow users to create "unsafe" `BigUInt` instances if they want to, but there must be a key-word only argument, e.g., `raw_words`.
 
 - [x] (#31) The `exp()` function performs slower than Python's counterpart in specific cases. Detailed investigation reveals the bottleneck stems from multiplication operations between decimals with significant fractional components. These operations currently rely on UInt256 arithmetic, which introduces performance overhead. Optimization of the `multiply()` function is required to address these performance bottlenecks, particularly for high-precision decimal multiplication with many digits after the decimal point.
 - [x] Implement different methods for augmented arithmetic assignments to improve memeory-efficiency and performance.
@@ -17,6 +17,6 @@ This is a to-do list for DeciMojo.
 
 ## Roadmap for Decimojo
 
-- [ ] Re-implement some methods of `BigUInt` to improve the performance, since it is the building block of `BigDecimal` and `BigInt10`.
-- [ ] Refine the methods of `BigDecimal` to improve the performance.
-- [ ] Implement the big **binary** (signed and unsigned) integer type (`BigBinaryUInt`) when users do not need the full precision of BigDecimal. When it is finished, the current BigUInt will be renamed to `BigDecimalUInt`. The alias `BUInt` may be rebound to `BigBinaryUInt`.
+- [x] Re-implement some methods of `BigUInt` to improve the performance, since it is the building block of `BigDecimal` and `BigInt10`.
+- [x] Refine the methods of `BigDecimal` to improve the performance.
+- [x] Implement the big **binary** integer type (`BigInt`) using base-2^32 internal representation. The new `BigInt` (alias `BInt`) replaces the previous base-10^9 implementation (now `BigInt10`) and delivers significantly improved performance.

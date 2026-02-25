@@ -6,7 +6,7 @@ license = "Apache-2.0"
 name = "decimojo"
 platforms = ["osx-arm64", "linux-64"]
 readme = "README.md"
-version = "0.7.0"
+version = "0.8.0"
 
 [dependencies]
 mojo = "==0.26.1"

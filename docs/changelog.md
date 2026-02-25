@@ -2,30 +2,78 @@
 
 This is a list of changes for the DeciMojo Package.
 
-<!-- 
-## Unreleased (v0.8.0)
+## 20260225 (v0.8.0)
 
-DeciMojo v0.8.0 is a profound milestone in the development of DeciMojo, i.e., "make it fast". There are two major improvements in this release:
+DeciMojo v0.8.0 is a profound milestone in the development of DeciMojo, marking the **"make it fast"** phase. There are two major improvements in this release:
 
-First, it re-implements the core `BigInt` (alias `BInt`) type using 2^32-based internal representation. This replaces the previous 10^9-based implementation, significantly enhancing the performance of `BigInt` operations, especially for large integers. The new implementation is designed to be fully compatible with the existing API, ensuring a seamless transition for users. Benchmarks show that the new `BigInt` implementation can be up to 10x faster than the previous one for certain operations, particularly multiplication and division of large integers, and it also beats Python's built-in `int` type in most cases.
+First, it introduces a completely new `BigInt` (`BInt`) type using a **base-2^32 internal representation**. This replaces the previous base-10^9 implementation (now available as `BigInt10`) with a little-endian format using `UInt32` words, dramatically improving the performance of all integer operations. The new `BigInt` implements the **Karatsuba multiplication algorithm** and the **Burnikel-Ziegler division algorithm** for sub-quadratic performance on large integers, and includes **divide-and-conquer base conversion** for fast string I/O. It also adds **bitwise operations**, **GCD and modular arithmetic**, and an optimized **integer square root**. Benchmarks show that the new `BigInt` outperforms Python's built-in `int` type in most cases, with up to 11× speedup for power operations and 5× for shift operations.
 
-Second, it optimizes the mathematical operations for `BigDecimal`, improving performance and accuracy. For example, the re-implementation of the `sqrt()` function for `BigDecimal` using the reciprocal square root method combined with Newton's method allows for faster convergence and better performance, especially for high-precision calculations. It also refines the `to_string()` method to align with the Python `decimal` module's string representation in terms of scientific notation and trailing zeros, ensuring better compatibility and consistency. Benchmarks indicate that the `BigDecimal` operations beat Python's `decimal` module in terms of speed, especially for high-precision calculations, while maintaining comparable accuracy.
-
-Besides... [to be finished at the release time]
-
-Benchmarks... [put some core benchmark results here at the release time] 
+Second, it optimizes the mathematical operations for `BigDecimal`, bringing significant performance and accuracy improvements. The `sqrt()` function is re-implemented using the **reciprocal square root method** combined with Newton's method for faster convergence. The `ln()` function now supports an **atanh-based approach** with mathematical constant caching via `MathCache`. The `exp()` function benefits from **aggressive range reduction** for much faster convergence. The `root()` function gains **rational root decomposition** and a direct Newton method. The `to_string()` method is aligned with CPython's `decimal` module formatting rules for scientific notation and trailing zeros. The `BigUInt` layer also gains the **Toom-Cook 3-way multiplication algorithm**. Benchmarks indicate that `BigDecimal` operations beat Python's `decimal` module in speed, especially for high-precision calculations (e.g., division up to 915× faster, sqrt 3.5× faster on average).
 
 ### ⭐️ New in v0.8.0
 
-List the new features here and also refer to PR numbers in the format of `(PR #number)`.
+**BigInt (base-2^32):**
+
+1. Implement the `BigInt` (`BInt`) type using a base-2^32 internal representation with little-endian `UInt32` words. This is a completely new implementation optimized for binary computations while supporting arbitrary precision (PR #133, #134, #135, #141).
+1. Implement the **Karatsuba multiplication algorithm** for `BigInt`, reducing time complexity from $O(n^2)$ to $O(n^{\log_2 3})$ for large integers (PR #142).
+1. Implement the **slice-based Burnikel-Ziegler division algorithm** for `BigInt`, providing sub-quadratic division performance for the base-2^32 representation (PR #144).
+1. Implement **divide-and-conquer base conversion** for `BigInt.to_string()`, significantly improving string conversion speed for large integers (PR #145).
+1. Implement **bitwise operations** (`__and__`, `__or__`, `__xor__`, `__lshift__`, `__rshift__`, `__invert__`) and true in-place bitwise operations for `BigInt` (PR #150, #151).
+1. Implement `gcd()`, `extended_gcd()`, `mod_inverse()`, and `mod_pow()` for `BigInt`, providing number-theoretic functions (PR #152, #153).
+1. Implement an optimized `sqrt()` for `BigInt` using Newton's method with a good initial approximation, delivering 1.39× average speedup over Python (PR #155).
+
+**BigDecimal:**
+
+1. Implement the `quantize()` function for `BigDecimal` to format decimal numbers to a specified number of decimal places, similar to Python's `Decimal.quantize()` (PR #126).
+1. Implement true in-place arithmetic functions (`__iadd__`, `__isub__`, `__imul__`) for `BigDecimal` to reduce memory allocations during repeated operations (PR #162).
+1. Implement methods to initialize `BigInt` and `BigDecimal` from Python objects, enabling seamless interoperability with Python's `int` and `decimal.Decimal` (PR #129).
+
+**Core:**
+
+1. Add `ROUND_CEILING` and `ROUND_FLOOR` rounding modes to `RoundingMode`, bringing the total to six modes (PR #164).
+
+**TOMLMojo:**
+
+1. Implement all core **TOML v1.0 specification** features for `TOMLMojo`, including inline tables, arrays of tables, dotted keys, multiline strings, and all value types (PR #140).
 
 ### 🦋 Changed in v0.8.0
 
+**BigInt:**
+
+1. Rename the previous base-10^9 `BigInt` to `BigInt10`. The alias `BInt` now refers to the new base-2^32 `BigInt` type (PR #143, #154).
+1. Optimize `from_string()` for `BigInt` with an improved string parser and divide-and-conquer approach for fast base conversion (PR #146, #147, #148).
+1. Optimize `to_string()` for `BigInt` with divide-and-conquer base conversion, achieving 6× average speedup over Python (PR #149).
+
+**BigDecimal:**
+
+1. Re-implement `sqrt()` for `BigDecimal` using the **reciprocal square root method** combined with Newton's method, delivering faster convergence and better accuracy for high-precision calculations (PR #163).
+1. Optimize `ln()` and `exp()` for `BigDecimal` with mathematical constant caching via `MathCache` and improved handling of one-word dividends (PR #160).
+1. Apply **aggressive range reduction** for `exp()` to achieve faster convergence at high precision (PR #167).
+1. Implement direct Newton method for general `root()` calculation, replacing the previous iterative approach (PR #161).
+1. Add **rational root decomposition** to `root()` and an **atanh-based approach** to `ln()` for improved accuracy and convergence (PR #168).
+1. Optimize `true_divide_general()` to correctly account for existing word surplus in the dividend (PR #158).
+1. Optimize division with truncation and align `to_string()` output with CPython's `decimal` module formatting for scientific notation and trailing zeros (PR #165).
+
+**BigUInt:**
+
+1. Implement the **Toom-Cook 3-way multiplication algorithm** for `BigUInt`, improving performance for large number multiplications (PR #166).
+1. Unify and refine initialization methods for `BigUInt` with consistent constructors and improved validation (PR #127, #128, #131).
+
+**Core:**
+
+1. Improve naming consistency between types, ensuring uniform method names across `BigInt`, `BigDecimal`, and `Decimal128` (PR #164).
+1. Make `RoundingMode` type implicitly copyable for easier usage in function signatures (PR #125).
+
 ### 🛠️ Fixed in v0.8.0
+
+- Fix string formatting for `BigDecimal` to match Python's `decimal` module formatting rules, including correct scientific notation thresholds and trailing zero handling (PR #163, #165).
 
 ### 📚 Documentation and testing in v0.8.0
 
--->
+- Refactor the testing files for `Decimal128` (PR #132).
+- Refactor the benchmarking system to use TOML-based input files with configurable precision (PR #139, #159).
+- Update document links for the repository organization move to `forfudan` (PR #130).
+- Update documents and add the planning files for BigInt and BigDecimal optimization roadmaps (PR #157).
 
 ## 20260212 (v0.7.0)
 
@@ -58,7 +106,7 @@ DeciMojo v0.5.0 is compatible with Mojo v25.5.
 
 Changes in **BigUInt**:
 
-1. Refine the `BigUInt` multiplication with the **Karatsuba algorithm**. The time complexity of maltiplication is reduced from $O(n^2)$ to $O(n^{ln(3/2)})$ for large integers, which significantly improves performance for big numbers. Doubling the size of the numbers will only increase the time taken by a factor of about 3, instead of 4 as in the previous implementation (#97).
+1. Refine the `BigUInt` multiplication with the **Karatsuba algorithm**. The time complexity of multiplication is reduced from $O(n^2)$ to $O(n^{ln(3/2)})$ for large integers, which significantly improves performance for big numbers. Doubling the size of the numbers will only increase the time taken by a factor of about 3, instead of 4 as in the previous implementation (#97).
 1. Refine the `BigUInt` division with the **Burnikel-Ziegler fast recursive division algorithm**. The time complexity of division is also reduced from $O(n^2)$ to $O(n^{ln(3/2)})$ for large integers (#103).
 1. Refine the fall-back **schoolbook division** of `BigUInt` to improve performance. The fallback division is used when the divisor is small enough (#98, #100).
 1. Implement auxiliary functions for arithmetic operations of `BigUInt` to handle **special cases** more efficiently, e.g., when the second operand is one-word long or is a `UInt32` value (#98, #104, #111).

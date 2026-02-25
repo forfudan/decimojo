@@ -72,7 +72,7 @@ The following table summarizes the package versions and their corresponding Mojo
 | v0.5.0     | ==25.5        | pixi            |
 | v0.6.0     | ==0.25.7      | pixi            |
 | v0.7.0     | ==0.26.1      | pixi            |
-| v0.8.0     | ==0.26.2      | pixi            |
+| v0.8.0     | ==0.26.1      | pixi            |
 
 ## Quick start
 
