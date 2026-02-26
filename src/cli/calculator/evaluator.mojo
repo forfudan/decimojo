@@ -48,10 +48,11 @@ fn _call_func(name: String, mut stack: List[BDec], precision: Int) raises:
     and push the result back.
 
     Single-argument functions:
-        sqrt, cbrt, ln, log, log10, exp, sin, cos, tan, cot, csc, abs
+        sqrt, cbrt, ln, log10, exp, sin, cos, tan, cot, csc, abs
 
     Two-argument functions:
-        root(x, n)  — the n-th root of x.
+        root(x, n)   — the n-th root of x.
+        log(x, base) — logarithm of x with the given base.
     """
     if name == "root":
         # root(x, n): x was pushed first, then n
@@ -60,6 +61,15 @@ fn _call_func(name: String, mut stack: List[BDec], precision: Int) raises:
         var n_val = stack.pop()
         var x_val = stack.pop()
         stack.append(x_val.root(n_val, precision))
+        return
+
+    if name == "log":
+        # log(x, base): x was pushed first, then base
+        if len(stack) < 2:
+            raise Error("log() requires two arguments: log(x, base)")
+        var base_val = stack.pop()
+        var x_val = stack.pop()
+        stack.append(x_val.log(base_val, precision))
         return
 
     # All remaining functions take exactly one argument
@@ -73,8 +83,6 @@ fn _call_func(name: String, mut stack: List[BDec], precision: Int) raises:
         stack.append(a.cbrt(precision))
     elif name == "ln":
         stack.append(a.ln(precision))
-    elif name == "log":
-        stack.append(a.log10(precision))
     elif name == "log10":
         stack.append(a.log10(precision))
     elif name == "exp":
@@ -118,7 +126,7 @@ fn evaluate_rpn(rpn: List[Token], precision: Int) raises -> BDec:
             if rpn[i].value == "pi":
                 stack.append(BDec.pi(precision))
             elif rpn[i].value == "e":
-                stack.append(BDec.from_string("1").exp(precision))
+                stack.append(BDec.e(precision))
             else:
                 raise Error("Unknown constant: " + rpn[i].value)
 

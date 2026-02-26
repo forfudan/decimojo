@@ -43,7 +43,7 @@ Decimo also includes a command-line calculator application that supports arbitra
 You can use it to evaluate complex mathematical expressions with high precision directly from your terminal. For example:
 
 ```bash
-./decimo "2^10 + sqrt(pi) * ln(e^3) - root(125, 3) / abs(-5) + sin(pi/2)" -p 50 --sci
+./decimo "2^10 + sqrt(pi) * ln(e^3) - root(125, 3) / abs(-5) + sin(pi/2)" -p 50 --scientific
 ```
 
 ---

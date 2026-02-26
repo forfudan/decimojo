@@ -309,6 +309,76 @@ fn test_ln_e_is_one() raises:
 
 
 # ===----------------------------------------------------------------------=== #
+# Tests: remaining functions (Phase 2 – smoke tests per function)
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_cbrt_27() raises:
+    """cbrt(27) ≈ 3."""
+    var result = String(evaluate("cbrt(27)"))
+    testing.assert_true(
+        result == "3" or result.startswith("3."),
+        "cbrt(27) should be 3, got: " + result,
+    )
+
+
+fn test_log10_1000() raises:
+    """log10(1000) = 3."""
+    testing.assert_equal(String(evaluate("log10(1000)")), "3", "log10(1000)")
+
+
+fn test_log10_1() raises:
+    """log10(1) = 0."""
+    testing.assert_equal(String(evaluate("log10(1)")), "0", "log10(1)")
+
+
+fn test_log_base_2() raises:
+    """log(8, 2) ≈ 3."""
+    var result = String(evaluate("log(8, 2)"))
+    testing.assert_true(
+        result == "3" or result.startswith("3."),
+        "log(8,2) should be 3, got: " + result,
+    )
+
+
+fn test_log_base_100() raises:
+    """log(1000000, 100) ≈ 3."""
+    var result = String(evaluate("log(1000000, 100)"))
+    testing.assert_true(
+        result == "3" or result.startswith("3."),
+        "log(1000000,100) should be 3, got: " + result,
+    )
+
+
+fn test_cos_0() raises:
+    """cos(0) = 1."""
+    testing.assert_equal(String(evaluate("cos(0)")), "1", "cos(0)")
+
+
+fn test_tan_0() raises:
+    """tan(0) = 0."""
+    testing.assert_equal(String(evaluate("tan(0)")), "0", "tan(0)")
+
+
+fn test_cot_pi_over_4() raises:
+    """cot(pi/4) is very close to 1."""
+    var result = String(evaluate("cot(pi/4)", precision=20))
+    testing.assert_true(
+        result == "1" or result.startswith("1.") or result.startswith("0.9999"),
+        "cot(pi/4) ≈ 1: " + result,
+    )
+
+
+fn test_csc_pi_over_2() raises:
+    """csc(pi/2) is very close to 1."""
+    var result = String(evaluate("csc(pi/2)", precision=20))
+    testing.assert_true(
+        result == "1" or result.startswith("1.") or result.startswith("0.9999"),
+        "csc(pi/2) ≈ 1: " + result,
+    )
+
+
+# ===----------------------------------------------------------------------=== #
 # Main
 # ===----------------------------------------------------------------------=== #
 
