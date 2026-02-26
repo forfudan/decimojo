@@ -1,14 +1,14 @@
-# Decimo <!-- omit from toc -->
+# Decimo (formerly DeciMojo) <!-- omit from toc -->
 
 An arbitrary-precision integer and decimal library for [Mojo](https://www.modular.com/mojo), inspired by Python's `int` and `Decimal`.
 
 **[中文·漢字](https://github.com/forfudan/decimo/blob/main/docs/readme_zht.md)**　|　**[Changelog](https://github.com/forfudan/decimo/blob/main/docs/changelog.md)**　|　**[Repository on GitHub»](https://github.com/forfudan/decimo)**　|　**[Discord channel»](https://discord.gg/3rGH87uZTk)**
 
 - [Overview](#overview)
+- [Project structure](#project-structure)
 - [Installation](#installation)
 - [Quick start](#quick-start)
 - [Objective](#objective)
-- [Nomenclature](#nomenclature)
 - [Status](#status)
 - [Tests and benches](#tests-and-benches)
 - [Citation](#citation)
@@ -30,13 +30,50 @@ The core types are:
 | --------- | -------------------- | ---------------------------------------- | ----------------------- |
 | `BInt`    | `BigInt`             | Equivalent to Python's `int`             | Base-2^32               |
 | `Decimal` | `BDec`, `BigDecimal` | Equivalent to Python's `decimal.Decimal` | Base-10^9               |
-| `Dec`     | `Decimal128`         | 128-bit fixed-precision decimal type     | Triple 32-bit words     |
+| `Dec128`  | `Decimal128`         | 128-bit fixed-precision decimal type     | Triple 32-bit words     |
 
 The auxiliary types include a base-10 arbitrary-precision signed integer type (`BigInt10`) and a base-10 arbitrary-precision unsigned integer type (`BigUInt`) supporting unlimited digits[^bigint10]. `BigUInt` is used as the internal representation for `BigInt10` and `Decimal`.
 
 ---
 
+**Decimo** combines "**Deci**mal" and "**Mo**jo" - reflecting its purpose and implementation language. "Decimo" is also a Latin word meaning "tenth" and is the root of the word "decimal".
+
+---
+
 This repository includes [TOMLMojo](./docs/readme_tomlmojo.md), a lightweight TOML parser in pure Mojo. It parses configuration files and test data, supporting basic types, arrays, and nested tables. While created for Decimo's testing framework, it offers general-purpose structured data parsing with a clean, simple API.
+
+## Project structure
+
+```text
+decimo/
+├── src/                          # All source code
+│   ├── decimo/                   # Core library (mojo package)
+│   │   ├── bigdecimal/           #   Arbitrary-precision decimal (Decimal/BDec)
+│   │   ├── bigint/               #   Arbitrary-precision signed integer (BInt)
+│   │   ├── bigint10/             #   Base-10 signed integer (BigInt10)
+│   │   ├── biguint/              #   Base-10 unsigned integer (BigUInt)
+│   │   ├── decimal128/           #   128-bit fixed-precision decimal (Dec128)
+│   │   └── ...                   #   Shared utilities (str, errors, rounding)
+│   ├── tomlmojo/                 # TOML parser library (mojo package)
+│   └── cli/                      # CLI calculator application
+│       ├── main.mojo             #   Entry point (ArgMojo CLI)
+│       └── calculator/           #   Calculator engine (mojo package)
+│           ├── tokenizer.mojo    #     Lexer: expression → tokens
+│           ├── parser.mojo       #     Shunting-yard: infix → RPN
+│           └── evaluator.mojo    #     RPN evaluator using BigDecimal
+├── tests/                        # Unit tests (one subfolder per module)
+│   ├── bigdecimal/
+│   ├── bigint/
+│   ├── biguint/
+│   ├── decimal128/
+│   ├── cli/                      #   CLI calculator tests
+│   └── tomlmojo/
+├── benches/                      # Benchmarks (one subfolder per module)
+├── docs/                         # Documentation and design notes
+└── pixi.toml                     # Project configuration and tasks
+```
+
+`src/decimo/` and `src/tomlmojo/` are Mojo packages — they are compiled with `mojo package` and can be imported by external projects. `src/cli/` is an application that consumes the `decimo` package and compiles to a standalone binary via `mojo build`.
 
 ## Installation
 
@@ -62,17 +99,17 @@ Then, you can install Decimo using any of these methods:
 
 The following table summarizes the package versions and their corresponding Mojo versions:
 
-| `decimo` | `mojo`        | package manager |
-| ---------- | ------------- | --------------- |
-| v0.1.0     | ==25.1        | magic           |
-| v0.2.0     | ==25.2        | magic           |
-| v0.3.0     | ==25.2        | magic           |
-| v0.3.1     | >=25.2, <25.4 | pixi            |
-| v0.4.x     | ==25.4        | pixi            |
-| v0.5.0     | ==25.5        | pixi            |
-| v0.6.0     | ==0.25.7      | pixi            |
-| v0.7.0     | ==0.26.1      | pixi            |
-| v0.8.0     | ==0.26.1      | pixi            |
+| libary     | version | Mojo version  | package manager |
+| ---------- | ------- | ------------- | --------------- |
+| `decimojo` | v0.1.0  | ==25.1        | magic           |
+| `decimojo` | v0.2.0  | ==25.2        | magic           |
+| `decimojo` | v0.3.0  | ==25.2        | magic           |
+| `decimojo` | v0.3.1  | >=25.2, <25.4 | pixi            |
+| `decimojo` | v0.4.x  | ==25.4        | pixi            |
+| `decimojo` | v0.5.0  | ==25.5        | pixi            |
+| `decimojo` | v0.6.0  | ==0.25.7      | pixi            |
+| `decimojo` | v0.7.0  | ==0.26.1      | pixi            |
+| `decimo`   | v0.8.0  | ==0.26.1      | pixi            |
 
 ## Quick start
 
@@ -92,7 +129,7 @@ This will import the following types or aliases into your namespace:
 
 ---
 
-Here are some examples showcasing the arbitrary-precision feature of the `Decimal` type. For some mathematical operations, the default precision (number of significant digits) is set to `36`. You can change the precision by passing the `precision` argument to the function. This default precision will be configurable globally in future when Mojo supports global variables.
+Here are some examples showcasing the arbitrary-precision feature of the `Decimal` type. For some mathematical operations, the default precision (number of significant digits) is set to `28`. You can change the precision by passing the `precision` argument to the function. This default precision will be configurable globally in future when Mojo supports global variables.
 
 ```mojo
 from decimo.prelude import *
@@ -108,7 +145,7 @@ fn main() raises:
     print(a + b)  # 123458023.691346789
     print(a - b)  # 123455554.555566789
     print(a * b)  # 152415787654.32099750190521
-    print(a.true_divide(b + 1))  # 99919.0656560820700835791386582569736
+    print(a.true_divide(b + 1))  # 99919.06565608207008357913866
 
     # === Exponential Functions === #
     print(a.sqrt(precision=80))
@@ -295,12 +332,6 @@ Since Mojo currently lacks a native Decimal type in its standard library, I deci
 
 This project draws inspiration from several established decimal implementations and documentation, e.g., [Python built-in `Decimal` type](https://docs.python.org/3/library/decimal.html), [Rust `rust_decimal` crate](https://docs.rs/rust_decimal/latest/rust_decimal/index.html), [Microsoft's `Decimal` implementation](https://learn.microsoft.com/en-us/dotnet/api/system.decimal.getbits?view=net-9.0&redirectedfrom=MSDN#System_Decimal_GetBits_System_Decimal_), [General Decimal Arithmetic Specification](https://speleotrove.com/decimal/decarith.html), etc. Many thanks to these predecessors for their contributions and their commitment to open knowledge sharing.
 
-## Nomenclature
-
-Decimo combines "Deci" and "Mojo" - reflecting its purpose and implementation language. "Deci" (from Latin "decimus" meaning "tenth") highlights our focus on the decimal numeral system that humans naturally use for counting and calculations.
-
-The name ultimately emphasizes our mission: bringing precise, reliable decimal calculations to the Mojo ecosystem, addressing the fundamental need for exact arithmetic that floating-point representations cannot provide.
-
 ## Status
 
 Rome wasn't built in a day. Decimo is currently under active development. It has successfully progressed through the **"make it work"** phase and the **"make it right"**, and is now well into the **"make it fast"** phase.
@@ -313,8 +344,10 @@ Bug reports and feature requests are welcome! If you encounter issues, please [f
 
 After cloning the repo onto your local disk, you can:
 
-- Use `pixi run test` to run tests.
+- Use `pixi run test` to run all tests.
+- Use `pixi run test_cli` to run CLI calculator tests.
 - Use `pixi run bench` to run benchmarks.
+- Use `pixi run build` to compile the CLI calculator to a `./decimo` binary.
 
 ## Citation
 
@@ -324,7 +357,7 @@ If you find Decimo useful, consider listing it in your citations.
 @software{Zhu.2026,
     author       = {Zhu, Yuhao},
     year         = {2026},
-    title        = {An arbitrary-precision integer and decimal mathematics library for Mojo},
+    title        = {Decimo: An arbitrary-precision integer and decimal library for Mojo},
     url          = {https://github.com/forfudan/decimo},
     version      = {0.8.0},
     note         = {Computer Software}
