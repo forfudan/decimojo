@@ -521,24 +521,46 @@ struct BigDecimal(
 
     fn to_string(
         self,
-        scientific_notation: Bool = False,
+        scientific: Bool = False,
+        engineering: Bool = False,
+        force_plain: Bool = False,
+        delimiter: String = "",
         line_width: Int = 0,
     ) -> String:
         """Returns string representation of the number.
 
-        This method follows CPython's `Decimal.__str__` logic exactly:
+        This method follows CPython's ``Decimal.__str__`` logic exactly for
+        the default and scientific-notation paths.
 
+        - Engineering notation (``engineering=True``) is tried first.
+          The exponent is always a multiple of 3 (e.g. ``12.34E+6``,
+          ``500E-3``).  Trailing zeros in the mantissa are stripped.
         - Scientific notation is used when:
-          1. `scientific_notation` parameter is True, OR
+          1. ``scientific`` parameter is True, OR
           2. The internal exponent > 0 (i.e., scale < 0), OR
           3. There are more than 6 leading zeros after the decimal
-             point (adjusted exponent < -6).
+             point (adjusted exponent < -6), unless ``force_plain=True``.
         - Otherwise, plain (fixed-point) notation is used.
 
+        When both ``engineering`` and ``scientific`` are True, engineering
+        notation takes precedence.
+
         Args:
-            scientific_notation: If True, the number is always represented in
-                scientific notation. If False, the format is determined by the
-                CPython-compatible rules described above.
+            scientific: If True, the number is always represented in
+                scientific notation (trailing zeros stripped).  The format is
+                otherwise determined by the CPython-compatible rules above.
+            engineering: If True, the number is represented in engineering
+                notation (exponent is a multiple of 3, trailing zeros
+                stripped).
+            force_plain: If True, suppress the CPython-compatible
+                auto-detection of scientific notation (the ``scale < 0`` and
+                ``leftdigits <= -6`` rules are not applied).  Useful when a
+                guaranteed fixed-point string is needed regardless of
+                magnitude.  Has no effect when ``scientific`` or
+                ``engineering`` is True.
+            delimiter: A string inserted every 3 digits in both the integer
+                and fractional parts (e.g. ``"_"`` gives ``1_234.567_89``).
+                An empty string (default) disables grouping.
             line_width: The maximum line width for the string representation.
                 If 0, the string is returned as a single line.
                 If greater than 0, the string is split into multiple lines.
@@ -572,19 +594,78 @@ struct BigDecimal(
         var leftdigits = num_digits - self.scale
 
         # Determine whether to use scientific notation
-        var use_scientific = (
-            scientific_notation
-            or self.scale < 0  # CPython: _exp > 0
-            or leftdigits <= -6  # Too many leading zeros
+        var use_scientific = scientific or (
+            not force_plain and (self.scale < 0 or leftdigits <= -6)
         )
 
-        if use_scientific:
+        if engineering:
+            # Engineering notation: exponent is always a multiple of 3.
+            # Examples: 12345 -> 12.345E+3, 0.001 -> 1E-3, 0.5 -> 500E-3.
+            var adjusted_exp = leftdigits - 1
+            var eng_exp: Int
+            if adjusted_exp >= 0:
+                eng_exp = (adjusted_exp // 3) * 3
+            else:
+                eng_exp = -((-adjusted_exp + 2) // 3) * 3
+            var lead_digits = adjusted_exp - eng_exp + 1  # always 1, 2, or 3
+
+            # Strip trailing zeros (artifacts of working precision)
+            var coef = coefficient_string
+            var cb = coef.as_string_slice().as_bytes()
+            var clen = len(cb)
+            var cptr = cb.unsafe_ptr()
+            while clen > 1 and cptr[clen - 1] == 48:  # '0'
+                clen -= 1
+            if clen < num_digits:
+                var trimmed = List[UInt8](capacity=clen)
+                for i in range(clen):
+                    trimmed.append(cptr[i])
+                coef = String(unsafe_from_utf8=trimmed^)
+
+            # Zero-pad the right side if fewer sig-digits than lead_digits
+            # e.g. coef="5", lead_digits=3  ->  coef="500"  (500E-3)
+            if len(coef) < lead_digits:
+                coef = coef + "0" * (lead_digits - len(coef))
+
+            # Build mantissa
+            if len(coef) <= lead_digits:
+                result += coef
+            else:
+                result += coef[:lead_digits]
+                result += "."
+                result += coef[lead_digits:]
+
+            # Append exponent (omit the 'E' suffix when eng_exp == 0)
+            if eng_exp != 0:
+                result += "E"
+                if eng_exp > 0:
+                    result += "+"
+                result += String(eng_exp)
+
+        elif use_scientific:
             # Scientific notation: 1 digit on left of the decimal point
             var exponent = leftdigits - 1
-            result += coefficient_string[byte=0]
-            if num_digits > 1:
+            # When the caller explicitly requests scientific notation, strip
+            # trailing zeros that are artifacts of working precision (e.g.
+            # "5.0000...0E-1" -> "5E-1").  When scientific notation is
+            # triggered automatically by CPython-compatibility rules we
+            # preserve all digits so that __str__ stays round-trip safe.
+            var coef = coefficient_string
+            if scientific:
+                var cb = coef.as_string_slice().as_bytes()
+                var clen = len(cb)
+                var cptr = cb.unsafe_ptr()
+                while clen > 1 and cptr[clen - 1] == 48:  # ord('0')
+                    clen -= 1
+                if clen < num_digits:
+                    var trimmed = List[UInt8](capacity=clen)
+                    for i in range(clen):
+                        trimmed.append(cptr[i])
+                    coef = String(unsafe_from_utf8=trimmed^)
+            result += coef[byte=0]
+            if len(coef) > 1:
                 result += "."
-                result += coefficient_string[1:]
+                result += coef[1:]
             result += "E"
             if exponent > 0:
                 result += "+"
@@ -614,6 +695,10 @@ struct BigDecimal(
                 result += coefficient_string[:leftdigits]
                 result += "."
                 result += coefficient_string[leftdigits:]
+
+        # Insert digit-group separators if requested
+        if delimiter:
+            result = _insert_digit_separators(result^, delimiter)
 
         # Split the result in multiple lines if line_width > 0
         if line_width > 0:
@@ -1533,3 +1618,92 @@ struct BigDecimal(
             number_of_trailing_zeros += 1
 
         return number_of_zero_words * 9 + number_of_trailing_zeros
+
+
+# ===----------------------------------------------------------------------=== #
+# Module-level helpers
+# ===----------------------------------------------------------------------=== #
+
+
+fn _insert_digit_separators(s: String, delimiter: String) -> String:
+    """Insert ``delimiter`` every 3 digits in both the integer and
+    fractional parts of a numeric string.
+
+    The function is aware of an optional leading ``-`` sign and a trailing
+    exponent suffix (``E+3``, ``E-12``, …).  Only the mantissa digits are
+    grouped; the sign and exponent are preserved verbatim.
+
+    Examples (with ``delimiter = "_"``):
+      ``"1234567"``          → ``"1_234_567"``
+      ``"1234567.891011"``   → ``"1_234_567.891_011"``
+      ``"12.345678E+6"``     → ``"12.345_678E+6"``
+      ``"-0.00123"``         → ``"-0.001_23"``
+    """
+    if not delimiter:
+        return s
+
+    var sb = s.as_string_slice().as_bytes()
+    var n = len(sb)
+    var ptr = sb.unsafe_ptr()
+
+    # Locate optional leading minus (ASCII 45)
+    var start = 0
+    if n > 0 and ptr[0] == 45:
+        start = 1
+
+    # Locate optional exponent suffix 'E' (ASCII 69)
+    var e_pos = n  # points past end if no 'E'
+    for i in range(start, n):
+        if ptr[i] == 69:
+            e_pos = i
+            break
+
+    # Locate optional decimal point '.' (ASCII 46) within the mantissa
+    var dot_pos = -1
+    for i in range(start, e_pos):
+        if ptr[i] == 46:
+            dot_pos = i
+            break
+
+    # Determine integer-part and fractional-part ranges within `s`
+    var int_end = dot_pos if dot_pos >= 0 else e_pos
+    var int_part = String(s[start:int_end])
+
+    var frac_part = String("")
+    if dot_pos >= 0:
+        frac_part = String(s[dot_pos + 1 : e_pos])
+
+    # --- Group integer part (right-to-left every 3 digits) ---
+    var int_len = len(int_part)
+    if int_len > 3:
+        var blocks = List[String](capacity=int_len // 3 + 1)
+        var end_i = int_len
+        var start_i = end_i - 3
+        while start_i > 0:
+            blocks.append(String(int_part[start_i:end_i]))
+            end_i = start_i
+            start_i = end_i - 3
+        blocks.append(String(int_part[0:end_i]))
+        blocks.reverse()
+        int_part = delimiter.join(blocks)
+
+    # --- Group fractional part (left-to-right every 3 digits) ---
+    var frac_len = len(frac_part)
+    if frac_len > 3:
+        var blocks = List[String](capacity=frac_len // 3 + 1)
+        var i = 0
+        while i + 3 < frac_len:
+            blocks.append(String(frac_part[i : i + 3]))
+            i += 3
+        blocks.append(String(frac_part[i:]))
+        frac_part = delimiter.join(blocks)
+
+    # --- Rebuild ---
+    var result = String(s[:start])  # sign (if any)
+    result += int_part
+    if dot_pos >= 0:
+        result += "."
+        result += frac_part
+    if e_pos < n:
+        result += String(s[e_pos:])  # exponent suffix
+    return result^

@@ -11,6 +11,10 @@ from calculator.tokenizer import (
     TOKEN_STAR,
     TOKEN_SLASH,
     TOKEN_UNARY_MINUS,
+    TOKEN_CARET,
+    TOKEN_FUNC,
+    TOKEN_CONST,
+    TOKEN_COMMA,
 )
 from calculator.parser import parse_to_rpn
 
@@ -159,6 +163,96 @@ fn test_mismatched_rparen() raises:
     except:
         raised = True
     testing.assert_true(raised, "should raise on missing '('")
+
+
+# ===----------------------------------------------------------------------=== #
+# Tests: power operator (Phase 2)
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_caret_simple() raises:
+    testing.assert_equal(parse_expr("2^3"), "2 3 ^", "simple power")
+
+
+fn test_caret_right_associative() raises:
+    """2^3^4 should be parsed as 2^(3^4), i.e. RPN: 2 3 4 ^ ^."""
+    testing.assert_equal(parse_expr("2^3^4"), "2 3 4 ^ ^", "right assoc ^")
+
+
+fn test_caret_vs_mul_precedence() raises:
+    """^ binds tighter than *: 2*3^4 = 2*(3^4)."""
+    testing.assert_equal(parse_expr("2*3^4"), "2 3 4 ^ *", "^ before *")
+
+
+fn test_caret_vs_add_precedence() raises:
+    """^ binds tighter than +: 1+2^3 = 1+(2^3)."""
+    testing.assert_equal(parse_expr("1+2^3"), "1 2 3 ^ +", "^ before +")
+
+
+fn test_caret_with_parens() raises:
+    testing.assert_equal(parse_expr("(2+3)^4"), "2 3 + 4 ^", "(2+3)^4")
+
+
+fn test_double_star() raises:
+    """** is alias for ^."""
+    testing.assert_equal(parse_expr("2**3"), "2 3 ^", "** as ^")
+
+
+# ===----------------------------------------------------------------------=== #
+# Tests: function calls (Phase 2)
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_func_single_arg() raises:
+    """Sqrt(4) should produce RPN: 4 sqrt."""
+    testing.assert_equal(parse_expr("sqrt(4)"), "4 sqrt", "sqrt(4)")
+
+
+fn test_func_nested_expr() raises:
+    """Sqrt(2+2) should produce RPN: 2 2 + sqrt."""
+    testing.assert_equal(parse_expr("sqrt(2+2)"), "2 2 + sqrt", "sqrt(2+2)")
+
+
+fn test_func_in_expression() raises:
+    """1+sqrt(4) should produce RPN: 1 4 sqrt +."""
+    testing.assert_equal(parse_expr("1+sqrt(4)"), "1 4 sqrt +", "1+sqrt(4)")
+
+
+fn test_func_two_args() raises:
+    """Root(27, 3) should produce RPN: 27 3 root."""
+    testing.assert_equal(parse_expr("root(27, 3)"), "27 3 root", "root(27,3)")
+
+
+fn test_func_chained() raises:
+    """Nested sqrt(abs(-9)) should produce RPN: 9 neg abs sqrt."""
+    testing.assert_equal(
+        parse_expr("sqrt(abs(-9))"), "9 neg abs sqrt", "chained functions"
+    )
+
+
+fn test_func_with_power() raises:
+    """Function sqrt(2)^2 should produce RPN: 2 sqrt 2 ^."""
+    testing.assert_equal(parse_expr("sqrt(2)^2"), "2 sqrt 2 ^", "sqrt(2)^2")
+
+
+# ===----------------------------------------------------------------------=== #
+# Tests: constants (Phase 2)
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_constant_pi_rpn() raises:
+    """Constant pi alone should produce RPN: pi."""
+    testing.assert_equal(parse_expr("pi"), "pi", "pi alone")
+
+
+fn test_constant_in_expression() raises:
+    """2*pi should produce RPN: 2 pi *."""
+    testing.assert_equal(parse_expr("2*pi"), "2 pi *", "2*pi")
+
+
+fn test_constant_e_in_function() raises:
+    """Expression ln(e) should produce RPN: e ln."""
+    testing.assert_equal(parse_expr("ln(e)"), "e ln", "ln(e)")
 
 
 # ===----------------------------------------------------------------------=== #
