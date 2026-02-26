@@ -9,8 +9,9 @@ readme = "README.md"
 version = "0.8.0"
 
 [dependencies]
-mojo = "==0.26.1"
 argmojo = ">=0.1.0,<0.2"
+mojo = "==0.26.1"
+python = ">=3.13,<3.14"
 
 [tasks]
 # format the code
@@ -45,3 +46,8 @@ dec_debug = "clear && pixi run package && cd benches/decimal128 && pixi run mojo
 
 # doc
 doc = "clear && pixi run mojo doc -o docs/doc.json --diagnose-missing-doc-strings --validate-doc-strings src/decimo"
+
+# cli calculator
+build = "pixi run mojo build -I src -I src/cli -o decimo src/cli/main.mojo"
+tcli = "clear && bash tests/test_cli.sh"
+test_cli = "bash tests/test_cli.sh"

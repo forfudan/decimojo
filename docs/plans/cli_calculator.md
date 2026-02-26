@@ -299,6 +299,10 @@ Error: division by zero
 decimo> exit
 ```
 
+### Phase 5: Future Enhancements
+
+1. Detect full-width digits/operators for CJK users while parsing.
+
 ## Design Decisions
 
 ### All Numbers Are `BigDecimal`

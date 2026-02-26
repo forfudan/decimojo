@@ -23,3 +23,5 @@ kgen.trace.json*
 /test*.mojo
 /test*.py
 local
+# CLI binary
+/decimo
