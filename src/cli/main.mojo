@@ -41,6 +41,7 @@ fn main() raises:
     )
 
     # Output formatting flags
+    # Mutually exclusive: scientific, engineering
     cmd.add_arg(
         Arg("scientific", help="Output in scientific notation (e.g. 1.23E+10)")
         .long("scientific")
