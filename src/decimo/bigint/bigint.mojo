@@ -468,15 +468,15 @@ struct BigInt(
 
     fn __str__(self) -> String:
         """Returns a decimal string representation of the BigInt."""
-        return self.to_decimal_string()
+        return self.to_string()
 
     fn __repr__(self) -> String:
         """Returns a debug representation of the BigInt."""
-        return 'BigInt("' + self.to_decimal_string() + '")'
+        return 'BigInt("' + self.to_string() + '")'
 
     fn write_to[W: Writer](self, mut writer: W):
         """Writes the decimal string representation to a writer."""
-        writer.write(self.to_decimal_string())
+        writer.write(self.to_string())
 
     # ===------------------------------------------------------------------=== #
     # Type-transfer or output methods that are not dunders
@@ -545,7 +545,7 @@ struct BigInt(
 
         return BigInt10(raw_words=decimal_words^, sign=self.sign)
 
-    fn to_decimal_string(self, line_width: Int = 0) -> String:
+    fn to_string(self, line_width: Int = 0) -> String:
         """Returns the decimal string representation of the BigInt.
 
         Uses divide-and-conquer base conversion for large numbers (O(M(n)·log n))
@@ -598,6 +598,13 @@ struct BigInt(
 
         return result^
 
+    fn to_decimal_string(self, line_width: Int = 0) -> String:
+        """Returns the decimal string representation of the BigInt.
+
+        Deprecated: Use ``to_string(line_width=...)`` instead.
+        """
+        return self.to_string(line_width=line_width)
+
     fn to_string_with_separators(self, separator: String = "_") -> String:
         """Returns string representation of the BigInt with separators.
 
@@ -608,7 +615,7 @@ struct BigInt(
             The string representation of the BigInt with separators.
         """
 
-        var result = self.to_decimal_string()
+        var result = self.to_string()
         var start_idx = 0
         if self.sign:
             start_idx = 1  # Skip the minus sign
@@ -1292,9 +1299,9 @@ struct BigInt(
         result += sep_line + "\n"
 
         # number line
-        var string_of_number = self.to_decimal_string(
-            line_width=value_width
-        ).split("\n")
+        var string_of_number = self.to_string(line_width=value_width).split(
+            "\n"
+        )
         result += "number:" + String(" ") * (col - len("number:"))
         for i in range(len(string_of_number)):
             if i > 0:

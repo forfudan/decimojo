@@ -62,7 +62,7 @@ Methods that BigDecimal should have but currently lacks:
 | `copy()`                         | **MISSING**  | **Add** — explicit deep copy method                                                            |
 | `number_of_significant_digits()` | **MISSING**  | **Add** — count of significant digits in the coefficient                                       |
 | `is_positive()`                  | **MISSING**  | **Add** — BigInt has it, BigDecimal should too                                                 |
-| `to_scientific_string()`         | **Partial**  | **Add** as convenience alias (currently via `to_string(scientific_notation=True)`)             |
+| `to_scientific_string()`         | **Partial**  | **Add** as convenience alias (currently via `to_string(scientific=True)`)                      |
 | `__divmod__()`                   | **MISSING**  | **Add** — BigInt has it                                                                        |
 | `Int` overloads for operators    | **RESOLVED** | Mojo's `@implicit` handles this — `BigDecimal("1.5") + 1` already works                        |
 | `__ifloordiv__` / `__imod__`     | **MISSING**  | **Add** — complete the augmented assignment set                                                |
