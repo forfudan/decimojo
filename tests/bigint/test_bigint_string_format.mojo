@@ -1,6 +1,6 @@
 """
 Test BigInt string formatting: to_string_with_separators,
-to_decimal_string with line_width, number_of_digits, and __repr__.
+to_string with line_width, number_of_digits, and __repr__.
 """
 
 import testing
@@ -32,26 +32,26 @@ fn test_to_string_with_separators() raises:
 
 
 # ===----------------------------------------------------------------------=== #
-# Test: to_decimal_string with line_width
+# Test: to_string with line_width
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_to_decimal_string_line_width() raises:
-    """Test to_decimal_string with line_width parameter."""
+fn test_to_string_line_width() raises:
+    """Test to_string with line_width parameter."""
     # Default: no wrapping
     var val = BigInt("12345678901234567890")
-    testing.assert_equal(val.to_decimal_string(), "12345678901234567890")
+    testing.assert_equal(val.to_string(), "12345678901234567890")
 
     # line_width=10: "1234567890\n1234567890"
-    var wrapped = val.to_decimal_string(line_width=10)
+    var wrapped = val.to_string(line_width=10)
     testing.assert_equal(wrapped, "1234567890\n1234567890")
 
     # line_width=5: "12345\n67890\n12345\n67890"
-    var wrapped5 = val.to_decimal_string(line_width=5)
+    var wrapped5 = val.to_string(line_width=5)
     testing.assert_equal(wrapped5, "12345\n67890\n12345\n67890")
 
     # Short string: no wrapping needed
-    testing.assert_equal(BigInt(42).to_decimal_string(line_width=10), "42")
+    testing.assert_equal(BigInt(42).to_string(line_width=10), "42")
 
 
 # ===----------------------------------------------------------------------=== #
