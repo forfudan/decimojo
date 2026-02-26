@@ -159,6 +159,156 @@ fn test_showcase_expression() raises:
 
 
 # ===----------------------------------------------------------------------=== #
+# Tests: power operator (Phase 2)
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_power_simple() raises:
+    testing.assert_equal(String(evaluate("2^10")), "1024", "2^10")
+
+
+fn test_power_double_star() raises:
+    """** alias for ^."""
+    testing.assert_equal(String(evaluate("2**10")), "1024", "2**10")
+
+
+fn test_power_zero() raises:
+    testing.assert_equal(String(evaluate("5^0")), "1", "5^0")
+
+
+fn test_power_one() raises:
+    testing.assert_equal(String(evaluate("7^1")), "7", "7^1")
+
+
+fn test_power_large() raises:
+    """2^256 should produce the correct value."""
+    var result = String(evaluate("2^256"))
+    # BigDecimal may render this in scientific notation
+    testing.assert_true(
+        result.startswith(
+            "1.1579208923731619542357098500868790785326998466564"
+        ),
+        "2^256 starts correctly: " + result,
+    )
+
+
+fn test_power_right_associative() raises:
+    """2^3^2 = 2^(3^2) = 2^9 = 512."""
+    testing.assert_equal(String(evaluate("2^3^2")), "512", "2^3^2")
+
+
+fn test_power_with_subtraction() raises:
+    """10^2 - 1 = 99."""
+    testing.assert_equal(String(evaluate("10^2-1")), "99", "10^2-1")
+
+
+fn test_power_negative_exponent() raises:
+    """2^-3 = 0.125."""
+    testing.assert_equal(String(evaluate("2^-3")), "0.125", "2^-3")
+
+
+# ===----------------------------------------------------------------------=== #
+# Tests: built-in functions (Phase 2)
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_sqrt_perfect() raises:
+    testing.assert_equal(String(evaluate("sqrt(9)")), "3", "sqrt(9)")
+
+
+fn test_sqrt_irrational() raises:
+    """Irrational sqrt(2) with precision 20."""
+    var result = String(evaluate("sqrt(2)", precision=20))
+    testing.assert_true(
+        result.startswith("1.414213562373095048"),
+        "sqrt(2) p=20 starts correctly: " + result,
+    )
+
+
+fn test_ln_1() raises:
+    testing.assert_equal(String(evaluate("ln(1)")), "0", "ln(1)")
+
+
+fn test_exp_0() raises:
+    testing.assert_equal(String(evaluate("exp(0)")), "1", "exp(0)")
+
+
+fn test_abs_negative() raises:
+    testing.assert_equal(String(evaluate("abs(-42)")), "42", "abs(-42)")
+
+
+fn test_abs_positive() raises:
+    testing.assert_equal(String(evaluate("abs(7)")), "7", "abs(7)")
+
+
+fn test_root_cube() raises:
+    """Cube root(27, 3) = 3."""
+    testing.assert_equal(String(evaluate("root(27, 3)")), "3", "root(27,3)")
+
+
+fn test_function_in_expression() raises:
+    """1 + sqrt(4) = 3."""
+    testing.assert_equal(String(evaluate("1+sqrt(4)")), "3", "1+sqrt(4)")
+
+
+fn test_nested_functions() raises:
+    """Nested sqrt(abs(-9)) = 3."""
+    testing.assert_equal(
+        String(evaluate("sqrt(abs(-9))")), "3", "sqrt(abs(-9))"
+    )
+
+
+fn test_function_with_power() raises:
+    """Power of sqrt(2)^2 should be very close to 2."""
+    var result = String(evaluate("sqrt(2)^2"))
+    testing.assert_true(
+        result.startswith("1.999999999999999999") or result.startswith("2"),
+        "sqrt(2)^2 should be close to 2: " + result,
+    )
+
+
+# ===----------------------------------------------------------------------=== #
+# Tests: built-in constants (Phase 2)
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_pi_constant() raises:
+    """Constant pi with precision 20."""
+    var result = String(evaluate("pi", precision=20))
+    testing.assert_true(
+        result.startswith("3.1415926535897932"),
+        "pi p=20 starts correctly: " + result,
+    )
+
+
+fn test_e_constant() raises:
+    """Constant e with precision 20."""
+    var result = String(evaluate("e", precision=20))
+    testing.assert_true(
+        result.startswith("2.7182818284590452"),
+        "e p=20 starts correctly: " + result,
+    )
+
+
+fn test_pi_in_expression() raises:
+    """Expression 2*pi should start with 6.2831853..."""
+    var result = String(evaluate("2*pi", precision=20))
+    testing.assert_true(
+        result.startswith("6.283185307179586"),
+        "2*pi p=20: " + result,
+    )
+
+
+fn test_ln_e_is_one() raises:
+    """Expression ln(e) should be approximately 1."""
+    var result = String(evaluate("ln(e)", precision=20))
+    testing.assert_true(
+        result.startswith("1.0000000000000000000"),
+        "ln(e) ≈ 1",
+    )
+
+
+# ===----------------------------------------------------------------------=== #
 # Main
 # ===----------------------------------------------------------------------=== #
 

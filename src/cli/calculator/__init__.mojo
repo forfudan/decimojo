@@ -37,6 +37,10 @@ from .tokenizer import (
     TOKEN_LPAREN,
     TOKEN_RPAREN,
     TOKEN_UNARY_MINUS,
+    TOKEN_CARET,
+    TOKEN_FUNC,
+    TOKEN_CONST,
+    TOKEN_COMMA,
 )
 from .parser import parse_to_rpn
 from .evaluator import evaluate_rpn, evaluate
