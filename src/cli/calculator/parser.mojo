@@ -30,12 +30,20 @@ from .tokenizer import (
     TOKEN_LPAREN,
     TOKEN_RPAREN,
     TOKEN_UNARY_MINUS,
+    TOKEN_CARET,
+    TOKEN_FUNC,
+    TOKEN_CONST,
+    TOKEN_COMMA,
 )
 
 
 fn parse_to_rpn(tokens: List[Token]) raises -> List[Token]:
     """Convert infix tokens to Reverse Polish Notation using
     Dijkstra's shunting-yard algorithm.
+
+    Supports binary operators (+, -, *, /, ^), unary minus,
+    function calls (sqrt, ln, …), constants (pi, e), and commas
+    for multi-argument functions like root(x, n).
     """
     var output = List[Token]()
     var op_stack = List[Token]()
@@ -43,14 +51,32 @@ fn parse_to_rpn(tokens: List[Token]) raises -> List[Token]:
     for i in range(len(tokens)):
         var kind = tokens[i].kind
 
-        if kind == TOKEN_NUMBER:
+        # Numbers and constants go straight to output
+        if kind == TOKEN_NUMBER or kind == TOKEN_CONST:
             output.append(tokens[i])
 
+        # Functions are pushed onto the operator stack
+        elif kind == TOKEN_FUNC:
+            op_stack.append(tokens[i])
+
+        # Comma: pop operators until '(' (separates function arguments)
+        elif kind == TOKEN_COMMA:
+            var found_lparen = False
+            while len(op_stack) > 0:
+                if op_stack[len(op_stack) - 1].kind == TOKEN_LPAREN:
+                    found_lparen = True
+                    break
+                output.append(op_stack.pop())
+            if not found_lparen:
+                raise Error("Misplaced comma or mismatched parentheses")
+
+        # Operators: shunt by precedence / associativity
         elif (
             kind == TOKEN_PLUS
             or kind == TOKEN_MINUS
             or kind == TOKEN_STAR
             or kind == TOKEN_SLASH
+            or kind == TOKEN_CARET
             or kind == TOKEN_UNARY_MINUS
         ):
             var tok_prec = tokens[i].precedence()
@@ -90,6 +116,13 @@ fn parse_to_rpn(tokens: List[Token]) raises -> List[Token]:
             if not found_lparen:
                 raise Error("Mismatched parentheses: missing '('")
             _ = op_stack.pop()  # Discard the '('
+
+            # If a function sits on top of the stack, pop it to output
+            if (
+                len(op_stack) > 0
+                and op_stack[len(op_stack) - 1].kind == TOKEN_FUNC
+            ):
+                output.append(op_stack.pop())
 
     # Pop remaining operators
     while len(op_stack) > 0:

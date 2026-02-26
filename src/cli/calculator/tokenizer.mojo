@@ -32,6 +32,10 @@ comptime TOKEN_SLASH = 4
 comptime TOKEN_LPAREN = 5
 comptime TOKEN_RPAREN = 6
 comptime TOKEN_UNARY_MINUS = 7
+comptime TOKEN_CARET = 8
+comptime TOKEN_FUNC = 9
+comptime TOKEN_CONST = 10
+comptime TOKEN_COMMA = 11
 
 
 # ===----------------------------------------------------------------------=== #
@@ -64,22 +68,33 @@ struct Token(Copyable, ImplicitlyCopyable, Movable):
             or self.kind == TOKEN_MINUS
             or self.kind == TOKEN_STAR
             or self.kind == TOKEN_SLASH
+            or self.kind == TOKEN_CARET
             or self.kind == TOKEN_UNARY_MINUS
         )
 
     fn precedence(self) -> Int:
-        """Returns the precedence level (higher binds tighter)."""
+        """Returns the precedence level (higher binds tighter).
+
+        | Precedence | Operators | Associativity |
+        |:----------:|-----------|:-------------:|
+        |  1 (low)   | +, -      | Left          |
+        |     2      | *, /      | Left          |
+        |     3      | ^         | Right         |
+        |  4 (high)  | unary -   | Right         |
+        """
         if self.kind == TOKEN_PLUS or self.kind == TOKEN_MINUS:
             return 1
         if self.kind == TOKEN_STAR or self.kind == TOKEN_SLASH:
             return 2
+        if self.kind == TOKEN_CARET:
+            return 3
         if self.kind == TOKEN_UNARY_MINUS:
             return 4
         return 0
 
     fn is_left_associative(self) -> Bool:
         """Returns True if this operator is left-associative."""
-        if self.kind == TOKEN_UNARY_MINUS:
+        if self.kind == TOKEN_UNARY_MINUS or self.kind == TOKEN_CARET:
             return False
         return True
 
@@ -91,17 +106,55 @@ struct Token(Copyable, ImplicitlyCopyable, Movable):
 
 # TODO:
 # Yuhao Zhu:
-# I am seriously thinking that whether I should also support recoginizing
+# I am seriously thinking that whether I should also support recognizing
 # full-width digits and operators, so that users can copy-paste expressions from
 # other sources without having to manually convert them. This would be a nice
 # feature for Chinese-Japanese-Korean (CJK) users.
 # But it would also add some complexity to the tokenizer, because these
 # full-width characters have different byte numbers.
+# Known function names and built-in constants.
+
+
+fn _is_known_function(name: String) -> Bool:
+    """Returns True if `name` is a recognized function."""
+    return (
+        name == "sqrt"
+        or name == "root"
+        or name == "cbrt"
+        or name == "ln"
+        or name == "log"
+        or name == "log10"
+        or name == "exp"
+        or name == "sin"
+        or name == "cos"
+        or name == "tan"
+        or name == "cot"
+        or name == "csc"
+        or name == "abs"
+    )
+
+
+fn _is_known_constant(name: String) -> Bool:
+    """Returns True if `name` is a recognized constant."""
+    return name == "pi" or name == "e"
+
+
+fn _is_alpha_or_underscore(c: UInt8) -> Bool:
+    """Returns True if c is a-z, A-Z, or '_'."""
+    return (c >= 65 and c <= 90) or (c >= 97 and c <= 122) or c == 95
+
+
+fn _is_alnum_or_underscore(c: UInt8) -> Bool:
+    """Returns True if c is a-z, A-Z, 0-9, or '_'."""
+    return _is_alpha_or_underscore(c) or (c >= 48 and c <= 57)
+
+
 fn tokenize(expr: String) raises -> List[Token]:
     """Converts an expression string into a list of tokens.
 
-    Handles: numbers (integer and decimal), +, -, *, /, (, ),
-    and distinguishes unary minus from binary minus.
+    Handles: numbers (integer and decimal), operators (+, -, *, /, ^),
+    parentheses, commas, function calls (sqrt, ln, …), built-in
+    constants (pi, e), and distinguishes unary minus from binary minus.
     """
     var tokens = List[Token]()
     var expr_bytes = expr.as_string_slice().as_bytes()
@@ -140,6 +193,29 @@ fn tokenize(expr: String) raises -> List[Token]:
             )
             continue
 
+        # --- Alphabetical identifier: function name or constant ---
+        if _is_alpha_or_underscore(c):
+            var start = i
+            i += 1
+            while i < n and _is_alnum_or_underscore(ptr[i]):
+                i += 1
+            var id_bytes = List[UInt8](capacity=i - start)
+            for j in range(start, i):
+                id_bytes.append(ptr[j])
+            var name = String(unsafe_from_utf8=id_bytes^)
+
+            # Check if it is a known constant
+            if _is_known_constant(name):
+                tokens.append(Token(TOKEN_CONST, name^))
+                continue
+
+            # Check if it is a known function
+            if _is_known_function(name):
+                tokens.append(Token(TOKEN_FUNC, name^))
+                continue
+
+            raise Error("Unknown identifier '" + name + "' in expression")
+
         # --- Operators and parentheses ---
         if c == 43:  # '+'
             tokens.append(Token(TOKEN_PLUS, "+"))
@@ -148,7 +224,7 @@ fn tokenize(expr: String) raises -> List[Token]:
 
         if c == 45:  # '-'
             # Determine if this minus is unary or binary.
-            # Unary if: at the start, or after an operator, or after '('
+            # Unary if: at the start, or after an operator, or after '(' or ','
             var is_unary = len(tokens) == 0
             if not is_unary:
                 var last_kind = tokens[len(tokens) - 1].kind
@@ -157,8 +233,10 @@ fn tokenize(expr: String) raises -> List[Token]:
                     or last_kind == TOKEN_MINUS
                     or last_kind == TOKEN_STAR
                     or last_kind == TOKEN_SLASH
+                    or last_kind == TOKEN_CARET
                     or last_kind == TOKEN_LPAREN
                     or last_kind == TOKEN_UNARY_MINUS
+                    or last_kind == TOKEN_COMMA
                 )
             if is_unary:
                 tokens.append(Token(TOKEN_UNARY_MINUS, "neg"))
@@ -168,12 +246,27 @@ fn tokenize(expr: String) raises -> List[Token]:
             continue
 
         if c == 42:  # '*'
-            tokens.append(Token(TOKEN_STAR, "*"))
-            i += 1
+            # Support '**' as an alias for '^'
+            if i + 1 < n and ptr[i + 1] == 42:
+                tokens.append(Token(TOKEN_CARET, "^"))
+                i += 2
+            else:
+                tokens.append(Token(TOKEN_STAR, "*"))
+                i += 1
             continue
 
         if c == 47:  # '/'
             tokens.append(Token(TOKEN_SLASH, "/"))
+            i += 1
+            continue
+
+        if c == 94:  # '^'
+            tokens.append(Token(TOKEN_CARET, "^"))
+            i += 1
+            continue
+
+        if c == 44:  # ','
+            tokens.append(Token(TOKEN_COMMA, ","))
             i += 1
             continue
 

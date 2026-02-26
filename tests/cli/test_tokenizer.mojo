@@ -13,6 +13,10 @@ from calculator.tokenizer import (
     TOKEN_LPAREN,
     TOKEN_RPAREN,
     TOKEN_UNARY_MINUS,
+    TOKEN_CARET,
+    TOKEN_FUNC,
+    TOKEN_CONST,
+    TOKEN_COMMA,
 )
 
 
@@ -185,6 +189,139 @@ fn test_invalid_character() raises:
 fn test_empty_string() raises:
     var toks = tokenize("")
     testing.assert_equal(len(toks), 0, "empty string produces no tokens")
+
+
+# ===----------------------------------------------------------------------=== #
+# Tests: caret / power operator (Phase 2)
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_caret_operator() raises:
+    var toks = tokenize("2^3")
+    testing.assert_equal(len(toks), 3, "2^3 token count")
+    assert_token(toks, 0, TOKEN_NUMBER, "2", "base")
+    assert_token(toks, 1, TOKEN_CARET, "^", "caret")
+    assert_token(toks, 2, TOKEN_NUMBER, "3", "exponent")
+
+
+fn test_double_star_as_power() raises:
+    """'**' should be tokenized as TOKEN_CARET."""
+    var toks = tokenize("2**3")
+    testing.assert_equal(len(toks), 3, "2**3 token count")
+    assert_token(toks, 1, TOKEN_CARET, "^", "** -> ^")
+
+
+fn test_caret_precedence() raises:
+    """Verify the caret token has precedence 3."""
+    var toks = tokenize("^")
+    testing.assert_equal(toks[0].precedence(), 3, "^ precedence")
+
+
+fn test_caret_right_associative() raises:
+    """Verify the caret token is right-associative."""
+    var toks = tokenize("^")
+    testing.assert_equal(toks[0].is_left_associative(), False, "^ right assoc")
+
+
+# ===----------------------------------------------------------------------=== #
+# Tests: function names (Phase 2)
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_function_sqrt() raises:
+    var toks = tokenize("sqrt(4)")
+    testing.assert_equal(len(toks), 4, "sqrt(4) token count")
+    assert_token(toks, 0, TOKEN_FUNC, "sqrt", "sqrt function")
+    assert_token(toks, 1, TOKEN_LPAREN, "(", "lparen")
+    assert_token(toks, 2, TOKEN_NUMBER, "4", "argument")
+    assert_token(toks, 3, TOKEN_RPAREN, ")", "rparen")
+
+
+fn test_function_ln() raises:
+    var toks = tokenize("ln(2)")
+    testing.assert_equal(len(toks), 4, "ln(2) token count")
+    assert_token(toks, 0, TOKEN_FUNC, "ln", "ln function")
+
+
+fn test_function_sin() raises:
+    var toks = tokenize("sin(3.14)")
+    assert_token(toks, 0, TOKEN_FUNC, "sin", "sin function")
+
+
+fn test_function_log10() raises:
+    var toks = tokenize("log10(100)")
+    assert_token(toks, 0, TOKEN_FUNC, "log10", "log10 function")
+
+
+fn test_function_abs() raises:
+    var toks = tokenize("abs(-5)")
+    assert_token(toks, 0, TOKEN_FUNC, "abs", "abs function")
+
+
+# ===----------------------------------------------------------------------=== #
+# Tests: constants (Phase 2)
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_constant_pi() raises:
+    var toks = tokenize("pi")
+    testing.assert_equal(len(toks), 1, "pi token count")
+    assert_token(toks, 0, TOKEN_CONST, "pi", "pi constant")
+
+
+fn test_constant_e() raises:
+    var toks = tokenize("e")
+    testing.assert_equal(len(toks), 1, "e token count")
+    assert_token(toks, 0, TOKEN_CONST, "e", "e constant")
+
+
+fn test_constant_in_expression() raises:
+    var toks = tokenize("2*pi")
+    testing.assert_equal(len(toks), 3, "2*pi token count")
+    assert_token(toks, 0, TOKEN_NUMBER, "2", "number")
+    assert_token(toks, 1, TOKEN_STAR, "*", "star")
+    assert_token(toks, 2, TOKEN_CONST, "pi", "pi constant")
+
+
+# ===----------------------------------------------------------------------=== #
+# Tests: comma (Phase 2)
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_comma_in_function() raises:
+    var toks = tokenize("root(27, 3)")
+    testing.assert_equal(len(toks), 6, "root(27,3) token count")
+    assert_token(toks, 0, TOKEN_FUNC, "root", "root function")
+    assert_token(toks, 1, TOKEN_LPAREN, "(", "lparen")
+    assert_token(toks, 2, TOKEN_NUMBER, "27", "first arg")
+    assert_token(toks, 3, TOKEN_COMMA, ",", "comma")
+    assert_token(toks, 4, TOKEN_NUMBER, "3", "second arg")
+    assert_token(toks, 5, TOKEN_RPAREN, ")", "rparen")
+
+
+# ===----------------------------------------------------------------------=== #
+# Tests: unary minus with new tokens (Phase 2)
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_unary_minus_after_caret() raises:
+    var toks = tokenize("2^-3")
+    testing.assert_equal(len(toks), 4, "2^-3 token count")
+    assert_token(toks, 2, TOKEN_UNARY_MINUS, "neg", "unary after ^")
+
+
+fn test_unary_minus_after_comma() raises:
+    var toks = tokenize("root(-8, 3)")
+    assert_token(toks, 2, TOKEN_UNARY_MINUS, "neg", "unary after (")
+
+
+fn test_unknown_identifier() raises:
+    var raised = False
+    try:
+        _ = tokenize("foo(1)")
+    except:
+        raised = True
+    testing.assert_true(raised, "should raise on unknown identifier 'foo'")
 
 
 # ===----------------------------------------------------------------------=== #
