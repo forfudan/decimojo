@@ -24,14 +24,14 @@ Converts an expression string into a list of tokens for the parser.
 # Token kinds
 # ===----------------------------------------------------------------------=== #
 
-comptime TK_NUMBER = 0
-comptime TK_PLUS = 1
-comptime TK_MINUS = 2
-comptime TK_STAR = 3
-comptime TK_SLASH = 4
-comptime TK_LPAREN = 5
-comptime TK_RPAREN = 6
-comptime TK_UNARY_MINUS = 7
+comptime TOKEN_NUMBER = 0
+comptime TOKEN_PLUS = 1
+comptime TOKEN_MINUS = 2
+comptime TOKEN_STAR = 3
+comptime TOKEN_SLASH = 4
+comptime TOKEN_LPAREN = 5
+comptime TOKEN_RPAREN = 6
+comptime TOKEN_UNARY_MINUS = 7
 
 
 # ===----------------------------------------------------------------------=== #
@@ -60,26 +60,26 @@ struct Token(Copyable, ImplicitlyCopyable, Movable):
     fn is_operator(self) -> Bool:
         """Returns True if this token is a binary or unary operator."""
         return (
-            self.kind == TK_PLUS
-            or self.kind == TK_MINUS
-            or self.kind == TK_STAR
-            or self.kind == TK_SLASH
-            or self.kind == TK_UNARY_MINUS
+            self.kind == TOKEN_PLUS
+            or self.kind == TOKEN_MINUS
+            or self.kind == TOKEN_STAR
+            or self.kind == TOKEN_SLASH
+            or self.kind == TOKEN_UNARY_MINUS
         )
 
     fn precedence(self) -> Int:
         """Returns the precedence level (higher binds tighter)."""
-        if self.kind == TK_PLUS or self.kind == TK_MINUS:
+        if self.kind == TOKEN_PLUS or self.kind == TOKEN_MINUS:
             return 1
-        if self.kind == TK_STAR or self.kind == TK_SLASH:
+        if self.kind == TOKEN_STAR or self.kind == TOKEN_SLASH:
             return 2
-        if self.kind == TK_UNARY_MINUS:
+        if self.kind == TOKEN_UNARY_MINUS:
             return 4
         return 0
 
     fn is_left_associative(self) -> Bool:
         """Returns True if this operator is left-associative."""
-        if self.kind == TK_UNARY_MINUS:
+        if self.kind == TOKEN_UNARY_MINUS:
             return False
         return True
 
@@ -89,8 +89,16 @@ struct Token(Copyable, ImplicitlyCopyable, Movable):
 # ===----------------------------------------------------------------------=== #
 
 
+# TODO:
+# Yuhao Zhu:
+# I am seriously thinking that whether I should also support recoginizing
+# full-width digits and operators, so that users can copy-paste expressions from
+# other sources without having to manually convert them. This would be a nice
+# feature for Chinese-Japanese-Korean (CJK) users.
+# But it would also add some complexity to the tokenizer, because these
+# full-width characters have different byte numbers.
 fn tokenize(expr: String) raises -> List[Token]:
-    """Convert an expression string into a list of tokens.
+    """Converts an expression string into a list of tokens.
 
     Handles: numbers (integer and decimal), +, -, *, /, (, ),
     and distinguishes unary minus from binary minus.
@@ -127,12 +135,14 @@ fn tokenize(expr: String) raises -> List[Token]:
             var num_bytes = List[UInt8](capacity=i - start)
             for j in range(start, i):
                 num_bytes.append(ptr[j])
-            tokens.append(Token(TK_NUMBER, String(unsafe_from_utf8=num_bytes^)))
+            tokens.append(
+                Token(TOKEN_NUMBER, String(unsafe_from_utf8=num_bytes^))
+            )
             continue
 
         # --- Operators and parentheses ---
         if c == 43:  # '+'
-            tokens.append(Token(TK_PLUS, "+"))
+            tokens.append(Token(TOKEN_PLUS, "+"))
             i += 1
             continue
 
@@ -143,37 +153,37 @@ fn tokenize(expr: String) raises -> List[Token]:
             if not is_unary:
                 var last_kind = tokens[len(tokens) - 1].kind
                 is_unary = (
-                    last_kind == TK_PLUS
-                    or last_kind == TK_MINUS
-                    or last_kind == TK_STAR
-                    or last_kind == TK_SLASH
-                    or last_kind == TK_LPAREN
-                    or last_kind == TK_UNARY_MINUS
+                    last_kind == TOKEN_PLUS
+                    or last_kind == TOKEN_MINUS
+                    or last_kind == TOKEN_STAR
+                    or last_kind == TOKEN_SLASH
+                    or last_kind == TOKEN_LPAREN
+                    or last_kind == TOKEN_UNARY_MINUS
                 )
             if is_unary:
-                tokens.append(Token(TK_UNARY_MINUS, "neg"))
+                tokens.append(Token(TOKEN_UNARY_MINUS, "neg"))
             else:
-                tokens.append(Token(TK_MINUS, "-"))
+                tokens.append(Token(TOKEN_MINUS, "-"))
             i += 1
             continue
 
         if c == 42:  # '*'
-            tokens.append(Token(TK_STAR, "*"))
+            tokens.append(Token(TOKEN_STAR, "*"))
             i += 1
             continue
 
         if c == 47:  # '/'
-            tokens.append(Token(TK_SLASH, "/"))
+            tokens.append(Token(TOKEN_SLASH, "/"))
             i += 1
             continue
 
         if c == 40:  # '('
-            tokens.append(Token(TK_LPAREN, "("))
+            tokens.append(Token(TOKEN_LPAREN, "("))
             i += 1
             continue
 
         if c == 41:  # ')'
-            tokens.append(Token(TK_RPAREN, ")"))
+            tokens.append(Token(TOKEN_RPAREN, ")"))
             i += 1
             continue
 

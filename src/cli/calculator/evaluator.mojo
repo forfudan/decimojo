@@ -24,12 +24,12 @@ from decimo import BDec
 
 from .tokenizer import (
     Token,
-    TK_NUMBER,
-    TK_PLUS,
-    TK_MINUS,
-    TK_STAR,
-    TK_SLASH,
-    TK_UNARY_MINUS,
+    TOKEN_NUMBER,
+    TOKEN_PLUS,
+    TOKEN_MINUS,
+    TOKEN_STAR,
+    TOKEN_SLASH,
+    TOKEN_UNARY_MINUS,
 )
 from .parser import parse_to_rpn
 from .tokenizer import tokenize
@@ -46,37 +46,37 @@ fn evaluate_rpn(rpn: List[Token], precision: Int) raises -> BDec:
     for i in range(len(rpn)):
         var kind = rpn[i].kind
 
-        if kind == TK_NUMBER:
+        if kind == TOKEN_NUMBER:
             stack.append(BDec.from_string(rpn[i].value))
 
-        elif kind == TK_UNARY_MINUS:
+        elif kind == TOKEN_UNARY_MINUS:
             if len(stack) < 1:
                 raise Error("Invalid expression: missing operand for negation")
             var a = stack.pop()
             stack.append(-a)
 
-        elif kind == TK_PLUS:
+        elif kind == TOKEN_PLUS:
             if len(stack) < 2:
                 raise Error("Invalid expression: missing operand")
             var b = stack.pop()
             var a = stack.pop()
             stack.append(a + b)
 
-        elif kind == TK_MINUS:
+        elif kind == TOKEN_MINUS:
             if len(stack) < 2:
                 raise Error("Invalid expression: missing operand")
             var b = stack.pop()
             var a = stack.pop()
             stack.append(a - b)
 
-        elif kind == TK_STAR:
+        elif kind == TOKEN_STAR:
             if len(stack) < 2:
                 raise Error("Invalid expression: missing operand")
             var b = stack.pop()
             var a = stack.pop()
             stack.append(a * b)
 
-        elif kind == TK_SLASH:
+        elif kind == TOKEN_SLASH:
             if len(stack) < 2:
                 raise Error("Invalid expression: missing operand")
             var b = stack.pop()

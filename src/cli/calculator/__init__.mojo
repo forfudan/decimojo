@@ -29,14 +29,14 @@ var result = evaluate("100 * 12 - 23/17", precision=50)
 from .tokenizer import (
     Token,
     tokenize,
-    TK_NUMBER,
-    TK_PLUS,
-    TK_MINUS,
-    TK_STAR,
-    TK_SLASH,
-    TK_LPAREN,
-    TK_RPAREN,
-    TK_UNARY_MINUS,
+    TOKEN_NUMBER,
+    TOKEN_PLUS,
+    TOKEN_MINUS,
+    TOKEN_STAR,
+    TOKEN_SLASH,
+    TOKEN_LPAREN,
+    TOKEN_RPAREN,
+    TOKEN_UNARY_MINUS,
 )
 from .parser import parse_to_rpn
 from .evaluator import evaluate_rpn, evaluate

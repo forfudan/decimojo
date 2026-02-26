@@ -5,12 +5,12 @@ import testing
 from calculator.tokenizer import (
     Token,
     tokenize,
-    TK_NUMBER,
-    TK_PLUS,
-    TK_MINUS,
-    TK_STAR,
-    TK_SLASH,
-    TK_UNARY_MINUS,
+    TOKEN_NUMBER,
+    TOKEN_PLUS,
+    TOKEN_MINUS,
+    TOKEN_STAR,
+    TOKEN_SLASH,
+    TOKEN_UNARY_MINUS,
 )
 from calculator.parser import parse_to_rpn
 
