@@ -1364,6 +1364,49 @@ struct BigDecimal(
         """
         return self.coefficient.number_of_digits() - 1 - self.scale
 
+    fn as_tuple(self) -> Tuple[Bool, List[UInt8], Int]:
+        """Returns a 3-tuple `(sign, digits, exponent)` matching Python's
+        `decimal.Decimal.as_tuple()` convention.
+
+        The components are:
+        - `sign`: `False` for positive/zero, `True` for negative.
+        - `digits`: each decimal digit of the coefficient as a `UInt8` in 0–9,
+          most-significant first. Equivalent to Python's `digits` tuple.
+        - `exponent`: `-scale`, i.e. the power of 10 such that
+          `value = coefficient × 10^exponent`. Negative exponent means digits
+          after the decimal point; positive means trailing zeros.
+
+        Returns:
+            `Tuple[Bool, List[UInt8], Int]`
+
+        Examples:
+
+        ```
+        var sign, digits, exp = BigDecimal("7.25").as_tuple()
+        # sign=False, digits=[7, 2, 5], exp=-2
+        # => 7.25 matches Python: Decimal("7.25").as_tuple()
+        #    -> DecimalTuple(sign=0, digits=(7, 2, 5), exponent=-2)
+
+        var sign, digits, exp = BigDecimal("-0.001").as_tuple()
+        # sign=True, digits=[1], exp=-3
+
+        var sign, digits, exp = BigDecimal("1E+5").as_tuple()
+        # sign=False, digits=[1], exp=5
+        ```
+
+        Notes:
+            To reconstruct the value from the tuple, join the digits into a
+            coefficient string, parse as BigUInt, then apply sign and exponent.
+        """
+        var coef_str = self.coefficient.to_string()
+        var cb = coef_str.as_string_slice().as_bytes()
+        var n = len(cb)
+        var ptr = cb.unsafe_ptr()
+        var digits = List[UInt8](capacity=n)
+        for i in range(n):
+            digits.append(ptr[i] - 48)  # 48 == ord('0')
+        return (self.sign, digits^, -self.scale)
+
     fn extend_precision(self, precision_diff: Int) -> Self:
         """Returns a number with additional decimal places (trailing zeros).
         This multiplies the coefficient by 10^precision_diff and increases
@@ -1673,32 +1716,6 @@ struct BigDecimal(
         BigDecimal("0.00123").number_of_digits()   # 3
         BigDecimal("100.00").number_of_digits()    # 5  (trailing zeros in fractional part)
         BigDecimal("100").number_of_digits()       # 3
-        ```
-        """
-        return self.coefficient.number_of_digits()
-
-    fn number_of_significant_digits(self) -> Int:
-        """Returns the number of significant digits, following Python's
-        `Decimal` convention.
-
-        Since BigDecimal stores no leading zeros in its coefficient, this is
-        always equal to `number_of_digits()`. Trailing zeros in the fractional
-        part (e.g. `"1.0000"`) are significant — they convey precision. Trailing
-        zeros in the integer part (e.g. `"100"`) are also stored as-is and
-        counted.
-
-        Use `normalize()` first if you want trailing zeros stripped before
-        counting.
-
-        Examples:
-
-        ```
-        BigDecimal("123.456").number_of_significant_digits()   # 6
-        BigDecimal("0.00123").number_of_significant_digits()   # 3
-        BigDecimal("1.0000").number_of_significant_digits()    # 5
-        BigDecimal("100").number_of_significant_digits()       # 3
-        # After normalize, "100" becomes "1E+2" (coefficient=1):
-        BigDecimal("100").normalize().number_of_significant_digits()  # 1
         ```
         """
         return self.coefficient.number_of_digits()

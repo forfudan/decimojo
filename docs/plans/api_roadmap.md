@@ -25,8 +25,8 @@ These inconsistencies will confuse users who use both types in the same codebase
 
 | Concept  | BigDecimal                                                                                                                                              | BigInt                                                      | Status                                                                                            |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Equality | ~~`equals()` / `not_equals()`~~ → `equal()` / `not_equal()`                                                                                             | `equal()` / `not_equal()`                                   | ✅ **DONE** — old aliases removed                                                                  |
-| Ordering | ~~`less_than()` / `greater_than()` / `less_than_or_equal()` / `greater_than_or_equal()`~~ → `less()` / `greater()` / `less_equal()` / `greater_equal()` | `less()` / `greater()` / `less_equal()` / `greater_equal()` | ✅ **DONE** — old aliases removed                                                                  |
+| Equality | ~~`equals()` / `not_equals()`~~ → `equal()` / `not_equal()`                                                                                             | `equal()` / `not_equal()`                                   | ✓ **DONE** — old aliases removed                                                                  |
+| Ordering | ~~`less_than()` / `greater_than()` / `less_than_or_equal()` / `greater_than_or_equal()`~~ → `less()` / `greater()` / `less_equal()` / `greater_equal()` | `less()` / `greater()` / `less_equal()` / `greater_equal()` | ✓ **DONE** — old aliases removed                                                                  |
 | Division | `true_divide()`                                                                                                                                         | N/A                                                         | `true_divide` is aligned with `__truediv__` dunder. Maybe add an alias `divide()` for convenience |
 
 ### 1.2 Field Access vs Method Access
@@ -43,27 +43,27 @@ BigDecimal exposes internal state via direct field access (`self.scale`, `self.c
 
 Methods that BigDecimal should have but currently lacks:
 
-| Method                           | Status       | Action                                                                                         |
-| -------------------------------- | ------------ | ---------------------------------------------------------------------------------------------- |
-| `as_tuple()`                     | **MISSING**  | **Add** — returns `(sign: Bool, coefficient: BigUInt, exponent: Int)`                          |
-| `copy()`                         | ✅ **DONE**   | Implemented — used internally by `__pos__`, `__round__`, etc.                                  |
-| `number_of_significant_digits()` | **MISSING**  | **Add** — count of significant digits in the coefficient                                       |
-| `is_positive()`                  | **MISSING**  | **Add** — BigInt has it, BigDecimal should too                                                 |
-| `to_scientific_string()`         | **Partial**  | **Add** as convenience alias (currently via `to_string(scientific=True)`)                      |
-| `__divmod__()`                   | ✅ **DONE**   | Implemented                                                                                    |
-| `Int` overloads for operators    | **RESOLVED** | Mojo's `@implicit` handles this — `BigDecimal("1.5") + 1` already works                        |
-| `__ifloordiv__` / `__imod__`     | ✅ **DONE**   | Implemented                                                                                    |
-| `__rtruediv__`                   | **MISSING**  | **Add** — complete the reflected operator set                                                  |
-| Debug repr returning String      | Prints only  | **Improve** — `print_internal_representation()` should also have a variant that returns String |
+| Method                           | Status       | Action                                                                                                    |
+| -------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------- |
+| `as_tuple()`                     | ✓ **DONE**   | Implemented — returns `(sign: Bool, digits: List[UInt8], exponent: Int)` matching Python's `DecimalTuple` |
+| `copy()`                         | ✓ **DONE**   | Implemented — used internally by `__pos__`, `__round__`, etc.                                             |
+| `number_of_significant_digits()` | ~~REMOVED~~  | Removed — identical to `number_of_digits()`; not a Python API                                             |
+| `is_positive()`                  | ✓ **DONE**   | Implemented                                                                                               |
+| `to_scientific_string()`         | ✓ **DONE**   | Added — convenience alias for `to_string(scientific=True)`                                                |
+| `__divmod__()`                   | ✓ **DONE**   | Implemented                                                                                               |
+| `Int` overloads for operators    | **RESOLVED** | Mojo's `@implicit` handles this — `BigDecimal("1.5") + 1` already works                                   |
+| `__ifloordiv__` / `__imod__`     | ✓ **DONE**   | Implemented                                                                                               |
+| `__rtruediv__`                   | ✓ **DONE**   | Implemented                                                                                               |
+| Debug repr returning String      | Prints only  | **Improve** — `print_internal_representation()` should also have a variant that returns String            |
 
 ### 1.4 Missing Parity: BigInt vs BigDecimal
 
 | Method                        | BigInt   | BigDecimal  | Action                                                              |
 | ----------------------------- | -------- | ----------- | ------------------------------------------------------------------- |
-| `is_positive()`               | ✅ Has it | **MISSING** | Add to BigDecimal                                                   |
-| `__bool__()`                  | ✅ Done   | ✅ Done      | —                                                                   |
+| `is_positive()`               | ✓ Has it | ✓ Done      | —                                                                   |
+| `__bool__()`                  | ✓ Done   | ✓ Done      | —                                                                   |
 | `to_string_with_separators()` | Has it   | **MISSING** | Nice to have on BigDecimal too (can use `to_string(delimiter=...)`) |
-| `number_of_digits()`          | Has it   | **MISSING** | Add to BigDecimal (number of digits in coefficient)                 |
+| `number_of_digits()`          | Has it   | ✓ Done      | —                                                                   |
 
 ---
 
@@ -73,33 +73,33 @@ These are the gaps vs Python's `decimal.Decimal`, prioritized by user impact.
 
 ### 2.1 HIGH Priority — Dunders That Pythonistas Expect
 
-| Method                                     | What It Does                                     | Notes                                                                |
-| ------------------------------------------ | ------------------------------------------------ | -------------------------------------------------------------------- |
-| **`__bool__(self) -> Bool`**               | `if x:` — True if nonzero                        | ✅ **DONE**                                                           |
-| **`__pos__(self) -> Self`**                | `+x` — unary plus                                | ✅ **DONE**                                                           |
-| **`__divmod__(self, other) -> Tuple`**     | `divmod(a, b)`                                   | ✅ **DONE**                                                           |
-| **`__ceil__` / `__floor__` / `__trunc__`** | `math.ceil(x)`, `math.floor(x)`, `math.trunc(x)` | ✅ **DONE**                                                           |
-| **`__rtruediv__(self, other) -> Self`**    | `1 / x` where x is BigDecimal                    | Still **MISSING**. `Int.__truediv__(BigDecimal)` fails without this. |
-| **`__hash__(self) -> UInt`**               | Hashable                                         | **MISSING**. Can wait for Mojo's Hashable trait maturity.            |
+| Method                                     | What It Does                                     | Notes                                                     |
+| ------------------------------------------ | ------------------------------------------------ | --------------------------------------------------------- |
+| **`__bool__(self) -> Bool`**               | `if x:` — True if nonzero                        | ✓ **DONE**                                                |
+| **`__pos__(self) -> Self`**                | `+x` — unary plus                                | ✓ **DONE**                                                |
+| **`__divmod__(self, other) -> Tuple`**     | `divmod(a, b)`                                   | ✓ **DONE**                                                |
+| **`__ceil__` / `__floor__` / `__trunc__`** | `math.ceil(x)`, `math.floor(x)`, `math.trunc(x)` | ✓ **DONE**                                                |
+| **`__rtruediv__(self, other) -> Self`**    | `1 / x` where x is BigDecimal                    | ✓ **DONE**                                                |
+| **`__hash__(self) -> UInt`**               | Hashable                                         | **MISSING**. Can wait for Mojo's Hashable trait maturity. |
 
 ### 2.2 MEDIUM Priority — Named Methods for Python Migration
 
-| Method                              | What It Does                                             | Notes                                                                                               |
-| ----------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `as_tuple()`                        | Returns `(sign, digits_tuple, exponent)`                 | Python returns a named tuple. We should return `(sign: Bool, coefficient: BigUInt, exponent: Int)`. |
-| `adjusted()`                        | Returns adjusted exponent (= exponent + len(digits) - 1) | Useful for formatting and comparison.                                                               |
-| `copy_abs()`                        | Returns `abs(self)`                                      | Alias for `__abs__()`. Trivial to add.                                                              |
-| `copy_negate()`                     | Returns `-self`                                          | Alias for `__neg__()`. Trivial to add.                                                              |
-| `copy_sign(other)`                  | Returns self with the sign of other                      | One-liner.                                                                                          |
-| `same_quantum(other)`               | True if both have same exponent/scale                    | Useful for financial code.                                                                          |
-| `normalize()`                       | Already exists                                           | ✓                                                                                                   |
-| `to_eng_string()`                   | Engineering notation (exponent multiple of 3)            | Nice for scientific users.                                                                          |
-| `to_integral_value(rounding)`       | Round to integer, keep as Decimal                        | `round(ndigits=0)` is close but not identical (doesn't strip trailing zeros).                       |
-| `max_mag(other)` / `min_mag(other)` | Max/min by absolute value                                | `compare_absolute` exists; this is a convenience.                                                   |
-| `remainder_near(other)`             | IEEE 754 remainder                                       | Different from `%` (truncated).                                                                     |
-| `logb()`                            | Returns adjusted exponent as Decimal                     | Different from `adjusted()` (returns Decimal, not Int).                                             |
-| `fma(a, b)`                         | `self * a + b` without intermediate rounding             | Important for numerical algorithms.                                                                 |
-| `scaleb(n)`                         | Multiply by 10^n efficiently                             | Useful for scale manipulation.                                                                      |
+| Method                              | What It Does                                             | Notes                                                                                                    |
+| ----------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `as_tuple()`                        | Returns `(sign, digits, exponent)`                       | ✓ **DONE** — returns `(sign: Bool, digits: List[UInt8], exponent: Int)` matching Python's `DecimalTuple` |
+| `adjusted()`                        | Returns adjusted exponent (= exponent + len(digits) - 1) | Useful for formatting and comparison.                                                                    |
+| `copy_abs()`                        | Returns `abs(self)`                                      | Alias for `__abs__()`. Trivial to add.                                                                   |
+| `copy_negate()`                     | Returns `-self`                                          | Alias for `__neg__()`. Trivial to add.                                                                   |
+| `copy_sign(other)`                  | Returns self with the sign of other                      | One-liner.                                                                                               |
+| `same_quantum(other)`               | True if both have same exponent/scale                    | Useful for financial code.                                                                               |
+| `normalize()`                       | Already exists                                           | ✓                                                                                                        |
+| `to_eng_string()`                   | Engineering notation (exponent multiple of 3)            | ✓ **DONE** — alias for `to_string(engineering=True)`                                                     |
+| `to_integral_value(rounding)`       | Round to integer, keep as Decimal                        | `round(ndigits=0)` is close but not identical (doesn't strip trailing zeros).                            |
+| `max_mag(other)` / `min_mag(other)` | Max/min by absolute value                                | `compare_absolute` exists; this is a convenience.                                                        |
+| `remainder_near(other)`             | IEEE 754 remainder                                       | Different from `%` (truncated).                                                                          |
+| `logb()`                            | Returns adjusted exponent as Decimal                     | Different from `adjusted()` (returns Decimal, not Int).                                                  |
+| `fma(a, b)`                         | `self * a + b` without intermediate rounding             | Important for numerical algorithms.                                                                      |
+| `scaleb(n)`                         | Multiply by 10^n efficiently                             | Useful for scale manipulation.                                                                           |
 
 ### 2.3 LOW Priority — Completeness
 
@@ -123,9 +123,9 @@ These are the gaps vs Python's `decimal.Decimal`, prioritized by user impact.
 
 | Method                                     | What It Does                 | Notes                                                                                                                                               |
 | ------------------------------------------ | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`__bool__(self) -> Bool`**               | `if n:` — True if nonzero    | ✅ **DONE**                                                                                                                                          |
-| **`__pos__(self) -> Self`**                | `+n` — returns self          | ✅ **DONE**                                                                                                                                          |
-| **`__ceil__` / `__floor__` / `__trunc__`** | All return self for integers | ✅ **DONE**                                                                                                                                          |
+| **`__bool__(self) -> Bool`**               | `if n:` — True if nonzero    | ✓ **DONE**                                                                                                                                          |
+| **`__pos__(self) -> Self`**                | `+n` — returns self          | ✓ **DONE**                                                                                                                                          |
+| **`__ceil__` / `__floor__` / `__trunc__`** | All return self for integers | ✓ **DONE**                                                                                                                                          |
 | **`bit_count(self) -> Int`**               | Popcount (number of 1-bits)  | **MISSING**. Python 3.10+. Useful.                                                                                                                  |
 | **`__float__(self) -> Float64`**           | Float conversion             | **MISSING**. Python's `float(n)`. Useful for interop.                                                                                               |
 | **`__pow__(self, exp, mod)`**              | 3-arg pow                    | Python's `pow(base, exp, mod)`. `mod_pow` exists but not via the dunder. **Mojo may not support 3-arg **pow** yet — keep `mod_pow` as workaround.** |
@@ -154,12 +154,12 @@ These are the gaps vs Python's `decimal.Decimal`, prioritized by user impact.
 
 | Mode              | Python Name       | Status |
 | ----------------- | ----------------- | ------ |
-| `ROUND_DOWN`      | `ROUND_DOWN`      | ✅ Done |
-| `ROUND_UP`        | `ROUND_UP`        | ✅ Done |
-| `ROUND_HALF_UP`   | `ROUND_HALF_UP`   | ✅ Done |
-| `ROUND_HALF_EVEN` | `ROUND_HALF_EVEN` | ✅ Done |
-| `ROUND_CEILING`   | `ROUND_CEILING`   | ✅ Done |
-| `ROUND_FLOOR`     | `ROUND_FLOOR`     | ✅ Done |
+| `ROUND_DOWN`      | `ROUND_DOWN`      | ✓ Done |
+| `ROUND_UP`        | `ROUND_UP`        | ✓ Done |
+| `ROUND_HALF_UP`   | `ROUND_HALF_UP`   | ✓ Done |
+| `ROUND_HALF_EVEN` | `ROUND_HALF_EVEN` | ✓ Done |
+| `ROUND_CEILING`   | `ROUND_CEILING`   | ✓ Done |
+| `ROUND_FLOOR`     | `ROUND_FLOOR`     | ✓ Done |
 
 ### Missing: 2 modes
 
@@ -283,17 +283,17 @@ BigInt has `to_string_with_separators()`. This should be extended to BigDecimal.
 > Updated after audit on 2026-02-27. Items already completed are removed.
 > Last updated: 2026-02-27 (Tier 1 completed).
 
-### ✅ Tier 1: Completed
+### ✓ Tier 1: Completed
 
-1. ✅ **Naming cleanup** — removed old aliases `equals`/`not_equals`/`less_than`/`greater_than`/`less_than_or_equal`/`greater_than_or_equal` from BigDecimal `comparison.mojo`
-2. ✅ **`__rtruediv__()`** on BigDecimal — `1 / some_decimal` now works
-3. ✅ **`is_positive()`** on BigDecimal
-4. ✅ **`number_of_significant_digits()`** and **`number_of_digits()`** on BigDecimal
-5. ✅ **`to_scientific_string()`** and **`to_eng_string()`** on BigDecimal
+1. ✓ **Naming cleanup** — removed old aliases `equals`/`not_equals`/`less_than`/`greater_than`/`less_than_or_equal`/`greater_than_or_equal` from BigDecimal `comparison.mojo`
+2. ✓ **`__rtruediv__()`** on BigDecimal — `1 / some_decimal` now works
+3. ✓ **`is_positive()`** on BigDecimal
+4. ✓ **`number_of_digits()`** on BigDecimal (`number_of_significant_digits()` removed — identical behavior, not a Python API)
+5. ✓ **`to_scientific_string()`** and **`to_eng_string()`** on BigDecimal
 
 ### Tier 2: Important (Remaining)
 
-1. **`as_tuple()`** on BigDecimal — returns `(sign: Bool, coefficient: BigUInt, exponent: Int)`
+1. ✓ **`as_tuple()`** on BigDecimal — returns `(sign: Bool, digits: List[UInt8], exponent: Int)` matching Python's `DecimalTuple`
 2. **`copy_abs()` / `copy_negate()` / `copy_sign(other)`** on BigDecimal
 3. **`adjusted()`** on BigDecimal — returns adjusted exponent (= `exponent + len(digits) - 1`)
 4. **`same_quantum(other)`** on BigDecimal
@@ -342,9 +342,9 @@ For tracking against the above:
 ✓ __mul__          ✓ __ne__           ✓ __neg__          ✓ __pos__
 ✓ __pow__          ✓ __radd__         ✓ __repr__         ✓ __rfloordiv__
 ✓ __rmod__         ✓ __rmul__         ✓ __round__        ✓ __rpow__
-✓ __rsub__         ✗ __rtruediv__     ✓ __str__          ✓ __sub__
+✓ __rsub__         ✓ __rtruediv__     ✓ __str__          ✓ __sub__
 ✓ __truediv__      ✓ __trunc__
-✗ adjusted         ✗ as_integer_ratio ✗ as_tuple         ✗ canonical
+✗ adjusted         ✗ as_integer_ratio ✓ as_tuple         ✗ canonical
 ✓ compare          ✗ conjugate        ✗ copy_abs         ✗ copy_negate
 ✗ copy_sign        ✓ exp              ✗ fma              ✗ is_canonical
 ✗ is_finite        ✓ is_integer       ✗ is_nan           ✗ is_normal
@@ -355,5 +355,5 @@ For tracking against the above:
 ✗ next_plus        ✗ next_toward      ✓ normalize        ✗ number_class
 ✓ quantize         ✗ radix            ✗ remainder_near   ✗ rotate
 ✗ same_quantum     ✗ scaleb           ✗ shift            ✓ sqrt
-△ to_eng_string    ✗ to_integral_exact ✗ to_integral_value
+✓ to_eng_string    ✗ to_integral_exact ✗ to_integral_value
 ```
