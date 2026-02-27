@@ -17,30 +17,17 @@ The main areas for further improvement are:
 
 Note that `Decimal128` is not among the priority at this stage because it is a fixed-width type and is not a big number. For the release of v0.8 or v0.9, I should focus only on `BigDecimal` and `BigInt` because they have direct Python counterparties. For `BigUInt`, the priority is lower because it is not directly exposed to users.
 
----
-
-## Table of Contents
-
-- [Part I: Cross-Type Consistency Issues](#part-i-cross-type-consistency-issues)
-- [Part II: BigDecimal (Decimal) — Python Compatibility](#part-ii-bigdecimal-decimal--python-compatibility)
-- [Part III: BigInt (BInt) — Python Compatibility](#part-iii-bigint-bint--python-compatibility)
-- [Part IV: RoundingMode](#part-iv-roundingmode)
-- [Part V: Ergonomic Improvements (Static Language Features)](#part-v-ergonomic-improvements-static-language-features)
-- [Part VI: Priority Ranking](#part-vi-priority-ranking)
-
----
-
 ## Part I: Cross-Type Consistency Issues
 
 These inconsistencies will confuse users who use both types in the same codebase.
 
 ### 1.1 Naming: Free Function Inconsistencies
 
-| Concept  | BigDecimal                                                                            | BigInt                                                      | Recommendation                                                                                     |
-| -------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Equality | `equals()` / `not_equals()`                                                           | `equal()` / `not_equal()`                                   | **Unify to `equal` / `not_equal`** (shorter, BigInt already uses it)                               |
-| Ordering | `less_than()` / `greater_than()` / `less_than_or_equal()` / `greater_than_or_equal()` | `less()` / `greater()` / `less_equal()` / `greater_equal()` | **Unify to `less` / `greater` / `less_equal` / `greater_equal`** (shorter, BigInt already uses it) |
-| Division | `true_divide()`                                                                       | N/A                                                         | `true_divide` is aligned with `__truediv__` dunder. Maybe add an alias `divide()` for convenience  |
+| Concept  | BigDecimal                                                                                                                                              | BigInt                                                      | Status                                                                                            |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Equality | ~~`equals()` / `not_equals()`~~ → `equal()` / `not_equal()`                                                                                             | `equal()` / `not_equal()`                                   | ✅ **DONE** — old aliases removed                                                                  |
+| Ordering | ~~`less_than()` / `greater_than()` / `less_than_or_equal()` / `greater_than_or_equal()`~~ → `less()` / `greater()` / `less_equal()` / `greater_equal()` | `less()` / `greater()` / `less_equal()` / `greater_equal()` | ✅ **DONE** — old aliases removed                                                                  |
+| Division | `true_divide()`                                                                                                                                         | N/A                                                         | `true_divide` is aligned with `__truediv__` dunder. Maybe add an alias `divide()` for convenience |
 
 ### 1.2 Field Access vs Method Access
 
@@ -59,24 +46,24 @@ Methods that BigDecimal should have but currently lacks:
 | Method                           | Status       | Action                                                                                         |
 | -------------------------------- | ------------ | ---------------------------------------------------------------------------------------------- |
 | `as_tuple()`                     | **MISSING**  | **Add** — returns `(sign: Bool, coefficient: BigUInt, exponent: Int)`                          |
-| `copy()`                         | **MISSING**  | **Add** — explicit deep copy method                                                            |
+| `copy()`                         | ✅ **DONE**   | Implemented — used internally by `__pos__`, `__round__`, etc.                                  |
 | `number_of_significant_digits()` | **MISSING**  | **Add** — count of significant digits in the coefficient                                       |
 | `is_positive()`                  | **MISSING**  | **Add** — BigInt has it, BigDecimal should too                                                 |
 | `to_scientific_string()`         | **Partial**  | **Add** as convenience alias (currently via `to_string(scientific=True)`)                      |
-| `__divmod__()`                   | **MISSING**  | **Add** — BigInt has it                                                                        |
+| `__divmod__()`                   | ✅ **DONE**   | Implemented                                                                                    |
 | `Int` overloads for operators    | **RESOLVED** | Mojo's `@implicit` handles this — `BigDecimal("1.5") + 1` already works                        |
-| `__ifloordiv__` / `__imod__`     | **MISSING**  | **Add** — complete the augmented assignment set                                                |
+| `__ifloordiv__` / `__imod__`     | ✅ **DONE**   | Implemented                                                                                    |
 | `__rtruediv__`                   | **MISSING**  | **Add** — complete the reflected operator set                                                  |
 | Debug repr returning String      | Prints only  | **Improve** — `print_internal_representation()` should also have a variant that returns String |
 
 ### 1.4 Missing Parity: BigInt vs BigDecimal
 
-| Method                        | BigInt      | BigDecimal  | Action                                              |
-| ----------------------------- | ----------- | ----------- | --------------------------------------------------- |
-| `is_positive()`               | Has it      | **MISSING** | Add to BigDecimal                                   |
-| `__bool__()`                  | **MISSING** | **MISSING** | Add to both — see Part II and Part III              |
-| `to_string_with_separators()` | Has it      | **MISSING** | Nice to have on BigDecimal too                      |
-| `number_of_digits()`          | Has it      | **MISSING** | Add to BigDecimal (number of digits in coefficient) |
+| Method                        | BigInt   | BigDecimal  | Action                                                              |
+| ----------------------------- | -------- | ----------- | ------------------------------------------------------------------- |
+| `is_positive()`               | ✅ Has it | **MISSING** | Add to BigDecimal                                                   |
+| `__bool__()`                  | ✅ Done   | ✅ Done      | —                                                                   |
+| `to_string_with_separators()` | Has it   | **MISSING** | Nice to have on BigDecimal too (can use `to_string(delimiter=...)`) |
+| `number_of_digits()`          | Has it   | **MISSING** | Add to BigDecimal (number of digits in coefficient)                 |
 
 ---
 
@@ -86,13 +73,14 @@ These are the gaps vs Python's `decimal.Decimal`, prioritized by user impact.
 
 ### 2.1 HIGH Priority — Dunders That Pythonistas Expect
 
-| Method                                                   | What It Does                                     | Notes                                                                                     |
-| -------------------------------------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------- |
-| **`__bool__(self) -> Bool`**                             | `if x:` — True if nonzero                        | Python's most basic truthiness check. Currently must use `not x.is_zero()`. **Must add.** |
-| **`__pos__(self) -> Self`**                              | `+x` — unary plus                                | Python uses this to apply context rounding. At minimum return self. **Must add.**         |
-| **`__divmod__(self, other) -> Tuple`**                   | `divmod(a, b)`                                   | BigInt has it. **Must add.**                                                              |
-| **`__hash__(self) -> UInt`**                             | Hashable                                         | Needed for Dict/Set usage. Can wait for Mojo's Hashable trait maturity.                   |
-| **`__ceil__(self) / __floor__(self) / __trunc__(self)`** | `math.ceil(x)`, `math.floor(x)`, `math.trunc(x)` | Very common operations. `__trunc__` is what `int()` calls in Python. **Must add.**        |
+| Method                                     | What It Does                                     | Notes                                                                |
+| ------------------------------------------ | ------------------------------------------------ | -------------------------------------------------------------------- |
+| **`__bool__(self) -> Bool`**               | `if x:` — True if nonzero                        | ✅ **DONE**                                                           |
+| **`__pos__(self) -> Self`**                | `+x` — unary plus                                | ✅ **DONE**                                                           |
+| **`__divmod__(self, other) -> Tuple`**     | `divmod(a, b)`                                   | ✅ **DONE**                                                           |
+| **`__ceil__` / `__floor__` / `__trunc__`** | `math.ceil(x)`, `math.floor(x)`, `math.trunc(x)` | ✅ **DONE**                                                           |
+| **`__rtruediv__(self, other) -> Self`**    | `1 / x` where x is BigDecimal                    | Still **MISSING**. `Int.__truediv__(BigDecimal)` fails without this. |
+| **`__hash__(self) -> UInt`**               | Hashable                                         | **MISSING**. Can wait for Mojo's Hashable trait maturity.            |
 
 ### 2.2 MEDIUM Priority — Named Methods for Python Migration
 
@@ -133,22 +121,22 @@ These are the gaps vs Python's `decimal.Decimal`, prioritized by user impact.
 
 ### 3.1 HIGH Priority
 
-| Method                           | What It Does                | Notes                                                                                                                                               |
-| -------------------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`__bool__(self) -> Bool`**     | `if n:` — True if nonzero   | **Must add.**                                                                                                                                       |
-| **`__pos__(self) -> Self`**      | `+n` — returns self         | **Must add.**                                                                                                                                       |
-| **`bit_count(self) -> Int`**     | Popcount (number of 1-bits) | Python 3.10+. Useful.                                                                                                                               |
-| **`__float__(self) -> Float64`** | Float conversion            | Python's `float(n)`. Useful for interop.                                                                                                            |
-| **`__pow__(self, exp, mod)`**    | 3-arg pow                   | Python's `pow(base, exp, mod)`. `mod_pow` exists but not via the dunder. **Mojo may not support 3-arg **pow** yet — keep `mod_pow` as workaround.** |
+| Method                                     | What It Does                 | Notes                                                                                                                                               |
+| ------------------------------------------ | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`__bool__(self) -> Bool`**               | `if n:` — True if nonzero    | ✅ **DONE**                                                                                                                                          |
+| **`__pos__(self) -> Self`**                | `+n` — returns self          | ✅ **DONE**                                                                                                                                          |
+| **`__ceil__` / `__floor__` / `__trunc__`** | All return self for integers | ✅ **DONE**                                                                                                                                          |
+| **`bit_count(self) -> Int`**               | Popcount (number of 1-bits)  | **MISSING**. Python 3.10+. Useful.                                                                                                                  |
+| **`__float__(self) -> Float64`**           | Float conversion             | **MISSING**. Python's `float(n)`. Useful for interop.                                                                                               |
+| **`__pow__(self, exp, mod)`**              | 3-arg pow                    | Python's `pow(base, exp, mod)`. `mod_pow` exists but not via the dunder. **Mojo may not support 3-arg **pow** yet — keep `mod_pow` as workaround.** |
 
 ### 3.2 MEDIUM Priority
 
-| Method                                       | What It Does                    | Notes                                                  |
-| -------------------------------------------- | ------------------------------- | ------------------------------------------------------ |
-| `to_bytes(length, byteorder, signed)`        | Serialization                   | Useful for crypto / network code.                      |
-| `from_bytes(bytes, byteorder, signed)`       | Deserialization                 | Counterpart of above.                                  |
-| `__ceil__()` / `__floor__()` / `__trunc__()` | All return self for integers    | Trivial, but makes BigInt work with `math.ceil()` etc. |
-| `__index__(self) -> Int`                     | Allows `list[big_int]` indexing | Maps to `__int__`. Useful.                             |
+| Method                                 | What It Does                    | Notes                             |
+| -------------------------------------- | ------------------------------- | --------------------------------- |
+| `to_bytes(length, byteorder, signed)`  | Serialization                   | Useful for crypto / network code. |
+| `from_bytes(bytes, byteorder, signed)` | Deserialization                 | Counterpart of above.             |
+| `__index__(self) -> Int`               | Allows `list[big_int]` indexing | Maps to `__int__`. Useful.        |
 
 ### 3.3 LOW Priority
 
@@ -162,23 +150,23 @@ These are the gaps vs Python's `decimal.Decimal`, prioritized by user impact.
 
 ## Part IV: RoundingMode
 
-### Current: 4 modes
+### Current: 6 modes
 
 | Mode              | Python Name       | Status |
 | ----------------- | ----------------- | ------ |
-| `ROUND_DOWN`      | `ROUND_DOWN`      | ✓      |
-| `ROUND_UP`        | `ROUND_UP`        | ✓      |
-| `ROUND_HALF_UP`   | `ROUND_HALF_UP`   | ✓      |
-| `ROUND_HALF_EVEN` | `ROUND_HALF_EVEN` | ✓      |
+| `ROUND_DOWN`      | `ROUND_DOWN`      | ✅ Done |
+| `ROUND_UP`        | `ROUND_UP`        | ✅ Done |
+| `ROUND_HALF_UP`   | `ROUND_HALF_UP`   | ✅ Done |
+| `ROUND_HALF_EVEN` | `ROUND_HALF_EVEN` | ✅ Done |
+| `ROUND_CEILING`   | `ROUND_CEILING`   | ✅ Done |
+| `ROUND_FLOOR`     | `ROUND_FLOOR`     | ✅ Done |
 
-### Missing: 4 modes
+### Missing: 2 modes
 
-| Mode              | Python Name       | Description            | Priority                                                        |
-| ----------------- | ----------------- | ---------------------- | --------------------------------------------------------------- |
-| `ROUND_CEILING`   | `ROUND_CEILING`   | Round toward +∞        | **HIGH** — common in financial (always round up for charges)    |
-| `ROUND_FLOOR`     | `ROUND_FLOOR`     | Round toward -∞        | **HIGH** — common in financial (always round down for payments) |
-| `ROUND_HALF_DOWN` | `ROUND_HALF_DOWN` | Round ties toward zero | **MEDIUM** — less common but expected                           |
-| `ROUND_05UP`      | `ROUND_05UP`      | Special IEEE rounding  | **LOW** — rarely used                                           |
+| Mode              | Python Name       | Description            | Priority                              |
+| ----------------- | ----------------- | ---------------------- | ------------------------------------- |
+| `ROUND_HALF_DOWN` | `ROUND_HALF_DOWN` | Round ties toward zero | **MEDIUM** — less common but expected |
+| `ROUND_05UP`      | `ROUND_05UP`      | Special IEEE rounding  | **LOW** — rarely used                 |
 
 ---
 
@@ -290,44 +278,42 @@ BigInt has `to_string_with_separators()`. This should be extended to BigDecimal.
 
 ---
 
-## Part VI: Priority Ranking
+## Part VI: Remaining Tasks (Re-ranked)
 
-### Tier 1: Must-Have (Breaking friction for Python users)
+> Updated after audit on 2026-02-27. Items already completed are removed.
+> Last updated: 2026-02-27 (Tier 1 completed).
 
-1. **`__bool__()`** on BigDecimal and BigInt
-2. **`__pos__()`** on BigDecimal and BigInt
-3. **`__ceil__()` / `__floor__()` / `__trunc__()`** on BigDecimal and BigInt
-4. **`__divmod__()`** on BigDecimal
-5. ~~**`Int` operator overloads** on BigDecimal~~ — **RESOLVED** (implicit conversion handles this)
-6. **`ROUND_CEILING` / `ROUND_FLOOR`** rounding modes
-7. **Naming consistency** — unify `equals`→`equal`, `less_than`→`less`, etc. in BigDecimal free functions
+### ✅ Tier 1: Completed
 
-### Tier 2: Important (Python migration smoothness)
+1. ✅ **Naming cleanup** — removed old aliases `equals`/`not_equals`/`less_than`/`greater_than`/`less_than_or_equal`/`greater_than_or_equal` from BigDecimal `comparison.mojo`
+2. ✅ **`__rtruediv__()`** on BigDecimal — `1 / some_decimal` now works
+3. ✅ **`is_positive()`** on BigDecimal
+4. ✅ **`number_of_significant_digits()`** and **`number_of_digits()`** on BigDecimal
+5. ✅ **`to_scientific_string()`** and **`to_eng_string()`** on BigDecimal
 
-1. **`as_tuple()`** on BigDecimal
-2. **`copy_abs()` / `copy_negate()` / `copy_sign()`** on BigDecimal
-3. **`adjusted()`** on BigDecimal
-4. **`same_quantum()`** on BigDecimal
-5. **`fma()`** on BigDecimal
-6. **`ROUND_HALF_DOWN`** rounding mode  
-7. **`is_positive()`** on BigDecimal
-8. **`number_of_significant_digits()`** on BigDecimal
-9. **`scaleb(n)`** / `shift_scale(n)` on BigDecimal
-10. **`bit_count()`** on BigInt
-11. **`__float__()`** on BigInt
-12. **`to_eng_string()`** on BigDecimal
+### Tier 2: Important (Remaining)
 
-### Tier 3: Nice-to-Have (Ergonomics & modern patterns)
+1. **`as_tuple()`** on BigDecimal — returns `(sign: Bool, coefficient: BigUInt, exponent: Int)`
+2. **`copy_abs()` / `copy_negate()` / `copy_sign(other)`** on BigDecimal
+3. **`adjusted()`** on BigDecimal — returns adjusted exponent (= `exponent + len(digits) - 1`)
+4. **`same_quantum(other)`** on BigDecimal
+5. **`ROUND_HALF_DOWN`** rounding mode
+6. **`scaleb(n)`** on BigDecimal — multiply by 10^n efficiently
+7. **`bit_count()`** on BigInt — popcount (number of 1-bits in abs value)
+8. **`__float__()`** on BigInt — `float(n)` interop
+9. **`fma(a, b)`** on BigDecimal — `self * a + b` without intermediate rounding
+10. **`to_string_with_separators()`** on BigDecimal — alias for `to_string(delimiter=...)`
 
-1. `clamp(lower, upper)` on BigDecimal and BigInt
-2. `is_close(other, tolerance)` on BigDecimal
-3. `signum()` returning -1/0/1 on BigDecimal and BigInt
-4. `to_string_with_separators()` on BigDecimal
-5. `from_fraction(num, den, precision)` on BigDecimal
-6. `to_bytes()` / `from_bytes()` on BigInt
-7. `to_integral_value()` / `remainder_near()` on BigDecimal
-8. Method aliases for chaining (`add()`, `sub()`, `mul()`, `div()`)
-9. `__hash__()` when Mojo's Hashable trait matures
+### Tier 3: Nice-to-Have (Remaining)
+
+1. `signum()` returning -1/0/1 on BigDecimal and BigInt
+2. `clamp(lower, upper)` on BigDecimal and BigInt
+3. `is_close(other, tolerance)` on BigDecimal
+4. `from_fraction(num, den, precision)` on BigDecimal
+5. `to_bytes()` / `from_bytes()` on BigInt
+6. `to_integral_value()` / `remainder_near()` on BigDecimal
+7. Method aliases for chaining (`add()`, `sub()`, `mul()`, `div()`) on BigDecimal
+8. `__hash__()` when Mojo's Hashable trait matures
 
 ### Tier 4: Completeness (Low urgency)
 
@@ -347,17 +333,17 @@ For tracking against the above:
 
 ```txt
 # Python decimal.Decimal methods (3.12)
-# ✓ = implemented, △ = partial, ✗ = missing
+# ✓ = implemented, △ = partial/alias only, ✗ = missing
 
-✓ __abs__          ✓ __add__          ✗ __bool__         ✗ __ceil__
-✗ __complex__      ✓ __eq__           ✓ __float__        ✗ __floor__
+✓ __abs__          ✓ __add__          ✓ __bool__         ✓ __ceil__
+✗ __complex__      ✓ __eq__           ✓ __float__        ✓ __floor__
 ✓ __floordiv__     ✓ __ge__           ✓ __gt__           ✗ __hash__
 ✓ __int__          ✓ __le__           ✓ __lt__           ✓ __mod__
-✓ __mul__          ✓ __ne__           ✓ __neg__          ✗ __pos__
+✓ __mul__          ✓ __ne__           ✓ __neg__          ✓ __pos__
 ✓ __pow__          ✓ __radd__         ✓ __repr__         ✓ __rfloordiv__
-✓ __rmod__         ✓ __rmul__         ✗ __round__[?]     ✓ __rpow__
-✓ __rsub__         △ __rtruediv__     ✓ __str__          ✓ __sub__
-✓ __truediv__      ✗ __trunc__
+✓ __rmod__         ✓ __rmul__         ✓ __round__        ✓ __rpow__
+✓ __rsub__         ✗ __rtruediv__     ✓ __str__          ✓ __sub__
+✓ __truediv__      ✓ __trunc__
 ✗ adjusted         ✗ as_integer_ratio ✗ as_tuple         ✗ canonical
 ✓ compare          ✗ conjugate        ✗ copy_abs         ✗ copy_negate
 ✗ copy_sign        ✓ exp              ✗ fma              ✗ is_canonical
@@ -369,5 +355,5 @@ For tracking against the above:
 ✗ next_plus        ✗ next_toward      ✓ normalize        ✗ number_class
 ✓ quantize         ✗ radix            ✗ remainder_near   ✗ rotate
 ✗ same_quantum     ✗ scaleb           ✗ shift            ✓ sqrt
-✗ to_eng_string    ✗ to_integral_exact ✗ to_integral_value
+△ to_eng_string    ✗ to_integral_exact ✗ to_integral_value
 ```

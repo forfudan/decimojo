@@ -724,6 +724,35 @@ struct BigDecimal(
         """
         writer.write(String(self))
 
+    fn to_scientific_string(self) -> String:
+        """Returns the number in scientific notation (trailing zeros stripped).
+
+        Convenience alias for `to_string(scientific=True)`.
+
+        Examples:
+
+        ```
+        BigDecimal("123456.789").to_scientific_string()  # "1.23456789E+5"
+        BigDecimal("0.00123").to_scientific_string()     # "1.23E-3"
+        ```
+        """
+        return self.to_string(scientific=True)
+
+    fn to_eng_string(self) -> String:
+        """Returns the number in engineering notation (exponent is a multiple
+        of 3, trailing zeros stripped).
+
+        Convenience alias for `to_string(engineering=True)`.
+
+        Examples:
+
+        ```
+        BigDecimal("123456.789").to_eng_string()  # "123.456789E+3"
+        BigDecimal("0.00123").to_eng_string()     # "1.23E-3"
+        ```
+        """
+        return self.to_string(engineering=True)
+
     # ===------------------------------------------------------------------=== #
     # Basic unary operation dunders
     # neg
@@ -877,6 +906,12 @@ struct BigDecimal(
     fn __rpow__(self, base: Self) raises -> Self:
         return decimo.bigdecimal.exponential.power(
             base, self, precision=PRECISION
+        )
+
+    @always_inline
+    fn __rtruediv__(self, other: Self) raises -> Self:
+        return decimo.bigdecimal.arithmetics.true_divide(
+            other, self, precision=PRECISION
         )
 
     # ===------------------------------------------------------------------=== #
@@ -1515,6 +1550,11 @@ struct BigDecimal(
         """Returns True if this number represents a negative value."""
         return self.sign
 
+    @always_inline
+    fn is_positive(self) -> Bool:
+        """Returns True if this number represents a strictly positive value."""
+        return not self.sign and not self.coefficient.is_zero()
+
     fn is_odd(self) raises -> Bool:
         """Returns True if this number represents an odd value."""
         if self.scale < 0:
@@ -1618,6 +1658,50 @@ struct BigDecimal(
             number_of_trailing_zeros += 1
 
         return number_of_zero_words * 9 + number_of_trailing_zeros
+
+    fn number_of_digits(self) -> Int:
+        """Returns the total number of digits in the coefficient.
+
+        This counts all digits stored in the coefficient, including any
+        trailing zeros that were explicitly provided (e.g. `"1.0000"` has 5).
+        Equivalent to `len(coefficient_as_string)`.
+
+        Examples:
+
+        ```
+        BigDecimal("123.456").number_of_digits()   # 6
+        BigDecimal("0.00123").number_of_digits()   # 3
+        BigDecimal("100.00").number_of_digits()    # 5  (trailing zeros in fractional part)
+        BigDecimal("100").number_of_digits()       # 3
+        ```
+        """
+        return self.coefficient.number_of_digits()
+
+    fn number_of_significant_digits(self) -> Int:
+        """Returns the number of significant digits, following Python's
+        `Decimal` convention.
+
+        Since BigDecimal stores no leading zeros in its coefficient, this is
+        always equal to `number_of_digits()`. Trailing zeros in the fractional
+        part (e.g. `"1.0000"`) are significant — they convey precision. Trailing
+        zeros in the integer part (e.g. `"100"`) are also stored as-is and
+        counted.
+
+        Use `normalize()` first if you want trailing zeros stripped before
+        counting.
+
+        Examples:
+
+        ```
+        BigDecimal("123.456").number_of_significant_digits()   # 6
+        BigDecimal("0.00123").number_of_significant_digits()   # 3
+        BigDecimal("1.0000").number_of_significant_digits()    # 5
+        BigDecimal("100").number_of_significant_digits()       # 3
+        # After normalize, "100" becomes "1E+2" (coefficient=1):
+        BigDecimal("100").normalize().number_of_significant_digits()  # 1
+        ```
+        """
+        return self.coefficient.number_of_digits()
 
 
 # ===----------------------------------------------------------------------=== #
