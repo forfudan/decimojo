@@ -86,7 +86,7 @@ These are the gaps vs Python's `decimal.Decimal`, prioritized by user impact.
 
 | Method                              | What It Does                                             | Notes                                                                                                    |
 | ----------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `as_tuple()`                        | Returns `(sign, coefficient, exponent)`                  | ✓ **DONE** — returns `(sign: Bool, digits: List[UInt8], exponent: Int)` matching Python's `DecimalTuple` |
+| `as_tuple()`                        | Returns `(sign, digits, exponent)`                       | ✓ **DONE** — returns `(sign: Bool, digits: List[UInt8], exponent: Int)` matching Python's `DecimalTuple` |
 | `adjusted()`                        | Returns adjusted exponent (= exponent + len(digits) - 1) | Useful for formatting and comparison.                                                                    |
 | `copy_abs()`                        | Returns `abs(self)`                                      | Alias for `__abs__()`. Trivial to add.                                                                   |
 | `copy_negate()`                     | Returns `-self`                                          | Alias for `__neg__()`. Trivial to add.                                                                   |

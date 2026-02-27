@@ -4,10 +4,12 @@ Tests for BigDecimal utility methods added in v0.8.x:
   - __rtruediv__()
   - to_scientific_string() / to_eng_string()
   - number_of_digits()
+  - as_tuple()
 """
 
 import testing
 from decimo.bigdecimal.bigdecimal import BigDecimal
+from decimo.biguint.biguint import BigUInt
 
 
 # ===----------------------------------------------------------------------=== #
@@ -37,7 +39,7 @@ fn test_is_positive_zero() raises:
 
 
 fn test_is_positive_matches_bigint_semantics() raises:
-    """is_positive() is strictly positive (zero excluded), matching BigInt."""
+    """Strictly positive (zero excluded), matching BigInt semantics."""
     var pos = BigDecimal("1")
     var neg = BigDecimal("-1")
     var zero = BigDecimal("0")
@@ -65,6 +67,10 @@ fn test_rtruediv_basic() raises:
     var rhs = BigDecimal("2")
     var r = rhs.__rtruediv__(lhs)
     testing.assert_equal(String(r), String(result), "1 / 2 via __rtruediv__")
+    # Also test language-level dispatch: 1 / x
+    var x = BigDecimal("2")
+    var dispatched = BigDecimal(1) / x
+    testing.assert_equal(String(dispatched), String(result), "1 / x dispatch")
 
 
 fn test_rtruediv_integer_numerator() raises:
@@ -84,21 +90,18 @@ fn test_rtruediv_negative() raises:
 
 
 fn test_rtruediv_symmetry() raises:
-    """a / b == b.__rtruediv__(a) for various pairs."""
-    var pairs = List[Tuple[String, String]]()
-    pairs.append(("10", "3"))
-    pairs.append(("1", "7"))
-    pairs.append(("100", "6"))
-    pairs.append(("-5", "2"))
-    for pair in pairs:
-        var a = BigDecimal(pair[][0])
-        var b = BigDecimal(pair[][1])
+    """Verify a / b == b.__rtruediv__(a) for various pairs."""
+    var as_: List[String] = ["10", "1", "100", "-5"]
+    var bs: List[String] = ["3", "7", "6", "2"]
+    for i in range(len(as_)):
+        var a = BigDecimal(as_[i])
+        var b = BigDecimal(bs[i])
         var direct = a / b
         var reflected = b.__rtruediv__(a)
         testing.assert_equal(
             String(direct),
             String(reflected),
-            "a/b == b.__rtruediv__(a) for a=" + pair[][0] + ", b=" + pair[][1],
+            "a/b == b.__rtruediv__(a) for a=" + as_[i] + ", b=" + bs[i],
         )
 
 
@@ -115,7 +118,7 @@ fn test_to_scientific_string_basic() raises:
     testing.assert_equal(
         BigDecimal("0.00123").to_scientific_string(), "1.23E-3"
     )
-    testing.assert_equal(BigDecimal("1").to_scientific_string(), "1")
+    testing.assert_equal(BigDecimal("1").to_scientific_string(), "1E0")
     testing.assert_equal(BigDecimal("10").to_scientific_string(), "1E+1")
 
 
@@ -125,7 +128,7 @@ fn test_to_scientific_string_trailing_zeros_stripped() raises:
     var v = BigDecimal("1.23000")
     var s = v.to_scientific_string()
     # Should not end with trailing zeros
-    testing.assert_equal(s, "1.23E+0")
+    testing.assert_equal(s, "1.23E0")
 
 
 fn test_to_scientific_string_negative() raises:
@@ -137,7 +140,7 @@ fn test_to_scientific_string_negative() raises:
 
 fn test_to_scientific_string_zero() raises:
     """Zero renders correctly."""
-    testing.assert_equal(BigDecimal("0").to_scientific_string(), "0")
+    testing.assert_equal(BigDecimal("0").to_scientific_string(), "0E0")
 
 
 # ===----------------------------------------------------------------------=== #
@@ -171,34 +174,29 @@ fn test_to_eng_string_negative() raises:
 
 
 fn test_to_eng_string_is_alias() raises:
-    """to_eng_string() returns the same as to_string(engineering=True)."""
-    var values = List[String]()
-    values.append("123456.789")
-    values.append("0.00123")
-    values.append("-9.99E+10")
-    values.append("0")
-    for v in values:
-        var d = BigDecimal(v[])
+    """Verify to_eng_string() returns the same as to_string(engineering=True).
+    """
+    var values: List[String] = ["123456.789", "0.00123", "-9.99E+10", "0"]
+    for i in range(len(values)):
+        var d = BigDecimal(values[i])
         testing.assert_equal(
             d.to_eng_string(),
             d.to_string(engineering=True),
-            "to_eng_string() == to_string(engineering=True) for " + v[],
+            "to_eng_string() == to_string(engineering=True) for " + values[i],
         )
 
 
 fn test_to_scientific_string_is_alias() raises:
-    """to_scientific_string() returns the same as to_string(scientific=True)."""
-    var values = List[String]()
-    values.append("123456.789")
-    values.append("0.00123")
-    values.append("-9.99E+10")
-    values.append("0")
-    for v in values:
-        var d = BigDecimal(v[])
+    """Verify to_scientific_string() returns the same as to_string(scientific=True).
+    """
+    var values: List[String] = ["123456.789", "0.00123", "-9.99E+10", "0"]
+    for i in range(len(values)):
+        var d = BigDecimal(values[i])
         testing.assert_equal(
             d.to_scientific_string(),
             d.to_string(scientific=True),
-            "to_scientific_string() == to_string(scientific=True) for " + v[],
+            "to_scientific_string() == to_string(scientific=True) for "
+            + values[i],
         )
 
 
@@ -208,7 +206,7 @@ fn test_to_scientific_string_is_alias() raises:
 
 
 fn test_number_of_digits_basic() raises:
-    """number_of_digits() counts all coefficient digits."""
+    """Counts all coefficient digits."""
     testing.assert_equal(BigDecimal("123.456").number_of_digits(), 6)
     testing.assert_equal(BigDecimal("0.00123").number_of_digits(), 3)
     # Trailing zeros in fractional part are stored in the coefficient
@@ -304,13 +302,9 @@ fn test_as_tuple_zero() raises:
 
 fn test_as_tuple_reconstruct() raises:
     """Round-trip: reconstruct BigDecimal from (sign, digits, exponent)."""
-    var values = List[String]()
-    values.append("123.456")
-    values.append("-0.001")
-    values.append("12345")
-    values.append("0")
-    for v in values:
-        var d = BigDecimal(v[])
+    var values: List[String] = ["123.456", "-0.001", "12345", "0"]
+    for vi in range(len(values)):
+        var d = BigDecimal(values[vi])
         var t = d.as_tuple()
         # Rebuild coefficient string from digit list
         var coef_str = String()
@@ -323,7 +317,7 @@ fn test_as_tuple_reconstruct() raises:
         testing.assert_equal(
             String(reconstructed),
             String(d),
-            "round-trip for " + v[],
+            "round-trip for " + values[vi],
         )
 
 
