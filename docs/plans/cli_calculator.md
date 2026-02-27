@@ -263,7 +263,7 @@ Format the final `BigDecimal` result based on CLI flags:
 2. Add function call parsing (`sqrt(...)`, `ln(...)`, etc.).
 3. Add multi-argument function support (`root(x, n)`).
 4. Add built-in constants (`pi`, `e`).
-5. Add output formatting flags (`--sci`, `--eng`, `--pad-to-precision`).
+5. Add output formatting flags (`--scientific` or `-s`, `--engineering` or `-e`, `--pad-to-precision` or `-P`).
 
 ### Phase 3: Polish
 

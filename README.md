@@ -67,15 +67,15 @@ The following table summarizes the package versions and their corresponding Mojo
 
 | libary     | version | Mojo version  | package manager |
 | ---------- | ------- | ------------- | --------------- |
-| `decimojo` | v0.1.0  | ==25.1        | magic           |
-| `decimojo` | v0.2.0  | ==25.2        | magic           |
-| `decimojo` | v0.3.0  | ==25.2        | magic           |
-| `decimojo` | v0.3.1  | >=25.2, <25.4 | pixi            |
-| `decimojo` | v0.4.x  | ==25.4        | pixi            |
-| `decimojo` | v0.5.0  | ==25.5        | pixi            |
-| `decimojo` | v0.6.0  | ==0.25.7      | pixi            |
-| `decimojo` | v0.7.0  | ==0.26.1      | pixi            |
-| `decimo`   | v0.8.0  | ==0.26.1      | pixi            |
+| `decimojo` | 0.1.0   | ==25.1        | magic           |
+| `decimojo` | 0.2.0   | ==25.2        | magic           |
+| `decimojo` | 0.3.0   | ==25.2        | magic           |
+| `decimojo` | 0.3.1   | >=25.2, <25.4 | pixi            |
+| `decimojo` | 0.4.x   | ==25.4        | pixi            |
+| `decimojo` | 0.5.0   | ==25.5        | pixi            |
+| `decimojo` | 0.6.0   | ==0.25.7      | pixi            |
+| `decimojo` | 0.7.0   | ==0.26.1      | pixi            |
+| `decimo`   | 0.8.0   | ==0.26.1      | pixi            |
 
 ## Quick start
 
