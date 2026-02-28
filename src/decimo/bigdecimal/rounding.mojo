@@ -40,6 +40,7 @@ fn round(
             RoundingMode.ROUND_DOWN: Round toward zero.
             RoundingMode.ROUND_UP: Round away from zero.
             RoundingMode.ROUND_HALF_UP: Round half away from zero.
+            RoundingMode.ROUND_HALF_DOWN: Round half toward zero.
             RoundingMode.ROUND_HALF_EVEN: Round half to even (banker's).
             RoundingMode.ROUND_CEILING: Round toward positive infinity.
             RoundingMode.ROUND_FLOOR: Round toward negative infinity.
@@ -54,18 +55,6 @@ fn round(
             round(123.456, -3) -> 0E+3
             round(678.890, -3) -> 1E+3
     """
-    # Translate CEILING/FLOOR to UP/DOWN based on the number's sign.
-    # CEILING (toward +inf): positive -> UP, negative -> DOWN
-    # FLOOR (toward -inf): positive -> DOWN, negative -> UP
-    var effective_mode = rounding_mode
-    if rounding_mode == RoundingMode.ceiling():
-        effective_mode = (
-            RoundingMode.up() if not number.sign else RoundingMode.down()
-        )
-    elif rounding_mode == RoundingMode.floor():
-        effective_mode = (
-            RoundingMode.down() if not number.sign else RoundingMode.up()
-        )
 
     var ndigits_to_remove = number.scale - ndigits
     if ndigits_to_remove == 0:
@@ -82,10 +71,15 @@ fn round(
             # ROUND_HALF_EVEN, it depends on whether the removed value is
             # >= 0.5 at the target scale (it can't be when all digits are
             # below the target precision), so it's 0.
-            if (
-                effective_mode == RoundingMode.up()
-                and number.coefficient != BigUInt.zero()
-            ):
+            #
+            # For CEILING: round up if positive and non-zero.
+            # For FLOOR: round up if negative and non-zero.
+            var rounds_away = (
+                rounding_mode == RoundingMode.up()
+                or (rounding_mode == RoundingMode.ceiling() and not number.sign)
+                or (rounding_mode == RoundingMode.floor() and number.sign)
+            )
+            if rounds_away and number.coefficient != BigUInt.zero():
                 return BigDecimal(
                     coefficient=BigUInt.one(),
                     scale=ndigits,
@@ -99,8 +93,9 @@ fn round(
         var coefficient = (
             number.coefficient.remove_trailing_digits_with_rounding(
                 ndigits=ndigits_to_remove,
-                rounding_mode=effective_mode,
+                rounding_mode=rounding_mode,
                 remove_extra_digit_due_to_rounding=False,
+                sign=number.sign,
             )
         )
         return BigDecimal(
@@ -127,6 +122,7 @@ fn round_to_precision(
             RoundingMode.ROUND_DOWN: Round toward zero.
             RoundingMode.ROUND_UP: Round away from zero.
             RoundingMode.ROUND_HALF_UP: Round half away from zero.
+            RoundingMode.ROUND_HALF_DOWN: Round half toward zero.
             RoundingMode.ROUND_HALF_EVEN: Round half to even (banker's).
             RoundingMode.ROUND_CEILING: Round toward +∞.
             RoundingMode.ROUND_FLOOR: Round toward -∞.
@@ -134,17 +130,6 @@ fn round_to_precision(
             the rounding mode result in an extra leading digit.
         fill_zeros_to_precision: If True, fill trailing zeros to the precision.
     """
-
-    # Translate CEILING/FLOOR to UP/DOWN based on the number's sign.
-    var effective_mode = rounding_mode
-    if rounding_mode == RoundingMode.ceiling():
-        effective_mode = (
-            RoundingMode.up() if not number.sign else RoundingMode.down()
-        )
-    elif rounding_mode == RoundingMode.floor():
-        effective_mode = (
-            RoundingMode.down() if not number.sign else RoundingMode.up()
-        )
 
     var ndigits_coefficient = number.coefficient.number_of_digits()
     var ndigits_to_remove = ndigits_coefficient - precision
@@ -162,8 +147,9 @@ fn round_to_precision(
     number.coefficient = (
         number.coefficient.remove_trailing_digits_with_rounding(
             ndigits=ndigits_to_remove,
-            rounding_mode=effective_mode,
+            rounding_mode=rounding_mode,
             remove_extra_digit_due_to_rounding=False,
+            sign=number.sign,
         )
     )
     number.scale -= ndigits_to_remove

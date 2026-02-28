@@ -1355,8 +1355,7 @@ struct BigDecimal(
     # ===------------------------------------------------------------------=== #
 
     fn adjusted(self) -> Int:
-        """Returns the adjusted exponent, matching Python's
-        `decimal.Decimal.adjusted()`.
+        """Returns the adjusted exponent.
 
         This is the exponent of the number when written with a single leading
         digit in scientific notation.  Equivalently,
@@ -1459,6 +1458,27 @@ struct BigDecimal(
             scale=self.scale,
             sign=other.sign,
         )
+
+    @always_inline
+    fn same_quantum(self, other: Self) -> Bool:
+        """Returns True if both operands have the same scale (exponent).
+
+        Matches Python's `decimal.Decimal.same_quantum(other)`.  Two numbers
+        are in the same quantum when they have the same scale, meaning they
+        are expressed with the same number of decimal places.
+
+        Args:
+            other: The BigDecimal to compare quantum with.
+
+        Examples:
+
+        ```
+        BigDecimal("1.23").same_quantum(BigDecimal("4.56"))   # True  (both scale=2)
+        BigDecimal("1.2").same_quantum(BigDecimal("4.56"))    # False (scale 1 vs 2)
+        BigDecimal("100").same_quantum(BigDecimal("1"))       # True  (both scale=0)
+        ```
+        """
+        return self.scale == other.scale
 
     fn extend_precision(self, precision_diff: Int) -> Self:
         """Returns a number with additional decimal places (trailing zeros).

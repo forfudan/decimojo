@@ -218,6 +218,103 @@ b = "0"
 description = "Round half even exactly -0.5 to integer (0 is even)"
 expected = "-0"
 
+# === ROUND HALF DOWN TESTS ===
+[[round_half_down_tests]]
+a = "12.345"
+b = "0"
+description = "Round half down to integer"
+expected = "12"
+
+[[round_half_down_tests]]
+a = "12.345"
+b = "1"
+description = "Round half down to 1 decimal place"
+expected = "12.3"
+
+[[round_half_down_tests]]
+a = "12.345"
+b = "2"
+description = "Round half down to 2 decimal places"
+expected = "12.34"
+
+[[round_half_down_tests]]
+a = "12.5"
+b = "0"
+description = "Round half down exactly 0.5 to integer (tie goes toward zero)"
+expected = "12"
+
+[[round_half_down_tests]]
+a = "13.5"
+b = "0"
+description = "Round half down exactly 13.5 to integer (tie goes toward zero)"
+expected = "13"
+
+[[round_half_down_tests]]
+a = "12.501"
+b = "0"
+description = "Round half down 12.501 to integer (above tie, rounds up)"
+expected = "13"
+
+[[round_half_down_tests]]
+a = "-12.5"
+b = "0"
+description = "Round half down negative tie (toward zero)"
+expected = "-12"
+
+[[round_half_down_tests]]
+a = "-12.501"
+b = "0"
+description = "Round half down negative above tie (away from zero)"
+expected = "-13"
+
+[[round_half_down_tests]]
+a = "12.345"
+b = "3"
+description = "Round half down at exactly 0.005 tie (toward zero)"
+expected = "12.344"
+
+[[round_half_down_tests]]
+a = "12.3451"
+b = "3"
+description = "Round half down above 0.005 tie (rounds up)"
+expected = "12.345"
+
+[[round_half_down_tests]]
+a = "-12.345"
+b = "2"
+description = "Round half down negative -12.345 to 2 decimal places"
+expected = "-12.34"
+
+[[round_half_down_tests]]
+a = "0.5"
+b = "0"
+description = "Round half down exactly 0.5 to integer"
+expected = "0"
+
+[[round_half_down_tests]]
+a = "-0.5"
+b = "0"
+description = "Round half down exactly -0.5 to integer"
+expected = "-0"
+
+[[round_half_down_tests]]
+a = "1.050"
+b = "1"
+description = "Round half down exactly at tie 1.050"
+expected = "1.0"
+
+[[round_half_down_tests]]
+a = "1.15"
+b = "1"
+description = "Round half down exactly at tie 1.15"
+expected = "1.1"
+
+[[round_half_down_tests]]
+a = "1.16"
+b = "1"
+description = "Round half down above tie 1.16"
+expected = "1.2"
+
 # === EXTREME VALUES TESTS ===
 [[extreme_value_tests]]
 a = "0.{0,25}1"

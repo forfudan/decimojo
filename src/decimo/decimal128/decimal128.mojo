@@ -716,6 +716,7 @@ struct Decimal128(
             if scale > Decimal128.MAX_SCALE:
                 coef = decimo.decimal128.utility.round_to_keep_first_n_digits(
                     coef,
+                    False,
                     Int(num_mantissa_digits)
                     - Int(scale - Decimal128.MAX_SCALE),
                 )
@@ -729,7 +730,7 @@ struct Decimal128(
 
             var truncated_coef = (
                 decimo.decimal128.utility.round_to_keep_first_n_digits(
-                    coef, Decimal128.MAX_NUM_DIGITS
+                    coef, False, Decimal128.MAX_NUM_DIGITS
                 )
             )
             var scale_of_truncated_coef = (
@@ -739,7 +740,7 @@ struct Decimal128(
             if truncated_coef > Decimal128.MAX_AS_UINT128:
                 truncated_coef = (
                     decimo.decimal128.utility.round_to_keep_first_n_digits(
-                        coef, Decimal128.MAX_NUM_DIGITS - 1
+                        coef, False, Decimal128.MAX_NUM_DIGITS - 1
                     )
                 )
                 scale_of_truncated_coef -= 1
@@ -751,6 +752,7 @@ struct Decimal128(
                 truncated_coef = (
                     decimo.decimal128.utility.round_to_keep_first_n_digits(
                         truncated_coef,
+                        False,
                         num_digits_truncated_coef
                         - Int(scale_of_truncated_coef - Decimal128.MAX_SCALE),
                     )

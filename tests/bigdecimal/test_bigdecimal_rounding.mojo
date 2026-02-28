@@ -142,6 +142,37 @@ fn test_bigdecimal_rounding() raises:
     )
 
     # -------------------------------------------------------
+    # Testing BigDecimal ROUND_HALF_DOWN mode
+    # -------------------------------------------------------
+
+    pydecimal.getcontext().rounding = pydecimal.ROUND_HALF_DOWN
+    test_cases = load_test_cases(toml, "round_half_down_tests")
+    count_wrong = 0
+    for test_case in test_cases:
+        var precision = Int(test_case.b)
+        var result = BDec(test_case.a).round(
+            precision, RoundingMode.half_down()
+        )
+        var mojo_str = String(result)
+        var template = pydecimal.Decimal("1E" + String(-precision))
+        var py_str = String(pydecimal.Decimal(test_case.a).quantize(template))
+        if mojo_str != py_str:
+            print(
+                test_case.description,
+                "\n  Mojo:   ",
+                mojo_str,
+                "\n  Python: ",
+                py_str,
+                "\n",
+            )
+            count_wrong += 1
+    testing.assert_equal(
+        count_wrong,
+        0,
+        "ROUND_HALF_DOWN: Mojo and Python results differ. See above.",
+    )
+
+    # -------------------------------------------------------
     # Testing BigDecimal rounding with extreme values (HALF_EVEN)
     # -------------------------------------------------------
 

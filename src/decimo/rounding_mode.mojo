@@ -21,6 +21,8 @@ comptime ROUND_DOWN = RoundingMode.ROUND_DOWN
 """Rounding mode: Truncate (toward zero)."""
 comptime ROUND_HALF_UP = RoundingMode.ROUND_HALF_UP
 """Rounding mode: Round away from zero if >= 0.5."""
+comptime ROUND_HALF_DOWN = RoundingMode.ROUND_HALF_DOWN
+"""Rounding mode: Round toward zero if <= 0.5."""
 comptime ROUND_HALF_EVEN = RoundingMode.ROUND_HALF_EVEN
 """Rounding mode: Round to nearest even digit if equidistant (banker's rounding)."""
 comptime ROUND_UP = RoundingMode.ROUND_UP
@@ -38,6 +40,7 @@ struct RoundingMode(Copyable, ImplicitlyCopyable, Movable, Stringable):
     Available modes:
     - DOWN: Truncate (toward zero)
     - HALF_UP: Round away from zero if >= 0.5
+    - HALF_DOWN: Round toward zero if <= 0.5
     - HALF_EVEN: Round to nearest even digit if equidistant (banker's rounding)
     - UP: Round away from zero
     - CEILING: Round toward positive infinity
@@ -52,6 +55,7 @@ struct RoundingMode(Copyable, ImplicitlyCopyable, Movable, Stringable):
     # alias
     comptime ROUND_DOWN = Self.down()
     comptime ROUND_HALF_UP = Self.half_up()
+    comptime ROUND_HALF_DOWN = Self.half_down()
     comptime ROUND_HALF_EVEN = Self.half_even()
     comptime ROUND_UP = Self.up()
     comptime ROUND_CEILING = Self.ceiling()
@@ -71,6 +75,11 @@ struct RoundingMode(Copyable, ImplicitlyCopyable, Movable, Stringable):
     fn half_up() -> Self:
         """Round away from zero if >= 0.5."""
         return Self(1)
+
+    @staticmethod
+    fn half_down() -> Self:
+        """Round toward zero if <= 0.5."""
+        return Self(6)
 
     @staticmethod
     fn half_even() -> Self:
@@ -112,6 +121,8 @@ struct RoundingMode(Copyable, ImplicitlyCopyable, Movable, Stringable):
             return "ROUND_UP"
         elif self == Self.ceiling():
             return "ROUND_CEILING"
+        elif self == Self.half_down():
+            return "ROUND_HALF_DOWN"
         elif self == Self.floor():
             return "ROUND_FLOOR"
         else:

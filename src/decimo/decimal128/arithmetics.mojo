@@ -225,13 +225,13 @@ fn add(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
 
             var truncated_summation = (
                 decimo.decimal128.utility.round_to_keep_first_n_digits(
-                    summation, Decimal128.MAX_NUM_DIGITS
+                    summation, False, Decimal128.MAX_NUM_DIGITS
                 )
             )
             if truncated_summation > Decimal128.MAX_AS_UINT128:
                 truncated_summation = (
                     decimo.decimal128.utility.round_to_keep_first_n_digits(
-                        summation, Decimal128.MAX_NUM_DIGITS - 1
+                        summation, False, Decimal128.MAX_NUM_DIGITS - 1
                     )
                 )
                 final_scale -= 1
@@ -306,13 +306,13 @@ fn add(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
 
             truncated_summation = (
                 decimo.decimal128.utility.round_to_keep_first_n_digits(
-                    summation, Decimal128.MAX_NUM_DIGITS
+                    summation, False, Decimal128.MAX_NUM_DIGITS
                 )
             )
             if truncated_summation > Decimal128.MAX_AS_UINT256:
                 truncated_summation = (
                     decimo.decimal128.utility.round_to_keep_first_n_digits(
-                        summation, Decimal128.MAX_NUM_DIGITS - 1
+                        summation, False, Decimal128.MAX_NUM_DIGITS - 1
                     )
                 )
                 final_scale -= 1
@@ -468,7 +468,7 @@ fn multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
             )
             var truncated_prod = (
                 decimo.decimal128.utility.round_to_keep_first_n_digits(
-                    prod, num_digits_to_keep
+                    prod, False, num_digits_to_keep
                 )
             )
             var final_scale = min(Decimal128.MAX_SCALE, combined_scale)
@@ -496,7 +496,7 @@ fn multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
             )
             var truncated_prod = (
                 decimo.decimal128.utility.round_to_keep_first_n_digits(
-                    prod, num_digits_to_keep
+                    prod, False, num_digits_to_keep
                 )
             )
             var final_scale = min(Decimal128.MAX_SCALE, combined_scale)
@@ -603,7 +603,7 @@ fn multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
                 combined_scale - Decimal128.MAX_SCALE
             )
             prod = decimo.decimal128.utility.round_to_keep_first_n_digits(
-                prod, num_digits_to_keep
+                prod, False, num_digits_to_keep
             )
             var final_scale = min(Decimal128.MAX_SCALE, combined_scale)
 
@@ -612,7 +612,9 @@ fn multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
                     prod
                 )
                 prod = decimo.decimal128.utility.round_to_keep_first_n_digits(
-                    prod, ndigits_prod - (final_scale - Decimal128.MAX_SCALE)
+                    prod,
+                    False,
+                    ndigits_prod - (final_scale - Decimal128.MAX_SCALE),
                 )
                 final_scale = Decimal128.MAX_SCALE
 
@@ -630,7 +632,7 @@ fn multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
         # Truncated first 29 digits
         var truncated_prod_at_max_length = (
             decimo.decimal128.utility.round_to_keep_first_n_digits(
-                prod, Decimal128.MAX_NUM_DIGITS
+                prod, False, Decimal128.MAX_NUM_DIGITS
             )
         )
 
@@ -658,7 +660,7 @@ fn multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
         if truncated_prod_at_max_length > Decimal128.MAX_AS_UINT128:
             num_digits_of_decimal_part -= 1
             prod = decimo.decimal128.utility.round_to_keep_first_n_digits(
-                prod, Decimal128.MAX_NUM_DIGITS - 1
+                prod, False, Decimal128.MAX_NUM_DIGITS - 1
             )
         else:
             prod = truncated_prod_at_max_length
@@ -669,7 +671,7 @@ fn multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
         if final_scale > Decimal128.MAX_SCALE:
             var ndigits_prod = decimo.decimal128.utility.number_of_digits(prod)
             prod = decimo.decimal128.utility.round_to_keep_first_n_digits(
-                prod, ndigits_prod - (final_scale - Decimal128.MAX_SCALE)
+                prod, False, ndigits_prod - (final_scale - Decimal128.MAX_SCALE)
             )
             final_scale = Decimal128.MAX_SCALE
 
@@ -687,7 +689,7 @@ fn multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
     # Truncated first 29 digits
     var truncated_prod_at_max_length = (
         decimo.decimal128.utility.round_to_keep_first_n_digits(
-            prod, Decimal128.MAX_NUM_DIGITS
+            prod, False, Decimal128.MAX_NUM_DIGITS
         )
     )
 
@@ -717,7 +719,7 @@ fn multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
     if truncated_prod_at_max_length > Decimal128.MAX_AS_UINT256:
         num_digits_of_decimal_part -= 1
         prod = decimo.decimal128.utility.round_to_keep_first_n_digits(
-            prod, Decimal128.MAX_NUM_DIGITS - 1
+            prod, False, Decimal128.MAX_NUM_DIGITS - 1
         )
     else:
         prod = truncated_prod_at_max_length
@@ -728,7 +730,7 @@ fn multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
     if final_scale > Decimal128.MAX_SCALE:
         var ndigits_prod = decimo.decimal128.utility.number_of_digits(prod)
         prod = decimo.decimal128.utility.round_to_keep_first_n_digits(
-            prod, ndigits_prod - (final_scale - Decimal128.MAX_SCALE)
+            prod, False, ndigits_prod - (final_scale - Decimal128.MAX_SCALE)
         )
         final_scale = Decimal128.MAX_SCALE
 
@@ -1022,6 +1024,7 @@ fn divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
             if scale_of_quot > Decimal128.MAX_SCALE:
                 quot = decimo.decimal128.utility.round_to_keep_first_n_digits(
                     quot,
+                    False,
                     ndigits_quot - (scale_of_quot - Decimal128.MAX_SCALE),
                 )
                 scale_of_quot = Decimal128.MAX_SCALE
@@ -1032,7 +1035,7 @@ fn divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
         else:
             var truncated_quot = (
                 decimo.decimal128.utility.round_to_keep_first_n_digits(
-                    quot, Decimal128.MAX_NUM_DIGITS
+                    quot, False, Decimal128.MAX_NUM_DIGITS
                 )
             )
             var scale_of_truncated_quot = (
@@ -1042,7 +1045,7 @@ fn divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
             if truncated_quot > Decimal128.MAX_AS_UINT128:
                 truncated_quot = (
                     decimo.decimal128.utility.round_to_keep_first_n_digits(
-                        quot, Decimal128.MAX_NUM_DIGITS - 1
+                        quot, False, Decimal128.MAX_NUM_DIGITS - 1
                     )
                 )
                 scale_of_truncated_quot -= 1
@@ -1054,6 +1057,7 @@ fn divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
                 truncated_quot = (
                     decimo.decimal128.utility.round_to_keep_first_n_digits(
                         truncated_quot,
+                        False,
                         num_digits_truncated_quot
                         - (scale_of_truncated_quot - Decimal128.MAX_SCALE),
                     )
@@ -1125,6 +1129,7 @@ fn divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
                 quot256 = (
                     decimo.decimal128.utility.round_to_keep_first_n_digits(
                         quot256,
+                        False,
                         ndigits_quot - (scale_of_quot - Decimal128.MAX_SCALE),
                     )
                 )
@@ -1140,7 +1145,7 @@ fn divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
         else:
             var truncated_quot = (
                 decimo.decimal128.utility.round_to_keep_first_n_digits(
-                    quot256, Decimal128.MAX_NUM_DIGITS
+                    quot256, False, Decimal128.MAX_NUM_DIGITS
                 )
             )
 
@@ -1158,7 +1163,7 @@ fn divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
             if truncated_quot > Decimal128.MAX_AS_UINT256:
                 truncated_quot = (
                     decimo.decimal128.utility.round_to_keep_first_n_digits(
-                        quot256, Decimal128.MAX_NUM_DIGITS - 1
+                        quot256, False, Decimal128.MAX_NUM_DIGITS - 1
                     )
                 )
                 scale_of_truncated_quot -= 1
@@ -1170,6 +1175,7 @@ fn divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
                 truncated_quot = (
                     decimo.decimal128.utility.round_to_keep_first_n_digits(
                         truncated_quot,
+                        False,
                         num_digits_truncated_quot
                         - (scale_of_truncated_quot - Decimal128.MAX_SCALE),
                     )
