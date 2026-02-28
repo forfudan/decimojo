@@ -1931,6 +1931,8 @@ struct BigUInt(
                     round_up = True
                 else:
                     round_up = self.ith_digit(ndigits) % 2 == 1
+        # TODO: Remove this fallback once Mojo has proper enum support,
+        # which will make exhaustive matching a compile-time guarantee.
         else:
             raise Error(
                 ValueError(

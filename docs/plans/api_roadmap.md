@@ -163,10 +163,10 @@ These are the gaps vs Python's `decimal.Decimal`, prioritized by user impact.
 
 ### Missing: 2 modes
 
-| Mode              | Python Name       | Description            | Priority                              |
-| ----------------- | ----------------- | ---------------------- | ------------------------------------- |
-| `ROUND_HALF_DOWN` | `ROUND_HALF_DOWN` | Round ties toward zero | ✓ Implemented |
-| `ROUND_05UP`      | `ROUND_05UP`      | Special IEEE rounding  | **LOW** — rarely used                 |
+| Mode              | Python Name       | Description            | Priority              |
+| ----------------- | ----------------- | ---------------------- | --------------------- |
+| `ROUND_HALF_DOWN` | `ROUND_HALF_DOWN` | Round ties toward zero | ✓ Implemented         |
+| `ROUND_05UP`      | `ROUND_05UP`      | Special IEEE rounding  | **LOW** — rarely used |
 
 ---
 

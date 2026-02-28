@@ -219,14 +219,13 @@ fn sqrt(x: UInt128) -> UInt128:
 
 
 # TODO: Evaluate whether this can replace truncate_to_max in some cases.
-# TODO: Add rounding modes to this function.
 fn round_to_keep_first_n_digits[
     dtype: DType, //
 ](
     value: Scalar[dtype],
+    sign: Bool,
     ndigits: Int,
     rounding_mode: RoundingMode = RoundingMode.ROUND_HALF_EVEN,
-    sign: Bool = False,
 ) -> Scalar[dtype]:
     """
     Rounds and keeps the first n digits of a integral value.
@@ -239,6 +238,7 @@ fn round_to_keep_first_n_digits[
 
     Args:
         value: The integral value to truncate.
+        sign: The sign of the original number.
         ndigits: The number of significant digits to evaluate.
         rounding_mode: The rounding mode to use.
 
@@ -380,7 +380,8 @@ fn round_to_keep_first_n_digits[
                 # If truncated_value is odd, round up
                 truncated_value += truncated_value % 2
 
-        # If we reach here, it's an unknown rounding mode.
+        # TODO: Remove this fallback once Mojo has proper enum support,
+        # which will make exhaustive matching a compile-time guarantee.
         else:
             debug_assert(
                 False,
