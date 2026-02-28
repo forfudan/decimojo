@@ -5,6 +5,8 @@ Tests for BigDecimal utility methods added in v0.8.x:
   - to_scientific_string() / to_eng_string()
   - number_of_digits()
   - as_tuple()
+  - copy_abs() / copy_negate() / copy_sign()
+  - adjusted()
 """
 
 import testing
@@ -319,6 +321,114 @@ fn test_as_tuple_reconstruct() raises:
             String(d),
             "round-trip for " + values[vi],
         )
+
+
+# ===----------------------------------------------------------------------=== #
+# copy_abs() / copy_negate() / copy_sign()
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_copy_abs_positive() raises:
+    """Positive value unchanged."""
+    var x = BigDecimal("3.14")
+    testing.assert_equal(String(x.copy_abs()), "3.14")
+
+
+fn test_copy_abs_negative() raises:
+    """Negative value becomes positive."""
+    var x = BigDecimal("-3.14")
+    testing.assert_equal(String(x.copy_abs()), "3.14")
+
+
+fn test_copy_abs_zero() raises:
+    """Zero stays zero."""
+    testing.assert_equal(String(BigDecimal("0").copy_abs()), "0")
+
+
+fn test_copy_abs_matches_abs() raises:
+    """Verify copy_abs() == abs(x)."""
+    var x = BigDecimal("-42.5")
+    testing.assert_equal(String(x.copy_abs()), String(x.__abs__()))
+
+
+fn test_copy_negate_positive() raises:
+    """Positive becomes negative."""
+    testing.assert_equal(String(BigDecimal("3.14").copy_negate()), "-3.14")
+
+
+fn test_copy_negate_negative() raises:
+    """Negative becomes positive."""
+    testing.assert_equal(String(BigDecimal("-3.14").copy_negate()), "3.14")
+
+
+fn test_copy_negate_zero() raises:
+    """Negating zero."""
+    var z = BigDecimal("0").copy_negate()
+    # Zero negated — coefficient is still 0
+    testing.assert_true(z.is_zero())
+
+
+fn test_copy_negate_matches_neg() raises:
+    """Verify copy_negate() == -x."""
+    var x = BigDecimal("42.5")
+    testing.assert_equal(String(x.copy_negate()), String(x.__neg__()))
+
+
+fn test_copy_sign_positive_to_negative() raises:
+    """Copy sign of negative onto positive value."""
+    var x = BigDecimal("3.14")
+    var y = BigDecimal("-1")
+    testing.assert_equal(String(x.copy_sign(y)), "-3.14")
+
+
+fn test_copy_sign_negative_to_positive() raises:
+    """Copy sign of positive onto negative value."""
+    var x = BigDecimal("-3.14")
+    var y = BigDecimal("1")
+    testing.assert_equal(String(x.copy_sign(y)), "3.14")
+
+
+fn test_copy_sign_same_sign() raises:
+    """Same sign leaves value unchanged."""
+    var x = BigDecimal("3.14")
+    var y = BigDecimal("99")
+    testing.assert_equal(String(x.copy_sign(y)), "3.14")
+
+
+fn test_copy_sign_zero_source() raises:
+    """Zero takes sign of other."""
+    var x = BigDecimal("0")
+    var y = BigDecimal("-5")
+    var result = x.copy_sign(y)
+    # Sign bit set but coefficient is 0
+    testing.assert_true(result.sign)
+    testing.assert_true(result.is_zero())
+
+
+# ===----------------------------------------------------------------------=== #
+# adjusted()
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_adjusted_basic() raises:
+    """Basic adjusted exponent values."""
+    testing.assert_equal(BigDecimal("123.45").adjusted(), 2)
+    testing.assert_equal(BigDecimal("0.00123").adjusted(), -3)
+    testing.assert_equal(BigDecimal("100").adjusted(), 2)
+    testing.assert_equal(BigDecimal("1").adjusted(), 0)
+    testing.assert_equal(BigDecimal("10").adjusted(), 1)
+
+
+fn test_adjusted_zero() raises:
+    """Zero has adjusted exponent 0."""
+    testing.assert_equal(BigDecimal("0").adjusted(), 0)
+
+
+fn test_adjusted_scientific() raises:
+    """Scientific notation inputs."""
+    testing.assert_equal(BigDecimal("1E+5").adjusted(), 5)
+    testing.assert_equal(BigDecimal("1E-5").adjusted(), -5)
+    testing.assert_equal(BigDecimal("1.23E+10").adjusted(), 10)
 
 
 fn main() raises:

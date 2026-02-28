@@ -623,7 +623,7 @@ fn integer_root(
 
     # Initial guess using Float64 approximation
     # Use exponent to get log10(x), then compute 10^(log10(x)/n)
-    var x_exp = abs_x.exponent()  # floor(log10(x))
+    var x_exp = abs_x.adjusted()  # floor(log10(x))
 
     # Extract leading digits for a more precise Float64 approximation
     var top_word = Float64(abs_x.coefficient.words[-1])
@@ -1020,7 +1020,7 @@ fn fast_isqrt(c: BigUInt, working_digits: Int) raises -> BigUInt:
     var c_bd = BigDecimal(c.copy(), 0, False)
 
     # --- Normalization ---
-    var c_exp = c_bd.exponent()
+    var c_exp = c_bd.adjusted()
     var norm_shift: Int
     if c_exp >= 0:
         norm_shift = (c_exp // 2) * 2
@@ -1045,7 +1045,7 @@ fn fast_isqrt(c: BigUInt, working_digits: Int) raises -> BigUInt:
             Float64(10.0) ** Float64(digits_in_top + 8)
         )
 
-    var c_norm_exp = c_norm.exponent()
+    var c_norm_exp = c_norm.adjusted()
     var c_norm_f64 = mantissa * Float64(10.0) ** Float64(c_norm_exp)
     var r_f64 = c_norm_f64 ** (-0.5)
     if r_f64 != r_f64 or r_f64 <= 0.0:
@@ -1333,7 +1333,7 @@ fn sqrt_reciprocal(x: BigDecimal, precision: Int) raises -> BigDecimal:
     # Shift x by an even power of 10 to bring it into [0.1, 100) for a
     # stable Float64 initial guess. Then sqrt(x) = sqrt(x_norm) * 10^(shift/2).
     var x_norm = x.copy()
-    var x_exp = x_norm.exponent()  # floor(log10(x))
+    var x_exp = x_norm.adjusted()  # floor(log10(x))
 
     # Make shift even and bring x_norm near 1
     var shift: Int
@@ -1359,7 +1359,7 @@ fn sqrt_reciprocal(x: BigDecimal, precision: Int) raises -> BigDecimal:
             Float64(10.0) ** Float64(digits_in_top + 8)
         )
 
-    var x_norm_exp = x_norm.exponent()
+    var x_norm_exp = x_norm.adjusted()
     var x_norm_f64 = mantissa * Float64(10.0) ** Float64(x_norm_exp)
     var r_f64 = x_norm_f64 ** (-0.5)  # 1/sqrt(x_norm)
     if r_f64 != r_f64 or r_f64 <= 0.0:  # NaN or degenerate
@@ -1764,11 +1764,11 @@ fn exp(x: BigDecimal, precision: Int) raises -> BigDecimal:
 
     # For very large positive values, result will overflow BigDecimal capacity
     # TODO: Use BigInt10 as scale can avoid overflow in this case
-    if not x.sign and x.exponent() >= 20:  # x > 10^20
+    if not x.sign and x.adjusted() >= 20:  # x > 10^20
         raise Error("Error in `exp`: Result too large to represent")
 
     # For very large negative values, result will be effectively zero
-    if x.sign and x.exponent() >= 20:  # x < -10^20
+    if x.sign and x.adjusted() >= 20:  # x < -10^20
         return BigDecimal(BigUInt.zero(), precision, False)
 
     # Handle negative x using identity: exp(-x) = 1/exp(x)
@@ -1789,7 +1789,7 @@ fn exp(x: BigDecimal, precision: Int) raises -> BigDecimal:
     #
     # For |x| ≈ 1: M ≈ √(3.322·p), giving ~2·√(3.322·p) total multiplications
     # vs the old approach of ~2.5·p multiplications.
-    var x_exp = x.exponent()  # floor(log10(x))
+    var x_exp = x.adjusted()  # floor(log10(x))
     var p_float = Float64(precision)
 
     # Compute optimal number of halvings
@@ -1909,7 +1909,7 @@ fn exp_taylor_series(
         # print("DEUBG: round {}, term {}, result {}".format(n, term, result))
 
         # Check if we've reached desired precision
-        if term.exponent() < -minimum_precision:
+        if term.adjusted() < -minimum_precision:
             break
 
     result.round_to_precision(
@@ -1990,7 +1990,7 @@ fn ln(x: BigDecimal, precision: Int, mut cache: MathCache) raises -> BigDecimal:
     var adj_power_of_2: Int = 0
     var adj_power_of_5: Int = 0
     # First, scale down to [0.1, 1)
-    var power_of_10 = m.exponent() + 1
+    var power_of_10 = m.adjusted() + 1
     m.scale += power_of_10
     # Second, scale to [0.5, 1.5)
     if m < BigDecimal(BigUInt(raw_words=[135]), 3, False):
@@ -2241,7 +2241,7 @@ fn ln_series_expansion(
             else:
                 result += next_term
 
-            if next_term.exponent() < -working_precision:
+            if next_term.adjusted() < -working_precision:
                 break
 
         result.round_to_precision(
@@ -2294,7 +2294,7 @@ fn ln_series_expansion(
 
         result += term
 
-        if term.exponent() < -working_precision:
+        if term.adjusted() < -working_precision:
             break
 
     result.round_to_precision(
@@ -2390,7 +2390,7 @@ fn compute_ln2(working_precision: Int) raises -> BigDecimal:
             term.coefficient, k
         )
         k = new_k
-        if term.exponent() < -working_precision:
+        if term.adjusted() < -working_precision:
             break
 
     result.round_to_precision(

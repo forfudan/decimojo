@@ -87,10 +87,10 @@ These are the gaps vs Python's `decimal.Decimal`, prioritized by user impact.
 | Method                              | What It Does                                             | Notes                                                                                                    |
 | ----------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | `as_tuple()`                        | Returns `(sign, digits, exponent)`                       | ✓ **DONE** — returns `(sign: Bool, digits: List[UInt8], exponent: Int)` matching Python's `DecimalTuple` |
-| `adjusted()`                        | Returns adjusted exponent (= exponent + len(digits) - 1) | Useful for formatting and comparison.                                                                    |
-| `copy_abs()`                        | Returns `abs(self)`                                      | Alias for `__abs__()`. Trivial to add.                                                                   |
-| `copy_negate()`                     | Returns `-self`                                          | Alias for `__neg__()`. Trivial to add.                                                                   |
-| `copy_sign(other)`                  | Returns self with the sign of other                      | One-liner.                                                                                               |
+| `adjusted()`                        | Returns adjusted exponent (= exponent + len(digits) - 1) | ✅ **DONE** — alias for `exponent()`.                                                                     |
+| `copy_abs()`                        | Returns `abs(self)`                                      | ✅ **DONE** — alias for `__abs__()`.                                                                      |
+| `copy_negate()`                     | Returns `-self`                                          | ✅ **DONE** — alias for `__neg__()`.                                                                      |
+| `copy_sign(other)`                  | Returns self with the sign of other                      | ✅ **DONE**.                                                                                              |
 | `same_quantum(other)`               | True if both have same exponent/scale                    | Useful for financial code.                                                                               |
 | `normalize()`                       | Already exists                                           | ✓                                                                                                        |
 | `to_eng_string()`                   | Engineering notation (exponent multiple of 3)            | ✓ **DONE** — alias for `to_string(engineering=True)`                                                     |
@@ -294,8 +294,8 @@ BigInt has `to_string_with_separators()`. This should be extended to BigDecimal.
 ### Tier 2: Important (Remaining)
 
 1. ✓ **`as_tuple()`** on BigDecimal — returns `(sign: Bool, digits: List[UInt8], exponent: Int)` matching Python's `DecimalTuple`
-2. **`copy_abs()` / `copy_negate()` / `copy_sign(other)`** on BigDecimal
-3. **`adjusted()`** on BigDecimal — returns adjusted exponent (= `exponent + len(digits) - 1`)
+2. ✅ **`copy_abs()` / `copy_negate()` / `copy_sign(other)`** on BigDecimal
+3. ✅ **`adjusted()`** on BigDecimal — renamed from `exponent()` to match Python's `Decimal.adjusted()`
 4. **`same_quantum(other)`** on BigDecimal
 5. **`ROUND_HALF_DOWN`** rounding mode
 6. **`scaleb(n)`** on BigDecimal — multiply by 10^n efficiently
@@ -344,9 +344,9 @@ For tracking against the above:
 ✓ __rmod__         ✓ __rmul__         ✓ __round__        ✓ __rpow__
 ✓ __rsub__         ✓ __rtruediv__     ✓ __str__          ✓ __sub__
 ✓ __truediv__      ✓ __trunc__
-✗ adjusted         ✗ as_integer_ratio ✓ as_tuple         ✗ canonical
-✓ compare          ✗ conjugate        ✗ copy_abs         ✗ copy_negate
-✗ copy_sign        ✓ exp              ✗ fma              ✗ is_canonical
+✓ adjusted         ✗ as_integer_ratio ✓ as_tuple         ✗ canonical
+✓ compare          ✗ conjugate        ✓ copy_abs         ✓ copy_negate
+✓ copy_sign        ✓ exp              ✗ fma              ✗ is_canonical
 ✗ is_finite        ✓ is_integer       ✗ is_nan           ✗ is_normal
 ✗ is_signed        ✗ is_snan          ✗ is_subnormal     ✗ is_qnan
 ✓ ln               ✓ log10            ✗ logb             ✗ logical_and

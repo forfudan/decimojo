@@ -851,8 +851,9 @@ struct BigDecimal(
         `decimal.Decimal`.
 
         Notes:
-            Uses truncated division (toward zero), matching Python's
-            `decimal.Decimal.__divmod__()` behavior.
+
+        Uses truncated division (toward zero), matching Python's
+        `decimal.Decimal.__divmod__()` behavior.
         """
         var quotient = decimo.bigdecimal.arithmetics.truncate_divide(
             self, other
@@ -1353,20 +1354,27 @@ struct BigDecimal(
     # Other methods
     # ===------------------------------------------------------------------=== #
 
-    fn exponent(self) -> Int:
-        """Returns the exponent of the number in scientific notation.
+    fn adjusted(self) -> Int:
+        """Returns the adjusted exponent.
 
-        Notes:
+        This is the exponent of the number when written with a single leading
+        digit in scientific notation.  Equivalently,
+        `as_tuple_exponent + number_of_digits - 1` where `as_tuple_exponent`
+        is `-scale`.
 
-        123.45 (coefficient = 12345, scale = 2) is represented as 1.2345E+2.
-        0.00123 (coefficient = 123, scale = 5) is represented as 1.23E-3.
-        123000 (coefficient = 123, scale = -3) is represented as 1.23E+5.
+        Examples:
+
+        ```
+        BigDecimal("123.45").adjusted()   # 2   (1.2345E+2)
+        BigDecimal("0.00123").adjusted()  # -3  (1.23E-3)
+        BigDecimal("100").adjusted()      # 2   (1E+2)
+        BigDecimal("1").adjusted()        # 0   (1E0)
+        ```
         """
         return self.coefficient.number_of_digits() - 1 - self.scale
 
     fn as_tuple(self) -> Tuple[Bool, List[UInt8], Int]:
-        """Returns a 3-tuple `(sign, digits, exponent)` matching Python's
-        `decimal.Decimal.as_tuple()` convention.
+        """Returns a 3-tuple `(sign, digits, exponent)`.
 
         The components are:
         - `sign`: `False` for positive/zero, `True` for negative.
@@ -1395,8 +1403,13 @@ struct BigDecimal(
         ```
 
         Notes:
-            To reconstruct the value from the tuple, join the digits into a
-            coefficient string, parse as BigUInt, then apply sign and exponent.
+
+        To reconstruct the value from the tuple, join the digits into a
+        coefficient string, parse as BigUInt, then apply sign and exponent.
+
+        This method is designed to match Python's `decimal.Decimal.as_tuple()`
+        output, except that the `digits` are returned as a `List[UInt8]`
+        instead of a `Tuple[int]` for better performance in Mojo.
         """
         var coef_str = self.coefficient.to_string()
         var cb = coef_str.as_string_slice().as_bytes()
@@ -1406,6 +1419,39 @@ struct BigDecimal(
         for i in range(n):
             digits.append(ptr[i] - 48)  # 48 == ord('0')
         return (self.sign, digits^, -self.scale)
+
+    @always_inline
+    fn copy_abs(self) -> Self:
+        """Returns a copy with the sign set to positive.
+
+        Equivalent to `abs(self)`. Matches Python's
+        `decimal.Decimal.copy_abs()`.
+        """
+        return self.__abs__()
+
+    @always_inline
+    fn copy_negate(self) -> Self:
+        """Returns a copy with the sign inverted.
+
+        Equivalent to `-self`. Matches Python's
+        `decimal.Decimal.copy_negate()`.
+        """
+        return self.__neg__()
+
+    @always_inline
+    fn copy_sign(self, other: Self) -> Self:
+        """Returns a copy of `self` with the sign of `other`.
+
+        Matches Python's `decimal.Decimal.copy_sign(other)`.
+
+        Args:
+            other: The BigDecimal whose sign to copy.
+        """
+        return Self(
+            coefficient=self.coefficient,
+            scale=self.scale,
+            sign=other.sign,
+        )
 
     fn extend_precision(self, precision_diff: Int) -> Self:
         """Returns a number with additional decimal places (trailing zeros).
