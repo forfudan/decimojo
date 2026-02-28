@@ -1355,12 +1355,16 @@ struct BigDecimal(
     # ===------------------------------------------------------------------=== #
 
     fn adjusted(self) -> Int:
-        """Returns the adjusted exponent.
+        """Returns the adjusted exponent, matching Python's
+        `decimal.Decimal.adjusted()`.
 
         This is the exponent of the number when written with a single leading
         digit in scientific notation.  Equivalently,
         `as_tuple_exponent + number_of_digits - 1` where `as_tuple_exponent`
         is `-scale`.
+
+        For zero, the adjusted exponent is always 0 regardless of scale,
+        matching Python's behavior.
 
         Examples:
 
@@ -1369,8 +1373,11 @@ struct BigDecimal(
         BigDecimal("0.00123").adjusted()  # -3  (1.23E-3)
         BigDecimal("100").adjusted()      # 2   (1E+2)
         BigDecimal("1").adjusted()        # 0   (1E0)
+        BigDecimal("0.00").adjusted()     # 0   (zero has no order of magnitude)
         ```
         """
+        if self.coefficient.is_zero():
+            return 0
         return self.coefficient.number_of_digits() - 1 - self.scale
 
     fn as_tuple(self) -> Tuple[Bool, List[UInt8], Int]:

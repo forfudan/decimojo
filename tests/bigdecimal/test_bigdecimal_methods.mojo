@@ -420,8 +420,11 @@ fn test_adjusted_basic() raises:
 
 
 fn test_adjusted_zero() raises:
-    """Zero has adjusted exponent 0."""
+    """Zero has adjusted exponent 0 regardless of scale."""
     testing.assert_equal(BigDecimal("0").adjusted(), 0)
+    testing.assert_equal(BigDecimal("0.00").adjusted(), 0)
+    testing.assert_equal(BigDecimal("0.000000").adjusted(), 0)
+    testing.assert_equal(BigDecimal("0E+10").adjusted(), 0)
 
 
 fn test_adjusted_scientific() raises:
