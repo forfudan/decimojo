@@ -40,6 +40,7 @@ fn round(
             RoundingMode.ROUND_DOWN: Round toward zero.
             RoundingMode.ROUND_UP: Round away from zero.
             RoundingMode.ROUND_HALF_UP: Round half away from zero.
+            RoundingMode.ROUND_HALF_DOWN: Round half toward zero.
             RoundingMode.ROUND_HALF_EVEN: Round half to even (banker's).
             RoundingMode.ROUND_CEILING: Round toward positive infinity.
             RoundingMode.ROUND_FLOOR: Round toward negative infinity.
@@ -126,8 +127,7 @@ fn round_to_precision(
         rounding_mode: Rounding mode to use.
             RoundingMode.ROUND_DOWN: Round toward zero.
             RoundingMode.ROUND_UP: Round away from zero.
-            RoundingMode.ROUND_HALF_UP: Round half away from zero.
-            RoundingMode.ROUND_HALF_EVEN: Round half to even (banker's).
+            RoundingMode.ROUND_HALF_UP: Round half away from zero.            RoundingMode.ROUND_HALF_DOWN: Round half toward zero.            RoundingMode.ROUND_HALF_EVEN: Round half to even (banker's).
             RoundingMode.ROUND_CEILING: Round toward +∞.
             RoundingMode.ROUND_FLOOR: Round toward -∞.
         remove_extra_digit_due_to_rounding: If True, remove a trailing digit if

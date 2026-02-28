@@ -165,7 +165,7 @@ These are the gaps vs Python's `decimal.Decimal`, prioritized by user impact.
 
 | Mode              | Python Name       | Description            | Priority                              |
 | ----------------- | ----------------- | ---------------------- | ------------------------------------- |
-| `ROUND_HALF_DOWN` | `ROUND_HALF_DOWN` | Round ties toward zero | **MEDIUM** — less common but expected |
+| `ROUND_HALF_DOWN` | `ROUND_HALF_DOWN` | Round ties toward zero | ✓ Implemented |
 | `ROUND_05UP`      | `ROUND_05UP`      | Special IEEE rounding  | **LOW** — rarely used                 |
 
 ---
@@ -297,7 +297,7 @@ BigInt has `to_string_with_separators()`. This should be extended to BigDecimal.
 2. ✓ **`copy_abs()` / `copy_negate()` / `copy_sign(other)`** on BigDecimal
 3. ✓ **`adjusted()`** on BigDecimal — renamed from `exponent()` to match Python's `Decimal.adjusted()`
 4. ✓ **`same_quantum(other)`** on BigDecimal
-5. **`ROUND_HALF_DOWN`** rounding mode
+5. ✓ **`ROUND_HALF_DOWN`** rounding mode
 6. **`scaleb(n)`** on BigDecimal — multiply by 10^n efficiently
 7. **`bit_count()`** on BigInt — popcount (number of 1-bits in abs value)
 8. **`__float__()`** on BigInt — `float(n)` interop

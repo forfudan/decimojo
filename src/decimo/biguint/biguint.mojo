@@ -1893,6 +1893,14 @@ struct BigUInt(
         elif rounding_mode == RoundingMode.half_up():
             if self.ith_digit(ndigits - 1) >= 5:
                 round_up = True
+        elif rounding_mode == RoundingMode.half_down():
+            var cut_off_digit = self.ith_digit(ndigits - 1)
+            if cut_off_digit > 5:
+                round_up = True
+            elif cut_off_digit == 5:
+                # Round up only if there are non-zero digits beyond the 5
+                if self.number_of_trailing_zeros() < ndigits - 1:
+                    round_up = True
         elif rounding_mode == RoundingMode.half_even():
             var cut_off_digit = self.ith_digit(ndigits - 1)
             if cut_off_digit > 5:
