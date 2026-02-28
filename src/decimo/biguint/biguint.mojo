@@ -1824,18 +1824,24 @@ struct BigUInt(
         ndigits: Int,
         rounding_mode: RoundingMode,
         remove_extra_digit_due_to_rounding: Bool,
+        sign: Bool = False,
     ) raises -> Self:
         """Removes trailing digits from the BigUInt with rounding.
 
         Args:
             ndigits: The number of digits to remove.
             rounding_mode: The rounding mode to use.
-                RoundingMode.ROUND_DOWN: Round down.
-                RoundingMode.ROUND_UP: Round up.
-                RoundingMode.ROUND_HALF_UP: Round half up.
-                RoundingMode.ROUND_HALF_EVEN: Round half even.
+                RoundingMode.ROUND_DOWN: Round toward zero.
+                RoundingMode.ROUND_UP: Round away from zero.
+                RoundingMode.ROUND_HALF_UP: Round half away from zero.
+                RoundingMode.ROUND_HALF_DOWN: Round half toward zero.
+                RoundingMode.ROUND_HALF_EVEN: Round half to even (banker's).
+                RoundingMode.ROUND_CEILING: Round toward +inf.
+                RoundingMode.ROUND_FLOOR: Round toward -inf.
             remove_extra_digit_due_to_rounding: If True, remove an trailing
                 digit if the rounding mode result in an extra digit.
+            sign: The sign of the original number (True = negative).
+                Only needed for CEILING/FLOOR modes.
 
         Returns:
             The BigUInt with the trailing digits removed.
@@ -1885,15 +1891,36 @@ struct BigUInt(
         )
         var round_up: Bool = False
 
-        if rounding_mode == RoundingMode.down():
+        # Translate CEILING/FLOOR to UP/DOWN based on sign.
+        # CEILING (toward +inf): positive -> UP, negative -> DOWN
+        # FLOOR (toward -inf): positive -> DOWN, negative -> UP
+        var effective_mode = rounding_mode
+        if rounding_mode == RoundingMode.ceiling():
+            effective_mode = (
+                RoundingMode.up() if not sign else RoundingMode.down()
+            )
+        elif rounding_mode == RoundingMode.floor():
+            effective_mode = (
+                RoundingMode.down() if not sign else RoundingMode.up()
+            )
+
+        if effective_mode == RoundingMode.down():
             pass
-        elif rounding_mode == RoundingMode.up():
+        elif effective_mode == RoundingMode.up():
             if self.number_of_trailing_zeros() < ndigits:
                 round_up = True
-        elif rounding_mode == RoundingMode.half_up():
+        elif effective_mode == RoundingMode.half_up():
             if self.ith_digit(ndigits - 1) >= 5:
                 round_up = True
-        elif rounding_mode == RoundingMode.half_even():
+        elif effective_mode == RoundingMode.half_down():
+            var cut_off_digit = self.ith_digit(ndigits - 1)
+            if cut_off_digit > 5:
+                round_up = True
+            elif cut_off_digit == 5:
+                # Round up only if there are non-zero digits beyond the 5
+                if self.number_of_trailing_zeros() < ndigits - 1:
+                    round_up = True
+        elif effective_mode == RoundingMode.half_even():
             var cut_off_digit = self.ith_digit(ndigits - 1)
             if cut_off_digit > 5:
                 round_up = True
@@ -1904,6 +1931,8 @@ struct BigUInt(
                     round_up = True
                 else:
                     round_up = self.ith_digit(ndigits) % 2 == 1
+        # TODO: Remove this fallback once Mojo has proper enum support,
+        # which will make exhaustive matching a compile-time guarantee.
         else:
             raise Error(
                 ValueError(

@@ -219,11 +219,11 @@ fn sqrt(x: UInt128) -> UInt128:
 
 
 # TODO: Evaluate whether this can replace truncate_to_max in some cases.
-# TODO: Add rounding modes to this function.
 fn round_to_keep_first_n_digits[
     dtype: DType, //
 ](
     value: Scalar[dtype],
+    sign: Bool,
     ndigits: Int,
     rounding_mode: RoundingMode = RoundingMode.ROUND_HALF_EVEN,
 ) -> Scalar[dtype]:
@@ -238,6 +238,7 @@ fn round_to_keep_first_n_digits[
 
     Args:
         value: The integral value to truncate.
+        sign: The sign of the original number.
         ndigits: The number of significant digits to evaluate.
         rounding_mode: The rounding mode to use.
 
@@ -333,23 +334,42 @@ fn round_to_keep_first_n_digits[
         var truncated_value = value // divisor
         var remainder = value % divisor
 
+        # Translate CEILING/FLOOR to UP/DOWN based on sign.
+        # CEILING (toward +inf): positive -> UP, negative -> DOWN
+        # FLOOR (toward -inf): positive -> DOWN, negative -> UP
+        var effective_mode = rounding_mode
+        if rounding_mode == RoundingMode.ceiling():
+            effective_mode = (
+                RoundingMode.up() if not sign else RoundingMode.down()
+            )
+        elif rounding_mode == RoundingMode.floor():
+            effective_mode = (
+                RoundingMode.down() if not sign else RoundingMode.up()
+            )
+
         # If RoundingMode is down(), just truncate the value
-        if rounding_mode == RoundingMode.down():
+        if effective_mode == RoundingMode.down():
             pass
 
         # If RoundingMode is up(), round up the value if remainder is greater than 0
-        elif rounding_mode == RoundingMode.up():
+        elif effective_mode == RoundingMode.up():
             if remainder > 0:
                 truncated_value += 1
 
-        # If RoundingMode is half_up(), round up the value if remainder is greater than 5
-        elif rounding_mode == RoundingMode.half_up():
+        # If RoundingMode is half_up(), round up the value if remainder is >= 0.5
+        elif effective_mode == RoundingMode.half_up():
             var cutoff_value = 5 * power_of_10[dtype](ndigits_to_remove - 1)
             if remainder >= cutoff_value:
                 truncated_value += 1
 
+        # If RoundingMode is half_down(), round up only if remainder is > 0.5
+        elif effective_mode == RoundingMode.half_down():
+            var cutoff_value = 5 * power_of_10[dtype](ndigits_to_remove - 1)
+            if remainder > cutoff_value:
+                truncated_value += 1
+
         # If RoundingMode is ROUND_HALF_EVEN, round to nearest even digit if equidistant
-        else:
+        elif effective_mode == RoundingMode.half_even():
             var cutoff_value: ValueType = 5 * power_of_10[dtype](
                 ndigits_to_remove - 1
             )
@@ -359,8 +379,15 @@ fn round_to_keep_first_n_digits[
                 # If truncated_value is even, do not round up
                 # If truncated_value is odd, round up
                 truncated_value += truncated_value % 2
-            else:
-                pass
+
+        # TODO: Remove this fallback once Mojo has proper enum support,
+        # which will make exhaustive matching a compile-time guarantee.
+        else:
+            debug_assert(
+                False,
+                "Unknown rounding mode in round_to_keep_first_n_digits: "
+                + String(rounding_mode),
+            )
 
         return truncated_value
 

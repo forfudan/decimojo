@@ -53,6 +53,13 @@ fn round(
         ndigits: Number of decimal places to round to.
             Defaults to 0.
         rounding_mode: Rounding mode to use.
+            RoundingMode.ROUND_DOWN: Round toward zero.
+            RoundingMode.ROUND_UP: Round away from zero.
+            RoundingMode.ROUND_HALF_UP: Round half away from zero.
+            RoundingMode.ROUND_HALF_DOWN: Round half toward zero.
+            RoundingMode.ROUND_HALF_EVEN: Round half to even (banker's).
+            RoundingMode.ROUND_CEILING: Round toward positive infinity.
+            RoundingMode.ROUND_FLOOR: Round toward negative infinity.
             Defaults to ROUND_HALF_EVEN (banker's rounding).
 
     Returns:
@@ -140,7 +147,10 @@ fn round(
 
         # Keep the first `ndigits_to_keep` digits with specified rounding mode
         var res_coef = decimo.decimal128.utility.round_to_keep_first_n_digits(
-            x_coef, ndigits=ndigits_to_keep, rounding_mode=rounding_mode
+            x_coef,
+            ndigits=ndigits_to_keep,
+            rounding_mode=rounding_mode,
+            sign=number.is_negative(),
         )
 
         if ndigits >= 0:
@@ -174,6 +184,13 @@ fn quantize(
         value: The Decimal128 value to quantize.
         exp: A Decimal128 whose scale (exponent) will be used for the result.
         rounding_mode: The rounding mode to use.
+            RoundingMode.ROUND_DOWN: Round toward zero.
+            RoundingMode.ROUND_UP: Round away from zero.
+            RoundingMode.ROUND_HALF_UP: Round half away from zero.
+            RoundingMode.ROUND_HALF_DOWN: Round half toward zero.
+            RoundingMode.ROUND_HALF_EVEN: Round half to even (banker's).
+            RoundingMode.ROUND_CEILING: Round toward positive infinity.
+            RoundingMode.ROUND_FLOOR: Round toward negative infinity.
             Defaults to ROUND_HALF_EVEN (banker's rounding).
 
     Returns:

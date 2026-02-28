@@ -134,40 +134,51 @@ fn test_truncate_banker_rounding() raises:
 fn test_round_to_keep_first_n_digits() raises:
     """Tests for round_to_keep_first_n_digits."""
     # Keep 0 digits (round to nearest power of 10)
-    assert_equal(round_to_keep_first_n_digits(UInt128(997), 0), UInt128(1))
+    assert_equal(
+        round_to_keep_first_n_digits(UInt128(997), False, 0), UInt128(1)
+    )
 
     # Truncate one digit
     assert_equal(
-        round_to_keep_first_n_digits(UInt128(234567), 5), UInt128(23457)
+        round_to_keep_first_n_digits(UInt128(234567), False, 5), UInt128(23457)
     )
 
     # Fewer digits than n → unchanged
     assert_equal(
-        round_to_keep_first_n_digits(UInt128(234567), 29), UInt128(234567)
+        round_to_keep_first_n_digits(UInt128(234567), False, 29),
+        UInt128(234567),
     )
 
     # Banker's rounding: trailing 5 with even preceding digit
-    assert_equal(round_to_keep_first_n_digits(UInt128(12345), 4), UInt128(1234))
+    assert_equal(
+        round_to_keep_first_n_digits(UInt128(12345), False, 4), UInt128(1234)
+    )
 
     # Banker's rounding: trailing 5 with odd preceding digit → round up
-    assert_equal(round_to_keep_first_n_digits(UInt128(23455), 4), UInt128(2346))
+    assert_equal(
+        round_to_keep_first_n_digits(UInt128(23455), False, 4), UInt128(2346)
+    )
 
     # Round down (< 5)
-    assert_equal(round_to_keep_first_n_digits(UInt128(12342), 4), UInt128(1234))
+    assert_equal(
+        round_to_keep_first_n_digits(UInt128(12342), False, 4), UInt128(1234)
+    )
 
     # Round up (> 5)
-    assert_equal(round_to_keep_first_n_digits(UInt128(12347), 4), UInt128(1235))
+    assert_equal(
+        round_to_keep_first_n_digits(UInt128(12347), False, 4), UInt128(1235)
+    )
 
     # Zero input
-    assert_equal(round_to_keep_first_n_digits(UInt128(0), 5), UInt128(0))
+    assert_equal(round_to_keep_first_n_digits(UInt128(0), False, 5), UInt128(0))
 
     # Single digit
-    assert_equal(round_to_keep_first_n_digits(UInt128(7), 1), UInt128(7))
-    assert_equal(round_to_keep_first_n_digits(UInt128(7), 0), UInt128(1))
+    assert_equal(round_to_keep_first_n_digits(UInt128(7), False, 1), UInt128(7))
+    assert_equal(round_to_keep_first_n_digits(UInt128(7), False, 0), UInt128(1))
 
     # Large UInt256
     assert_equal(
-        round_to_keep_first_n_digits(UInt256(9876543210987654321), 18),
+        round_to_keep_first_n_digits(UInt256(9876543210987654321), False, 18),
         UInt256(987654321098765432),
     )
 
