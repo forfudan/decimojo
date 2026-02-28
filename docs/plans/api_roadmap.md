@@ -87,11 +87,11 @@ These are the gaps vs Python's `decimal.Decimal`, prioritized by user impact.
 | Method                              | What It Does                                             | Notes                                                                                                    |
 | ----------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | `as_tuple()`                        | Returns `(sign, digits, exponent)`                       | ✓ **DONE** — returns `(sign: Bool, digits: List[UInt8], exponent: Int)` matching Python's `DecimalTuple` |
-| `adjusted()`                        | Returns adjusted exponent (= exponent + len(digits) - 1) | ✅ **DONE** — renamed from former `exponent()` method.                                                    |
-| `copy_abs()`                        | Returns `abs(self)`                                      | ✅ **DONE** — alias for `__abs__()`.                                                                      |
-| `copy_negate()`                     | Returns `-self`                                          | ✅ **DONE** — alias for `__neg__()`.                                                                      |
-| `copy_sign(other)`                  | Returns self with the sign of other                      | ✅ **DONE**.                                                                                              |
-| `same_quantum(other)`               | True if both have same exponent/scale                    | Useful for financial code.                                                                               |
+| `adjusted()`                        | Returns adjusted exponent (= exponent + len(digits) - 1) | ✓ **DONE** — renamed from former `exponent()` method.                                                    |
+| `copy_abs()`                        | Returns `abs(self)`                                      | ✓ **DONE** — alias for `__abs__()`.                                                                      |
+| `copy_negate()`                     | Returns `-self`                                          | ✓ **DONE** — alias for `__neg__()`.                                                                      |
+| `copy_sign(other)`                  | Returns self with the sign of other                      | ✓ **DONE**.                                                                                              |
+| `same_quantum(other)`               | True if both have same exponent/scale                    | ✓ **DONE**.                                                                                              |
 | `normalize()`                       | Already exists                                           | ✓                                                                                                        |
 | `to_eng_string()`                   | Engineering notation (exponent multiple of 3)            | ✓ **DONE** — alias for `to_string(engineering=True)`                                                     |
 | `to_integral_value(rounding)`       | Round to integer, keep as Decimal                        | `round(ndigits=0)` is close but not identical (doesn't strip trailing zeros).                            |
@@ -294,9 +294,9 @@ BigInt has `to_string_with_separators()`. This should be extended to BigDecimal.
 ### Tier 2: Important (Remaining)
 
 1. ✓ **`as_tuple()`** on BigDecimal — returns `(sign: Bool, digits: List[UInt8], exponent: Int)` matching Python's `DecimalTuple`
-2. ✅ **`copy_abs()` / `copy_negate()` / `copy_sign(other)`** on BigDecimal
-3. ✅ **`adjusted()`** on BigDecimal — renamed from `exponent()` to match Python's `Decimal.adjusted()`
-4. **`same_quantum(other)`** on BigDecimal
+2. ✓ **`copy_abs()` / `copy_negate()` / `copy_sign(other)`** on BigDecimal
+3. ✓ **`adjusted()`** on BigDecimal — renamed from `exponent()` to match Python's `Decimal.adjusted()`
+4. ✓ **`same_quantum(other)`** on BigDecimal
 5. **`ROUND_HALF_DOWN`** rounding mode
 6. **`scaleb(n)`** on BigDecimal — multiply by 10^n efficiently
 7. **`bit_count()`** on BigInt — popcount (number of 1-bits in abs value)
@@ -354,6 +354,6 @@ For tracking against the above:
 ✗ max_mag          ✓ min              ✗ min_mag          ✗ next_minus
 ✗ next_plus        ✗ next_toward      ✓ normalize        ✗ number_class
 ✓ quantize         ✗ radix            ✗ remainder_near   ✗ rotate
-✗ same_quantum     ✗ scaleb           ✗ shift            ✓ sqrt
+✓ same_quantum     ✗ scaleb           ✗ shift            ✓ sqrt
 ✓ to_eng_string    ✗ to_integral_exact ✗ to_integral_value
 ```

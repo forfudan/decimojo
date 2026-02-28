@@ -7,6 +7,7 @@ Tests for BigDecimal utility methods added in v0.8.x:
   - as_tuple()
   - copy_abs() / copy_negate() / copy_sign()
   - adjusted()
+  - same_quantum()
 """
 
 import testing
@@ -432,6 +433,38 @@ fn test_adjusted_scientific() raises:
     testing.assert_equal(BigDecimal("1E+5").adjusted(), 5)
     testing.assert_equal(BigDecimal("1E-5").adjusted(), -5)
     testing.assert_equal(BigDecimal("1.23E+10").adjusted(), 10)
+
+
+# ===----------------------------------------------------------------------=== #
+# same_quantum()
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_same_quantum_same_scale() raises:
+    """Same scale returns True."""
+    testing.assert_true(BigDecimal("1.23").same_quantum(BigDecimal("4.56")))
+    testing.assert_true(BigDecimal("100").same_quantum(BigDecimal("1")))
+    testing.assert_true(BigDecimal("0").same_quantum(BigDecimal("5")))
+
+
+fn test_same_quantum_different_scale() raises:
+    """Different scale returns False."""
+    testing.assert_false(BigDecimal("1.2").same_quantum(BigDecimal("4.56")))
+    testing.assert_false(BigDecimal("1").same_quantum(BigDecimal("1.0")))
+    testing.assert_false(BigDecimal("0").same_quantum(BigDecimal("0.00")))
+
+
+fn test_same_quantum_negative() raises:
+    """Sign does not affect quantum comparison."""
+    testing.assert_true(BigDecimal("1.23").same_quantum(BigDecimal("-4.56")))
+    testing.assert_true(BigDecimal("-1.23").same_quantum(BigDecimal("4.56")))
+
+
+fn test_same_quantum_zero_variants() raises:
+    """Zeros with different scales have different quanta."""
+    testing.assert_true(BigDecimal("0").same_quantum(BigDecimal("0")))
+    testing.assert_true(BigDecimal("0.00").same_quantum(BigDecimal("0.00")))
+    testing.assert_false(BigDecimal("0").same_quantum(BigDecimal("0.0")))
 
 
 fn main() raises:
