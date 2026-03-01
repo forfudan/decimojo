@@ -43,7 +43,9 @@ from .tokenizer import tokenize
 # ===----------------------------------------------------------------------=== #
 
 
-fn _call_func(name: String, mut stack: List[BDec], precision: Int) raises:
+fn _call_func(
+    name: String, mut stack: List[BDec], precision: Int, position: Int
+) raises:
     """Pop argument(s) from `stack`, call the named Decimo function,
     and push the result back.
 
@@ -53,11 +55,22 @@ fn _call_func(name: String, mut stack: List[BDec], precision: Int) raises:
     Two-argument functions:
         root(x, n)   — the n-th root of x.
         log(x, base) — logarithm of x with the given base.
+
+    Args:
+        name: The function name.
+        stack: The operand stack (modified in place).
+        precision: Decimal precision for the computation.
+        position: 0-based column of the function token in the source
+            expression, used for diagnostic messages.
     """
     if name == "root":
         # root(x, n): x was pushed first, then n
         if len(stack) < 2:
-            raise Error("root() requires two arguments: root(x, n)")
+            raise Error(
+                "Error at position "
+                + String(position)
+                + ": root() requires two arguments, e.g. root(27, 3)"
+            )
         var n_val = stack.pop()
         var x_val = stack.pop()
         stack.append(x_val.root(n_val, precision))
@@ -66,7 +79,11 @@ fn _call_func(name: String, mut stack: List[BDec], precision: Int) raises:
     if name == "log":
         # log(x, base): x was pushed first, then base
         if len(stack) < 2:
-            raise Error("log() requires two arguments: log(x, base)")
+            raise Error(
+                "Error at position "
+                + String(position)
+                + ": log() requires two arguments, e.g. log(100, 10)"
+            )
         var base_val = stack.pop()
         var x_val = stack.pop()
         stack.append(x_val.log(base_val, precision))
@@ -74,16 +91,52 @@ fn _call_func(name: String, mut stack: List[BDec], precision: Int) raises:
 
     # All remaining functions take exactly one argument
     if len(stack) < 1:
-        raise Error(name + "() requires one argument")
+        raise Error(
+            "Error at position "
+            + String(position)
+            + ": "
+            + name
+            + "() requires one argument"
+        )
     var a = stack.pop()
 
     if name == "sqrt":
+        if a.is_negative():
+            raise Error(
+                "Error at position "
+                + String(position)
+                + ": sqrt() is undefined for negative numbers (got "
+                + String(a)
+                + ")"
+            )
         stack.append(a.sqrt(precision))
     elif name == "cbrt":
         stack.append(a.cbrt(precision))
     elif name == "ln":
+        if a.is_negative() or a.is_zero():
+            raise Error(
+                "Error at position "
+                + String(position)
+                + ": ln() is undefined for "
+                + (
+                    "zero" if a.is_zero() else "negative numbers (got "
+                    + String(a)
+                    + ")"
+                )
+            )
         stack.append(a.ln(precision))
     elif name == "log10":
+        if a.is_negative() or a.is_zero():
+            raise Error(
+                "Error at position "
+                + String(position)
+                + ": log10() is undefined for "
+                + (
+                    "zero" if a.is_zero() else "negative numbers (got "
+                    + String(a)
+                    + ")"
+                )
+            )
         stack.append(a.log10(precision))
     elif name == "exp":
         stack.append(a.exp(precision))
@@ -100,7 +153,13 @@ fn _call_func(name: String, mut stack: List[BDec], precision: Int) raises:
     elif name == "abs":
         stack.append(abs(a))
     else:
-        raise Error("Unknown function: " + name)
+        raise Error(
+            "Error at position "
+            + String(position)
+            + ": unknown function '"
+            + name
+            + "'"
+        )
 
 
 # ===----------------------------------------------------------------------=== #
@@ -113,6 +172,10 @@ fn evaluate_rpn(rpn: List[Token], precision: Int) raises -> BDec:
 
     All numbers are BigDecimal.  Division uses `true_divide` with
     the caller-supplied precision.
+
+    Raises:
+        Error: On division by zero, missing operands, or other runtime
+            errors — with source position when available.
     """
     var stack = List[BDec]()
 
@@ -128,57 +191,101 @@ fn evaluate_rpn(rpn: List[Token], precision: Int) raises -> BDec:
             elif rpn[i].value == "e":
                 stack.append(BDec.e(precision))
             else:
-                raise Error("Unknown constant: " + rpn[i].value)
+                raise Error(
+                    "Error at position "
+                    + String(rpn[i].position)
+                    + ": unknown constant '"
+                    + rpn[i].value
+                    + "'"
+                )
 
         elif kind == TOKEN_UNARY_MINUS:
             if len(stack) < 1:
-                raise Error("Invalid expression: missing operand for negation")
+                raise Error(
+                    "Error at position "
+                    + String(rpn[i].position)
+                    + ": missing operand for negation"
+                )
             var a = stack.pop()
             stack.append(-a)
 
         elif kind == TOKEN_PLUS:
             if len(stack) < 2:
-                raise Error("Invalid expression: missing operand")
+                raise Error(
+                    "Error at position "
+                    + String(rpn[i].position)
+                    + ": missing operand for '+'"
+                )
             var b = stack.pop()
             var a = stack.pop()
             stack.append(a + b)
 
         elif kind == TOKEN_MINUS:
             if len(stack) < 2:
-                raise Error("Invalid expression: missing operand")
+                raise Error(
+                    "Error at position "
+                    + String(rpn[i].position)
+                    + ": missing operand for '-'"
+                )
             var b = stack.pop()
             var a = stack.pop()
             stack.append(a - b)
 
         elif kind == TOKEN_STAR:
             if len(stack) < 2:
-                raise Error("Invalid expression: missing operand")
+                raise Error(
+                    "Error at position "
+                    + String(rpn[i].position)
+                    + ": missing operand for '*'"
+                )
             var b = stack.pop()
             var a = stack.pop()
             stack.append(a * b)
 
         elif kind == TOKEN_SLASH:
             if len(stack) < 2:
-                raise Error("Invalid expression: missing operand")
+                raise Error(
+                    "Error at position "
+                    + String(rpn[i].position)
+                    + ": missing operand for '/'"
+                )
             var b = stack.pop()
+            if b.is_zero():
+                raise Error(
+                    "Error at position "
+                    + String(rpn[i].position)
+                    + ": division by zero"
+                )
             var a = stack.pop()
             stack.append(a.true_divide(b, precision))
 
         elif kind == TOKEN_CARET:
             if len(stack) < 2:
-                raise Error("Invalid expression: missing operand")
+                raise Error(
+                    "Error at position "
+                    + String(rpn[i].position)
+                    + ": missing operand for '^'"
+                )
             var b = stack.pop()
             var a = stack.pop()
             stack.append(a.power(b, precision))
 
         elif kind == TOKEN_FUNC:
-            _call_func(rpn[i].value, stack, precision)
+            _call_func(rpn[i].value, stack, precision, rpn[i].position)
 
         else:
-            raise Error("Unexpected token in RPN evaluation")
+            raise Error(
+                "Error at position "
+                + String(rpn[i].position)
+                + ": unexpected token in evaluation"
+            )
 
     if len(stack) != 1:
-        raise Error("Invalid expression: too many values remaining")
+        raise Error(
+            "Invalid expression: expected a single result but got "
+            + String(len(stack))
+            + " values"
+        )
 
     return stack.pop()
 

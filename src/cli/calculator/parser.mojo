@@ -44,6 +44,10 @@ fn parse_to_rpn(tokens: List[Token]) raises -> List[Token]:
     Supports binary operators (+, -, *, /, ^), unary minus,
     function calls (sqrt, ln, …), constants (pi, e), and commas
     for multi-argument functions like root(x, n).
+
+    Raises:
+        Error: On mismatched parentheses, misplaced commas, or trailing
+            operators — with position information when available.
     """
     var output = List[Token]()
     var op_stack = List[Token]()
@@ -68,7 +72,11 @@ fn parse_to_rpn(tokens: List[Token]) raises -> List[Token]:
                     break
                 output.append(op_stack.pop())
             if not found_lparen:
-                raise Error("Misplaced comma or mismatched parentheses")
+                raise Error(
+                    "Error at position "
+                    + String(tokens[i].position)
+                    + ": misplaced ',' outside of a function call"
+                )
 
         # Operators: shunt by precedence / associativity
         elif (
@@ -114,7 +122,11 @@ fn parse_to_rpn(tokens: List[Token]) raises -> List[Token]:
                     break
                 output.append(op_stack.pop())
             if not found_lparen:
-                raise Error("Mismatched parentheses: missing '('")
+                raise Error(
+                    "Error at position "
+                    + String(tokens[i].position)
+                    + ": unmatched ')'"
+                )
             _ = op_stack.pop()  # Discard the '('
 
             # If a function sits on top of the stack, pop it to output
@@ -128,7 +140,9 @@ fn parse_to_rpn(tokens: List[Token]) raises -> List[Token]:
     while len(op_stack) > 0:
         var top = op_stack.pop()
         if top.kind == TOKEN_LPAREN:
-            raise Error("Mismatched parentheses: missing ')'")
+            raise Error(
+                "Error at position " + String(top.position) + ": unmatched '('"
+            )
         output.append(top^)
 
     return output^
