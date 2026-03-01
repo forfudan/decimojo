@@ -190,7 +190,7 @@ fn test_empty_string() raises:
     """Empty string should raise an error since Phase 3."""
     var raised = False
     try:
-        var toks = tokenize("")
+        _ = tokenize("")
     except:
         raised = True
     testing.assert_true(raised, "empty string should raise an error")

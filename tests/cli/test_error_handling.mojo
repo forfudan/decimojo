@@ -9,7 +9,6 @@ import testing
 
 from calculator import evaluate
 from calculator.tokenizer import tokenize
-from calculator.parser import parse_to_rpn
 
 
 # ===----------------------------------------------------------------------=== #

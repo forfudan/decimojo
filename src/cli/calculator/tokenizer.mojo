@@ -168,9 +168,9 @@ fn tokenize(expr: String) raises -> List[Token]:
     diagnostics that pinpoint where the problem is.
 
     Raises:
-        Error: On empty/whitespace-only input, unknown identifiers, or
-            unexpected characters, with the column position included in
-            the message.
+        Error: On empty/whitespace-only input (without position info),
+            unknown identifiers, or unexpected characters (with the
+            column position included in the message).
     """
     var tokens = List[Token]()
     var expr_bytes = expr.as_string_slice().as_bytes()

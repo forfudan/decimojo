@@ -12,7 +12,6 @@
 from sys import exit
 
 from argmojo import Arg, Command
-from calculator import evaluate
 from calculator.tokenizer import tokenize
 from calculator.parser import parse_to_rpn
 from calculator.evaluator import evaluate_rpn
