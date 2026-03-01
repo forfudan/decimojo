@@ -9,14 +9,39 @@
 #   ./decimo "100 * 12 - 23/17" -p 50
 # ===----------------------------------------------------------------------=== #
 
+from sys import exit
+
 from argmojo import Arg, Command
 from calculator import evaluate
+from calculator.tokenizer import tokenize
+from calculator.parser import parse_to_rpn
+from calculator.evaluator import evaluate_rpn
+from calculator.display import print_error
 
 
-fn main() raises:
+fn main():
+    try:
+        _run()
+    except e:
+        # Should not reach here — _run() handles all expected errors.
+        # This is a last-resort safety net that still avoids the ugly
+        # "Unhandled exception caught during execution:" message.
+        print_error(String(e))
+        exit(1)
+
+
+fn _run() raises:
     var cmd = Command(
         "decimo",
-        "Arbitrary-precision CLI calculator powered by Decimo.",
+        (
+            "Arbitrary-precision CLI calculator powered by Decimo.\n"
+            "\n"
+            "Note: if your expression contains *, ( or ), your shell may\n"
+            "intercept them before decimo runs. Use quotes or noglob:\n"
+            '  decimo "2 * (3 + 4)"         # with quotes\n'
+            "  noglob decimo 2*(3+4)        # with noglob\n"
+            "  alias decimo='noglob decimo' # add to ~/.zshrc"
+        ),
         version="0.1.0",
     )
 
@@ -88,16 +113,77 @@ fn main() raises:
     var pad = result.get_flag("pad")
     var delimiter = result.get_string("delimiter")
 
-    var value = evaluate(expr, precision)
+    # ── Phase 1: Tokenize & parse ──────────────────────────────────────────
+    try:
+        var tokens = tokenize(expr)
+        var rpn = parse_to_rpn(tokens^)
 
-    if scientific:
-        print(value.to_string(scientific=True, delimiter=delimiter))
-    elif engineering:
-        print(value.to_string(engineering=True, delimiter=delimiter))
-    elif pad:
-        print(_pad_to_precision(value.to_string(force_plain=True), precision))
-    else:
-        print(value.to_string(delimiter=delimiter))
+        # ── Phase 2: Evaluate ────────────────────────────────────────────
+        # Syntax was fine — any error here is a math error (division by
+        # zero, negative sqrt, …).  No glob hint needed.
+        try:
+            var value = evaluate_rpn(rpn^, precision)
+
+            if scientific:
+                print(value.to_string(scientific=True, delimiter=delimiter))
+            elif engineering:
+                print(value.to_string(engineering=True, delimiter=delimiter))
+            elif pad:
+                print(
+                    _pad_to_precision(
+                        value.to_string(force_plain=True), precision
+                    )
+                )
+            else:
+                print(value.to_string(delimiter=delimiter))
+        except eval_err:
+            _display_calc_error(String(eval_err), expr)
+            exit(1)
+
+    except parse_err:
+        _display_calc_error(String(parse_err), expr)
+        exit(1)
+
+
+fn _display_calc_error(error_msg: String, expr: String):
+    """Parse a calculator error message and display it with colours
+    and a caret indicator.
+
+    The calculator engine produces errors in two forms:
+
+    1. ``Error at position N: <description>``  — with position info.
+    2. ``<description>``  — without position info.
+
+    This function detects form (1), extracts the position, and calls
+    `print_error(description, expr, position)` so the user sees a
+    visual caret under the offending column.  For form (2) it falls
+    back to a plain coloured error.
+    """
+    comptime PREFIX = "Error at position "
+
+    if error_msg.startswith(PREFIX):
+        # Find the colon after the position number.
+        var after_prefix = len(PREFIX)
+        var colon_pos = -1
+        for i in range(after_prefix, len(error_msg)):
+            if error_msg[byte=i] == ":":
+                colon_pos = i
+                break
+
+        if colon_pos > after_prefix:
+            # Extract position number and description.
+            var pos_str = String(error_msg[after_prefix:colon_pos])
+            var description = String(error_msg[colon_pos + 2 :])  # skip ": "
+
+            try:
+                var pos = Int(pos_str)
+                print_error(description, expr, pos)
+                return
+            except:
+                pass  # fall through to plain display
+
+    # Fallback: no position info — just show the message.
+    print_error(error_msg)
 
 
 fn _pad_to_precision(plain: String, precision: Int) -> String:

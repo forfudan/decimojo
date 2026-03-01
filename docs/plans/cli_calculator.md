@@ -269,9 +269,10 @@ Format the final `BigDecimal` result based on CLI flags:
 
 1. Error messages: clear diagnostics for malformed expressions (e.g., "Unexpected token '*' at position 5").
 2. Edge cases: division by zero, negative sqrt, overflow, empty expression.
-3. Performance: ensure the tokenizer/parser overhead is negligible compared to BigDecimal computation.
-4. Documentation and examples in README.
-5. Build and distribute as a single binary.
+3. Upgrade to ArgMojo v0.2.0 (once available in pixi). See [ArgMojo v0.2.0 Upgrade Tasks](#argmojo-v020-upgrade-tasks) below.
+4. Performance: ensure the tokenizer/parser overhead is negligible compared to BigDecimal computation.
+5. Documentation and examples in README.
+6. Build and distribute as a single binary.
 
 ### Phase 4: Interactive REPL
 
@@ -302,6 +303,71 @@ decimo> exit
 ### Phase 5: Future Enhancements
 
 1. Detect full-width digits/operators for CJK users while parsing.
+
+---
+
+### ArgMojo v0.2.0 Upgrade Tasks
+
+> **Prerequisite:** ArgMojo ≥ v0.2.0 is available as a pixi package.
+>
+> Reference: <https://github.com/forfudan/argmojo/releases/tag/v0.2.0>
+
+Once ArgMojo v0.2.0 lands in pixi, apply the following changes to `decimo`:
+
+#### 1. Auto-show help when no positional arg is given
+
+ArgMojo v0.2.0 automatically displays help when a required positional argument is missing — no code change needed on our side. Remove the `.required()` guard if it interferes, or verify the behaviour works out of the box.
+
+**Current (v0.1.x):** missing `expr` prints a raw error.
+**After:** missing `expr` prints the full help text.
+
+#### 2. Shell-quoting tips via `add_tip()`
+
+Replace the inline description workaround with ArgMojo's dedicated `add_tip()` API. Tips render as a separate section at the bottom of `--help` output.
+
+```mojo
+cmd.add_tip('If your expression contains *, ( or ), wrap it in quotes:')
+cmd.add_tip('  decimo "2 * (3 + 4)"')
+cmd.add_tip('Or use noglob:  noglob decimo 2*(3+4)')
+cmd.add_tip("Or add to ~/.zshrc:  alias decimo='noglob decimo'")
+```
+
+Remove the corresponding note that is currently embedded in the `Command` description string.
+
+#### 3. Negative number passthrough
+
+Enable `allow_negative_numbers()` so that expressions like `decimo -3+4` or `decimo -3.14` are treated as math, not as unknown CLI flags.
+
+```mojo
+cmd.allow_negative_numbers()
+```
+
+#### 4. Rename `Arg` → `Argument`
+
+`Arg` is kept as an alias in v0.2.0, so this is optional but recommended for consistency with the new API naming.
+
+```mojo
+# Before
+from argmojo import Arg, Command
+# After
+from argmojo import Argument, Command
+```
+
+#### 5. Colored error messages from ArgMojo
+
+ArgMojo v0.2.0 produces ANSI-colored stderr errors for its own parse errors (e.g., unknown flags). Our custom `display.mojo` colors still handle calculator-level errors. Verify that both layers look consistent (same RED styling).
+
+#### 6. Subcommands (Phase 4 REPL prep)
+
+Although not needed immediately, the new `add_subcommand()` API could later support:
+
+- `decimo repl` — launch interactive REPL
+- `decimo eval "expr"` — explicit one-shot evaluation (current default)
+- `decimo help <topic>` — extended help on functions, constants, etc.
+
+This is deferred to Phase 4 planning.
+
+---
 
 ## Design Decisions
 
