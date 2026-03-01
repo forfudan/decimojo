@@ -48,18 +48,25 @@ struct Token(Copyable, ImplicitlyCopyable, Movable):
 
     var kind: Int
     var value: String
+    var position: Int
+    """0-based column index in the original expression where this token
+    starts.  Used to produce clear diagnostics such as
+    ``Error at position 5: unexpected '*'``."""
 
-    fn __init__(out self, kind: Int, value: String = ""):
+    fn __init__(out self, kind: Int, value: String = "", position: Int = 0):
         self.kind = kind
         self.value = value
+        self.position = position
 
     fn __copyinit__(out self, other: Self):
         self.kind = other.kind
         self.value = other.value
+        self.position = other.position
 
     fn __moveinit__(out self, deinit other: Self):
         self.kind = other.kind
         self.value = other.value^
+        self.position = other.position
 
     fn is_operator(self) -> Bool:
         """Returns True if this token is a binary or unary operator."""
@@ -155,6 +162,15 @@ fn tokenize(expr: String) raises -> List[Token]:
     Handles: numbers (integer and decimal), operators (+, -, *, /, ^),
     parentheses, commas, function calls (sqrt, ln, …), built-in
     constants (pi, e), and distinguishes unary minus from binary minus.
+
+    Each token records its 0-based column position in the source
+    expression so that downstream stages can emit user-friendly
+    diagnostics that pinpoint where the problem is.
+
+    Raises:
+        Error: On empty/whitespace-only input (without position info),
+            unknown identifiers, or unexpected characters (with the
+            column position included in the message).
     """
     var tokens = List[Token]()
     var expr_bytes = expr.as_string_slice().as_bytes()
@@ -189,7 +205,11 @@ fn tokenize(expr: String) raises -> List[Token]:
             for j in range(start, i):
                 num_bytes.append(ptr[j])
             tokens.append(
-                Token(TOKEN_NUMBER, String(unsafe_from_utf8=num_bytes^))
+                Token(
+                    TOKEN_NUMBER,
+                    String(unsafe_from_utf8=num_bytes^),
+                    position=start,
+                )
             )
             continue
 
@@ -206,25 +226,32 @@ fn tokenize(expr: String) raises -> List[Token]:
 
             # Check if it is a known constant
             if _is_known_constant(name):
-                tokens.append(Token(TOKEN_CONST, name^))
+                tokens.append(Token(TOKEN_CONST, name^, position=start))
                 continue
 
             # Check if it is a known function
             if _is_known_function(name):
-                tokens.append(Token(TOKEN_FUNC, name^))
+                tokens.append(Token(TOKEN_FUNC, name^, position=start))
                 continue
 
-            raise Error("Unknown identifier '" + name + "' in expression")
+            raise Error(
+                "Error at position "
+                + String(start)
+                + ": unknown identifier '"
+                + name
+                + "'"
+            )
 
         # --- Operators and parentheses ---
         if c == 43:  # '+'
-            tokens.append(Token(TOKEN_PLUS, "+"))
+            tokens.append(Token(TOKEN_PLUS, "+", position=i))
             i += 1
             continue
 
         if c == 45:  # '-'
             # Determine if this minus is unary or binary.
             # Unary if: at the start, or after an operator, or after '(' or ','
+            var pos = i
             var is_unary = len(tokens) == 0
             if not is_unary:
                 var last_kind = tokens[len(tokens) - 1].kind
@@ -239,47 +266,56 @@ fn tokenize(expr: String) raises -> List[Token]:
                     or last_kind == TOKEN_COMMA
                 )
             if is_unary:
-                tokens.append(Token(TOKEN_UNARY_MINUS, "neg"))
+                tokens.append(Token(TOKEN_UNARY_MINUS, "neg", position=pos))
             else:
-                tokens.append(Token(TOKEN_MINUS, "-"))
+                tokens.append(Token(TOKEN_MINUS, "-", position=pos))
             i += 1
             continue
 
         if c == 42:  # '*'
             # Support '**' as an alias for '^'
             if i + 1 < n and ptr[i + 1] == 42:
-                tokens.append(Token(TOKEN_CARET, "^"))
+                tokens.append(Token(TOKEN_CARET, "^", position=i))
                 i += 2
             else:
-                tokens.append(Token(TOKEN_STAR, "*"))
+                tokens.append(Token(TOKEN_STAR, "*", position=i))
                 i += 1
             continue
 
         if c == 47:  # '/'
-            tokens.append(Token(TOKEN_SLASH, "/"))
+            tokens.append(Token(TOKEN_SLASH, "/", position=i))
             i += 1
             continue
 
         if c == 94:  # '^'
-            tokens.append(Token(TOKEN_CARET, "^"))
+            tokens.append(Token(TOKEN_CARET, "^", position=i))
             i += 1
             continue
 
         if c == 44:  # ','
-            tokens.append(Token(TOKEN_COMMA, ","))
+            tokens.append(Token(TOKEN_COMMA, ",", position=i))
             i += 1
             continue
 
         if c == 40:  # '('
-            tokens.append(Token(TOKEN_LPAREN, "("))
+            tokens.append(Token(TOKEN_LPAREN, "(", position=i))
             i += 1
             continue
 
         if c == 41:  # ')'
-            tokens.append(Token(TOKEN_RPAREN, ")"))
+            tokens.append(Token(TOKEN_RPAREN, ")", position=i))
             i += 1
             continue
 
-        raise Error("Unexpected character '" + chr(Int(c)) + "' in expression")
+        raise Error(
+            "Error at position "
+            + String(i)
+            + ": unexpected character '"
+            + chr(Int(c))
+            + "'"
+        )
+
+    if len(tokens) == 0:
+        raise Error("Empty expression")
 
     return tokens^

@@ -187,8 +187,13 @@ fn test_invalid_character() raises:
 
 
 fn test_empty_string() raises:
-    var toks = tokenize("")
-    testing.assert_equal(len(toks), 0, "empty string produces no tokens")
+    """Empty string should raise an error since Phase 3."""
+    var raised = False
+    try:
+        _ = tokenize("")
+    except:
+        raised = True
+    testing.assert_true(raised, "empty string should raise an error")
 
 
 # ===----------------------------------------------------------------------=== #
