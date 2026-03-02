@@ -25,3 +25,7 @@ kgen.trace.json*
 local
 # CLI binary
 /decimo
+# Python build artifacts
+*.so
+__pycache__/
+*.pyc
