@@ -23,6 +23,10 @@ format = """pixi run mojo format ./src \
 &&pixi run mojo format ./docs \
 &&pixi run ruff format ./python"""
 
+# doc
+doc = """clear && pixi run mojo doc \
+--diagnose-missing-doc-strings --validate-doc-strings src/decimo"""
+
 # compile the package
 p = "clear && pixi run package"
 package = """pixi run format \
@@ -69,12 +73,8 @@ dec_debug = """clear && pixi run package && cd benches/decimal128 \
 && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. \
 && pixi run clean"""
 
-# doc
-doc = """clear && pixi run mojo doc -o docs/doc.json \
---diagnose-missing-doc-strings --validate-doc-strings src/decimo"""
-
 # cli calculator
-bcli = "clear && pixi run clibuild"
+bcli = "clear && pixi run buildcli"
 buildcli = "pixi run mojo build -I src -I src/cli -o decimo src/cli/main.mojo"
 tcli = "clear && pixi run clitest"
 testcli = "bash tests/test_cli.sh"
@@ -83,5 +83,5 @@ testcli = "bash tests/test_cli.sh"
 bpy = "clear && pixi run buildpy"
 buildpy = """pixi run mojo build python/decimo_module.mojo \
 --emit shared-lib -I src -o python/_decimo.so"""
-testpy = "pixi run pybuild && pixi run python python/tests/test_decimo.py"
+testpy = "pixi run buildpy && pixi run python python/tests/test_decimo.py"
 tpy = "clear && pixi run testpy"
