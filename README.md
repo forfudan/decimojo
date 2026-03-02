@@ -28,7 +28,7 @@ Decimo provides an arbitrary-precision integer and decimal library for Mojo. It 
 
 For Pythonistas, `decimo.BInt` to Mojo is like `int` to Python, and `decimo.Decimal` to Mojo is like `decimal.Decimal` to Python.
 
-The core types are:
+The core types are[^auxiliary]:
 
 - An arbitrary-precision signed integer type `BInt`[^bigint], which is a Mojo-native equivalent of Python's `int`.
 - An arbitrary-precision decimal implementation (`Decimal`) allowing for calculations with unlimited digits and decimal places[^arbitrary], which is a Mojo-native equivalent of Python's `decimal.Decimal`.
@@ -40,15 +40,13 @@ The core types are:
 | `Decimal` | `BDec`, `BigDecimal` | Equivalent to Python's `decimal.Decimal` | Base-10^9               |
 | `Dec128`  | `Decimal128`         | 128-bit fixed-precision decimal type     | Triple 32-bit words     |
 
-The auxiliary types include a base-10 arbitrary-precision signed integer type (`BigInt10`) and a base-10 arbitrary-precision unsigned integer type (`BigUInt`) supporting unlimited digits[^bigint10]. `BigUInt` is used as the internal representation for `BigInt10` and `Decimal`.
-
 ---
 
 **Decimo** combines "**Deci**mal" and "**Mo**jo" - reflecting its purpose and implementation language. "Decimo" is also a Latin word meaning "tenth" and is the root of the word "decimal".
 
 ---
 
-This repository includes [TOMLMojo](./docs/readme_tomlmojo.md), a lightweight TOML parser in pure Mojo. It parses configuration files and test data, supporting basic types, arrays, and nested tables. While created for Decimo's testing framework, it offers general-purpose structured data parsing with a clean, simple API.
+This repository includes a built-in [TOML parser](./docs/readme_toml.md) (`decimo.toml`), a lightweight pure-Mojo implementation supporting TOML v1.0. It parses configuration files and test data, supporting basic types, arrays, and nested tables. While created for Decimo's testing framework, it offers general-purpose structured data parsing with a clean, simple API.
 
 ## Installation
 
@@ -343,5 +341,6 @@ This repository and its contributions are licensed under the Apache License v2.0
 
 [^fixed]: The `Decimal128` type can represent values with up to 29 significant digits and a maximum of 28 digits after the decimal point. When a value exceeds the maximum representable value (`2^96 - 1`), Decimo either raises an error or rounds the value to fit within these constraints. For example, the significant digits of `8.8888888888888888888888888888` (29 eights total with 28 after the decimal point) exceeds the maximum representable value (`2^96 - 1`) and is automatically rounded to `8.888888888888888888888888889` (28 eights total with 27 after the decimal point). Decimo's `Decimal128` type is similar to `System.Decimal` (C#/.NET), `rust_decimal` in Rust, `DECIMAL/NUMERIC` in SQL Server, etc.
 [^bigint]: The `BigInt` implementation uses a base-2^32 representation with a little-endian format, where the least significant word is stored at index 0. Each word is a `UInt32`, allowing for efficient storage and arithmetic operations on large integers. This design choice optimizes performance for binary computations while still supporting arbitrary precision.
+[^auxiliary]: The auxiliary types include a base-10 arbitrary-precision signed integer type (`BigInt10`) and a base-10 arbitrary-precision unsigned integer type (`BigUInt`) supporting unlimited digits[^bigint10]. `BigUInt` is used as the internal representation for `BigInt10` and `Decimal`.
 [^bigint10]: The BigInt10 implementation uses a base-10 representation for users (maintaining decimal semantics), while internally using an optimized base-10^9 storage system for efficient calculations. This approach balances human-readable decimal operations with high-performance computing. It provides both floor division (round toward negative infinity) and truncate division (round toward zero) semantics, enabling precise handling of division operations with correct mathematical behavior regardless of operand signs.
 [^arbitrary]: Built on top of our completed BigInt10 implementation, BigDecimal will support arbitrary precision for both the integer and fractional parts, similar to `decimal` and `mpmath` in Python, `java.math.BigDecimal` in Java, etc.

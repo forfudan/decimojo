@@ -6,7 +6,7 @@ and consistency with floor division.
 """
 
 import testing
-import tomlmojo
+from decimo.toml.parser import TOMLDocument
 
 from decimo.decimal128.decimal128 import Decimal128, Dec128
 from decimo.rounding_mode import RoundingMode
@@ -15,7 +15,7 @@ from decimo.tests import parse_file, load_test_cases
 comptime data_path = "tests/decimal128/test_data/decimal128_modulo.toml"
 
 
-fn _run_section(doc: tomlmojo.parser.TOMLDocument, section: String) raises:
+fn _run_section(doc: TOMLDocument, section: String) raises:
     """Run modulo test cases from a TOML section."""
     var cases = load_test_cases(doc, section)
     for tc in cases:

@@ -30,13 +30,13 @@ print(a / b)   # 0.12499999...
 
 ## Status
 
-| Feature | Status |
-|---|---|
-| `Decimal` (BigDecimal) arithmetic (`+`, `-`, `*`, `/`) | ✅ Working |
-| Comparison operators | ✅ Working |
-| Unary `-`, `abs()`, `bool()` | ✅ Working |
-| Pre-built wheels on PyPI | 🚧 Coming soon |
-| `BigInt` / `Decimal128` Python bindings | 🔜 Planned |
+| Feature                                                | Status        |
+| ------------------------------------------------------ | ------------- |
+| `Decimal` (BigDecimal) arithmetic (`+`, `-`, `*`, `/`) | ✓ Working     |
+| Comparison operators                                   | ✓ Working     |
+| Unary `-`, `abs()`, `bool()`                           | ✓ Working     |
+| Pre-built wheels on PyPI                               | ? Coming soon |
+| `BigInt` / `Decimal128` Python bindings                | ? Planned     |
 
 ## Building from source
 

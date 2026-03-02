@@ -11,7 +11,7 @@ Test Decimal128 multiplication operations including:
 
 from python import Python, PythonObject
 import testing
-import tomlmojo
+from decimo.toml.parser import TOMLDocument
 
 from decimo import Dec128
 from decimo import Decimal128
@@ -21,7 +21,7 @@ comptime file_path = "tests/decimal128/test_data/decimal128_multiply.toml"
 
 
 fn _run_multiply_section(
-    toml: tomlmojo.parser.TOMLDocument,
+    toml: TOMLDocument,
     pydecimal: PythonObject,
     section: String,
     mut count_wrong: Int,

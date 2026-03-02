@@ -8,7 +8,7 @@ mathematical relationship verification.
 """
 
 import testing
-import tomlmojo
+from decimo.toml.parser import TOMLDocument
 
 from decimo import Decimal128, RoundingMode
 from decimo.tests import parse_file, load_test_cases
@@ -19,9 +19,7 @@ comptime data_path = "tests/decimal128/test_data/decimal128_divide.toml"
 # ─── TOML-driven helpers ────────────────────────────────────────────────────
 
 
-fn _run_division_section(
-    doc: tomlmojo.parser.TOMLDocument, section: String
-) raises:
+fn _run_division_section(doc: TOMLDocument, section: String) raises:
     """Run division (/) test cases from a TOML section."""
     var cases = load_test_cases(doc, section)
     for tc in cases:
@@ -29,9 +27,7 @@ fn _run_division_section(
         testing.assert_equal(String(result), tc.expected, tc.description)
 
 
-fn _run_truncate_section(
-    doc: tomlmojo.parser.TOMLDocument, section: String
-) raises:
+fn _run_truncate_section(doc: TOMLDocument, section: String) raises:
     """Run truncate division (//) test cases from a TOML section."""
     var cases = load_test_cases(doc, section)
     for tc in cases:
