@@ -12,7 +12,9 @@ version = "0.8.0"
 argmojo = ">=0.1.0,<0.2" # CLI argument parsing for the Decimo calculator
 mojo = "==0.26.1" # Mojo language compiler and runtime
 python = ">=3.13,<3.14" # For Python bindings and tests
+python-build = ">=1.4.0,<2" # Build PyPI wheel (`pixi run wheel`)
 ruff = ">=0.9,<1" # Python code formatter
+twine = ">=6.2.0,<7" # Upload wheel to PyPI (`twine upload dist/*`)
 
 [tasks]
 # format the code
@@ -82,6 +84,8 @@ testcli = "bash tests/test_cli.sh"
 # python bindings (mojo4py)
 bpy = "clear && pixi run buildpy"
 buildpy = """pixi run mojo build python/decimo_module.mojo \
---emit shared-lib -I src -o python/_decimo.so"""
+--emit shared-lib -I src -o python/src/decimo/_decimo.so"""
 testpy = "pixi run buildpy && pixi run python python/tests/test_decimo.py"
 tpy = "clear && pixi run testpy"
+# build PyPI wheel (placeholder, no .so included)
+wheel = "cd python && pixi run python -m build --wheel"

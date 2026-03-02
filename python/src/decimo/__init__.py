@@ -8,7 +8,20 @@ Usage:
     print(a + b)  # 3.8
 """
 
-from _decimo import BigDecimal as _BigDecimal
+__version__ = "0.1.0.dev0"
+__all__ = ["Decimal", "BigDecimal"]
+
+try:
+    from ._decimo import BigDecimal as _BigDecimal
+except ImportError as _err:
+    raise ImportError(
+        "decimo requires a compiled Mojo extension (_decimo native module).\n"
+        "This package does not yet include pre-built wheels.\n"
+        "Build from source:\n"
+        "  git clone https://github.com/forfudan/decimo && cd decimo\n"
+        "  pixi run buildpy\n"
+        "  pip install -e python/\n"
+    ) from _err
 
 
 class Decimal:
