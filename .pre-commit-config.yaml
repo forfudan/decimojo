@@ -5,5 +5,12 @@ repos:
         name: mojo-format
         entry: pixi run mojo format
         language: system
-        files: '\.(mojo|🔥|py)$'
+        files: '\.(mojo|🔥)$'
+        stages: [pre-commit]
+
+      - id: ruff-format
+        name: ruff-format
+        entry: pixi run ruff format
+        language: system
+        files: '\.py$'
         stages: [pre-commit]
