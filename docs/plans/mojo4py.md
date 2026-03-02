@@ -116,14 +116,22 @@ The binding code lives in a top-level `python/` directory at the project root, p
 
 ```txt
 python/
-├── decimo_module.mojo        ← Mojo binding source (builds to _decimo.so)
-├── _decimo.so                ← compiled extension (gitignored)
-├── decimo.py                 ← Python wrapper: Decimal class + BigDecimal alias
+├── pyproject.toml            ← PyPI package config (hatchling, src layout)
+├── README.md                 ← PyPI landing page
+├── decimo_module.mojo        ← Mojo binding source (builds to src/decimo/_decimo.so)
+├── src/
+│   └── decimo/
+│       ├── __init__.py       ← Python wrapper: Decimal class + BigDecimal alias
+│       ├── _decimo.pyi       ← Type stub for Pylance/mypy
+│       ├── _decimo.so        ← compiled extension (gitignored)
+│       └── py.typed          ← PEP 561 marker
 └── tests/
     └── test_decimo.py        ← Python tests
 ```
 
 The core Mojo library (`src/decimo/`) is not modified — all binding logic lives in `python/decimo_module.mojo` as free functions.
+
+The `src` layout (PEP 517) is used so that `pip install -e python/` installs cleanly and the package is importable as `from decimo import Decimal` without any path manipulation.
 
 ### 4.1 Two-Layer Architecture
 
@@ -136,11 +144,11 @@ This keeps the core `BigDecimal` struct unmodified and provides full Pythonic be
 
 ### 4.2 The `Decimal` Alias
 
-The `Decimal` alias is set in `decimo.py` as the primary class name, with `BigDecimal = Decimal` for users who prefer the full name:
+The `Decimal` alias is set in `src/decimo/__init__.py` as the primary class name, with `BigDecimal = Decimal` for users who prefer the full name:
 
 ```python
-# python/decimo.py
-from _decimo import BigDecimal as _BigDecimal
+# python/src/decimo/__init__.py
+from ._decimo import BigDecimal as _BigDecimal
 
 class Decimal:
     __slots__ = ("_inner",)
@@ -164,17 +172,20 @@ from decimo import BigDecimal       # also works, same class
 
 ## 5. Build System Integration (pixi.toml)
 
-Tasks added to `pixi.toml`:
+Tasks in `pixi.toml`:
 
 ```toml
 # python bindings (mojo4py)
-pybuild = "pixi run mojo build python/decimo_module.mojo --emit shared-lib -I src -o python/_decimo.so"
-pytest = "pixi run pybuild && pixi run python python/tests/test_decimo.py"
+bpy     = "clear && pixi run buildpy"
+buildpy = "pixi run mojo build python/decimo_module.mojo --emit shared-lib -I src -o python/src/decimo/_decimo.so"
+testpy  = "pixi run buildpy && pixi run python python/tests/test_decimo.py"
+tpy     = "clear && pixi run testpy"
+wheel   = "cd python && pixi run python -m build --wheel"
 ```
 
-- `pixi run pybuild` — compiles the Mojo binding to `python/_decimo.so`.
-- `pixi run pytest` — builds then runs the Python test suite.
-- The `-I src` flag ensures `import decimo` in the Mojo binding resolves to `src/decimo/`. No need to pre-package `decimo.mojopkg`.
+- `pixi run buildpy` — compiles the Mojo binding directly into the installable package at `python/src/decimo/_decimo.so`. No need to pre-package `decimo.mojopkg`; the `-I src` flag resolves `import decimo` to `src/decimo/`.
+- `pixi run testpy` — builds then runs the Python test suite.
+- `pixi run wheel` — produces a pure-Python placeholder wheel in `python/dist/` (no `.so` included); suitable for PyPI name reservation.
 
 ---
 
@@ -335,9 +346,14 @@ jobs:
 - [x] Manually build the `.so` with `mojo build --emit shared-lib -I src`.
 - [x] Import from Python, confirm round-trip: `str(Decimal("1.23")) == "1.23"`.
 - [x] Identify trait gaps (`Representable`, `Movable`, etc. — all satisfied).
-- [x] Arithmetic: `+`, `-`, `*` work. Comparison: `==`, `<`, `<=`, `>`, `>=`, `!=` work.
+- [x] Arithmetic: `+`, `-`, `*`, `/` work. Comparison: `==`, `<`, `<=`, `>`, `>=`, `!=` work.
 - [x] `Decimal` alias (`Decimal is BigDecimal` → `True` in Python).
 - [x] Large arbitrary-precision numbers work (38+ digit numbers).
+- [x] Cross-validated all operations against Python stdlib `decimal.Decimal`.
+- [x] Type stubs (`_decimo.pyi`) and `py.typed` PEP 561 marker.
+- [x] `pyproject.toml` + `src` layout for PyPI; placeholder wheel built and uploaded to PyPI.
+- [x] CI: `test-python` job in GitHub Actions parallel CI.
+- [x] Python code formatter: `ruff` integrated into `pixi run format` and pre-commit.
 
 **Phase 0 findings & architecture decisions:**
 
@@ -391,12 +407,13 @@ jobs:
 
 ### Phase 4 — Packaging + Distribution
 
-- [ ] Create `python/` directory with `pyproject.toml` and `__init__.py`.
-- [ ] Write `.pyi` stubs for all types.
-- [ ] Add `py.typed` marker (PEP 561).
-- [ ] Test `pip install` of the built wheel locally.
+- [x] Create `python/` directory with `pyproject.toml` (hatchling, src layout) and `src/decimo/__init__.py`.
+- [x] Write `.pyi` stubs for `BigDecimal` (`_decimo.pyi`).
+- [x] Add `py.typed` marker (PEP 561).
+- [x] PyPI name reserved — placeholder wheel (`0.1.0.dev0`) published to PyPI.
+- [ ] Test `pip install` of the built wheel locally (blocked until pre-built `.so` in wheel).
 - [ ] Set up GitHub Actions for wheel builds (macOS arm64, Linux x86_64).
-- [ ] Publish to PyPI (or TestPyPI first).
+- [ ] Publish platform-specific wheels with bundled `.so`.
 
 ### Phase 5 — Ergonomics + Stabilization
 

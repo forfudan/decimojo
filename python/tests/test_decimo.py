@@ -8,8 +8,8 @@ import operator
 from pathlib import Path
 import sys
 
-# Add python/ directory to sys.path so `import decimo` resolves to decimo.py
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+# Add python/src/ to sys.path so `import decimo` resolves to src/decimo/__init__.py
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 import decimo
 
