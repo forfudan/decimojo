@@ -100,29 +100,44 @@ class Decimal:
 
     def __lt__(self, other):
         if not isinstance(other, Decimal):
-            other = Decimal(other)
+            try:
+                other = Decimal(other)
+            except Exception:
+                return NotImplemented
         return self._inner.lt(other._inner)
 
     def __le__(self, other):
         if not isinstance(other, Decimal):
-            other = Decimal(other)
+            try:
+                other = Decimal(other)
+            except Exception:
+                return NotImplemented
         return self._inner.le(other._inner)
 
     def __gt__(self, other):
         if not isinstance(other, Decimal):
-            other = Decimal(other)
+            try:
+                other = Decimal(other)
+            except Exception:
+                return NotImplemented
         return not self._inner.le(other._inner)
 
     def __ge__(self, other):
         if not isinstance(other, Decimal):
-            other = Decimal(other)
+            try:
+                other = Decimal(other)
+            except Exception:
+                return NotImplemented
         return not self._inner.lt(other._inner)
 
     def __ne__(self, other):
-        return not self.__eq__(other)
+        eq_result = self.__eq__(other)
+        if eq_result is NotImplemented:
+            return NotImplemented
+        return not eq_result
 
     def __bool__(self):
-        return str(self) != "0"
+        return str(self) not in ("0", "-0")
 
 
 # Also expose as BigDecimal for users who prefer the full name

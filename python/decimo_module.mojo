@@ -9,10 +9,9 @@
 # https://docs.modular.com/mojo/manual/python/mojo-from-python
 # ===----------------------------------------------------------------------=== #
 
-from python import PythonObject, Python
+from python import PythonObject
 from python.bindings import PythonModuleBuilder
 from os import abort
-from memory import UnsafePointer
 
 from decimo import BigDecimal
 
