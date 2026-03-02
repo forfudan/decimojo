@@ -1,4 +1,4 @@
-name: Decimo Unit Tests
+name: CI
 on:
   pull_request:
   workflow_dispatch:
@@ -7,66 +7,218 @@ permissions:
   contents: read
   pull-requests: read
 
+defaults:
+  run:
+    shell: bash
+
+# Shared setup repeated per job (GitHub Actions has no job-level includes,
+# so we keep each job self-contained for clarity and parallelism).
+
 jobs:
-  testing-decimo:
-    name: with ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        # os: ["macos-latest"]
-        os: ["ubuntu-22.04"]
-
-    runs-on: ${{ matrix.os }}
+  # ── Test: BigDecimal ─────────────────────────────────────────────────────────
+  test-bigdecimal:
+    name: Test BigDecimal
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
-
-    defaults:
-      run:
-        shell: bash
     env:
       DEBIAN_FRONTEND: noninteractive
-
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Install pixi
-        run: |
-          curl -fsSL https://pixi.sh/install.sh | sh
-      
-      - name: Add path
+        run: curl -fsSL https://pixi.sh/install.sh | sh
+      - name: Add pixi to PATH
         run: |
           echo "PIXI_HOME=$HOME/.pixi" >> $GITHUB_ENV
-          echo "$HOME/.pixi/bin"  >> $GITHUB_PATH
-
-      - name: Activate virtualenv
+          echo "$HOME/.pixi/bin" >> $GITHUB_PATH
+      - name: pixi install
+        run: pixi install
+      - name: Build packages
         run: |
-          python3 -m venv $HOME/venv/
-          . $HOME/venv/bin/activate
-          echo PATH=$PATH >> $GITHUB_ENV
-
-      - name: Pixi install
-        run: |
-          pixi install
-
-      - name: Build package
-        run: |
-          pixi run mojo package src/decimo
-          pixi run mojo package src/tomlmojo
-          cp decimo.mojopkg tests/
-          cp decimo.mojopkg benches/
-          mv tomlmojo.mojopkg tests/
-
+          pixi run mojo package src/decimo && cp decimo.mojopkg tests/
+          pixi run mojo package src/tomlmojo && mv tomlmojo.mojopkg tests/
       - name: Run tests
-        run: |
-          bash ./tests/test_all.sh
-          bash ./tests/test_toml.sh
+        run: bash ./tests/test_bigdecimal.sh
 
-      - name: Install pre-commit
+  # ── Test: BigInt ─────────────────────────────────────────────────────────────
+  test-bigint:
+    name: Test BigInt
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pixi
+        run: curl -fsSL https://pixi.sh/install.sh | sh
+      - name: Add pixi to PATH
         run: |
-          pip install pre-commit
-          pre-commit install
-      
-      - name: Run pre-commit
-        run: | 
-          pixi install
-          pre-commit run --all-files
+          echo "PIXI_HOME=$HOME/.pixi" >> $GITHUB_ENV
+          echo "$HOME/.pixi/bin" >> $GITHUB_PATH
+      - name: pixi install
+        run: pixi install
+      - name: Build packages
+        run: |
+          pixi run mojo package src/decimo && cp decimo.mojopkg tests/
+          pixi run mojo package src/tomlmojo && mv tomlmojo.mojopkg tests/
+      - name: Run tests
+        run: bash ./tests/test_bigint.sh
+
+  # ── Test: BigUint ────────────────────────────────────────────────────────────
+  test-biguint:
+    name: Test BigUint
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pixi
+        run: curl -fsSL https://pixi.sh/install.sh | sh
+      - name: Add pixi to PATH
+        run: |
+          echo "PIXI_HOME=$HOME/.pixi" >> $GITHUB_ENV
+          echo "$HOME/.pixi/bin" >> $GITHUB_PATH
+      - name: pixi install
+        run: pixi install
+      - name: Build packages
+        run: |
+          pixi run mojo package src/decimo && cp decimo.mojopkg tests/
+          pixi run mojo package src/tomlmojo && mv tomlmojo.mojopkg tests/
+      - name: Run tests
+        run: bash ./tests/test_biguint.sh
+
+  # ── Test: BigInt10 ───────────────────────────────────────────────────────────
+  test-bigint10:
+    name: Test BigInt10
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pixi
+        run: curl -fsSL https://pixi.sh/install.sh | sh
+      - name: Add pixi to PATH
+        run: |
+          echo "PIXI_HOME=$HOME/.pixi" >> $GITHUB_ENV
+          echo "$HOME/.pixi/bin" >> $GITHUB_PATH
+      - name: pixi install
+        run: pixi install
+      - name: Build packages
+        run: |
+          pixi run mojo package src/decimo && cp decimo.mojopkg tests/
+          pixi run mojo package src/tomlmojo && mv tomlmojo.mojopkg tests/
+      - name: Run tests
+        run: bash ./tests/test_bigint10.sh
+
+  # ── Test: Decimal128 ─────────────────────────────────────────────────────────
+  test-decimal128:
+    name: Test Decimal128
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pixi
+        run: curl -fsSL https://pixi.sh/install.sh | sh
+      - name: Add pixi to PATH
+        run: |
+          echo "PIXI_HOME=$HOME/.pixi" >> $GITHUB_ENV
+          echo "$HOME/.pixi/bin" >> $GITHUB_PATH
+      - name: pixi install
+        run: pixi install
+      - name: Build packages
+        run: |
+          pixi run mojo package src/decimo && cp decimo.mojopkg tests/
+          pixi run mojo package src/tomlmojo && mv tomlmojo.mojopkg tests/
+      - name: Run tests
+        run: bash ./tests/test_decimal128.sh
+
+  # ── Test: TomlMojo ───────────────────────────────────────────────────────────
+  test-tomlmojo:
+    name: Test TomlMojo
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pixi
+        run: curl -fsSL https://pixi.sh/install.sh | sh
+      - name: Add pixi to PATH
+        run: |
+          echo "PIXI_HOME=$HOME/.pixi" >> $GITHUB_ENV
+          echo "$HOME/.pixi/bin" >> $GITHUB_PATH
+      - name: pixi install
+        run: pixi install
+      - name: Build packages
+        run: |
+          pixi run mojo package src/decimo && cp decimo.mojopkg tests/
+          pixi run mojo package src/tomlmojo && mv tomlmojo.mojopkg tests/
+      - name: Run tests
+        run: bash ./tests/test_tomlmojo.sh
+
+  # ── Test: CLI ────────────────────────────────────────────────────────────────
+  test-cli:
+    name: Test CLI
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pixi
+        run: curl -fsSL https://pixi.sh/install.sh | sh
+      - name: Add pixi to PATH
+        run: |
+          echo "PIXI_HOME=$HOME/.pixi" >> $GITHUB_ENV
+          echo "$HOME/.pixi/bin" >> $GITHUB_PATH
+      - name: pixi install
+        run: pixi install
+      - name: Build CLI binary
+        run: pixi run build
+      - name: Run tests
+        run: bash ./tests/test_cli.sh
+
+  # ── Test: Python bindings ────────────────────────────────────────────────────
+  test-python:
+    name: Test Python bindings
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pixi
+        run: curl -fsSL https://pixi.sh/install.sh | sh
+      - name: Add pixi to PATH
+        run: |
+          echo "PIXI_HOME=$HOME/.pixi" >> $GITHUB_ENV
+          echo "$HOME/.pixi/bin" >> $GITHUB_PATH
+      - name: pixi install
+        run: pixi install
+      - name: Build & run Python tests
+        run: pixi run pytest
+
+  # ── Format check ─────────────────────────────────────────────────────────────
+  format-check:
+    name: Format check
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pixi
+        run: curl -fsSL https://pixi.sh/install.sh | sh
+      - name: Add pixi to PATH
+        run: |
+          echo "PIXI_HOME=$HOME/.pixi" >> $GITHUB_ENV
+          echo "$HOME/.pixi/bin" >> $GITHUB_PATH
+      - name: pixi install
+        run: pixi install
+      - name: Install pre-commit
+        run: pip install pre-commit
+      - name: Run format check
+        run: pre-commit run --all-files

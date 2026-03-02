@@ -34,6 +34,7 @@ fn PyInit__decimo() -> PythonObject:
             .def_method[bigdecimal_add]("add")
             .def_method[bigdecimal_sub]("sub")
             .def_method[bigdecimal_mul]("mul")
+            .def_method[bigdecimal_div]("div")
             .def_method[bigdecimal_neg]("neg")
             .def_method[bigdecimal_abs]("abs_")
             .def_method[bigdecimal_eq]("eq")
@@ -111,6 +112,16 @@ fn bigdecimal_mul(
     var self_ptr = py_self.downcast_value_ptr[BigDecimal]()
     var other_ptr = other.downcast_value_ptr[BigDecimal]()
     var result = self_ptr[] * other_ptr[]
+    return PythonObject(alloc=result^)
+
+
+fn bigdecimal_div(
+    py_self: PythonObject, other: PythonObject
+) raises -> PythonObject:
+    """Return self / other."""
+    var self_ptr = py_self.downcast_value_ptr[BigDecimal]()
+    var other_ptr = other.downcast_value_ptr[BigDecimal]()
+    var result = self_ptr[] / other_ptr[]
     return PythonObject(alloc=result^)
 
 

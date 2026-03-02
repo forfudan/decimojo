@@ -68,6 +68,13 @@ class Decimal:
     def __rmul__(self, other):
         return Decimal(other).__mul__(self)
 
+    def __truediv__(self, other):
+        if not isinstance(other, Decimal):
+            other = Decimal(other)
+        result = Decimal.__new__(Decimal)
+        result._inner = self._inner.div(other._inner)
+        return result
+
     def __neg__(self):
         result = Decimal.__new__(Decimal)
         result._inner = self._inner.neg()

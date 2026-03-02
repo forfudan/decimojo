@@ -9,49 +9,79 @@ readme = "README.md"
 version = "0.8.0"
 
 [dependencies]
-argmojo = ">=0.1.0,<0.2"
-mojo = "==0.26.1"
-python = ">=3.13,<3.14"
+argmojo = ">=0.1.0,<0.2" # CLI argument parsing for the Decimo calculator
+mojo = "==0.26.1" # Mojo language compiler and runtime
+python = ">=3.13,<3.14" # For Python bindings and tests
+ruff = ">=0.9,<1" # Python code formatter
 
 [tasks]
 # format the code
-format = "pixi run mojo format ./src && pixi run mojo format ./benches && pixi run mojo format ./tests && pixi run mojo format ./docs"
+format = """pixi run mojo format ./src \
+&&pixi run mojo format ./python \
+&&pixi run mojo format ./benches \
+&&pixi run mojo format ./tests \
+&&pixi run mojo format ./docs \
+&&pixi run ruff format ./python"""
 
 # compile the package
 p = "clear && pixi run package"
-package = "pixi run format && pixi run package_decimo && pixi run package_tomlmojo"
-package_decimo = "pixi run mojo package src/decimo && cp decimo.mojopkg tests/ && cp decimo.mojopkg benches/ && rm decimo.mojopkg"
-package_tomlmojo = "pixi run mojo package src/tomlmojo && cp tomlmojo.mojopkg tests/ && cp tomlmojo.mojopkg benches/ && rm tomlmojo.mojopkg"
+package = """pixi run format \
+&& pixi run package_decimo \
+&& pixi run package_tomlmojo"""
+package_decimo = """pixi run mojo package src/decimo \
+&& cp decimo.mojopkg tests/ \
+&& cp decimo.mojopkg benches/ \
+&& rm decimo.mojopkg"""
+package_tomlmojo = """pixi run mojo package src/tomlmojo \
+&& cp tomlmojo.mojopkg tests/ \
+&& cp tomlmojo.mojopkg benches/ \
+&& rm tomlmojo.mojopkg"""
 
 # clean the package files in tests folder
 c = "clear && pixi run clean"
-clean = "rm tests/decimo.mojopkg && rm benches/decimo.mojopkg && rm tests/tomlmojo.mojopkg && rm benches/tomlmojo.mojopkg"
+clean = """rm tests/decimo.mojopkg && \
+rm benches/decimo.mojopkg && \
+rm tests/tomlmojo.mojopkg && \
+rm benches/tomlmojo.mojopkg"""
 
 # tests (use the mojo testing tool)
-b = "clear && pixi run package && bash ./tests/test_big.sh"
-b2 = "clear && pixi run package && bash ./tests/test_binary.sh"
-t = "clear && pixi run package && bash ./tests/test_all.sh"
+t = "clear && pixi run test"
+tdecimo = "clear && pixi run testdecimo"
 test = "pixi run package && bash ./tests/test_all.sh"
-test_toml = "pixi run package && bash ./tests/test_toml.sh"
-ttoml = "clear && pixi run package && bash ./tests/test_toml.sh"
+testdecimo = "pixi run package && bash ./tests/test_decimo.sh"
+testtoml = "pixi run package && bash ./tests/test_tomlmojo.sh"
+ttoml = "clear && pixi run testtoml"
 
 # bench
 bench = "pixi run package && bash benches/run_bench.sh"
 
 # bench with debug assertions enabled
-bdec_debug = "clear && pixi run package && cd benches/bigdecimal && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
-bint_debug = "clear && pixi run package && cd benches/bigint && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
-buint_debug = "clear && pixi run package && cd benches/biguint && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
-dec_debug = "clear && pixi run package && cd benches/decimal128 && pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. && pixi run clean"
+bdec_debug = """clear && pixi run package && cd benches/bigdecimal \
+&& pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. \
+&& pixi run clean"""
+bint_debug = """clear && pixi run package && cd benches/bigint \
+&& pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. \
+&& pixi run clean"""
+buint_debug = """clear && pixi run package && cd benches/biguint \
+&& pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. \
+&& pixi run clean"""
+dec_debug = """clear && pixi run package && cd benches/decimal128 \
+&& pixi run mojo run -I ../ -D ASSERT=all bench.mojo && cd ../.. \
+&& pixi run clean"""
 
 # doc
-doc = "clear && pixi run mojo doc -o docs/doc.json --diagnose-missing-doc-strings --validate-doc-strings src/decimo"
+doc = """clear && pixi run mojo doc -o docs/doc.json \
+--diagnose-missing-doc-strings --validate-doc-strings src/decimo"""
 
 # cli calculator
-build = "pixi run mojo build -I src -I src/cli -o decimo src/cli/main.mojo"
-tcli = "clear && bash tests/test_cli.sh"
-test_cli = "bash tests/test_cli.sh"
+bcli = "clear && pixi run clibuild"
+buildcli = "pixi run mojo build -I src -I src/cli -o decimo src/cli/main.mojo"
+tcli = "clear && pixi run clitest"
+testcli = "bash tests/test_cli.sh"
 
 # python bindings (mojo4py)
-pybuild = "pixi run mojo build python/decimo_module.mojo --emit shared-lib -I src -o python/_decimo.so"
-pytest = "pixi run pybuild && pixi run python python/tests/test_decimo.py"
+bpy = "clear && pixi run buildpy"
+buildpy = """pixi run mojo build python/decimo_module.mojo \
+--emit shared-lib -I src -o python/_decimo.so"""
+testpy = "pixi run pybuild && pixi run python python/tests/test_decimo.py"
+tpy = "clear && pixi run testpy"
