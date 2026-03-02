@@ -1,40 +1,40 @@
 [build-system]
-requires = ["hatchling"]
 build-backend = "hatchling.build"
+requires = ["hatchling"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/decimo"]
 
 [project]
-name = "decimo"
-version = "0.1.0.dev0"
-description = "Arbitrary-precision decimal and integer arithmetic for Python, powered by Mojo"
-readme = "README.md"
-license = { text = "Apache-2.0" }
-authors = [{ name = "ZHU Yuhao (朱宇浩)", email = "dr.yuhao.zhu@outlook.com" }]
-requires-python = ">=3.11"
-keywords = [
-    "decimal",
-    "arbitrary-precision",
-    "mojo",
-    "bigdecimal",
-    "arithmetic",
-    "numeric",
-]
+authors = [{name = "ZHU Yuhao (朱宇浩)", email = "dr.yuhao.zhu@outlook.com"}]
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Topic :: Scientific/Engineering :: Mathematics",
-    "Typing :: Typed",
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Mathematics",
+  "Typing :: Typed",
 ]
+description = "Arbitrary-precision decimal arithmetic for Python, powered by Mojo"
+keywords = [
+  "decimal",
+  "arbitrary-precision",
+  "mojo",
+  "bigdecimal",
+  "arithmetic",
+  "numeric",
+]
+license = {text = "Apache-2.0"}
+name = "decimo"
+readme = "README.md"
+requires-python = ">=3.11"
+version = "0.1.0.dev0"
 
 [project.urls]
-Homepage = "https://github.com/forfudan/decimo"
-Repository = "https://github.com/forfudan/decimo"
-Issues = "https://github.com/forfudan/decimo/issues"
 Changelog = "https://github.com/forfudan/decimo/blob/main/docs/changelog.md"
+Homepage = "https://github.com/forfudan/decimo"
+Issues = "https://github.com/forfudan/decimo/issues"
+Repository = "https://github.com/forfudan/decimo"

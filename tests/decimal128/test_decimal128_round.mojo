@@ -4,7 +4,7 @@ TOML-driven tests for standard cases; inline for dynamic/consistency tests.
 """
 
 import testing
-import tomlmojo
+from decimo.toml.parser import TOMLDocument
 
 from decimo.decimal128.decimal128 import Decimal128, Dec128
 from decimo.rounding_mode import RoundingMode
@@ -14,7 +14,7 @@ comptime data_path = "tests/decimal128/test_data/decimal128_round.toml"
 
 
 fn _run_round_section(
-    doc: tomlmojo.parser.TOMLDocument,
+    doc: TOMLDocument,
     section: String,
     mode: RoundingMode,
 ) raises:
@@ -25,9 +25,7 @@ fn _run_round_section(
         testing.assert_equal(String(result), tc.expected, tc.description)
 
 
-fn _run_round_default_section(
-    doc: tomlmojo.parser.TOMLDocument, section: String
-) raises:
+fn _run_round_default_section(doc: TOMLDocument, section: String) raises:
     """Run round test cases using builtin round() (banker's rounding)."""
     var cases = load_test_cases(doc, section)
     for tc in cases:

@@ -15,7 +15,9 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-tomlmojo — A native TOML v1.0 parser for Mojo.
+decimo.toml — A native TOML v1.0 parser for Mojo.
+
+(Originally named tomlmojo, now merged into decimo as a subpackage.)
 
 Supports:
 - Basic and literal strings (single-line and multi-line)

@@ -13,7 +13,7 @@ Test Decimal128.from_int() and Decimal128 component constructor including:
 """
 
 import testing
-import tomlmojo
+from decimo.toml.parser import TOMLDocument
 
 from decimo import Dec128
 from decimo import Decimal128
@@ -23,7 +23,7 @@ comptime file_path = "tests/decimal128/test_data/decimal128_from_int.toml"
 
 
 fn _run_from_int_section(
-    toml: tomlmojo.parser.TOMLDocument,
+    toml: TOMLDocument,
     section: String,
     mut count_wrong: Int,
 ) raises:

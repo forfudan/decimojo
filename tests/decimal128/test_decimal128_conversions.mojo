@@ -4,7 +4,7 @@ Merges former to_string, to_int, to_float test files.
 """
 
 import testing
-import tomlmojo
+from decimo.toml.parser import TOMLDocument
 
 from decimo import Dec128
 from decimo import Decimal128

@@ -2,17 +2,25 @@
 
 An arbitrary-precision integer and decimal library for [Mojo](https://www.modular.com/mojo), inspired by Python's `int` and `Decimal`.
 
-**[中文·漢字](https://github.com/forfudan/decimo/blob/main/docs/readme_zht.md)**　|　**[Changelog](https://github.com/forfudan/decimo/blob/main/docs/changelog.md)**　|　**[Repository on GitHub»](https://github.com/forfudan/decimo)**　|　**[Discord channel»](https://discord.gg/3rGH87uZTk)**
+[![Version](https://img.shields.io/github/v/tag/forfudan/decimo?label=version&color=blue)](https://github.com/forfudan/decimo/releases)
+[![pixi](https://img.shields.io/badge/pixi%20add-decimo-purple)](https://prefix.dev/channels/modular-community/packages/decimo)
+[![CI](https://img.shields.io/github/actions/workflow/status/forfudan/argmojo/run_tests.yaml?branch=main&label=tests)](https://github.com/forfudan/argmojo/actions/workflows/run_tests.yaml)
+[![Last Commit](https://img.shields.io/github/last-commit/forfudan/argmojo?color=red)](https://github.com/forfudan/argmojo/commits/main)
 
-- [Overview](#overview)
-- [Project structure](#project-structure)
-- [Installation](#installation)
-- [Quick start](#quick-start)
-- [Objective](#objective)
-- [Status](#status)
-- [Tests and benches](#tests-and-benches)
-- [Citation](#citation)
-- [License](#license)
+<!-- 
+[![Mojo](https://img.shields.io/badge/mojo-0.26.1-orange)](https://docs.modular.com/mojo/manual/)
+[![License](https://img.shields.io/github/license/forfudan/argmojo)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/forfudan/argmojo?style=flat)](https://github.com/forfudan/argmojo/stargazers)
+[![Issues](https://img.shields.io/github/issues/forfudan/argmojo)](https://github.com/forfudan/argmojo/issues)
+![Platforms](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey)
+-->
+
+<!-- 
+[![中文](https://img.shields.io/badge/中文-介紹-red)](https://github.com/forfudan/decimo/blob/main/docs/readme_zht.md)
+[![Changelog](https://img.shields.io/badge/change-log-yellow)](https://github.com/forfudan/decimo/blob/main/docs/changelog.md)
+[![Repository on GitHub](https://img.shields.io/badge/repo-GitHub-black)](https://github.com/forfudan/decimo)
+[![Discord](https://img.shields.io/badge/discord-join-darkblue)](https://discord.gg/3rGH87uZTk)
+-->
 
 ## Overview
 
@@ -38,7 +46,7 @@ The core types are[^auxiliary]:
 
 ---
 
-Decimo also includes a command-line calculator application that supports arbitrary-precision calculations, powered by the `decimo` and `argmojo` libraries.
+Decimo also includes **a command-line calculator application** that supports arbitrary-precision calculations, powered by [ArgMojo - a command-line argument parser library for Mojo](https://github.com/forfudan/argmojo).
 
 You can use it to evaluate complex mathematical expressions with high precision directly from your terminal. For example:
 
@@ -48,40 +56,7 @@ You can use it to evaluate complex mathematical expressions with high precision 
 
 ---
 
-This repository includes [TOMLMojo](./docs/readme_tomlmojo.md), a lightweight TOML parser in pure Mojo. It parses configuration files and test data, supporting basic types, arrays, and nested tables. While created for Decimo's testing framework, it offers general-purpose structured data parsing with a clean, simple API.
-
-## Project structure
-
-```text
-decimo/
-├── src/                          # All source code
-│   ├── decimo/                   # Core library (mojo package)
-│   │   ├── bigdecimal/           #   Arbitrary-precision decimal (Decimal/BDec)
-│   │   ├── bigint/               #   Arbitrary-precision signed integer (BInt)
-│   │   ├── bigint10/             #   Base-10 signed integer (BigInt10)
-│   │   ├── biguint/              #   Base-10 unsigned integer (BigUInt)
-│   │   ├── decimal128/           #   128-bit fixed-precision decimal (Dec128)
-│   │   └── ...                   #   Shared utilities (str, errors, rounding)
-│   ├── tomlmojo/                 # TOML parser library (mojo package)
-│   └── cli/                      # CLI calculator application
-│       ├── main.mojo             #   Entry point (ArgMojo CLI)
-│       └── calculator/           #   Calculator engine (mojo package)
-│           ├── tokenizer.mojo    #     Lexer: expression → tokens
-│           ├── parser.mojo       #     Shunting-yard: infix → RPN
-│           └── evaluator.mojo    #     RPN evaluator using BigDecimal
-├── tests/                        # Unit tests (one subfolder per module)
-│   ├── bigdecimal/
-│   ├── bigint/
-│   ├── biguint/
-│   ├── decimal128/
-│   ├── cli/                      #   CLI calculator tests
-│   └── tomlmojo/
-├── benches/                      # Benchmarks (one subfolder per module)
-├── docs/                         # Documentation and design notes
-└── pixi.toml                     # Project configuration and tasks
-```
-
-`src/decimo/` and `src/tomlmojo/` are Mojo packages — they are compiled with `mojo package` and can be imported by external projects. `src/cli/` is an application that consumes the `decimo` package and compiles to a standalone binary via `mojo build`.
+Decimo also includes a built-in [TOML parser](./docs/readme_toml.md) (`decimo.toml`), a lightweight pure-Mojo implementation supporting TOML v1.0. It parses configuration files and test data, supporting basic types, arrays, and nested tables. While created for Decimo's testing framework, it offers general-purpose structured data parsing with a clean, simple API.
 
 ## Installation
 
@@ -348,6 +323,38 @@ Rome wasn't built in a day. Decimo is currently under active development. It has
 The `BInt` type is fully implemented and optimized. It has been benchmarked against Python's `int` and demonstrates superior performance in most cases.
 
 Bug reports and feature requests are welcome! If you encounter issues, please [file them here](https://github.com/forfudan/decimo/issues).
+
+## Project structure
+
+```text
+decimo/
+├── src/                          # All source code
+│   ├── decimo/                   # Core library (mojo package)
+│   │   ├── bigdecimal/           #   Arbitrary-precision decimal (Decimal/BDec)
+│   │   ├── bigint/               #   Arbitrary-precision signed integer (BInt)
+│   │   ├── bigint10/             #   Base-10 signed integer (BigInt10)
+│   │   ├── biguint/              #   Base-10 unsigned integer (BigUInt)
+│   │   ├── decimal128/           #   128-bit fixed-precision decimal (Dec128)
+│   │   └── ...                   #   Shared utilities (str, errors, rounding)
+│   └── cli/                      # CLI calculator application
+│       ├── main.mojo             #   Entry point (ArgMojo CLI)
+│       └── calculator/           #   Calculator engine (mojo package)
+│           ├── tokenizer.mojo    #     Lexer: expression → tokens
+│           ├── parser.mojo       #     Shunting-yard: infix → RPN
+│           └── evaluator.mojo    #     RPN evaluator using BigDecimal
+├── tests/                        # Unit tests (one subfolder per module)
+│   ├── bigdecimal/
+│   ├── bigint/
+│   ├── biguint/
+│   ├── decimal128/
+│   ├── cli/                      #   CLI calculator tests
+│   └── toml/
+├── benches/                      # Benchmarks (one subfolder per module)
+├── docs/                         # Documentation and design notes
+└── pixi.toml                     # Project configuration and tasks
+```
+
+`src/decimo/` is a Mojo package — it is compiled with `mojo package` and can be imported by external projects. The TOML parser (`decimo.toml`) is included as a subpackage. `src/cli/` is an application that consumes the `decimo` package and compiles to a standalone binary via `mojo build`.
 
 ## Tests and benches
 

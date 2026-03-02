@@ -18,7 +18,7 @@
 Shared infrastructure for Decimo tests and benchmarks.
 
 Provides:
-- Test case and benchmark case loading from TOML files (via tomlmojo)
+- Test case and benchmark case loading from TOML files (via decimo.toml)
 - Pattern expansion: {C,N} repeats string C exactly N times
 - Log file management and formatted output (console + log)
 - Summary statistics reporting for benchmarks
@@ -50,7 +50,8 @@ Pattern expansion in string values:
         "{123456789,5}" → "123456789" repeated 5 times
 """
 
-import tomlmojo
+from .toml import parse_file as parse_toml_file
+from .toml.parser import TOMLDocument
 from python import Python, PythonObject
 from collections import List
 import os
@@ -247,10 +248,10 @@ fn expand_value(s: String) raises -> String:
 # ===----------------------------------------------------------------------=== #
 
 
-fn parse_file(file_path: String) raises -> tomlmojo.parser.TOMLDocument:
+fn parse_file(file_path: String) raises -> TOMLDocument:
     """Parse a TOML file and return the TOMLDocument."""
     try:
-        return tomlmojo.parse_file(file_path)
+        return parse_toml_file(file_path)
     except e:
         raise Error(
             "tests.parse_file(): Failed to parse TOML file:",
@@ -262,9 +263,7 @@ fn parse_file(file_path: String) raises -> tomlmojo.parser.TOMLDocument:
 
 fn load_test_cases[
     unary: Bool = False
-](toml: tomlmojo.parser.TOMLDocument, table_name: String) raises -> List[
-    TestCase
-]:
+](toml: TOMLDocument, table_name: String) raises -> List[TestCase]:
     """Load test cases from a TOMLDocument.
 
     String values are expanded using the {C,N} pattern syntax.
@@ -309,7 +308,7 @@ fn load_test_cases[
 fn load_bench_cases(toml_path: String) raises -> List[BenchCase]:
     """Load benchmark cases from a TOML file.
 
-    Uses tomlmojo to parse the TOML file. Operand values are expanded
+    Uses decimo.toml to parse the TOML file. Operand values are expanded
     using the {C,N} pattern syntax.
 
     Args:

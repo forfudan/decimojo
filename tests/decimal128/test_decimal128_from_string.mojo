@@ -14,7 +14,7 @@ Test Decimal128.from_string() constructor including:
 """
 
 import testing
-import tomlmojo
+from decimo.toml.parser import TOMLDocument
 
 from decimo import Dec128
 from decimo.tests import TestCase, parse_file, load_test_cases
@@ -23,7 +23,7 @@ comptime file_path = "tests/decimal128/test_data/decimal128_from_string.toml"
 
 
 fn _run_unary_section(
-    toml: tomlmojo.parser.TOMLDocument,
+    toml: TOMLDocument,
     section: String,
     mut count_wrong: Int,
 ) raises:

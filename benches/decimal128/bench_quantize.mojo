@@ -51,7 +51,7 @@ fn main() raises:
     var pydecimal = Python.import_module("decimal")
     pydecimal.getcontext().prec = 28
 
-    # --- TOML load via tomlmojo for 'rounding' field ---
+    # --- TOML load via decimo.toml for 'rounding' field ---
     var doc = parse_file("bench_data/quantize.toml")
     var cases_array = doc.get_array_of_tables("cases")
     var iterations = 10000

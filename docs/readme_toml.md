@@ -1,8 +1,10 @@
-# TOMLMojo <!-- omit from toc -->
+# decimo.toml <!-- omit from toc -->
 
-A native TOML v1.0 parser for [Mojo](https://www.modular.com/mojo).
+A native TOML v1.0 parser for [Mojo](https://www.modular.com/mojo), included as a subpackage of [Decimo](https://github.com/forfudan/decimo).
 
-**[Repository on GitHub»](https://github.com/forfudan/decimo/tree/main/src/tomlmojo)**　|　**[Decimo»](https://github.com/forfudan/decimo)**
+> Formerly distributed as the standalone package `tomlmojo`. Merged into Decimo as `decimo.toml` starting from v0.9.0.
+
+**[Source on GitHub»](https://github.com/forfudan/decimo/tree/main/src/decimo/toml)**　|　**[Decimo»](https://github.com/forfudan/decimo)**
 
 - [Overview](#overview)
 - [History](#history)
@@ -24,30 +26,28 @@ A native TOML v1.0 parser for [Mojo](https://www.modular.com/mojo).
 
 ## Overview
 
-TOMLMojo is a lightweight, pure-Mojo TOML parser (~1,500 LOC) that implements the core [TOML v1.0 specification](https://toml.io/en/v1.0.0). It parses TOML source text into a `TOMLDocument` — a nested dictionary structure that you can query by key, table name, or array index. It handles all common TOML constructs including nested tables, inline tables, dotted keys, arrays of tables, and all TOML data types.
+`decimo.toml` (formerly TOMLMojo) is a lightweight, pure-Mojo TOML parser (~1,500 LOC) that implements the core [TOML v1.0 specification](https://toml.io/en/v1.0.0). It parses TOML source text into a `TOMLDocument` — a nested dictionary structure that you can query by key, table name, or array index. It handles all common TOML constructs including nested tables, inline tables, dotted keys, arrays of tables, and all TOML data types.
 
 ## History
 
 TOMLMojo was initially developed in **April 2025** alongside [Decimo](https://github.com/forfudan/decimo) v0.3.0 to support Decimo's TOML-based test data system. At that time, no TOML parser existed in the Mojo ecosystem, so I wrote one from scratch.
 
-Currently, **Decimo heavily depends on TOMLMojo** for its entire testing and benchmarking infrastructure. All test cases and benchmark configurations are stored as TOML files and loaded via TOMLMojo's `parse_file()` API.
+Decimo heavily depends on this TOML parser for its entire testing and benchmarking infrastructure. All test cases and benchmark configurations are stored as TOML files and loaded via `parse_file()`.
 
-While originally built for internal use, TOMLMojo has grown into a general-purpose TOML library suitable for any Mojo project that needs to parse configuration files or structured data.
-
-The version number of TOMLMojo is aligned with the latest version of Decimo.
+Starting from Decimo v0.9.0, TOMLMojo has been merged into the Decimo package as the `decimo.toml` subpackage to simplify dependency management and packaging. It is no longer distributed as a standalone conda package.
 
 ## Installation
 
-TOMLMojo is available in the modular-community `https://repo.prefix.dev/modular-community` package repository. Add it to your `channels` in `pixi.toml`:
-
-```toml
-channels = ["https://conda.modular.com/max", "https://repo.prefix.dev/modular-community", "conda-forge"]
-```
-
-Then install:
+`decimo.toml` is included as part of the Decimo package. Install Decimo:
 
 ```bash
-pixi add tomlmojo
+pixi add decimo
+```
+
+Then import the TOML parser:
+
+```mojo
+from decimo.toml import parse_string, parse_file
 ```
 
 ## Quick start
@@ -55,10 +55,10 @@ pixi add tomlmojo
 ### Parse a TOML string
 
 ```mojo
-import tomlmojo
+from decimo.toml import parse_string, parse_file
 
 fn main() raises:
-    var doc = tomlmojo.parse_string("""
+    var doc = parse_string("""
         title = "My App"
         version = 42
         debug = true
@@ -86,10 +86,10 @@ fn main() raises:
 ### Parse a TOML file
 
 ```mojo
-import tomlmojo
+from decimo.toml import parse_string, parse_file
 
 fn main() raises:
-    var doc = tomlmojo.parse_file("config.toml")
+    var doc = parse_file("config.toml")
     var db = doc.get_table("database")
     print(db["name"].as_string())           # mydb
 ```
@@ -97,10 +97,10 @@ fn main() raises:
 ### Dotted keys and nested tables
 
 ```mojo
-import tomlmojo
+from decimo.toml import parse_string, parse_file
 
 fn main() raises:
-    var doc = tomlmojo.parse_string("""
+    var doc = parse_string("""
         fruit.name = "apple"
         fruit.color = "red"
         fruit.size.width = 10
@@ -129,10 +129,10 @@ fn main() raises:
 ### Inline tables
 
 ```mojo
-import tomlmojo
+from decimo.toml import parse_string, parse_file
 
 fn main() raises:
-    var doc = tomlmojo.parse_string("""
+    var doc = parse_string("""
         point = {x = 1, y = 2}
         animal = {type.name = "pug"}
     """)
@@ -150,10 +150,10 @@ fn main() raises:
 ### Arrays and arrays of tables
 
 ```mojo
-import tomlmojo
+from decimo.toml import parse_string, parse_file
 
 fn main() raises:
-    var doc = tomlmojo.parse_string("""
+    var doc = parse_string("""
         colors = [
             "red",
             "green",
@@ -184,10 +184,10 @@ fn main() raises:
 ### Integer formats and special floats
 
 ```mojo
-import tomlmojo
+from decimo.toml import parse_string, parse_file
 
 fn main() raises:
-    var doc = tomlmojo.parse_string("""
+    var doc = parse_string("""
         hex = 0xDEADBEEF
         oct = 0o755
         bin = 0b11010110

@@ -7,13 +7,14 @@ import testing
 
 from decimo import BDec
 from decimo.tests import TestCase, parse_file, load_test_cases
+from decimo.toml.parser import TOMLDocument
 
 comptime file_path = "tests/bigdecimal/test_data/bigdecimal_trigonometric.toml"
 
 
 fn run_test[
     func: fn (BDec, Int) raises -> BDec
-](toml: tomlmojo.parser.TOMLDocument, table_name: String, msg: String) raises:
+](toml: TOMLDocument, table_name: String, msg: String) raises:
     """Run a specific test case from the TOML document."""
     # print("------------------------------------------------------")
     # print("Testing BigDecimal ", msg, "...", sep="")

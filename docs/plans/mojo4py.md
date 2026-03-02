@@ -365,14 +365,20 @@ jobs:
 
    ```txt
    python/
-   ├── decimo_module.mojo   ← Mojo binding (builds to _decimo.so)
-   ├── _decimo.so            ← compiled extension (PyInit__decimo, gitignored)
-   ├── decimo.py             ← Python wrapper: Decimal class + BigDecimal alias
+   ├── pyproject.toml            ← PyPI package config (hatchling, src layout)
+   ├── README.md                 ← PyPI landing page
+   ├── decimo_module.mojo        ← Mojo binding (builds to src/decimo/_decimo.so)
+   ├── src/
+   │   └── decimo/
+   │       ├── __init__.py       ← Python wrapper: Decimal class + BigDecimal alias
+   │       ├── _decimo.pyi       ← Type stub for Pylance/mypy
+   │       ├── _decimo.so        ← compiled extension (gitignored)
+   │       └── py.typed          ← PEP 561 marker
    └── tests/
-       └── test_decimo.py    ← test script
+       └── test_decimo.py        ← test script
    ```
 
-4. **Build command:** `pixi run pybuild` (= `mojo build python/decimo_module.mojo --emit shared-lib -I src -o python/_decimo.so`)
+4. **Build command:** `pixi run buildpy` (= `mojo build python/decimo_module.mojo --emit shared-lib -I src -o python/src/decimo/_decimo.so`)
 
 5. **`def_py_init` signature:** `fn(out self: T, args: PythonObject, kwargs: PythonObject) raises` — works as a free function, does not need to be a `@staticmethod` on the struct itself. This means **zero modifications to the core BigDecimal struct** are needed for the binding.
 
@@ -447,8 +453,8 @@ jobs:
 Build and test with two commands:
 
 ```bash
-pixi run pybuild    # Compiles python/decimo_module.mojo → python/_decimo.so
-pixi run pytest     # Builds, then runs python/tests/test_decimo.py
+pixi run buildpy    # Compiles python/decimo_module.mojo → python/src/decimo/_decimo.so
+pixi run testpy     # Builds, then runs python/tests/test_decimo.py
 ```
 
 From Python:

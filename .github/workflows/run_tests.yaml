@@ -35,7 +35,6 @@ jobs:
       - name: Build packages
         run: |
           pixi run mojo package src/decimo && cp decimo.mojopkg tests/
-          pixi run mojo package src/tomlmojo && mv tomlmojo.mojopkg tests/
       - name: Run tests
         run: bash ./tests/test_bigdecimal.sh
 
@@ -59,7 +58,6 @@ jobs:
       - name: Build packages
         run: |
           pixi run mojo package src/decimo && cp decimo.mojopkg tests/
-          pixi run mojo package src/tomlmojo && mv tomlmojo.mojopkg tests/
       - name: Run tests
         run: bash ./tests/test_bigint.sh
 
@@ -83,7 +81,6 @@ jobs:
       - name: Build packages
         run: |
           pixi run mojo package src/decimo && cp decimo.mojopkg tests/
-          pixi run mojo package src/tomlmojo && mv tomlmojo.mojopkg tests/
       - name: Run tests
         run: bash ./tests/test_biguint.sh
 
@@ -107,7 +104,6 @@ jobs:
       - name: Build packages
         run: |
           pixi run mojo package src/decimo && cp decimo.mojopkg tests/
-          pixi run mojo package src/tomlmojo && mv tomlmojo.mojopkg tests/
       - name: Run tests
         run: bash ./tests/test_bigint10.sh
 
@@ -131,13 +127,12 @@ jobs:
       - name: Build packages
         run: |
           pixi run mojo package src/decimo && cp decimo.mojopkg tests/
-          pixi run mojo package src/tomlmojo && mv tomlmojo.mojopkg tests/
       - name: Run tests
         run: bash ./tests/test_decimal128.sh
 
-  # ── Test: TomlMojo ───────────────────────────────────────────────────────────
-  test-tomlmojo:
-    name: Test TomlMojo
+  # ── Test: TOML parser ─────────────────────────────────────────────────────
+  test-toml:
+    name: Test TOML parser
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     env:
@@ -155,9 +150,8 @@ jobs:
       - name: Build packages
         run: |
           pixi run mojo package src/decimo && cp decimo.mojopkg tests/
-          pixi run mojo package src/tomlmojo && mv tomlmojo.mojopkg tests/
       - name: Run tests
-        run: bash ./tests/test_tomlmojo.sh
+        run: bash ./tests/test_toml.sh
 
   # ── Test: CLI ────────────────────────────────────────────────────────────────
   test-cli:
