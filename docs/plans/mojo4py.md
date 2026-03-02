@@ -1,5 +1,7 @@
 # mojo4py: Exposing decimo to Python via Mojo Bindings
 
+> Initial date of planning: 2026-03-02
+>
 > I use "mojo4py" as the name of this document - it refers to a package *written in Mojo* that is callable *from Python*. The inverse ("py4mojo") would be calling Python from Mojo, which decimo already does in some places.
 >
 > This name is pretty concise and descriptive. I will use the same "mojo4py" for Mojo Miji when discussing the Mojo-Python inter-operability.
@@ -110,136 +112,69 @@ These are hard constraints today, expected to improve over time:
 
 ## 4. File Structure
 
-The binding code lives under a new `src/decimo/python/` sub-package, separate from the core implementation. This keeps concerns clean and the core library free of Python-specific boilerplate.
-
-```txt
-src/
-└── decimo/
-    ├── __init__.mojo          (existing)
-    ├── decimal128/            (existing)
-    ├── bigdecimal/            (existing)
-    ├── bigint/                (existing)
-    ├── biguint/               (existing)
-    ├── errors.mojo            (existing)
-    ├── prelude.mojo           (existing)
-    ├── rounding_mode.mojo     (existing)
-    └── python/                ← NEW sub-package
-        ├── __init__.mojo      ← top-level PyInit_decimo() entry point
-        ├── bind_decimal128.mojo
-        ├── bind_bigdecimal.mojo
-        ├── bind_bigint.mojo
-        ├── bind_biguint.mojo
-        └── helpers.mojo       ← shared conversion helpers (PythonObject ↔ RoundingMode, etc.)
-```
-
-The `python/__init__.mojo` contains the single `@export fn PyInit_decimo()` that calls each `bind_*` file's registration function, then calls `m.finalize()`.
-
-Alternatively, for initial simplicity, expose each type as its own module:
-
-```txt
-src/decimo/python/
-    ├── decimal128_module.mojo   → builds to decimal128.so
-    ├── bigdecimal_module.mojo   → builds to bigdecimal.so
-    ├── bigint_module.mojo       → builds to bigint.so
-    └── biguint_module.mojo      → builds to biguint.so
-```
-
-**Recommendation:** Start with separate modules per type (easier to iterate, easier to test in isolation), then merge into a single `decimo` module once the API stabilizes.
-
-### 4.1 Python-side Wrapper Package (`python/decimo/`)
-
-A thin Python wrapper package provides:
-
-- Type stubs (`.pyi` files) for IDE autocomplete and mypy/pyright support
-- Pythonic re-exports and documentation
-- The canonical `Decimal` alias (see below)
-- Optional pure-Python fallback for platforms where the `.so` is unavailable
+The binding code lives in a top-level `python/` directory at the project root, parallel to `src/`, `tests/`, `benches/`, and `docs/`. This keeps the Python distribution separate from the Mojo library source.
 
 ```txt
 python/
-└── decimo/                    ← Python package (installable via pip/conda)
-    ├── __init__.py            ← imports the .so, re-exports, and sets Decimal alias
-    ├── bigdecimal.pyi         ← type stubs
-    ├── decimal128.pyi
-    ├── bigint.pyi
-    ├── biguint.pyi
-    └── py.typed               ← PEP 561 marker
+├── decimo_module.mojo        ← Mojo binding source (builds to _decimo.so)
+├── _decimo.so                ← compiled extension (gitignored)
+├── decimo.py                 ← Python wrapper: Decimal class + BigDecimal alias
+└── tests/
+    └── test_decimo.py        ← Python tests
 ```
+
+The core Mojo library (`src/decimo/`) is not modified — all binding logic lives in `python/decimo_module.mojo` as free functions.
+
+### 4.1 Two-Layer Architecture
+
+Due to CPython slot limitations (see Phase 0 findings in Section 8), a two-layer pattern is used:
+
+1. **Mojo layer** (`decimo_module.mojo` → `_decimo.so`): Exposes `BigDecimal` with non-dunder method names (`add`, `sub`, `mul`, `to_string`, etc.).
+2. **Python layer** (`decimo.py`): A thin `Decimal` wrapper class that delegates Python dunders (`__add__`, `__str__`, etc.) to the Mojo methods.
+
+This keeps the core `BigDecimal` struct unmodified and provides full Pythonic behavior (operators, `str()`, `repr()`, comparisons).
 
 ### 4.2 The `Decimal` Alias
 
-Set the alias in the Python wrapper `__init__.py`, not in the Mojo binding layer:
+The `Decimal` alias is set in `decimo.py` as the primary class name, with `BigDecimal = Decimal` for users who prefer the full name:
 
 ```python
-# python/decimo/__init__.py
-from ._decimo import BigDecimal, Decimal128, BigInt, BigUint  # .so symbols
+# python/decimo.py
+from _decimo import BigDecimal as _BigDecimal
 
-# Expose Decimal as a friendly alias for BigDecimal.
-# Because it's assignment, not subclassing, both names refer to the
-# *exact same type object*: isinstance(d, Decimal) == isinstance(d, BigDecimal).
-Decimal = BigDecimal
+class Decimal:
+    __slots__ = ("_inner",)
+    def __init__(self, value="0"):
+        self._inner = _BigDecimal(str(value))
+    def __add__(self, other):
+        ...
+    # etc.
 
-__all__ = ["Decimal", "BigDecimal", "Decimal128", "BigInt", "BigUint"]
+BigDecimal = Decimal   # alias
 ```
 
-Python users can then use either name interchangeably:
+Python users import like:
 
 ```python
-from decimo import Decimal          # preferred, familiar name
-from decimo import BigDecimal       # also works, same object
-
-d = Decimal("1.23456789")
-print(isinstance(d, BigDecimal))    # True — same type
-```
-
-**Stub file:** The `.pyi` stub should document both names:
-
-```python
-# python/decimo/bigdecimal.pyi
-class BigDecimal:
-    def __init__(self, value: int | float | str) -> None: ...
-    def __add__(self, other: BigDecimal) -> BigDecimal: ...
-    # ...
-
-Decimal = BigDecimal   # alias
+from decimo import Decimal          # preferred
+from decimo import BigDecimal       # also works, same class
 ```
 
 ---
 
 ## 5. Build System Integration (pixi.toml)
 
-New tasks to add to `pixi.toml`:
+Tasks added to `pixi.toml`:
 
 ```toml
-# Build Python extension modules (.so files)
-py_build_bigdecimal = """
-    pixi run mojo build src/decimo/python/bigdecimal_module.mojo \
-    --emit shared-lib \
-    -I src \
-    -o python/decimo/_decimo_bigdecimal.so
-"""
-py_build_decimal128 = """
-    pixi run mojo build src/decimo/python/decimal128_module.mojo \
-    --emit shared-lib \
-    -I src \
-    -o python/decimo/_decimo_decimal128.so
-"""
-py_build_bigint = """
-    pixi run mojo build src/decimo/python/bigint_module.mojo \
-    --emit shared-lib \
-    -I src \
-    -o python/decimo/_decimo_bigint.so
-"""
-py_build = "pixi run py_build_bigdecimal && pixi run py_build_decimal128 && pixi run py_build_bigint"
-
-# Run Python tests
-py_test = "pixi run py_build && python -m pytest tests/python/ -v"
-
-# Build + install locally for interactive testing
-py_install = "pixi run py_build && pip install -e python/ --no-build-isolation"
+# python bindings (mojo4py)
+pybuild = "pixi run mojo build python/decimo_module.mojo --emit shared-lib -I src -o python/_decimo.so"
+pytest = "pixi run pybuild && pixi run python python/tests/test_decimo.py"
 ```
 
-Key point: the `-I src` flag ensures `import decimo` in the binding Mojo file resolves to `src/decimo/`. I do **not** need to pre-package `decimo.mojopkg` for the binding build — the source directory import works directly with `mojo build`.
+- `pixi run pybuild` — compiles the Mojo binding to `python/_decimo.so`.
+- `pixi run pytest` — builds then runs the Python test suite.
+- The `-I src` flag ensures `import decimo` in the Mojo binding resolves to `src/decimo/`. No need to pre-package `decimo.mojopkg`.
 
 ---
 
@@ -248,16 +183,12 @@ Key point: the `-I src` flag ensures `import decimo` in the binding Mojo file re
 ### 6.1 Test Layout
 
 ```txt
-tests/
-├── python/                    ← NEW
-│   ├── test_bigdecimal.py     ← primary
-│   ├── test_decimal128.py
-│   ├── test_bigint.py
-│   ├── test_biguint.py
-│   ├── test_aliases.py        ← verifies Decimal is BigDecimal
-│   └── conftest.py            ← shared fixtures, e.g. pre-built .so path
-└── test_all.sh                (existing, Mojo-native tests)
+python/
+└── tests/
+    └── test_decimo.py         ← Phase 0 tests (will be split per type later)
 ```
+
+Tests live inside `python/tests/` — co-located with the binding code and `.so` file. This separation avoids mixing Python tests with the Mojo-native tests in `tests/`.
 
 ### 6.2 Test Approach
 
@@ -313,12 +244,10 @@ d = Decimal("1.23e5")  # from Python str
 
 ### 6.3 CI Integration
 
-Add to the CI pipeline (if one exists) or to `test_all.sh`:
+Add to CI pipeline:
 
 ```bash
-# In tests/test_all.sh or a new tests/test_python.sh
-pixi run py_build
-python -m pytest tests/python/ -v --tb=short
+pixi run pytest
 ```
 
 ---
@@ -400,12 +329,38 @@ jobs:
 
 ## 8. Roadmap
 
-### Phase 0 — Proof of Concept
+### Phase 0 — Proof of Concept ✅ DONE (2026-03-02)
 
-- [ ] Write binding for a single function: `BigDecimal.__init__(str)` and `BigDecimal.__str__`.
-- [ ] Manually build the `.so` with `mojo build --emit shared-lib -I src`.
-- [ ] Import from Python, confirm round-trip: `str(BigDecimal("1.23")) == "1.23"`.
-- [ ] Identify trait gaps (`Representable`, `Movable`, etc., should be fine).
+- [x] Write binding for `BigDecimal.__init__(str)` and `BigDecimal.__str__`.
+- [x] Manually build the `.so` with `mojo build --emit shared-lib -I src`.
+- [x] Import from Python, confirm round-trip: `str(Decimal("1.23")) == "1.23"`.
+- [x] Identify trait gaps (`Representable`, `Movable`, etc. — all satisfied).
+- [x] Arithmetic: `+`, `-`, `*` work. Comparison: `==`, `<`, `<=`, `>`, `>=`, `!=` work.
+- [x] `Decimal` alias (`Decimal is BigDecimal` → `True` in Python).
+- [x] Large arbitrary-precision numbers work (38+ digit numbers).
+
+**Phase 0 findings & architecture decisions:**
+
+1. **Two-layer architecture is required.** `PythonTypeBuilder.def_method("__str__")` creates a dict entry but does NOT set the CPython `tp_str` type slot. Similarly, `def_method("__add__")` does NOT set `nb_add`. This means `str(d)` and `d + e` don't work — only `d.__str__()` and `d.__add__(e)` do. This is a CPython limitation for heap types created via C API: dunder methods must be registered as type slots, not just dict entries.
+
+2. **Solution: Mojo `.so` exposes non-dunder methods** (`to_string`, `add`, `sub`, `mul`, `neg`, `abs_`, `eq`, `lt`, `le`), and a **thin Python wrapper class** (`decimo.py`) delegates Python dunders to them. Overhead is negligible — one Python method call per operation, with all heavy math done in Mojo.
+
+3. **File layout for Phase 0:**
+
+   ```txt
+   python/
+   ├── decimo_module.mojo   ← Mojo binding (builds to _decimo.so)
+   ├── _decimo.so            ← compiled extension (PyInit__decimo, gitignored)
+   ├── decimo.py             ← Python wrapper: Decimal class + BigDecimal alias
+   └── tests/
+       └── test_decimo.py    ← test script
+   ```
+
+4. **Build command:** `pixi run pybuild` (= `mojo build python/decimo_module.mojo --emit shared-lib -I src -o python/_decimo.so`)
+
+5. **`def_py_init` signature:** `fn(out self: T, args: PythonObject, kwargs: PythonObject) raises` — works as a free function, does not need to be a `@staticmethod` on the struct itself. This means **zero modifications to the core BigDecimal struct** are needed for the binding.
+
+6. **`String(py_obj)` conversion:** `String(args[0])` works for Python `str` objects. For Python `int`/`float`, the caller must pass `str(value)` before calling the Mojo constructor — the Python wrapper handles this.
 
 ### Phase 1 — BigDecimal Full Binding
 
@@ -470,57 +425,23 @@ jobs:
 
 ---
 
-## 10. Quick-Start Skeleton
+## 10. Quick-Start
 
-To start the proof of concept, create `src/decimo/python/bigdecimal_module.mojo`:
-
-```mojo
-from python import PythonObject
-from python.bindings import PythonModuleBuilder
-from os import abort
-from decimo.bigdecimal import BigDecimal
-
-@export
-fn PyInit_bigdecimal() -> PythonObject:
-    try:
-        var m = PythonModuleBuilder("bigdecimal")
-        _ = m.add_type[BigDecimal]("BigDecimal")
-              .def_py_init[BigDecimal.py_init]()
-              .def_method[BigDecimal.py_add]("__add__")
-              .def_method[BigDecimal.py_sub]("__sub__")
-              .def_method[BigDecimal.py_mul]("__mul__")
-              .def_method[BigDecimal.py_truediv]("__truediv__")
-              .def_method[BigDecimal.py_str]("__str__")
-              .def_method[BigDecimal.py_repr]("__repr__")
-        return m.finalize()
-    except e:
-        abort(String("error creating bigdecimal Python module: ", e))
-```
-
-Then build it:
+Build and test with two commands:
 
 ```bash
-mojo build src/decimo/python/bigdecimal_module.mojo \
-    --emit shared-lib \
-    -I src \
-    -o bigdecimal.so
+pixi run pybuild    # Compiles python/decimo_module.mojo → python/_decimo.so
+pixi run pytest     # Builds, then runs python/tests/test_decimo.py
 ```
 
-Then in Python:
-
-```python
-import bigdecimal
-d = bigdecimal.BigDecimal("3.14159265358979323846")
-print(d)  # 3.14159265358979323846
-print(d + bigdecimal.BigDecimal("1"))  # 4.14159265358979323846
-```
-
-Once wrapped by the `python/decimo/` package with the alias:
+From Python:
 
 ```python
 from decimo import Decimal
-d = Decimal("1") / Decimal("3")   # prints 0.333333...
-assert isinstance(d, Decimal)     # True
-```
 
-The Mojo side will require adding `py_init`, `py_add`, `py_str` etc. as `@staticmethod` methods on `BigDecimal` (or as free functions), following the binding pattern described in Section 2.3.
+a = Decimal("1.5")
+b = Decimal("2.3")
+print(a + b)        # 3.8
+print(repr(a))      # Decimal("1.5")
+assert Decimal("1") < Decimal("2")  # True
+```

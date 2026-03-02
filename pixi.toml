@@ -51,3 +51,7 @@ doc = "clear && pixi run mojo doc -o docs/doc.json --diagnose-missing-doc-string
 build = "pixi run mojo build -I src -I src/cli -o decimo src/cli/main.mojo"
 tcli = "clear && bash tests/test_cli.sh"
 test_cli = "bash tests/test_cli.sh"
+
+# python bindings (mojo4py)
+pybuild = "pixi run mojo build python/decimo_module.mojo --emit shared-lib -I src -o python/_decimo.so"
+pytest = "pixi run pybuild && pixi run python python/tests/test_decimo.py"
