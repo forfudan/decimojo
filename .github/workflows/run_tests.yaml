@@ -177,7 +177,7 @@ jobs:
       - name: pixi install
         run: pixi install
       - name: Build CLI binary
-        run: pixi run build
+        run: pixi run buildcli
       - name: Run tests
         run: bash ./tests/test_cli.sh
 
@@ -199,7 +199,7 @@ jobs:
       - name: pixi install
         run: pixi install
       - name: Build & run Python tests
-        run: pixi run pytest
+        run: pixi run testpy
 
   # ── Format check ─────────────────────────────────────────────────────────────
   format-check:
