@@ -5,7 +5,7 @@ inline for startswith, tolerance, identity, and exception tests.
 """
 
 import testing
-import tomlmojo
+from decimo.toml.parser import TOMLDocument
 
 from decimo.decimal128.decimal128 import Decimal128, Dec128
 from decimo.rounding_mode import RoundingMode
@@ -17,7 +17,7 @@ comptime data_path = "tests/decimal128/test_data/decimal128_sqrt.toml"
 # ─── helpers ─────────────────────────────────────────────────────────────────
 
 
-fn _run_sqrt_section(doc: tomlmojo.parser.TOMLDocument, section: String) raises:
+fn _run_sqrt_section(doc: TOMLDocument, section: String) raises:
     var cases = load_test_cases[unary=True](doc, section)
     for tc in cases:
         var result = Dec128(tc.a).sqrt()

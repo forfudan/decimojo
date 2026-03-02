@@ -32,30 +32,23 @@ doc = """clear && pixi run mojo doc \
 # compile the package
 p = "clear && pixi run package"
 package = """pixi run format \
-&& pixi run package_decimo \
-&& pixi run package_tomlmojo"""
+&& pixi run package_decimo"""
 package_decimo = """pixi run mojo package src/decimo \
 && cp decimo.mojopkg tests/ \
 && cp decimo.mojopkg benches/ \
 && rm decimo.mojopkg"""
-package_tomlmojo = """pixi run mojo package src/tomlmojo \
-&& cp tomlmojo.mojopkg tests/ \
-&& cp tomlmojo.mojopkg benches/ \
-&& rm tomlmojo.mojopkg"""
 
 # clean the package files in tests folder
 c = "clear && pixi run clean"
 clean = """rm tests/decimo.mojopkg && \
-rm benches/decimo.mojopkg && \
-rm tests/tomlmojo.mojopkg && \
-rm benches/tomlmojo.mojopkg"""
+rm benches/decimo.mojopkg"""
 
 # tests (use the mojo testing tool)
 t = "clear && pixi run test"
 tdecimo = "clear && pixi run testdecimo"
 test = "pixi run package && bash ./tests/test_all.sh"
 testdecimo = "pixi run package && bash ./tests/test_decimo.sh"
-testtoml = "pixi run package && bash ./tests/test_tomlmojo.sh"
+testtoml = "pixi run package && bash ./tests/test_toml.sh"
 ttoml = "clear && pixi run testtoml"
 
 # bench
