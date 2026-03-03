@@ -267,10 +267,28 @@ fn test_from_string_non_integer_raises() raises:
 
 
 fn test_from_string_plus_sign() raises:
-    """Test from_string handles explicit positive sign."""
+    """Tests from_string handles explicit positive sign."""
     testing.assert_equal(String(BigInt("+42")), "42")
     testing.assert_equal(String(BigInt("+0")), "0")
     testing.assert_equal(String(BigInt("+1,000")), "1000")
+
+
+# ===----------------------------------------------------------------------=== #
+# Test: __float__
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_float_small() raises:
+    """Tests __float__ with small integers."""
+    testing.assert_equal(Float64(BigInt(0)), 0.0)
+    testing.assert_equal(Float64(BigInt(1)), 1.0)
+    testing.assert_equal(Float64(BigInt(42)), 42.0)
+    testing.assert_equal(Float64(BigInt(-7)), -7.0)
+
+
+fn test_float_large() raises:
+    """Tests __float__ with a large-ish integer."""
+    testing.assert_equal(Float64(BigInt(1000000)), 1000000.0)
 
 
 fn main() raises:

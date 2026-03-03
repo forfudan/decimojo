@@ -298,11 +298,11 @@ BigInt has `to_string_with_separators()`. This should be extended to BigDecimal.
 3. ✓ **`adjusted()`** on BigDecimal — renamed from `exponent()` to match Python's `Decimal.adjusted()`
 4. ✓ **`same_quantum(other)`** on BigDecimal
 5. ✓ **`ROUND_HALF_DOWN`** rounding mode
-6. **`scaleb(n)`** on BigDecimal — multiply by 10^n efficiently
-7. **`bit_count()`** on BigInt — popcount (number of 1-bits in abs value)
-8. **`__float__()`** on BigInt — `float(n)` interop
-9. **`fma(a, b)`** on BigDecimal — `self * a + b` without intermediate rounding
-10. **`to_string_with_separators()`** on BigDecimal — alias for `to_string(delimiter=...)`
+6. ✓ **`scaleb(n)`** on BigDecimal — adjusts scale by `n` (O(1), no coefficient change)
+7. ✓ **`bit_count()`** on BigInt — popcount (Kernighan's algorithm over UInt32 words)
+8. ✓ **`__float__()`** on BigInt — `float(n)` via `Float64(String(self))`; `FloatableRaising` trait added
+9. ✓ **`fma(a, b)`** on BigDecimal — `self * a + b` (exact, no intermediate rounding)
+10. ✓ **`to_string_with_separators()`** on BigDecimal — alias for `to_string(delimiter=...)`
 
 ### Tier 3: Nice-to-Have (Remaining)
 
