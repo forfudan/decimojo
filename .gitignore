@@ -2,6 +2,8 @@
 # pixi environments
 .pixi
 *.egg-info
+# ruff environments
+.ruff_cache
 # magic environments
 .magic
 magic.lock

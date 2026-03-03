@@ -21,6 +21,7 @@ Evaluates a Reverse Polish Notation token list using BigDecimal arithmetic.
 """
 
 from decimo import BDec
+from decimo.rounding_mode import RoundingMode
 
 from .tokenizer import (
     Token,
@@ -170,13 +171,17 @@ fn _call_func(
 fn evaluate_rpn(rpn: List[Token], precision: Int) raises -> BDec:
     """Evaluate an RPN token list using BigDecimal arithmetic.
 
-    All numbers are BigDecimal.  Division uses `true_divide` with
-    the caller-supplied precision.
+    Internally uses `working_precision = precision + GUARD_DIGITS` for all
+    computations to absorb intermediate rounding errors.  The caller is
+    responsible for rounding the final result to `precision` significant
+    digits (see `final_round`).
 
     Raises:
         Error: On division by zero, missing operands, or other runtime
             errors — with source position when available.
     """
+    comptime GUARD_DIGITS = 9  # Word size
+    var working_precision = precision + GUARD_DIGITS  # working precision
     var stack = List[BDec]()
 
     for i in range(len(rpn)):
@@ -187,9 +192,9 @@ fn evaluate_rpn(rpn: List[Token], precision: Int) raises -> BDec:
 
         elif kind == TOKEN_CONST:
             if rpn[i].value == "pi":
-                stack.append(BDec.pi(precision))
+                stack.append(BDec.pi(working_precision))
             elif rpn[i].value == "e":
-                stack.append(BDec.e(precision))
+                stack.append(BDec.e(working_precision))
             else:
                 raise Error(
                     "Error at position "
@@ -240,7 +245,13 @@ fn evaluate_rpn(rpn: List[Token], precision: Int) raises -> BDec:
                 )
             var b = stack.pop()
             var a = stack.pop()
-            stack.append(a * b)
+            var product = a * b
+            # Multiplication can grow digits unboundedly; trim to
+            # working precision to prevent intermediate blowup.
+            product.round_to_precision(
+                working_precision, RoundingMode.half_even(), False, False
+            )
+            stack.append(product^)
 
         elif kind == TOKEN_SLASH:
             if len(stack) < 2:
@@ -257,7 +268,7 @@ fn evaluate_rpn(rpn: List[Token], precision: Int) raises -> BDec:
                     + ": division by zero"
                 )
             var a = stack.pop()
-            stack.append(a.true_divide(b, precision))
+            stack.append(a.true_divide(b, working_precision))
 
         elif kind == TOKEN_CARET:
             if len(stack) < 2:
@@ -268,10 +279,10 @@ fn evaluate_rpn(rpn: List[Token], precision: Int) raises -> BDec:
                 )
             var b = stack.pop()
             var a = stack.pop()
-            stack.append(a.power(b, precision))
+            stack.append(a.power(b, working_precision))
 
         elif kind == TOKEN_FUNC:
-            _call_func(rpn[i].value, stack, precision, rpn[i].position)
+            _call_func(rpn[i].value, stack, working_precision, rpn[i].position)
 
         else:
             raise Error(
@@ -290,19 +301,45 @@ fn evaluate_rpn(rpn: List[Token], precision: Int) raises -> BDec:
     return stack.pop()
 
 
-fn evaluate(expr: String, precision: Int = 50) raises -> BDec:
+fn final_round(
+    value: BDec,
+    precision: Int,
+    rounding_mode: RoundingMode = RoundingMode.half_even(),
+) raises -> BDec:
+    """Round a BigDecimal to `precision` significant digits.
+
+    This should be called on the result of `evaluate_rpn` before
+    displaying it to the user, so that guard digits are removed and
+    the last visible digit is correctly rounded.
+    """
+    if value.is_zero():
+        return value.copy()
+    var result = value.copy()
+    result.round_to_precision(precision, rounding_mode, False, False)
+    return result^
+
+
+fn evaluate(
+    expr: String,
+    precision: Int = 50,
+    rounding_mode: RoundingMode = RoundingMode.half_even(),
+) raises -> BDec:
     """Evaluate a math expression string and return a BigDecimal result.
 
     This is the main entry point for the calculator engine.
     It tokenizes, parses (shunting-yard), and evaluates (RPN) the expression.
+    The result is rounded to `precision` significant digits.
 
     Args:
         expr: The math expression to evaluate (e.g. "100 * 12 - 23/17").
-        precision: The number of decimal digits for division (default: 50).
+        precision: The number of significant digits (default: 50).
+        rounding_mode: The rounding mode for the final result
+            (default: half_even).
 
     Returns:
-        The result as a BigDecimal.
+        The result as a BigDecimal, rounded to `precision` significant digits.
     """
     var tokens = tokenize(expr)
     var rpn = parse_to_rpn(tokens^)
-    return evaluate_rpn(rpn^, precision)
+    var result = evaluate_rpn(rpn^, precision)
+    return final_round(result, precision, rounding_mode)
