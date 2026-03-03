@@ -753,6 +753,26 @@ struct BigDecimal(
         """
         return self.to_string(engineering=True)
 
+    fn to_string_with_separators(self, separator: String = "_") -> String:
+        """Returns a string with digit-group separators inserted every 3 digits.
+
+        Groups both the integer and fractional parts.  Convenience alias for
+        `to_string(delimiter=separator)`.
+
+        Args:
+            separator: The separator character (default: `"_"`).
+
+        Examples:
+
+        ```
+        BigDecimal("1234567.89").to_string_with_separators()       # "1_234_567.89"
+        BigDecimal("1234567.89").to_string_with_separators(",")    # "1,234,567.89"
+        BigDecimal("-9876543210.123456").to_string_with_separators()
+        # "-9_876_543_210.123_456"
+        ```
+        """
+        return self.to_string(delimiter=separator)
+
     # ===------------------------------------------------------------------=== #
     # Basic unary operation dunders
     # neg
@@ -1350,6 +1370,34 @@ struct BigDecimal(
         """
         return decimo.bigdecimal.rounding.quantize(self, exp, rounding_mode)
 
+    fn fma(self, a: Self, b: Self) raises -> Self:
+        """Fused multiply-add: returns `self * a + b` with no intermediate
+        rounding.
+
+        Matches Python's `decimal.Decimal.fma(other, third)`.
+
+        Because BigDecimal multiplication and addition are both exact
+        (no precision loss), this method is semantically equivalent to
+        `self * a + b`.  It is provided for IEEE 754 / Python `Decimal`
+        API compatibility and to express intent clearly in numerical
+        algorithms.
+
+        Args:
+            a: The value to multiply by.
+            b: The value to add after multiplication.
+
+        Returns:
+            The exact result of `self * a + b`.
+
+        Examples:
+
+        ```
+        BigDecimal("2").fma(BigDecimal("3"), BigDecimal("4"))    # 10 (2*3+4)
+        BigDecimal("1.5").fma(BigDecimal("2"), BigDecimal("0.1"))  # 3.1
+        ```
+        """
+        return self * a + b
+
     # ===------------------------------------------------------------------=== #
     # Other methods
     # ===------------------------------------------------------------------=== #
@@ -1479,6 +1527,35 @@ struct BigDecimal(
         ```
         """
         return self.scale == other.scale
+
+    @always_inline
+    fn scaleb(self, n: Int) -> Self:
+        """Multiplies the value by 10^n by adjusting the scale.
+
+        Matches Python's `decimal.Decimal.scaleb(other)`.  The name
+        comes from the IEEE 754 "scaleB" (scale Binary/Base) operation.
+
+        This operation is O(1) — it only changes the exponent without
+        touching the coefficient digits.
+
+        Args:
+            n: The power of ten to scale by.  Positive values make the
+                number larger, negative values make it smaller.
+
+        Returns:
+            A new BigDecimal whose value is `self * 10^n`.
+
+        Examples:
+
+        ```
+        BigDecimal("1.23").scaleb(2)   # 123
+        BigDecimal("1.23").scaleb(-2)  # 0.0123
+        BigDecimal("100").scaleb(-1)   # 10
+        ```
+        """
+        var result = self.copy()
+        result.scale -= n
+        return result^
 
     fn extend_precision(self, precision_diff: Int) -> Self:
         """Returns a number with additional decimal places (trailing zeros).

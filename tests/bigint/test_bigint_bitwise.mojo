@@ -416,5 +416,48 @@ fn test_word_boundary_values() raises:
     testing.assert_equal(String(~w64), "-18446744073709551616")
 
 
+# ===----------------------------------------------------------------------=== #
+# Test: bit_count() — population count
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_bit_count_zero() raises:
+    """Tests bit_count(0) = 0."""
+    testing.assert_equal(BigInt(0).bit_count(), 0)
+
+
+fn test_bit_count_one() raises:
+    """Tests bit_count(1) = 1."""
+    testing.assert_equal(BigInt(1).bit_count(), 1)
+
+
+fn test_bit_count_powers_of_two() raises:
+    """Powers of 2 have exactly 1 bit set."""
+    testing.assert_equal(BigInt(2).bit_count(), 1)
+    testing.assert_equal(BigInt(4).bit_count(), 1)
+    testing.assert_equal(BigInt(1024).bit_count(), 1)
+
+
+fn test_bit_count_small() raises:
+    """Small values: 7 = 0b111 (3 bits), 13 = 0b1101 (3 bits)."""
+    testing.assert_equal(BigInt(7).bit_count(), 3)
+    testing.assert_equal(BigInt(13).bit_count(), 3)
+    testing.assert_equal(BigInt(15).bit_count(), 4)
+    testing.assert_equal(BigInt(255).bit_count(), 8)
+
+
+fn test_bit_count_negative() raises:
+    """Tests bit_count on negative values counts bits in the magnitude."""
+    testing.assert_equal(BigInt(-7).bit_count(), 3)
+    testing.assert_equal(BigInt(-1).bit_count(), 1)
+
+
+fn test_bit_count_large() raises:
+    """2^32 - 1 = 0xFFFFFFFF has 32 bits set."""
+    var n = BigInt(1) << 32
+    n = n - BigInt(1)  # 2^32 - 1
+    testing.assert_equal(n.bit_count(), 32)
+
+
 fn main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

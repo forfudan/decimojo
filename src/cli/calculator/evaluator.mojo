@@ -180,8 +180,12 @@ fn evaluate_rpn(rpn: List[Token], precision: Int) raises -> BDec:
         Error: On division by zero, missing operands, or other runtime
             errors — with source position when available.
     """
-    comptime GUARD_DIGITS = 9  # Word size
-    var working_precision = precision + GUARD_DIGITS  # working precision
+    # BigUInt uses base-1e9 words (~9 decimal digits per word).
+    # Adding 9 guard digits gives roughly one extra internal word of
+    # precision beyond the user-requested amount, which absorbs
+    # accumulated rounding errors from intermediate operations.
+    comptime GUARD_DIGITS = 9
+    var working_precision = precision + GUARD_DIGITS
     var stack = List[BDec]()
 
     for i in range(len(rpn)):
