@@ -14,7 +14,7 @@ from sys import exit
 from argmojo import Arg, Command
 from calculator.tokenizer import tokenize
 from calculator.parser import parse_to_rpn
-from calculator.evaluator import evaluate_rpn
+from calculator.evaluator import evaluate_rpn, final_round
 from calculator.display import print_error
 
 
@@ -58,7 +58,7 @@ fn _run() raises:
 
     # Named option: decimal precision
     cmd.add_arg(
-        Arg("precision", help="Decimal precision for division (default: 50)")
+        Arg("precision", help="Number of significant digits (default: 50)")
         .long("precision")
         .short("p")
         .default("50")
@@ -121,7 +121,7 @@ fn _run() raises:
         # Syntax was fine — any error here is a math error (division by
         # zero, negative sqrt, …).  No glob hint needed.
         try:
-            var value = evaluate_rpn(rpn^, precision)
+            var value = final_round(evaluate_rpn(rpn^, precision), precision)
 
             if scientific:
                 print(value.to_string(scientific=True, delimiter=delimiter))
