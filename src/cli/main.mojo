@@ -12,6 +12,7 @@
 from sys import exit
 
 from argmojo import Arg, Command
+from decimo.rounding_mode import RoundingMode
 from calculator.tokenizer import tokenize
 from calculator.parser import parse_to_rpn
 from calculator.evaluator import evaluate_rpn, final_round
@@ -104,6 +105,27 @@ fn _run() raises:
         .default("")
     )
 
+    # Rounding mode for the final result
+    var rounding_choices: List[String] = [
+        "half-even",
+        "half-up",
+        "half-down",
+        "up",
+        "down",
+        "ceiling",
+        "floor",
+    ]
+    cmd.add_arg(
+        Arg(
+            "rounding-mode",
+            help="Rounding mode for the final result (default: half-even)",
+        )
+        .long("rounding-mode")
+        .short("r")
+        .choices(rounding_choices^)
+        .default("half-even")
+    )
+
     var result = cmd.parse()
     var expr = result.get_string("expr")
     var precision = result.get_int("precision")
@@ -111,6 +133,7 @@ fn _run() raises:
     var engineering = result.get_flag("engineering")
     var pad = result.get_flag("pad")
     var delimiter = result.get_string("delimiter")
+    var rounding_mode = _parse_rounding_mode(result.get_string("rounding-mode"))
 
     # ── Phase 1: Tokenize & parse ──────────────────────────────────────────
     try:
@@ -121,7 +144,9 @@ fn _run() raises:
         # Syntax was fine — any error here is a math error (division by
         # zero, negative sqrt, …).  No glob hint needed.
         try:
-            var value = final_round(evaluate_rpn(rpn^, precision), precision)
+            var value = final_round(
+                evaluate_rpn(rpn^, precision), precision, rounding_mode
+            )
 
             if scientific:
                 print(value.to_string(scientific=True, delimiter=delimiter))
@@ -207,3 +232,24 @@ fn _pad_to_precision(plain: String, precision: Int) -> String:
         return plain
 
     return plain + "0" * (precision - frac_len)
+
+
+fn _parse_rounding_mode(name: String) -> RoundingMode:
+    """Convert a CLI rounding-mode name (hyphenated) to a RoundingMode value."""
+    if name == "half-even":
+        return RoundingMode.half_even()
+    elif name == "half-up":
+        return RoundingMode.half_up()
+    elif name == "half-down":
+        return RoundingMode.half_down()
+    elif name == "up":
+        return RoundingMode.up()
+    elif name == "down":
+        return RoundingMode.down()
+    elif name == "ceiling":
+        return RoundingMode.ceiling()
+    elif name == "floor":
+        return RoundingMode.floor()
+    else:
+        # ArgMojo's choices validation should prevent this.
+        return RoundingMode.half_even()

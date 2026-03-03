@@ -301,7 +301,11 @@ fn evaluate_rpn(rpn: List[Token], precision: Int) raises -> BDec:
     return stack.pop()
 
 
-fn final_round(value: BDec, precision: Int) raises -> BDec:
+fn final_round(
+    value: BDec,
+    precision: Int,
+    rounding_mode: RoundingMode = RoundingMode.half_even(),
+) raises -> BDec:
     """Round a BigDecimal to `precision` significant digits.
 
     This should be called on the result of `evaluate_rpn` before
@@ -311,11 +315,15 @@ fn final_round(value: BDec, precision: Int) raises -> BDec:
     if value.is_zero():
         return value.copy()
     var result = value.copy()
-    result.round_to_precision(precision, RoundingMode.half_even(), False, False)
+    result.round_to_precision(precision, rounding_mode, False, False)
     return result^
 
 
-fn evaluate(expr: String, precision: Int = 50) raises -> BDec:
+fn evaluate(
+    expr: String,
+    precision: Int = 50,
+    rounding_mode: RoundingMode = RoundingMode.half_even(),
+) raises -> BDec:
     """Evaluate a math expression string and return a BigDecimal result.
 
     This is the main entry point for the calculator engine.
@@ -325,6 +333,8 @@ fn evaluate(expr: String, precision: Int = 50) raises -> BDec:
     Args:
         expr: The math expression to evaluate (e.g. "100 * 12 - 23/17").
         precision: The number of significant digits (default: 50).
+        rounding_mode: The rounding mode for the final result
+            (default: half_even).
 
     Returns:
         The result as a BigDecimal, rounded to `precision` significant digits.
@@ -332,4 +342,4 @@ fn evaluate(expr: String, precision: Int = 50) raises -> BDec:
     var tokens = tokenize(expr)
     var rpn = parse_to_rpn(tokens^)
     var result = evaluate_rpn(rpn^, precision)
-    return final_round(result, precision)
+    return final_round(result, precision, rounding_mode)
