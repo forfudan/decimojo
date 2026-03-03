@@ -3,6 +3,7 @@
 import testing
 
 from calculator import evaluate
+from decimo.rounding_mode import RoundingMode
 
 
 # ===----------------------------------------------------------------------=== #
@@ -377,6 +378,60 @@ fn test_csc_pi_over_2() raises:
         result == "1" or result.startswith("1.") or result.startswith("0.9999"),
         "csc(pi/2) ≈ 1: " + result,
     )
+
+
+# ===----------------------------------------------------------------------=== #
+# Tests: rounding modes
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_rounding_half_even_tie() raises:
+    """2.5 rounded to 1 significant digit with half_even → 2 (round to even)."""
+    var result = String(
+        evaluate("2.5", precision=1, rounding_mode=RoundingMode.half_even())
+    )
+    testing.assert_equal(result, "2", "2.5 half_even p=1")
+
+
+fn test_rounding_half_up_tie() raises:
+    """2.5 rounded to 1 significant digit with half_up → 3 (round away from 0).
+    """
+    var result = String(
+        evaluate("2.5", precision=1, rounding_mode=RoundingMode.half_up())
+    )
+    testing.assert_equal(result, "3", "2.5 half_up p=1")
+
+
+fn test_rounding_floor() raises:
+    """1.9 rounded to 1 significant digit with floor → 1."""
+    var result = String(
+        evaluate("1.9", precision=1, rounding_mode=RoundingMode.floor())
+    )
+    testing.assert_equal(result, "1", "1.9 floor p=1")
+
+
+fn test_rounding_ceiling() raises:
+    """1.1 rounded to 1 significant digit with ceiling → 2."""
+    var result = String(
+        evaluate("1.1", precision=1, rounding_mode=RoundingMode.ceiling())
+    )
+    testing.assert_equal(result, "2", "1.1 ceiling p=1")
+
+
+fn test_rounding_half_even_division() raises:
+    """1/3 with half_even should produce a correctly rounded trailing digit."""
+    var result = String(
+        evaluate("1/3", precision=4, rounding_mode=RoundingMode.half_even())
+    )
+    testing.assert_equal(result, "0.3333", "1/3 half_even p=4")
+
+
+fn test_rounding_half_up_division() raises:
+    """2/3 with half_up should round trailing 6… → 7."""
+    var result = String(
+        evaluate("2/3", precision=4, rounding_mode=RoundingMode.half_up())
+    )
+    testing.assert_equal(result, "0.6667", "2/3 half_up p=4")
 
 
 # ===----------------------------------------------------------------------=== #

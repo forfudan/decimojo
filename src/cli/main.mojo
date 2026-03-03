@@ -57,7 +57,7 @@ fn _run() raises:
         .required()
     )
 
-    # Named option: decimal precision
+    # Named option: number of significant digits
     cmd.add_arg(
         Arg("precision", help="Number of significant digits (default: 50)")
         .long("precision")

@@ -1,3 +1,4 @@
+# Consider incorporating some of the tests to other test files in future
 """
 Tests for BigDecimal utility methods added in v0.8.x:
   - is_positive()
@@ -8,6 +9,9 @@ Tests for BigDecimal utility methods added in v0.8.x:
   - copy_abs() / copy_negate() / copy_sign()
   - adjusted()
   - same_quantum()
+  - scaleb()
+  - fma()
+  - to_string_with_separators()
 """
 
 import testing
@@ -465,6 +469,96 @@ fn test_same_quantum_zero_variants() raises:
     testing.assert_true(BigDecimal("0").same_quantum(BigDecimal("0")))
     testing.assert_true(BigDecimal("0.00").same_quantum(BigDecimal("0.00")))
     testing.assert_false(BigDecimal("0").same_quantum(BigDecimal("0.0")))
+
+
+# ===----------------------------------------------------------------------=== #
+# scaleb()
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_scaleb_positive() raises:
+    """Tests scaleb with positive n multiplies value by 10^n."""
+    testing.assert_equal(String(BigDecimal("1.23").scaleb(2)), "123")
+    testing.assert_equal(String(BigDecimal("5").scaleb(3)), "5E+3")
+
+
+fn test_scaleb_negative() raises:
+    """Tests scaleb with negative n divides value by 10^|n|."""
+    testing.assert_equal(String(BigDecimal("1.23").scaleb(-2)), "0.0123")
+    testing.assert_equal(String(BigDecimal("100").scaleb(-1)), "10.0")
+
+
+fn test_scaleb_zero() raises:
+    """Tests scaleb(0) returns the same value."""
+    testing.assert_equal(String(BigDecimal("42.5").scaleb(0)), "42.5")
+
+
+fn test_scaleb_on_zero() raises:
+    """Tests scaleb on zero adjusts scale but value stays zero."""
+    var result = BigDecimal("0").scaleb(5)
+    testing.assert_true(result.is_zero())
+
+
+# ===----------------------------------------------------------------------=== #
+# fma()
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_fma_basic() raises:
+    """Tests fma(a, b) = self * a + b."""
+    var result = BigDecimal("2").fma(BigDecimal("3"), BigDecimal("4"))
+    testing.assert_equal(String(result), "10")
+
+
+fn test_fma_decimal() raises:
+    """Tests fma with fractional values."""
+    var result = BigDecimal("1.5").fma(BigDecimal("2"), BigDecimal("0.1"))
+    testing.assert_equal(String(result), "3.1")
+
+
+fn test_fma_negative() raises:
+    """Tests fma with negative values."""
+    var result = BigDecimal("-3").fma(BigDecimal("4"), BigDecimal("15"))
+    testing.assert_equal(String(result), "3")
+
+
+fn test_fma_zero_multiplier() raises:
+    """Tests fma with zero multiplier: 0 * a + b = b."""
+    var result = BigDecimal("0").fma(BigDecimal("999"), BigDecimal("42"))
+    testing.assert_equal(String(result), "42")
+
+
+# ===----------------------------------------------------------------------=== #
+# to_string_with_separators()
+# ===----------------------------------------------------------------------=== #
+
+
+fn test_to_string_with_separators_default() raises:
+    """Tests to_string_with_separators with default separator."""
+    testing.assert_equal(
+        BigDecimal("1234567").to_string_with_separators(), "1_234_567"
+    )
+
+
+fn test_to_string_with_separators_comma() raises:
+    """Tests to_string_with_separators with custom comma separator."""
+    testing.assert_equal(
+        BigDecimal("1234567.89").to_string_with_separators(","),
+        "1,234,567.89",
+    )
+
+
+fn test_to_string_with_separators_small() raises:
+    """Tests to_string_with_separators with numbers having fewer than 4 digits.
+    """
+    testing.assert_equal(BigDecimal("123").to_string_with_separators(), "123")
+
+
+fn test_to_string_with_separators_negative() raises:
+    """Tests to_string_with_separators with negative numbers."""
+    testing.assert_equal(
+        BigDecimal("-1234567").to_string_with_separators(), "-1_234_567"
+    )
 
 
 fn main() raises:

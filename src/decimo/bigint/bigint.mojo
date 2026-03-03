@@ -48,6 +48,7 @@ struct BigInt(
     Absable,
     Comparable,
     Copyable,
+    FloatableRaising,
     IntableRaising,
     Movable,
     Representable,
@@ -465,6 +466,18 @@ struct BigInt(
         See `to_int()` for more information.
         """
         return self.to_int()
+
+    fn __float__(self) raises -> Float64:
+        """Converts the BigInt to a floating-point number.
+
+        Matches Python's `float(n)` for `int` objects.
+
+        Note: Large values may lose precision or overflow to `inf`.
+
+        Returns:
+            The value as a Float64.
+        """
+        return Float64(String(self))
 
     fn __str__(self) -> String:
         """Returns a decimal string representation of the BigInt."""
@@ -1237,6 +1250,32 @@ struct BigInt(
             probe >>= 1
 
         return (n_words - 1) * 32 + bits_in_msw
+
+    fn bit_count(self) -> Int:
+        """Returns the number of ones in the binary representation of the
+        absolute value (population count).
+
+        Matches Python 3.10+ `int.bit_count()`.
+
+        Returns:
+            The number of set bits in the magnitude, or 0 if the value is zero.
+
+        Examples:
+
+        ```
+        BigInt(13).bit_count()   # 3 (13 = 0b1101)
+        BigInt(-7).bit_count()   # 3 (7 = 0b111)
+        BigInt(0).bit_count()    # 0
+        ```
+        """
+        var count = 0
+        for i in range(len(self.words)):
+            var w = self.words[i]
+            # Kernighan's bit-counting trick
+            while w != 0:
+                w &= w - 1
+                count += 1
+        return count
 
     fn number_of_words(self) -> Int:
         """Returns the number of words in the magnitude."""
