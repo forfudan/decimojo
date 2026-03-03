@@ -149,11 +149,12 @@ fn test_precision_5() raises:
 
 
 fn test_showcase_expression() raises:
-    """100 * 12 - 23/17 at default precision (50)."""
+    """100 * 12 - 23/17 at default precision (50 significant digits)."""
     var result = String(evaluate("100*12-23/17"))
+    # 50 significant digits: 4 integer digits + 46 decimal digits.
     testing.assert_equal(
         result,
-        "1198.6470588235294117647058823529411764705882352941176",
+        "1198.6470588235294117647058823529411764705882352941",
         "100*12-23/17",
     )
 
