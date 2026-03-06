@@ -71,6 +71,17 @@ fn parse_numeric_string(
     End of examples.
     """
 
+    # [Mojo Miji]
+    # The sytax of numeric values in EBNF form is as follows:
+    #     number ::= integer | real
+    #     integer ::= sign digit ((separator | epsilon) digit)*
+    #     real ::= integer exponent | decimal (exponent | epsilon)
+    #     decimal ::= sign (( digit ((separator | epsilon) digit)* ) | epsilon) '.' digit ((separator | epsilon) digit)*
+    #     exponent ::= ('e' | 'E') (sign | epsilon) digit ((separator | epsilon) digit)*
+    #     sign ::= '+' | '-' | epsilon
+    #     digit ::= '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+    #     separator ::= ' ' | ',' | '_'
+
     var value_bytes = value.as_string_slice().as_bytes()
     var n = len(value_bytes)
 

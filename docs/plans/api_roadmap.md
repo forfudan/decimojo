@@ -249,34 +249,13 @@ var d = x.digit(i)    # Returns i-th decimal digit
 var y = x.clamp(lower, upper)   # clamp between bounds
 ```
 
-### 5.8 `sign()` Method Returning Int
-
-```mojo
-# Python's math.copysign pattern:
-var s = x.sign()      # Returns -1, 0, or 1 as Int (not Bool)
-```
-
-Currently `sign` is a `Bool` field on BigDecimal. Consider a `signum()` method that returns `Int` (-1/0/1).
-
-### 5.9 Approximate Equality
+### 5.8 Approximate Equality
 
 ```mojo
 # Useful for testing and numerical code:
 x.is_close(y, tolerance=BigDecimal("0.001"))
 x.is_close(y, rel_tol=BigDecimal("1e-9"))
 ```
-
-### 5.10 Format Control
-
-```mojo
-# Format with locale-aware separators:
-x.format(decimal_places=2, thousands_separator=",")  # "1,234,567.89"
-x.format(decimal_places=2, thousands_separator="_")   # "1_234_567.89"
-```
-
-BigInt has `to_string_with_separators()`. This should be extended to BigDecimal.
-
----
 
 ## Part VI: Remaining Tasks (Re-ranked)
 
