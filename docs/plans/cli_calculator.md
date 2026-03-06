@@ -257,6 +257,18 @@ Format the final `BigDecimal` result based on CLI flags:
 6. Handle unary minus.
 7. Test with basic expressions.
 
+| #   | Task                                             | Status | Notes                         |
+| --- | ------------------------------------------------ | :----: | ----------------------------- |
+| 1.1 | Project structure (src/cli/, calculator module)  |   ✓    |                               |
+| 1.2 | Tokenizer (numbers, `+ - * /`, parens)           |   ✓    |                               |
+| 1.3 | Shunting-yard parser (infix → RPN)               |   ✓    |                               |
+| 1.4 | RPN evaluator using `BigDecimal`                 |   ✓    |                               |
+| 1.5 | ArgMojo wiring (`expr`, `--precision`, `--help`) |   ✓    |                               |
+| 1.6 | Unary minus                                      |   ✓    |                               |
+| 1.7 | Basic expression tests                           |   ✓    | 4 test files, 118 tests total |
+| 1.8 | Pipeline / stdin input (`echo "1+2" \| decimo`)  |   ✗    | Not yet implemented           |
+| 1.9 | File input (`decimo file.dm`)                    |   ✗    | Not yet implemented           |
+
 ### Phase 2: Power and Functions
 
 1. Add `^` operator with right associativity.
@@ -264,6 +276,19 @@ Format the final `BigDecimal` result based on CLI flags:
 3. Add multi-argument function support (`root(x, n)`).
 4. Add built-in constants (`pi`, `e`).
 5. Add output formatting flags (`--scientific` or `-s`, `--engineering` or `-e`, `--pad-to-precision` or `-P`).
+
+| #    | Task                                                              | Status | Notes                                           |
+| ---- | ----------------------------------------------------------------- | :----: | ----------------------------------------------- |
+| 2.1  | `^` operator (right-associative, `**` alias)                      |   ✓    |                                                 |
+| 2.2  | Single-arg functions: `sqrt`, `cbrt`, `ln`, `log10`, `exp`, `abs` |   ✓    |                                                 |
+| 2.3  | Trig functions: `sin`, `cos`, `tan`, `cot`, `csc`                 |   ✓    | `cot` and `csc` are extras beyond original plan |
+| 2.4  | Multi-arg functions: `root(x, n)`, `log(x, base)`                 |   ✓    | `log(x, base)` is an extra                      |
+| 2.5  | Constants: `pi`, `e`                                              |   ✓    |                                                 |
+| 2.6  | `--scientific` / `-s`                                             |   ✓    |                                                 |
+| 2.7  | `--engineering` / `-e`                                            |   ✓    |                                                 |
+| 2.8  | `--pad` / `-P` (trailing zeros)                                   |   ✓    |                                                 |
+| 2.9  | `--delimiter` / `-d` (digit grouping)                             |   ✓    | Extra feature beyond original plan              |
+| 2.10 | `--rounding-mode` / `-r`                                          |   ✓    | 7 modes; extra feature beyond original plan     |
 
 ### Phase 3: Polish
 
@@ -273,6 +298,15 @@ Format the final `BigDecimal` result based on CLI flags:
 4. Performance: ensure the tokenizer/parser overhead is negligible compared to BigDecimal computation.
 5. Documentation and examples in README.
 6. Build and distribute as a single binary.
+
+| #   | Task                                                                   | Status | Notes                                         |
+| --- | ---------------------------------------------------------------------- | :----: | --------------------------------------------- |
+| 3.1 | Error messages with position info + caret display                      |   ✓    | Colored stderr: red `Error:`, green `^` caret |
+| 3.2 | Edge cases (div-by-zero, negative sqrt, empty expression, etc.)        |   ✓    | 27 error-handling tests                       |
+| 3.3 | ArgMojo v0.2.0 upgrade (`add_tip()`, `allow_negative_numbers()`, etc.) |   ?    | Blocked: waiting for ArgMojo v0.2.0 in pixi   |
+| 3.4 | Performance validation                                                 |   ✗    | No CLI-level benchmarks yet                   |
+| 3.5 | Documentation (user manual for CLI)                                    |   ✗    | Will be `docs/user_manual_cli.md`             |
+| 3.6 | Build and distribute as single binary                                  |   ✗    |                                               |
 
 ### Phase 4: Interactive REPL
 
@@ -300,11 +334,19 @@ Error: division by zero
 decimo> exit
 ```
 
+| #   | Task                                     | Status | Notes |
+| --- | ---------------------------------------- | :----: | ----- |
+| 4.1 | Read-eval-print loop                     |   ✗    |       |
+| 4.2 | Custom prompt (`decimo>`)                |   ✗    |       |
+| 4.3 | `ans` variable (previous result)         |   ✗    |       |
+| 4.4 | Variable assignment (`x = expr`)         |   ✗    |       |
+| 4.5 | Session-level precision (`:precision N`) |   ✗    |       |
+| 4.6 | Graceful exit (`exit`, `quit`, Ctrl-D)   |   ✗    |       |
+| 4.7 | Error recovery (don't crash session)     |   ✗    |       |
+
 ### Phase 5: Future Enhancements
 
 1. Detect full-width digits/operators for CJK users while parsing.
-
----
 
 ### ArgMojo v0.2.0 Upgrade Tasks
 
@@ -366,8 +408,6 @@ Although not needed immediately, the new `add_subcommand()` API could later supp
 - `decimo help <topic>` — extended help on functions, constants, etc.
 
 This is deferred to Phase 4 planning.
-
----
 
 ## Design Decisions
 
