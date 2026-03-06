@@ -199,11 +199,13 @@ decimo "123456789 * 987654321" -e
 
 ### Pad to Precision (`--pad`, `-P`)
 
-Pad trailing zeros so the fractional part has exactly `precision` digits.
+Pad trailing zeros so the fractional part has exactly `precision` digits after the decimal point.
+
+When used together with `--precision`, the `precision` value is treated as the number of fractional digits for padding purposes, not as a strict limit on total significant digits. As a result, the formatted number can have more than `precision` significant digits.
 
 ```bash
 decimo "1.5" -P -p 10
-# → 1.5000000000
+# → 1.5000000000 (10 fractional digits, 11 significant digits)
 ```
 
 ### Digit Separator (`--delimiter`, `-d`)
@@ -361,15 +363,19 @@ The calculator provides clear error diagnostics with position indicators:
 
 ```bash
 $ decimo "1 + * 2"
-Error: missing operand for '*'
+Error: missing operand for '+'
   1 + * 2
-      ^
+    ^
 
 $ decimo "sqrt(-1)"
-Error: sqrt() is undefined for negative numbers
+Error: sqrt() is undefined for negative numbers (got -1)
+  sqrt(-1)
+  ^^^^
 
 $ decimo "1 / 0"
 Error: division by zero
+  1 / 0
+    ^
 
 $ decimo "hello + 1"
 Error: unknown identifier 'hello'
@@ -377,7 +383,9 @@ Error: unknown identifier 'hello'
   ^^^^^
 
 $ decimo "2 * (3 + 4"
-Error: mismatched parentheses: missing closing ')'
+Error: unmatched '('
+  2 * (3 + 4
+      ^
 ```
 
 ## Full `--help` Reference
