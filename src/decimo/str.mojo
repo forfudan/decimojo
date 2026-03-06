@@ -71,6 +71,21 @@ fn parse_numeric_string(
     End of examples.
     """
 
+    # [Mojo Miji]
+    # The syntax of numeric values in EBNF form is as follows:
+    #     number ::= integer | real
+    #     integer ::= (sign | epsilon) digit ((separator | epsilon) digit)*
+    #     real ::= integer exponent | decimal (exponent | epsilon)
+    #     decimal ::= (sign | epsilon) ((digit ((separator | epsilon) digit)*) | epsilon) '.' (digit ((separator | epsilon) digit)* | epsilon)
+    #     # At least one digit must appear either before or after the decimal point.
+    #     exponent ::= ('e' | 'E') (sign | epsilon) digit ((separator | epsilon) digit)*
+    #     sign ::= '+' | '-'
+    #     digit ::= '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+    #     separator ::= ' ' | ',' | '_'
+    #     # Separator characters are ignored by the parser. In particular:
+    #     # - Space ' ' may appear anywhere in the string and is ignored.
+    #     # - Comma ',' and underscore '_' may appear anywhere between digits and are ignored.
+
     var value_bytes = value.as_string_slice().as_bytes()
     var n = len(value_bytes)
 
