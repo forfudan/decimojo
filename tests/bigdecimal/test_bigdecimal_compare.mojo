@@ -2,8 +2,8 @@
 Test BigDecimal comparison operations.
 """
 
-from python import Python
-import testing
+from std.python import Python
+from std import testing
 
 from decimo import BDec
 from decimo.bigdecimal.comparison import compare_absolute, compare

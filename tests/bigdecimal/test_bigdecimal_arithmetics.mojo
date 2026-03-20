@@ -7,8 +7,8 @@ Test BigDecimal arithmetic operations including:
 4. division
 """
 
-from python import Python
-import testing
+from std.python import Python
+from std import testing
 
 from decimo import BDec
 from decimo.tests import TestCase, parse_file, load_test_cases

@@ -9,8 +9,8 @@ Test Decimal128 multiplication operations including:
 6. commutative property (TOML)
 """
 
-from python import Python, PythonObject
-import testing
+from std.python import Python, PythonObject
+from std import testing
 from decimo.toml.parser import TOMLDocument
 
 from decimo import Dec128

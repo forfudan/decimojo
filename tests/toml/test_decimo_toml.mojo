@@ -1,7 +1,7 @@
 """Comprehensive test suite for decimo.toml — covers all TOML features."""
 
 from decimo.toml import parse_string, parse_file
-import testing
+from std import testing
 
 
 fn main() raises:

@@ -3,7 +3,7 @@ Test BigInt power and shift operations: __pow__, __lshift__, __rshift__,
 augmented assignment (<<=, >>=), and power-of-2 vs shift cross-checks.
 """
 
-import testing
+from std import testing
 from decimo.bigint.bigint import BigInt
 
 

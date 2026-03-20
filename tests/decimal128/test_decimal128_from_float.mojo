@@ -4,7 +4,7 @@ Most tests use startswith assertions due to float precision, so they remain
 inline rather than TOML-driven.
 """
 
-import testing
+from std import testing
 from decimo import Dec128
 
 

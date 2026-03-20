@@ -5,7 +5,7 @@ Inline tests for exception handling, mathematical relationships,
 and consistency with floor division.
 """
 
-import testing
+from std import testing
 from decimo.toml.parser import TOMLDocument
 
 from decimo.decimal128.decimal128 import Decimal128, Dec128

@@ -1,6 +1,6 @@
 """Test the shunting-yard parser: infix to RPN conversion."""
 
-import testing
+from std import testing
 
 from calculator.tokenizer import (
     Token,

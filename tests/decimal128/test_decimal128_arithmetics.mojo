@@ -8,8 +8,8 @@ Test Decimal128 arithmetic operations including:
 5. extreme / edge cases
 """
 
-from python import Python
-import testing
+from std.python import Python
+from std import testing
 
 from decimo import Dec128
 from decimo.tests import TestCase, parse_file, load_test_cases

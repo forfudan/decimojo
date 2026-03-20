@@ -4,7 +4,7 @@ Merged from test_decimal128_exp.mojo and test_decimal128_ln.mojo.
 Most tests use startswith prefix matching for high-precision results.
 """
 
-import testing
+from std import testing
 from decimo.decimal128.decimal128 import Decimal128
 from decimo.rounding_mode import RoundingMode
 from decimo.decimal128.exponential import exp, ln

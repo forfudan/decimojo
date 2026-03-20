@@ -11,9 +11,9 @@ from decimo.tests import (
     print_header,
     print_summary,
 )
-from python import Python, PythonObject
-from time import perf_counter_ns
-from collections import List
+from std.python import Python, PythonObject
+from std.time import perf_counter_ns
+from std.collections import List
 
 
 fn run_case(
@@ -23,7 +23,9 @@ fn run_case(
     mut sf: List[Float64],
 ) raises:
     log_print("\nBenchmark:       " + bc.name, log_file)
-    log_print("a: " + bc.a[:80] + (" ..." if len(bc.a) > 80 else ""), log_file)
+    log_print(
+        "a: " + bc.a[byte=:80] + (" ..." if len(bc.a) > 80 else ""), log_file
+    )
     log_print("shift: " + bc.b, log_file)
 
     var m2a = BigInt(bc.a)
@@ -42,20 +44,20 @@ fn run_case(
         # Correctness check: string match
         if r2_str != rp_str:
             log_print("*** WARNING: String mismatch detected! ***", log_file)
-            log_print("BigInt result:  " + r2_str[:80], log_file)
-            log_print("Python result:   " + rp_str[:80], log_file)
+            log_print("BigInt result:  " + r2_str[byte=:80], log_file)
+            log_print("Python result:   " + rp_str[byte=:80], log_file)
 
         var t0 = perf_counter_ns()
         for _ in range(iterations):
             _ = m2a << shift
-        var t2 = (perf_counter_ns() - t0) / iterations
+        var t2 = (perf_counter_ns() - t0) / UInt(iterations)
         if t2 == 0:
             t2 = 1
 
         t0 = perf_counter_ns()
         for _ in range(iterations):
             _ = pa << pb
-        var tp = (perf_counter_ns() - t0) / iterations
+        var tp = (perf_counter_ns() - t0) / UInt(iterations)
 
         var s2 = Float64(tp) / Float64(t2)
         sf.append(s2)

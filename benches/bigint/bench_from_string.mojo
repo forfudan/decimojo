@@ -11,9 +11,9 @@ from decimo.tests import (
     print_header,
     print_summary_dual,
 )
-from python import Python, PythonObject
-from time import perf_counter_ns
-from collections import List
+from std.python import Python, PythonObject
+from std.time import perf_counter_ns
+from std.collections import List
 
 
 fn run_case(
@@ -24,7 +24,9 @@ fn run_case(
     mut sf_bigint: List[Float64],
 ) raises:
     log_print("\nBenchmark:       " + bc.name, log_file)
-    log_print("a: " + bc.a[:80] + (" ..." if len(bc.a) > 80 else ""), log_file)
+    log_print(
+        "a: " + bc.a[byte=:80] + (" ..." if len(bc.a) > 80 else ""), log_file
+    )
     log_print("digits:          " + String(len(bc.a)), log_file)
 
     var py = Python.import_module("builtins")
@@ -33,21 +35,21 @@ fn run_case(
         var t0 = perf_counter_ns()
         for _ in range(iterations):
             _ = BigInt10(bc.a)
-        var t1 = (perf_counter_ns() - t0) / iterations
+        var t1 = (perf_counter_ns() - t0) / UInt(iterations)
         if t1 == 0:
             t1 = 1
 
         t0 = perf_counter_ns()
         for _ in range(iterations):
             _ = BigInt(bc.a)
-        var t2 = (perf_counter_ns() - t0) / iterations
+        var t2 = (perf_counter_ns() - t0) / UInt(iterations)
         if t2 == 0:
             t2 = 1
 
         t0 = perf_counter_ns()
         for _ in range(iterations):
             _ = py.int(bc.a)
-        var tp = (perf_counter_ns() - t0) / iterations
+        var tp = (perf_counter_ns() - t0) / UInt(iterations)
 
         var s1 = Float64(tp) / Float64(t1)
         var s2 = Float64(tp) / Float64(t2)

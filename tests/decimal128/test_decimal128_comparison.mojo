@@ -8,7 +8,7 @@ Test Decimal128 comparison operations including:
 5. exact comparison with trailing zeros
 """
 
-import testing
+from std import testing
 
 from decimo import Dec128
 from decimo import Decimal128

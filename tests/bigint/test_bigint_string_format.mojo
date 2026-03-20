@@ -3,7 +3,7 @@ Test BigInt string formatting: to_string_with_separators,
 to_string with line_width, number_of_digits, and __repr__.
 """
 
-import testing
+from std import testing
 from decimo.bigint.bigint import BigInt
 
 

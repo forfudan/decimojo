@@ -3,8 +3,8 @@ Test BigDecimal.from_python_decimal() method.
 Tests conversion from Python Decimal to Mojo BigDecimal.
 """
 
-import testing
-from python import Python
+from std import testing
+from std.python import Python
 from decimo.bigdecimal.bigdecimal import BigDecimal
 
 

@@ -14,7 +14,7 @@ Tests for BigDecimal utility methods added in v0.8.x:
   - to_string_with_separators()
 """
 
-import testing
+from std import testing
 from decimo.bigdecimal.bigdecimal import BigDecimal
 from decimo.biguint.biguint import BigUInt
 

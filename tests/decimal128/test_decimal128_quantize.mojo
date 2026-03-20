@@ -4,8 +4,8 @@ Tests various scenarios to ensure proper quantization behavior and compatibility
 with Python's decimal module implementation.
 """
 
-import testing
-from python import Python, PythonObject
+from std import testing
+from std.python import Python, PythonObject
 from decimo.decimal128.decimal128 import Decimal128
 from decimo.rounding_mode import RoundingMode
 

@@ -6,7 +6,7 @@ identical to the non-in-place operators, but mutate self.words directly
 instead of creating a new BigInt.
 """
 
-import testing
+from std import testing
 from decimo.bigint.bigint import BigInt
 
 

@@ -4,7 +4,7 @@ Migrated from verbose inline format; TOML for exact-result cases,
 inline for startswith, tolerance, identity, and exception tests.
 """
 
-import testing
+from std import testing
 from decimo.toml.parser import TOMLDocument
 
 from decimo.decimal128.decimal128 import Decimal128, Dec128

@@ -3,7 +3,7 @@ Test BigInt10 conversion methods: to_int() and __int__
 for different numerical cases.
 """
 
-import testing
+from std import testing
 
 from decimo.bigint10.bigint10 import BigInt10
 import decimo.bigint10.arithmetics as arithmetics

@@ -6,8 +6,8 @@ Reuses TOML test data from the BigInt10 test suite, since the test cases
 use decimal string representations that are valid for both BigInt10 and BigInt.
 """
 
-from python import Python
-import testing
+from std.python import Python
+from std import testing
 from decimo.bigint.bigint import BigInt
 from decimo.tests import TestCase, parse_file, load_test_cases
 

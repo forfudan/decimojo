@@ -7,7 +7,7 @@ startswith checks, scale properties, overflow/error handling, and
 mathematical relationship verification.
 """
 
-import testing
+from std import testing
 from decimo.toml.parser import TOMLDocument
 
 from decimo import Decimal128, RoundingMode

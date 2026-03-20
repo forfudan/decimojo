@@ -4,12 +4,12 @@ Tests word sizes from 8 to 262144 words (powers of 2).
 Cases are generated programmatically — no TOML data file.
 """
 
-from time import perf_counter_ns
+from std.time import perf_counter_ns
 from decimo import BigUInt
 from decimo.biguint.arithmetics import multiply
 from decimo.tests import open_log_file, log_print, print_header
-from python import Python, PythonObject
-from collections import List
+from std.python import Python, PythonObject
+from std.collections import List
 
 
 fn create_test_biguint(num_words: Int) raises -> BigUInt:

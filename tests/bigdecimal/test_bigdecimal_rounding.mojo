@@ -2,8 +2,8 @@
 Test BigDecimal rounding operations with various rounding modes and precision values.
 """
 
-from python import Python
-import testing
+from std.python import Python
+from std import testing
 
 from decimo.bigdecimal.bigdecimal import BDec
 from decimo.rounding_mode import RoundingMode

@@ -3,7 +3,7 @@ Tests for Decimal128 round operations with different rounding modes.
 TOML-driven tests for standard cases; inline for dynamic/consistency tests.
 """
 
-import testing
+from std import testing
 from decimo.toml.parser import TOMLDocument
 
 from decimo.decimal128.decimal128 import Decimal128, Dec128
@@ -79,8 +79,8 @@ fn test_rounding_consistency() raises:
     var d1 = Decimal128("123.45")
     var d2 = Decimal128(123.45)
     testing.assert_equal(
-        String(round(d1, 1))[:3],
-        String(round(d2, 1))[:3],
+        String(round(d1, 1))[byte=:3],
+        String(round(d2, 1))[byte=:3],
         "Rounding consistency across different constructors",
     )
 

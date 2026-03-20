@@ -3,7 +3,7 @@ Test BigInt sqrt and divmod operations: sqrt, isqrt, __divmod__
 with positive, negative, mixed-sign, and consistency checks.
 """
 
-import testing
+from std import testing
 from decimo.bigint.bigint import BigInt
 
 

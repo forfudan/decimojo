@@ -1,6 +1,6 @@
 """Test the evaluator: end-to-end expression evaluation with BigDecimal."""
 
-import testing
+from std import testing
 
 from calculator import evaluate
 from decimo.rounding_mode import RoundingMode

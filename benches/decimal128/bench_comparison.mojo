@@ -13,9 +13,9 @@ from decimo.tests import (
     print_header,
     print_summary,
 )
-from python import Python, PythonObject
-from time import perf_counter_ns
-from collections import List
+from std.python import Python, PythonObject
+from std.time import perf_counter_ns
+from std.collections import List
 
 
 fn main() raises:
@@ -77,7 +77,7 @@ fn main() raises:
             elif op == "!=":
                 for _ in range(iterations):
                     _ = m_a != m_b
-            var tm = (perf_counter_ns() - t0) / iterations
+            var tm = (perf_counter_ns() - t0) / UInt(iterations)
             if tm == 0:
                 tm = 1
 
@@ -101,7 +101,7 @@ fn main() raises:
             elif op == "!=":
                 for _ in range(iterations):
                     _ = pa != pb
-            var tp = (perf_counter_ns() - t0) / iterations
+            var tp = (perf_counter_ns() - t0) / UInt(iterations)
 
             var s = Float64(tp) / Float64(tm)
             sf.append(s)

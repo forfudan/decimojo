@@ -12,7 +12,7 @@ Test Decimal128.from_int() and Decimal128 component constructor including:
 9. from_components (inline - 5-arg constructor)
 """
 
-import testing
+from std import testing
 from decimo.toml.parser import TOMLDocument
 
 from decimo import Dec128

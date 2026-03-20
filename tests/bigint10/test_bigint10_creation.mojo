@@ -3,8 +3,8 @@ Test BigInt10.from_python_int() method.
 Tests conversion from Python integers to Mojo BigInt10.
 """
 
-import testing
-from python import Python
+from std import testing
+from std.python import Python
 from decimo.bigint10.bigint10 import BigInt10
 
 

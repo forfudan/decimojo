@@ -13,7 +13,7 @@ Test Decimal128.from_string() constructor including:
 10. special cases
 """
 
-import testing
+from std import testing
 from decimo.toml.parser import TOMLDocument
 
 from decimo import Dec128

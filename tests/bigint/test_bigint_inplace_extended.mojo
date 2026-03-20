@@ -5,7 +5,7 @@ These tests verify that each in-place operator produces results identical
 to the corresponding non-in-place operator.
 """
 
-import testing
+from std import testing
 from decimo.bigint.bigint import BigInt
 
 

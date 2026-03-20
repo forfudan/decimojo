@@ -4,10 +4,10 @@ BigUInt is an unsigned integer type, so it doesn't support negative values.
 """
 
 
-from python import Python
-from random import random_ui64
-import testing
-from testing import assert_equal, assert_true
+from std.python import Python
+from std.random import random_ui64
+from std import testing
+from std.testing import assert_equal, assert_true
 from decimo.biguint.biguint import BigUInt
 from decimo.tests import TestCase, parse_file, load_test_cases
 

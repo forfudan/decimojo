@@ -1,6 +1,6 @@
 """Test the tokenizer: lexical analysis of expression strings."""
 
-import testing
+from std import testing
 
 from calculator.tokenizer import (
     Token,

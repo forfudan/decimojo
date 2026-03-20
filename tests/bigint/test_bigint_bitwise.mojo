@@ -4,7 +4,7 @@ and augmented assignment (&=, |=, ^=). All tests compare against Python's
 arbitrary-precision integer bitwise semantics.
 """
 
-import testing
+from std import testing
 from decimo.bigint.bigint import BigInt
 
 

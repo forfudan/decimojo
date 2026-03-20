@@ -1,7 +1,7 @@
 """Tests for BigInt number theory operations: GCD, Extended GCD, LCM,
 modular exponentiation, and modular inverse."""
 
-import testing
+from std import testing
 from decimo.bigint.bigint import BigInt
 from decimo.bigint.number_theory import (
     gcd,

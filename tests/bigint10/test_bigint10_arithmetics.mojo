@@ -2,8 +2,8 @@
 Test BigInt10 arithmetic operations including addition, subtraction, and negation.
 """
 
-from python import Python
-import testing
+from std.python import Python
+from std import testing
 from decimo.bigint10.bigint10 import BigInt10
 from decimo.tests import TestCase, parse_file, load_test_cases
 

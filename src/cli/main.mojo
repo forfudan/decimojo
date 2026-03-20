@@ -9,7 +9,7 @@
 #   ./decimo "100 * 12 - 23/17" -p 50
 # ===----------------------------------------------------------------------=== #
 
-from sys import exit
+from std.sys import exit
 
 from argmojo import Arg, Command
 from decimo.rounding_mode import RoundingMode
@@ -196,8 +196,10 @@ fn _display_calc_error(error_msg: String, expr: String):
 
         if colon_pos > after_prefix:
             # Extract position number and description.
-            var pos_str = String(error_msg[after_prefix:colon_pos])
-            var description = String(error_msg[colon_pos + 2 :])  # skip ": "
+            var pos_str = String(error_msg[byte=after_prefix:colon_pos])
+            var description = String(
+                error_msg[byte = colon_pos + 2 :]
+            )  # skip ": "
 
             try:
                 var pos = Int(pos_str)

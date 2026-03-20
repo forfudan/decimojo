@@ -5,7 +5,7 @@ and proper handling of edge cases (empty expression, division by zero,
 negative sqrt, etc.).
 """
 
-import testing
+from std import testing
 
 from calculator import evaluate
 from calculator.tokenizer import tokenize

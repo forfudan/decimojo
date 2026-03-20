@@ -4,7 +4,7 @@ various formats (commas, underscores, spaces, scientific notation, decimal
 point), and D&C from_string for large numbers.
 """
 
-import testing
+from std import testing
 from decimo.bigint.bigint import BigInt
 from decimo.bigint10.bigint10 import BigInt10
 

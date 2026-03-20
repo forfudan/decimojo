@@ -29,7 +29,7 @@ in an expression.  Modelled after ArgMojo's colour system.
 ```
 """
 
-from sys import stderr
+from std.sys import stderr
 
 # ── ANSI colour codes ────────────────────────────────────────────────────────
 

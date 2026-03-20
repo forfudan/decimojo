@@ -3,8 +3,8 @@ Tests for utility functions: number_of_digits, truncate_to_max,
 round_to_keep_first_n_digits, and bitcast.
 """
 
-import testing
-from testing import assert_equal, assert_true
+from std import testing
+from std.testing import assert_equal, assert_true
 
 from decimo.decimal128.decimal128 import Decimal128
 from decimo.rounding_mode import RoundingMode

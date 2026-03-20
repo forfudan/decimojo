@@ -6,7 +6,7 @@ compare against pre-computed expected values in the TOML data file instead
 of Python cross-checking.
 """
 
-import testing
+from std import testing
 
 from decimo import BDec
 from decimo.tests import TestCase, parse_file, load_test_cases

@@ -3,7 +3,7 @@ Test Decimal128 conversion methods: __str__, __int__, __float__
 Merges former to_string, to_int, to_float test files.
 """
 
-import testing
+from std import testing
 from decimo.toml.parser import TOMLDocument
 
 from decimo import Dec128

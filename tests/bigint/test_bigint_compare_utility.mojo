@@ -3,7 +3,7 @@ Test BigInt comparison and utility methods: compare, compare_magnitudes,
 is_one_or_minus_one, and __iadd__(Int).
 """
 
-import testing
+from std import testing
 from decimo.bigint.bigint import BigInt
 
 
