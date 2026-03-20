@@ -1,6 +1,6 @@
 [workspace]
 authors = ["ZHU Yuhao (朱宇浩) <dr.yuhao.zhu@outlook.com>"]
-channels = ["https://conda.modular.com/max-nightly", "https://conda.modular.com/max", "https://repo.prefix.dev/modular-community", "conda-forge"]
+channels = ["https://conda.modular.com/max", "https://conda.modular.com/max-nightly", "https://repo.prefix.dev/modular-community", "conda-forge"]
 description = "An arbitrary-precision decimal and integer library for Mojo"
 license = "Apache-2.0"
 name = "decimo"
@@ -9,12 +9,12 @@ readme = "README.md"
 version = "0.8.0"
 
 [dependencies]
-argmojo = ">=0.1.0,<0.2" # CLI argument parsing for the Decimo calculator
-mojo = "==0.26.1" # Mojo language compiler and runtime
-python = ">=3.13,<3.14" # For Python bindings and tests
-python-build = ">=1.4.0,<2" # Build PyPI wheel (`pixi run wheel`)
-ruff = ">=0.9,<1" # Python code formatter
-twine = ">=6.2.0,<7" # Upload wheel to PyPI (`twine upload dist/*`)
+# argmojo = ">=0.4.0" # CLI argument parsing for the Decimo calculator (TODO: waiting for argmojo 0.2.0 compatible with mojo 0.26.2)
+mojo = ">=0.26.2.0,<0.26.3" # Mojo language compiler and runtime
+python = ">=3.13" # For Python bindings and tests
+python-build = ">=0.2.0" # Build PyPI wheel (`pixi run wheel`)
+ruff = ">=0.15.0" # Python code formatter
+twine = ">=6.2.0" # Upload wheel to PyPI (`twine upload dist/*`)
 
 [tasks]
 # format the code

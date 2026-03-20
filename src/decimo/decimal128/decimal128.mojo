@@ -23,8 +23,8 @@ operation dunders, and other dunders that implement traits, as well as
 mathematical methods that do not implement a trait.
 """
 
-from memory import UnsafePointer
-import testing
+from std.memory import UnsafePointer
+from std import testing
 
 import decimo.decimal128.arithmetics
 import decimo.decimal128.comparison
@@ -38,15 +38,13 @@ comptime Dec128 = Decimal128
 """A 128-bit fixed-point decimal number."""
 
 
-@register_passable("trivial")
 struct Decimal128(
     Absable,
     Comparable,
     Floatable,
     IntableRaising,
-    Representable,
     Roundable,
-    Stringable,
+    TrivialRegisterPassable,
     Writable,
 ):
     """A 128-bit fixed-point decimal number.
@@ -307,7 +305,7 @@ struct Decimal128(
             Error: If the scale is greater than MAX_SCALE.
         """
 
-        if scale > Self.MAX_SCALE:
+        if scale > UInt32(Self.MAX_SCALE):
             raise Error(
                 String(
                     "Error in Decimal128 constructor with five components:"
@@ -351,7 +349,8 @@ struct Decimal128(
             ).format(flags),
         )
         testing.assert_true(
-            ((flags & 0x00FF0000) >> Self.SCALE_SHIFT) <= Self.MAX_SCALE,
+            ((flags & 0x00FF0000) >> Self.SCALE_SHIFT)
+            <= UInt32(Self.MAX_SCALE),
             String(
                 "Error in Decimal128 constructor with four words: Scale must"
                 " be between 0 and 28, but got {}"
@@ -430,7 +429,7 @@ struct Decimal128(
         var mid: UInt32
         var flags: UInt32
 
-        if scale > Self.MAX_SCALE:
+        if scale > UInt32(Self.MAX_SCALE):
             raise Error(
                 String(
                     "Error in Decimal128 constructor with Int: Scale must be"
@@ -480,7 +479,7 @@ struct Decimal128(
                 ).format(value)
             )
 
-        if scale > Self.MAX_SCALE:
+        if scale > UInt32(Self.MAX_SCALE):
             raise Error(
                 String(
                     "Error in Decimal128 constructor with five components:"
@@ -522,7 +521,7 @@ struct Decimal128(
         - Underscore "_". It can appear anywhere between digits it is ignored.
         """
 
-        var value_string_slice = value.as_string_slice()
+        var value_string_slice = StringSlice(value)
         var value_bytes = value_string_slice.as_bytes()
         var value_bytes_len = len(value_bytes)
 
@@ -713,20 +712,20 @@ struct Decimal128(
         # TODO: The following part can be written into a function
         # because it is used in many cases
         if coef <= Decimal128.MAX_AS_UINT128:
-            if scale > Decimal128.MAX_SCALE:
+            if scale > UInt32(Decimal128.MAX_SCALE):
                 coef = decimo.decimal128.utility.round_to_keep_first_n_digits(
                     coef,
                     False,
                     Int(num_mantissa_digits)
-                    - Int(scale - Decimal128.MAX_SCALE),
+                    - Int(scale - UInt32(Decimal128.MAX_SCALE)),
                 )
-                scale = Decimal128.MAX_SCALE
+                scale = UInt32(Decimal128.MAX_SCALE)
 
             return Decimal128.from_uint128(coef, scale, mantissa_sign)
 
         else:
             var ndigits_coef = decimo.decimal128.utility.number_of_digits(coef)
-            var ndigits_quot_int_part = ndigits_coef - scale
+            var ndigits_quot_int_part = UInt32(ndigits_coef) - scale
 
             var truncated_coef = (
                 decimo.decimal128.utility.round_to_keep_first_n_digits(
@@ -734,7 +733,7 @@ struct Decimal128(
                 )
             )
             var scale_of_truncated_coef = (
-                Decimal128.MAX_NUM_DIGITS - ndigits_quot_int_part
+                UInt32(Decimal128.MAX_NUM_DIGITS) - ndigits_quot_int_part
             )
 
             if truncated_coef > Decimal128.MAX_AS_UINT128:
@@ -745,7 +744,7 @@ struct Decimal128(
                 )
                 scale_of_truncated_coef -= 1
 
-            if scale_of_truncated_coef > Decimal128.MAX_SCALE:
+            if scale_of_truncated_coef > UInt32(Decimal128.MAX_SCALE):
                 var num_digits_truncated_coef = (
                     decimo.decimal128.utility.number_of_digits(truncated_coef)
                 )
@@ -754,10 +753,13 @@ struct Decimal128(
                         truncated_coef,
                         False,
                         num_digits_truncated_coef
-                        - Int(scale_of_truncated_coef - Decimal128.MAX_SCALE),
+                        - Int(
+                            scale_of_truncated_coef
+                            - UInt32(Decimal128.MAX_SCALE)
+                        ),
                     )
                 )
-                scale_of_truncated_coef = Decimal128.MAX_SCALE
+                scale_of_truncated_coef = UInt32(Decimal128.MAX_SCALE)
 
             return Decimal128.from_uint128(
                 truncated_coef, scale_of_truncated_coef, mantissa_sign
@@ -820,7 +822,7 @@ struct Decimal128(
 
         # CASE: Denormalized number that is very close to zero
         if biased_exponent == 0:
-            return Self(0, 0, 0, Decimal128.MAX_SCALE, is_negative)
+            return Self(0, 0, 0, UInt32(Decimal128.MAX_SCALE), is_negative)
 
         # CASE: Infinity or NaN
         if biased_exponent == 0x7FF:
@@ -877,7 +879,7 @@ struct Decimal128(
         var high = UInt32((coefficient >> 64) & 0xFFFFFFFF)
 
         # Return both the significant digits and the scale
-        return Self(low, mid, high, scale, is_negative)
+        return Self(low, mid, high, UInt32(scale), is_negative)
 
     @always_inline
     fn copy(self) -> Self:
@@ -922,6 +924,10 @@ struct Decimal128(
         """Returns a string representation of the Decimal128."""
         return 'Decimal128("' + self.__str__() + '")'
 
+    fn write_repr_to[W: Writer](self, mut writer: W):
+        """Writes the debug representation to a writer."""
+        writer.write('Decimal128("', self.__str__(), '")')
+
     # ===------------------------------------------------------------------=== #
     # Type-transfer or output methods that are not dunders
     # ===------------------------------------------------------------------=== #
@@ -930,7 +936,7 @@ struct Decimal128(
         """Writes the Decimal128 to a writer.
         This implement the `write` method of the `Writer` trait.
         """
-        writer.write(String(self))
+        writer.write(self.__str__())
 
     fn repr_words(self) -> String:
         """Returns a string representation of the Decimal128's internal words.
@@ -1058,7 +1064,7 @@ struct Decimal128(
         else:
             # Insert decimal128 point at appropriate position
             var insert_pos = len(coef) - scale
-            result = coef[:insert_pos] + "." + coef[insert_pos:]
+            result = coef[byte=:insert_pos] + "." + coef[byte=insert_pos:]
 
             # Ensure we have exactly 'scale' digits after decimal128 point
             var decimal_point_pos = result.find(".")
@@ -1118,7 +1124,7 @@ struct Decimal128(
         if len(coef_str) == 1:
             result = result + coef_str + String(".0")
         else:
-            result = result + coef_str[byte=0] + String(".") + coef_str[1:]
+            result = result + coef_str[byte=0] + String(".") + coef_str[byte=1:]
 
         # Add exponent (E+XX or E-XX)
         if exponent >= 0:
@@ -1574,7 +1580,8 @@ struct Decimal128(
 
         # Set the new scale
         result.flags = (self.flags & ~Decimal128.SCALE_MASK) | (
-            UInt32(new_scale << Decimal128.SCALE_SHIFT) & Decimal128.SCALE_MASK
+            (UInt32(new_scale) << UInt32(Decimal128.SCALE_SHIFT))
+            & UInt32(Decimal128.SCALE_MASK)
         )
 
         return result
@@ -1610,7 +1617,7 @@ struct Decimal128(
 
         var result = String("\nInternal Representation Details of Decimal128\n")
         result += sep_line + "\n"
-        result += pad("Decimal128:") + String(self) + "\n"
+        result += pad("Decimal128:") + self.__str__() + "\n"
         result += pad("coefficient:") + String(self.coefficient()) + "\n"
         result += pad("scale:") + String(self.scale()) + "\n"
         result += pad("is negative:") + String(self.is_negative()) + "\n"

@@ -18,7 +18,7 @@
 Implements functions for mathematical operations on BigDecimal objects.
 """
 
-import math
+from std import math
 
 from decimo.rounding_mode import RoundingMode
 

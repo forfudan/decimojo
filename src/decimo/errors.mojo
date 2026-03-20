@@ -18,7 +18,8 @@
 Implements error handling for Decimo.
 """
 
-from pathlib.path import cwd
+from std.pathlib.path import cwd
+import decimo.str
 
 comptime OverflowError = DecimoError[error_type="OverflowError"]
 """Type for overflow errors in Decimo.
@@ -95,7 +96,7 @@ DecimoError                             Traceback (most recent call last)
 """
 
 
-struct DecimoError[error_type: String = "DecimoError"](Stringable, Writable):
+struct DecimoError[error_type: String = "DecimoError"](Writable):
     """Base type for all Decimo errors.
 
     Parameters:
@@ -162,7 +163,7 @@ struct DecimoError[error_type: String = "DecimoError"](Stringable, Writable):
         writer.write("\n")
         writer.write(("-" * 80))
         writer.write("\n")
-        writer.write(Self.error_type.ljust(47, " "))
+        writer.write(decimo.str.ljust(String(Self.error_type), 47, " "))
         writer.write("Traceback (most recent call last)\n")
         writer.write('File "')
         try:

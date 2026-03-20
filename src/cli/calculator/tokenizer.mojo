@@ -58,15 +58,15 @@ struct Token(Copyable, ImplicitlyCopyable, Movable):
         self.value = value
         self.position = position
 
-    fn __copyinit__(out self, other: Self):
-        self.kind = other.kind
-        self.value = other.value
-        self.position = other.position
+    fn __init__(out self, *, copy: Self):
+        self.kind = copy.kind
+        self.value = copy.value
+        self.position = copy.position
 
-    fn __moveinit__(out self, deinit other: Self):
-        self.kind = other.kind
-        self.value = other.value^
-        self.position = other.position
+    fn __init__(out self, *, deinit take: Self):
+        self.kind = take.kind
+        self.value = take.value^
+        self.position = take.position
 
     fn is_operator(self) -> Bool:
         """Returns True if this token is a binary or unary operator."""
@@ -173,7 +173,7 @@ fn tokenize(expr: String) raises -> List[Token]:
             column position included in the message).
     """
     var tokens = List[Token]()
-    var expr_bytes = expr.as_string_slice().as_bytes()
+    var expr_bytes = StringSlice(expr).as_bytes()
     var n = len(expr_bytes)
     var ptr = expr_bytes.unsafe_ptr()
     var i = 0

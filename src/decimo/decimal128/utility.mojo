@@ -19,9 +19,9 @@
 #
 # ===----------------------------------------------------------------------=== #
 
-from memory import UnsafePointer
-import sys
-import time
+from std.memory import UnsafePointer
+from std import sys
+from std import time
 
 from decimo.decimal128.decimal128 import Decimal128
 
@@ -48,10 +48,9 @@ fn bitcast[dtype: DType](dec: Decimal128) -> Scalar[dtype]:
     """
 
     # Compile-time checker: ensure the dtype is either uint128 or uint256
-    constrained[
-        dtype == DType.uint128 or dtype == DType.uint256,
-        "must be uint128 or uint256",
-    ]()
+    comptime assert (
+        dtype == DType.uint128 or dtype == DType.uint256
+    ), "must be uint128 or uint256"
 
     # Bitcast the Decimal128 to the desired Mojo scalar type
     var result = UnsafePointer(to=dec).bitcast[Scalar[dtype]]().load()
@@ -85,10 +84,9 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
 
     comptime ValueType = Scalar[dtype]
 
-    constrained[
-        dtype == DType.uint128 or dtype == DType.uint256,
-        "must be uint128 or uint256",
-    ]()
+    comptime assert (
+        dtype == DType.uint128 or dtype == DType.uint256
+    ), "must be uint128 or uint256"
 
     # If the value is already less than the maximum possible value, return it
     if value <= ValueType(Decimal128.MAX_AS_UINT128):
@@ -209,7 +207,7 @@ fn sqrt(x: UInt128) -> UInt128:
     var r: UInt128 = 0
 
     for p in range(sys.bit_width_of[UInt128]() // 2 - 1, -1, -1):
-        var new_bit = UInt128(1) << p
+        var new_bit = UInt128(1) << UInt128(p)
         var would_be = r | new_bit
         var squared = would_be * would_be
         if squared <= x:
@@ -295,10 +293,9 @@ fn round_to_keep_first_n_digits[
 
     comptime ValueType = Scalar[dtype]
 
-    constrained[
-        dtype == DType.uint128 or dtype == DType.uint256,
-        "must be uint128 or uint256",
-    ]()
+    comptime assert (
+        dtype == DType.uint128 or dtype == DType.uint256
+    ), "must be uint128 or uint256"
 
     # CASE: The number of digits is less than 0
     # Return 0.
@@ -386,7 +383,7 @@ fn round_to_keep_first_n_digits[
             debug_assert(
                 False,
                 "Unknown rounding mode in round_to_keep_first_n_digits: "
-                + String(rounding_mode),
+                + rounding_mode.__str__(),
             )
 
         return truncated_value
@@ -411,10 +408,9 @@ fn number_of_digits[dtype: DType, //](value: Scalar[dtype]) -> Int:
         The number of digits in the integral value.
     """
 
-    constrained[
-        dtype == DType.uint128 or dtype == DType.uint256,
-        "must be uint128 or uint256",
-    ]()
+    comptime assert (
+        dtype == DType.uint128 or dtype == DType.uint256
+    ), "must be uint128 or uint256"
 
     comptime ValueType = Scalar[dtype]
 
@@ -567,10 +563,7 @@ fn number_of_bits[dtype: DType, //](var value: Scalar[dtype]) -> Int:
         `dtype` must be integral.
     """
 
-    constrained[
-        dtype.is_integral(),
-        "must be intergral",
-    ]()
+    comptime assert dtype.is_integral(), "must be intergral"
 
     if value < 0:
         value = -value
@@ -695,10 +688,9 @@ fn power_of_10[dtype: DType](n: Int) -> Scalar[dtype]:
 
     comptime ValueType = Scalar[dtype]
 
-    constrained[
-        dtype == DType.uint128 or dtype == DType.uint256,
-        "must be uint128 or uint256",
-    ]()
+    comptime assert (
+        dtype == DType.uint128 or dtype == DType.uint256
+    ), "must be uint128 or uint256"
 
     if n == 0:
         return ValueType(1)

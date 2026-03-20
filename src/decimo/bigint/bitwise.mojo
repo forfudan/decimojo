@@ -53,22 +53,18 @@ fn _binary_bitwise_op[op: StringLiteral](a: BigInt, b: BigInt) -> BigInt:
     # Determine result sign from operation on sign-extension bits
     var result_negative: Bool
 
-    @parameter
-    if op == "and":
+    comptime if op == "and":
         result_negative = a.sign and b.sign
     elif op == "or":
         result_negative = a.sign or b.sign
     elif op == "xor":
         result_negative = a.sign != b.sign
     else:
-        constrained[False, "op must be 'and', 'or', or 'xor'"]()
-        result_negative = False  # unreachable
+        comptime assert False, "op must be 'and', 'or', or 'xor'"
 
     # Fast path: both non-negative
     if not a.sign and not b.sign:
-
-        @parameter
-        if op == "and":
+        comptime if op == "and":
             # AND with zeros → zeros, so result is at most min_len words
             var min_len = min(len(a.words), len(b.words))
             var result_words = List[UInt32](capacity=min_len)
@@ -136,8 +132,7 @@ fn _binary_bitwise_op[op: StringLiteral](a: BigInt, b: BigInt) -> BigInt:
         var wa = a_fill if i >= len(a_tc) else a_tc[i]
         var wb = b_fill if i >= len(b_tc) else b_tc[i]
 
-        @parameter
-        if op == "and":
+        comptime if op == "and":
             result_tc.append(wa & wb)
         elif op == "or":
             result_tc.append(wa | wb)
@@ -199,22 +194,18 @@ fn _binary_bitwise_op_inplace[op: StringLiteral](mut a: BigInt, read b: BigInt):
     # Determine result sign from operation on sign-extension bits
     var result_negative: Bool
 
-    @parameter
-    if op == "and":
+    comptime if op == "and":
         result_negative = a.sign and b.sign
     elif op == "or":
         result_negative = a.sign or b.sign
     elif op == "xor":
         result_negative = a.sign != b.sign
     else:
-        constrained[False, "op must be 'and', 'or', or 'xor'"]()
-        result_negative = False  # unreachable
+        comptime assert False, "op must be 'and', 'or', or 'xor'"
 
     # Fast path: both non-negative
     if not a.sign and not b.sign:
-
-        @parameter
-        if op == "and":
+        comptime if op == "and":
             var min_len = min(len(a.words), len(b.words))
             # We can modify a.words in-place for AND (result <= min_len)
             for i in range(min_len):
@@ -285,8 +276,7 @@ fn _binary_bitwise_op_inplace[op: StringLiteral](mut a: BigInt, read b: BigInt):
         var wa = a_fill if i >= len(a_tc) else a_tc[i]
         var wb = b_fill if i >= len(b_tc) else b_tc[i]
 
-        @parameter
-        if op == "and":
+        comptime if op == "and":
             result_tc.append(wa & wb)
         elif op == "or":
             result_tc.append(wa | wb)

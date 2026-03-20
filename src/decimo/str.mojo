@@ -16,7 +16,23 @@
 
 """String parsing and manipulation functions."""
 
-from algorithm import vectorize
+from std.algorithm import vectorize
+
+
+fn rjust(s: String, width: Int, fillchar: String = " ") -> String:
+    """Right-justifies a string by padding with fillchar on the left."""
+    var n = len(s)
+    if n >= width:
+        return s
+    return fillchar * (width - n) + s
+
+
+fn ljust(s: String, width: Int, fillchar: String = " ") -> String:
+    """Left-justifies a string by padding with fillchar on the right."""
+    var n = len(s)
+    if n >= width:
+        return s
+    return s + fillchar * (width - n)
 
 
 fn parse_numeric_string(
@@ -86,7 +102,7 @@ fn parse_numeric_string(
     #     # - Space ' ' may appear anywhere in the string and is ignored.
     #     # - Comma ',' and underscore '_' may appear anywhere between digits and are ignored.
 
-    var value_bytes = value.as_string_slice().as_bytes()
+    var value_bytes = StringSlice(value).as_bytes()
     var n = len(value_bytes)
 
     if n == 0:
@@ -300,11 +316,11 @@ fn parse_numeric_string(
         fn convert_fast[
             simd_width: Int
         ](i: Int) unified {mut coef, read value_bytes, read extract_start}:
-            coef._data.store[width=simd_width](
+            coef.unsafe_ptr().store[width=simd_width](
                 i,
-                (value_bytes.unsafe_ptr() + (extract_start + i)).load[
-                    width=simd_width
-                ]()
+                value_bytes.unsafe_ptr().load[width=simd_width](
+                    extract_start + i
+                )
                 - SIMD[DType.uint8, simd_width](48),
             )
 
@@ -324,11 +340,11 @@ fn parse_numeric_string(
             fn convert_before[
                 simd_width: Int
             ](i: Int) unified {mut coef, read value_bytes, read extract_start}:
-                coef._data.store[width=simd_width](
+                coef.unsafe_ptr().store[width=simd_width](
                     i,
-                    (value_bytes.unsafe_ptr() + (extract_start + i)).load[
-                        width=simd_width
-                    ]()
+                    value_bytes.unsafe_ptr().load[width=simd_width](
+                        extract_start + i
+                    )
                     - SIMD[DType.uint8, simd_width](48),
                 )
 
@@ -346,11 +362,11 @@ fn parse_numeric_string(
                 read decimal_point_pos,
                 read before_count,
             }:
-                coef._data.store[width=simd_width](
+                coef.unsafe_ptr().store[width=simd_width](
                     before_count + i,
-                    (
-                        value_bytes.unsafe_ptr() + (decimal_point_pos + 1 + i)
-                    ).load[width=simd_width]()
+                    value_bytes.unsafe_ptr().load[width=simd_width](
+                        decimal_point_pos + 1 + i
+                    )
                     - SIMD[DType.uint8, simd_width](48),
                 )
 

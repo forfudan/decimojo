@@ -16,9 +16,9 @@
 
 """Implements exponential functions for the Decimal128 type."""
 
-import math as builtin_math
-import testing
-import time
+import std.math
+from std import testing
+from std import time
 
 import decimo.decimal128.constants
 import decimo.decimal128.special
@@ -241,7 +241,7 @@ fn root(x: Decimal128, n: Int) raises -> Decimal128:
             10
         ) ** (Float64(remainder) / Float64(n) - 1)
         guess = Decimal128.from_uint128(
-            UInt128(float_root), scale=dividend + 1, sign=False
+            UInt128(float_root), scale=UInt32(dividend + 1), sign=False
         )
 
     # var t_initial_guess = time.perf_counter_ns()
@@ -297,7 +297,7 @@ fn root(x: Decimal128, n: Int) raises -> Decimal128:
             if guess_coef_powered == x_coef:
                 return Decimal128.from_uint128(
                     guess_coef,
-                    scale=guess.scale() - num_digits_to_decrease,
+                    scale=UInt32(guess.scale() - num_digits_to_decrease),
                     sign=False,
                 )
             if (
@@ -307,7 +307,7 @@ fn root(x: Decimal128, n: Int) raises -> Decimal128:
             ):
                 return Decimal128.from_uint128(
                     guess_coef // 10,
-                    scale=guess.scale() - num_digits_to_decrease - 1,
+                    scale=UInt32(guess.scale() - num_digits_to_decrease - 1),
                     sign=False,
                 )
 
@@ -349,22 +349,22 @@ fn sqrt(x: Decimal128) raises -> Decimal128:
 
     # For numbers with zero scale (true integers)
     if x_scale == 0:
-        var float_sqrt = builtin_math.sqrt(Float64(x_coef))
+        var float_sqrt = std.math.sqrt(Float64(x_coef))
         guess = Decimal128.from_uint128(UInt128(round(float_sqrt)))
 
     # For numbers with even scale
     elif x_scale % 2 == 0:
-        var float_sqrt = builtin_math.sqrt(Float64(x_coef))
+        var float_sqrt = std.math.sqrt(Float64(x_coef))
         guess = Decimal128.from_uint128(
-            UInt128(float_sqrt), scale=x_scale >> 1, sign=False
+            UInt128(float_sqrt), scale=UInt32(x_scale >> 1), sign=False
         )
         # print("DEBUG: scale is even")
 
     # For numbers with odd scale
     else:
-        var float_sqrt = builtin_math.sqrt(Float64(x_coef)) * Float64(3.15625)
+        var float_sqrt = std.math.sqrt(Float64(x_coef)) * Float64(3.15625)
         guess = Decimal128.from_uint128(
-            UInt128(float_sqrt), scale=(x_scale + 1) >> 1, sign=False
+            UInt128(float_sqrt), scale=UInt32((x_scale + 1) >> 1), sign=False
         )
         # print("DEBUG: scale is odd")
 
@@ -432,7 +432,7 @@ fn sqrt(x: Decimal128) raises -> Decimal128:
             ):
                 return Decimal128.from_uint128(
                     guess_coef,
-                    scale=guess.scale() - num_digits_to_decrease,
+                    scale=UInt32(guess.scale() - num_digits_to_decrease),
                     sign=False,
                 )
 
@@ -1001,7 +1001,7 @@ fn log10(x: Decimal128) raises -> Decimal128:
         if x_scale == 0:
             return Decimal128.ZERO()
         else:
-            return Decimal128(x_scale, 0, 0, 0x8000_0000)
+            return Decimal128(UInt32(x_scale), 0, 0, 0x8000_0000)
 
     var ten_to_power_of_scale = decimo.decimal128.utility.power_of_10[
         DType.uint128
@@ -1020,7 +1020,7 @@ fn log10(x: Decimal128) raises -> Decimal128:
             integeral_part //= 10
             exponent += 1
         if integeral_part == 1:
-            return Decimal128(exponent, 0, 0, 0)
+            return Decimal128(UInt32(exponent), 0, 0, 0)
         else:
             pass
 

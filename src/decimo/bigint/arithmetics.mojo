@@ -33,7 +33,7 @@ Algorithms:
   (< CUTOFF_BURNIKEL_ZIEGLER words). Single-word fast path for UInt32 divisors.
 """
 
-from memory import memcpy, memset_zero
+from std.memory import memcpy, memset_zero
 
 from decimo.bigint.bigint import BigInt
 from decimo.bigint.comparison import compare_magnitudes
@@ -854,10 +854,10 @@ fn _compare_word_lists(a: List[UInt32], b: List[UInt32]) -> Int8:
     var len_a = len(a)
     var len_b = len(b)
     if len_a != len_b:
-        return 1 if len_a > len_b else -1
+        return Int8(1) if len_a > len_b else Int8(-1)
     for i in range(len_a - 1, -1, -1):
         if a[i] != b[i]:
-            return 1 if a[i] > b[i] else -1
+            return Int8(1) if a[i] > b[i] else Int8(-1)
     return 0
 
 
@@ -911,9 +911,9 @@ fn _shift_left_words(a: List[UInt32], shift: Int) -> List[UInt32]:
     var result = List[UInt32](capacity=n + 1)
     var carry: UInt32 = 0
     for i in range(n):
-        var shifted = UInt64(a[i]) << shift
-        result.append(UInt32(shifted & 0xFFFF_FFFF) | carry)
-        carry = UInt32(shifted >> 32)
+        var shifted = UInt64(a[i]) << UInt64(shift)
+        result.append(UInt32(shifted & UInt64(0xFFFF_FFFF)) | carry)
+        carry = UInt32(shifted >> UInt64(32))
     if carry > 0:
         result.append(carry)
 
@@ -948,10 +948,12 @@ fn _shift_right_words(
     var n = min(num_words, len(a))
     var result = List[UInt32](capacity=n)
     for i in range(n):
-        var lo = UInt64(a[i]) >> shift
+        var lo = UInt64(a[i]) >> UInt64(shift)
         var hi: UInt64 = 0
         if i + 1 < n:
-            hi = (UInt64(a[i + 1]) << (32 - shift)) & 0xFFFF_FFFF
+            hi = (UInt64(a[i + 1]) << (UInt64(32) - UInt64(shift))) & UInt64(
+                0xFFFF_FFFF
+            )
         result.append(UInt32(lo | hi))
 
     # Strip leading zeros
@@ -1691,10 +1693,10 @@ fn _compare_magnitudes_words(
     var n_a = len(a)
     var n_b = len(b)
     if n_a != n_b:
-        return 1 if n_a > n_b else -1
+        return Int8(1) if n_a > n_b else Int8(-1)
     for i in range(n_a - 1, -1, -1):
         if a[i] != b[i]:
-            return 1 if a[i] > b[i] else -1
+            return Int8(1) if a[i] > b[i] else Int8(-1)
     return 0
 
 
@@ -1924,9 +1926,9 @@ fn left_shift_inplace(mut x: BigInt, shift: Int):
     else:
         var carry: UInt32 = 0
         for i in range(n):
-            var shifted = UInt64(x.words[i]) << bit_shift
-            new_words.append(UInt32(shifted & 0xFFFF_FFFF) | carry)
-            carry = UInt32(shifted >> 32)
+            var shifted = UInt64(x.words[i]) << UInt64(bit_shift)
+            new_words.append(UInt32(shifted & UInt64(0xFFFF_FFFF)) | carry)
+            carry = UInt32(shifted >> UInt64(32))
         if carry > 0:
             new_words.append(carry)
 
@@ -1989,12 +1991,13 @@ fn right_shift_inplace(mut x: BigInt, shift: Int):
             x.words[i] = x.words[i + word_shift]
     else:
         for i in range(new_len):
-            var lo = UInt64(x.words[i + word_shift]) >> bit_shift
+            var lo = UInt64(x.words[i + word_shift]) >> UInt64(bit_shift)
             var hi: UInt64 = 0
             if i + word_shift + 1 < n:
                 hi = (
-                    UInt64(x.words[i + word_shift + 1]) << (32 - bit_shift)
-                ) & 0xFFFF_FFFF
+                    UInt64(x.words[i + word_shift + 1])
+                    << (UInt64(32) - UInt64(bit_shift))
+                ) & UInt64(0xFFFF_FFFF)
             x.words[i] = UInt32(lo | hi)
 
     # Truncate to new length in a single shrink call
@@ -2438,9 +2441,9 @@ fn left_shift(x: BigInt, shift: Int) -> BigInt:
     else:
         var carry: UInt32 = 0
         for i in range(n):
-            var shifted = UInt64(x.words[i]) << bit_shift
-            result.append(UInt32(shifted & 0xFFFF_FFFF) | carry)
-            carry = UInt32(shifted >> 32)
+            var shifted = UInt64(x.words[i]) << UInt64(bit_shift)
+            result.append(UInt32(shifted & UInt64(0xFFFF_FFFF)) | carry)
+            carry = UInt32(shifted >> UInt64(32))
         if carry > 0:
             result.append(carry)
 
@@ -2486,10 +2489,12 @@ fn right_shift(x: BigInt, shift: Int) -> BigInt:
             result.append(x.words[i])
     else:
         for i in range(word_shift, n):
-            var lo = UInt64(x.words[i]) >> bit_shift
+            var lo = UInt64(x.words[i]) >> UInt64(bit_shift)
             var hi: UInt64 = 0
             if i + 1 < n:
-                hi = (UInt64(x.words[i + 1]) << (32 - bit_shift)) & 0xFFFF_FFFF
+                hi = (
+                    UInt64(x.words[i + 1]) << (UInt64(32) - UInt64(bit_shift))
+                ) & UInt64(0xFFFF_FFFF)
             result.append(UInt32(lo | hi))
 
     # Strip leading zeros

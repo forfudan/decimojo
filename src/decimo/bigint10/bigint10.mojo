@@ -23,8 +23,8 @@ operation dunders, and other dunders that implement traits, as well as
 mathematical methods that do not implement a trait.
 """
 
-from memory import UnsafePointer
-from python import PythonObject
+from std.memory import UnsafePointer
+from std.python import PythonObject
 
 import decimo.bigint10.arithmetics
 import decimo.bigint10.comparison
@@ -41,8 +41,6 @@ struct BigInt10(
     Copyable,
     IntableRaising,
     Movable,
-    Representable,
-    Stringable,
     Writable,
 ):
     """Represents a base-10 arbitrary-precision signed integer.
@@ -296,7 +294,7 @@ struct BigInt10(
             The BigInt10 representation of the Scalar value.
         """
 
-        constrained[dtype.is_integral(), "dtype must be integral."]()
+        comptime assert dtype.is_integral(), "dtype must be integral."
 
         if value == 0:
             return Self()
@@ -345,7 +343,7 @@ struct BigInt10(
 
         Examples:
         ```mojo
-        from python import Python
+        from std.python import Python
         from decimo.bigint10.bigint10 import BigInt10
 
         fn main() raises:
@@ -397,6 +395,10 @@ struct BigInt10(
         """Returns a string representation of the BigInt10."""
         return 'BigInt10("' + self.__str__() + '")'
 
+    fn write_repr_to[W: Writer](self, mut writer: W):
+        """Writes the debug representation to a writer."""
+        writer.write('BigInt10("', self.__str__(), '")')
+
     # ===------------------------------------------------------------------=== #
     # Type-transfer or output methods that are not dunders
     # ===------------------------------------------------------------------=== #
@@ -405,7 +407,7 @@ struct BigInt10(
         """Writes the BigInt10 to a writer.
         This implement the `write` method of the `Writer` trait.
         """
-        writer.write(String(self))
+        writer.write(self.__str__())
 
     fn to_int(self) raises -> Int:
         """Returns the number as Int.
@@ -471,10 +473,10 @@ struct BigInt10(
             var end = line_width
             var lines = List[String](capacity=len(result) // line_width + 1)
             while end < len(result):
-                lines.append(String(result[start:end]))
+                lines.append(String(result[byte=start:end]))
                 start = end
                 end += line_width
-            lines.append(String(result[start:]))
+            lines.append(String(result[byte=start:]))
             result = String("\n").join(lines^)
 
         return result^
@@ -494,10 +496,10 @@ struct BigInt10(
         var start = end - 3
         var blocks = List[String](capacity=len(result) // 3 + 1)
         while start > 0:
-            blocks.append(String(result[start:end]))
+            blocks.append(String(result[byte=start:end]))
             end = start
             start = end - 3
-        blocks.append(String(result[0:end]))
+        blocks.append(String(result[byte=0:end]))
         blocks.reverse()
         result = separator.join(blocks)
 
@@ -838,7 +840,10 @@ struct BigInt10(
             var label = "word " + String(i) + ":"
             result += label + String(" ") * (col - len(label))
             result += (
-                String(self.magnitude.words[i]).rjust(9, fillchar="0") + "\n"
+                decimo.str.rjust(
+                    String(self.magnitude.words[i]), 9, fillchar="0"
+                )
+                + "\n"
             )
 
         result += sep_line

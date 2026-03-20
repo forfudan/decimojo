@@ -23,7 +23,7 @@ operation dunders, and other dunders that implement traits, as well as
 mathematical methods that do not implement a trait.
 """
 
-from memory import UnsafePointer, memcpy, memcmp
+from std.memory import UnsafePointer, memcpy, memcmp
 
 from decimo.bigint10.bigint10 import BigInt10
 import decimo.biguint.arithmetics
@@ -41,9 +41,7 @@ import decimo.str
 comptime BUInt = BigUInt
 
 
-struct BigUInt(
-    Absable, Copyable, IntableRaising, Movable, Stringable, Writable
-):
+struct BigUInt(Absable, Copyable, IntableRaising, Movable, Writable):
     """Represents a base-10 arbitrary-precision unsigned integer.
 
     Notes:
@@ -508,20 +506,17 @@ struct BigUInt(
         """
 
         # Only allow unsigned integral types
-        constrained[
-            dtype.is_integral() and dtype.is_unsigned(),
-            "dtype must be unsigned integral.",
-        ]()
+        comptime assert (
+            dtype.is_integral() and dtype.is_unsigned()
+        ), "dtype must be unsigned integral."
 
         # Evaluate the conditions at compile time.
         # UInt8 and UInt16 can be directly converted to UInt32.
-        @parameter
-        if (dtype == DType.uint8) or (dtype == DType.uint16):
+        comptime if (dtype == DType.uint8) or (dtype == DType.uint16):
             return Self(raw_words=[UInt32(value)])
 
         # UInt32 is special, so we have a separate method for it.
-        @parameter
-        if dtype == DType.uint32:
+        comptime if dtype == DType.uint32:
             if value <= 999_999_999:
                 # One word is enough
                 return Self(raw_words=[UInt32(value)])
@@ -567,10 +562,9 @@ struct BigUInt(
             The BigUInt representation of the Scalar value.
         """
 
-        constrained[dtype.is_integral(), "dtype must be integral."]()
+        comptime assert dtype.is_integral(), "dtype must be integral."
 
-        @parameter
-        if (dtype == DType.uint8) or (dtype == DType.uint16):
+        comptime if (dtype == DType.uint8) or (dtype == DType.uint16):
             # For types that are smaller than word size
             # We can directly convert them to UInt32
             return Self(raw_words=[UInt32(value)])
@@ -785,6 +779,10 @@ struct BigUInt(
         """Returns a string representation of the BigUInt."""
         return 'BigUInt("' + self.__str__() + '")'
 
+    fn write_repr_to[W: Writer](self, mut writer: W):
+        """Writes the debug representation to a writer."""
+        writer.write('BigUInt("', self.__str__(), '")')
+
     # ===------------------------------------------------------------------=== #
     # Type-transfer or output methods that are not dunders
     # ===------------------------------------------------------------------=== #
@@ -793,7 +791,7 @@ struct BigUInt(
         """Writes the BigUInt to a writer.
         This implement the `write` method of the `Writer` trait.
         """
-        writer.write(String(self))
+        writer.write(self.__str__())
 
     fn to_int(self) raises -> Int:
         """Returns the number as Int.
@@ -854,15 +852,15 @@ struct BigUInt(
             )
 
         if len(self.words) == 1:
-            return self.words._data.load[width=1]().cast[DType.uint64]()
+            return self.words.unsafe_ptr().load[width=1]().cast[DType.uint64]()
         elif len(self.words) == 2:
             return (
-                self.words._data.load[width=2]().cast[DType.uint64]()
+                self.words.unsafe_ptr().load[width=2]().cast[DType.uint64]()
                 * SIMD[DType.uint64, 2](1, 1_000_000_000)
             ).reduce_add()
         else:
             return (
-                self.words._data.load[width=4]().cast[DType.uint64]()
+                self.words.unsafe_ptr().load[width=4]().cast[DType.uint64]()
                 * SIMD[DType.uint64, 4](
                     1,
                     1_000_000_000,
@@ -878,10 +876,10 @@ struct BigUInt(
             This method quickly convert BigUInt with 2 words into UInt64.
         """
         if len(self.words) == 1:
-            return self.words._data.load[width=1]().cast[DType.uint64]()
+            return self.words.unsafe_ptr().load[width=1]().cast[DType.uint64]()
         else:  # len(self.words) == 2
             return (
-                self.words._data.load[width=2]().cast[DType.uint64]()
+                self.words.unsafe_ptr().load[width=2]().cast[DType.uint64]()
                 * SIMD[DType.uint64, 2](1, 1_000_000_000)
             ).reduce_add()
 
@@ -907,22 +905,24 @@ struct BigUInt(
         var result: UInt128
 
         if len(self.words) == 1:
-            result = self.words._data.load[width=1]().cast[DType.uint128]()
+            result = (
+                self.words.unsafe_ptr().load[width=1]().cast[DType.uint128]()
+            )
         elif len(self.words) == 2:
             result = (
-                self.words._data.load[width=2]().cast[DType.uint128]()
+                self.words.unsafe_ptr().load[width=2]().cast[DType.uint128]()
                 * SIMD[DType.uint128, 2](1, 1_000_000_000)
             ).reduce_add()
         elif len(self.words) == 3:
             result = (
-                self.words._data.load[width=4]().cast[DType.uint128]()
+                self.words.unsafe_ptr().load[width=4]().cast[DType.uint128]()
                 * SIMD[DType.uint128, 4](
                     1, 1_000_000_000, 1_000_000_000_000_000_000, 0
                 )
             ).reduce_add()
         elif len(self.words) == 4:
             result = (
-                self.words._data.load[width=4]().cast[DType.uint128]()
+                self.words.unsafe_ptr().load[width=4]().cast[DType.uint128]()
                 * SIMD[DType.uint128, 4](
                     1,
                     1_000_000_000,
@@ -932,7 +932,7 @@ struct BigUInt(
             ).reduce_add()
         else:
             result = (
-                self.words._data.load[width=8]().cast[DType.uint128]()
+                self.words.unsafe_ptr().load[width=8]().cast[DType.uint128]()
                 * SIMD[DType.uint128, 8](
                     1,
                     1_000_000_000,
@@ -955,22 +955,22 @@ struct BigUInt(
         """
 
         if len(self.words) == 1:
-            return self.words._data.load[width=1]().cast[DType.uint128]()
+            return self.words.unsafe_ptr().load[width=1]().cast[DType.uint128]()
         elif len(self.words) == 2:
             return (
-                self.words._data.load[width=2]().cast[DType.uint128]()
+                self.words.unsafe_ptr().load[width=2]().cast[DType.uint128]()
                 * SIMD[DType.uint128, 2](1, 1_000_000_000)
             ).reduce_add()
         elif len(self.words) == 3:
             return (
-                self.words._data.load[width=4]().cast[DType.uint128]()
+                self.words.unsafe_ptr().load[width=4]().cast[DType.uint128]()
                 * SIMD[DType.uint128, 4](
                     1, 1_000_000_000, 1_000_000_000_000_000_000, 0
                 )
             ).reduce_add()
         else:  # len(self.words) == 4
             return (
-                self.words._data.load[width=4]().cast[DType.uint128]()
+                self.words.unsafe_ptr().load[width=4]().cast[DType.uint128]()
                 * SIMD[DType.uint128, 4](
                     1,
                     1_000_000_000,
@@ -1003,17 +1003,19 @@ struct BigUInt(
             if i == len(self.words) - 1:
                 result += String(self.words[i])
             else:
-                result += String(self.words[i]).rjust(width=9, fillchar="0")
+                result += decimo.str.rjust(
+                    String(self.words[i]), width=9, fillchar="0"
+                )
 
         if line_width > 0:
             var start = 0
             var end = line_width
             var lines = List[String](capacity=len(result) // line_width + 1)
             while end < len(result):
-                lines.append(String(result[start:end]))
+                lines.append(String(result[byte=start:end]))
                 start = end
                 end += line_width
-            lines.append(String(result[start:]))
+            lines.append(String(result[byte=start:]))
             result = String("\n").join(lines^)
 
         return result^
@@ -1033,10 +1035,10 @@ struct BigUInt(
         var start = end - 3
         var blocks = List[String](capacity=len(result) // 3 + 1)
         while start > 0:
-            blocks.append(String(result[start:end]))
+            blocks.append(String(result[byte=start:end]))
             end = start
             start = end - 3
-        blocks.append(String(result[0:end]))
+        blocks.append(String(result[byte=0:end]))
         blocks.reverse()
         result = separator.join(blocks)
 
@@ -1556,7 +1558,9 @@ struct BigUInt(
         for i in range(len(self.words)):
             var label = "word " + String(i) + ":"
             result += label + String(" ") * (col - len(label))
-            result += String(self.words[i]).rjust(9, fillchar="0") + "\n"
+            result += (
+                decimo.str.rjust(String(self.words[i]), 9, fillchar="0") + "\n"
+            )
 
         result += sep_line
         return result^
@@ -1938,7 +1942,9 @@ struct BigUInt(
                 ValueError(
                     file="src/decimo/biguint/biguint.mojo",
                     function="BigUInt.remove_trailing_digits_with_rounding()",
-                    message=("Unknown rounding mode: " + String(rounding_mode)),
+                    message=(
+                        "Unknown rounding mode: " + rounding_mode.__str__()
+                    ),
                     previous_error=None,
                 )
             )

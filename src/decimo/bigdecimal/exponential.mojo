@@ -16,7 +16,7 @@
 
 """Implements exponential functions for the BigDecimal type."""
 
-import math
+from std import math
 
 from decimo.bigdecimal.bigdecimal import BigDecimal
 from decimo.rounding_mode import RoundingMode
@@ -1882,7 +1882,7 @@ fn exp_taylor_series(
     # print("DEBUG: exp_taylor_series")
     # print("DEBUG: x =", x)
 
-    var max_number_of_terms = Int(minimum_precision * 2.5) + 1
+    var max_number_of_terms = Int(Float64(minimum_precision) * 2.5) + 1
     var result = BigDecimal(BigUInt.one(), 0, False)
     var term = BigDecimal(BigUInt.one(), 0, False)
     var n: UInt32 = 1
@@ -2205,7 +2205,7 @@ fn ln_series_expansion(
     comptime _TAYLOR_ATANH_DIGIT_RATIO = 10
     if z_digits <= working_precision // _TAYLOR_ATANH_DIGIT_RATIO:
         # ---- Taylor path (optimal for small/simple z) ----
-        var max_terms = Int(working_precision * 2.5) + 1
+        var max_terms = Int(Float64(working_precision) * 2.5) + 1
         var result = BigDecimal(BigUInt.zero(), working_precision, False)
         var term = z.copy()
         var k: UInt32 = 1
@@ -2275,7 +2275,7 @@ fn ln_series_expansion(
     var result = term.copy()
 
     # Convergence: u² ≤ 1/9, so ~1.05*p terms suffice (vs 3.3*p Taylor)
-    var max_terms = Int(working_precision * 1.2) + 10
+    var max_terms = Int(Float64(working_precision) * 1.2) + 10
 
     for k in range(1, max_terms):
         var old_denom = UInt32(2 * k - 1)
@@ -2356,7 +2356,7 @@ fn compute_ln2(working_precision: Int) raises -> BigDecimal:
         )
         return result^
 
-    var max_terms = Int(working_precision * 2.5) + 1
+    var max_terms = Int(Float64(working_precision) * 2.5) + 1
 
     var number_of_words = working_precision // 9 + 1
     var words = List[UInt32](capacity=number_of_words)

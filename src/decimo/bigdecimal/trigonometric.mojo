@@ -18,7 +18,7 @@
 # Trigonometric functions for BigDecimal
 # ===----------------------------------------------------------------------=== #
 
-import time
+from std import time
 
 from decimo.bigdecimal.bigdecimal import BigDecimal
 from decimo.rounding_mode import RoundingMode

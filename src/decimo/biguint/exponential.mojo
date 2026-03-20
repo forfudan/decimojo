@@ -16,8 +16,8 @@
 
 """Implements exponential functions for the BigUInt type."""
 
-import math
-from memory import memset_zero
+from std import math
+from std.memory import memset_zero
 
 from decimo.biguint.biguint import BigUInt
 import decimo.biguint.arithmetics
@@ -57,7 +57,7 @@ fn sqrt(x: BigUInt) -> BigUInt:
         var res = UInt32(
             math.sqrt(
                 (
-                    x.words._data.load[width=2]().cast[DType.uint64]()
+                    x.words.unsafe_ptr().load[width=2]().cast[DType.uint64]()
                     * SIMD[DType.uint64, 2](1, 1_000_000_000)
                 ).reduce_add()
             )
@@ -164,9 +164,9 @@ fn sqrt_initial_guess(x: BigUInt) -> BigUInt:
         msw_sqrt = UInt32(
             math.sqrt(
                 (
-                    x.words._data.load[width=2](len(x.words) - 2).cast[
-                        DType.uint64
-                    ]()
+                    x.words.unsafe_ptr()
+                    .load[width=2](len(x.words) - 2)
+                    .cast[DType.uint64]()
                     * SIMD[DType.uint64, 2](1, 1_000_000_000)
                 ).reduce_add()
             )

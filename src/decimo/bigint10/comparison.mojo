@@ -56,7 +56,7 @@ fn compare(x1: BigInt10, x2: BigInt10) -> Int8:
 
     # Different signs: negative < positive
     if x1.sign != x2.sign:
-        return -1 if x1.sign else 1
+        return Int8(-1) if x1.sign else Int8(1)
 
     # Same signs: compare magnitudes
     var magnitude_comparison = compare_magnitudes(x1, x2)

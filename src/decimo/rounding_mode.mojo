@@ -33,7 +33,7 @@ comptime ROUND_FLOOR = RoundingMode.ROUND_FLOOR
 """Rounding mode: Round toward negative infinity."""
 
 
-struct RoundingMode(Copyable, ImplicitlyCopyable, Movable, Stringable):
+struct RoundingMode(Copyable, ImplicitlyCopyable, Movable, Writable):
     """
     Represents different rounding modes for decimal operations.
 
@@ -108,7 +108,7 @@ struct RoundingMode(Copyable, ImplicitlyCopyable, Movable, Stringable):
         return self.value == other.value
 
     fn __eq__(self, other: String) -> Bool:
-        return String(self) == other
+        return self.__str__() == other
 
     fn __str__(self) -> String:
         if self == Self.down():
@@ -127,3 +127,6 @@ struct RoundingMode(Copyable, ImplicitlyCopyable, Movable, Stringable):
             return "ROUND_FLOOR"
         else:
             return "UNKNOWN_ROUNDING_MODE"
+
+    fn write_to[W: Writer](self, mut writer: W):
+        writer.write(self.__str__())

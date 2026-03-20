@@ -52,9 +52,9 @@ Pattern expansion in string values:
 
 from .toml import parse_file as parse_toml_file
 from .toml.parser import TOMLDocument
-from python import Python, PythonObject
-from collections import List
-import os
+from std.python import Python, PythonObject
+from std.collections import List
+from std import os
 
 
 # ===----------------------------------------------------------------------=== #
@@ -62,7 +62,7 @@ import os
 # ===----------------------------------------------------------------------=== #
 
 
-struct TestCase(Copyable, Movable, Stringable, Writable):
+struct TestCase(Copyable, Movable, Writable):
     """Structure to hold test case data.
 
     Attributes:
@@ -87,17 +87,17 @@ struct TestCase(Copyable, Movable, Stringable, Writable):
             description + " (a = " + self.a + ", b = " + self.b + ")"
         )
 
-    fn __copyinit__(out self, other: Self):
-        self.a = other.a
-        self.b = other.b
-        self.expected = other.expected
-        self.description = other.description
+    fn __init__(out self, *, copy: Self):
+        self.a = copy.a
+        self.b = copy.b
+        self.expected = copy.expected
+        self.description = copy.description
 
-    fn __moveinit__(out self, deinit other: Self):
-        self.a = other.a^
-        self.b = other.b^
-        self.expected = other.expected^
-        self.description = other.description^
+    fn __init__(out self, *, deinit take: Self):
+        self.a = take.a^
+        self.b = take.b^
+        self.expected = take.expected^
+        self.description = take.description^
 
     fn __str__(self) -> String:
         return (
@@ -125,7 +125,7 @@ struct TestCase(Copyable, Movable, Stringable, Writable):
 # ===----------------------------------------------------------------------=== #
 
 
-struct BenchCase(Copyable, Movable, Stringable, Writable):
+struct BenchCase(Copyable, Movable, Writable):
     """A benchmark case with a name and one or two operands."""
 
     var name: String
@@ -137,15 +137,15 @@ struct BenchCase(Copyable, Movable, Stringable, Writable):
         self.a = a
         self.b = b
 
-    fn __copyinit__(out self, other: Self):
-        self.name = other.name
-        self.a = other.a
-        self.b = other.b
+    fn __init__(out self, *, copy: Self):
+        self.name = copy.name
+        self.a = copy.a
+        self.b = copy.b
 
-    fn __moveinit__(out self, deinit other: Self):
-        self.name = other.name^
-        self.a = other.a^
-        self.b = other.b^
+    fn __init__(out self, *, deinit take: Self):
+        self.name = take.name^
+        self.a = take.a^
+        self.b = take.b^
 
     fn __str__(self) -> String:
         return (
@@ -210,7 +210,7 @@ fn expand_value(s: String) raises -> String:
                 continue
 
             # Extract inner content between braces
-            var inner = String(s[i + 1 : close])
+            var inner = String(s[byte = i + 1 : close])
 
             # Find the LAST comma (to handle multi-char repeat strings)
             var comma_pos = -1
@@ -229,8 +229,8 @@ fn expand_value(s: String) raises -> String:
                 i = close + 1
                 continue
 
-            var pattern = String(inner[:comma_pos])
-            var count_str = String(inner[comma_pos + 1 :])
+            var pattern = String(inner[byte=:comma_pos])
+            var count_str = String(inner[byte = comma_pos + 1 :])
             var count = atol(count_str)
 
             for _ in range(count):
@@ -392,13 +392,13 @@ struct PrecisionLevel(Copyable, Movable):
         self.precision = precision
         self.iterations = iterations
 
-    fn __copyinit__(out self, other: Self):
-        self.precision = other.precision
-        self.iterations = other.iterations
+    fn __init__(out self, *, copy: Self):
+        self.precision = copy.precision
+        self.iterations = copy.iterations
 
-    fn __moveinit__(out self, deinit other: Self):
-        self.precision = other.precision
-        self.iterations = other.iterations
+    fn __init__(out self, *, deinit take: Self):
+        self.precision = take.precision
+        self.iterations = take.iterations
 
 
 fn load_bench_precision_levels(

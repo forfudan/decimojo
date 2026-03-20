@@ -60,7 +60,7 @@ struct SourcePosition:
             self.column = 1
         else:
             self.column += 1
-        self.index += 1
+        self.index += len(char)
 
 
 struct TokenType(Copyable, ImplicitlyCopyable, Movable):
@@ -440,9 +440,7 @@ struct Tokenizer:
             result += self.current_char  # 'x'/'o'/'b'
             self._advance()
             # Determine valid digit set based on the base prefix
-            var base_char = String(
-                result[byte = len(result) - 1]
-            )  # 'x'/'o'/'b'
+            var base_char = String(result[byte=len(result) - 1])  # 'x'/'o'/'b'
             var digits_found = False
 
             if base_char == "x" or base_char == "X":

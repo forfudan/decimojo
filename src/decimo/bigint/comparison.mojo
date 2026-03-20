@@ -43,12 +43,12 @@ fn compare_magnitudes(x1: BigInt, x2: BigInt) -> Int8:
 
     # More words means larger magnitude
     if n1 != n2:
-        return 1 if n1 > n2 else -1
+        return Int8(1) if n1 > n2 else Int8(-1)
 
     # Same number of words: compare from most-significant to least-significant
     for i in range(n1 - 1, -1, -1):
         if x1.words[i] != x2.words[i]:
-            return 1 if x1.words[i] > x2.words[i] else -1
+            return Int8(1) if x1.words[i] > x2.words[i] else Int8(-1)
 
     return 0
 
@@ -72,7 +72,7 @@ fn compare(x1: BigInt, x2: BigInt) -> Int8:
 
     # Different signs: negative < positive
     if x1.sign != x2.sign:
-        return -1 if x1.sign else 1
+        return Int8(-1) if x1.sign else Int8(1)
 
     # Same signs: compare magnitudes
     var magnitude_comparison = compare_magnitudes(x1, x2)

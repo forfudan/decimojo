@@ -29,7 +29,7 @@ Supports:
 - Duplicate key detection
 """
 
-from collections import Dict
+from std.collections import Dict
 from .tokenizer import Token, TokenType, Tokenizer
 
 
@@ -94,14 +94,14 @@ struct TOMLValue(Copyable, ImplicitlyCopyable, Movable):
         self.array_values = List[TOMLValue]()
         self.table_values = Dict[String, TOMLValue]()
 
-    fn __copyinit__(out self, other: Self):
-        self.type = other.type
-        self.string_value = other.string_value
-        self.int_value = other.int_value
-        self.float_value = other.float_value
-        self.bool_value = other.bool_value
-        self.array_values = other.array_values.copy()
-        self.table_values = other.table_values.copy()
+    fn __init__(out self, *, copy: Self):
+        self.type = copy.type
+        self.string_value = copy.string_value
+        self.int_value = copy.int_value
+        self.float_value = copy.float_value
+        self.bool_value = copy.bool_value
+        self.array_values = copy.array_values.copy()
+        self.table_values = copy.table_values.copy()
 
     fn is_table(self) -> Bool:
         """Check if this value is a table."""
@@ -518,9 +518,9 @@ struct TOMLParser:
     fn _parse_integer(self, val_str: String) raises -> TOMLValue:
         """Parse an integer string, handling hex/octal/binary prefixes."""
         if len(val_str) > 2:
-            var prefix = String(val_str[:2])
+            var prefix = String(val_str[byte=:2])
             if prefix == "0x" or prefix == "0X":
-                var hex_str = String(val_str[2:])
+                var hex_str = String(val_str[byte=2:])
                 var result: Int = 0
                 for i in range(len(hex_str)):
                     var ch = String(hex_str[byte=i])
@@ -533,7 +533,7 @@ struct TOMLParser:
                         result += ord(ch) - ord("A") + 10
                 return TOMLValue(result)
             elif prefix == "0o" or prefix == "0O":
-                var oct_str = String(val_str[2:])
+                var oct_str = String(val_str[byte=2:])
                 var result: Int = 0
                 for i in range(len(oct_str)):
                     result = result * 8 + (
@@ -541,7 +541,7 @@ struct TOMLParser:
                     )
                 return TOMLValue(result)
             elif prefix == "0b" or prefix == "0B":
-                var bin_str = String(val_str[2:])
+                var bin_str = String(val_str[byte=2:])
                 var result: Int = 0
                 for i in range(len(bin_str)):
                     result = result * 2 + (

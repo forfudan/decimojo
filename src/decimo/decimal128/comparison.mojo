@@ -39,7 +39,7 @@
 Implements functions for comparison operations on Decimal128 objects.
 """
 
-import testing
+from std import testing
 
 from decimo.decimal128.decimal128 import Decimal128
 import decimo.decimal128.utility
@@ -66,15 +66,15 @@ fn compare(x: Decimal128, y: Decimal128) -> Int8:
 
     # If x is zero, it is less than any non-zero number
     elif x.is_zero():
-        return 1 if y.is_negative() else -1
+        return Int8(1) if y.is_negative() else Int8(-1)
 
     # If y is zero, it is less than any non-zero number
     elif y.is_zero():
-        return -1 if x.is_negative() else 1
+        return Int8(-1) if x.is_negative() else Int8(1)
 
     # If signs differ, the positive one is greater
     elif x.is_negative() != y.is_negative():
-        return -1 if x.is_negative() else 1
+        return Int8(-1) if x.is_negative() else Int8(1)
 
     # If they have the same sign, compare the absolute values
     elif x.is_negative():

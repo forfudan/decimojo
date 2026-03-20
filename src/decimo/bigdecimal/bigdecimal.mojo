@@ -23,14 +23,15 @@ operation dunders, and other dunders that implement traits, as well as
 mathematical methods that do not implement a trait.
 """
 
-from memory import UnsafePointer
-from python import PythonObject
-import testing
+from std.memory import UnsafePointer
+from std.python import PythonObject
+from std import testing
 
 from decimo.errors import DecimoError
 from decimo.rounding_mode import RoundingMode
 from decimo.bigdecimal.rounding import round_to_precision
 from decimo.bigint10.bigint10 import BigInt10
+import decimo.str
 
 comptime BDec = BigDecimal
 """An arbitrary-precision decimal, similar to Python's `decimal.Decimal`."""
@@ -51,9 +52,7 @@ struct BigDecimal(
     FloatableRaising,
     IntableRaising,
     Movable,
-    Representable,
     Roundable,
-    Stringable,
     Writable,
 ):
     """An arbitrary-precision decimal, similar to Python's `decimal.Decimal`.
@@ -154,19 +153,16 @@ struct BigDecimal(
         Constraints:
             The dtype of the scalar must be integral.
         """
-        constrained[
-            dtype.is_integral(),
-            (
-                "\n***********************************************************\n"
-                "BigDecimal does not allow floating-point numbers as input to"
-                " avoid unintentional loss of precision. If you want to create"
-                " a BigDecimal from a floating-point number, please consider"
-                " wrapping it with quotation marks or using the"
-                " `BigDecimal.from_float()` (or `BDec.from_float()`) method"
-                " instead."
-                "\n***********************************************************"
-            ),
-        ]()
+        comptime assert dtype.is_integral(), (
+            "\n***********************************************************\n"
+            "BigDecimal does not allow floating-point numbers as input to"
+            " avoid unintentional loss of precision. If you want to create"
+            " a BigDecimal from a floating-point number, please consider"
+            " wrapping it with quotation marks or using the"
+            " `BigDecimal.from_float()` (or `BDec.from_float()`) method"
+            " instead."
+            "\n***********************************************************"
+        )
 
         self = Self.from_integral_scalar(value)
 
@@ -270,7 +266,7 @@ struct BigDecimal(
             The BigDecimal representation of the Scalar value.
         """
 
-        constrained[dtype.is_integral(), "dtype must be integral."]()
+        comptime assert dtype.is_integral(), "dtype must be integral."
 
         if value == 0:
             return Self(coefficient=BigUInt.zero(), scale=0, sign=False)
@@ -297,9 +293,9 @@ struct BigDecimal(
         with full precision before converting to BigDecimal.
         """
 
-        constrained[
-            dtype.is_floating_point(), "dtype must be floating-point."
-        ]()
+        comptime assert (
+            dtype.is_floating_point()
+        ), "dtype must be floating-point."
 
         if value == 0:
             return Self(coefficient=BigUInt.zero(), scale=0, sign=False)
@@ -374,7 +370,7 @@ struct BigDecimal(
 
         Examples:
         ```mojo
-        from python import Python
+        from std.python import Python
         from decimo.prelude import *
 
         fn main() raises:
@@ -497,23 +493,31 @@ struct BigDecimal(
     # __float__()
     # ===------------------------------------------------------------------=== #
 
+    # TODO: Deprecate this.
+    # Stringable -> Writable (write_to())
     fn __str__(self) -> String:
         """Returns string representation of the BigDecimal.
         See `to_string()` for more information.
         """
         return self.to_string()
 
+    # TODO: Deprecate this.
+    # Representable -> Writable (write_repr_to())
     fn __repr__(self) -> String:
         """Returns a string representation of the BigDecimal."""
         return 'BigDecimal("' + self.__str__() + '")'
 
+    fn write_repr_to[W: Writer](self, mut writer: W):
+        """Writes the debug representation to a writer."""
+        writer.write('BigDecimal("', self.__str__(), '")')
+
     fn __int__(self) raises -> Int:
         """Converts the BigDecimal to an integer."""
-        return Int(String(self))
+        return Int(self.__str__())
 
     fn __float__(self) raises -> Float64:
         """Converts the BigDecimal to a floating-point number."""
-        return Float64(String(self))
+        return Float64(self.__str__())
 
     # ===------------------------------------------------------------------=== #
     # Type-transfer or output methods that are not dunders
@@ -611,7 +615,7 @@ struct BigDecimal(
 
             # Strip trailing zeros (artifacts of working precision)
             var coef = coefficient_string
-            var cb = coef.as_string_slice().as_bytes()
+            var cb = StringSlice(coef).as_bytes()
             var clen = len(cb)
             var cptr = cb.unsafe_ptr()
             while clen > 1 and cptr[clen - 1] == 48:  # '0'
@@ -631,9 +635,9 @@ struct BigDecimal(
             if len(coef) <= lead_digits:
                 result += coef
             else:
-                result += coef[:lead_digits]
+                result += coef[byte=:lead_digits]
                 result += "."
-                result += coef[lead_digits:]
+                result += coef[byte=lead_digits:]
 
             # Append exponent (omit the 'E' suffix when eng_exp == 0)
             if eng_exp != 0:
@@ -652,7 +656,7 @@ struct BigDecimal(
             # preserve all digits so that __str__ stays round-trip safe.
             var coef = coefficient_string
             if scientific:
-                var cb = coef.as_string_slice().as_bytes()
+                var cb = StringSlice(coef).as_bytes()
                 var clen = len(cb)
                 var cptr = cb.unsafe_ptr()
                 while clen > 1 and cptr[clen - 1] == 48:  # ord('0')
@@ -665,7 +669,7 @@ struct BigDecimal(
             result += coef[byte=0]
             if len(coef) > 1:
                 result += "."
-                result += coef[1:]
+                result += coef[byte=1:]
             result += "E"
             if exponent > 0:
                 result += "+"
@@ -692,9 +696,9 @@ struct BigDecimal(
             else:
                 # Decimal point falls within the digit string.
                 # Example: coefficient "123456", scale 3 -> "123.456"
-                result += coefficient_string[:leftdigits]
+                result += coefficient_string[byte=:leftdigits]
                 result += "."
-                result += coefficient_string[leftdigits:]
+                result += coefficient_string[byte=leftdigits:]
 
         # Insert digit-group separators if requested
         if delimiter:
@@ -706,10 +710,10 @@ struct BigDecimal(
             var end = line_width
             var lines = List[String](capacity=len(result) // line_width + 1)
             while end < len(result):
-                lines.append(String(result[start:end]))
+                lines.append(String(result[byte=start:end]))
                 start = end
                 end += line_width
-            lines.append(String(result[start:]))
+            lines.append(String(result[byte=start:]))
             result = String("\n").join(lines^)
 
         return result^
@@ -722,7 +726,7 @@ struct BigDecimal(
         """Writes the BigDecimal to a writer.
         This implement the `write` method of the `Writer` trait.
         """
-        writer.write(String(self))
+        writer.write(self.__str__())
 
     fn to_scientific_string(self) -> String:
         """Returns the number in scientific notation (trailing zeros stripped).
@@ -1466,7 +1470,7 @@ struct BigDecimal(
         instead of a `Tuple[int]` for better performance in Mojo.
         """
         var coef_str = self.coefficient.to_string()
-        var cb = coef_str.as_string_slice().as_bytes()
+        var cb = StringSlice(coef_str).as_bytes()
         var n = len(cb)
         var ptr = cb.unsafe_ptr()
         var digits = List[UInt8](capacity=n)
@@ -1696,7 +1700,10 @@ struct BigDecimal(
             var label = "word " + String(i) + ":"
             result += label + String(" ") * (col - len(label))
             result += (
-                String(self.coefficient.words[i]).rjust(9, fillchar="0") + "\n"
+                decimo.str.rjust(
+                    String(self.coefficient.words[i]), 9, fillchar="0"
+                )
+                + "\n"
             )
 
         result += sep_line
@@ -1893,7 +1900,7 @@ fn _insert_digit_separators(s: String, delimiter: String) -> String:
     if not delimiter:
         return s
 
-    var sb = s.as_string_slice().as_bytes()
+    var sb = StringSlice(s).as_bytes()
     var n = len(sb)
     var ptr = sb.unsafe_ptr()
 
@@ -1918,11 +1925,11 @@ fn _insert_digit_separators(s: String, delimiter: String) -> String:
 
     # Determine integer-part and fractional-part ranges within `s`
     var int_end = dot_pos if dot_pos >= 0 else e_pos
-    var int_part = String(s[start:int_end])
+    var int_part = String(s[byte=start:int_end])
 
     var frac_part = String("")
     if dot_pos >= 0:
-        frac_part = String(s[dot_pos + 1 : e_pos])
+        frac_part = String(s[byte = dot_pos + 1 : e_pos])
 
     # --- Group integer part (right-to-left every 3 digits) ---
     var int_len = len(int_part)
@@ -1931,10 +1938,10 @@ fn _insert_digit_separators(s: String, delimiter: String) -> String:
         var end_i = int_len
         var start_i = end_i - 3
         while start_i > 0:
-            blocks.append(String(int_part[start_i:end_i]))
+            blocks.append(String(int_part[byte=start_i:end_i]))
             end_i = start_i
             start_i = end_i - 3
-        blocks.append(String(int_part[0:end_i]))
+        blocks.append(String(int_part[byte=0:end_i]))
         blocks.reverse()
         int_part = delimiter.join(blocks)
 
@@ -1944,17 +1951,17 @@ fn _insert_digit_separators(s: String, delimiter: String) -> String:
         var blocks = List[String](capacity=frac_len // 3 + 1)
         var i = 0
         while i + 3 < frac_len:
-            blocks.append(String(frac_part[i : i + 3]))
+            blocks.append(String(frac_part[byte = i : i + 3]))
             i += 3
-        blocks.append(String(frac_part[i:]))
+        blocks.append(String(frac_part[byte=i:]))
         frac_part = delimiter.join(blocks)
 
     # --- Rebuild ---
-    var result = String(s[:start])  # sign (if any)
+    var result = String(s[byte=:start])  # sign (if any)
     result += int_part
     if dot_pos >= 0:
         result += "."
         result += frac_part
     if e_pos < n:
-        result += String(s[e_pos:])  # exponent suffix
+        result += String(s[byte=e_pos:])  # exponent suffix
     return result^

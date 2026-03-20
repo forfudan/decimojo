@@ -27,7 +27,7 @@ for the Decimo library. It uses base-2^32 representation with UInt32 words
 in little-endian order, and a separate sign bit.
 """
 
-from memory import UnsafePointer, memcpy
+from std.memory import UnsafePointer, memcpy
 
 import decimo.bigint.arithmetics
 import decimo.bigint.bitwise
@@ -51,8 +51,6 @@ struct BigInt(
     FloatableRaising,
     IntableRaising,
     Movable,
-    Representable,
-    Stringable,
     Writable,
 ):
     """An arbitrary-precision signed integer, similar to Python's `int`.
@@ -289,7 +287,7 @@ struct BigInt(
             The BigInt representation of the Scalar value.
         """
 
-        constrained[dtype.is_integral(), "dtype must be integral."]()
+        comptime assert dtype.is_integral(), "dtype must be integral."
 
         if value == 0:
             return Self()
@@ -297,8 +295,7 @@ struct BigInt(
         var sign: Bool
         var magnitude: UInt64
 
-        @parameter
-        if dtype.is_unsigned():
+        comptime if dtype.is_unsigned():
             sign = False
             magnitude = UInt64(value)
         else:
@@ -477,7 +474,7 @@ struct BigInt(
         Returns:
             The value as a Float64.
         """
-        return Float64(String(self))
+        return Float64(self.__str__())
 
     fn __str__(self) -> String:
         """Returns a decimal string representation of the BigInt."""
@@ -486,6 +483,10 @@ struct BigInt(
     fn __repr__(self) -> String:
         """Returns a debug representation of the BigInt."""
         return 'BigInt("' + self.to_string() + '")'
+
+    fn write_repr_to[W: Writer](self, mut writer: W):
+        """Writes the debug representation to a writer."""
+        writer.write('BigInt("', self.to_string(), '")')
 
     fn write_to[W: Writer](self, mut writer: W):
         """Writes the decimal string representation to a writer."""
@@ -603,10 +604,10 @@ struct BigInt(
             var end = line_width
             var lines = List[String](capacity=len(result) // line_width + 1)
             while end < len(result):
-                lines.append(String(result[start:end]))
+                lines.append(String(result[byte=start:end]))
                 start = end
                 end += line_width
-            lines.append(String(result[start:]))
+            lines.append(String(result[byte=start:]))
             result = String("\n").join(lines^)
 
         return result^
@@ -633,15 +634,15 @@ struct BigInt(
         if self.sign:
             start_idx = 1  # Skip the minus sign
 
-        var digits_part = String(result[start_idx:])
+        var digits_part = String(result[byte=start_idx:])
         var end = len(digits_part)
         var start = end - 3
         var blocks = List[String](capacity=len(digits_part) // 3 + 1)
         while start > 0:
-            blocks.append(String(digits_part[start:end]))
+            blocks.append(String(digits_part[byte=start:end]))
             end = start
             start = end - 3
-        blocks.append(String(digits_part[0:end]))
+        blocks.append(String(digits_part[byte=0:end]))
         blocks.reverse()
         var formatted = separator.join(blocks)
 
@@ -668,10 +669,10 @@ struct BigInt(
             var word = self.words[i]
             if first_word:
                 if word != 0:
-                    result += hex(word)[2:]
+                    result += hex(word)[byte=2:]
                     first_word = False
             else:
-                var h = hex(word)[2:]
+                var h = hex(word)[byte=2:]
                 for _ in range(8 - len(h)):
                     result += "0"
                 result += h
@@ -700,10 +701,10 @@ struct BigInt(
             var word = self.words[i]
             if first_word:
                 if word != 0:
-                    result += bin(word)[2:]
+                    result += bin(word)[byte=2:]
                     first_word = False
             else:
-                var b = bin(word)[2:]
+                var b = bin(word)[byte=2:]
                 for _ in range(32 - len(b)):
                     result += "0"
                 result += b
@@ -1357,13 +1358,14 @@ struct BigInt(
             if not first_hex_line:
                 result += String(" ") * col
             result += (
-                String(hex_str[hex_start : hex_start + value_width]) + "\n"
+                String(hex_str[byte = hex_start : hex_start + value_width])
+                + "\n"
             )
             hex_start += value_width
             first_hex_line = False
         if not first_hex_line:
             result += String(" ") * col
-        result += String(hex_str[hex_start:]) + "\n"
+        result += String(hex_str[byte=hex_start:]) + "\n"
 
         # sign line
         result += "sign:" + String(" ") * (col - len("sign:"))
@@ -1373,7 +1375,9 @@ struct BigInt(
         for i in range(len(self.words)):
             var label = "word " + String(i) + ":"
             result += label + String(" ") * (col - len(label))
-            result += "0x" + hex(self.words[i])[2:].rjust(8, fillchar="0")
+            result += "0x" + decimo.str.rjust(
+                String(hex(self.words[i])[byte=2:]), 8, fillchar="0"
+            )
             result += "  (" + String(self.words[i]) + ")\n"
 
         result += sep_line

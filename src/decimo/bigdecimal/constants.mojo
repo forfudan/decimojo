@@ -17,8 +17,6 @@
 # Implements functions for calculating common constants.
 """
 
-import math as builtin_math
-
 from decimo.bigdecimal.bigdecimal import BigDecimal
 from decimo.bigint10.bigint10 import BigInt10
 from decimo.rounding_mode import RoundingMode
