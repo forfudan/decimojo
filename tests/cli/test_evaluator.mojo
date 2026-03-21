@@ -1,6 +1,6 @@
 """Test the evaluator: end-to-end expression evaluation with BigDecimal."""
 
-import testing
+from std import testing
 
 from calculator import evaluate
 from decimo.rounding_mode import RoundingMode
@@ -11,33 +11,33 @@ from decimo.rounding_mode import RoundingMode
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_addition() raises:
+def test_addition() raises:
     testing.assert_equal(String(evaluate("2+3")), "5", "2+3")
 
 
-fn test_subtraction() raises:
+def test_subtraction() raises:
     testing.assert_equal(String(evaluate("10-7")), "3", "10-7")
 
 
-fn test_multiplication() raises:
+def test_multiplication() raises:
     testing.assert_equal(String(evaluate("6*7")), "42", "6*7")
 
 
-fn test_division_exact() raises:
+def test_division_exact() raises:
     testing.assert_equal(String(evaluate("10/2")), "5", "10/2")
 
 
-fn test_division_repeating() raises:
+def test_division_repeating() raises:
     """1/3 with precision=10 should give 10 decimal digits."""
     var result = String(evaluate("1/3", precision=10))
     testing.assert_equal(result, "0.3333333333", "1/3 p=10")
 
 
-fn test_zero() raises:
+def test_zero() raises:
     testing.assert_equal(String(evaluate("0+0")), "0", "0+0")
 
 
-fn test_add_zero() raises:
+def test_add_zero() raises:
     testing.assert_equal(String(evaluate("42+0")), "42", "42+0")
 
 
@@ -46,15 +46,15 @@ fn test_add_zero() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_mul_before_add() raises:
+def test_mul_before_add() raises:
     testing.assert_equal(String(evaluate("2+3*4")), "14", "2+3*4")
 
 
-fn test_div_before_sub() raises:
+def test_div_before_sub() raises:
     testing.assert_equal(String(evaluate("10-6/3")), "8", "10-6/3")
 
 
-fn test_left_to_right() raises:
+def test_left_to_right() raises:
     testing.assert_equal(String(evaluate("10-3-2")), "5", "10-3-2")
 
 
@@ -63,17 +63,17 @@ fn test_left_to_right() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_parens_simple() raises:
+def test_parens_simple() raises:
     testing.assert_equal(String(evaluate("(2+3)*4")), "20", "(2+3)*4")
 
 
-fn test_nested_parens() raises:
+def test_nested_parens() raises:
     testing.assert_equal(
         String(evaluate("((1+2)*(3+4))")), "21", "((1+2)*(3+4))"
     )
 
 
-fn test_parens_division() raises:
+def test_parens_division() raises:
     testing.assert_equal(String(evaluate("(10+2)/(3+1)")), "3", "(10+2)/(3+1)")
 
 
@@ -82,23 +82,23 @@ fn test_parens_division() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_unary_minus_simple() raises:
+def test_unary_minus_simple() raises:
     testing.assert_equal(String(evaluate("-5+3")), "-2", "-5+3")
 
 
-fn test_unary_minus_in_parens() raises:
+def test_unary_minus_in_parens() raises:
     testing.assert_equal(String(evaluate("(-5+2)*3")), "-9", "(-5+2)*3")
 
 
-fn test_multiply_negative() raises:
+def test_multiply_negative() raises:
     testing.assert_equal(String(evaluate("2*-3")), "-6", "2*-3")
 
 
-fn test_double_negative() raises:
+def test_double_negative() raises:
     testing.assert_equal(String(evaluate("--5")), "5", "--5")
 
 
-fn test_negative_times_negative() raises:
+def test_negative_times_negative() raises:
     testing.assert_equal(String(evaluate("-2*-3")), "6", "-2*-3")
 
 
@@ -107,15 +107,15 @@ fn test_negative_times_negative() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_decimal_addition() raises:
+def test_decimal_addition() raises:
     testing.assert_equal(String(evaluate("1.5+2.5")), "4.0", "1.5+2.5")
 
 
-fn test_decimal_multiplication() raises:
+def test_decimal_multiplication() raises:
     testing.assert_equal(String(evaluate("0.1*0.2")), "0.02", "0.1*0.2")
 
 
-fn test_large_integer() raises:
+def test_large_integer() raises:
     """Test with numbers exceeding 64-bit integer range."""
     var result = String(evaluate("999999999999999999999999999999 + 1"))
     testing.assert_equal(
@@ -130,7 +130,7 @@ fn test_large_integer() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_precision_20() raises:
+def test_precision_20() raises:
     var result = String(evaluate("1/7", precision=20))
     testing.assert_equal(
         result,
@@ -139,7 +139,7 @@ fn test_precision_20() raises:
     )
 
 
-fn test_precision_5() raises:
+def test_precision_5() raises:
     var result = String(evaluate("1/3", precision=5))
     testing.assert_equal(result, "0.33333", "1/3 p=5")
 
@@ -149,7 +149,7 @@ fn test_precision_5() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_showcase_expression() raises:
+def test_showcase_expression() raises:
     """100 * 12 - 23/17 at default precision (50 significant digits)."""
     var result = String(evaluate("100*12-23/17"))
     # 50 significant digits: 4 integer digits + 46 decimal digits.
@@ -165,24 +165,24 @@ fn test_showcase_expression() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_power_simple() raises:
+def test_power_simple() raises:
     testing.assert_equal(String(evaluate("2^10")), "1024", "2^10")
 
 
-fn test_power_double_star() raises:
+def test_power_double_star() raises:
     """** alias for ^."""
     testing.assert_equal(String(evaluate("2**10")), "1024", "2**10")
 
 
-fn test_power_zero() raises:
+def test_power_zero() raises:
     testing.assert_equal(String(evaluate("5^0")), "1", "5^0")
 
 
-fn test_power_one() raises:
+def test_power_one() raises:
     testing.assert_equal(String(evaluate("7^1")), "7", "7^1")
 
 
-fn test_power_large() raises:
+def test_power_large() raises:
     """2^256 should produce the correct value."""
     var result = String(evaluate("2^256"))
     # BigDecimal may render this in scientific notation
@@ -194,17 +194,17 @@ fn test_power_large() raises:
     )
 
 
-fn test_power_right_associative() raises:
+def test_power_right_associative() raises:
     """2^3^2 = 2^(3^2) = 2^9 = 512."""
     testing.assert_equal(String(evaluate("2^3^2")), "512", "2^3^2")
 
 
-fn test_power_with_subtraction() raises:
+def test_power_with_subtraction() raises:
     """10^2 - 1 = 99."""
     testing.assert_equal(String(evaluate("10^2-1")), "99", "10^2-1")
 
 
-fn test_power_negative_exponent() raises:
+def test_power_negative_exponent() raises:
     """2^-3 = 0.125."""
     testing.assert_equal(String(evaluate("2^-3")), "0.125", "2^-3")
 
@@ -214,11 +214,11 @@ fn test_power_negative_exponent() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_sqrt_perfect() raises:
+def test_sqrt_perfect() raises:
     testing.assert_equal(String(evaluate("sqrt(9)")), "3", "sqrt(9)")
 
 
-fn test_sqrt_irrational() raises:
+def test_sqrt_irrational() raises:
     """Irrational sqrt(2) with precision 20."""
     var result = String(evaluate("sqrt(2)", precision=20))
     testing.assert_true(
@@ -227,40 +227,40 @@ fn test_sqrt_irrational() raises:
     )
 
 
-fn test_ln_1() raises:
+def test_ln_1() raises:
     testing.assert_equal(String(evaluate("ln(1)")), "0", "ln(1)")
 
 
-fn test_exp_0() raises:
+def test_exp_0() raises:
     testing.assert_equal(String(evaluate("exp(0)")), "1", "exp(0)")
 
 
-fn test_abs_negative() raises:
+def test_abs_negative() raises:
     testing.assert_equal(String(evaluate("abs(-42)")), "42", "abs(-42)")
 
 
-fn test_abs_positive() raises:
+def test_abs_positive() raises:
     testing.assert_equal(String(evaluate("abs(7)")), "7", "abs(7)")
 
 
-fn test_root_cube() raises:
+def test_root_cube() raises:
     """Cube root(27, 3) = 3."""
     testing.assert_equal(String(evaluate("root(27, 3)")), "3", "root(27,3)")
 
 
-fn test_function_in_expression() raises:
+def test_function_in_expression() raises:
     """1 + sqrt(4) = 3."""
     testing.assert_equal(String(evaluate("1+sqrt(4)")), "3", "1+sqrt(4)")
 
 
-fn test_nested_functions() raises:
+def test_nested_functions() raises:
     """Nested sqrt(abs(-9)) = 3."""
     testing.assert_equal(
         String(evaluate("sqrt(abs(-9))")), "3", "sqrt(abs(-9))"
     )
 
 
-fn test_function_with_power() raises:
+def test_function_with_power() raises:
     """Power of sqrt(2)^2 should be very close to 2."""
     var result = String(evaluate("sqrt(2)^2"))
     testing.assert_true(
@@ -274,7 +274,7 @@ fn test_function_with_power() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_pi_constant() raises:
+def test_pi_constant() raises:
     """Constant pi with precision 20."""
     var result = String(evaluate("pi", precision=20))
     testing.assert_true(
@@ -283,7 +283,7 @@ fn test_pi_constant() raises:
     )
 
 
-fn test_e_constant() raises:
+def test_e_constant() raises:
     """Constant e with precision 20."""
     var result = String(evaluate("e", precision=20))
     testing.assert_true(
@@ -292,7 +292,7 @@ fn test_e_constant() raises:
     )
 
 
-fn test_pi_in_expression() raises:
+def test_pi_in_expression() raises:
     """Expression 2*pi should start with 6.2831853..."""
     var result = String(evaluate("2*pi", precision=20))
     testing.assert_true(
@@ -301,7 +301,7 @@ fn test_pi_in_expression() raises:
     )
 
 
-fn test_ln_e_is_one() raises:
+def test_ln_e_is_one() raises:
     """Expression ln(e) should be approximately 1."""
     var result = String(evaluate("ln(e)", precision=20))
     testing.assert_true(
@@ -315,7 +315,7 @@ fn test_ln_e_is_one() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_cbrt_27() raises:
+def test_cbrt_27() raises:
     """Tests cbrt(27) ≈ 3."""
     var result = String(evaluate("cbrt(27)"))
     testing.assert_true(
@@ -324,17 +324,17 @@ fn test_cbrt_27() raises:
     )
 
 
-fn test_log10_1000() raises:
+def test_log10_1000() raises:
     """Tests log10(1000) = 3."""
     testing.assert_equal(String(evaluate("log10(1000)")), "3", "log10(1000)")
 
 
-fn test_log10_1() raises:
+def test_log10_1() raises:
     """Tests log10(1) = 0."""
     testing.assert_equal(String(evaluate("log10(1)")), "0", "log10(1)")
 
 
-fn test_log_base_2() raises:
+def test_log_base_2() raises:
     """Tests log(8, 2) ≈ 3."""
     var result = String(evaluate("log(8, 2)"))
     testing.assert_true(
@@ -343,7 +343,7 @@ fn test_log_base_2() raises:
     )
 
 
-fn test_log_base_100() raises:
+def test_log_base_100() raises:
     """Tests log(1000000, 100) ≈ 3."""
     var result = String(evaluate("log(1000000, 100)"))
     testing.assert_true(
@@ -352,17 +352,17 @@ fn test_log_base_100() raises:
     )
 
 
-fn test_cos_0() raises:
+def test_cos_0() raises:
     """Tests cos(0) = 1."""
     testing.assert_equal(String(evaluate("cos(0)")), "1", "cos(0)")
 
 
-fn test_tan_0() raises:
+def test_tan_0() raises:
     """Tests tan(0) = 0."""
     testing.assert_equal(String(evaluate("tan(0)")), "0", "tan(0)")
 
 
-fn test_cot_pi_over_4() raises:
+def test_cot_pi_over_4() raises:
     """Tests cot(pi/4) is very close to 1."""
     var result = String(evaluate("cot(pi/4)", precision=20))
     testing.assert_true(
@@ -371,7 +371,7 @@ fn test_cot_pi_over_4() raises:
     )
 
 
-fn test_csc_pi_over_2() raises:
+def test_csc_pi_over_2() raises:
     """Tests csc(pi/2) is very close to 1."""
     var result = String(evaluate("csc(pi/2)", precision=20))
     testing.assert_true(
@@ -385,7 +385,7 @@ fn test_csc_pi_over_2() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_rounding_half_even_tie() raises:
+def test_rounding_half_even_tie() raises:
     """2.5 rounded to 1 significant digit with half_even → 2 (round to even)."""
     var result = String(
         evaluate("2.5", precision=1, rounding_mode=RoundingMode.half_even())
@@ -393,7 +393,7 @@ fn test_rounding_half_even_tie() raises:
     testing.assert_equal(result, "2", "2.5 half_even p=1")
 
 
-fn test_rounding_half_up_tie() raises:
+def test_rounding_half_up_tie() raises:
     """2.5 rounded to 1 significant digit with half_up → 3 (round away from 0).
     """
     var result = String(
@@ -402,7 +402,7 @@ fn test_rounding_half_up_tie() raises:
     testing.assert_equal(result, "3", "2.5 half_up p=1")
 
 
-fn test_rounding_floor() raises:
+def test_rounding_floor() raises:
     """1.9 rounded to 1 significant digit with floor → 1."""
     var result = String(
         evaluate("1.9", precision=1, rounding_mode=RoundingMode.floor())
@@ -410,7 +410,7 @@ fn test_rounding_floor() raises:
     testing.assert_equal(result, "1", "1.9 floor p=1")
 
 
-fn test_rounding_ceiling() raises:
+def test_rounding_ceiling() raises:
     """1.1 rounded to 1 significant digit with ceiling → 2."""
     var result = String(
         evaluate("1.1", precision=1, rounding_mode=RoundingMode.ceiling())
@@ -418,7 +418,7 @@ fn test_rounding_ceiling() raises:
     testing.assert_equal(result, "2", "1.1 ceiling p=1")
 
 
-fn test_rounding_half_even_division() raises:
+def test_rounding_half_even_division() raises:
     """1/3 with half_even should produce a correctly rounded trailing digit."""
     var result = String(
         evaluate("1/3", precision=4, rounding_mode=RoundingMode.half_even())
@@ -426,7 +426,7 @@ fn test_rounding_half_even_division() raises:
     testing.assert_equal(result, "0.3333", "1/3 half_even p=4")
 
 
-fn test_rounding_half_up_division() raises:
+def test_rounding_half_up_division() raises:
     """2/3 with half_up should round trailing 6… → 7."""
     var result = String(
         evaluate("2/3", precision=4, rounding_mode=RoundingMode.half_up())
@@ -439,5 +439,5 @@ fn test_rounding_half_up_division() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

@@ -9,12 +9,12 @@ from decimo.tests import (
     print_header,
     print_summary,
 )
-from python import Python, PythonObject
-from time import perf_counter_ns
-from collections import List
+from std.python import Python, PythonObject
+from std.time import perf_counter_ns
+from std.collections import List
 
 
-fn run_case(
+def run_case(
     bc: BenchCase,
     iterations: Int,
     pydecimal: PythonObject,
@@ -41,14 +41,14 @@ fn run_case(
         var t0 = perf_counter_ns()
         for _ in range(iterations):
             _ = round(m_a, ndigits)
-        var tm = (perf_counter_ns() - t0) / iterations
+        var tm = (perf_counter_ns() - t0) / UInt(iterations)
         if tm == 0:
             tm = 1
 
         t0 = perf_counter_ns()
         for _ in range(iterations):
             _ = py_builtins.round(pa, ndigits)
-        var tp = (perf_counter_ns() - t0) / iterations
+        var tp = (perf_counter_ns() - t0) / UInt(iterations)
 
         var s = Float64(tp) / Float64(tm)
         sf.append(s)
@@ -61,7 +61,7 @@ fn run_case(
         log_print("Skipping this case", log_file)
 
 
-fn main() raises:
+def main() raises:
     var log_file = open_log_file("benchmark_round")
     print_header("Decimo Decimal128 Round Benchmark", log_file)
 

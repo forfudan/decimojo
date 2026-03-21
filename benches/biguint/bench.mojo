@@ -9,7 +9,7 @@ from bench_biguint_divide_complexity import main as bench_div_complexity
 from bench_biguint_multiply_complexity import main as bench_mul_complexity
 
 
-fn main() raises:
+def main() raises:
     while True:
         print(
             """

@@ -3,7 +3,7 @@ Tests for Decimal128 round operations with different rounding modes.
 TOML-driven tests for standard cases; inline for dynamic/consistency tests.
 """
 
-import testing
+from std import testing
 from decimo.toml.parser import TOMLDocument
 
 from decimo.decimal128.decimal128 import Decimal128, Dec128
@@ -13,7 +13,7 @@ from decimo.tests import parse_file, load_test_cases
 comptime data_path = "tests/decimal128/test_data/decimal128_round.toml"
 
 
-fn _run_round_section(
+def _run_round_section(
     doc: TOMLDocument,
     section: String,
     mode: RoundingMode,
@@ -25,7 +25,7 @@ fn _run_round_section(
         testing.assert_equal(String(result), tc.expected, tc.description)
 
 
-fn _run_round_default_section(doc: TOMLDocument, section: String) raises:
+def _run_round_default_section(doc: TOMLDocument, section: String) raises:
     """Run round test cases using builtin round() (banker's rounding)."""
     var cases = load_test_cases(doc, section)
     for tc in cases:
@@ -33,37 +33,37 @@ fn _run_round_default_section(doc: TOMLDocument, section: String) raises:
         testing.assert_equal(String(result), tc.expected, tc.description)
 
 
-fn test_round_default() raises:
+def test_round_default() raises:
     """6 cases using builtin round() with banker's rounding."""
     var doc = parse_file(data_path)
     _run_round_default_section(doc, "round_default")
 
 
-fn test_round_down() raises:
+def test_round_down() raises:
     """3 cases rounding toward zero."""
     var doc = parse_file(data_path)
     _run_round_section(doc, "round_down", RoundingMode.down())
 
 
-fn test_round_up() raises:
+def test_round_up() raises:
     """3 cases rounding away from zero."""
     var doc = parse_file(data_path)
     _run_round_section(doc, "round_up", RoundingMode.up())
 
 
-fn test_round_half_up() raises:
+def test_round_half_up() raises:
     """2 cases rounding half up."""
     var doc = parse_file(data_path)
     _run_round_section(doc, "round_half_up", RoundingMode.half_up())
 
 
-fn test_round_half_even() raises:
+def test_round_half_even() raises:
     """4 cases with banker's rounding via method."""
     var doc = parse_file(data_path)
     _run_round_section(doc, "round_half_even", RoundingMode.half_even())
 
 
-fn test_round_small_value() raises:
+def test_round_small_value() raises:
     """Round a dynamically-constructed very small number."""
     var small_value = Decimal128("0." + "0" * 27 + "1")
     testing.assert_equal(
@@ -73,14 +73,14 @@ fn test_round_small_value() raises:
     )
 
 
-fn test_rounding_consistency() raises:
+def test_rounding_consistency() raises:
     """Consistency across constructors and sequential rounding."""
     # Two ways to create 123.45
     var d1 = Decimal128("123.45")
     var d2 = Decimal128(123.45)
     testing.assert_equal(
-        String(round(d1, 1))[:3],
-        String(round(d2, 1))[:3],
+        String(round(d1, 1))[byte=:3],
+        String(round(d2, 1))[byte=:3],
         "Rounding consistency across different constructors",
     )
 
@@ -95,5 +95,5 @@ fn test_rounding_consistency() raises:
     )
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

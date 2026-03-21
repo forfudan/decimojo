@@ -37,7 +37,7 @@ from .tokenizer import (
 )
 
 
-fn parse_to_rpn(tokens: List[Token]) raises -> List[Token]:
+def parse_to_rpn(tokens: List[Token]) raises -> List[Token]:
     """Convert infix tokens to Reverse Polish Notation using
     Dijkstra's shunting-yard algorithm.
 

@@ -2,8 +2,8 @@
 Test BigDecimal comparison operations.
 """
 
-from python import Python
-import testing
+from std.python import Python
+from std import testing
 
 from decimo import BDec
 from decimo.bigdecimal.comparison import compare_absolute, compare
@@ -12,7 +12,7 @@ from decimo.tests import TestCase, parse_file, load_test_cases
 comptime file_path = "tests/bigdecimal/test_data/bigdecimal_compare.toml"
 
 
-fn test_bigdecimal_compare() raises:
+def test_bigdecimal_compare() raises:
     # Load test cases from TOML file
     var pydecimal = Python.import_module("decimal")
     var toml = parse_file(file_path)
@@ -213,7 +213,7 @@ fn test_bigdecimal_compare() raises:
     )
 
 
-fn main() raises:
+def main() raises:
     # print("Running BigDecimal comparison tests")
 
     # Run compare_absolute tests

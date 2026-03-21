@@ -2,8 +2,8 @@
 Test BigDecimal trigonometric functions
 """
 
-from python import Python
-import testing
+from std.python import Python
+from std import testing
 
 from decimo import BDec
 from decimo.tests import TestCase, parse_file, load_test_cases
@@ -12,8 +12,8 @@ from decimo.toml.parser import TOMLDocument
 comptime file_path = "tests/bigdecimal/test_data/bigdecimal_trigonometric.toml"
 
 
-fn run_test[
-    func: fn (BDec, Int) raises -> BDec
+def run_test[
+    func: def(BDec, Int) raises -> BDec
 ](toml: TOMLDocument, table_name: String, msg: String) raises:
     """Run a specific test case from the TOML document."""
     # print("------------------------------------------------------")
@@ -44,38 +44,38 @@ fn run_test[
     )
 
 
-fn test_bigdecimal_trignometric() raises:
+def test_bigdecimal_trignometric() raises:
     # Load test cases from TOML file
     var toml = parse_file(file_path)
 
-    run_test[func = decimo.bigdecimal.trigonometric.sin](
+    run_test[func=decimo.bigdecimal.trigonometric.sin](
         toml,
         "sin_tests",
         "sin",
     )
-    run_test[func = decimo.bigdecimal.trigonometric.cos](
+    run_test[func=decimo.bigdecimal.trigonometric.cos](
         toml,
         "cos_tests",
         "cos",
     )
-    run_test[func = decimo.bigdecimal.trigonometric.tan](
+    run_test[func=decimo.bigdecimal.trigonometric.tan](
         toml,
         "tan_tests",
         "tan",
     )
-    run_test[func = decimo.bigdecimal.trigonometric.cot](
+    run_test[func=decimo.bigdecimal.trigonometric.cot](
         toml,
         "cot_tests",
         "cot",
     )
-    run_test[func = decimo.bigdecimal.trigonometric.arctan](
+    run_test[func=decimo.bigdecimal.trigonometric.arctan](
         toml,
         "arctan_tests",
         "arctan",
     )
 
 
-fn main() raises:
+def main() raises:
     # print("Running BigDecimal trigonometric tests")
 
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

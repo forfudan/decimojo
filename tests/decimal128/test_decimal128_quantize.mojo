@@ -4,13 +4,13 @@ Tests various scenarios to ensure proper quantization behavior and compatibility
 with Python's decimal module implementation.
 """
 
-import testing
-from python import Python, PythonObject
+from std import testing
+from std.python import Python, PythonObject
 from decimo.decimal128.decimal128 import Decimal128
 from decimo.rounding_mode import RoundingMode
 
 
-fn test_basic_quantization() raises:
+def test_basic_quantization() raises:
     """Test basic quantization with different scales."""
     # print("Testing basic quantization...")
 
@@ -86,7 +86,7 @@ fn test_basic_quantization() raises:
     # print("✓ Basic quantization tests passed!")
 
 
-fn test_rounding_modes() raises:
+def test_rounding_modes() raises:
     """Test quantization with different rounding modes."""
     # print("Testing quantization with different rounding modes...")
 
@@ -163,7 +163,7 @@ fn test_rounding_modes() raises:
     # print("✓ Rounding mode tests passed!")
 
 
-fn test_edge_cases() raises:
+def test_edge_cases() raises:
     """Test edge cases for quantization."""
     # print("Testing quantization edge cases...")
 
@@ -242,7 +242,7 @@ fn test_edge_cases() raises:
     # print("✓ Edge cases tests passed!")
 
 
-fn test_special_cases() raises:
+def test_special_cases() raises:
     """Test special cases for quantization."""
     # print("Testing special quantization cases...")
 
@@ -320,7 +320,7 @@ fn test_special_cases() raises:
     # print("✓ Special cases tests passed!")
 
 
-fn test_quantize_exceptions() raises:
+def test_quantize_exceptions() raises:
     """Test exception conditions for quantize()."""
     # print("Testing quantize exceptions...")
 
@@ -355,7 +355,7 @@ fn test_quantize_exceptions() raises:
     # print("✓ Exception tests passed!")
 
 
-fn test_comprehensive_comparison() raises:
+def test_comprehensive_comparison() raises:
     """Test a wide range of values to ensure compatibility with Python's decimal.
     """
     # print("Testing comprehensive comparison with Python's decimal...")
@@ -574,7 +574,7 @@ fn test_comprehensive_comparison() raises:
     # print("✓ Comprehensive comparison tests passed!")
 
 
-fn run_single_quantize_case(
+def run_single_quantize_case(
     value_str: String,
     quant_str: String,
     mojo_mode: RoundingMode,
@@ -608,5 +608,5 @@ fn run_single_quantize_case(
         # Both implementations should either both succeed or both fail
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

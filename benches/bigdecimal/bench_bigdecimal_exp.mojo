@@ -17,12 +17,12 @@ from decimo.tests import (
     print_header,
     print_summary,
 )
-from python import Python, PythonObject
-from time import perf_counter_ns
-from collections import List
+from std.python import Python, PythonObject
+from std.time import perf_counter_ns
+from std.collections import List
 
 
-fn run_case(
+def run_case(
     bc: BenchCase,
     iterations: Int,
     precision: Int,
@@ -31,7 +31,7 @@ fn run_case(
     mut sf: List[Float64],
 ) raises:
     log_print("\nBenchmark:       " + bc.name, log_file)
-    log_print("a: " + bc.a[:80], log_file)
+    log_print("a: " + bc.a[byte=:80], log_file)
 
     var m_a = BigDecimal(bc.a)
     var pa = pydecimal.Decimal(bc.a)
@@ -46,20 +46,20 @@ fn run_case(
         # Correctness check: exact string match with Python
         if rm_str != rp_str:
             log_print("*** WARNING: String mismatch detected! ***", log_file)
-            log_print("Decimo result:   " + rm_str[:100], log_file)
-            log_print("Python result:     " + rp_str[:100], log_file)
+            log_print("Decimo result:   " + rm_str[byte=:100], log_file)
+            log_print("Python result:     " + rp_str[byte=:100], log_file)
 
         var t0 = perf_counter_ns()
         for _ in range(iterations):
             _ = m_a.exp(precision)
-        var tm = (perf_counter_ns() - t0) / iterations
+        var tm = (perf_counter_ns() - t0) / UInt(iterations)
         if tm == 0:
             tm = 1
 
         t0 = perf_counter_ns()
         for _ in range(iterations):
             _ = pa.exp()
-        var tp = (perf_counter_ns() - t0) / iterations
+        var tp = (perf_counter_ns() - t0) / UInt(iterations)
 
         var s = Float64(tp) / Float64(tm)
         sf.append(s)
@@ -72,7 +72,7 @@ fn run_case(
         log_print("Skipping this case", log_file)
 
 
-fn main() raises:
+def main() raises:
     var log_file = open_log_file("benchmark_bigdecimal_exp")
     print_header(
         "Decimo BigDecimal Exponential (exp) Multi-Precision Benchmark",

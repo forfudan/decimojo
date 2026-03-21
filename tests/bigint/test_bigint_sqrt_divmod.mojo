@@ -3,7 +3,7 @@ Test BigInt sqrt and divmod operations: sqrt, isqrt, __divmod__
 with positive, negative, mixed-sign, and consistency checks.
 """
 
-import testing
+from std import testing
 from decimo.bigint.bigint import BigInt
 
 
@@ -12,7 +12,7 @@ from decimo.bigint.bigint import BigInt
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_sqrt_perfect_squares() raises:
+def test_sqrt_perfect_squares() raises:
     """Test sqrt with perfect squares."""
     testing.assert_equal(String(BigInt(0).sqrt()), "0")
     testing.assert_equal(String(BigInt(1).sqrt()), "1")
@@ -25,7 +25,7 @@ fn test_sqrt_perfect_squares() raises:
     testing.assert_equal(String(BigInt(1000000).sqrt()), "1000")
 
 
-fn test_sqrt_non_perfect() raises:
+def test_sqrt_non_perfect() raises:
     """Test sqrt with non-perfect squares (floor)."""
     # sqrt(2) = 1
     testing.assert_equal(String(BigInt(2).sqrt()), "1")
@@ -46,7 +46,7 @@ fn test_sqrt_non_perfect() raises:
     testing.assert_equal(String(BigInt(101).sqrt()), "10")
 
 
-fn test_sqrt_large() raises:
+def test_sqrt_large() raises:
     """Test sqrt with large perfect squares."""
     # 10^20 → sqrt = 10^10 = 10000000000
     var x = BigInt(10) ** 20
@@ -65,7 +65,7 @@ fn test_sqrt_large() raises:
     testing.assert_true(s1_sq > n, "(sqrt+1)^2 > n")
 
 
-fn test_sqrt_negative_raises() raises:
+def test_sqrt_negative_raises() raises:
     """Test that sqrt of negative number raises."""
     var raised = False
     try:
@@ -75,7 +75,7 @@ fn test_sqrt_negative_raises() raises:
     testing.assert_true(raised, "sqrt(-4) should raise")
 
 
-fn test_isqrt_equals_sqrt() raises:
+def test_isqrt_equals_sqrt() raises:
     """Test that isqrt and sqrt produce the same result."""
     testing.assert_equal(String(BigInt(49).isqrt()), String(BigInt(49).sqrt()))
     testing.assert_equal(String(BigInt(50).isqrt()), String(BigInt(50).sqrt()))
@@ -86,7 +86,7 @@ fn test_isqrt_equals_sqrt() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_divmod_basic() raises:
+def test_divmod_basic() raises:
     """Test divmod with positive numbers."""
     var result = BigInt(7).__divmod__(BigInt(3))
     testing.assert_equal(String(result[0]), "2", "7 divmod 3: q")
@@ -101,7 +101,7 @@ fn test_divmod_basic() raises:
     testing.assert_equal(String(result[1]), "0", "0 divmod 5: r")
 
 
-fn test_divmod_mixed_sign() raises:
+def test_divmod_mixed_sign() raises:
     """Test divmod with mixed signs (floor semantics)."""
     # Python: divmod(7, -3) = (-3, -2) since 7 = (-3)*(-3) + (-2)
     var result = BigInt(7).__divmod__(BigInt(-3))
@@ -119,10 +119,10 @@ fn test_divmod_mixed_sign() raises:
     testing.assert_equal(String(result[1]), "-1", "-7 divmod -3: r")
 
 
-fn test_divmod_consistency() raises:
+def test_divmod_consistency() raises:
     """Test that divmod(a, b) satisfies a = q * b + r."""
 
-    fn _check_divmod(a_val: Int, b_val: Int) raises:
+    def _check_divmod(a_val: Int, b_val: Int) raises:
         var a = BigInt(a_val)
         var b = BigInt(b_val)
         var result = a.__divmod__(b)
@@ -143,7 +143,7 @@ fn test_divmod_consistency() raises:
     _check_divmod(-100, 7)
 
 
-fn test_divmod_by_zero_raises() raises:
+def test_divmod_by_zero_raises() raises:
     """Test divmod by zero raises."""
     var raised = False
     try:
@@ -153,5 +153,5 @@ fn test_divmod_by_zero_raises() raises:
     testing.assert_true(raised, "divmod by zero should raise")
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

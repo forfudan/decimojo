@@ -19,15 +19,15 @@
 #
 # ===----------------------------------------------------------------------=== #
 
-from memory import UnsafePointer
-import sys
-import time
+from std.memory import UnsafePointer
+from std import sys
+from std import time
 
 from decimo.decimal128.decimal128 import Decimal128
 
 
 # UNSAFE
-fn bitcast[dtype: DType](dec: Decimal128) -> Scalar[dtype]:
+def bitcast[dtype: DType](dec: Decimal128) -> Scalar[dtype]:
     """
     Direct memory bit copy from Decimal128 (low, mid, high) to Mojo's Scalar type.
     This performs a bitcast/reinterpretation rather than bit manipulation.
@@ -48,10 +48,9 @@ fn bitcast[dtype: DType](dec: Decimal128) -> Scalar[dtype]:
     """
 
     # Compile-time checker: ensure the dtype is either uint128 or uint256
-    constrained[
-        dtype == DType.uint128 or dtype == DType.uint256,
-        "must be uint128 or uint256",
-    ]()
+    comptime assert (
+        dtype == DType.uint128 or dtype == DType.uint256
+    ), "must be uint128 or uint256"
 
     # Bitcast the Decimal128 to the desired Mojo scalar type
     var result = UnsafePointer(to=dec).bitcast[Scalar[dtype]]().load()
@@ -60,7 +59,7 @@ fn bitcast[dtype: DType](dec: Decimal128) -> Scalar[dtype]:
     return result
 
 
-fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
+def truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
     """
     Truncates a UInt256 or UInt128 value to be as closer to the max value of
     Decimal128 coefficient (`2^96 - 1`) as possible with rounding.
@@ -85,10 +84,9 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
 
     comptime ValueType = Scalar[dtype]
 
-    constrained[
-        dtype == DType.uint128 or dtype == DType.uint256,
-        "must be uint128 or uint256",
-    ]()
+    comptime assert (
+        dtype == DType.uint128 or dtype == DType.uint256
+    ), "must be uint128 or uint256"
 
     # If the value is already less than the maximum possible value, return it
     if value <= ValueType(Decimal128.MAX_AS_UINT128):
@@ -192,7 +190,7 @@ fn truncate_to_max[dtype: DType, //](value: Scalar[dtype]) -> Scalar[dtype]:
             return truncated_value
 
 
-fn sqrt(x: UInt128) -> UInt128:
+def sqrt(x: UInt128) -> UInt128:
     """
     Returns the square root of a UInt128 value.
 
@@ -209,7 +207,7 @@ fn sqrt(x: UInt128) -> UInt128:
     var r: UInt128 = 0
 
     for p in range(sys.bit_width_of[UInt128]() // 2 - 1, -1, -1):
-        var new_bit = UInt128(1) << p
+        var new_bit = UInt128(1) << UInt128(p)
         var would_be = r | new_bit
         var squared = would_be * would_be
         if squared <= x:
@@ -219,7 +217,7 @@ fn sqrt(x: UInt128) -> UInt128:
 
 
 # TODO: Evaluate whether this can replace truncate_to_max in some cases.
-fn round_to_keep_first_n_digits[
+def round_to_keep_first_n_digits[
     dtype: DType, //
 ](
     value: Scalar[dtype],
@@ -295,10 +293,9 @@ fn round_to_keep_first_n_digits[
 
     comptime ValueType = Scalar[dtype]
 
-    constrained[
-        dtype == DType.uint128 or dtype == DType.uint256,
-        "must be uint128 or uint256",
-    ]()
+    comptime assert (
+        dtype == DType.uint128 or dtype == DType.uint256
+    ), "must be uint128 or uint256"
 
     # CASE: The number of digits is less than 0
     # Return 0.
@@ -393,7 +390,7 @@ fn round_to_keep_first_n_digits[
 
 
 @always_inline
-fn number_of_digits[dtype: DType, //](value: Scalar[dtype]) -> Int:
+def number_of_digits[dtype: DType, //](value: Scalar[dtype]) -> Int:
     """
     Returns the number of (significant) digits in an integral value using binary search.
     This implementation is significantly faster than loop division.
@@ -411,10 +408,9 @@ fn number_of_digits[dtype: DType, //](value: Scalar[dtype]) -> Int:
         The number of digits in the integral value.
     """
 
-    constrained[
-        dtype == DType.uint128 or dtype == DType.uint256,
-        "must be uint128 or uint256",
-    ]()
+    comptime assert (
+        dtype == DType.uint128 or dtype == DType.uint256
+    ), "must be uint128 or uint256"
 
     comptime ValueType = Scalar[dtype]
 
@@ -559,7 +555,7 @@ fn number_of_digits[dtype: DType, //](value: Scalar[dtype]) -> Int:
     return 59
 
 
-fn number_of_bits[dtype: DType, //](var value: Scalar[dtype]) -> Int:
+def number_of_bits[dtype: DType, //](var value: Scalar[dtype]) -> Int:
     """
     Returns the number of significant bits in an integer value.
 
@@ -567,10 +563,7 @@ fn number_of_bits[dtype: DType, //](var value: Scalar[dtype]) -> Int:
         `dtype` must be integral.
     """
 
-    constrained[
-        dtype.is_integral(),
-        "must be intergral",
-    ]()
+    comptime assert dtype.is_integral(), "must be intergral"
 
     if value < 0:
         value = -value
@@ -605,19 +598,19 @@ fn number_of_bits[dtype: DType, //](var value: Scalar[dtype]) -> Int:
 
 # # Initialize with the first value
 # @always_inline
-# fn _init_power_of_10_as_uint128_cache():
+# def _init_power_of_10_as_uint128_cache():
 #     if len(_power_of_10_as_uint128_cache) == 0:
 #         _power_of_10_as_uint128_cache.append(1)  # 10^0 = 1
 
 
 # @always_inline
-# fn _init_power_of_10_as_uint256_cache():
+# def _init_power_of_10_as_uint256_cache():
 #     if len(_power_of_10_as_uint256_cache) == 0:
 #         _power_of_10_as_uint256_cache.append(1)  # 10^0 = 1
 
 
 # @always_inline
-# fn power_of_10_as_uint128(n: Int) raises -> UInt128:
+# def power_of_10_as_uint128(n: Int) raises -> UInt128:
 #     """
 #     Returns 10^n using cached values when available.
 #     """
@@ -643,7 +636,7 @@ fn number_of_bits[dtype: DType, //](var value: Scalar[dtype]) -> Int:
 
 
 # @always_inline
-# fn power_of_10_as_uint256(n: Int) raises -> UInt256:
+# def power_of_10_as_uint256(n: Int) raises -> UInt256:
 #     """
 #     Returns 10^n using cached values when available.
 #     """
@@ -669,7 +662,7 @@ fn number_of_bits[dtype: DType, //](var value: Scalar[dtype]) -> Int:
 
 
 @always_inline
-fn power_of_10[dtype: DType](n: Int) -> Scalar[dtype]:
+def power_of_10[dtype: DType](n: Int) -> Scalar[dtype]:
     """
     Returns 10^n using cached values when available.
     **WARNING**: The overflow is not checked in this function.
@@ -695,10 +688,9 @@ fn power_of_10[dtype: DType](n: Int) -> Scalar[dtype]:
 
     comptime ValueType = Scalar[dtype]
 
-    constrained[
-        dtype == DType.uint128 or dtype == DType.uint256,
-        "must be uint128 or uint256",
-    ]()
+    comptime assert (
+        dtype == DType.uint128 or dtype == DType.uint256
+    ), "must be uint128 or uint256"
 
     if n == 0:
         return ValueType(1)

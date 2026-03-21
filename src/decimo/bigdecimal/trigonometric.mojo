@@ -18,7 +18,7 @@
 # Trigonometric functions for BigDecimal
 # ===----------------------------------------------------------------------=== #
 
-import time
+from std import time
 
 from decimo.bigdecimal.bigdecimal import BigDecimal
 from decimo.rounding_mode import RoundingMode
@@ -31,7 +31,7 @@ import decimo.bigdecimal.exponential
 # ===----------------------------------------------------------------------=== #
 
 
-fn sin(x: BigDecimal, precision: Int) raises -> BigDecimal:
+def sin(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculates sine (sin) of the number.
 
     Args:
@@ -149,7 +149,7 @@ fn sin(x: BigDecimal, precision: Int) raises -> BigDecimal:
     return result^
 
 
-fn sin_taylor_series(
+def sin_taylor_series(
     x: BigDecimal, minimum_precision: Int
 ) raises -> BigDecimal:
     """Calculates sine of a number with Taylor series.
@@ -210,7 +210,7 @@ fn sin_taylor_series(
     return result^
 
 
-fn cos(x: BigDecimal, precision: Int) raises -> BigDecimal:
+def cos(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculates cosine (cos) of the number.
 
     Args:
@@ -237,7 +237,7 @@ fn cos(x: BigDecimal, precision: Int) raises -> BigDecimal:
     return result^
 
 
-fn cos_taylor_series(
+def cos_taylor_series(
     x: BigDecimal, minimum_precision: Int
 ) raises -> BigDecimal:
     """Calculates cosine using Taylor series.
@@ -300,7 +300,7 @@ fn cos_taylor_series(
     return result^
 
 
-fn tan(x: BigDecimal, precision: Int) raises -> BigDecimal:
+def tan(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculates tangent (tan) of the number.
 
     Args:
@@ -317,7 +317,7 @@ fn tan(x: BigDecimal, precision: Int) raises -> BigDecimal:
     return tan_cot(x, precision, is_tan=True)
 
 
-fn cot(x: BigDecimal, precision: Int) raises -> BigDecimal:
+def cot(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculates cotangent (cot) of the number.
 
     Args:
@@ -334,7 +334,7 @@ fn cot(x: BigDecimal, precision: Int) raises -> BigDecimal:
     return tan_cot(x, precision, is_tan=False)
 
 
-fn tan_cot(x: BigDecimal, precision: Int, is_tan: Bool) raises -> BigDecimal:
+def tan_cot(x: BigDecimal, precision: Int, is_tan: Bool) raises -> BigDecimal:
     """Calculates tangent (tan) or cotangent (cot) of the number.
 
     Args:
@@ -414,7 +414,7 @@ fn tan_cot(x: BigDecimal, precision: Int, is_tan: Bool) raises -> BigDecimal:
     return result^
 
 
-fn csc(x: BigDecimal, precision: Int) raises -> BigDecimal:
+def csc(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculates cosecant (csc) of the number.
 
     Args:
@@ -439,7 +439,7 @@ fn csc(x: BigDecimal, precision: Int) raises -> BigDecimal:
     return BigDecimal(BigUInt.one()).true_divide(sin_x, precision=precision)
 
 
-fn sec(x: BigDecimal, precision: Int) raises -> BigDecimal:
+def sec(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculates secant (sec) of the number.
 
     Args:
@@ -469,7 +469,7 @@ fn sec(x: BigDecimal, precision: Int) raises -> BigDecimal:
 # ===----------------------------------------------------------------------=== #
 
 
-fn arctan(x: BigDecimal, precision: Int) raises -> BigDecimal:
+def arctan(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculates arctangent (arctan) of the number.
 
     Notes:
@@ -539,7 +539,7 @@ fn arctan(x: BigDecimal, precision: Int) raises -> BigDecimal:
     return result^
 
 
-fn arctan_taylor_series(
+def arctan_taylor_series(
     x: BigDecimal, minimum_precision: Int
 ) raises -> BigDecimal:
     """Calculates arctangent (arctan) of a number with Taylor series.

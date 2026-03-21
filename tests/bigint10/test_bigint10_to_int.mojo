@@ -3,13 +3,13 @@ Test BigInt10 conversion methods: to_int() and __int__
 for different numerical cases.
 """
 
-import testing
+from std import testing
 
 from decimo.bigint10.bigint10 import BigInt10
 import decimo.bigint10.arithmetics as arithmetics
 
 
-fn test_int_conversion() raises:
+def test_int_conversion() raises:
     # print("------------------------------------------------------")
     # print("--- Testing BigInt10 to Int Conversion ---")
 
@@ -61,7 +61,7 @@ fn test_int_conversion() raises:
     testing.assert_equal(i7, Int.MIN)
 
 
-fn test_error_cases() raises:
+def test_error_cases() raises:
     # print("------------------------------------------------------")
     # print("--- Testing Error Cases ---")
 
@@ -102,7 +102,7 @@ fn test_error_cases() raises:
     )
 
 
-fn main() raises:
+def main() raises:
     # print("Starting BigInt10 to Int conversion tests...")
 
     # test_int_conversion()

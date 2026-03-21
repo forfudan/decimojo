@@ -52,9 +52,9 @@ Pattern expansion in string values:
 
 from .toml import parse_file as parse_toml_file
 from .toml.parser import TOMLDocument
-from python import Python, PythonObject
-from collections import List
-import os
+from std.python import Python, PythonObject
+from std.collections import List
+from std import os
 
 
 # ===----------------------------------------------------------------------=== #
@@ -62,7 +62,7 @@ import os
 # ===----------------------------------------------------------------------=== #
 
 
-struct TestCase(Copyable, Movable, Stringable, Writable):
+struct TestCase(Copyable, Movable, Writable):
     """Structure to hold test case data.
 
     Attributes:
@@ -77,7 +77,7 @@ struct TestCase(Copyable, Movable, Stringable, Writable):
     var expected: String
     var description: String
 
-    fn __init__(
+    def __init__(
         out self, a: String, b: String, expected: String, description: String
     ):
         self.a = a
@@ -87,32 +87,19 @@ struct TestCase(Copyable, Movable, Stringable, Writable):
             description + " (a = " + self.a + ", b = " + self.b + ")"
         )
 
-    fn __copyinit__(out self, other: Self):
-        self.a = other.a
-        self.b = other.b
-        self.expected = other.expected
-        self.description = other.description
+    def __init__(out self, *, copy: Self):
+        self.a = copy.a
+        self.b = copy.b
+        self.expected = copy.expected
+        self.description = copy.description
 
-    fn __moveinit__(out self, deinit other: Self):
-        self.a = other.a^
-        self.b = other.b^
-        self.expected = other.expected^
-        self.description = other.description^
+    def __init__(out self, *, deinit take: Self):
+        self.a = take.a^
+        self.b = take.b^
+        self.expected = take.expected^
+        self.description = take.description^
 
-    fn __str__(self) -> String:
-        return (
-            "TestCase(a: "
-            + self.a
-            + ", b: "
-            + self.b
-            + ", expected: "
-            + self.expected
-            + ", description: "
-            + self.description
-            + ")"
-        )
-
-    fn write_to[T: Writer](self, mut writer: T):
+    def write_to[T: Writer](self, mut writer: T):
         writer.write("TestCase:\n")
         writer.write("  a: " + self.a + "\n")
         writer.write("  b: " + self.b + "\n")
@@ -125,41 +112,38 @@ struct TestCase(Copyable, Movable, Stringable, Writable):
 # ===----------------------------------------------------------------------=== #
 
 
-struct BenchCase(Copyable, Movable, Stringable, Writable):
+struct BenchCase(Copyable, Movable, Writable):
     """A benchmark case with a name and one or two operands."""
 
     var name: String
     var a: String
     var b: String
 
-    fn __init__(out self, name: String, a: String, b: String = ""):
+    def __init__(out self, name: String, a: String, b: String = ""):
         self.name = name
         self.a = a
         self.b = b
 
-    fn __copyinit__(out self, other: Self):
-        self.name = other.name
-        self.a = other.a
-        self.b = other.b
+    def __init__(out self, *, copy: Self):
+        self.name = copy.name
+        self.a = copy.a
+        self.b = copy.b
 
-    fn __moveinit__(out self, deinit other: Self):
-        self.name = other.name^
-        self.a = other.a^
-        self.b = other.b^
+    def __init__(out self, *, deinit take: Self):
+        self.name = take.name^
+        self.a = take.a^
+        self.b = take.b^
 
-    fn __str__(self) -> String:
-        return (
-            "BenchCase(name='"
-            + self.name
-            + "', a='"
-            + self.a
-            + "', b='"
-            + self.b
-            + "')"
+    def write_to[T: Writer](self, mut writer: T):
+        writer.write(
+            "BenchCase(name='",
+            self.name,
+            "', a='",
+            self.a,
+            "', b='",
+            self.b,
+            "')",
         )
-
-    fn write_to[T: Writer](self, mut writer: T):
-        writer.write(self.__str__())
 
 
 # ===----------------------------------------------------------------------=== #
@@ -167,7 +151,7 @@ struct BenchCase(Copyable, Movable, Stringable, Writable):
 # ===----------------------------------------------------------------------=== #
 
 
-fn expand_value(s: String) raises -> String:
+def expand_value(s: String) raises -> String:
     """Expand {C,N} repeat patterns in a string.
 
     Scans the string for `{C,N}` patterns where C is the string to repeat
@@ -210,7 +194,7 @@ fn expand_value(s: String) raises -> String:
                 continue
 
             # Extract inner content between braces
-            var inner = String(s[i + 1 : close])
+            var inner = String(s[byte = i + 1 : close])
 
             # Find the LAST comma (to handle multi-char repeat strings)
             var comma_pos = -1
@@ -229,8 +213,8 @@ fn expand_value(s: String) raises -> String:
                 i = close + 1
                 continue
 
-            var pattern = String(inner[:comma_pos])
-            var count_str = String(inner[comma_pos + 1 :])
+            var pattern = String(inner[byte=:comma_pos])
+            var count_str = String(inner[byte = comma_pos + 1 :])
             var count = atol(count_str)
 
             for _ in range(count):
@@ -248,7 +232,7 @@ fn expand_value(s: String) raises -> String:
 # ===----------------------------------------------------------------------=== #
 
 
-fn parse_file(file_path: String) raises -> TOMLDocument:
+def parse_file(file_path: String) raises -> TOMLDocument:
     """Parse a TOML file and return the TOMLDocument."""
     try:
         return parse_toml_file(file_path)
@@ -261,7 +245,7 @@ fn parse_file(file_path: String) raises -> TOMLDocument:
         )
 
 
-fn load_test_cases[
+def load_test_cases[
     unary: Bool = False
 ](toml: TOMLDocument, table_name: String) raises -> List[TestCase]:
     """Load test cases from a TOMLDocument.
@@ -305,7 +289,7 @@ fn load_test_cases[
     return test_cases^
 
 
-fn load_bench_cases(toml_path: String) raises -> List[BenchCase]:
+def load_bench_cases(toml_path: String) raises -> List[BenchCase]:
     """Load benchmark cases from a TOML file.
 
     Uses decimo.toml to parse the TOML file. Operand values are expanded
@@ -335,7 +319,7 @@ fn load_bench_cases(toml_path: String) raises -> List[BenchCase]:
     return cases^
 
 
-fn load_bench_iterations(toml_path: String) raises -> Int:
+def load_bench_iterations(toml_path: String) raises -> Int:
     """Load the iterations count from TOML config section.
 
     Args:
@@ -354,7 +338,7 @@ fn load_bench_iterations(toml_path: String) raises -> Int:
     return 1000
 
 
-fn load_bench_precision(toml_path: String) raises -> Int:
+def load_bench_precision(toml_path: String) raises -> Int:
     """Load the precision from TOML config section.
 
     Args:
@@ -388,20 +372,20 @@ struct PrecisionLevel(Copyable, Movable):
     var precision: Int
     var iterations: Int
 
-    fn __init__(out self, precision: Int, iterations: Int):
+    def __init__(out self, precision: Int, iterations: Int):
         self.precision = precision
         self.iterations = iterations
 
-    fn __copyinit__(out self, other: Self):
-        self.precision = other.precision
-        self.iterations = other.iterations
+    def __init__(out self, *, copy: Self):
+        self.precision = copy.precision
+        self.iterations = copy.iterations
 
-    fn __moveinit__(out self, deinit other: Self):
-        self.precision = other.precision
-        self.iterations = other.iterations
+    def __init__(out self, *, deinit take: Self):
+        self.precision = take.precision
+        self.iterations = take.iterations
 
 
-fn load_bench_precision_levels(
+def load_bench_precision_levels(
     toml_path: String,
 ) raises -> List[PrecisionLevel]:
     """Load precision levels from a TOML file's [[precision_levels]] tables.
@@ -438,7 +422,7 @@ fn load_bench_precision_levels(
 # ===----------------------------------------------------------------------=== #
 
 
-fn open_log_file(prefix: String) raises -> PythonObject:
+def open_log_file(prefix: String) raises -> PythonObject:
     """Create and open a timestamped log file.
 
     Creates a `./logs/` directory if it doesn't exist, then opens a log
@@ -466,7 +450,7 @@ fn open_log_file(prefix: String) raises -> PythonObject:
     return python.open(log_filename, "w")
 
 
-fn log_print(msg: String, log_file: PythonObject) raises:
+def log_print(msg: String, log_file: PythonObject) raises:
     """Print a message to both console and log file.
 
     Args:
@@ -483,7 +467,7 @@ fn log_print(msg: String, log_file: PythonObject) raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn print_header(title: String, log_file: PythonObject) raises:
+def print_header(title: String, log_file: PythonObject) raises:
     """Print a benchmark header with title and system information.
 
     Args:
@@ -511,7 +495,7 @@ fn print_header(title: String, log_file: PythonObject) raises:
         log_print("Could not retrieve system information", log_file)
 
 
-fn print_summary(
+def print_summary(
     title: String,
     speedup_factors: List[Float64],
     label: String,
@@ -562,7 +546,7 @@ fn print_summary(
         )
 
 
-fn print_summary_dual(
+def print_summary_dual(
     title: String,
     sf1: List[Float64],
     label1: String,

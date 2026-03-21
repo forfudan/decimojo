@@ -4,15 +4,15 @@ Tests word sizes from 8 to 262144 words (powers of 2).
 Cases are generated programmatically — no TOML data file.
 """
 
-from time import perf_counter_ns
+from std.time import perf_counter_ns
 from decimo import BigUInt
 from decimo.biguint.arithmetics import multiply
 from decimo.tests import open_log_file, log_print, print_header
-from python import Python, PythonObject
-from collections import List
+from std.python import Python, PythonObject
+from std.collections import List
 
 
-fn create_test_biguint(num_words: Int) raises -> BigUInt:
+def create_test_biguint(num_words: Int) raises -> BigUInt:
     """Creates a BigUInt with the specified number of words filled with test
     values."""
     var words = List[UInt32](capacity=num_words)
@@ -24,7 +24,7 @@ fn create_test_biguint(num_words: Int) raises -> BigUInt:
     return BigUInt(words=words^)
 
 
-fn benchmark_multiply_at_size(
+def benchmark_multiply_at_size(
     num_words: Int, iterations: Int, log_file: PythonObject
 ) raises -> Float64:
     """Benchmarks multiplication for a specific word size."""
@@ -60,7 +60,7 @@ fn benchmark_multiply_at_size(
     return avg
 
 
-fn main() raises:
+def main() raises:
     var log_file = open_log_file("benchmark_multiply_complexity")
     print_header(
         "Decimo BigUInt Multiplication Time Complexity Benchmark", log_file

@@ -5,7 +5,7 @@ TOML-driven tests for exact-result cases; inline for startswith,
 tolerance, exception, and mathematical property tests.
 """
 
-import testing
+from std import testing
 from decimo.toml.parser import TOMLDocument
 
 from decimo.decimal128.decimal128 import Decimal128, Dec128
@@ -18,7 +18,7 @@ comptime data_path = "tests/decimal128/test_data/decimal128_logarithm.toml"
 # ─── TOML-driven tests ──────────────────────────────────────────────────────
 
 
-fn test_log_exact() raises:
+def test_log_exact() raises:
     """5 exact log(value, base) results via TOML."""
     var doc = parse_file(data_path)
     var cases = load_test_cases(doc, "log_exact")
@@ -27,7 +27,7 @@ fn test_log_exact() raises:
         testing.assert_equal(String(result), tc.expected, tc.description)
 
 
-fn test_log10_exact() raises:
+def test_log10_exact() raises:
     """8 exact log10(value) results via TOML."""
     var doc = parse_file(data_path)
     var cases = load_test_cases[unary=True](doc, "log10_exact")
@@ -39,7 +39,7 @@ fn test_log10_exact() raises:
 # ─── log() inline tests ─────────────────────────────────────────────────────
 
 
-fn test_log_rounded() raises:
+def test_log_rounded() raises:
     """Log results that are exact after rounding."""
     # log_3(27) ≈ 3, log_5(125) ≈ 3, log_0.1(0.001) ≈ 3, log_2(1024) ≈ 10
     testing.assert_equal(
@@ -78,7 +78,7 @@ fn test_log_rounded() raises:
     )
 
 
-fn test_log_non_integer() raises:
+def test_log_non_integer() raises:
     """Log results with non-integer values (startswith checks)."""
     testing.assert_true(
         String(Decimal128(10).log(Decimal128(2))).startswith(
@@ -122,7 +122,7 @@ fn test_log_non_integer() raises:
     )
 
 
-fn test_log_exceptions() raises:
+def test_log_exceptions() raises:
     """Invalid log inputs should raise exceptions."""
     # log of negative
     var caught = False
@@ -170,7 +170,7 @@ fn test_log_exceptions() raises:
     testing.assert_true(caught, "log negative base exception")
 
 
-fn test_log_properties() raises:
+def test_log_properties() raises:
     """Mathematical properties: product, quotient, power, inverse, change of base.
     """
     var tol = Decimal128("0.000000000001")
@@ -238,7 +238,7 @@ fn test_log_properties() raises:
 # ─── log10() inline tests ───────────────────────────────────────────────────
 
 
-fn test_log10_non_powers() raises:
+def test_log10_non_powers() raises:
     """Tests log10 of non-powers of 10 (startswith checks)."""
     testing.assert_true(
         String(Decimal128(2).log10()).startswith("0.301029995663981"),
@@ -262,7 +262,7 @@ fn test_log10_non_powers() raises:
     )
 
 
-fn test_log10_exceptions() raises:
+def test_log10_exceptions() raises:
     """Tests log10 of negative and zero should raise."""
     var caught = False
     try:
@@ -281,7 +281,7 @@ fn test_log10_exceptions() raises:
     testing.assert_true(caught, "log10(0) exception")
 
 
-fn test_log10_precision() raises:
+def test_log10_precision() raises:
     """Precision tests for log10."""
     testing.assert_true(
         String(Decimal128("3.14159265358979323846").log10()).startswith(
@@ -308,7 +308,7 @@ fn test_log10_precision() raises:
     )
 
 
-fn test_log10_properties() raises:
+def test_log10_properties() raises:
     """Mathematical properties of log10."""
     var tol = Decimal128("0.000000000001")
 
@@ -362,5 +362,5 @@ fn test_log10_properties() raises:
     )
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

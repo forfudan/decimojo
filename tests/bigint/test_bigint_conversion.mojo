@@ -4,7 +4,7 @@ various formats (commas, underscores, spaces, scientific notation, decimal
 point), and D&C from_string for large numbers.
 """
 
-import testing
+from std import testing
 from decimo.bigint.bigint import BigInt
 from decimo.bigint10.bigint10 import BigInt10
 
@@ -14,7 +14,7 @@ from decimo.bigint10.bigint10 import BigInt10
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_to_int_small_positive() raises:
+def test_to_int_small_positive() raises:
     """Test to_int with small positive numbers."""
     testing.assert_equal(Int(BigInt(0)), 0)
     testing.assert_equal(Int(BigInt(1)), 1)
@@ -22,14 +22,14 @@ fn test_to_int_small_positive() raises:
     testing.assert_equal(Int(BigInt(1000000)), 1000000)
 
 
-fn test_to_int_small_negative() raises:
+def test_to_int_small_negative() raises:
     """Test to_int with small negative numbers."""
     testing.assert_equal(Int(BigInt(-1)), -1)
     testing.assert_equal(Int(BigInt(-42)), -42)
     testing.assert_equal(Int(BigInt(-1000000)), -1000000)
 
 
-fn test_to_int_large_values() raises:
+def test_to_int_large_values() raises:
     """Test to_int with values near Int.MAX and Int.MIN."""
     # Int.MAX = 9_223_372_036_854_775_807
     var max_val = BigInt("9223372036854775807")
@@ -40,7 +40,7 @@ fn test_to_int_large_values() raises:
     testing.assert_equal(Int(min_val), Int.MIN)
 
 
-fn test_to_int_overflow() raises:
+def test_to_int_overflow() raises:
     """Test to_int raises on overflow."""
     var too_large = BigInt("9223372036854775808")  # Int.MAX + 1
     var raised = False
@@ -72,7 +72,7 @@ fn test_to_int_overflow() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_from_integral_scalar() raises:
+def test_from_integral_scalar() raises:
     """Test construction from Scalar types."""
     # UInt8
     var u8 = BigInt(UInt8(255))
@@ -112,7 +112,7 @@ fn test_from_integral_scalar() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_from_string_large_dc() raises:
+def test_from_string_large_dc() raises:
     """Test from_string round-trip for large numbers (500–2000 digits).
     These sizes exercise the simple O(n²) path. The D&C path is only
     entered at >10000 digits and is tested in test_from_string_dc_path.
@@ -160,7 +160,7 @@ fn test_from_string_large_dc() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_from_string_dc_path() raises:
+def test_from_string_dc_path() raises:
     """Test that from_string exercises the D&C conversion path by parsing
     a string with >10000 digits (_DC_FROM_STR_ENTRY_THRESHOLD).
     """
@@ -197,7 +197,7 @@ fn test_from_string_dc_path() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_from_string_with_commas() raises:
+def test_from_string_with_commas() raises:
     """Test from_string handles commas as thousand separators."""
     testing.assert_equal(String(BigInt("1,234,567")), "1234567")
     testing.assert_equal(String(BigInt("-1,000,000")), "-1000000")
@@ -206,21 +206,21 @@ fn test_from_string_with_commas() raises:
     )
 
 
-fn test_from_string_with_underscores() raises:
+def test_from_string_with_underscores() raises:
     """Test from_string handles underscores as digit separators."""
     testing.assert_equal(String(BigInt("1_000_000")), "1000000")
     testing.assert_equal(String(BigInt("-99_999")), "-99999")
     testing.assert_equal(String(BigInt("1_2_3_4_5")), "12345")
 
 
-fn test_from_string_with_spaces() raises:
+def test_from_string_with_spaces() raises:
     """Test from_string handles spaces in the string."""
     testing.assert_equal(String(BigInt(" 42 ")), "42")
     testing.assert_equal(String(BigInt("1 000 000")), "1000000")
     testing.assert_equal(String(BigInt("- 123")), "-123")
 
 
-fn test_from_string_with_scientific_notation() raises:
+def test_from_string_with_scientific_notation() raises:
     """Test from_string handles scientific/exponential notation."""
     # 1.23e5 = 123000
     testing.assert_equal(String(BigInt("1.23e5")), "123000")
@@ -234,14 +234,14 @@ fn test_from_string_with_scientific_notation() raises:
     testing.assert_equal(String(BigInt("100e2")), "10000")
 
 
-fn test_from_string_with_decimal_point_integer() raises:
+def test_from_string_with_decimal_point_integer() raises:
     """Test from_string with decimal point where fractional part is zero."""
     testing.assert_equal(String(BigInt("123.0")), "123")
     testing.assert_equal(String(BigInt("100.00")), "100")
     testing.assert_equal(String(BigInt("-42.000")), "-42")
 
 
-fn test_from_string_non_integer_raises() raises:
+def test_from_string_non_integer_raises() raises:
     """Test from_string raises error for non-integer values."""
     var raised = False
     try:
@@ -266,7 +266,7 @@ fn test_from_string_non_integer_raises() raises:
     testing.assert_true(raised, msg="Should raise for non-integer '1.23e1'")
 
 
-fn test_from_string_plus_sign() raises:
+def test_from_string_plus_sign() raises:
     """Tests from_string handles explicit positive sign."""
     testing.assert_equal(String(BigInt("+42")), "42")
     testing.assert_equal(String(BigInt("+0")), "0")
@@ -278,7 +278,7 @@ fn test_from_string_plus_sign() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_float_small() raises:
+def test_float_small() raises:
     """Tests __float__ with small integers."""
     testing.assert_equal(Float64(BigInt(0)), 0.0)
     testing.assert_equal(Float64(BigInt(1)), 1.0)
@@ -286,10 +286,10 @@ fn test_float_small() raises:
     testing.assert_equal(Float64(BigInt(-7)), -7.0)
 
 
-fn test_float_large() raises:
+def test_float_large() raises:
     """Tests __float__ with a large-ish integer."""
     testing.assert_equal(Float64(BigInt(1000000)), 1000000.0)
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

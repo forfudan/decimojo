@@ -16,6 +16,7 @@ magic.lock
 tempCodeRunnerFile.mojo
 temp.md
 temp*.mojo
+temp/
 kgen.trace.json*
 # macOS environments
 .DS_Store

@@ -21,7 +21,7 @@ algorithm with a UInt64 fast path for early iterations, leveraging BigInt's
 base-2^32 representation for efficient bit-level operations.
 """
 
-import math
+from std import math
 
 from decimo.bigint.bigint import BigInt
 import decimo.bigint.arithmetics
@@ -33,7 +33,7 @@ from decimo.errors import DecimoError
 # ===----------------------------------------------------------------------=== #
 
 
-fn _extract_uint64_from_words(words: List[UInt32], bit_shift: Int) -> UInt64:
+def _extract_uint64_from_words(words: List[UInt32], bit_shift: Int) -> UInt64:
     """Extracts up to 64 bits from a magnitude at a given bit offset.
 
     Computes floor(value(words) >> bit_shift) mod 2^64, reading only the
@@ -60,15 +60,15 @@ fn _extract_uint64_from_words(words: List[UInt32], bit_shift: Int) -> UInt64:
         return result
 
     # bi > 0: need up to 3 consecutive words to cover 64 bits at alignment
-    var result = UInt64(words[wi]) >> bi
+    var result = UInt64(words[wi]) >> UInt64(bi)
     if wi + 1 < n:
-        result |= UInt64(words[wi + 1]) << (32 - bi)
+        result |= UInt64(words[wi + 1]) << UInt64(32 - bi)
     if wi + 2 < n:
-        result |= UInt64(words[wi + 2]) << (64 - bi)
+        result |= UInt64(words[wi + 2]) << UInt64(64 - bi)
     return result
 
 
-fn _uint64_to_words(val: UInt64) -> List[UInt32]:
+def _uint64_to_words(val: UInt64) -> List[UInt32]:
     """Converts a UInt64 value to a magnitude word list.
 
     Args:
@@ -93,7 +93,7 @@ fn _uint64_to_words(val: UInt64) -> List[UInt32]:
     return result^
 
 
-fn _extract_uint128_from_words(words: List[UInt32], bit_shift: Int) -> UInt128:
+def _extract_uint128_from_words(words: List[UInt32], bit_shift: Int) -> UInt128:
     """Extracts up to 128 bits from a magnitude at a given bit offset.
 
     Similar to _extract_uint64_from_words but returns UInt128.
@@ -117,24 +117,24 @@ fn _extract_uint128_from_words(words: List[UInt32], bit_shift: Int) -> UInt128:
         # Aligned: read exactly 4 words
         var result = UInt128(0)
         for k in range(min(4, n - wi)):
-            result |= UInt128(words[wi + k]) << (k * 32)
+            result |= UInt128(words[wi + k]) << UInt128(k * 32)
         return result
 
     # Unaligned: need bits [bi..bi+127] from words[wi..wi+4]
     # Build result by placing each word's contribution at the correct position
-    var result = UInt128(words[wi]) >> bi
+    var result = UInt128(words[wi]) >> UInt128(bi)
     if wi + 1 < n:
-        result |= UInt128(words[wi + 1]) << (32 - bi)
+        result |= UInt128(words[wi + 1]) << UInt128(32 - bi)
     if wi + 2 < n:
-        result |= UInt128(words[wi + 2]) << (64 - bi)
+        result |= UInt128(words[wi + 2]) << UInt128(64 - bi)
     if wi + 3 < n:
-        result |= UInt128(words[wi + 3]) << (96 - bi)
+        result |= UInt128(words[wi + 3]) << UInt128(96 - bi)
     if wi + 4 < n:
-        result |= UInt128(words[wi + 4]) << (128 - bi)
+        result |= UInt128(words[wi + 4]) << UInt128(128 - bi)
     return result
 
 
-fn _uint128_to_words(val: UInt128) -> List[UInt32]:
+def _uint128_to_words(val: UInt128) -> List[UInt32]:
     """Converts a UInt128 value to a magnitude word list.
 
     Args:
@@ -156,7 +156,7 @@ fn _uint128_to_words(val: UInt128) -> List[UInt32]:
     return result^
 
 
-fn _left_shift_magnitude_bits(a: List[UInt32], shift: Int) -> List[UInt32]:
+def _left_shift_magnitude_bits(a: List[UInt32], shift: Int) -> List[UInt32]:
     """Shifts a magnitude left by an arbitrary number of bits.
 
     Handles both whole-word and sub-word shifts in a single pass.
@@ -191,7 +191,7 @@ fn _left_shift_magnitude_bits(a: List[UInt32], shift: Int) -> List[UInt32]:
     else:
         var carry: UInt32 = 0
         for i in range(n):
-            var shifted = UInt64(a[i]) << bit_shift
+            var shifted = UInt64(a[i]) << UInt64(bit_shift)
             result.append(UInt32(shifted & 0xFFFF_FFFF) | carry)
             carry = UInt32(shifted >> 32)
         if carry > 0:
@@ -200,7 +200,7 @@ fn _left_shift_magnitude_bits(a: List[UInt32], shift: Int) -> List[UInt32]:
     return result^
 
 
-fn _right_shift_magnitude_bits(a: List[UInt32], shift: Int) -> List[UInt32]:
+def _right_shift_magnitude_bits(a: List[UInt32], shift: Int) -> List[UInt32]:
     """Shifts a magnitude right by an arbitrary number of bits.
 
     Efficiently skips lower words that would be entirely shifted out,
@@ -229,10 +229,12 @@ fn _right_shift_magnitude_bits(a: List[UInt32], shift: Int) -> List[UInt32]:
             result.append(a[i])
     else:
         for i in range(word_shift, n):
-            var lo = UInt64(a[i]) >> bit_shift
+            var lo = UInt64(a[i]) >> UInt64(bit_shift)
             var hi: UInt64 = 0
             if i + 1 < n:
-                hi = (UInt64(a[i + 1]) << (32 - bit_shift)) & 0xFFFF_FFFF
+                hi = (UInt64(a[i + 1]) << UInt64(32 - bit_shift)) & UInt64(
+                    0xFFFF_FFFF
+                )
             result.append(UInt32(lo | hi))
 
     # Strip leading zeros
@@ -249,7 +251,7 @@ fn _right_shift_magnitude_bits(a: List[UInt32], shift: Int) -> List[UInt32]:
 # ===----------------------------------------------------------------------=== #
 
 
-fn sqrt(x: BigInt) raises -> BigInt:
+def sqrt(x: BigInt) raises -> BigInt:
     """Calculates the integer square root of a BigInt.
 
     Args:
@@ -319,7 +321,7 @@ fn sqrt(x: BigInt) raises -> BigInt:
     return _sqrt_precision_doubling_fast(x)
 
 
-fn _sqrt_precision_doubling_fast(x: BigInt) raises -> BigInt:
+def _sqrt_precision_doubling_fast(x: BigInt) raises -> BigInt:
     """Optimized precision-doubling integer sqrt with UInt64 fast path.
 
     Args:
@@ -380,7 +382,7 @@ fn _sqrt_precision_doubling_fast(x: BigInt) raises -> BigInt:
 
         # Save old a for division, then shift a
         var old_a = a_val
-        a_val <<= shift_a
+        a_val <<= UInt64(shift_a)
 
         # Extract n_shifted directly from x.words as UInt64 — O(1), no alloc
         var n_val = _extract_uint64_from_words(x.words, shift_n)
@@ -420,7 +422,7 @@ fn _sqrt_precision_doubling_fast(x: BigInt) raises -> BigInt:
         var shift_n = 2 * c - e - d + 1
 
         var old_a128 = a128
-        a128 <<= shift_a
+        a128 <<= UInt128(shift_a)
 
         # Extract n_shifted as UInt128 from x.words (O(1))
         var n128 = _extract_uint128_from_words(x.words, shift_n)
@@ -485,7 +487,7 @@ fn _sqrt_precision_doubling_fast(x: BigInt) raises -> BigInt:
     return BigInt(raw_words=a_words^, sign=False)
 
 
-fn isqrt(x: BigInt) raises -> BigInt:
+def isqrt(x: BigInt) raises -> BigInt:
     """Calculates the integer square root of a BigInt.
     Equivalent to `sqrt()`.
 

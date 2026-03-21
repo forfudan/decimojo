@@ -5,7 +5,7 @@ and proper handling of edge cases (empty expression, division by zero,
 negative sqrt, etc.).
 """
 
-import testing
+from std import testing
 
 from calculator import evaluate
 from calculator.tokenizer import tokenize
@@ -17,7 +17,7 @@ from calculator.tokenizer import tokenize
 # ===----------------------------------------------------------------------=== #
 
 
-fn assert_error_contains(expr: String, expected_substr: String) raises:
+def assert_error_contains(expr: String, expected_substr: String) raises:
     """Evaluate `expr` and assert that it raises an Error containing
     `expected_substr` in its message.
     """
@@ -43,7 +43,9 @@ fn assert_error_contains(expr: String, expected_substr: String) raises:
             )
 
 
-fn assert_tokenize_error_contains(expr: String, expected_substr: String) raises:
+def assert_tokenize_error_contains(
+    expr: String, expected_substr: String
+) raises:
     """Tokenize `expr` and assert that it raises an Error containing
     `expected_substr`.
     """
@@ -75,15 +77,15 @@ fn assert_tokenize_error_contains(expr: String, expected_substr: String) raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_empty_expression() raises:
+def test_empty_expression() raises:
     assert_tokenize_error_contains("", "Empty expression")
 
 
-fn test_whitespace_only() raises:
+def test_whitespace_only() raises:
     assert_tokenize_error_contains("   ", "Empty expression")
 
 
-fn test_tabs_only() raises:
+def test_tabs_only() raises:
     assert_tokenize_error_contains("\t\t", "Empty expression")
 
 
@@ -92,11 +94,11 @@ fn test_tabs_only() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_unknown_identifier() raises:
+def test_unknown_identifier() raises:
     assert_error_contains("foo + 1", "unknown identifier 'foo'")
 
 
-fn test_unknown_identifier_position() raises:
+def test_unknown_identifier_position() raises:
     assert_error_contains("1 + bar", "position 4")
 
 
@@ -105,11 +107,11 @@ fn test_unknown_identifier_position() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_unexpected_character() raises:
+def test_unexpected_character() raises:
     assert_error_contains("1 @ 2", "unexpected character '@'")
 
 
-fn test_unexpected_character_position() raises:
+def test_unexpected_character_position() raises:
     assert_error_contains("1 + 2 # 3", "position 6")
 
 
@@ -118,19 +120,19 @@ fn test_unexpected_character_position() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_missing_closing_paren() raises:
+def test_missing_closing_paren() raises:
     assert_error_contains("(1 + 2", "unmatched '('")
 
 
-fn test_missing_opening_paren() raises:
+def test_missing_opening_paren() raises:
     assert_error_contains("1 + 2)", "unmatched ')'")
 
 
-fn test_nested_missing_close() raises:
+def test_nested_missing_close() raises:
     assert_error_contains("((1+2) * 3", "unmatched '('")
 
 
-fn test_extra_closing_paren() raises:
+def test_extra_closing_paren() raises:
     assert_error_contains("(1+2))", "unmatched ')'")
 
 
@@ -139,15 +141,15 @@ fn test_extra_closing_paren() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_division_by_zero() raises:
+def test_division_by_zero() raises:
     assert_error_contains("1/0", "division by zero")
 
 
-fn test_division_by_zero_expression() raises:
+def test_division_by_zero_expression() raises:
     assert_error_contains("10 / (5-5)", "division by zero")
 
 
-fn test_division_by_zero_decimal() raises:
+def test_division_by_zero_decimal() raises:
     assert_error_contains("1 / 0.0", "division by zero")
 
 
@@ -156,11 +158,11 @@ fn test_division_by_zero_decimal() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_sqrt_negative() raises:
+def test_sqrt_negative() raises:
     assert_error_contains("sqrt(-4)", "sqrt() is undefined for negative")
 
 
-fn test_sqrt_negative_expression() raises:
+def test_sqrt_negative_expression() raises:
     assert_error_contains("sqrt(-1)", "sqrt() is undefined for negative")
 
 
@@ -169,19 +171,19 @@ fn test_sqrt_negative_expression() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_ln_zero() raises:
+def test_ln_zero() raises:
     assert_error_contains("ln(0)", "ln() is undefined for zero")
 
 
-fn test_ln_negative() raises:
+def test_ln_negative() raises:
     assert_error_contains("ln(-1)", "ln() is undefined for negative")
 
 
-fn test_log10_zero() raises:
+def test_log10_zero() raises:
     assert_error_contains("log10(0)", "log10() is undefined for zero")
 
 
-fn test_log10_negative() raises:
+def test_log10_negative() raises:
     assert_error_contains("log10(-5)", "log10() is undefined for negative")
 
 
@@ -190,7 +192,7 @@ fn test_log10_negative() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_comma_outside_function() raises:
+def test_comma_outside_function() raises:
     assert_error_contains("1, 2", "misplaced ','")
 
 
@@ -199,23 +201,23 @@ fn test_comma_outside_function() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_trailing_plus() raises:
+def test_trailing_plus() raises:
     assert_error_contains("1 +", "missing operand for '+'")
 
 
-fn test_trailing_star() raises:
+def test_trailing_star() raises:
     assert_error_contains("1 *", "missing operand for '*'")
 
 
-fn test_trailing_slash() raises:
+def test_trailing_slash() raises:
     assert_error_contains("1 /", "missing operand for '/'")
 
 
-fn test_leading_star() raises:
+def test_leading_star() raises:
     assert_error_contains("* 1", "missing operand for '*'")
 
 
-fn test_leading_slash() raises:
+def test_leading_slash() raises:
     assert_error_contains("/ 1", "missing operand for '/'")
 
 
@@ -224,12 +226,12 @@ fn test_leading_slash() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_double_plus() raises:
+def test_double_plus() raises:
     """1 ++ should fail: the second + has no left operand."""
     assert_error_contains("1 ++ 2", "missing operand")
 
 
-fn test_double_star() raises:
+def test_double_star() raises:
     """1 * * 2 should fail."""
     assert_error_contains("1 * * 2", "missing operand")
 
@@ -239,17 +241,17 @@ fn test_double_star() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_position_in_unknown_char() raises:
+def test_position_in_unknown_char() raises:
     """The '@' is at position 4 in '1 + @'."""
     assert_error_contains("1 + @", "position 4")
 
 
-fn test_position_in_div_by_zero() raises:
+def test_position_in_div_by_zero() raises:
     """The '/' is at position 1 in '1/0'."""
     assert_error_contains("1/0", "position 1")
 
 
-fn test_position_in_sqrt_negative() raises:
+def test_position_in_sqrt_negative() raises:
     """'sqrt' starts at position 0 in 'sqrt(-1)'."""
     assert_error_contains("sqrt(-1)", "position 0")
 
@@ -259,7 +261,7 @@ fn test_position_in_sqrt_negative() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_negative_zero() raises:
+def test_negative_zero() raises:
     """Negation of zero should not raise an error."""
     var result = String(evaluate("-0"))
     testing.assert_true(
@@ -268,19 +270,19 @@ fn test_negative_zero() raises:
     )
 
 
-fn test_deeply_nested_parens() raises:
+def test_deeply_nested_parens() raises:
     """((((1)))) should be fine."""
     testing.assert_equal(String(evaluate("((((1))))")), "1", "((((1))))")
 
 
-fn test_many_operations() raises:
+def test_many_operations() raises:
     """1+2+3+4+5+6+7+8+9+10 = 55."""
     testing.assert_equal(
         String(evaluate("1+2+3+4+5+6+7+8+9+10")), "55", "sum 1..10"
     )
 
 
-fn test_function_of_constant() raises:
+def test_function_of_constant() raises:
     """Compute sqrt(pi) — should not crash."""
     var result = String(evaluate("sqrt(pi)", precision=10))
     testing.assert_true(
@@ -294,5 +296,5 @@ fn test_function_of_constant() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

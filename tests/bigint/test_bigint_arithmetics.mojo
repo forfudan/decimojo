@@ -6,8 +6,8 @@ Reuses TOML test data from the BigInt10 test suite, since the test cases
 use decimal string representations that are valid for both BigInt10 and BigInt.
 """
 
-from python import Python
-import testing
+from std.python import Python
+from std import testing
 from decimo.bigint.bigint import BigInt
 from decimo.tests import TestCase, parse_file, load_test_cases
 
@@ -21,7 +21,7 @@ comptime file_path_biguint_arithmetics = "tests/biguint/test_data/biguint_arithm
 comptime file_path_biguint_truncate_divide = "tests/biguint/test_data/biguint_truncate_divide.toml"
 
 
-fn _set_max_str_digits(limit: Int) raises:
+def _set_max_str_digits(limit: Int) raises:
     """Set Python's int-to-string digit limit (Python 3.11+). No-op if unavailable.
     """
     try:
@@ -30,7 +30,7 @@ fn _set_max_str_digits(limit: Int) raises:
         pass
 
 
-fn test_bigint_addition() raises:
+def test_bigint_addition() raises:
     """Test BigInt addition using shared TOML test data."""
     _set_max_str_digits(500000)
     var toml = parse_file(file_path_arithmetics)
@@ -57,7 +57,7 @@ fn test_bigint_addition() raises:
     )
 
 
-fn test_bigint_subtraction() raises:
+def test_bigint_subtraction() raises:
     """Test BigInt subtraction using shared TOML test data."""
     _set_max_str_digits(500000)
     var toml = parse_file(file_path_arithmetics)
@@ -84,7 +84,7 @@ fn test_bigint_subtraction() raises:
     )
 
 
-fn test_bigint_negation() raises:
+def test_bigint_negation() raises:
     """Test BigInt negation using shared TOML test data."""
     _set_max_str_digits(500000)
     var toml = parse_file(file_path_arithmetics)
@@ -111,7 +111,7 @@ fn test_bigint_negation() raises:
     )
 
 
-fn test_bigint_abs() raises:
+def test_bigint_abs() raises:
     """Test BigInt absolute value using shared TOML test data."""
     var pybuiltins = Python.import_module("builtins")
     _set_max_str_digits(500000)
@@ -139,7 +139,7 @@ fn test_bigint_abs() raises:
     )
 
 
-fn test_bigint_multiply() raises:
+def test_bigint_multiply() raises:
     """Test BigInt multiplication using shared TOML test data."""
     _set_max_str_digits(500000)
     var toml = parse_file(file_path_multiply)
@@ -166,7 +166,7 @@ fn test_bigint_multiply() raises:
     )
 
 
-fn test_bigint_floor_divide() raises:
+def test_bigint_floor_divide() raises:
     """Test BigInt floor division using shared TOML test data."""
     _set_max_str_digits(500000)
     var toml = parse_file(file_path_floor_divide)
@@ -193,7 +193,7 @@ fn test_bigint_floor_divide() raises:
     )
 
 
-fn test_bigint_truncate_divide() raises:
+def test_bigint_truncate_divide() raises:
     """Test BigInt truncate division using shared TOML test data."""
     var pybuiltins = Python.import_module("builtins")
     _set_max_str_digits(500000)
@@ -228,7 +228,7 @@ fn test_bigint_truncate_divide() raises:
     )
 
 
-fn test_bigint_comparison() raises:
+def test_bigint_comparison() raises:
     """Test BigInt comparison operators."""
     # Basic comparisons
     var a = BigInt(42)
@@ -283,7 +283,7 @@ fn test_bigint_comparison() raises:
     testing.assert_true(neg1 > neg2, "-100 > -200")
 
 
-fn test_bigint_division_by_zero() raises:
+def test_bigint_division_by_zero() raises:
     """Test that division by zero raises an error."""
     var a = BigInt(42)
     var zero = BigInt(0)
@@ -305,7 +305,7 @@ fn test_bigint_division_by_zero() raises:
     testing.assert_true(raised, "Truncate division by zero should raise")
 
 
-fn test_bigint_zero_quotient_mixed_sign() raises:
+def test_bigint_zero_quotient_mixed_sign() raises:
     """Regression test: 0 // negative should be +0 with sign == False."""
     # Floor divide: 0 // -5
     var result_floor = BigInt(0) // BigInt(-5)
@@ -347,7 +347,7 @@ fn test_bigint_zero_quotient_mixed_sign() raises:
     )
 
 
-fn test_bigint_augmented_assignment() raises:
+def test_bigint_augmented_assignment() raises:
     """Test augmented assignment operators (+=, -=, *=)."""
     var a = BigInt(100)
 
@@ -366,7 +366,7 @@ fn test_bigint_augmented_assignment() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_bigint_biguint_addition() raises:
+def test_bigint_biguint_addition() raises:
     """Test BigInt addition with BigUInt TOML test data (all positive)."""
     _set_max_str_digits(500000)
     var toml = parse_file(file_path_biguint_arithmetics)
@@ -393,7 +393,7 @@ fn test_bigint_biguint_addition() raises:
     )
 
 
-fn test_bigint_biguint_subtraction() raises:
+def test_bigint_biguint_subtraction() raises:
     """Test BigInt subtraction with BigUInt TOML test data (a >= b cases)."""
     _set_max_str_digits(500000)
     var toml = parse_file(file_path_biguint_arithmetics)
@@ -437,7 +437,7 @@ fn test_bigint_biguint_subtraction() raises:
     )
 
 
-fn test_bigint_biguint_subtraction_underflow() raises:
+def test_bigint_biguint_subtraction_underflow() raises:
     """Test that BigInt handles subtraction underflow (smaller - larger).
 
     Unlike BigUInt which errors, BigInt should return a negative result.
@@ -451,7 +451,7 @@ fn test_bigint_biguint_subtraction_underflow() raises:
     )
 
 
-fn test_bigint_floor_divide_burnikel_ziegler() raises:
+def test_bigint_floor_divide_burnikel_ziegler() raises:
     """Test floor division with large operands that exercise the
     Burnikel-Ziegler dispatch path (divisor > 64 words ≈ 617 digits).
 
@@ -541,7 +541,7 @@ fn test_bigint_floor_divide_burnikel_ziegler() raises:
     )
 
 
-fn test_bigint_biguint_multiplication() raises:
+def test_bigint_biguint_multiplication() raises:
     """Test BigInt multiplication with BigUInt TOML test data (all positive)."""
     _set_max_str_digits(500000)
     var toml = parse_file(file_path_biguint_arithmetics)
@@ -568,7 +568,7 @@ fn test_bigint_biguint_multiplication() raises:
     )
 
 
-fn test_bigint_biguint_truncate_divide() raises:
+def test_bigint_biguint_truncate_divide() raises:
     """Test BigInt truncate division with BigUInt TOML test data (all positive).
     """
     _set_max_str_digits(500000)
@@ -596,5 +596,5 @@ fn test_bigint_biguint_truncate_divide() raises:
     )
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

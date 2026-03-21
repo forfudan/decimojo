@@ -29,7 +29,7 @@
 Implements functions for mathematical operations on Decimal128 objects.
 """
 
-import testing
+from std import testing
 
 from decimo.decimal128.decimal128 import Decimal128
 from decimo.rounding_mode import RoundingMode
@@ -40,7 +40,7 @@ import decimo.decimal128.utility
 # ===------------------------------------------------------------------------===#
 
 
-fn round(
+def round(
     number: Decimal128,
     ndigits: Int = 0,
     rounding_mode: RoundingMode = RoundingMode.ROUND_HALF_EVEN,
@@ -125,7 +125,7 @@ fn round(
             # In other cases, return the result
             else:
                 return Decimal128.from_uint128(
-                    res_coef, scale=ndigits, sign=number.is_negative()
+                    res_coef, scale=UInt32(ndigits), sign=number.is_negative()
                 )
 
     # CASE: If ndigits is smaller than the current scale
@@ -155,14 +155,14 @@ fn round(
 
         if ndigits >= 0:
             return Decimal128.from_uint128(
-                res_coef, scale=ndigits, sign=number.is_negative()
+                res_coef, scale=UInt32(ndigits), sign=number.is_negative()
             )
 
         # if `ndigits` is negative and `ndigits_to_keep` >= 0, scale up the result
         elif ndigits_to_keep >= 0:
             res_coef *= UInt128(10) ** (-ndigits)
             return Decimal128.from_uint128(
-                res_coef, scale=0, sign=number.is_negative()
+                res_coef, scale=UInt32(0), sign=number.is_negative()
             )
 
         # if `ndigits` is negative and `ndigits_to_keep` < 0, return 0
@@ -170,7 +170,7 @@ fn round(
             return Decimal128.ZERO()
 
 
-fn quantize(
+def quantize(
     value: Decimal128,
     exp: Decimal128,
     rounding_mode: RoundingMode = RoundingMode.ROUND_HALF_EVEN,

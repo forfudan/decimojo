@@ -27,7 +27,7 @@ for the Decimo library. It uses base-2^32 representation with UInt32 words
 in little-endian order, and a separate sign bit.
 """
 
-from memory import UnsafePointer, memcpy
+from std.memory import UnsafePointer, memcpy
 
 import decimo.bigint.arithmetics
 import decimo.bigint.bitwise
@@ -51,8 +51,6 @@ struct BigInt(
     FloatableRaising,
     IntableRaising,
     Movable,
-    Representable,
-    Stringable,
     Writable,
 ):
     """An arbitrary-precision signed integer, similar to Python's `int`.
@@ -108,19 +106,19 @@ struct BigInt(
 
     @always_inline
     @staticmethod
-    fn zero() -> Self:
+    def zero() -> Self:
         """Returns a BigInt with value 0."""
         return Self()
 
     @always_inline
     @staticmethod
-    fn one() -> Self:
+    def one() -> Self:
         """Returns a BigInt with value 1."""
         return Self(raw_words=[UInt32(1)], sign=False)
 
     @always_inline
     @staticmethod
-    fn negative_one() -> Self:
+    def negative_one() -> Self:
         """Returns a BigInt with value -1."""
         return Self(raw_words=[UInt32(1)], sign=True)
 
@@ -128,12 +126,12 @@ struct BigInt(
     # Constructors and life time dunder methods
     # ===------------------------------------------------------------------=== #
 
-    fn __init__(out self):
+    def __init__(out self):
         """Initializes a BigInt with value 0."""
         self.words = [UInt32(0)]
         self.sign = False
 
-    fn __init__(out self, *, uninitialized_capacity: Int):
+    def __init__(out self, *, uninitialized_capacity: Int):
         """Creates an uninitialized BigInt with a given word capacity.
         The words list is empty; caller must append words before use.
 
@@ -143,7 +141,7 @@ struct BigInt(
         self.words = List[UInt32](capacity=uninitialized_capacity)
         self.sign = False
 
-    fn __init__(out self, *, var raw_words: List[UInt32], sign: Bool):
+    def __init__(out self, *, var raw_words: List[UInt32], sign: Bool):
         """Initializes a BigInt from a list of raw words without
         validation. The caller must ensure words are in valid little-endian
         form with no unnecessary leading zeros.
@@ -164,7 +162,7 @@ struct BigInt(
             self.sign = sign
 
     @implicit
-    fn __init__(out self, value: Int):
+    def __init__(out self, value: Int):
         """Initializes a BigInt from an Int.
 
         Args:
@@ -172,7 +170,7 @@ struct BigInt(
         """
         self = Self.from_int(value)
 
-    fn __init__(out self, value: String) raises:
+    def __init__(out self, value: String) raises:
         """Initializes a BigInt from a decimal string representation.
 
         Args:
@@ -181,7 +179,7 @@ struct BigInt(
         self = Self.from_string(value)
 
     @implicit
-    fn __init__(out self, value: Scalar):
+    def __init__(out self, value: Scalar):
         """Constructs a BigInt from an integral scalar.
         This includes all SIMD integral types, such as Int8, Int16, UInt32, etc.
 
@@ -195,7 +193,7 @@ struct BigInt(
     # ===------------------------------------------------------------------=== #
 
     @staticmethod
-    fn from_int(value: Int) -> Self:
+    def from_int(value: Int) -> Self:
         """Creates a BigInt from a Mojo Int.
 
         Args:
@@ -232,7 +230,7 @@ struct BigInt(
         return Self(raw_words=words^, sign=sign)
 
     @staticmethod
-    fn from_uint64(value: UInt64) -> Self:
+    def from_uint64(value: UInt64) -> Self:
         """Creates a BigInt from a UInt64.
 
         Args:
@@ -254,7 +252,7 @@ struct BigInt(
         return Self(raw_words=words^, sign=False)
 
     @staticmethod
-    fn from_uint128(value: UInt128) -> Self:
+    def from_uint128(value: UInt128) -> Self:
         """Creates a BigInt from a UInt128.
 
         Args:
@@ -275,7 +273,7 @@ struct BigInt(
         return Self(raw_words=words^, sign=False)
 
     @staticmethod
-    fn from_integral_scalar[dtype: DType, //](value: SIMD[dtype, 1]) -> Self:
+    def from_integral_scalar[dtype: DType, //](value: SIMD[dtype, 1]) -> Self:
         """Initializes a BigInt from an integral scalar.
         This includes all SIMD integral types, such as Int8, Int16, UInt32, etc.
 
@@ -289,7 +287,7 @@ struct BigInt(
             The BigInt representation of the Scalar value.
         """
 
-        constrained[dtype.is_integral(), "dtype must be integral."]()
+        comptime assert dtype.is_integral(), "dtype must be integral."
 
         if value == 0:
             return Self()
@@ -297,8 +295,7 @@ struct BigInt(
         var sign: Bool
         var magnitude: UInt64
 
-        @parameter
-        if dtype.is_unsigned():
+        comptime if dtype.is_unsigned():
             sign = False
             magnitude = UInt64(value)
         else:
@@ -320,7 +317,7 @@ struct BigInt(
         return Self(raw_words=words^, sign=sign)
 
     @staticmethod
-    fn from_string(value: String) raises -> Self:
+    def from_string(value: String) raises -> Self:
         """Creates a BigInt from a string representation.
         The string is normalized with `decimo.str.parse_numeric_string()`.
 
@@ -412,7 +409,7 @@ struct BigInt(
         return result^
 
     @staticmethod
-    fn from_bigint10(value: BigInt10) -> Self:
+    def from_bigint10(value: BigInt10) -> Self:
         """Converts a base-10^9 BigInt10 to a base-2^32 BigInt.
 
         Args:
@@ -461,13 +458,13 @@ struct BigInt(
     # Output dunders, type-transfer dunders
     # ===------------------------------------------------------------------=== #
 
-    fn __int__(self) raises -> Int:
+    def __int__(self) raises -> Int:
         """Returns the number as Int.
         See `to_int()` for more information.
         """
         return self.to_int()
 
-    fn __float__(self) raises -> Float64:
+    def __float__(self) raises -> Float64:
         """Converts the BigInt to a floating-point number.
 
         Matches Python's `float(n)` for `int` objects.
@@ -477,17 +474,13 @@ struct BigInt(
         Returns:
             The value as a Float64.
         """
-        return Float64(String(self))
+        return Float64(self.to_string())
 
-    fn __str__(self) -> String:
-        """Returns a decimal string representation of the BigInt."""
-        return self.to_string()
+    def write_repr_to[W: Writer](self, mut writer: W):
+        """Writes the debug representation to a writer."""
+        writer.write('BigInt("', self.to_string(), '")')
 
-    fn __repr__(self) -> String:
-        """Returns a debug representation of the BigInt."""
-        return 'BigInt("' + self.to_string() + '")'
-
-    fn write_to[W: Writer](self, mut writer: W):
+    def write_to[W: Writer](self, mut writer: W):
         """Writes the decimal string representation to a writer."""
         writer.write(self.to_string())
 
@@ -495,7 +488,7 @@ struct BigInt(
     # Type-transfer or output methods that are not dunders
     # ===------------------------------------------------------------------=== #
 
-    fn to_int(self) raises -> Int:
+    def to_int(self) raises -> Int:
         """Returns the number as Int.
 
         Returns:
@@ -530,7 +523,7 @@ struct BigInt(
                 )
             return Int(magnitude)
 
-    fn to_bigint10(self) -> BigInt10:
+    def to_bigint10(self) -> BigInt10:
         """Converts the BigInt to a base-10^9 BigInt10.
 
         Returns:
@@ -558,7 +551,7 @@ struct BigInt(
 
         return BigInt10(raw_words=decimal_words^, sign=self.sign)
 
-    fn to_string(self, line_width: Int = 0) -> String:
+    def to_string(self, line_width: Int = 0) -> String:
         """Returns the decimal string representation of the BigInt.
 
         Uses divide-and-conquer base conversion for large numbers (O(M(n)·log n))
@@ -603,22 +596,22 @@ struct BigInt(
             var end = line_width
             var lines = List[String](capacity=len(result) // line_width + 1)
             while end < len(result):
-                lines.append(String(result[start:end]))
+                lines.append(String(result[byte=start:end]))
                 start = end
                 end += line_width
-            lines.append(String(result[start:]))
+            lines.append(String(result[byte=start:]))
             result = String("\n").join(lines^)
 
         return result^
 
-    fn to_decimal_string(self, line_width: Int = 0) -> String:
+    def to_decimal_string(self, line_width: Int = 0) -> String:
         """Returns the decimal string representation of the BigInt.
 
         Deprecated: Use ``to_string(line_width=...)`` instead.
         """
         return self.to_string(line_width=line_width)
 
-    fn to_string_with_separators(self, separator: String = "_") -> String:
+    def to_string_with_separators(self, separator: String = "_") -> String:
         """Returns string representation of the BigInt with separators.
 
         Args:
@@ -633,15 +626,15 @@ struct BigInt(
         if self.sign:
             start_idx = 1  # Skip the minus sign
 
-        var digits_part = String(result[start_idx:])
+        var digits_part = String(result[byte=start_idx:])
         var end = len(digits_part)
         var start = end - 3
         var blocks = List[String](capacity=len(digits_part) // 3 + 1)
         while start > 0:
-            blocks.append(String(digits_part[start:end]))
+            blocks.append(String(digits_part[byte=start:end]))
             end = start
             start = end - 3
-        blocks.append(String(digits_part[0:end]))
+        blocks.append(String(digits_part[byte=0:end]))
         blocks.reverse()
         var formatted = separator.join(blocks)
 
@@ -649,7 +642,7 @@ struct BigInt(
             return String("-") + formatted
         return formatted^
 
-    fn to_hex_string(self) -> String:
+    def to_hex_string(self) -> String:
         """Returns a hexadecimal string representation of the BigInt.
 
         Returns:
@@ -668,10 +661,10 @@ struct BigInt(
             var word = self.words[i]
             if first_word:
                 if word != 0:
-                    result += hex(word)[2:]
+                    result += hex(word)[byte=2:]
                     first_word = False
             else:
-                var h = hex(word)[2:]
+                var h = hex(word)[byte=2:]
                 for _ in range(8 - len(h)):
                     result += "0"
                 result += h
@@ -681,7 +674,7 @@ struct BigInt(
 
         return result
 
-    fn to_binary_string(self) -> String:
+    def to_binary_string(self) -> String:
         """Returns a binary string representation of the BigInt.
 
         Returns:
@@ -700,10 +693,10 @@ struct BigInt(
             var word = self.words[i]
             if first_word:
                 if word != 0:
-                    result += bin(word)[2:]
+                    result += bin(word)[byte=2:]
                     first_word = False
             else:
-                var b = bin(word)[2:]
+                var b = bin(word)[byte=2:]
                 for _ in range(32 - len(b)):
                     result += "0"
                 result += b
@@ -717,18 +710,18 @@ struct BigInt(
     # Unary arithmetic dunders
     # ===------------------------------------------------------------------=== #
 
-    fn __neg__(self) -> Self:
+    def __neg__(self) -> Self:
         """Returns the negation of the BigInt."""
         if self.is_zero():
             return Self()
         return Self(raw_words=self.words.copy(), sign=not self.sign)
 
-    fn __abs__(self) -> Self:
+    def __abs__(self) -> Self:
         """Returns the absolute value of the BigInt."""
         return Self(raw_words=self.words.copy(), sign=False)
 
     @always_inline
-    fn __bool__(self) -> Bool:
+    def __bool__(self) -> Bool:
         """Returns True if the number is nonzero.
 
         This enables `if n:` syntax, consistent with Python's `int`.
@@ -736,7 +729,7 @@ struct BigInt(
         return not self.is_zero()
 
     @always_inline
-    fn __pos__(self) -> Self:
+    def __pos__(self) -> Self:
         """Returns the number unchanged (unary plus).
 
         This enables `+n` syntax, consistent with Python's `int`.
@@ -744,7 +737,7 @@ struct BigInt(
         return Self(raw_words=self.words.copy(), sign=self.sign)
 
     @always_inline
-    fn __ceil__(self) -> Self:
+    def __ceil__(self) -> Self:
         """Returns self unchanged. Integers are already integers.
 
         This enables `math.ceil()` compatibility with Python's `int`.
@@ -752,7 +745,7 @@ struct BigInt(
         return Self(raw_words=self.words.copy(), sign=self.sign)
 
     @always_inline
-    fn __floor__(self) -> Self:
+    def __floor__(self) -> Self:
         """Returns self unchanged. Integers are already integers.
 
         This enables `math.floor()` compatibility with Python's `int`.
@@ -760,7 +753,7 @@ struct BigInt(
         return Self(raw_words=self.words.copy(), sign=self.sign)
 
     @always_inline
-    fn __trunc__(self) -> Self:
+    def __trunc__(self) -> Self:
         """Returns self unchanged. Integers are already integers.
 
         This enables `math.trunc()` compatibility with Python's `int`.
@@ -774,19 +767,19 @@ struct BigInt(
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn __add__(self, other: Self) -> Self:
+    def __add__(self, other: Self) -> Self:
         return decimo.bigint.arithmetics.add(self, other)
 
     @always_inline
-    fn __sub__(self, other: Self) -> Self:
+    def __sub__(self, other: Self) -> Self:
         return decimo.bigint.arithmetics.subtract(self, other)
 
     @always_inline
-    fn __mul__(self, other: Self) -> Self:
+    def __mul__(self, other: Self) -> Self:
         return decimo.bigint.arithmetics.multiply(self, other)
 
     @always_inline
-    fn __floordiv__(self, other: Self) raises -> Self:
+    def __floordiv__(self, other: Self) raises -> Self:
         try:
             return decimo.bigint.arithmetics.floor_divide(self, other)
         except e:
@@ -800,7 +793,7 @@ struct BigInt(
             )
 
     @always_inline
-    fn __mod__(self, other: Self) raises -> Self:
+    def __mod__(self, other: Self) raises -> Self:
         try:
             return decimo.bigint.arithmetics.floor_modulo(self, other)
         except e:
@@ -814,7 +807,7 @@ struct BigInt(
             )
 
     @always_inline
-    fn __divmod__(self, other: Self) raises -> Tuple[Self, Self]:
+    def __divmod__(self, other: Self) raises -> Tuple[Self, Self]:
         try:
             return decimo.bigint.arithmetics.floor_divmod(self, other)
         except e:
@@ -828,20 +821,20 @@ struct BigInt(
             )
 
     @always_inline
-    fn __pow__(self, exponent: Self) raises -> Self:
+    def __pow__(self, exponent: Self) raises -> Self:
         return self.power(exponent)
 
     @always_inline
-    fn __pow__(self, exponent: Int) raises -> Self:
+    def __pow__(self, exponent: Int) raises -> Self:
         return self.power(exponent)
 
     @always_inline
-    fn __lshift__(self, shift: Int) -> Self:
+    def __lshift__(self, shift: Int) -> Self:
         """Returns self << shift (multiply by 2^shift)."""
         return decimo.bigint.arithmetics.left_shift(self, shift)
 
     @always_inline
-    fn __rshift__(self, shift: Int) -> Self:
+    def __rshift__(self, shift: Int) -> Self:
         """Returns self >> shift (floor divide by 2^shift)."""
         return decimo.bigint.arithmetics.right_shift(self, shift)
 
@@ -850,31 +843,31 @@ struct BigInt(
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn __radd__(self, other: Self) -> Self:
+    def __radd__(self, other: Self) -> Self:
         return decimo.bigint.arithmetics.add(self, other)
 
     @always_inline
-    fn __rsub__(self, other: Self) -> Self:
+    def __rsub__(self, other: Self) -> Self:
         return decimo.bigint.arithmetics.subtract(other, self)
 
     @always_inline
-    fn __rmul__(self, other: Self) -> Self:
+    def __rmul__(self, other: Self) -> Self:
         return decimo.bigint.arithmetics.multiply(self, other)
 
     @always_inline
-    fn __rfloordiv__(self, other: Self) raises -> Self:
+    def __rfloordiv__(self, other: Self) raises -> Self:
         return decimo.bigint.arithmetics.floor_divide(other, self)
 
     @always_inline
-    fn __rmod__(self, other: Self) raises -> Self:
+    def __rmod__(self, other: Self) raises -> Self:
         return decimo.bigint.arithmetics.floor_modulo(other, self)
 
     @always_inline
-    fn __rdivmod__(self, other: Self) raises -> Tuple[Self, Self]:
+    def __rdivmod__(self, other: Self) raises -> Tuple[Self, Self]:
         return decimo.bigint.arithmetics.floor_divmod(other, self)
 
     @always_inline
-    fn __rpow__(self, base: Self) raises -> Self:
+    def __rpow__(self, base: Self) raises -> Self:
         return base.power(self)
 
     # ===------------------------------------------------------------------=== #
@@ -883,42 +876,42 @@ struct BigInt(
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn __iadd__(mut self, other: Self):
+    def __iadd__(mut self, other: Self):
         """True in-place addition: mutates self.words directly."""
         decimo.bigint.arithmetics.add_inplace(self, other)
 
     @always_inline
-    fn __iadd__(mut self, other: Int):
+    def __iadd__(mut self, other: Int):
         """True in-place addition with Int: mutates self.words directly."""
         decimo.bigint.arithmetics.add_inplace_int(self, other)
 
     @always_inline
-    fn __isub__(mut self, other: Self):
+    def __isub__(mut self, other: Self):
         """True in-place subtraction: mutates self.words directly."""
         decimo.bigint.arithmetics.subtract_inplace(self, other)
 
     @always_inline
-    fn __imul__(mut self, other: Self):
+    def __imul__(mut self, other: Self):
         """True in-place multiplication: computes product into self.words."""
         decimo.bigint.arithmetics.multiply_inplace(self, other)
 
     @always_inline
-    fn __ifloordiv__(mut self, other: Self) raises:
+    def __ifloordiv__(mut self, other: Self) raises:
         """True in-place floor division: moves quotient into self.words."""
         decimo.bigint.arithmetics.floor_divide_inplace(self, other)
 
     @always_inline
-    fn __imod__(mut self, other: Self) raises:
+    def __imod__(mut self, other: Self) raises:
         """True in-place modulo: moves remainder into self.words."""
         decimo.bigint.arithmetics.floor_modulo_inplace(self, other)
 
     @always_inline
-    fn __ilshift__(mut self, shift: Int):
+    def __ilshift__(mut self, shift: Int):
         """True in-place left shift: mutates self.words directly."""
         decimo.bigint.arithmetics.left_shift_inplace(self, shift)
 
     @always_inline
-    fn __irshift__(mut self, shift: Int):
+    def __irshift__(mut self, shift: Int):
         """True in-place right shift: mutates self.words directly."""
         decimo.bigint.arithmetics.right_shift_inplace(self, shift)
 
@@ -928,64 +921,64 @@ struct BigInt(
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn __gt__(self, other: Self) -> Bool:
+    def __gt__(self, other: Self) -> Bool:
         """Returns True if self > other."""
         return decimo.bigint.comparison.greater(self, other)
 
     @always_inline
-    fn __gt__(self, other: Int) -> Bool:
+    def __gt__(self, other: Int) -> Bool:
         """Returns True if self > other."""
         return decimo.bigint.comparison.greater(self, Self.from_int(other))
 
     @always_inline
-    fn __ge__(self, other: Self) -> Bool:
+    def __ge__(self, other: Self) -> Bool:
         """Returns True if self >= other."""
         return decimo.bigint.comparison.greater_equal(self, other)
 
     @always_inline
-    fn __ge__(self, other: Int) -> Bool:
+    def __ge__(self, other: Int) -> Bool:
         """Returns True if self >= other."""
         return decimo.bigint.comparison.greater_equal(
             self, Self.from_int(other)
         )
 
     @always_inline
-    fn __lt__(self, other: Self) -> Bool:
+    def __lt__(self, other: Self) -> Bool:
         """Returns True if self < other."""
         return decimo.bigint.comparison.less(self, other)
 
     @always_inline
-    fn __lt__(self, other: Int) -> Bool:
+    def __lt__(self, other: Int) -> Bool:
         """Returns True if self < other."""
         return decimo.bigint.comparison.less(self, Self.from_int(other))
 
     @always_inline
-    fn __le__(self, other: Self) -> Bool:
+    def __le__(self, other: Self) -> Bool:
         """Returns True if self <= other."""
         return decimo.bigint.comparison.less_equal(self, other)
 
     @always_inline
-    fn __le__(self, other: Int) -> Bool:
+    def __le__(self, other: Int) -> Bool:
         """Returns True if self <= other."""
         return decimo.bigint.comparison.less_equal(self, Self.from_int(other))
 
     @always_inline
-    fn __eq__(self, other: Self) -> Bool:
+    def __eq__(self, other: Self) -> Bool:
         """Returns True if self == other."""
         return decimo.bigint.comparison.equal(self, other)
 
     @always_inline
-    fn __eq__(self, other: Int) -> Bool:
+    def __eq__(self, other: Int) -> Bool:
         """Returns True if self == other."""
         return decimo.bigint.comparison.equal(self, Self.from_int(other))
 
     @always_inline
-    fn __ne__(self, other: Self) -> Bool:
+    def __ne__(self, other: Self) -> Bool:
         """Returns True if self != other."""
         return decimo.bigint.comparison.not_equal(self, other)
 
     @always_inline
-    fn __ne__(self, other: Int) -> Bool:
+    def __ne__(self, other: Int) -> Bool:
         """Returns True if self != other."""
         return decimo.bigint.comparison.not_equal(self, Self.from_int(other))
 
@@ -994,27 +987,27 @@ struct BigInt(
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn truncate_divide(self, other: Self) raises -> Self:
+    def truncate_divide(self, other: Self) raises -> Self:
         """Performs a truncated division of two BigInt numbers.
         See `truncate_divide()` for more information.
         """
         return decimo.bigint.arithmetics.truncate_divide(self, other)
 
     @always_inline
-    fn floor_modulo(self, other: Self) raises -> Self:
+    def floor_modulo(self, other: Self) raises -> Self:
         """Performs a floor modulo of two BigInt numbers.
         See `floor_modulo()` for more information.
         """
         return decimo.bigint.arithmetics.floor_modulo(self, other)
 
     @always_inline
-    fn truncate_modulo(self, other: Self) raises -> Self:
+    def truncate_modulo(self, other: Self) raises -> Self:
         """Performs a truncated modulo of two BigInt numbers.
         See `truncate_modulo()` for more information.
         """
         return decimo.bigint.arithmetics.truncate_modulo(self, other)
 
-    fn power(self, exponent: Int) raises -> Self:
+    def power(self, exponent: Int) raises -> Self:
         """Raises the BigInt to the power of an integer exponent.
 
         Args:
@@ -1028,7 +1021,7 @@ struct BigInt(
         """
         return decimo.bigint.arithmetics.power(self, exponent)
 
-    fn power(self, exponent: Self) raises -> Self:
+    def power(self, exponent: Self) raises -> Self:
         """Raises the BigInt to the power of another BigInt.
 
         Args:
@@ -1049,7 +1042,7 @@ struct BigInt(
             raise Error("BigInt.power(): Exponent too large to fit in Int")
         return self.power(exp_int)
 
-    fn sqrt(self) raises -> Self:
+    def sqrt(self) raises -> Self:
         """Returns the integer square root of this BigInt.
 
         The result is the largest integer y such that y * y <= self
@@ -1063,7 +1056,7 @@ struct BigInt(
         """
         return decimo.bigint.exponential.sqrt(self)
 
-    fn isqrt(self) raises -> Self:
+    def isqrt(self) raises -> Self:
         """Returns the integer square root of this BigInt.
         It is equal to `sqrt()`.
 
@@ -1076,14 +1069,14 @@ struct BigInt(
         return decimo.bigint.exponential.sqrt(self)
 
     @always_inline
-    fn compare_magnitudes(self, other: Self) -> Int8:
+    def compare_magnitudes(self, other: Self) -> Int8:
         """Compares the magnitudes (absolute values) of two BigInt numbers.
         See `compare_magnitudes()` for more information.
         """
         return decimo.bigint.comparison.compare_magnitudes(self, other)
 
     @always_inline
-    fn compare(self, other: Self) -> Int8:
+    def compare(self, other: Self) -> Int8:
         """Compares two BigInt numbers.
         See `compare()` for more information.
         """
@@ -1094,55 +1087,55 @@ struct BigInt(
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn __and__(self, other: Self) -> Self:
+    def __and__(self, other: Self) -> Self:
         """Returns self & other (bitwise AND, Python two's complement semantics).
         """
         return decimo.bigint.bitwise.bitwise_and(self, other)
 
     @always_inline
-    fn __and__(self, other: Int) -> Self:
+    def __and__(self, other: Int) -> Self:
         """Returns self & other where other is an Int."""
         return decimo.bigint.bitwise.bitwise_and(self, Self(other))
 
     @always_inline
-    fn __or__(self, other: Self) -> Self:
+    def __or__(self, other: Self) -> Self:
         """Returns self | other (bitwise OR, Python two's complement semantics).
         """
         return decimo.bigint.bitwise.bitwise_or(self, other)
 
     @always_inline
-    fn __or__(self, other: Int) -> Self:
+    def __or__(self, other: Int) -> Self:
         """Returns self | other where other is an Int."""
         return decimo.bigint.bitwise.bitwise_or(self, Self(other))
 
     @always_inline
-    fn __xor__(self, other: Self) -> Self:
+    def __xor__(self, other: Self) -> Self:
         """Returns self ^ other (bitwise XOR, Python two's complement semantics).
         """
         return decimo.bigint.bitwise.bitwise_xor(self, other)
 
     @always_inline
-    fn __xor__(self, other: Int) -> Self:
+    def __xor__(self, other: Int) -> Self:
         """Returns self ^ other where other is an Int."""
         return decimo.bigint.bitwise.bitwise_xor(self, Self(other))
 
     @always_inline
-    fn __invert__(self) -> Self:
+    def __invert__(self) -> Self:
         """Returns ~self (bitwise NOT, Python two's complement semantics)."""
         return decimo.bigint.bitwise.bitwise_not(self)
 
     @always_inline
-    fn __iand__(mut self, other: Self):
+    def __iand__(mut self, other: Self):
         """True in-place bitwise AND: mutates self.words directly."""
         decimo.bigint.bitwise.bitwise_and_inplace(self, other)
 
     @always_inline
-    fn __ior__(mut self, other: Self):
+    def __ior__(mut self, other: Self):
         """True in-place bitwise OR: mutates self.words directly."""
         decimo.bigint.bitwise.bitwise_or_inplace(self, other)
 
     @always_inline
-    fn __ixor__(mut self, other: Self):
+    def __ixor__(mut self, other: Self):
         """True in-place bitwise XOR: mutates self.words directly."""
         decimo.bigint.bitwise.bitwise_xor_inplace(self, other)
 
@@ -1151,12 +1144,12 @@ struct BigInt(
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn gcd(self, other: Self) -> Self:
+    def gcd(self, other: Self) -> Self:
         """Returns the greatest common divisor of self and other."""
         return decimo.bigint.number_theory.gcd(self, other)
 
     @always_inline
-    fn extended_gcd(self, other: Self) raises -> Tuple[Self, Self, Self]:
+    def extended_gcd(self, other: Self) raises -> Tuple[Self, Self, Self]:
         """Returns a tuple (g, x, y) such that g = gcd(self, other) and
         self*x + other*y = g.
 
@@ -1170,19 +1163,19 @@ struct BigInt(
         return decimo.bigint.number_theory.extended_gcd(self, other)
 
     @always_inline
-    fn lcm(self, other: Self) raises -> Self:
+    def lcm(self, other: Self) raises -> Self:
         """Returns the least common multiple of self and other."""
         return decimo.bigint.number_theory.lcm(self, other)
 
     @always_inline
-    fn mod_pow(self, exponent: Self, modulus: Self) raises -> Self:
+    def mod_pow(self, exponent: Self, modulus: Self) raises -> Self:
         """Returns (self ** exponent) % modulus efficiently using modular
         exponentiation.
         """
         return decimo.bigint.number_theory.mod_pow(self, exponent, modulus)
 
     @always_inline
-    fn mod_pow(self, exponent: Int, modulus: Self) raises -> Self:
+    def mod_pow(self, exponent: Int, modulus: Self) raises -> Self:
         """Returns (self ** exponent) % modulus efficiently using modular
         exponentiation.
         """
@@ -1191,7 +1184,7 @@ struct BigInt(
         )
 
     @always_inline
-    fn mod_inverse(self, modulus: Self) raises -> Self:
+    def mod_inverse(self, modulus: Self) raises -> Self:
         """Returns the modular inverse of self modulo modulus, i.e. a number x
         such that (self * x) % modulus == 1.
         """
@@ -1202,7 +1195,7 @@ struct BigInt(
     # ===------------------------------------------------------------------=== #
 
     @always_inline
-    fn is_zero(self) -> Bool:
+    def is_zero(self) -> Bool:
         """Returns True if the value is zero."""
         if len(self.words) == 1 and self.words[0] == 0:
             return True
@@ -1212,24 +1205,24 @@ struct BigInt(
         return True
 
     @always_inline
-    fn is_negative(self) -> Bool:
+    def is_negative(self) -> Bool:
         """Returns True if the value is strictly negative."""
         return self.sign and not self.is_zero()
 
     @always_inline
-    fn is_positive(self) -> Bool:
+    def is_positive(self) -> Bool:
         """Returns True if the value is strictly positive."""
         return not self.sign and not self.is_zero()
 
-    fn is_one(self) -> Bool:
+    def is_one(self) -> Bool:
         """Returns True if the value is exactly 1."""
         return not self.sign and len(self.words) == 1 and self.words[0] == 1
 
-    fn is_one_or_minus_one(self) -> Bool:
+    def is_one_or_minus_one(self) -> Bool:
         """Returns True if the value is 1 or -1."""
         return len(self.words) == 1 and self.words[0] == 1
 
-    fn bit_length(self) -> Int:
+    def bit_length(self) -> Int:
         """Returns the number of bits needed to represent the magnitude,
         excluding leading zeros.
 
@@ -1251,7 +1244,7 @@ struct BigInt(
 
         return (n_words - 1) * 32 + bits_in_msw
 
-    fn bit_count(self) -> Int:
+    def bit_count(self) -> Int:
         """Returns the number of ones in the binary representation of the
         absolute value (population count).
 
@@ -1277,11 +1270,11 @@ struct BigInt(
                 count += 1
         return count
 
-    fn number_of_words(self) -> Int:
+    def number_of_words(self) -> Int:
         """Returns the number of words in the magnitude."""
         return len(self.words)
 
-    fn number_of_digits(self) -> Int:
+    def number_of_digits(self) -> Int:
         """Returns the number of decimal digits in the magnitude.
 
         Notes:
@@ -1297,14 +1290,14 @@ struct BigInt(
     # Internal utility methods
     # ===------------------------------------------------------------------=== #
 
-    fn copy(self) -> Self:
+    def copy(self) -> Self:
         """Returns a deep copy of this BigInt."""
         var new_words = List[UInt32](capacity=len(self.words))
         for word in self.words:
             new_words.append(word)
         return Self(raw_words=new_words^, sign=self.sign)
 
-    fn _normalize(mut self):
+    def _normalize(mut self):
         """Strips leading zero words and normalizes -0 to +0."""
         while len(self.words) > 1 and self.words[-1] == 0:
             self.words.shrink(len(self.words) - 1)
@@ -1313,7 +1306,7 @@ struct BigInt(
         if self.is_zero():
             self.sign = False
 
-    fn internal_representation(self) -> String:
+    def internal_representation(self) -> String:
         """Returns the internal representation details as a String."""
         # Collect all labels to find max width
         var fixed_labels = List[String]()
@@ -1357,13 +1350,14 @@ struct BigInt(
             if not first_hex_line:
                 result += String(" ") * col
             result += (
-                String(hex_str[hex_start : hex_start + value_width]) + "\n"
+                String(hex_str[byte = hex_start : hex_start + value_width])
+                + "\n"
             )
             hex_start += value_width
             first_hex_line = False
         if not first_hex_line:
             result += String(" ") * col
-        result += String(hex_str[hex_start:]) + "\n"
+        result += String(hex_str[byte=hex_start:]) + "\n"
 
         # sign line
         result += "sign:" + String(" ") * (col - len("sign:"))
@@ -1373,13 +1367,15 @@ struct BigInt(
         for i in range(len(self.words)):
             var label = "word " + String(i) + ":"
             result += label + String(" ") * (col - len(label))
-            result += "0x" + hex(self.words[i])[2:].rjust(8, fillchar="0")
+            result += "0x" + decimo.str.rjust(
+                String(hex(self.words[i])[byte=2:]), 8, fillchar="0"
+            )
             result += "  (" + String(self.words[i]) + ")\n"
 
         result += sep_line
         return result^
 
-    fn print_internal_representation(self):
+    def print_internal_representation(self):
         """Prints the internal representation details."""
         print(self.internal_representation())
 
@@ -1390,7 +1386,7 @@ struct BigInt(
 # ===----------------------------------------------------------------------=== #
 
 
-fn _multiply_inplace_by_uint32(mut x: BigInt, y: UInt32):
+def _multiply_inplace_by_uint32(mut x: BigInt, y: UInt32):
     """Multiplies a BigInt magnitude by a UInt32 scalar in-place.
 
     This is used internally by from_string() during base conversion.
@@ -1416,7 +1412,7 @@ fn _multiply_inplace_by_uint32(mut x: BigInt, y: UInt32):
         x.words.append(UInt32(carry))
 
 
-fn _add_inplace_by_uint32(mut x: BigInt, y: UInt32):
+def _add_inplace_by_uint32(mut x: BigInt, y: UInt32):
     """Adds a UInt32 value to a BigInt magnitude in-place.
 
     This is used internally by from_string() during base conversion.
@@ -1440,7 +1436,7 @@ fn _add_inplace_by_uint32(mut x: BigInt, y: UInt32):
         x.words.append(UInt32(carry))
 
 
-fn _multiply_add_inplace(mut x: BigInt, mul: UInt32, add: UInt32):
+def _multiply_add_inplace(mut x: BigInt, mul: UInt32, add: UInt32):
     """Computes x = x * mul + add in a single pass over the word array.
 
     Fuses the multiply-by-scalar and add-scalar operations into one O(n) pass
@@ -1492,7 +1488,7 @@ comptime _DC_FROM_STR_ENTRY_THRESHOLD = 10000
 comptime _DC_FROM_STR_BASE_THRESHOLD = 256
 
 
-fn _from_decimal_digits_simple(
+def _from_decimal_digits_simple(
     digits: List[UInt8], start: Int, end: Int
 ) -> BigInt:
     """Converts a range of digit values to a BigInt using the simple
@@ -1599,7 +1595,7 @@ fn _from_decimal_digits_simple(
     return result^
 
 
-fn _from_decimal_digits_dc(
+def _from_decimal_digits_dc(
     digits: List[UInt8], start: Int, end: Int
 ) raises -> BigInt:
     """Converts a range of digit values to a BigInt using
@@ -1652,7 +1648,7 @@ fn _from_decimal_digits_dc(
     return _dc_from_str_recursive(digits, start, end, power_table, top_level)
 
 
-fn _dc_from_str_recursive(
+def _dc_from_str_recursive(
     digits: List[UInt8],
     start: Int,
     end: Int,
@@ -1744,7 +1740,7 @@ comptime _DC_TO_STR_BASE_THRESHOLD = 64
 comptime _DECIMAL_CHUNK_BASE: UInt64 = 1_000_000_000
 
 
-fn _magnitude_to_decimal_simple(words: List[UInt32], eff_words: Int) -> String:
+def _magnitude_to_decimal_simple(words: List[UInt32], eff_words: Int) -> String:
     """Converts a magnitude (unsigned word list) to a decimal string using
     the simple O(n²) method of repeated division by 10^9.
 
@@ -1835,7 +1831,7 @@ fn _magnitude_to_decimal_simple(words: List[UInt32], eff_words: Int) -> String:
     return String(unsafe_from_utf8=buf^)
 
 
-fn _magnitude_to_decimal_dc(
+def _magnitude_to_decimal_dc(
     words: List[UInt32], eff_words: Int
 ) raises -> String:
     """Converts a magnitude to a decimal string using divide-and-conquer
@@ -1901,7 +1897,7 @@ fn _magnitude_to_decimal_dc(
     return _dc_to_str_recursive(n, power_table, num_powers - 1)
 
 
-fn _dc_to_str_recursive(
+def _dc_to_str_recursive(
     n: BigInt,
     power_table: List[BigInt],
     max_level: Int,
