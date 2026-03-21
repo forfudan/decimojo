@@ -35,7 +35,7 @@ from decimo.bigint.bigint import BigInt
 # ===----------------------------------------------------------------------=== #
 
 
-fn _binary_bitwise_op[op: StringLiteral](a: BigInt, b: BigInt) -> BigInt:
+def _binary_bitwise_op[op: StringLiteral](a: BigInt, b: BigInt) -> BigInt:
     """Performs a word-by-word binary bitwise operation on two BigInt values.
 
     The operation is determined by the `op` parameter:
@@ -53,22 +53,18 @@ fn _binary_bitwise_op[op: StringLiteral](a: BigInt, b: BigInt) -> BigInt:
     # Determine result sign from operation on sign-extension bits
     var result_negative: Bool
 
-    @parameter
-    if op == "and":
+    comptime if op == "and":
         result_negative = a.sign and b.sign
     elif op == "or":
         result_negative = a.sign or b.sign
     elif op == "xor":
         result_negative = a.sign != b.sign
     else:
-        constrained[False, "op must be 'and', 'or', or 'xor'"]()
-        result_negative = False  # unreachable
+        comptime assert False, "op must be 'and', 'or', or 'xor'"
 
     # Fast path: both non-negative
     if not a.sign and not b.sign:
-
-        @parameter
-        if op == "and":
+        comptime if op == "and":
             # AND with zeros → zeros, so result is at most min_len words
             var min_len = min(len(a.words), len(b.words))
             var result_words = List[UInt32](capacity=min_len)
@@ -136,8 +132,7 @@ fn _binary_bitwise_op[op: StringLiteral](a: BigInt, b: BigInt) -> BigInt:
         var wa = a_fill if i >= len(a_tc) else a_tc[i]
         var wb = b_fill if i >= len(b_tc) else b_tc[i]
 
-        @parameter
-        if op == "and":
+        comptime if op == "and":
             result_tc.append(wa & wb)
         elif op == "or":
             result_tc.append(wa | wb)
@@ -180,7 +175,9 @@ fn _binary_bitwise_op[op: StringLiteral](a: BigInt, b: BigInt) -> BigInt:
 # ===----------------------------------------------------------------------=== #
 
 
-fn _binary_bitwise_op_inplace[op: StringLiteral](mut a: BigInt, read b: BigInt):
+def _binary_bitwise_op_inplace[
+    op: StringLiteral
+](mut a: BigInt, read b: BigInt):
     """Performs a word-by-word binary bitwise operation on `a` in-place.
 
     Computes the result word list and moves it into a.words, avoiding
@@ -199,22 +196,18 @@ fn _binary_bitwise_op_inplace[op: StringLiteral](mut a: BigInt, read b: BigInt):
     # Determine result sign from operation on sign-extension bits
     var result_negative: Bool
 
-    @parameter
-    if op == "and":
+    comptime if op == "and":
         result_negative = a.sign and b.sign
     elif op == "or":
         result_negative = a.sign or b.sign
     elif op == "xor":
         result_negative = a.sign != b.sign
     else:
-        constrained[False, "op must be 'and', 'or', or 'xor'"]()
-        result_negative = False  # unreachable
+        comptime assert False, "op must be 'and', 'or', or 'xor'"
 
     # Fast path: both non-negative
     if not a.sign and not b.sign:
-
-        @parameter
-        if op == "and":
+        comptime if op == "and":
             var min_len = min(len(a.words), len(b.words))
             # We can modify a.words in-place for AND (result <= min_len)
             for i in range(min_len):
@@ -285,8 +278,7 @@ fn _binary_bitwise_op_inplace[op: StringLiteral](mut a: BigInt, read b: BigInt):
         var wa = a_fill if i >= len(a_tc) else a_tc[i]
         var wb = b_fill if i >= len(b_tc) else b_tc[i]
 
-        @parameter
-        if op == "and":
+        comptime if op == "and":
             result_tc.append(wa & wb)
         elif op == "or":
             result_tc.append(wa | wb)
@@ -334,22 +326,22 @@ fn _binary_bitwise_op_inplace[op: StringLiteral](mut a: BigInt, read b: BigInt):
 # ===----------------------------------------------------------------------=== #
 
 
-fn bitwise_and(a: BigInt, b: BigInt) -> BigInt:
+def bitwise_and(a: BigInt, b: BigInt) -> BigInt:
     """Returns a & b using Python-compatible two's complement semantics."""
     return _binary_bitwise_op["and"](a, b)
 
 
-fn bitwise_or(a: BigInt, b: BigInt) -> BigInt:
+def bitwise_or(a: BigInt, b: BigInt) -> BigInt:
     """Returns a | b using Python-compatible two's complement semantics."""
     return _binary_bitwise_op["or"](a, b)
 
 
-fn bitwise_xor(a: BigInt, b: BigInt) -> BigInt:
+def bitwise_xor(a: BigInt, b: BigInt) -> BigInt:
     """Returns a ^ b using Python-compatible two's complement semantics."""
     return _binary_bitwise_op["xor"](a, b)
 
 
-fn bitwise_not(x: BigInt) -> BigInt:
+def bitwise_not(x: BigInt) -> BigInt:
     """Returns ~x using Python-compatible two's complement semantics.
 
     ~x = -(x + 1)
@@ -391,19 +383,19 @@ fn bitwise_not(x: BigInt) -> BigInt:
 # ===----------------------------------------------------------------------=== #
 
 
-fn bitwise_and_inplace(mut a: BigInt, read b: BigInt):
+def bitwise_and_inplace(mut a: BigInt, read b: BigInt):
     """Performs a &= b in-place using Python-compatible two's complement
     semantics."""
     _binary_bitwise_op_inplace["and"](a, b)
 
 
-fn bitwise_or_inplace(mut a: BigInt, read b: BigInt):
+def bitwise_or_inplace(mut a: BigInt, read b: BigInt):
     """Performs a |= b in-place using Python-compatible two's complement
     semantics."""
     _binary_bitwise_op_inplace["or"](a, b)
 
 
-fn bitwise_xor_inplace(mut a: BigInt, read b: BigInt):
+def bitwise_xor_inplace(mut a: BigInt, read b: BigInt):
     """Performs a ^= b in-place using Python-compatible two's complement
     semantics."""
     _binary_bitwise_op_inplace["xor"](a, b)

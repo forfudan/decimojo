@@ -31,8 +31,8 @@
 Implements functions for mathematical operations on Decimal128 objects.
 """
 
-import time
-import testing
+from std import time
+from std import testing
 
 from decimo.decimal128.decimal128 import Decimal128
 from decimo.rounding_mode import RoundingMode
@@ -40,7 +40,7 @@ import decimo.decimal128.utility
 
 
 # TODO: Like `multiply` use combined bits to determine the appropriate method
-fn add(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
+def add(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
     """
     Adds two Decimal128 values and returns a new Decimal128 containing the sum.
     The results will be rounded (up to even) if digits are too many.
@@ -62,7 +62,7 @@ fn add(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
 
     # CASE: Zeros
     if x1_coef == 0 and x2_coef == 0:
-        var scale = max(x1_scale, x2_scale)
+        var scale = UInt32(max(x1_scale, x2_scale))
         return Decimal128(0, 0, 0, scale, False)
 
     elif x1_coef == 0:
@@ -86,7 +86,9 @@ fn add(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
             ):
                 scale -= 1
             sum_coef *= UInt128(10) ** (scale - x2_scale)
-            return Decimal128.from_uint128(sum_coef, scale, x2.is_negative())
+            return Decimal128.from_uint128(
+                sum_coef, UInt32(scale), x2.is_negative()
+            )
 
     elif x2_coef == 0:
         if x2_scale <= x1_scale:
@@ -108,7 +110,9 @@ fn add(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
             ):
                 scale -= 1
             sum_coef *= UInt128(10) ** (scale - x1_scale)
-            return Decimal128.from_uint128(sum_coef, scale, x1.is_negative())
+            return Decimal128.from_uint128(
+                sum_coef, UInt32(scale), x1.is_negative()
+            )
 
     # CASE: Integer addition with scale of 0 (true integers)
     elif x1_scale == 0 and x2_scale == 0:
@@ -153,15 +157,17 @@ fn add(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
                 raise Error("Error in `addition()`: Decimal128 overflow")
 
             # Determine the scale for the result
-            var scale = min(
-                max(x1_scale, x2_scale),
-                Decimal128.MAX_NUM_DIGITS
-                - decimo.decimal128.utility.number_of_digits(summation),
+            var scale = UInt32(
+                min(
+                    max(x1_scale, x2_scale),
+                    Decimal128.MAX_NUM_DIGITS
+                    - decimo.decimal128.utility.number_of_digits(summation),
+                )
             )
             ## If summation > 7922816251426433759354395033
             if (summation > Decimal128.MAX_AS_UINT128 // 10) and (scale > 0):
                 scale -= 1
-            summation *= UInt128(10) ** scale
+            summation *= UInt128(10) ** UInt128(scale)
 
             return Decimal128.from_uint128(summation, scale, x1.is_negative())
 
@@ -180,15 +186,17 @@ fn add(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
                 is_negative = False
 
             # Determine the scale for the result
-            var scale = min(
-                max(x1_scale, x2_scale),
-                Decimal128.MAX_NUM_DIGITS
-                - decimo.decimal128.utility.number_of_digits(diff),
+            var scale = UInt32(
+                min(
+                    max(x1_scale, x2_scale),
+                    Decimal128.MAX_NUM_DIGITS
+                    - decimo.decimal128.utility.number_of_digits(diff),
+                )
             )
             ## If summation > 7922816251426433759354395033
             if (diff > Decimal128.MAX_AS_UINT128 // 10) and (scale > 0):
                 scale -= 1
-            diff *= UInt128(10) ** scale
+            diff *= UInt128(10) ** UInt128(scale)
 
             return Decimal128.from_uint128(diff, scale, is_negative)
 
@@ -208,11 +216,15 @@ fn add(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
                 summation = x2_coef - x1_coef
                 is_negative = x2.is_negative()
             else:  # x1_coef == x2_coef
-                return Decimal128.from_uint128(UInt128(0), x1_scale, False)
+                return Decimal128.from_uint128(
+                    UInt128(0), UInt32(x1_scale), False
+                )
 
         # If the summation fits in 96 bits, we can use the original scale
         if summation < Decimal128.MAX_AS_UINT128:
-            return Decimal128.from_uint128(summation, x1_scale, is_negative)
+            return Decimal128.from_uint128(
+                summation, UInt32(x1_scale), is_negative
+            )
 
         # Otherwise, it is >= 29 digits
         # we need to truncate the summation to fit in 96 bits
@@ -220,7 +232,9 @@ fn add(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
             var ndigits_summation = decimo.decimal128.utility.number_of_digits(
                 summation
             )
-            var ndigits_int_summation = ndigits_summation - x1_scale
+            var ndigits_int_summation = UInt32(ndigits_summation) - UInt32(
+                x1_scale
+            )
             var final_scale = Decimal128.MAX_NUM_DIGITS - ndigits_int_summation
 
             var truncated_summation = (
@@ -263,7 +277,9 @@ fn add(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
                     summation = x2_coef_scaled - x1_coef_scaled
                     is_negative = x2.is_negative()
                 else:
-                    return Decimal128.from_uint128(UInt128(0), x1_scale, False)
+                    return Decimal128.from_uint128(
+                        UInt128(0), UInt32(x1_scale), False
+                    )
 
         else:  # x1_scale < x2_scale
             # Scale up x1_coef to match x2_scale
@@ -283,13 +299,15 @@ fn add(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
                     summation = x2_coef_scaled - x1_coef_scaled
                     is_negative = x2.is_negative()
                 else:
-                    return Decimal128.from_uint128(UInt128(0), x2_scale, False)
+                    return Decimal128.from_uint128(
+                        UInt128(0), UInt32(x2_scale), False
+                    )
 
         # If the summation fits in 96 bits, we can use the original scale
         if summation < Decimal128.MAX_AS_UINT256:
             return Decimal128.from_uint128(
                 UInt128(summation & 0x00000000_FFFFFFFF_FFFFFFFF_FFFFFFFF),
-                max(x1_scale, x2_scale),
+                UInt32(max(x1_scale, x2_scale)),
                 is_negative,
             )
 
@@ -299,10 +317,12 @@ fn add(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
             var ndigits_summation = decimo.decimal128.utility.number_of_digits(
                 summation
             )
-            var ndigits_int_summation = ndigits_summation - max(
-                x1_scale, x2_scale
+            var ndigits_int_summation = UInt32(ndigits_summation) - UInt32(
+                max(x1_scale, x2_scale)
             )
-            var final_scale = Decimal128.MAX_NUM_DIGITS - ndigits_int_summation
+            var final_scale = (
+                UInt32(Decimal128.MAX_NUM_DIGITS) - ndigits_int_summation
+            )
 
             truncated_summation = (
                 decimo.decimal128.utility.round_to_keep_first_n_digits(
@@ -326,7 +346,7 @@ fn add(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
             )
 
 
-fn subtract(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
+def subtract(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
     """
     Subtracts the x2 Decimal128 from x1 and returns a new Decimal128.
 
@@ -357,7 +377,7 @@ fn subtract(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
         raise Error("Error in `subtract()`; ", e)
 
 
-fn negative(x: Decimal128) -> Decimal128:
+def negative(x: Decimal128) -> Decimal128:
     """
     Returns the negative of a Decimal128 number.
 
@@ -380,7 +400,7 @@ fn negative(x: Decimal128) -> Decimal128:
     return result
 
 
-fn absolute(x: Decimal128) -> Decimal128:
+def absolute(x: Decimal128) -> Decimal128:
     """
     Returns the absolute value of a Decimal128 number.
 
@@ -395,7 +415,7 @@ fn absolute(x: Decimal128) -> Decimal128:
     return x
 
 
-fn multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
+def multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
     """
     Multiplies two Decimal128 values and returns a new Decimal128 containing the product.
 
@@ -428,7 +448,7 @@ fn multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
             0,
             0,
             0,
-            scale=min(combined_scale, Decimal128.MAX_SCALE),
+            scale=UInt32(min(combined_scale, Decimal128.MAX_SCALE)),
             sign=is_negative,
         )
 
@@ -441,11 +461,11 @@ fn multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
                 0,
                 0,
                 0,
-                Decimal128.MAX_SCALE,
+                UInt32(Decimal128.MAX_SCALE),
                 is_negative,
             )
         # Otherwise, return 1 with correct sign and scale
-        var final_scale = min(Decimal128.MAX_SCALE, combined_scale)
+        var final_scale = UInt32(min(Decimal128.MAX_SCALE, combined_scale))
         return Decimal128(1, 0, 0, final_scale, is_negative)
 
     # SPECIAL CASE: First operand has coefficient of 1
@@ -471,7 +491,7 @@ fn multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
                     prod, False, num_digits_to_keep
                 )
             )
-            var final_scale = min(Decimal128.MAX_SCALE, combined_scale)
+            var final_scale = UInt32(min(Decimal128.MAX_SCALE, combined_scale))
             return Decimal128.from_uint128(
                 truncated_prod, final_scale, is_negative
             )
@@ -499,7 +519,7 @@ fn multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
                     prod, False, num_digits_to_keep
                 )
             )
-            var final_scale = min(Decimal128.MAX_SCALE, combined_scale)
+            var final_scale = UInt32(min(Decimal128.MAX_SCALE, combined_scale))
             return Decimal128.from_uint128(
                 truncated_prod, final_scale, is_negative
             )
@@ -578,7 +598,7 @@ fn multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
                 low,
                 mid,
                 high,
-                final_scale,
+                UInt32(final_scale),
                 is_negative,
             )
 
@@ -594,7 +614,9 @@ fn multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
 
         # Combined scale more than max precision, no need to truncate
         if combined_scale <= Decimal128.MAX_SCALE:
-            return Decimal128.from_uint128(prod, combined_scale, is_negative)
+            return Decimal128.from_uint128(
+                prod, UInt32(combined_scale), is_negative
+            )
 
         # Combined scale no more than max precision, truncate with rounding
         else:
@@ -618,7 +640,9 @@ fn multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
                 )
                 final_scale = Decimal128.MAX_SCALE
 
-            return Decimal128.from_uint128(prod, final_scale, is_negative)
+            return Decimal128.from_uint128(
+                prod, UInt32(final_scale), is_negative
+            )
 
     # SUB-CASE: Both operands are moderate
     # The bits of the product will not exceed 128 bits
@@ -671,11 +695,13 @@ fn multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
         if final_scale > Decimal128.MAX_SCALE:
             var ndigits_prod = decimo.decimal128.utility.number_of_digits(prod)
             prod = decimo.decimal128.utility.round_to_keep_first_n_digits(
-                prod, False, ndigits_prod - (final_scale - Decimal128.MAX_SCALE)
+                prod,
+                False,
+                ndigits_prod - (final_scale - Decimal128.MAX_SCALE),
             )
             final_scale = Decimal128.MAX_SCALE
 
-        return Decimal128.from_uint128(prod, final_scale, is_negative)
+        return Decimal128.from_uint128(prod, UInt32(final_scale), is_negative)
 
     # REMAINING CASES: Both operands are big
     # The bits of the product will not exceed 192 bits
@@ -739,10 +765,10 @@ fn multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
     var mid = UInt32((prod >> 32) & 0xFFFFFFFF)
     var high = UInt32((prod >> 64) & 0xFFFFFFFF)
 
-    return Decimal128(low, mid, high, final_scale, is_negative)
+    return Decimal128(low, mid, high, UInt32(final_scale), is_negative)
 
 
-fn divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
+def divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
     """
     Divides x1 by x2 and returns a new Decimal128 containing the quotient.
     Uses a simpler string-based long division approach as fallback.
@@ -775,9 +801,9 @@ fn divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
     if x1.is_zero():
         var result = Decimal128.ZERO()
         var result_scale = max(0, x1.scale() - x2.scale())
-        result.flags = UInt32(
-            (result_scale << Decimal128.SCALE_SHIFT) & Decimal128.SCALE_MASK
-        )
+        result.flags = (
+            UInt32(result_scale) << Decimal128.SCALE_SHIFT
+        ) & Decimal128.SCALE_MASK
         return result
 
     var x1_coef = x1.coefficient()
@@ -797,12 +823,16 @@ fn divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
         # SUB-CASE: divisor is 1
         # If divisor is 1, return dividend with correct sign
         if x2_scale == 0:
-            return Decimal128(x1.low, x1.mid, x1.high, x1_scale, is_negative)
+            return Decimal128(
+                x1.low, x1.mid, x1.high, UInt32(x1_scale), is_negative
+            )
 
         # SUB-CASE: divisor is of coefficient 1 with positive scale
         # diff_scale > 0, then final scale is diff_scale
         elif diff_scale > 0:
-            return Decimal128(x1.low, x1.mid, x1.high, diff_scale, is_negative)
+            return Decimal128(
+                x1.low, x1.mid, x1.high, UInt32(diff_scale), is_negative
+            )
 
         # diff_scale < 0, then times 10 ** (-diff_scale)
         else:
@@ -837,7 +867,7 @@ fn divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
         # If the scales are positive, return 1 with the difference in scales
         # For example, 0.1234 / 1234 = 0.0001
         if diff_scale >= 0:
-            return Decimal128(1, 0, 0, diff_scale, is_negative)
+            return Decimal128(1, 0, 0, UInt32(diff_scale), is_negative)
 
         # SUB-CASE: The scales are negative
         # diff_scale < 0, then times 1e-diff_scale
@@ -861,7 +891,9 @@ fn divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
             # High will be zero because the quotient is less than 2^48
             # For safety, we still calcuate the high word
             var quot = x1_coef // x2_coef
-            return Decimal128.from_uint128(quot, diff_scale, is_negative)
+            return Decimal128.from_uint128(
+                quot, UInt32(diff_scale), is_negative
+            )
 
         else:
             # If diff_scale < 0, return the quotient with scaling up
@@ -1029,7 +1061,9 @@ fn divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
                 )
                 scale_of_quot = Decimal128.MAX_SCALE
 
-            return Decimal128.from_uint128(quot, scale_of_quot, is_negative)
+            return Decimal128.from_uint128(
+                quot, UInt32(scale_of_quot), is_negative
+            )
 
         # Otherwise, we need to truncate the first 29 or 28 digits
         else:
@@ -1065,7 +1099,7 @@ fn divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
                 scale_of_truncated_quot = Decimal128.MAX_SCALE
 
             return Decimal128.from_uint128(
-                truncated_quot, scale_of_truncated_quot, is_negative
+                truncated_quot, UInt32(scale_of_truncated_quot), is_negative
             )
 
     # SUB-CASE: Use UInt256 to store the quotient
@@ -1139,7 +1173,9 @@ fn divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
             var mid = UInt32((quot256 >> 32) & 0xFFFFFFFF)
             var high = UInt32((quot256 >> 64) & 0xFFFFFFFF)
 
-            return Decimal128(low, mid, high, scale_of_quot, is_negative)
+            return Decimal128(
+                low, mid, high, UInt32(scale_of_quot), is_negative
+            )
 
         # Otherwise, we need to truncate the first 29 or 28 digits
         else:
@@ -1187,11 +1223,11 @@ fn divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
             var high = UInt32((truncated_quot >> 64) & 0xFFFFFFFF)
 
             return Decimal128(
-                low, mid, high, scale_of_truncated_quot, is_negative
+                low, mid, high, UInt32(scale_of_truncated_quot), is_negative
             )
 
 
-fn truncate_divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
+def truncate_divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
     """Returns the integral part of the quotient (truncating towards zero).
     The following identity always holds: x_1 == (x_1 // x_2) * x_2 + x_1 % x_2.
 
@@ -1208,7 +1244,7 @@ fn truncate_divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
         raise Error("Error in `divide()`: ", e)
 
 
-fn modulo(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
+def modulo(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
     """Returns the remainder of the division of x1 by x2.
     The following identity always holds: x_1 == (x_1 // x_2) * x_2 + x_1 % x_2.
 

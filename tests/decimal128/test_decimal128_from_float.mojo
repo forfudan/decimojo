@@ -4,11 +4,11 @@ Most tests use startswith assertions due to float precision, so they remain
 inline rather than TOML-driven.
 """
 
-import testing
+from std import testing
 from decimo import Dec128
 
 
-fn test_simple_integers() raises:
+def test_simple_integers() raises:
     """Test conversion of simple integer float values."""
     testing.assert_equal(String(Dec128.from_float(0.0)), "0")
     testing.assert_equal(String(Dec128.from_float(1.0)), "1")
@@ -17,7 +17,7 @@ fn test_simple_integers() raises:
     testing.assert_equal(String(Dec128.from_float(1000.0)), "1000")
 
 
-fn test_simple_decimals() raises:
+def test_simple_decimals() raises:
     """Test conversion of simple decimal float values."""
     testing.assert_equal(String(Dec128.from_float(0.5)), "0.5")
     testing.assert_equal(String(Dec128.from_float(0.25)), "0.25")
@@ -26,7 +26,7 @@ fn test_simple_decimals() raises:
     testing.assert_true(String(Dec128.from_float(2.71828)).startswith("2.7182"))
 
 
-fn test_negative_numbers() raises:
+def test_negative_numbers() raises:
     """Test conversion of negative float values."""
     testing.assert_equal(String(Dec128.from_float(-1.0)), "-1")
     testing.assert_equal(String(Dec128.from_float(-0.5)), "-0.5")
@@ -39,7 +39,7 @@ fn test_negative_numbers() raises:
     )
 
 
-fn test_very_large_numbers() raises:
+def test_very_large_numbers() raises:
     """Test conversion of very large float values."""
     testing.assert_equal(String(Dec128.from_float(1e10)), "10000000000")
     testing.assert_equal(String(Dec128.from_float(1e15)), "1000000000000000")
@@ -54,7 +54,7 @@ fn test_very_large_numbers() raises:
     )
 
 
-fn test_very_small_numbers() raises:
+def test_very_small_numbers() raises:
     """Test conversion of very small float values."""
     testing.assert_true(
         String(Dec128.from_float(1e-10)).startswith("0.00000000")
@@ -71,7 +71,7 @@ fn test_very_small_numbers() raises:
     testing.assert_true(String(Dec128.from_float(1e-310)).startswith("0."))
 
 
-fn test_binary_to_decimal_conversion() raises:
+def test_binary_to_decimal_conversion() raises:
     """Test float values that are inexact in binary."""
     testing.assert_true(String(Dec128.from_float(0.1)).startswith("0.1"))
     testing.assert_true(String(Dec128.from_float(0.2)).startswith("0.2"))
@@ -80,7 +80,7 @@ fn test_binary_to_decimal_conversion() raises:
     testing.assert_true(String(Dec128.from_float(0.1)).startswith("0.1"))
 
 
-fn test_rounding_behavior() raises:
+def test_rounding_behavior() raises:
     """Test rounding behavior during float to Decimal128 conversion."""
     testing.assert_true(
         String(Dec128.from_float(3.141592653589793)).startswith(
@@ -101,7 +101,7 @@ fn test_rounding_behavior() raises:
     )
 
 
-fn test_special_values() raises:
+def test_special_values() raises:
     """Test handling of special float values."""
     testing.assert_equal(String(Dec128.from_float(0.0)), "0")
     testing.assert_true(
@@ -114,7 +114,7 @@ fn test_special_values() raises:
     testing.assert_true(String(Dec128.from_float(9.9999)).startswith("9.9999"))
 
 
-fn test_scientific_notation() raises:
+def test_scientific_notation() raises:
     """Test handling of scientific notation values."""
     testing.assert_equal(String(Dec128.from_float(1.23e5)), "123000")
     testing.assert_true(
@@ -129,7 +129,7 @@ fn test_scientific_notation() raises:
     testing.assert_true(String(Dec128.from_float(5e20)).startswith("5"))
 
 
-fn test_boundary_cases() raises:
+def test_boundary_cases() raises:
     """Test boundary cases for float to Decimal128 conversion."""
     testing.assert_equal(String(Dec128.from_float(1000.0)), "1000")
     testing.assert_equal(
@@ -144,5 +144,5 @@ fn test_boundary_cases() raises:
     testing.assert_equal(String(Dec128.from_float(0.125)), "0.125")
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

@@ -11,7 +11,7 @@ from bench_to_string import main as bench_to_string
 from bench_shift import main as bench_shift
 
 
-fn main() raises:
+def main() raises:
     while True:
         print(
             """

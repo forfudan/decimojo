@@ -9,7 +9,7 @@
 #   ./decimo "100 * 12 - 23/17" -p 50
 # ===----------------------------------------------------------------------=== #
 
-from sys import exit
+from std.sys import exit
 
 from argmojo import Arg, Command
 from decimo.rounding_mode import RoundingMode
@@ -19,7 +19,7 @@ from calculator.evaluator import evaluate_rpn, final_round
 from calculator.display import print_error
 
 
-fn main():
+def main():
     try:
         _run()
     except e:
@@ -30,7 +30,7 @@ fn main():
         exit(1)
 
 
-fn _run() raises:
+def _run() raises:
     var cmd = Command(
         "decimo",
         (
@@ -46,7 +46,7 @@ fn _run() raises:
     )
 
     # Positional: the math expression
-    cmd.add_arg(
+    cmd.add_argument(
         Arg(
             "expr",
             help=(
@@ -58,41 +58,41 @@ fn _run() raises:
     )
 
     # Named option: number of significant digits
-    cmd.add_arg(
+    cmd.add_argument(
         Arg("precision", help="Number of significant digits (default: 50)")
-        .long("precision")
-        .short("p")
-        .default("50")
+        .long["precision"]()
+        .short["p"]()
+        .default["50"]()
     )
 
     # Output formatting flags
     # Mutually exclusive: scientific, engineering
-    cmd.add_arg(
+    cmd.add_argument(
         Arg("scientific", help="Output in scientific notation (e.g. 1.23E+10)")
-        .long("scientific")
-        .short("s")
+        .long["scientific"]()
+        .short["s"]()
         .flag()
     )
-    cmd.add_arg(
+    cmd.add_argument(
         Arg(
             "engineering",
             help="Output in engineering notation (exponent multiple of 3)",
         )
-        .long("engineering")
-        .short("e")
+        .long["engineering"]()
+        .short["e"]()
         .flag()
     )
     cmd.mutually_exclusive(["scientific", "engineering"])
-    cmd.add_arg(
+    cmd.add_argument(
         Arg(
             "pad",
             help="Pad trailing zeros to the specified precision",
         )
-        .long("pad")
-        .short("P")
+        .long["pad"]()
+        .short["P"]()
         .flag()
     )
-    cmd.add_arg(
+    cmd.add_argument(
         Arg(
             "delimiter",
             help=(
@@ -100,30 +100,27 @@ fn _run() raises:
                 " (e.g. '_' gives 1_234.567_89)"
             ),
         )
-        .long("delimiter")
-        .short("d")
-        .default("")
+        .long["delimiter"]()
+        .short["d"]()
+        .default[""]()
     )
 
     # Rounding mode for the final result
-    var rounding_choices: List[String] = [
-        "half-even",
-        "half-up",
-        "half-down",
-        "up",
-        "down",
-        "ceiling",
-        "floor",
-    ]
-    cmd.add_arg(
+    cmd.add_argument(
         Arg(
             "rounding-mode",
             help="Rounding mode for the final result (default: half-even)",
         )
-        .long("rounding-mode")
-        .short("r")
-        .choices(rounding_choices^)
-        .default("half-even")
+        .long["rounding-mode"]()
+        .short["r"]()
+        .choice["half-even"]()
+        .choice["half-up"]()
+        .choice["half-down"]()
+        .choice["up"]()
+        .choice["down"]()
+        .choice["ceiling"]()
+        .choice["floor"]()
+        .default["half-even"]()
     )
 
     var result = cmd.parse()
@@ -169,7 +166,7 @@ fn _run() raises:
         exit(1)
 
 
-fn _display_calc_error(error_msg: String, expr: String):
+def _display_calc_error(error_msg: String, expr: String):
     """Parse a calculator error message and display it with colours
     and a caret indicator.
 
@@ -196,8 +193,10 @@ fn _display_calc_error(error_msg: String, expr: String):
 
         if colon_pos > after_prefix:
             # Extract position number and description.
-            var pos_str = String(error_msg[after_prefix:colon_pos])
-            var description = String(error_msg[colon_pos + 2 :])  # skip ": "
+            var pos_str = String(error_msg[byte=after_prefix:colon_pos])
+            var description = String(
+                error_msg[byte = colon_pos + 2 :]
+            )  # skip ": "
 
             try:
                 var pos = Int(pos_str)
@@ -210,7 +209,7 @@ fn _display_calc_error(error_msg: String, expr: String):
     print_error(error_msg)
 
 
-fn _pad_to_precision(plain: String, precision: Int) -> String:
+def _pad_to_precision(plain: String, precision: Int) -> String:
     """Pad (or add) trailing zeros so the fractional part has exactly
     `precision` digits.
     """
@@ -234,7 +233,7 @@ fn _pad_to_precision(plain: String, precision: Int) -> String:
     return plain + "0" * (precision - frac_len)
 
 
-fn _parse_rounding_mode(name: String) -> RoundingMode:
+def _parse_rounding_mode(name: String) -> RoundingMode:
     """Convert a CLI rounding-mode name (hyphenated) to a RoundingMode value."""
     if name == "half-even":
         return RoundingMode.half_even()

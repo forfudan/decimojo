@@ -9,9 +9,9 @@
 # https://docs.modular.com/mojo/manual/python/mojo-from-python
 # ===----------------------------------------------------------------------=== #
 
-from python import PythonObject
-from python.bindings import PythonModuleBuilder
-from os import abort
+from std.python import PythonObject
+from std.python.bindings import PythonModuleBuilder
+from std.os import abort
 
 from decimo import BigDecimal
 
@@ -22,7 +22,7 @@ from decimo import BigDecimal
 
 
 @export
-fn PyInit__decimo() -> PythonObject:
+def PyInit__decimo() -> PythonObject:
     try:
         var m = PythonModuleBuilder("_decimo")
         _ = (
@@ -50,7 +50,7 @@ fn PyInit__decimo() -> PythonObject:
 # ===----------------------------------------------------------------------=== #
 
 
-fn bigdecimal_py_init(
+def bigdecimal_py_init(
     out self: BigDecimal, args: PythonObject, kwargs: PythonObject
 ) raises:
     """Construct a BigDecimal from a single argument (string, int, or float).
@@ -72,19 +72,19 @@ fn bigdecimal_py_init(
     self = BigDecimal(s)
 
 
-fn bigdecimal_to_string(py_self: PythonObject) raises -> PythonObject:
+def bigdecimal_to_string(py_self: PythonObject) raises -> PythonObject:
     """Return the decimal as a plain string, e.g. '3.14'."""
     var ptr = py_self.downcast_value_ptr[BigDecimal]()
-    return PythonObject(ptr[].__str__())
+    return PythonObject(String(ptr[]))
 
 
-fn bigdecimal_to_repr(py_self: PythonObject) raises -> PythonObject:
+def bigdecimal_to_repr(py_self: PythonObject) raises -> PythonObject:
     """Return the repr string, e.g. 'Decimal(\"3.14\")'."""
     var ptr = py_self.downcast_value_ptr[BigDecimal]()
-    return PythonObject('Decimal("' + ptr[].__str__() + '")')
+    return PythonObject('Decimal("' + String(ptr[]) + '")')
 
 
-fn bigdecimal_add(
+def bigdecimal_add(
     py_self: PythonObject, other: PythonObject
 ) raises -> PythonObject:
     """Return self + other."""
@@ -94,7 +94,7 @@ fn bigdecimal_add(
     return PythonObject(alloc=result^)
 
 
-fn bigdecimal_sub(
+def bigdecimal_sub(
     py_self: PythonObject, other: PythonObject
 ) raises -> PythonObject:
     """Return self - other."""
@@ -104,7 +104,7 @@ fn bigdecimal_sub(
     return PythonObject(alloc=result^)
 
 
-fn bigdecimal_mul(
+def bigdecimal_mul(
     py_self: PythonObject, other: PythonObject
 ) raises -> PythonObject:
     """Return self * other."""
@@ -114,7 +114,7 @@ fn bigdecimal_mul(
     return PythonObject(alloc=result^)
 
 
-fn bigdecimal_div(
+def bigdecimal_div(
     py_self: PythonObject, other: PythonObject
 ) raises -> PythonObject:
     """Return self / other."""
@@ -124,21 +124,21 @@ fn bigdecimal_div(
     return PythonObject(alloc=result^)
 
 
-fn bigdecimal_neg(py_self: PythonObject) raises -> PythonObject:
+def bigdecimal_neg(py_self: PythonObject) raises -> PythonObject:
     """Return -self."""
     var ptr = py_self.downcast_value_ptr[BigDecimal]()
     var result = -(ptr[])
     return PythonObject(alloc=result^)
 
 
-fn bigdecimal_abs(py_self: PythonObject) raises -> PythonObject:
+def bigdecimal_abs(py_self: PythonObject) raises -> PythonObject:
     """Return abs(self)."""
     var ptr = py_self.downcast_value_ptr[BigDecimal]()
     var result = abs(ptr[])
     return PythonObject(alloc=result^)
 
 
-fn bigdecimal_eq(
+def bigdecimal_eq(
     py_self: PythonObject, other: PythonObject
 ) raises -> PythonObject:
     """Return self == other."""
@@ -147,7 +147,7 @@ fn bigdecimal_eq(
     return PythonObject(self_ptr[] == other_ptr[])
 
 
-fn bigdecimal_lt(
+def bigdecimal_lt(
     py_self: PythonObject, other: PythonObject
 ) raises -> PythonObject:
     """Return self < other."""
@@ -156,7 +156,7 @@ fn bigdecimal_lt(
     return PythonObject(self_ptr[] < other_ptr[])
 
 
-fn bigdecimal_le(
+def bigdecimal_le(
     py_self: PythonObject, other: PythonObject
 ) raises -> PythonObject:
     """Return self <= other."""

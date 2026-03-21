@@ -2,11 +2,11 @@
 # Test BigInt basic functionality
 # ===----------------------------------------------------------------------=== #
 
-import testing
+from std import testing
 from decimo.bigint.bigint import BigInt
 
 
-fn test_default_constructor() raises:
+def test_default_constructor() raises:
     """Test that default constructor creates zero."""
     var x = BigInt()
     assert_true(x.is_zero(), "Default constructor should be zero")
@@ -16,7 +16,7 @@ fn test_default_constructor() raises:
     print("  PASS: default constructor")
 
 
-fn test_from_int() raises:
+def test_from_int() raises:
     """Test construction from Int."""
     var zero = BigInt(0)
     assert_true(zero.is_zero(), "BigInt(0) should be zero")
@@ -52,7 +52,7 @@ fn test_from_int() raises:
     print("  PASS: from_int")
 
 
-fn test_from_string() raises:
+def test_from_string() raises:
     """Test construction from String."""
     var zero = BigInt("0")
     assert_true(zero.is_zero(), "from_string('0') should be zero")
@@ -88,7 +88,7 @@ fn test_from_string() raises:
     print("  PASS: from_string")
 
 
-fn test_negation_and_abs() raises:
+def test_negation_and_abs() raises:
     """Test __neg__ and __abs__."""
     var pos = BigInt(42)
     var neg = -pos
@@ -105,7 +105,7 @@ fn test_negation_and_abs() raises:
     print("  PASS: negation and abs")
 
 
-fn test_hex_and_binary_string() raises:
+def test_hex_and_binary_string() raises:
     """Test to_hex_string and to_binary_string."""
     var zero = BigInt(0)
     assert_true(
@@ -135,7 +135,7 @@ fn test_hex_and_binary_string() raises:
     print("  PASS: hex and binary string")
 
 
-fn test_bit_length() raises:
+def test_bit_length() raises:
     """Test bit_length."""
     var zero = BigInt(0)
     assert_true(zero.bit_length() == 0, "bit_length(0)")
@@ -155,7 +155,7 @@ fn test_bit_length() raises:
     print("  PASS: bit_length")
 
 
-fn test_copy() raises:
+def test_copy() raises:
     """Test copy method."""
     var original = BigInt("12345678901234567890")
     var copied = original.copy()
@@ -172,7 +172,7 @@ fn test_copy() raises:
     print("  PASS: copy")
 
 
-fn test_normalize() raises:
+def test_normalize() raises:
     """Test _normalize strips leading zeros and normalizes -0."""
     var x = BigInt(raw_words=[UInt32(42), UInt32(0), UInt32(0)], sign=False)
     x._normalize()
@@ -187,17 +187,17 @@ fn test_normalize() raises:
     print("  PASS: normalize")
 
 
-fn test_print_internal() raises:
+def test_print_internal() raises:
     """Smoke test for print_internal_representation."""
     var x = BigInt("1234567890123456789")
     x.print_internal_representation()
     print("  PASS: print_internal_representation (visual check above)")
 
 
-fn assert_true(cond: Bool, msg: String) raises:
+def assert_true(cond: Bool, msg: String) raises:
     if not cond:
         raise Error("FAIL: " + msg)
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

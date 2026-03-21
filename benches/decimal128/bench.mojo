@@ -20,7 +20,7 @@ from bench_quantize import main as bench_quantize
 from bench_round import main as bench_round
 
 
-fn main() raises:
+def main() raises:
     while True:
         print(
             """

@@ -3,12 +3,12 @@ Test BigInt10.from_python_int() method.
 Tests conversion from Python integers to Mojo BigInt10.
 """
 
-import testing
-from python import Python
+from std import testing
+from std.python import Python
 from decimo.bigint10.bigint10 import BigInt10
 
 
-fn test_from_python_int_basic() raises:
+def test_from_python_int_basic() raises:
     """Test basic Python int to BigInt10 conversion."""
     var py = Python.import_module("builtins")
 
@@ -28,7 +28,7 @@ fn test_from_python_int_basic() raises:
     testing.assert_equal(String(mojo_neg), "-456", "Small negative integer")
 
 
-fn test_from_python_int_large() raises:
+def test_from_python_int_large() raises:
     """Test large Python int to BigInt10 conversion."""
     var py = Python.import_module("builtins")
 
@@ -59,7 +59,7 @@ fn test_from_python_int_large() raises:
     )
 
 
-fn test_from_python_int_edge_cases() raises:
+def test_from_python_int_edge_cases() raises:
     """Test edge cases for Python int conversion."""
     var py = Python.import_module("builtins")
 
@@ -84,7 +84,7 @@ fn test_from_python_int_edge_cases() raises:
     )
 
 
-fn test_from_python_int_arithmetic() raises:
+def test_from_python_int_arithmetic() raises:
     """Test that converted BigInt10 can perform arithmetic correctly."""
     var py = Python.import_module("builtins")
 
@@ -121,7 +121,7 @@ fn test_from_python_int_arithmetic() raises:
     )
 
 
-fn test_from_python_int_sign() raises:
+def test_from_python_int_sign() raises:
     """Test sign handling in Python int conversion."""
     var py = Python.import_module("builtins")
 
@@ -141,7 +141,7 @@ fn test_from_python_int_sign() raises:
     testing.assert_false(mojo_zero.sign, "Zero has sign=False")
 
 
-fn test_from_python_int_constructor() raises:
+def test_from_python_int_constructor() raises:
     """Test the py= constructor syntax."""
     var py = Python.import_module("builtins")
 
@@ -162,7 +162,7 @@ fn test_from_python_int_constructor() raises:
     )
 
 
-fn test_from_python_int_roundtrip() raises:
+def test_from_python_int_roundtrip() raises:
     """Test Python -> Mojo -> Python roundtrip."""
     var py = Python.import_module("builtins")
 
@@ -185,5 +185,5 @@ fn test_from_python_int_roundtrip() raises:
     )
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

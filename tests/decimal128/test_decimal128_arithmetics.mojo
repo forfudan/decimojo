@@ -8,8 +8,8 @@ Test Decimal128 arithmetic operations including:
 5. extreme / edge cases
 """
 
-from python import Python
-import testing
+from std.python import Python
+from std import testing
 
 from decimo import Dec128
 from decimo.tests import TestCase, parse_file, load_test_cases
@@ -17,7 +17,7 @@ from decimo.tests import TestCase, parse_file, load_test_cases
 comptime file_path = "tests/decimal128/test_data/decimal128_arithmetics.toml"
 
 
-fn test_decimal128_arithmetics() raises:
+def test_decimal128_arithmetics() raises:
     """Test addition, subtraction, negation, and absolute value using TOML
     data-driven test cases.
     """
@@ -186,7 +186,7 @@ fn test_decimal128_arithmetics() raises:
     )
 
 
-fn test_repeated_addition() raises:
+def test_repeated_addition() raises:
     """Test that repeated addition of 0.1 accumulates correctly."""
     var acc = Dec128(0)
     for _ in range(10):
@@ -194,14 +194,14 @@ fn test_repeated_addition() raises:
     testing.assert_equal(String(acc), "1.0", "Repeated addition of 0.1")
 
 
-fn test_double_and_triple_negation() raises:
+def test_double_and_triple_negation() raises:
     """Test double and triple negation."""
     var a = Dec128("123.45")
     testing.assert_equal(String(-(-a)), "123.45", "Double negation")
     testing.assert_equal(String(-(-(-a))), "-123.45", "Triple negation")
 
 
-fn test_addition_overflow() raises:
+def test_addition_overflow() raises:
     """Test that adding beyond MAX raises an error."""
     try:
         var a = Dec128("79228162514264337593543950335")  # MAX
@@ -213,7 +213,7 @@ fn test_addition_overflow() raises:
         pass  # Expected: overflow correctly detected
 
 
-fn test_subtraction_commutativity() raises:
+def test_subtraction_commutativity() raises:
     """Verify that a - b = -(b - a)."""
     var a = Dec128("123.456")
     var b = Dec128("789.012")
@@ -224,5 +224,5 @@ fn test_subtraction_commutativity() raises:
     )
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

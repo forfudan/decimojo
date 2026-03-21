@@ -6,8 +6,8 @@ against TOML expected values), because Python's Decimal cannot compute most
 non-integer exponents.
 """
 
-from python import Python
-import testing
+from std.python import Python
+from std import testing
 
 from decimo import BDec
 from decimo.tests import TestCase, parse_file, load_test_cases
@@ -15,7 +15,7 @@ from decimo.tests import TestCase, parse_file, load_test_cases
 comptime file_path = "tests/bigdecimal/test_data/bigdecimal_exponential.toml"
 
 
-fn test_bigdecimal_exponential() raises:
+def test_bigdecimal_exponential() raises:
     # Load test cases from TOML file
     var pydecimal = Python.import_module("decimal")
     pydecimal.getcontext().prec = 28
@@ -75,7 +75,7 @@ fn test_bigdecimal_exponential() raises:
     )
 
 
-fn test_sqrt_multi_precision() raises:
+def test_sqrt_multi_precision() raises:
     """Test sqrt at various precisions against Python's decimal module.
 
     Exercises both perfect squares (whose natural digit count may exceed the
@@ -146,7 +146,7 @@ fn test_sqrt_multi_precision() raises:
     )
 
 
-fn test_negative_sqrt() raises:
+def test_negative_sqrt() raises:
     """Test that square root of negative number raises an error."""
     var negative_number = BDec("-1")
 
@@ -162,7 +162,7 @@ fn test_negative_sqrt() raises:
     )
 
 
-fn test_ln_invalid_inputs() raises:
+def test_ln_invalid_inputs() raises:
     """Test that natural logarithm with invalid inputs raises appropriate errors.
     """
     # Test 1: ln of zero should raise an error
@@ -187,5 +187,5 @@ fn test_ln_invalid_inputs() raises:
     )
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

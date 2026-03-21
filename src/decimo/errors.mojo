@@ -18,7 +18,8 @@
 Implements error handling for Decimo.
 """
 
-from pathlib.path import cwd
+from std.pathlib.path import cwd
+import decimo.str
 
 comptime OverflowError = DecimoError[error_type="OverflowError"]
 """Type for overflow errors in Decimo.
@@ -95,7 +96,7 @@ DecimoError                             Traceback (most recent call last)
 """
 
 
-struct DecimoError[error_type: String = "DecimoError"](Stringable, Writable):
+struct DecimoError[error_type: String = "DecimoError"](Writable):
     """Base type for all Decimo errors.
 
     Parameters:
@@ -114,7 +115,7 @@ struct DecimoError[error_type: String = "DecimoError"](Stringable, Writable):
     var message: Optional[String]
     var previous_error: Optional[String]
 
-    fn __init__(
+    def __init__(
         out self,
         file: String,
         function: String,
@@ -131,38 +132,11 @@ struct DecimoError[error_type: String = "DecimoError"](Stringable, Writable):
                 String(previous_error.value()).split("\n")[3:]
             )
 
-    fn __str__(self) -> String:
-        if self.message is None:
-            return (
-                "Traceback (most recent call last):\n"
-                + '  File "'
-                + self.file
-                + '"'
-                + " in "
-                + self.function
-                + "\n\n"
-            )
-
-        else:
-            return (
-                "Traceback (most recent call last):\n"
-                + '  File "'
-                + self.file
-                + '"'
-                + " in "
-                + self.function
-                + "\n\n"
-                + String(Self.error_type)
-                + ": "
-                + self.message.value()
-                + "\n"
-            )
-
-    fn write_to[W: Writer](self, mut writer: W):
+    def write_to[W: Writer](self, mut writer: W):
         writer.write("\n")
         writer.write(("-" * 80))
         writer.write("\n")
-        writer.write(Self.error_type.ljust(47, " "))
+        writer.write(decimo.str.ljust(String(Self.error_type), 47, " "))
         writer.write("Traceback (most recent call last)\n")
         writer.write('File "')
         try:

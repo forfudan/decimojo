@@ -33,7 +33,7 @@ comptime ROUND_FLOOR = RoundingMode.ROUND_FLOOR
 """Rounding mode: Round toward negative infinity."""
 
 
-struct RoundingMode(Copyable, ImplicitlyCopyable, Movable, Stringable):
+struct RoundingMode(Copyable, ImplicitlyCopyable, Movable, Writable):
     """
     Represents different rounding modes for decimal operations.
 
@@ -67,63 +67,63 @@ struct RoundingMode(Copyable, ImplicitlyCopyable, Movable, Stringable):
 
     # Static constants for each rounding mode
     @staticmethod
-    fn down() -> Self:
+    def down() -> Self:
         """Truncate (toward zero)."""
         return Self(0)
 
     @staticmethod
-    fn half_up() -> Self:
+    def half_up() -> Self:
         """Round away from zero if >= 0.5."""
         return Self(1)
 
     @staticmethod
-    fn half_down() -> Self:
+    def half_down() -> Self:
         """Round toward zero if <= 0.5."""
         return Self(6)
 
     @staticmethod
-    fn half_even() -> Self:
+    def half_even() -> Self:
         """Round to nearest even digit if equidistant (banker's rounding)."""
         return Self(2)
 
     @staticmethod
-    fn up() -> Self:
+    def up() -> Self:
         """Round away from zero."""
         return Self(3)
 
     @staticmethod
-    fn ceiling() -> Self:
+    def ceiling() -> Self:
         """Round toward positive infinity."""
         return Self(4)
 
     @staticmethod
-    fn floor() -> Self:
+    def floor() -> Self:
         """Round toward negative infinity."""
         return Self(5)
 
-    fn __init__(out self, value: Int):
+    def __init__(out self, value: Int):
         self.value = value
 
-    fn __eq__(self, other: Self) -> Bool:
+    def __eq__(self, other: Self) -> Bool:
         return self.value == other.value
 
-    fn __eq__(self, other: String) -> Bool:
+    def __eq__(self, other: String) -> Bool:
         return String(self) == other
 
-    fn __str__(self) -> String:
+    def write_to[W: Writer](self, mut writer: W):
         if self == Self.down():
-            return "ROUND_DOWN"
+            writer.write("ROUND_DOWN")
         elif self == Self.half_up():
-            return "ROUND_HALF_UP"
+            writer.write("ROUND_HALF_UP")
         elif self == Self.half_even():
-            return "ROUND_HALF_EVEN"
+            writer.write("ROUND_HALF_EVEN")
         elif self == Self.up():
-            return "ROUND_UP"
+            writer.write("ROUND_UP")
         elif self == Self.ceiling():
-            return "ROUND_CEILING"
+            writer.write("ROUND_CEILING")
         elif self == Self.half_down():
-            return "ROUND_HALF_DOWN"
+            writer.write("ROUND_HALF_DOWN")
         elif self == Self.floor():
-            return "ROUND_FLOOR"
+            writer.write("ROUND_FLOOR")
         else:
-            return "UNKNOWN_ROUNDING_MODE"
+            writer.write("UNKNOWN_ROUNDING_MODE")

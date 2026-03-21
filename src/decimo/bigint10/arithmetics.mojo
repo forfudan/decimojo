@@ -24,7 +24,7 @@ from decimo.errors import DecimoError
 from decimo.rounding_mode import RoundingMode
 
 
-fn add(x1: BigInt10, x2: BigInt10) -> BigInt10:
+def add(x1: BigInt10, x2: BigInt10) -> BigInt10:
     """Returns the sum of two BigInts.
 
     Args:
@@ -58,7 +58,7 @@ fn add(x1: BigInt10, x2: BigInt10) -> BigInt10:
     return BigInt10(magnitude^, sign=x1.sign)
 
 
-fn add_inplace(mut x1: BigInt10, x2: BigInt10) -> None:
+def add_inplace(mut x1: BigInt10, x2: BigInt10) -> None:
     """Increments a BigInt10 number by another BigInt10 number in place.
 
     Args:
@@ -78,7 +78,7 @@ fn add_inplace(mut x1: BigInt10, x2: BigInt10) -> None:
     return
 
 
-fn subtract(x1: BigInt10, x2: BigInt10) -> BigInt10:
+def subtract(x1: BigInt10, x2: BigInt10) -> BigInt10:
     """Returns the difference of two numbers.
 
     Args:
@@ -134,7 +134,7 @@ fn subtract(x1: BigInt10, x2: BigInt10) -> BigInt10:
     return BigInt10(magnitude^, sign=sign)
 
 
-fn negative(x: BigInt10) -> BigInt10:
+def negative(x: BigInt10) -> BigInt10:
     """Returns the negative of a BigInt10 number.
 
     Args:
@@ -159,7 +159,7 @@ fn negative(x: BigInt10) -> BigInt10:
     return result^
 
 
-fn absolute(x: BigInt10) -> BigInt10:
+def absolute(x: BigInt10) -> BigInt10:
     """Returns the absolute value of a BigInt10 number.
 
     Args:
@@ -174,7 +174,7 @@ fn absolute(x: BigInt10) -> BigInt10:
         return x.copy()
 
 
-fn multiply(x1: BigInt10, x2: BigInt10) -> BigInt10:
+def multiply(x1: BigInt10, x2: BigInt10) -> BigInt10:
     """Returns the product of two BigInt10 numbers.
 
     Args:
@@ -195,7 +195,7 @@ fn multiply(x1: BigInt10, x2: BigInt10) -> BigInt10:
     return BigInt10(result_magnitude^, sign=x1.sign != x2.sign)
 
 
-fn floor_divide(x1: BigInt10, x2: BigInt10) raises -> BigInt10:
+def floor_divide(x1: BigInt10, x2: BigInt10) raises -> BigInt10:
     """Returns the quotient of two numbers, rounding toward negative infinity.
     The modulo has the same sign as the divisor and satisfies:
     x1 = floor_divide(x1, x2) * x2 + floor_divide(x1, x2).
@@ -253,7 +253,7 @@ fn floor_divide(x1: BigInt10, x2: BigInt10) raises -> BigInt10:
         return BigInt10(magnitude^, sign=True)
 
 
-fn truncate_divide(x1: BigInt10, x2: BigInt10) raises -> BigInt10:
+def truncate_divide(x1: BigInt10, x2: BigInt10) raises -> BigInt10:
     """Returns the quotient of two BigInt10 numbers, truncating toward zero.
     The modulo has the same sign as the divisor and satisfies:
     x1 = truncate_divide(x1, x2) * x2 + truncate_modulo(x1, x2).
@@ -285,7 +285,7 @@ fn truncate_divide(x1: BigInt10, x2: BigInt10) raises -> BigInt10:
     return BigInt10(magnitude^, sign=x1.sign != x2.sign)
 
 
-fn floor_modulo(x1: BigInt10, x2: BigInt10) raises -> BigInt10:
+def floor_modulo(x1: BigInt10, x2: BigInt10) raises -> BigInt10:
     """Returns the remainder of two numbers, truncating toward negative infinity.
     The remainder has the same sign as the divisor and satisfies:
     x1 = floor_divide(x1, x2) * x2 + floor_modulo(x1, x2).
@@ -339,7 +339,7 @@ fn floor_modulo(x1: BigInt10, x2: BigInt10) raises -> BigInt10:
         return BigInt10(magnitude^, sign=x2.sign)
 
 
-fn truncate_modulo(x1: BigInt10, x2: BigInt10) raises -> BigInt10:
+def truncate_modulo(x1: BigInt10, x2: BigInt10) raises -> BigInt10:
     """Returns the remainder of two numbers, truncating toward zero.
     The remainder has the same sign as the dividend and satisfies:
     x1 = truncate_divide(x1, x2) * x2 + truncate_modulo(x1, x2).

@@ -3,7 +3,7 @@ Test BigInt power and shift operations: __pow__, __lshift__, __rshift__,
 augmented assignment (<<=, >>=), and power-of-2 vs shift cross-checks.
 """
 
-import testing
+from std import testing
 from decimo.bigint.bigint import BigInt
 
 
@@ -12,7 +12,7 @@ from decimo.bigint.bigint import BigInt
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_power_basic() raises:
+def test_power_basic() raises:
     """Test basic exponentiation."""
     # 2^10 = 1024
     testing.assert_equal(String(BigInt(2) ** 10), "1024")
@@ -36,7 +36,7 @@ fn test_power_basic() raises:
     testing.assert_equal(String(BigInt(0) ** 5), "0")
 
 
-fn test_power_negative_base() raises:
+def test_power_negative_base() raises:
     """Test exponentiation with negative base."""
     # (-2)^3 = -8
     testing.assert_equal(String(BigInt(-2) ** 3), "-8")
@@ -57,7 +57,7 @@ fn test_power_negative_base() raises:
     testing.assert_equal(String(BigInt(-1) ** 99), "-1")
 
 
-fn test_power_large() raises:
+def test_power_large() raises:
     """Test exponentiation with large results."""
     # 2^64 = 18446744073709551616
     testing.assert_equal(String(BigInt(2) ** 64), "18446744073709551616")
@@ -72,14 +72,14 @@ fn test_power_large() raises:
     testing.assert_equal(String(BigInt(10) ** 20), "100000000000000000000")
 
 
-fn test_power_bigint_exponent() raises:
+def test_power_bigint_exponent() raises:
     """Test exponentiation with BigInt exponent."""
     var base = BigInt(2)
     var exp = BigInt(10)
     testing.assert_equal(String(base**exp), "1024")
 
 
-fn test_power_negative_exponent_raises() raises:
+def test_power_negative_exponent_raises() raises:
     """Test that negative exponent raises an error."""
     var raised = False
     try:
@@ -94,7 +94,7 @@ fn test_power_negative_exponent_raises() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_left_shift_basic() raises:
+def test_left_shift_basic() raises:
     """Test basic left shift operations."""
     # 1 << 0 == 1
     testing.assert_equal(String(BigInt(1) << 0), "1")
@@ -115,7 +115,7 @@ fn test_left_shift_basic() raises:
     testing.assert_equal(String(BigInt(0) << 100), "0")
 
 
-fn test_left_shift_negative() raises:
+def test_left_shift_negative() raises:
     """Test left shift with negative numbers."""
     # -1 << 1 == -2
     testing.assert_equal(String(BigInt(-1) << 1), "-2")
@@ -124,7 +124,7 @@ fn test_left_shift_negative() raises:
     testing.assert_equal(String(BigInt(-5) << 3), "-40")
 
 
-fn test_right_shift_basic() raises:
+def test_right_shift_basic() raises:
     """Test basic right shift operations."""
     # 1 >> 0 == 1
     testing.assert_equal(String(BigInt(1) >> 0), "1")
@@ -142,7 +142,7 @@ fn test_right_shift_basic() raises:
     testing.assert_equal(String(BigInt(0) >> 100), "0")
 
 
-fn test_right_shift_large() raises:
+def test_right_shift_large() raises:
     """Test right shift with large values."""
     # 2^64 >> 32 = 2^32 = 4294967296
     var val = BigInt(1) << 64
@@ -155,7 +155,7 @@ fn test_right_shift_large() raises:
     testing.assert_equal(String(val >> 65), "0")
 
 
-fn test_right_shift_negative() raises:
+def test_right_shift_negative() raises:
     """Test right shift with negative numbers (Python-compatible arithmetic)."""
     # -1 >> 1 == -1 (Python behavior: floor toward -inf)
     testing.assert_equal(String(BigInt(-1) >> 1), "-1")
@@ -173,7 +173,7 @@ fn test_right_shift_negative() raises:
     testing.assert_equal(String(BigInt(-1) >> 100), "-1")
 
 
-fn test_shift_augmented_assignment() raises:
+def test_shift_augmented_assignment() raises:
     """Test <<= and >>= augmented assignment operators."""
     var x = BigInt(1)
     x <<= 10
@@ -183,7 +183,7 @@ fn test_shift_augmented_assignment() raises:
     testing.assert_equal(String(x), "32")
 
 
-fn test_shift_roundtrip() raises:
+def test_shift_roundtrip() raises:
     """Test that left shift then right shift recovers original value."""
     var original = BigInt("123456789012345678901234567890")
     var shifted = original << 100
@@ -196,7 +196,7 @@ fn test_shift_roundtrip() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_power_of_2_vs_shift() raises:
+def test_power_of_2_vs_shift() raises:
     """Verify that 2**n equals 1 << n for various n."""
     testing.assert_equal(String(BigInt(2) ** 0), String(BigInt(1) << 0))
     testing.assert_equal(String(BigInt(2) ** 1), String(BigInt(1) << 1))
@@ -208,5 +208,5 @@ fn test_power_of_2_vs_shift() raises:
     testing.assert_equal(String(BigInt(2) ** 128), String(BigInt(1) << 128))
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

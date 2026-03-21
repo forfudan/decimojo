@@ -42,7 +42,7 @@ from decimo.errors import DecimoError
 # ===----------------------------------------------------------------------=== #
 
 
-fn _count_trailing_zeros(words: List[UInt32]) -> Int:
+def _count_trailing_zeros(words: List[UInt32]) -> Int:
     """Counts the number of trailing zero bits in a magnitude word list.
 
     Words are stored little-endian, so trailing zero bits correspond to
@@ -76,7 +76,7 @@ fn _count_trailing_zeros(words: List[UInt32]) -> Int:
 # ===----------------------------------------------------------------------=== #
 
 
-fn gcd(a: BigInt, b: BigInt) -> BigInt:
+def gcd(a: BigInt, b: BigInt) -> BigInt:
     """Computes the greatest common divisor of two integers.
 
     Uses the binary GCD (Stein's) algorithm, which is efficient for the
@@ -141,7 +141,7 @@ fn gcd(a: BigInt, b: BigInt) -> BigInt:
 # ===----------------------------------------------------------------------=== #
 
 
-fn extended_gcd(a: BigInt, b: BigInt) raises -> Tuple[BigInt, BigInt, BigInt]:
+def extended_gcd(a: BigInt, b: BigInt) raises -> Tuple[BigInt, BigInt, BigInt]:
     """Computes the extended greatest common divisor.
 
     Returns (g, x, y) such that a * x + b * y = g, where g = gcd(a, b) >= 0.
@@ -200,7 +200,7 @@ fn extended_gcd(a: BigInt, b: BigInt) raises -> Tuple[BigInt, BigInt, BigInt]:
 # ===----------------------------------------------------------------------=== #
 
 
-fn lcm(a: BigInt, b: BigInt) raises -> BigInt:
+def lcm(a: BigInt, b: BigInt) raises -> BigInt:
     """Computes the least common multiple of two integers.
 
     Follows Python semantics:
@@ -227,7 +227,7 @@ fn lcm(a: BigInt, b: BigInt) raises -> BigInt:
 # ===----------------------------------------------------------------------=== #
 
 
-fn mod_pow(base: BigInt, exponent: BigInt, modulus: BigInt) raises -> BigInt:
+def mod_pow(base: BigInt, exponent: BigInt, modulus: BigInt) raises -> BigInt:
     """Computes (base ** exponent) mod modulus efficiently.
 
     Uses right-to-left binary exponentiation with modular reduction at
@@ -293,7 +293,7 @@ fn mod_pow(base: BigInt, exponent: BigInt, modulus: BigInt) raises -> BigInt:
     return result^
 
 
-fn mod_pow(base: BigInt, exponent: Int, modulus: BigInt) raises -> BigInt:
+def mod_pow(base: BigInt, exponent: Int, modulus: BigInt) raises -> BigInt:
     """Convenience overload accepting an Int exponent.
 
     Args:
@@ -312,7 +312,7 @@ fn mod_pow(base: BigInt, exponent: Int, modulus: BigInt) raises -> BigInt:
 # ===----------------------------------------------------------------------=== #
 
 
-fn mod_inverse(a: BigInt, modulus: BigInt) raises -> BigInt:
+def mod_inverse(a: BigInt, modulus: BigInt) raises -> BigInt:
     """Computes the modular multiplicative inverse of a modulo modulus.
 
     Returns x in [0, modulus) such that (a * x) ≡ 1 (mod modulus).

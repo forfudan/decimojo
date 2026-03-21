@@ -32,7 +32,7 @@ struct Token(Copyable, Movable):
     var line: Int
     var column: Int
 
-    fn __init__(
+    def __init__(
         out self, type: TokenType, value: String, line: Int, column: Int
     ):
         self.type = type
@@ -48,19 +48,19 @@ struct SourcePosition:
     var column: Int
     var index: Int
 
-    fn __init__(out self, line: Int = 1, column: Int = 1, index: Int = 0):
+    def __init__(out self, line: Int = 1, column: Int = 1, index: Int = 0):
         self.line = line
         self.column = column
         self.index = index
 
-    fn advance(mut self, char: String):
+    def advance(mut self, char: String):
         """Update position after consuming a character."""
         if char == "\n":
             self.line += 1
             self.column = 1
         else:
             self.column += 1
-        self.index += 1
+        self.index += len(char)
 
 
 struct TokenType(Copyable, ImplicitlyCopyable, Movable):
@@ -94,90 +94,90 @@ struct TokenType(Copyable, ImplicitlyCopyable, Movable):
 
     # Token type constants (lowercase method names)
     @staticmethod
-    fn key() -> TokenType:
+    def key() -> TokenType:
         return TokenType(0)
 
     @staticmethod
-    fn string() -> TokenType:
+    def string() -> TokenType:
         return TokenType(1)
 
     @staticmethod
-    fn integer() -> TokenType:
+    def integer() -> TokenType:
         return TokenType(2)
 
     @staticmethod
-    fn float() -> TokenType:
+    def float() -> TokenType:
         return TokenType(3)
 
     @staticmethod
-    fn boolean() -> TokenType:
+    def boolean() -> TokenType:
         return TokenType(4)
 
     @staticmethod
-    fn datetime() -> TokenType:
+    def datetime() -> TokenType:
         return TokenType(5)
 
     @staticmethod
-    fn array_start() -> TokenType:
+    def array_start() -> TokenType:
         return TokenType(6)
 
     @staticmethod
-    fn array_end() -> TokenType:
+    def array_end() -> TokenType:
         return TokenType(7)
 
     @staticmethod
-    fn table_start() -> TokenType:
+    def table_start() -> TokenType:
         return TokenType(8)
 
     @staticmethod
-    fn table_end() -> TokenType:
+    def table_end() -> TokenType:
         return TokenType(9)
 
     @staticmethod
-    fn array_of_tables_start() -> TokenType:
+    def array_of_tables_start() -> TokenType:
         return TokenType(16)
 
     @staticmethod
-    fn equal() -> TokenType:
+    def equal() -> TokenType:
         return TokenType(10)
 
     @staticmethod
-    fn comma() -> TokenType:
+    def comma() -> TokenType:
         return TokenType(11)
 
     @staticmethod
-    fn newline() -> TokenType:
+    def newline() -> TokenType:
         return TokenType(12)
 
     @staticmethod
-    fn dot() -> TokenType:
+    def dot() -> TokenType:
         return TokenType(13)
 
     @staticmethod
-    fn eof() -> TokenType:
+    def eof() -> TokenType:
         return TokenType(14)
 
     @staticmethod
-    fn error() -> TokenType:
+    def error() -> TokenType:
         return TokenType(15)
 
     @staticmethod
-    fn inline_table_start() -> TokenType:
+    def inline_table_start() -> TokenType:
         return TokenType(17)
 
     @staticmethod
-    fn inline_table_end() -> TokenType:
+    def inline_table_end() -> TokenType:
         return TokenType(18)
 
     # Constructor
-    fn __init__(out self, value: Int):
+    def __init__(out self, value: Int):
         self.value = value
 
     # Comparison operators
-    fn __eq__(self, other: TokenType) -> Bool:
+    def __eq__(self, other: TokenType) -> Bool:
         return self.value == other.value
 
-    fn __ne__(self, other: TokenType) -> Bool:
+    def __ne__(self, other: TokenType) -> Bool:
         return self.value != other.value
 
 
@@ -188,7 +188,7 @@ struct Tokenizer:
     var position: SourcePosition
     var current_char: String
 
-    fn __init__(out self, source: String):
+    def __init__(out self, source: String):
         self.source = source
         self.position = SourcePosition()
         if len(source) > 0:
@@ -196,23 +196,23 @@ struct Tokenizer:
         else:
             self.current_char = ""
 
-    fn _get_char(self, index: Int) -> String:
+    def _get_char(self, index: Int) -> String:
         """Get character at given index or empty string if out of bounds."""
         if index >= len(self.source):
             return ""
         return String(self.source[byte=index])
 
-    fn _advance(mut self):
+    def _advance(mut self):
         """Move to the next character."""
         self.position.advance(self.current_char)
         self.current_char = self._get_char(self.position.index)
 
-    fn _skip_whitespace(mut self):
+    def _skip_whitespace(mut self):
         """Skip whitespace characters."""
         while self.current_char and self.current_char in WHITESPACE:
             self._advance()
 
-    fn _skip_comment(mut self):
+    def _skip_comment(mut self):
         """Skip comment lines."""
         if self.current_char == COMMENT_START:
             while self.current_char:
@@ -227,7 +227,7 @@ struct Tokenizer:
                         break
                 self._advance()
 
-    fn _read_string(mut self) -> Token:
+    def _read_string(mut self) -> Token:
         """Read a quoted string value (basic or literal).
 
         Handles:
@@ -332,7 +332,7 @@ struct Tokenizer:
             TokenType.ERROR, "Unterminated string", start_line, start_column
         )
 
-    fn _read_escape_sequence(mut self) -> String:
+    def _read_escape_sequence(mut self) -> String:
         """Read and return the character for a backslash escape sequence.
 
         Assumes current_char is '\\'. Advances past the full sequence.
@@ -414,7 +414,7 @@ struct Tokenizer:
             # Unknown escape: keep as-is (backslash + char)
             return "\\" + esc
 
-    fn _read_number(mut self, sign: String = "") -> Token:
+    def _read_number(mut self, sign: String = "") -> Token:
         """Read a number value.
 
         Handles:
@@ -440,9 +440,7 @@ struct Tokenizer:
             result += self.current_char  # 'x'/'o'/'b'
             self._advance()
             # Determine valid digit set based on the base prefix
-            var base_char = String(
-                result[byte = len(result) - 1]
-            )  # 'x'/'o'/'b'
+            var base_char = String(result[byte=len(result) - 1])  # 'x'/'o'/'b'
             var digits_found = False
 
             if base_char == "x" or base_char == "X":
@@ -506,7 +504,7 @@ struct Tokenizer:
         else:
             return Token(TokenType.INTEGER, result, start_line, start_column)
 
-    fn _read_key(mut self) -> Token:
+    def _read_key(mut self) -> Token:
         """Read a key identifier."""
         start_line = self.position.line
         start_column = self.position.column
@@ -524,7 +522,7 @@ struct Tokenizer:
 
         return Token(TokenType.KEY, result, start_line, start_column)
 
-    fn next_token(mut self) -> Token:
+    def next_token(mut self) -> Token:
         """Get the next token from the source."""
         self._skip_whitespace()
 
@@ -702,7 +700,7 @@ struct Tokenizer:
         self._advance()
         return token^
 
-    fn tokenize(mut self) -> List[Token]:
+    def tokenize(mut self) -> List[Token]:
         """Tokenize the entire source text."""
         var tokens = List[Token]()
         var token = self.next_token()

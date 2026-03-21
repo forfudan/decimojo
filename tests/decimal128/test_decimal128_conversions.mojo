@@ -3,7 +3,7 @@ Test Decimal128 conversion methods: __str__, __int__, __float__
 Merges former to_string, to_int, to_float test files.
 """
 
-import testing
+from std import testing
 from decimo.toml.parser import TOMLDocument
 
 from decimo import Dec128
@@ -13,7 +13,7 @@ from decimo.tests import TestCase, parse_file, load_test_cases
 comptime file_path = "tests/decimal128/test_data/decimal128_conversions.toml"
 
 
-fn test_str_conversion() raises:
+def test_str_conversion() raises:
     """Test __str__ using TOML data-driven test cases."""
     var toml = parse_file(file_path)
     var test_cases = load_test_cases[unary=True](toml, "str_conversion_tests")
@@ -37,7 +37,7 @@ fn test_str_conversion() raises:
     testing.assert_equal(count_wrong, 0, "Some str conversion tests failed.")
 
 
-fn test_int_conversion() raises:
+def test_int_conversion() raises:
     """Test __int__ conversion."""
     # Positive integer
     testing.assert_equal(Int(Dec128(123)), 123)
@@ -58,7 +58,7 @@ fn test_int_conversion() raises:
     testing.assert_equal(Int(Dec128(9999999999)), 9999999999)
 
 
-fn test_float_basic_integers() raises:
+def test_float_basic_integers() raises:
     """Test __float__ conversion for basic integers."""
     testing.assert_equal(Float64(Dec128(0)), 0.0)
     testing.assert_equal(Float64(Dec128(1)), 1.0)
@@ -66,7 +66,7 @@ fn test_float_basic_integers() raises:
     testing.assert_equal(Float64(Dec128(123456)), 123456.0)
 
 
-fn test_float_decimals() raises:
+def test_float_decimals() raises:
     """Test __float__ conversion for decimal values."""
     testing.assert_equal(Float64(Dec128("3.14")), 3.14)
     testing.assert_true(
@@ -79,14 +79,14 @@ fn test_float_decimals() raises:
     )
 
 
-fn test_float_negatives() raises:
+def test_float_negatives() raises:
     """Test __float__ conversion for negative values."""
     testing.assert_equal(Float64(Dec128("-123")), -123.0)
     testing.assert_equal(Float64(Dec128("-0.5")), -0.5)
     testing.assert_equal(Float64(Dec128("-0")), 0.0)
 
 
-fn test_float_edge_cases() raises:
+def test_float_edge_cases() raises:
     """Test __float__ conversion edge cases."""
     # Very small positive
     var very_small = Dec128("0." + "0" * 20 + "1")
@@ -107,7 +107,7 @@ fn test_float_edge_cases() raises:
     )
 
 
-fn test_float_special_values() raises:
+def test_float_special_values() raises:
     """Test __float__ conversion of special values."""
     testing.assert_equal(Float64(Dec128("5.0000")), 5.0)
     testing.assert_equal(Float64(Dec128("000123.456")), 123.456)
@@ -126,5 +126,5 @@ fn test_float_special_values() raises:
     )
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

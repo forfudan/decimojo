@@ -1,7 +1,7 @@
 from decimo.prelude import *
 
 
-fn main() raises:
+def main() raises:
     # === Construction ===
     var a = Dec128("123.45")  # From string
     var b = Dec128(123)  # From integer

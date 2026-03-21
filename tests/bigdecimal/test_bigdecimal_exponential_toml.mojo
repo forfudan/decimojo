@@ -6,7 +6,7 @@ compare against pre-computed expected values in the TOML data file instead
 of Python cross-checking.
 """
 
-import testing
+from std import testing
 
 from decimo import BDec
 from decimo.tests import TestCase, parse_file, load_test_cases
@@ -14,7 +14,7 @@ from decimo.tests import TestCase, parse_file, load_test_cases
 comptime file_path = "tests/bigdecimal/test_data/bigdecimal_exponential.toml"
 
 
-fn test_bigdecimal_root() raises:
+def test_bigdecimal_root() raises:
     """Test BigDecimal root function against TOML expected values."""
     var toml = parse_file(file_path)
     var test_cases = load_test_cases(toml, "root_tests")
@@ -39,7 +39,7 @@ fn test_bigdecimal_root() raises:
     )
 
 
-fn test_bigdecimal_power() raises:
+def test_bigdecimal_power() raises:
     """Test BigDecimal power function against TOML expected values."""
     var toml = parse_file(file_path)
     var test_cases = load_test_cases(toml, "power_tests")
@@ -64,7 +64,7 @@ fn test_bigdecimal_power() raises:
     )
 
 
-fn test_root_invalid_inputs() raises:
+def test_root_invalid_inputs() raises:
     """Test that root function with invalid inputs raises appropriate errors."""
     var a1 = BDec("16")
     var n1 = BDec("0")
@@ -103,7 +103,7 @@ fn test_root_invalid_inputs() raises:
     )
 
 
-fn test_power_invalid_inputs() raises:
+def test_power_invalid_inputs() raises:
     """Test that power function with invalid inputs raises appropriate errors.
     """
     var base1 = BDec("0")
@@ -140,5 +140,5 @@ fn test_power_invalid_inputs() raises:
     )
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

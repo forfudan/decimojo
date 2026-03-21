@@ -21,7 +21,7 @@ Implements functions for comparison operations on BigUInt objects.
 from decimo.biguint.biguint import BigUInt
 
 
-fn compare(x1: BigUInt, x2: BigUInt) -> Int8:
+def compare(x1: BigUInt, x2: BigUInt) -> Int8:
     """Compares the values of two unsigned integers and returns the result.
 
     Args:
@@ -71,7 +71,7 @@ fn compare(x1: BigUInt, x2: BigUInt) -> Int8:
     return Int8(0)
 
 
-fn greater(x1: BigUInt, x2: BigUInt) -> Bool:
+def greater(x1: BigUInt, x2: BigUInt) -> Bool:
     """Checks if the first number is greater than the second.
 
     Args:
@@ -84,7 +84,7 @@ fn greater(x1: BigUInt, x2: BigUInt) -> Bool:
     return compare(x1, x2) > 0
 
 
-fn greater_equal(x1: BigUInt, x2: BigUInt) -> Bool:
+def greater_equal(x1: BigUInt, x2: BigUInt) -> Bool:
     """Checks if the first number is greater than or equal to the second.
 
     Args:
@@ -97,7 +97,7 @@ fn greater_equal(x1: BigUInt, x2: BigUInt) -> Bool:
     return compare(x1, x2) >= 0
 
 
-fn less(x1: BigUInt, x2: BigUInt) -> Bool:
+def less(x1: BigUInt, x2: BigUInt) -> Bool:
     """Checks if the first number is less than the second.
 
     Args:
@@ -110,7 +110,7 @@ fn less(x1: BigUInt, x2: BigUInt) -> Bool:
     return compare(x1, x2) < 0
 
 
-fn less_equal(x1: BigUInt, x2: BigUInt) -> Bool:
+def less_equal(x1: BigUInt, x2: BigUInt) -> Bool:
     """Checks if the first number is less than or equal to the second.
 
     Args:
@@ -123,7 +123,7 @@ fn less_equal(x1: BigUInt, x2: BigUInt) -> Bool:
     return compare(x1, x2) <= 0
 
 
-fn equal(x1: BigUInt, x2: BigUInt) -> Bool:
+def equal(x1: BigUInt, x2: BigUInt) -> Bool:
     """Checks if two numbers are equal.
 
     Args:
@@ -136,7 +136,7 @@ fn equal(x1: BigUInt, x2: BigUInt) -> Bool:
     return compare(x1, x2) == 0
 
 
-fn not_equal(x1: BigUInt, x2: BigUInt) -> Bool:
+def not_equal(x1: BigUInt, x2: BigUInt) -> Bool:
     """Checks if two numbers are not equal.
 
     Args:

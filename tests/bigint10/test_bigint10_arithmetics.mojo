@@ -2,8 +2,8 @@
 Test BigInt10 arithmetic operations including addition, subtraction, and negation.
 """
 
-from python import Python
-import testing
+from std.python import Python
+from std import testing
 from decimo.bigint10.bigint10 import BigInt10
 from decimo.tests import TestCase, parse_file, load_test_cases
 
@@ -13,7 +13,7 @@ comptime file_path_floor_divide = "tests/bigint10/test_data/bigint10_floor_divid
 comptime file_path_truncate_divide = "tests/bigint10/test_data/bigint10_truncate_divide.toml"
 
 
-fn _set_max_str_digits(limit: Int) raises:
+def _set_max_str_digits(limit: Int) raises:
     """Set Python's int-to-string digit limit (Python 3.11+). No-op if unavailable.
     """
     try:
@@ -22,7 +22,7 @@ fn _set_max_str_digits(limit: Int) raises:
         pass
 
 
-fn test_bigint10_arithmetics() raises:
+def test_bigint10_arithmetics() raises:
     # Load test cases from TOML file
     var pybuiltins = Python.import_module("builtins")
     _set_max_str_digits(500000)
@@ -134,7 +134,7 @@ fn test_bigint10_arithmetics() raises:
     )
 
 
-fn test_bigint10_multiply() raises:
+def test_bigint10_multiply() raises:
     # Load test cases from TOML file
     _set_max_str_digits(500000)
     var toml = parse_file(file_path_multiply)
@@ -167,7 +167,7 @@ fn test_bigint10_multiply() raises:
     )
 
 
-fn test_bigint10_floor_divide() raises:
+def test_bigint10_floor_divide() raises:
     # Load test cases from TOML file
     _set_max_str_digits(500000)
     var toml = parse_file(file_path_floor_divide)
@@ -200,7 +200,7 @@ fn test_bigint10_floor_divide() raises:
     )
 
 
-fn test_bigint10_truncate_divide() raises:
+def test_bigint10_truncate_divide() raises:
     # Load test cases from TOML file
     var pybuiltins = Python.import_module("builtins")
     _set_max_str_digits(500000)
@@ -243,5 +243,5 @@ fn test_bigint10_truncate_divide() raises:
     )
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

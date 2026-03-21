@@ -9,8 +9,8 @@ Test Decimal128 multiplication operations including:
 6. commutative property (TOML)
 """
 
-from python import Python, PythonObject
-import testing
+from std.python import Python, PythonObject
+from std import testing
 from decimo.toml.parser import TOMLDocument
 
 from decimo import Dec128
@@ -20,7 +20,7 @@ from decimo.tests import TestCase, parse_file, load_test_cases
 comptime file_path = "tests/decimal128/test_data/decimal128_multiply.toml"
 
 
-fn _run_multiply_section(
+def _run_multiply_section(
     toml: TOMLDocument,
     pydecimal: PythonObject,
     section: String,
@@ -48,7 +48,7 @@ fn _run_multiply_section(
             count_wrong += 1
 
 
-fn test_multiplication() raises:
+def test_multiplication() raises:
     """Test multiplication using TOML data-driven test cases."""
     var pydecimal = Python.import_module("decimal")
     var toml = parse_file(file_path)
@@ -63,7 +63,7 @@ fn test_multiplication() raises:
     testing.assert_equal(count_wrong, 0, "Some multiplication tests failed.")
 
 
-fn test_commutative_property() raises:
+def test_commutative_property() raises:
     """Test that a*b == b*a for all commutative test cases."""
     var toml = parse_file(file_path)
     var test_cases = load_test_cases(toml, "commutative_tests")
@@ -93,7 +93,7 @@ fn test_commutative_property() raises:
     testing.assert_equal(count_wrong, 0, "Some commutative tests failed.")
 
 
-fn test_precision_scale_properties() raises:
+def test_precision_scale_properties() raises:
     """Test scale and precision properties of multiplication results."""
     # Scale addition: scale(0.5) + scale(0.25) = 1 + 2 = 3
     var r1 = Dec128("0.5") * Dec128("0.25")
@@ -116,7 +116,7 @@ fn test_precision_scale_properties() raises:
     testing.assert_equal(r5.scale(), 28)
 
 
-fn test_boundary_cases_inline() raises:
+def test_boundary_cases_inline() raises:
     """Test boundary cases that require assertions beyond simple equality."""
     # Near max value
     var near_max = Dec128("38614081257132168796771975168")
@@ -141,5 +141,5 @@ fn test_boundary_cases_inline() raises:
     testing.assert_equal(String(small * one), String(small))
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

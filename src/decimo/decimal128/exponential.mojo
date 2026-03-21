@@ -16,9 +16,9 @@
 
 """Implements exponential functions for the Decimal128 type."""
 
-import math as builtin_math
-import testing
-import time
+import std.math
+from std import testing
+from std import time
 
 import decimo.decimal128.constants
 import decimo.decimal128.special
@@ -29,7 +29,7 @@ import decimo.decimal128.utility
 # ===----------------------------------------------------------------------=== #
 
 
-fn power(base: Decimal128, exponent: Decimal128) raises -> Decimal128:
+def power(base: Decimal128, exponent: Decimal128) raises -> Decimal128:
     """Raises a Decimal128 base to an arbitrary Decimal128 exponent power.
 
     This function handles both integer and non-integer exponents using the
@@ -88,7 +88,7 @@ fn power(base: Decimal128, exponent: Decimal128) raises -> Decimal128:
         raise Error("Error in `power()` with Decimal128 exponent: ", e)
 
 
-fn power(base: Decimal128, exponent: Int) raises -> Decimal128:
+def power(base: Decimal128, exponent: Int) raises -> Decimal128:
     """Raises a Decimal128 base to an integer power.
 
     Args:
@@ -147,7 +147,7 @@ fn power(base: Decimal128, exponent: Int) raises -> Decimal128:
     return result
 
 
-fn root(x: Decimal128, n: Int) raises -> Decimal128:
+def root(x: Decimal128, n: Int) raises -> Decimal128:
     """Calculates the n-th root of a Decimal128 value using Newton-Raphson method.
 
     Args:
@@ -241,7 +241,7 @@ fn root(x: Decimal128, n: Int) raises -> Decimal128:
             10
         ) ** (Float64(remainder) / Float64(n) - 1)
         guess = Decimal128.from_uint128(
-            UInt128(float_root), scale=dividend + 1, sign=False
+            UInt128(float_root), scale=UInt32(dividend + 1), sign=False
         )
 
     # var t_initial_guess = time.perf_counter_ns()
@@ -297,7 +297,7 @@ fn root(x: Decimal128, n: Int) raises -> Decimal128:
             if guess_coef_powered == x_coef:
                 return Decimal128.from_uint128(
                     guess_coef,
-                    scale=guess.scale() - num_digits_to_decrease,
+                    scale=UInt32(guess.scale() - num_digits_to_decrease),
                     sign=False,
                 )
             if (
@@ -307,7 +307,7 @@ fn root(x: Decimal128, n: Int) raises -> Decimal128:
             ):
                 return Decimal128.from_uint128(
                     guess_coef // 10,
-                    scale=guess.scale() - num_digits_to_decrease - 1,
+                    scale=UInt32(guess.scale() - num_digits_to_decrease - 1),
                     sign=False,
                 )
 
@@ -320,7 +320,7 @@ fn root(x: Decimal128, n: Int) raises -> Decimal128:
     return guess
 
 
-fn sqrt(x: Decimal128) raises -> Decimal128:
+def sqrt(x: Decimal128) raises -> Decimal128:
     """Computes the square root of a Decimal128 value using Newton-Raphson method.
 
     Args:
@@ -349,22 +349,22 @@ fn sqrt(x: Decimal128) raises -> Decimal128:
 
     # For numbers with zero scale (true integers)
     if x_scale == 0:
-        var float_sqrt = builtin_math.sqrt(Float64(x_coef))
+        var float_sqrt = std.math.sqrt(Float64(x_coef))
         guess = Decimal128.from_uint128(UInt128(round(float_sqrt)))
 
     # For numbers with even scale
     elif x_scale % 2 == 0:
-        var float_sqrt = builtin_math.sqrt(Float64(x_coef))
+        var float_sqrt = std.math.sqrt(Float64(x_coef))
         guess = Decimal128.from_uint128(
-            UInt128(float_sqrt), scale=x_scale >> 1, sign=False
+            UInt128(float_sqrt), scale=UInt32(x_scale >> 1), sign=False
         )
         # print("DEBUG: scale is even")
 
     # For numbers with odd scale
     else:
-        var float_sqrt = builtin_math.sqrt(Float64(x_coef)) * Float64(3.15625)
+        var float_sqrt = std.math.sqrt(Float64(x_coef)) * Float64(3.15625)
         guess = Decimal128.from_uint128(
-            UInt128(float_sqrt), scale=(x_scale + 1) >> 1, sign=False
+            UInt128(float_sqrt), scale=UInt32((x_scale + 1) >> 1), sign=False
         )
         # print("DEBUG: scale is odd")
 
@@ -432,7 +432,7 @@ fn sqrt(x: Decimal128) raises -> Decimal128:
             ):
                 return Decimal128.from_uint128(
                     guess_coef,
-                    scale=guess.scale() - num_digits_to_decrease,
+                    scale=UInt32(guess.scale() - num_digits_to_decrease),
                     sign=False,
                 )
 
@@ -444,7 +444,7 @@ fn sqrt(x: Decimal128) raises -> Decimal128:
 # ===----------------------------------------------------------------------=== #
 
 
-fn exp(x: Decimal128) raises -> Decimal128:
+def exp(x: Decimal128) raises -> Decimal128:
     """Calculates e^x for any Decimal128 value using optimized range reduction.
     x should be no greater than 66 to avoid overflow.
 
@@ -597,7 +597,7 @@ fn exp(x: Decimal128) raises -> Decimal128:
     return exp_main * exp_remainder
 
 
-fn exp_series(x: Decimal128) raises -> Decimal128:
+def exp_series(x: Decimal128) raises -> Decimal128:
     """Calculates e^x using Taylor series expansion.
     Do not use this function for values larger than 1, but `exp()` instead.
 
@@ -652,7 +652,7 @@ fn exp_series(x: Decimal128) raises -> Decimal128:
 # ===----------------------------------------------------------------------=== #
 
 
-fn ln(x: Decimal128) raises -> Decimal128:
+def ln(x: Decimal128) raises -> Decimal128:
     """Calculates the natural logarithm (ln) of a Decimal128 value.
 
     Args:
@@ -857,7 +857,7 @@ fn ln(x: Decimal128) raises -> Decimal128:
     return result
 
 
-fn ln_series(z: Decimal128) raises -> Decimal128:
+def ln_series(z: Decimal128) raises -> Decimal128:
     """Calculates ln(1+z) using Taylor series expansion at 1.
     For best accuracy, |z| should be small (< 0.5).
 
@@ -915,7 +915,7 @@ fn ln_series(z: Decimal128) raises -> Decimal128:
     return result
 
 
-fn log(x: Decimal128, base: Decimal128) raises -> Decimal128:
+def log(x: Decimal128, base: Decimal128) raises -> Decimal128:
     """Calculates the logarithm of a Decimal128 with respect to an arbitrary base.
 
     Args:
@@ -970,7 +970,7 @@ fn log(x: Decimal128, base: Decimal128) raises -> Decimal128:
     return ln_x / ln_base
 
 
-fn log10(x: Decimal128) raises -> Decimal128:
+def log10(x: Decimal128) raises -> Decimal128:
     """Calculates the base-10 logarithm (log10) of a Decimal128 value.
 
     Args:
@@ -1001,7 +1001,7 @@ fn log10(x: Decimal128) raises -> Decimal128:
         if x_scale == 0:
             return Decimal128.ZERO()
         else:
-            return Decimal128(x_scale, 0, 0, 0x8000_0000)
+            return Decimal128(UInt32(x_scale), 0, 0, 0x8000_0000)
 
     var ten_to_power_of_scale = decimo.decimal128.utility.power_of_10[
         DType.uint128
@@ -1020,7 +1020,7 @@ fn log10(x: Decimal128) raises -> Decimal128:
             integeral_part //= 10
             exponent += 1
         if integeral_part == 1:
-            return Decimal128(exponent, 0, 0, 0)
+            return Decimal128(UInt32(exponent), 0, 0, 0)
         else:
             pass
 

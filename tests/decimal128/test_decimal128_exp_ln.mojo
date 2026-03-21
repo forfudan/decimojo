@@ -4,7 +4,7 @@ Merged from test_decimal128_exp.mojo and test_decimal128_ln.mojo.
 Most tests use startswith prefix matching for high-precision results.
 """
 
-import testing
+from std import testing
 from decimo.decimal128.decimal128 import Decimal128
 from decimo.rounding_mode import RoundingMode
 from decimo.decimal128.exponential import exp, ln
@@ -13,7 +13,7 @@ from decimo.decimal128.exponential import exp, ln
 # ─── exp() tests ────────────────────────────────────────────────────────────
 
 
-fn test_exp_values() raises:
+def test_exp_values() raises:
     """Test e^x for basic, negative, fractional, and high-precision inputs."""
     # e^0 = 1 (exact)
     testing.assert_equal(String(exp(Decimal128("0"))), "1", "e^0 should be 1")
@@ -89,7 +89,7 @@ fn test_exp_values() raises:
     )
 
 
-fn test_exp_identities() raises:
+def test_exp_identities() raises:
     """Test e^(a+b) = e^a * e^b and e^(-x) = 1/e^x."""
     # e^(a+b) = e^a * e^b
     var a = Decimal128("2")
@@ -112,7 +112,7 @@ fn test_exp_identities() raises:
     testing.assert_equal(String(exp(Decimal128("0"))), "1", "e^0 should be 1")
 
 
-fn test_exp_extreme() raises:
+def test_exp_extreme() raises:
     """Test exp with very small inputs and large inputs."""
     testing.assert_true(
         String(exp(Decimal128("0.0000001"))).startswith("1.0000001"),
@@ -134,7 +134,7 @@ fn test_exp_extreme() raises:
 # ─── ln() tests ─────────────────────────────────────────────────────────────
 
 
-fn test_ln_values() raises:
+def test_ln_values() raises:
     """Test ln(x) for basic, fractional, and precision inputs."""
     # ln(1) = 0 (exact)
     testing.assert_equal(String(ln(Decimal128(1))), "0", "ln(1) should be 0")
@@ -177,7 +177,7 @@ fn test_ln_values() raises:
     )
 
 
-fn test_ln_identities() raises:
+def test_ln_identities() raises:
     """Test ln(a*b)=ln(a)+ln(b), ln(a/b)=ln(a)-ln(b), ln(e^x)=x."""
     var a = Decimal128(2)
     var b = Decimal128(3)
@@ -200,7 +200,7 @@ fn test_ln_identities() raises:
     )
 
 
-fn test_ln_edge_cases() raises:
+def test_ln_edge_cases() raises:
     """Test ln(0), ln(negative), and extreme values."""
     # ln(0) should raise
     var caught = False
@@ -236,7 +236,7 @@ fn test_ln_edge_cases() raises:
     )
 
 
-fn test_ln_properties() raises:
+def test_ln_properties() raises:
     """Test ln monotonicity and sign properties."""
     # ln(x) > 0 for x > 1
     testing.assert_true(Decimal128(3).ln() > Decimal128(0), "ln(3) > 0")
@@ -256,5 +256,5 @@ fn test_ln_properties() raises:
     )
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

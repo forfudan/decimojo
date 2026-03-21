@@ -7,7 +7,7 @@ startswith checks, scale properties, overflow/error handling, and
 mathematical relationship verification.
 """
 
-import testing
+from std import testing
 from decimo.toml.parser import TOMLDocument
 
 from decimo import Decimal128, RoundingMode
@@ -19,7 +19,7 @@ comptime data_path = "tests/decimal128/test_data/decimal128_divide.toml"
 # ─── TOML-driven helpers ────────────────────────────────────────────────────
 
 
-fn _run_division_section(doc: TOMLDocument, section: String) raises:
+def _run_division_section(doc: TOMLDocument, section: String) raises:
     """Run division (/) test cases from a TOML section."""
     var cases = load_test_cases(doc, section)
     for tc in cases:
@@ -27,7 +27,7 @@ fn _run_division_section(doc: TOMLDocument, section: String) raises:
         testing.assert_equal(String(result), tc.expected, tc.description)
 
 
-fn _run_truncate_section(doc: TOMLDocument, section: String) raises:
+def _run_truncate_section(doc: TOMLDocument, section: String) raises:
     """Run truncate division (//) test cases from a TOML section."""
     var cases = load_test_cases(doc, section)
     for tc in cases:
@@ -38,37 +38,37 @@ fn _run_truncate_section(doc: TOMLDocument, section: String) raises:
 # ─── TOML-driven test functions ─────────────────────────────────────────────
 
 
-fn test_division_basic() raises:
+def test_division_basic() raises:
     """10 basic division cases: integer, decimal, signed."""
     var doc = parse_file(data_path)
     _run_division_section(doc, "division_basic")
 
 
-fn test_division_precision() raises:
+def test_division_precision() raises:
     """6 precision/rounding cases at the 28-digit limit."""
     var doc = parse_file(data_path)
     _run_division_section(doc, "division_precision")
 
 
-fn test_division_scale() raises:
+def test_division_scale() raises:
     """10 scale handling cases: powers of 10, trailing zeros."""
     var doc = parse_file(data_path)
     _run_division_section(doc, "division_scale")
 
 
-fn test_division_special() raises:
+def test_division_special() raises:
     """30 special cases: exact results, large numbers, rounding."""
     var doc = parse_file(data_path)
     _run_division_section(doc, "division_special")
 
 
-fn test_truncate_basic() raises:
+def test_truncate_basic() raises:
     """11 basic truncate division cases: positive and negative."""
     var doc = parse_file(data_path)
     _run_truncate_section(doc, "truncate_basic")
 
 
-fn test_truncate_edge() raises:
+def test_truncate_edge() raises:
     """6 truncate edge cases: div by 1, zero dividend, small numbers."""
     var doc = parse_file(data_path)
     _run_truncate_section(doc, "truncate_edge")
@@ -77,7 +77,7 @@ fn test_truncate_edge() raises:
 # ─── Inline tests: repeating decimals (startswith checks) ───────────────────
 
 
-fn test_repeating_decimals() raises:
+def test_repeating_decimals() raises:
     """10 cases testing repeating decimal results (cases 11-20)."""
     testing.assert_true(
         String(Decimal128(1) / Decimal128(3)).startswith("0.33333333333333"),
@@ -126,7 +126,7 @@ fn test_repeating_decimals() raises:
 # ─── Inline tests: scale/precision properties and edge cases ────────────────
 
 
-fn test_properties_and_edge() raises:
+def test_properties_and_edge() raises:
     """Scale property checks, edge cases with comparisons and overflow."""
     # Scale property checks
     var a25 = Decimal128(1) / Decimal128(81)
@@ -220,7 +220,7 @@ fn test_properties_and_edge() raises:
 # ─── Inline tests: special equality and precision cases ──────────────────────
 
 
-fn test_special_and_precision() raises:
+def test_special_and_precision() raises:
     """Decimal128 equality, mixed precision, and rounding edge cases."""
     # 1.000 / 1.000 should equal 1 (Decimal128 value equality)
     testing.assert_equal(
@@ -301,7 +301,7 @@ fn test_special_and_precision() raises:
 # ─── Inline tests: error handling ────────────────────────────────────────────
 
 
-fn test_error_handling() raises:
+def test_error_handling() raises:
     """Division by zero, overflow, and boundary conditions."""
     # Division by zero
     try:
@@ -372,7 +372,7 @@ fn test_error_handling() raises:
 # ─── Inline tests: truncate division mathematical relationships ──────────────
 
 
-fn test_truncate_math_relationships() raises:
+def test_truncate_math_relationships() raises:
     """Mathematical properties of truncate division."""
     # a = (a // b) * b + (a % b) for positive
     var a1 = Decimal128(10)
@@ -419,5 +419,5 @@ fn test_truncate_math_relationships() raises:
     )
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

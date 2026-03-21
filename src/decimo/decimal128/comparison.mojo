@@ -39,13 +39,13 @@
 Implements functions for comparison operations on Decimal128 objects.
 """
 
-import testing
+from std import testing
 
 from decimo.decimal128.decimal128 import Decimal128
 import decimo.decimal128.utility
 
 
-fn compare(x: Decimal128, y: Decimal128) -> Int8:
+def compare(x: Decimal128, y: Decimal128) -> Int8:
     """
     Compares the values of two Decimal128 numbers and returns the result.
 
@@ -66,15 +66,15 @@ fn compare(x: Decimal128, y: Decimal128) -> Int8:
 
     # If x is zero, it is less than any non-zero number
     elif x.is_zero():
-        return 1 if y.is_negative() else -1
+        return Int8(1) if y.is_negative() else Int8(-1)
 
     # If y is zero, it is less than any non-zero number
     elif y.is_zero():
-        return -1 if x.is_negative() else 1
+        return Int8(-1) if x.is_negative() else Int8(1)
 
     # If signs differ, the positive one is greater
     elif x.is_negative() != y.is_negative():
-        return -1 if x.is_negative() else 1
+        return Int8(-1) if x.is_negative() else Int8(1)
 
     # If they have the same sign, compare the absolute values
     elif x.is_negative():
@@ -84,7 +84,7 @@ fn compare(x: Decimal128, y: Decimal128) -> Int8:
         return compare_absolute(x, y)
 
 
-fn compare_absolute(x: Decimal128, y: Decimal128) -> Int8:
+def compare_absolute(x: Decimal128, y: Decimal128) -> Int8:
     """
     Compares the absolute values of two Decimal128 numbers and returns the result.
 
@@ -157,7 +157,7 @@ fn compare_absolute(x: Decimal128, y: Decimal128) -> Int8:
                 return 0
 
 
-fn greater(a: Decimal128, b: Decimal128) -> Bool:
+def greater(a: Decimal128, b: Decimal128) -> Bool:
     """
     Returns True if a > b.
 
@@ -172,7 +172,7 @@ fn greater(a: Decimal128, b: Decimal128) -> Bool:
     return compare(a, b) == 1
 
 
-fn less(a: Decimal128, b: Decimal128) -> Bool:
+def less(a: Decimal128, b: Decimal128) -> Bool:
     """
     Returns True if a < b.
 
@@ -187,7 +187,7 @@ fn less(a: Decimal128, b: Decimal128) -> Bool:
     return compare(a, b) == -1
 
 
-fn greater_equal(a: Decimal128, b: Decimal128) -> Bool:
+def greater_equal(a: Decimal128, b: Decimal128) -> Bool:
     """
     Returns True if a >= b.
 
@@ -202,7 +202,7 @@ fn greater_equal(a: Decimal128, b: Decimal128) -> Bool:
     return compare(a, b) >= 0
 
 
-fn less_equal(a: Decimal128, b: Decimal128) -> Bool:
+def less_equal(a: Decimal128, b: Decimal128) -> Bool:
     """
     Returns True if a <= b.
 
@@ -217,7 +217,7 @@ fn less_equal(a: Decimal128, b: Decimal128) -> Bool:
     return not greater(a, b)
 
 
-fn equal(a: Decimal128, b: Decimal128) -> Bool:
+def equal(a: Decimal128, b: Decimal128) -> Bool:
     """
     Returns True if a == b.
 
@@ -232,7 +232,7 @@ fn equal(a: Decimal128, b: Decimal128) -> Bool:
     return compare(a, b) == 0
 
 
-fn not_equal(a: Decimal128, b: Decimal128) -> Bool:
+def not_equal(a: Decimal128, b: Decimal128) -> Bool:
     """
     Returns True if a != b.
 

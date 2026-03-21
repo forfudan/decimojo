@@ -26,7 +26,7 @@ from decimo.rounding_mode import RoundingMode
 # ===------------------------------------------------------------------------===#
 
 
-fn round(
+def round(
     number: BigDecimal,
     ndigits: Int,
     rounding_mode: RoundingMode,
@@ -105,7 +105,7 @@ fn round(
         )
 
 
-fn round_to_precision(
+def round_to_precision(
     mut number: BigDecimal,
     precision: Int,
     rounding_mode: RoundingMode,
@@ -167,7 +167,7 @@ fn round_to_precision(
         number.scale -= 1
 
 
-fn quantize(
+def quantize(
     value: BigDecimal,
     exp: BigDecimal,
     rounding_mode: RoundingMode = RoundingMode.ROUND_HALF_EVEN,

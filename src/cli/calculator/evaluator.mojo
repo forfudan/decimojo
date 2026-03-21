@@ -44,7 +44,7 @@ from .tokenizer import tokenize
 # ===----------------------------------------------------------------------=== #
 
 
-fn _call_func(
+def _call_func(
     name: String, mut stack: List[BDec], precision: Int, position: Int
 ) raises:
     """Pop argument(s) from `stack`, call the named Decimo function,
@@ -168,7 +168,7 @@ fn _call_func(
 # ===----------------------------------------------------------------------=== #
 
 
-fn evaluate_rpn(rpn: List[Token], precision: Int) raises -> BDec:
+def evaluate_rpn(rpn: List[Token], precision: Int) raises -> BDec:
     """Evaluate an RPN token list using BigDecimal arithmetic.
 
     Internally uses `working_precision = precision + GUARD_DIGITS` for all
@@ -305,7 +305,7 @@ fn evaluate_rpn(rpn: List[Token], precision: Int) raises -> BDec:
     return stack.pop()
 
 
-fn final_round(
+def final_round(
     value: BDec,
     precision: Int,
     rounding_mode: RoundingMode = RoundingMode.half_even(),
@@ -323,7 +323,7 @@ fn final_round(
     return result^
 
 
-fn evaluate(
+def evaluate(
     expr: String,
     precision: Int = 50,
     rounding_mode: RoundingMode = RoundingMode.half_even(),
