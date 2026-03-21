@@ -474,15 +474,7 @@ struct BigInt(
         Returns:
             The value as a Float64.
         """
-        return Float64(self.__str__())
-
-    fn __str__(self) -> String:
-        """Returns a decimal string representation of the BigInt."""
-        return self.to_string()
-
-    fn __repr__(self) -> String:
-        """Returns a debug representation of the BigInt."""
-        return 'BigInt("' + self.to_string() + '")'
+        return Float64(self.to_string())
 
     fn write_repr_to[W: Writer](self, mut writer: W):
         """Writes the debug representation to a writer."""

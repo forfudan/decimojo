@@ -132,33 +132,6 @@ struct DecimoError[error_type: String = "DecimoError"](Writable):
                 String(previous_error.value()).split("\n")[3:]
             )
 
-    fn __str__(self) -> String:
-        if self.message is None:
-            return (
-                "Traceback (most recent call last):\n"
-                + '  File "'
-                + self.file
-                + '"'
-                + " in "
-                + self.function
-                + "\n\n"
-            )
-
-        else:
-            return (
-                "Traceback (most recent call last):\n"
-                + '  File "'
-                + self.file
-                + '"'
-                + " in "
-                + self.function
-                + "\n\n"
-                + String(Self.error_type)
-                + ": "
-                + self.message.value()
-                + "\n"
-            )
-
     fn write_to[W: Writer](self, mut writer: W):
         writer.write("\n")
         writer.write(("-" * 80))

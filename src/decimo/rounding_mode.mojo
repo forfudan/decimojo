@@ -108,25 +108,22 @@ struct RoundingMode(Copyable, ImplicitlyCopyable, Movable, Writable):
         return self.value == other.value
 
     fn __eq__(self, other: String) -> Bool:
-        return self.__str__() == other
-
-    fn __str__(self) -> String:
-        if self == Self.down():
-            return "ROUND_DOWN"
-        elif self == Self.half_up():
-            return "ROUND_HALF_UP"
-        elif self == Self.half_even():
-            return "ROUND_HALF_EVEN"
-        elif self == Self.up():
-            return "ROUND_UP"
-        elif self == Self.ceiling():
-            return "ROUND_CEILING"
-        elif self == Self.half_down():
-            return "ROUND_HALF_DOWN"
-        elif self == Self.floor():
-            return "ROUND_FLOOR"
-        else:
-            return "UNKNOWN_ROUNDING_MODE"
+        return String(self) == other
 
     fn write_to[W: Writer](self, mut writer: W):
-        writer.write(self.__str__())
+        if self == Self.down():
+            writer.write("ROUND_DOWN")
+        elif self == Self.half_up():
+            writer.write("ROUND_HALF_UP")
+        elif self == Self.half_even():
+            writer.write("ROUND_HALF_EVEN")
+        elif self == Self.up():
+            writer.write("ROUND_UP")
+        elif self == Self.ceiling():
+            writer.write("ROUND_CEILING")
+        elif self == Self.half_down():
+            writer.write("ROUND_HALF_DOWN")
+        elif self == Self.floor():
+            writer.write("ROUND_FLOOR")
+        else:
+            writer.write("UNKNOWN_ROUNDING_MODE")

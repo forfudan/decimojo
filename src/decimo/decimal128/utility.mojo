@@ -383,7 +383,7 @@ fn round_to_keep_first_n_digits[
             debug_assert(
                 False,
                 "Unknown rounding mode in round_to_keep_first_n_digits: "
-                + rounding_mode.__str__(),
+                + String(rounding_mode),
             )
 
         return truncated_value

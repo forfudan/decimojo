@@ -9,9 +9,9 @@
 # https://docs.modular.com/mojo/manual/python/mojo-from-python
 # ===----------------------------------------------------------------------=== #
 
-from python import PythonObject
-from python.bindings import PythonModuleBuilder
-from os import abort
+from std.python import PythonObject
+from std.python.bindings import PythonModuleBuilder
+from std.os import abort
 
 from decimo import BigDecimal
 
@@ -75,13 +75,13 @@ fn bigdecimal_py_init(
 fn bigdecimal_to_string(py_self: PythonObject) raises -> PythonObject:
     """Return the decimal as a plain string, e.g. '3.14'."""
     var ptr = py_self.downcast_value_ptr[BigDecimal]()
-    return PythonObject(ptr[].__str__())
+    return PythonObject(String(ptr[]))
 
 
 fn bigdecimal_to_repr(py_self: PythonObject) raises -> PythonObject:
     """Return the repr string, e.g. 'Decimal(\"3.14\")'."""
     var ptr = py_self.downcast_value_ptr[BigDecimal]()
-    return PythonObject('Decimal("' + ptr[].__str__() + '")')
+    return PythonObject('Decimal("' + String(ptr[]) + '")')
 
 
 fn bigdecimal_add(

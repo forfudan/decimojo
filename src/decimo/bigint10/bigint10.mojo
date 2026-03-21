@@ -385,19 +385,9 @@ struct BigInt10(
         """
         return self.to_int()
 
-    fn __str__(self) -> String:
-        """Returns string representation of the BigInt10.
-        See `to_string()` for more information.
-        """
-        return self.to_string()
-
-    fn __repr__(self) -> String:
-        """Returns a string representation of the BigInt10."""
-        return 'BigInt10("' + self.__str__() + '")'
-
     fn write_repr_to[W: Writer](self, mut writer: W):
         """Writes the debug representation to a writer."""
-        writer.write('BigInt10("', self.__str__(), '")')
+        writer.write('BigInt10("', self.to_string(), '")')
 
     # ===------------------------------------------------------------------=== #
     # Type-transfer or output methods that are not dunders
@@ -407,7 +397,7 @@ struct BigInt10(
         """Writes the BigInt10 to a writer.
         This implement the `write` method of the `Writer` trait.
         """
-        writer.write(self.__str__())
+        writer.write(self.to_string())
 
     fn to_int(self) raises -> Int:
         """Returns the number as Int.

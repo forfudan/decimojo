@@ -914,19 +914,9 @@ struct Decimal128(
         """
         return self.to_int()
 
-    fn __str__(self) -> String:
-        """Returns string representation of the Decimal128.
-        See `to_str()` for more information.
-        """
-        return self.to_str()
-
-    fn __repr__(self) -> String:
-        """Returns a string representation of the Decimal128."""
-        return 'Decimal128("' + self.__str__() + '")'
-
     fn write_repr_to[W: Writer](self, mut writer: W):
         """Writes the debug representation to a writer."""
-        writer.write('Decimal128("', self.__str__(), '")')
+        writer.write('Decimal128("', self.to_str(), '")')
 
     # ===------------------------------------------------------------------=== #
     # Type-transfer or output methods that are not dunders
@@ -936,7 +926,7 @@ struct Decimal128(
         """Writes the Decimal128 to a writer.
         This implement the `write` method of the `Writer` trait.
         """
-        writer.write(self.__str__())
+        writer.write(self.to_str())
 
     fn repr_words(self) -> String:
         """Returns a string representation of the Decimal128's internal words.
@@ -1617,7 +1607,7 @@ struct Decimal128(
 
         var result = String("\nInternal Representation Details of Decimal128\n")
         result += sep_line + "\n"
-        result += pad("Decimal128:") + self.__str__() + "\n"
+        result += pad("Decimal128:") + self.to_str() + "\n"
         result += pad("coefficient:") + String(self.coefficient()) + "\n"
         result += pad("scale:") + String(self.scale()) + "\n"
         result += pad("is negative:") + String(self.is_negative()) + "\n"

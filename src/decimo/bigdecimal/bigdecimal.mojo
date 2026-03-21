@@ -487,37 +487,17 @@ struct BigDecimal(
 
     # ===------------------------------------------------------------------=== #
     # Output dunders, type-transfer dunders
-    # __str__()
-    # __repr__()
     # __int__()
     # __float__()
     # ===------------------------------------------------------------------=== #
 
-    # TODO: Deprecate this.
-    # Stringable -> Writable (write_to())
-    fn __str__(self) -> String:
-        """Returns string representation of the BigDecimal.
-        See `to_string()` for more information.
-        """
-        return self.to_string()
-
-    # TODO: Deprecate this.
-    # Representable -> Writable (write_repr_to())
-    fn __repr__(self) -> String:
-        """Returns a string representation of the BigDecimal."""
-        return 'BigDecimal("' + self.__str__() + '")'
-
-    fn write_repr_to[W: Writer](self, mut writer: W):
-        """Writes the debug representation to a writer."""
-        writer.write('BigDecimal("', self.__str__(), '")')
-
     fn __int__(self) raises -> Int:
         """Converts the BigDecimal to an integer."""
-        return Int(self.__str__())
+        return Int(self.to_string())
 
     fn __float__(self) raises -> Float64:
         """Converts the BigDecimal to a floating-point number."""
-        return Float64(self.__str__())
+        return Float64(self.to_string())
 
     # ===------------------------------------------------------------------=== #
     # Type-transfer or output methods that are not dunders
@@ -718,15 +698,15 @@ struct BigDecimal(
 
         return result^
 
-    # ===------------------------------------------------------------------=== #
-    # Type-transfer or output methods that are not dunders
-    # ===------------------------------------------------------------------=== #
-
     fn write_to[W: Writer](self, mut writer: W):
         """Writes the BigDecimal to a writer.
         This implement the `write` method of the `Writer` trait.
         """
-        writer.write(self.__str__())
+        writer.write(self.to_string())
+
+    fn write_repr_to[W: Writer](self, mut writer: W):
+        """Writes the debug representation to a writer."""
+        writer.write('BigDecimal("', self.to_string(), '")')
 
     fn to_scientific_string(self) -> String:
         """Returns the number in scientific notation (trailing zeros stripped).

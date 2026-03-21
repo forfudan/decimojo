@@ -769,19 +769,9 @@ struct BigUInt(Absable, Copyable, IntableRaising, Movable, Writable):
                 )
             )
 
-    fn __str__(self) -> String:
-        """Returns string representation of the BigUInt.
-        See `to_string()` for more information.
-        """
-        return self.to_string()
-
-    fn __repr__(self) -> String:
-        """Returns a string representation of the BigUInt."""
-        return 'BigUInt("' + self.__str__() + '")'
-
     fn write_repr_to[W: Writer](self, mut writer: W):
         """Writes the debug representation to a writer."""
-        writer.write('BigUInt("', self.__str__(), '")')
+        writer.write('BigUInt("', self.to_string(), '")')
 
     # ===------------------------------------------------------------------=== #
     # Type-transfer or output methods that are not dunders
@@ -791,7 +781,7 @@ struct BigUInt(Absable, Copyable, IntableRaising, Movable, Writable):
         """Writes the BigUInt to a writer.
         This implement the `write` method of the `Writer` trait.
         """
-        writer.write(self.__str__())
+        writer.write(self.to_string())
 
     fn to_int(self) raises -> Int:
         """Returns the number as Int.
@@ -1942,9 +1932,7 @@ struct BigUInt(Absable, Copyable, IntableRaising, Movable, Writable):
                 ValueError(
                     file="src/decimo/biguint/biguint.mojo",
                     function="BigUInt.remove_trailing_digits_with_rounding()",
-                    message=(
-                        "Unknown rounding mode: " + rounding_mode.__str__()
-                    ),
+                    message=("Unknown rounding mode: " + String(rounding_mode)),
                     previous_error=None,
                 )
             )

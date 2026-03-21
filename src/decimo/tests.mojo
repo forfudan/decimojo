@@ -99,19 +99,6 @@ struct TestCase(Copyable, Movable, Writable):
         self.expected = take.expected^
         self.description = take.description^
 
-    fn __str__(self) -> String:
-        return (
-            "TestCase(a: "
-            + self.a
-            + ", b: "
-            + self.b
-            + ", expected: "
-            + self.expected
-            + ", description: "
-            + self.description
-            + ")"
-        )
-
     fn write_to[T: Writer](self, mut writer: T):
         writer.write("TestCase:\n")
         writer.write("  a: " + self.a + "\n")
@@ -147,19 +134,16 @@ struct BenchCase(Copyable, Movable, Writable):
         self.a = take.a^
         self.b = take.b^
 
-    fn __str__(self) -> String:
-        return (
-            "BenchCase(name='"
-            + self.name
-            + "', a='"
-            + self.a
-            + "', b='"
-            + self.b
-            + "')"
-        )
-
     fn write_to[T: Writer](self, mut writer: T):
-        writer.write(self.__str__())
+        writer.write(
+            "BenchCase(name='",
+            self.name,
+            "', a='",
+            self.a,
+            "', b='",
+            self.b,
+            "')",
+        )
 
 
 # ===----------------------------------------------------------------------=== #
