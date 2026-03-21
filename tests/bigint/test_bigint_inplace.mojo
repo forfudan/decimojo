@@ -15,70 +15,70 @@ from decimo.bigint.bigint import BigInt
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_iadd_basic() raises:
+def test_iadd_basic() raises:
     """Basic iadd: positive + positive."""
     var x = BigInt(100)
     x += BigInt(23)
     testing.assert_equal(String(x), "123")
 
 
-fn test_iadd_zero_lhs() raises:
+def test_iadd_zero_lhs() raises:
     """Iadd: 0 += other."""
     var x = BigInt(0)
     x += BigInt(42)
     testing.assert_equal(String(x), "42")
 
 
-fn test_iadd_zero_rhs() raises:
+def test_iadd_zero_rhs() raises:
     """Iadd: x += 0 is no-op."""
     var x = BigInt(42)
     x += BigInt(0)
     testing.assert_equal(String(x), "42")
 
 
-fn test_iadd_both_zero() raises:
+def test_iadd_both_zero() raises:
     """Iadd: 0 += 0 = 0."""
     var x = BigInt(0)
     x += BigInt(0)
     testing.assert_equal(String(x), "0")
 
 
-fn test_iadd_negative_result() raises:
+def test_iadd_negative_result() raises:
     """Iadd with negative result: positive + negative where |neg| > |pos|."""
     var x = BigInt(10)
     x += BigInt(-30)
     testing.assert_equal(String(x), "-20")
 
 
-fn test_iadd_cancel_to_zero() raises:
+def test_iadd_cancel_to_zero() raises:
     """Iadd: x + (-x) = 0."""
     var x = BigInt(42)
     x += BigInt(-42)
     testing.assert_equal(String(x), "0")
 
 
-fn test_iadd_both_negative() raises:
+def test_iadd_both_negative() raises:
     """Iadd: negative + negative."""
     var x = BigInt(-10)
     x += BigInt(-20)
     testing.assert_equal(String(x), "-30")
 
 
-fn test_iadd_neg_plus_pos() raises:
+def test_iadd_neg_plus_pos() raises:
     """Iadd: negative + positive where |pos| > |neg|."""
     var x = BigInt(-10)
     x += BigInt(30)
     testing.assert_equal(String(x), "20")
 
 
-fn test_iadd_carry_propagation() raises:
+def test_iadd_carry_propagation() raises:
     """Iadd with carry: (2^32 - 1) + 1 = 2^32."""
     var x = BigInt("4294967295")
     x += BigInt(1)
     testing.assert_equal(String(x), "4294967296")
 
 
-fn test_iadd_large_values() raises:
+def test_iadd_large_values() raises:
     """Iadd with large multi-word values."""
     var x = BigInt("999999999999999999999999999999")
     x += BigInt(1)
@@ -89,10 +89,10 @@ fn test_iadd_large_values() raises:
     testing.assert_equal(String(y), "1000000000000000000000000000000")
 
 
-fn test_iadd_matches_add() raises:
+def test_iadd_matches_add() raises:
     """Iadd produces same result as add for various values."""
 
-    fn _check(a: String, b: String) raises:
+    def _check(a: String, b: String) raises:
         var expected = String(BigInt(a) + BigInt(b))
         var x = BigInt(a)
         x += BigInt(b)
@@ -114,14 +114,14 @@ fn test_iadd_matches_add() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_iadd_int_basic() raises:
+def test_iadd_int_basic() raises:
     """Iadd with Int: positive + positive."""
     var x = BigInt(100)
     x += 23
     testing.assert_equal(String(x), "123")
 
 
-fn test_iadd_int_zero() raises:
+def test_iadd_int_zero() raises:
     """Iadd with Int: x += 0 is no-op."""
     var x = BigInt(42)
     x += 0
@@ -132,7 +132,7 @@ fn test_iadd_int_zero() raises:
     testing.assert_equal(String(y), "42")
 
 
-fn test_iadd_int_negative() raises:
+def test_iadd_int_negative() raises:
     """Iadd with Int: adding negative Int."""
     var x = BigInt(10)
     x += -30
@@ -143,7 +143,7 @@ fn test_iadd_int_negative() raises:
     testing.assert_equal(String(y), "-5")
 
 
-fn test_iadd_int_cancel() raises:
+def test_iadd_int_cancel() raises:
     """Iadd with Int: cancellation to zero."""
     var x = BigInt(42)
     x += -42
@@ -154,14 +154,14 @@ fn test_iadd_int_cancel() raises:
     testing.assert_equal(String(y), "0")
 
 
-fn test_iadd_int_large_base() raises:
+def test_iadd_int_large_base() raises:
     """Iadd with Int: large BigInt + small Int."""
     var x = BigInt("999999999999999999999999999999")
     x += 1
     testing.assert_equal(String(x), "1000000000000000000000000000000")
 
 
-fn test_iadd_int_accumulator_loop() raises:
+def test_iadd_int_accumulator_loop() raises:
     """Iadd Int in a loop: simulate accumulator pattern."""
     var sum = BigInt(0)
     for i in range(1, 101):
@@ -175,21 +175,21 @@ fn test_iadd_int_accumulator_loop() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_isub_basic() raises:
+def test_isub_basic() raises:
     """Basic isub: positive - positive."""
     var x = BigInt(100)
     x -= BigInt(23)
     testing.assert_equal(String(x), "77")
 
 
-fn test_isub_zero_rhs() raises:
+def test_isub_zero_rhs() raises:
     """Isub: x -= 0 is no-op."""
     var x = BigInt(42)
     x -= BigInt(0)
     testing.assert_equal(String(x), "42")
 
 
-fn test_isub_zero_lhs() raises:
+def test_isub_zero_lhs() raises:
     """Isub: 0 -= other = -other."""
     var x = BigInt(0)
     x -= BigInt(42)
@@ -200,21 +200,21 @@ fn test_isub_zero_lhs() raises:
     testing.assert_equal(String(y), "42")
 
 
-fn test_isub_cancel_to_zero() raises:
+def test_isub_cancel_to_zero() raises:
     """Isub: x - x = 0."""
     var x = BigInt(42)
     x -= BigInt(42)
     testing.assert_equal(String(x), "0")
 
 
-fn test_isub_negative_result() raises:
+def test_isub_negative_result() raises:
     """Isub: positive - larger positive = negative."""
     var x = BigInt(10)
     x -= BigInt(30)
     testing.assert_equal(String(x), "-20")
 
 
-fn test_isub_both_negative() raises:
+def test_isub_both_negative() raises:
     """Isub: negative - negative."""
     # -10 - (-30) = -10 + 30 = 20
     var x = BigInt(-10)
@@ -227,24 +227,24 @@ fn test_isub_both_negative() raises:
     testing.assert_equal(String(y), "-20")
 
 
-fn test_isub_borrow_propagation() raises:
+def test_isub_borrow_propagation() raises:
     """Isub with borrow: 2^32 - 1 = 2^32 - 1."""
     var x = BigInt("4294967296")
     x -= BigInt(1)
     testing.assert_equal(String(x), "4294967295")
 
 
-fn test_isub_large_values() raises:
+def test_isub_large_values() raises:
     """Isub with large multi-word values."""
     var x = BigInt("1000000000000000000000000000000")
     x -= BigInt(1)
     testing.assert_equal(String(x), "999999999999999999999999999999")
 
 
-fn test_isub_matches_sub() raises:
+def test_isub_matches_sub() raises:
     """Isub produces same result as subtract for various values."""
 
-    fn _check(a: String, b: String) raises:
+    def _check(a: String, b: String) raises:
         var expected = String(BigInt(a) - BigInt(b))
         var x = BigInt(a)
         x -= BigInt(b)
@@ -266,35 +266,35 @@ fn test_isub_matches_sub() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_imul_basic() raises:
+def test_imul_basic() raises:
     """Basic imul: positive * positive."""
     var x = BigInt(12)
     x *= BigInt(10)
     testing.assert_equal(String(x), "120")
 
 
-fn test_imul_zero_lhs() raises:
+def test_imul_zero_lhs() raises:
     """Imul: 0 *= other = 0."""
     var x = BigInt(0)
     x *= BigInt(42)
     testing.assert_equal(String(x), "0")
 
 
-fn test_imul_zero_rhs() raises:
+def test_imul_zero_rhs() raises:
     """Imul: x *= 0 = 0."""
     var x = BigInt(42)
     x *= BigInt(0)
     testing.assert_equal(String(x), "0")
 
 
-fn test_imul_one() raises:
+def test_imul_one() raises:
     """Imul: x *= 1 is no-op."""
     var x = BigInt(42)
     x *= BigInt(1)
     testing.assert_equal(String(x), "42")
 
 
-fn test_imul_minus_one() raises:
+def test_imul_minus_one() raises:
     """Imul: x *= -1 negates."""
     var x = BigInt(42)
     x *= BigInt(-1)
@@ -305,7 +305,7 @@ fn test_imul_minus_one() raises:
     testing.assert_equal(String(y), "42")
 
 
-fn test_imul_sign_combinations() raises:
+def test_imul_sign_combinations() raises:
     """Imul: all sign combinations."""
     # pos * pos = pos
     var a = BigInt(7)
@@ -328,24 +328,24 @@ fn test_imul_sign_combinations() raises:
     testing.assert_equal(String(d), "42")
 
 
-fn test_imul_carry_propagation() raises:
+def test_imul_carry_propagation() raises:
     """Imul with carry: (2^32 - 1) * (2^32 - 1)."""
     var x = BigInt("4294967295")
     x *= BigInt("4294967295")
     testing.assert_equal(String(x), "18446744065119617025")
 
 
-fn test_imul_large_values() raises:
+def test_imul_large_values() raises:
     """Imul with large multi-word values."""
     var x = BigInt("123456789012345678901234567890")
     x *= BigInt("2")
     testing.assert_equal(String(x), "246913578024691357802469135780")
 
 
-fn test_imul_matches_mul() raises:
+def test_imul_matches_mul() raises:
     """Imul produces same result as multiply for various values."""
 
-    fn _check(a: String, b: String) raises:
+    def _check(a: String, b: String) raises:
         var expected = String(BigInt(a) * BigInt(b))
         var x = BigInt(a)
         x *= BigInt(b)
@@ -367,7 +367,7 @@ fn test_imul_matches_mul() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_chained_iadd() raises:
+def test_chained_iadd() raises:
     """Multiple iadd operations in sequence."""
     var x = BigInt(0)
     x += BigInt(10)
@@ -376,7 +376,7 @@ fn test_chained_iadd() raises:
     testing.assert_equal(String(x), "60")
 
 
-fn test_chained_isub() raises:
+def test_chained_isub() raises:
     """Multiple isub operations in sequence."""
     var x = BigInt(100)
     x -= BigInt(10)
@@ -385,7 +385,7 @@ fn test_chained_isub() raises:
     testing.assert_equal(String(x), "40")
 
 
-fn test_chained_imul() raises:
+def test_chained_imul() raises:
     """Multiple imul operations: factorial-like."""
     var x = BigInt(1)
     x *= BigInt(2)
@@ -395,7 +395,7 @@ fn test_chained_imul() raises:
     testing.assert_equal(String(x), "120")
 
 
-fn test_mixed_inplace() raises:
+def test_mixed_inplace() raises:
     """Mixed in-place operations."""
     var x = BigInt(10)
     x += BigInt(5)  # 15
@@ -405,7 +405,7 @@ fn test_mixed_inplace() raises:
     testing.assert_equal(String(x), "0")
 
 
-fn test_iadd_int_accumulator_vs_direct() raises:
+def test_iadd_int_accumulator_vs_direct() raises:
     """Int iadd accumulator gives same result as direct computation."""
     # Compute 1 + 2 + ... + 1000 via iadd
     var sum_iadd = BigInt(0)
@@ -415,7 +415,7 @@ fn test_iadd_int_accumulator_vs_direct() raises:
     testing.assert_equal(String(sum_iadd), "500500")
 
 
-fn test_imul_factorial_20() raises:
+def test_imul_factorial_20() raises:
     """Compute 20! via repeated imul."""
     var factorial = BigInt(1)
     for i in range(2, 21):
@@ -424,5 +424,5 @@ fn test_imul_factorial_20() raises:
     testing.assert_equal(String(factorial), "2432902008176640000")
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

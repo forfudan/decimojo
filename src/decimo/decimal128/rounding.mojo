@@ -40,7 +40,7 @@ import decimo.decimal128.utility
 # ===------------------------------------------------------------------------===#
 
 
-fn round(
+def round(
     number: Decimal128,
     ndigits: Int = 0,
     rounding_mode: RoundingMode = RoundingMode.ROUND_HALF_EVEN,
@@ -170,7 +170,7 @@ fn round(
             return Decimal128.ZERO()
 
 
-fn quantize(
+def quantize(
     value: Decimal128,
     exp: Decimal128,
     rounding_mode: RoundingMode = RoundingMode.ROUND_HALF_EVEN,

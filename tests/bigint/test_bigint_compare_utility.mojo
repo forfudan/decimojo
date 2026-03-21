@@ -12,7 +12,7 @@ from decimo.bigint.bigint import BigInt
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_is_one_or_minus_one() raises:
+def test_is_one_or_minus_one() raises:
     """Test is_one_or_minus_one method."""
     testing.assert_true(BigInt(1).is_one_or_minus_one(), "1 is ±1")
     testing.assert_true(BigInt(-1).is_one_or_minus_one(), "-1 is ±1")
@@ -26,7 +26,7 @@ fn test_is_one_or_minus_one() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_compare_instance_method() raises:
+def test_compare_instance_method() raises:
     """Test compare() instance method."""
     testing.assert_equal(BigInt(5).compare(BigInt(3)), Int8(1))
     testing.assert_equal(BigInt(3).compare(BigInt(5)), Int8(-1))
@@ -36,7 +36,7 @@ fn test_compare_instance_method() raises:
     testing.assert_equal(BigInt(0).compare(BigInt(0)), Int8(0))
 
 
-fn test_compare_magnitudes_instance_method() raises:
+def test_compare_magnitudes_instance_method() raises:
     """Test compare_magnitudes() instance method."""
     testing.assert_equal(BigInt(5).compare_magnitudes(BigInt(3)), Int8(1))
     testing.assert_equal(BigInt(3).compare_magnitudes(BigInt(5)), Int8(-1))
@@ -53,7 +53,7 @@ fn test_compare_magnitudes_instance_method() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_iadd_int() raises:
+def test_iadd_int() raises:
     """Test optimized += with Int."""
     var x = BigInt(100)
     x += 1
@@ -69,5 +69,5 @@ fn test_iadd_int() raises:
     testing.assert_equal(String(x), "1099")
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

@@ -14,7 +14,7 @@ from std.time import perf_counter_ns
 from std.collections import List
 
 
-fn run_case(
+def run_case(
     bc: BenchCase,
     iterations: Int,
     pydecimal: PythonObject,
@@ -60,7 +60,7 @@ fn run_case(
         log_print("Skipping this case", log_file)
 
 
-fn main() raises:
+def main() raises:
     var log_file = open_log_file("benchmark_modulo")
     print_header("Decimo Decimal128 Modulo Benchmark", log_file)
 

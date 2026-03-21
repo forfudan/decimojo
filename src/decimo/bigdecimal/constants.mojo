@@ -153,7 +153,7 @@ comptime PI_1024 = BigDecimal(
 # Everytime when user calls pi(precision),
 # we check whether the precision is higher than the current precision.
 # If yes, then we save it into the global scope as cached value.
-fn pi(precision: Int) raises -> BigDecimal:
+def pi(precision: Int) raises -> BigDecimal:
     """Calculates π using the fastest available algorithm."""
 
     if precision < 0:
@@ -181,12 +181,12 @@ struct Rational:
     var p: BigInt10  # numerator
     var q: BigInt10  # denominator
 
-    fn __init__(out self, p: BigInt10, q: BigInt10):
+    def __init__(out self, p: BigInt10, q: BigInt10):
         self.p = p.copy()
         self.q = q.copy()
 
 
-fn pi_chudnovsky_binary_split(precision: Int) raises -> BigDecimal:
+def pi_chudnovsky_binary_split(precision: Int) raises -> BigDecimal:
     """Calculates π using Chudnovsky algorithm with binary splitting.
 
     Notes:
@@ -227,7 +227,7 @@ fn pi_chudnovsky_binary_split(precision: Int) raises -> BigDecimal:
     return result^
 
 
-fn chudnovsky_split(a: Int, b: Int, precision: Int) raises -> Rational:
+def chudnovsky_split(a: Int, b: Int, precision: Int) raises -> Rational:
     """Conducts binary splitting for Chudnovsky series from term a to b-1."""
 
     var bint_1 = BigInt10(1)
@@ -272,7 +272,7 @@ fn chudnovsky_split(a: Int, b: Int, precision: Int) raises -> Rational:
     return Rational(combined_p^, combined_q^)
 
 
-fn compute_m_k_rational(k: Int) raises -> Rational:
+def compute_m_k_rational(k: Int) raises -> Rational:
     """Computes M(k) = (6k)! / ((3k)! * (k!)³) as exact rational."""
 
     var bint_1 = BigInt10(1)
@@ -295,7 +295,7 @@ fn compute_m_k_rational(k: Int) raises -> Rational:
     return Rational(numerator, denominator)
 
 
-fn pi_machin(precision: Int) raises -> BigDecimal:
+def pi_machin(precision: Int) raises -> BigDecimal:
     """Fallback π calculation using Machin's formula."""
 
     var working_precision = precision + 9

@@ -1,7 +1,7 @@
 from decimo.prelude import *
 
 
-fn main() raises:
+def main() raises:
     # === Construction ===
     var a = BInt("12345678901234567890")  # From string
     var b = BInt(12345)  # From integer

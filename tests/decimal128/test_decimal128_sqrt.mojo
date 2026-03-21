@@ -17,7 +17,7 @@ comptime data_path = "tests/decimal128/test_data/decimal128_sqrt.toml"
 # ─── helpers ─────────────────────────────────────────────────────────────────
 
 
-fn _run_sqrt_section(doc: TOMLDocument, section: String) raises:
+def _run_sqrt_section(doc: TOMLDocument, section: String) raises:
     var cases = load_test_cases[unary=True](doc, section)
     for tc in cases:
         var result = Dec128(tc.a).sqrt()
@@ -27,19 +27,19 @@ fn _run_sqrt_section(doc: TOMLDocument, section: String) raises:
 # ─── TOML-driven tests ──────────────────────────────────────────────────────
 
 
-fn test_sqrt_perfect() raises:
+def test_sqrt_perfect() raises:
     """Perfect square inputs (12 cases via TOML)."""
     var doc = parse_file(data_path)
     _run_sqrt_section(doc, "sqrt_perfect")
 
 
-fn test_sqrt_decimal() raises:
+def test_sqrt_decimal() raises:
     """Decimal inputs with exact square roots (7 cases via TOML)."""
     var doc = parse_file(data_path)
     _run_sqrt_section(doc, "sqrt_decimal")
 
 
-fn test_sqrt_edge_exact() raises:
+def test_sqrt_edge_exact() raises:
     """Edge cases with exact results (via TOML): sqrt(0)=0, sqrt(1)=1."""
     var doc = parse_file(data_path)
     _run_sqrt_section(doc, "sqrt_edge")
@@ -48,10 +48,10 @@ fn test_sqrt_edge_exact() raises:
 # ─── Inline tests ───────────────────────────────────────────────────────────
 
 
-fn test_sqrt_non_perfect() raises:
+def test_sqrt_non_perfect() raises:
     """Non-perfect squares (startswith checks)."""
 
-    fn _check(input: String, prefix: String, desc: String) raises:
+    def _check(input: String, prefix: String, desc: String) raises:
         testing.assert_true(
             String(Dec128(input).sqrt()).startswith(prefix), desc
         )
@@ -65,7 +65,7 @@ fn test_sqrt_non_perfect() raises:
     _check("999", "31.6069612585582165452042139", "sqrt(999)")
 
 
-fn test_sqrt_edge_special() raises:
+def test_sqrt_edge_special() raises:
     """Edge cases needing special constructors or exceptions."""
     # sqrt(1e-28) = 1e-14
     var very_small = Decimal128(1, 28)
@@ -94,10 +94,10 @@ fn test_sqrt_edge_special() raises:
     testing.assert_true(caught, "sqrt(-1) exception")
 
 
-fn test_sqrt_precision() raises:
+def test_sqrt_precision() raises:
     """Precision tests (startswith checks)."""
 
-    fn _check(input: String, prefix: String, desc: String) raises:
+    def _check(input: String, prefix: String, desc: String) raises:
         testing.assert_true(
             String(Dec128(input).sqrt()).startswith(prefix), desc
         )
@@ -120,11 +120,11 @@ fn test_sqrt_precision() raises:
     )
 
 
-fn test_sqrt_identities() raises:
+def test_sqrt_identities() raises:
     """Mathematical identities: sqrt(x)^2 ≈ x and sqrt(x*y) ≈ sqrt(x)*sqrt(y).
     """
 
-    fn _check_squared(s: String) raises:
+    def _check_squared(s: String) raises:
         var x = Dec128(s)
         testing.assert_true(
             round(x.sqrt() * x.sqrt(), 10) == round(x, 10),
@@ -140,7 +140,7 @@ fn test_sqrt_identities() raises:
     _check_squared("0.25")
     _check_squared("1.44")
 
-    fn _check_product(xs: String, ys: String) raises:
+    def _check_product(xs: String, ys: String) raises:
         var x = Dec128(xs)
         var y = Dec128(ys)
         testing.assert_true(
@@ -153,12 +153,12 @@ fn test_sqrt_identities() raises:
     _check_product("2", "8")
 
 
-fn test_sqrt_convergence() raises:
+def test_sqrt_convergence() raises:
     """Convergence: sqrt(x)^2 ≈ x within relative tolerance."""
 
     var tol = Dec128("0.00001")
 
-    fn _check_rel(s: String, tol: Dec128) raises:
+    def _check_rel(s: String, tol: Dec128) raises:
         var x = Dec128(s)
         var sq = x.sqrt()
         var diff = sq * sq - x
@@ -193,5 +193,5 @@ fn test_sqrt_convergence() raises:
     )
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

@@ -19,7 +19,7 @@
 from std.algorithm import vectorize
 
 
-fn rjust(s: String, width: Int, fillchar: String = " ") -> String:
+def rjust(s: String, width: Int, fillchar: String = " ") -> String:
     """Right-justifies a string by padding with fillchar on the left."""
     var n = len(s)
     if n >= width:
@@ -27,7 +27,7 @@ fn rjust(s: String, width: Int, fillchar: String = " ") -> String:
     return fillchar * (width - n) + s
 
 
-fn ljust(s: String, width: Int, fillchar: String = " ") -> String:
+def ljust(s: String, width: Int, fillchar: String = " ") -> String:
     """Left-justifies a string by padding with fillchar on the right."""
     var n = len(s)
     if n >= width:
@@ -35,7 +35,7 @@ fn ljust(s: String, width: Int, fillchar: String = " ") -> String:
     return s + fillchar * (width - n)
 
 
-fn parse_numeric_string(
+def parse_numeric_string(
     value: String,
 ) raises -> Tuple[List[UInt8], Int, Bool]:
     """Parse the string of a number into normalized parts.
@@ -313,7 +313,7 @@ fn parse_numeric_string(
         coef.resize(significant_count, 0)
 
         @parameter
-        fn convert_fast[
+        def convert_fast[
             simd_width: Int
         ](i: Int) unified {mut coef, read value_bytes, read extract_start}:
             coef.unsafe_ptr().store[width=simd_width](
@@ -337,7 +337,7 @@ fn parse_numeric_string(
         if before_count > 0:
 
             @parameter
-            fn convert_before[
+            def convert_before[
                 simd_width: Int
             ](i: Int) unified {mut coef, read value_bytes, read extract_start}:
                 coef.unsafe_ptr().store[width=simd_width](
@@ -354,7 +354,7 @@ fn parse_numeric_string(
         if after_count > 0:
 
             @parameter
-            fn convert_after[
+            def convert_after[
                 simd_width: Int
             ](i: Int) unified {
                 mut coef,

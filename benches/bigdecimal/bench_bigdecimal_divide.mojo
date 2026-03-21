@@ -21,7 +21,7 @@ comptime ITERATIONS_LARGE = 3
 comptime LARGE_CASE_THRESHOLD = 50  # Cases index >= this use fewer iterations
 
 
-fn run_case(
+def run_case(
     bc: BenchCase,
     iterations: Int,
     precision: Int,
@@ -74,7 +74,7 @@ fn run_case(
         log_print("Skipping this case", log_file)
 
 
-fn main() raises:
+def main() raises:
     var log_file = open_log_file("benchmark_bigdecimal_divide")
     print_header("Decimo BigDecimal Division Benchmark", log_file)
 

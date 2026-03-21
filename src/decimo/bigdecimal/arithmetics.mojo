@@ -32,7 +32,7 @@ from decimo.rounding_mode import RoundingMode
 # ===----------------------------------------------------------------------=== #
 
 
-fn add(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
+def add(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
     """Returns the sum of two numbers.
 
     Args:
@@ -91,7 +91,7 @@ fn add(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
         )
 
 
-fn subtract(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
+def subtract(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
     """Returns the difference of two numbers.
 
     Args:
@@ -153,7 +153,7 @@ fn subtract(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
         )
 
 
-fn multiply(x1: BigDecimal, x2: BigDecimal) -> BigDecimal:
+def multiply(x1: BigDecimal, x2: BigDecimal) -> BigDecimal:
     """Returns the product of two numbers.
 
     Args:
@@ -184,7 +184,7 @@ fn multiply(x1: BigDecimal, x2: BigDecimal) -> BigDecimal:
     )
 
 
-fn multiply_inplace(mut x1: BigDecimal, x2: BigDecimal):
+def multiply_inplace(mut x1: BigDecimal, x2: BigDecimal):
     """Multiplies x1 by x2 in place, avoiding full BigDecimal construction.
 
     This computes the product and moves the result words into x1,
@@ -205,7 +205,7 @@ fn multiply_inplace(mut x1: BigDecimal, x2: BigDecimal):
     x1.sign = x1.sign != x2.sign
 
 
-fn add_inplace(mut x1: BigDecimal, x2: BigDecimal) raises:
+def add_inplace(mut x1: BigDecimal, x2: BigDecimal) raises:
     """Adds x2 to x1 in place.
 
     This avoids constructing a new BigDecimal for the result.
@@ -275,7 +275,7 @@ fn add_inplace(mut x1: BigDecimal, x2: BigDecimal) raises:
             x1.sign = False
 
 
-fn subtract_inplace(mut x1: BigDecimal, x2: BigDecimal) raises:
+def subtract_inplace(mut x1: BigDecimal, x2: BigDecimal) raises:
     """Subtracts x2 from x1 in place.
 
     This avoids constructing a new BigDecimal for the result.
@@ -293,7 +293,7 @@ fn subtract_inplace(mut x1: BigDecimal, x2: BigDecimal) raises:
     add_inplace(x1, neg_x2)
 
 
-fn true_divide(
+def true_divide(
     x: BigDecimal, y: BigDecimal, precision: Int
 ) raises -> BigDecimal:
     """Returns the quotient of two numbers with specified precision.
@@ -334,7 +334,7 @@ fn true_divide(
     return true_divide_general(x, y, precision)
 
 
-fn true_divide_fast(
+def true_divide_fast(
     x: BigDecimal, y: BigDecimal, minimum_precision: Int
 ) raises -> BigDecimal:
     """Returns the quotient of two numbers.
@@ -413,7 +413,7 @@ fn true_divide_fast(
     )
 
 
-fn _true_divide_fast_truncated(
+def _true_divide_fast_truncated(
     x: BigDecimal,
     y: BigDecimal,
     minimum_precision: Int,
@@ -464,7 +464,7 @@ fn _true_divide_fast_truncated(
     )
 
 
-fn true_divide_general(
+def true_divide_general(
     x: BigDecimal, y: BigDecimal, precision: Int
 ) raises -> BigDecimal:
     """Returns the quotient of two numbers with the specified precision.
@@ -571,7 +571,7 @@ fn true_divide_general(
     return result^
 
 
-fn _true_divide_general_truncated(
+def _true_divide_general_truncated(
     x: BigDecimal,
     y: BigDecimal,
     precision: Int,
@@ -669,7 +669,7 @@ fn _true_divide_general_truncated(
     return result^
 
 
-fn true_divide_inexact(
+def true_divide_inexact(
     x1: BigDecimal, x2: BigDecimal, number_of_significant_digits: Int
 ) raises -> BigDecimal:
     """Returns the quotient of two numbers with number of significant digits.
@@ -751,7 +751,7 @@ fn true_divide_inexact(
     )
 
 
-fn _true_divide_inexact_truncated(
+def _true_divide_inexact_truncated(
     x1: BigDecimal,
     x2: BigDecimal,
     number_of_significant_digits: Int,
@@ -811,7 +811,7 @@ fn _true_divide_inexact_truncated(
     )
 
 
-fn true_divide_inexact_by_uint32(
+def true_divide_inexact_by_uint32(
     x1: BigDecimal, y: UInt32, number_of_significant_digits: Int
 ) raises -> BigDecimal:
     """Returns the quotient of a BigDecimal divided by a small UInt32 integer.
@@ -886,7 +886,7 @@ fn true_divide_inexact_by_uint32(
     )
 
 
-fn truncate_divide(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
+def truncate_divide(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
     """Returns the quotient of two numbers truncated to zeros.
 
     Args:
@@ -927,7 +927,7 @@ fn truncate_divide(x1: BigDecimal, x2: BigDecimal) raises -> BigDecimal:
         return BigDecimal(quotient^, 0, x1.sign != x2.sign)
 
 
-fn truncate_modulo(
+def truncate_modulo(
     x1: BigDecimal, x2: BigDecimal, precision: Int
 ) raises -> BigDecimal:
     """Returns the trucated modulo of two numbers.

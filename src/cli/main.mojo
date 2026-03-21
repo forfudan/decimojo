@@ -19,7 +19,7 @@ from calculator.evaluator import evaluate_rpn, final_round
 from calculator.display import print_error
 
 
-fn main():
+def main():
     try:
         _run()
     except e:
@@ -30,7 +30,7 @@ fn main():
         exit(1)
 
 
-fn _run() raises:
+def _run() raises:
     var cmd = Command(
         "decimo",
         (
@@ -166,7 +166,7 @@ fn _run() raises:
         exit(1)
 
 
-fn _display_calc_error(error_msg: String, expr: String):
+def _display_calc_error(error_msg: String, expr: String):
     """Parse a calculator error message and display it with colours
     and a caret indicator.
 
@@ -209,7 +209,7 @@ fn _display_calc_error(error_msg: String, expr: String):
     print_error(error_msg)
 
 
-fn _pad_to_precision(plain: String, precision: Int) -> String:
+def _pad_to_precision(plain: String, precision: Int) -> String:
     """Pad (or add) trailing zeros so the fractional part has exactly
     `precision` digits.
     """
@@ -233,7 +233,7 @@ fn _pad_to_precision(plain: String, precision: Int) -> String:
     return plain + "0" * (precision - frac_len)
 
 
-fn _parse_rounding_mode(name: String) -> RoundingMode:
+def _parse_rounding_mode(name: String) -> RoundingMode:
     """Convert a CLI rounding-mode name (hyphenated) to a RoundingMode value."""
     if name == "half-even":
         return RoundingMode.half_even()

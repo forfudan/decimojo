@@ -12,7 +12,7 @@ from decimo.tests import TestCase, parse_file, load_test_cases
 comptime file_path = "tests/bigdecimal/test_data/bigdecimal_rounding.toml"
 
 
-fn test_bigdecimal_rounding() raises:
+def test_bigdecimal_rounding() raises:
     # Load test cases from TOML file
     var pydecimal = Python.import_module("decimal")
     # Set high precision so Python's quantize doesn't raise InvalidOperation
@@ -293,7 +293,7 @@ fn test_bigdecimal_rounding() raises:
     )
 
 
-fn test_default_rounding_mode() raises:
+def test_default_rounding_mode() raises:
     """Test that the default rounding mode is ROUND_HALF_EVEN."""
     # print("------------------------------------------------------")
     # print("Testing BigDecimal default rounding mode...")
@@ -321,7 +321,7 @@ fn test_default_rounding_mode() raises:
     # print("✓ Default rounding mode tests passed")
 
 
-fn test_quantize_basic() raises:
+def test_quantize_basic() raises:
     """Test basic quantize() functionality."""
     var pydecimal = Python.import_module("decimal")
     var toml = parse_file(file_path)
@@ -356,7 +356,7 @@ fn test_quantize_basic() raises:
     )
 
 
-fn test_quantize_financial() raises:
+def test_quantize_financial() raises:
     """Test quantize() for financial calculations."""
     var pydecimal = Python.import_module("decimal")
     var toml = parse_file(file_path)
@@ -391,7 +391,7 @@ fn test_quantize_financial() raises:
     )
 
 
-fn test_quantize_scientific() raises:
+def test_quantize_scientific() raises:
     """Test quantize() for scientific measurements."""
     var pydecimal = Python.import_module("decimal")
     var toml = parse_file(file_path)
@@ -426,7 +426,7 @@ fn test_quantize_scientific() raises:
     )
 
 
-fn test_quantize_negative_scale() raises:
+def test_quantize_negative_scale() raises:
     """Test quantize() with negative scale (scientific notation)."""
     var pydecimal = Python.import_module("decimal")
     var toml = parse_file(file_path)
@@ -461,7 +461,7 @@ fn test_quantize_negative_scale() raises:
     )
 
 
-fn test_quantize_add_zeros() raises:
+def test_quantize_add_zeros() raises:
     """Test quantize() adding trailing zeros."""
     var pydecimal = Python.import_module("decimal")
     var toml = parse_file(file_path)
@@ -496,7 +496,7 @@ fn test_quantize_add_zeros() raises:
     )
 
 
-fn test_quantize_same_scale() raises:
+def test_quantize_same_scale() raises:
     """Test quantize() when scales are already the same."""
     var pydecimal = Python.import_module("decimal")
     var toml = parse_file(file_path)
@@ -531,7 +531,7 @@ fn test_quantize_same_scale() raises:
     )
 
 
-fn test_quantize_normalization() raises:
+def test_quantize_normalization() raises:
     """Test quantize() with normalized templates ('3.1E+2' vs '31E1')."""
     var pydecimal = Python.import_module("decimal")
     var toml = parse_file(file_path)
@@ -566,7 +566,7 @@ fn test_quantize_normalization() raises:
     )
 
 
-fn test_quantize_edge_cases() raises:
+def test_quantize_edge_cases() raises:
     """Test quantize() edge cases with banker's rounding."""
     var pydecimal = Python.import_module("decimal")
     var toml = parse_file(file_path)
@@ -601,7 +601,7 @@ fn test_quantize_edge_cases() raises:
     )
 
 
-fn test_quantize_rounding_modes() raises:
+def test_quantize_rounding_modes() raises:
     """Test quantize() with different rounding modes."""
     var pydecimal = Python.import_module("decimal")
     var toml = parse_file(file_path)
@@ -655,7 +655,7 @@ fn test_quantize_rounding_modes() raises:
     )
 
 
-fn main() raises:
+def main() raises:
     # print("Running BigDecimal rounding tests")
 
     # Test different rounding modes

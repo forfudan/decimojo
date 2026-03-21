@@ -13,12 +13,12 @@ from decimo.bigint.bigint import BigInt
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_invert_zero() raises:
+def test_invert_zero() raises:
     """Tests ~0 = -1."""
     testing.assert_equal(String(~BigInt(0)), "-1")
 
 
-fn test_invert_positive() raises:
+def test_invert_positive() raises:
     """Tests ~x = -(x+1) for positive x."""
     testing.assert_equal(String(~BigInt(1)), "-2")
     testing.assert_equal(String(~BigInt(2)), "-3")
@@ -27,7 +27,7 @@ fn test_invert_positive() raises:
     testing.assert_equal(String(~BigInt(1000000)), "-1000001")
 
 
-fn test_invert_negative() raises:
+def test_invert_negative() raises:
     """Tests ~(-x) = x - 1 for negative x."""
     testing.assert_equal(String(~BigInt(-1)), "0")
     testing.assert_equal(String(~BigInt(-2)), "1")
@@ -37,7 +37,7 @@ fn test_invert_negative() raises:
     testing.assert_equal(String(~BigInt(-1000001)), "1000000")
 
 
-fn test_invert_double() raises:
+def test_invert_double() raises:
     """Tests ~~x = x (involution)."""
     testing.assert_equal(String(~(~BigInt(0))), "0")
     testing.assert_equal(String(~(~BigInt(42))), "42")
@@ -48,7 +48,7 @@ fn test_invert_double() raises:
     )
 
 
-fn test_invert_large() raises:
+def test_invert_large() raises:
     """Tests ~x for large multi-word values."""
     # ~(2^32) = -(2^32 + 1)
     testing.assert_equal(String(~BigInt("4294967296")), "-4294967297")
@@ -67,7 +67,7 @@ fn test_invert_large() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_and_both_positive() raises:
+def test_and_both_positive() raises:
     """Tests Positive & Positive → Positive."""
     # 0xFF & 0x0F = 0x0F = 15
     testing.assert_equal(String(BigInt(255) & BigInt(15)), "15")
@@ -79,7 +79,7 @@ fn test_and_both_positive() raises:
     testing.assert_equal(String(BigInt(42) & BigInt(42)), "42")
 
 
-fn test_and_positive_negative() raises:
+def test_and_positive_negative() raises:
     """Tests Positive & Negative → Positive (Python semantics).
     In Python: 5 & -3 = 5.
     5    = ...00000101
@@ -98,7 +98,7 @@ fn test_and_positive_negative() raises:
     testing.assert_equal(String(BigInt(12) & BigInt(-8)), "8")
 
 
-fn test_and_both_negative() raises:
+def test_and_both_negative() raises:
     """Tests Negative & Negative → Negative (Python semantics).
     In Python: -5 & -3 = -7.
     -5   = ...11111011
@@ -117,7 +117,7 @@ fn test_and_both_negative() raises:
     testing.assert_equal(String(BigInt(-256) & BigInt(-16)), "-256")
 
 
-fn test_and_large_values() raises:
+def test_and_large_values() raises:
     """AND with multi-word values."""
     # (2^64 - 1) & (2^32 - 1) = 2^32 - 1
     var all_64 = BigInt("18446744073709551615")
@@ -130,7 +130,7 @@ fn test_and_large_values() raises:
     )
 
 
-fn test_and_with_int() raises:
+def test_and_with_int() raises:
     """AND with Int overload."""
     testing.assert_equal(String(BigInt(255) & 15), "15")
     testing.assert_equal(String(BigInt(-5) & -3), "-7")
@@ -141,7 +141,7 @@ fn test_and_with_int() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_or_both_positive() raises:
+def test_or_both_positive() raises:
     """Tests Positive | Positive → Positive."""
     # 0b1010 | 0b1100 = 0b1110 = 14
     testing.assert_equal(String(BigInt(10) | BigInt(12)), "14")
@@ -153,7 +153,7 @@ fn test_or_both_positive() raises:
     testing.assert_equal(String(BigInt(42) | BigInt(42)), "42")
 
 
-fn test_or_positive_negative() raises:
+def test_or_positive_negative() raises:
     """Tests Positive | Negative → Negative (Python semantics).
     In Python: 5 | -3 = -3.
     5    = ...00000101
@@ -172,7 +172,7 @@ fn test_or_positive_negative() raises:
     testing.assert_equal(String(BigInt(12) | BigInt(-8)), "-4")
 
 
-fn test_or_both_negative() raises:
+def test_or_both_negative() raises:
     """Tests Negative | Negative → Negative (Python semantics).
     In Python: -5 | -3 = -1.
     -5   = ...11111011
@@ -185,13 +185,13 @@ fn test_or_both_negative() raises:
     testing.assert_equal(String(BigInt(-256) | BigInt(-16)), "-16")
 
 
-fn test_or_large_values() raises:
+def test_or_large_values() raises:
     """OR with multi-word values."""
     # (2^32) | 1 = 2^32 + 1
     testing.assert_equal(String(BigInt("4294967296") | BigInt(1)), "4294967297")
 
 
-fn test_or_with_int() raises:
+def test_or_with_int() raises:
     """OR with Int overload."""
     testing.assert_equal(String(BigInt(10) | 12), "14")
     testing.assert_equal(String(BigInt(5) | -3), "-3")
@@ -202,7 +202,7 @@ fn test_or_with_int() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_xor_both_positive() raises:
+def test_xor_both_positive() raises:
     """Positive ^ Positive → Positive."""
     # 0b1010 ^ 0b1100 = 0b0110 = 6
     testing.assert_equal(String(BigInt(10) ^ BigInt(12)), "6")
@@ -214,7 +214,7 @@ fn test_xor_both_positive() raises:
     testing.assert_equal(String(BigInt(255) ^ BigInt(15)), "240")
 
 
-fn test_xor_positive_negative() raises:
+def test_xor_positive_negative() raises:
     """Tests Positive ^ Negative → Negative (Python semantics).
     In Python: 5 ^ -3 = -8.
     5    = ...00000101
@@ -234,7 +234,7 @@ fn test_xor_positive_negative() raises:
     testing.assert_equal(String(BigInt(12) ^ BigInt(-8)), "-12")
 
 
-fn test_xor_both_negative() raises:
+def test_xor_both_negative() raises:
     """Tests Negative ^ Negative → Positive (Python semantics).
     In Python: -5 ^ -3 = 6.
     -5   = ...11111011
@@ -250,7 +250,7 @@ fn test_xor_both_negative() raises:
     testing.assert_equal(String(BigInt(-256) ^ BigInt(-16)), "240")
 
 
-fn test_xor_large_values() raises:
+def test_xor_large_values() raises:
     """XOR with multi-word values."""
     # (2^32) ^ 1 = 2^32 + 1
     testing.assert_equal(String(BigInt("4294967296") ^ BigInt(1)), "4294967297")
@@ -260,7 +260,7 @@ fn test_xor_large_values() raises:
     testing.assert_equal(String(big ^ big.copy()), "0")
 
 
-fn test_xor_with_int() raises:
+def test_xor_with_int() raises:
     """XOR with Int overload."""
     testing.assert_equal(String(BigInt(10) ^ 12), "6")
     testing.assert_equal(String(BigInt(5) ^ -3), "-8")
@@ -271,21 +271,21 @@ fn test_xor_with_int() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_augmented_and() raises:
+def test_augmented_and() raises:
     """Test &= operator."""
     var x = BigInt(255)
     x &= BigInt(15)
     testing.assert_equal(String(x), "15")
 
 
-fn test_augmented_or() raises:
+def test_augmented_or() raises:
     """Test |= operator."""
     var x = BigInt(10)
     x |= BigInt(12)
     testing.assert_equal(String(x), "14")
 
 
-fn test_augmented_xor() raises:
+def test_augmented_xor() raises:
     """Test ^= operator."""
     var x = BigInt(10)
     x ^= BigInt(12)
@@ -297,7 +297,7 @@ fn test_augmented_xor() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_demorgan_laws() raises:
+def test_demorgan_laws() raises:
     """De Morgan's laws: ~(a & b) = ~a | ~b, ~(a | b) = ~a & ~b."""
     var a = BigInt(42)
     var b = BigInt(99)
@@ -327,7 +327,7 @@ fn test_demorgan_laws() raises:
     )
 
 
-fn test_xor_self_cancels() raises:
+def test_xor_self_cancels() raises:
     """Tests a ^ a = 0 for various values."""
     testing.assert_equal(String(BigInt(0) ^ BigInt(0)), "0")
     testing.assert_equal(String(BigInt(42) ^ BigInt(42)), "0")
@@ -336,7 +336,7 @@ fn test_xor_self_cancels() raises:
     testing.assert_equal(String(big ^ big.copy()), "0")
 
 
-fn test_and_with_minus_one() raises:
+def test_and_with_minus_one() raises:
     """Tests a & -1 = a (AND with all-ones is identity)."""
     testing.assert_equal(String(BigInt(0) & BigInt(-1)), "0")
     testing.assert_equal(String(BigInt(42) & BigInt(-1)), "42")
@@ -347,20 +347,20 @@ fn test_and_with_minus_one() raises:
     )
 
 
-fn test_or_with_zero() raises:
+def test_or_with_zero() raises:
     """Tests a | 0 = a (OR with zero is identity)."""
     testing.assert_equal(String(BigInt(0) | BigInt(0)), "0")
     testing.assert_equal(String(BigInt(42) | BigInt(0)), "42")
     testing.assert_equal(String(BigInt(-42) | BigInt(0)), "-42")
 
 
-fn test_xor_with_zero() raises:
+def test_xor_with_zero() raises:
     """Tests a ^ 0 = a (XOR with zero is identity)."""
     testing.assert_equal(String(BigInt(42) ^ BigInt(0)), "42")
     testing.assert_equal(String(BigInt(-42) ^ BigInt(0)), "-42")
 
 
-fn test_commutativity() raises:
+def test_commutativity() raises:
     """Tests a op b = b op a for all binary bitwise ops."""
     var a = BigInt(123)
     var b = BigInt(-456)
@@ -370,7 +370,7 @@ fn test_commutativity() raises:
     testing.assert_equal(String(a ^ b), String(b ^ a))
 
 
-fn test_python_cross_check() raises:
+def test_python_cross_check() raises:
     """Cross-check specific values against Python results.
     Computed in Python 3.13:
         123 & -456 = 56
@@ -388,7 +388,7 @@ fn test_python_cross_check() raises:
     testing.assert_equal(String(BigInt(-100) ^ BigInt(-200)), "164")
 
 
-fn test_word_boundary_values() raises:
+def test_word_boundary_values() raises:
     """Test values at word boundaries (32-bit, 64-bit)."""
     # 2^32 - 1 = 0xFFFFFFFF (single word, all bits set)
     var w32 = BigInt("4294967295")
@@ -421,24 +421,24 @@ fn test_word_boundary_values() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_bit_count_zero() raises:
+def test_bit_count_zero() raises:
     """Tests bit_count(0) = 0."""
     testing.assert_equal(BigInt(0).bit_count(), 0)
 
 
-fn test_bit_count_one() raises:
+def test_bit_count_one() raises:
     """Tests bit_count(1) = 1."""
     testing.assert_equal(BigInt(1).bit_count(), 1)
 
 
-fn test_bit_count_powers_of_two() raises:
+def test_bit_count_powers_of_two() raises:
     """Powers of 2 have exactly 1 bit set."""
     testing.assert_equal(BigInt(2).bit_count(), 1)
     testing.assert_equal(BigInt(4).bit_count(), 1)
     testing.assert_equal(BigInt(1024).bit_count(), 1)
 
 
-fn test_bit_count_small() raises:
+def test_bit_count_small() raises:
     """Small values: 7 = 0b111 (3 bits), 13 = 0b1101 (3 bits)."""
     testing.assert_equal(BigInt(7).bit_count(), 3)
     testing.assert_equal(BigInt(13).bit_count(), 3)
@@ -446,18 +446,18 @@ fn test_bit_count_small() raises:
     testing.assert_equal(BigInt(255).bit_count(), 8)
 
 
-fn test_bit_count_negative() raises:
+def test_bit_count_negative() raises:
     """Tests bit_count on negative values counts bits in the magnitude."""
     testing.assert_equal(BigInt(-7).bit_count(), 3)
     testing.assert_equal(BigInt(-1).bit_count(), 1)
 
 
-fn test_bit_count_large() raises:
+def test_bit_count_large() raises:
     """2^32 - 1 = 0xFFFFFFFF has 32 bits set."""
     var n = BigInt(1) << 32
     n = n - BigInt(1)  # 2^32 - 1
     testing.assert_equal(n.bit_count(), 32)
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

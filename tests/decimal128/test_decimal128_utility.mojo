@@ -16,7 +16,7 @@ from decimo.decimal128.utility import (
 )
 
 
-fn test_number_of_digits() raises:
+def test_number_of_digits() raises:
     """Tests for number_of_digits function."""
     # UInt128
     assert_equal(number_of_digits(UInt128(0)), 0)
@@ -38,7 +38,7 @@ fn test_number_of_digits() raises:
     )
 
 
-fn test_truncate_to_max_below() raises:
+def test_truncate_to_max_below() raises:
     """Truncate_to_max with values at or below MAX — should be unchanged."""
     assert_equal(truncate_to_max(UInt128(123456)), UInt128(123456))
     assert_equal(truncate_to_max(UInt256(7654321)), UInt256(7654321))
@@ -52,7 +52,7 @@ fn test_truncate_to_max_below() raises:
     )
 
 
-fn test_truncate_to_max_above() raises:
+def test_truncate_to_max_above() raises:
     """Truncate_to_max with values above MAX — should be truncated."""
     # MAX + 1
     var max_plus_1 = UInt256(Decimal128.MAX_AS_UINT128) + UInt256(1)
@@ -92,7 +92,7 @@ fn test_truncate_to_max_above() raises:
     )
 
 
-fn test_truncate_banker_rounding() raises:
+def test_truncate_banker_rounding() raises:
     """Banker's rounding edge cases in truncate_to_max."""
     # Round down to even (5 as rounding digit, preceding even)
     assert_equal(
@@ -131,7 +131,7 @@ fn test_truncate_banker_rounding() raises:
     )
 
 
-fn test_round_to_keep_first_n_digits() raises:
+def test_round_to_keep_first_n_digits() raises:
     """Tests for round_to_keep_first_n_digits."""
     # Keep 0 digits (round to nearest power of 10)
     assert_equal(
@@ -183,10 +183,10 @@ fn test_round_to_keep_first_n_digits() raises:
     )
 
 
-fn test_bitcast() raises:
+def test_bitcast() raises:
     """Test bitcast returns coefficient bits."""
 
-    fn _check(d: Decimal128) raises:
+    def _check(d: Decimal128) raises:
         assert_equal(d.coefficient(), bitcast[DType.uint128](d))
 
     _check(Decimal128("123.456"))
@@ -197,5 +197,5 @@ fn test_bitcast() raises:
     _check(Decimal128(12345, 67890, 0xABCDEF, 0x55))
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

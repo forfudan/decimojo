@@ -18,7 +18,7 @@ comptime data_path = "tests/decimal128/test_data/decimal128_factorial.toml"
 # ─── TOML-driven tests ──────────────────────────────────────────────────────
 
 
-fn test_factorial_values() raises:
+def test_factorial_values() raises:
     """Exact factorial values for 0..27 (16 cases via TOML)."""
     var doc = parse_file(data_path)
     var cases = load_test_cases[unary=True](doc, "factorial")
@@ -30,7 +30,7 @@ fn test_factorial_values() raises:
 # ─── Inline tests ───────────────────────────────────────────────────────────
 
 
-fn test_factorial_properties() raises:
+def test_factorial_properties() raises:
     """Mathematical property: (n+1)! = (n+1) * n! for n = 0..26."""
     for n in range(0, 26):
         var n_fact = factorial(n)
@@ -43,7 +43,7 @@ fn test_factorial_properties() raises:
         )
 
 
-fn test_factorial_exceptions() raises:
+def test_factorial_exceptions() raises:
     """Factorial of negative or > 27 should raise."""
     # Negative input
     var caught = False
@@ -64,7 +64,7 @@ fn test_factorial_exceptions() raises:
     testing.assert_true(caught, "factorial(28) exception")
 
 
-fn test_factorial_reciprocal() raises:
+def test_factorial_reciprocal() raises:
     """Factorial_reciprocal(n) should equal 1/factorial(n) for all n in 0..27.
     """
     var all_equal = True
@@ -89,5 +89,5 @@ fn test_factorial_reciprocal() raises:
     )
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

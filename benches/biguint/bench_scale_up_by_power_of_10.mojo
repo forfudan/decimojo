@@ -15,7 +15,7 @@ from std.time import perf_counter_ns
 from std.collections import List
 
 
-fn run_case(
+def run_case(
     bc: BenchCase,
     iterations: Int,
     log_file: PythonObject,
@@ -37,7 +37,7 @@ fn run_case(
     log_print("BigUInt:         " + String(tm) + " ns/iter", log_file)
 
 
-fn main() raises:
+def main() raises:
     var toml_path = "bench_data/scale_up_by_power_of_10.toml"
     var log_file = open_log_file("benchmark_biguint_scale_up")
     print_header("Decimo BigUInt scale_up_by_power_of_10 Benchmark", log_file)

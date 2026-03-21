@@ -40,7 +40,7 @@ import decimo.decimal128.utility
 
 
 # TODO: Like `multiply` use combined bits to determine the appropriate method
-fn add(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
+def add(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
     """
     Adds two Decimal128 values and returns a new Decimal128 containing the sum.
     The results will be rounded (up to even) if digits are too many.
@@ -346,7 +346,7 @@ fn add(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
             )
 
 
-fn subtract(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
+def subtract(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
     """
     Subtracts the x2 Decimal128 from x1 and returns a new Decimal128.
 
@@ -377,7 +377,7 @@ fn subtract(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
         raise Error("Error in `subtract()`; ", e)
 
 
-fn negative(x: Decimal128) -> Decimal128:
+def negative(x: Decimal128) -> Decimal128:
     """
     Returns the negative of a Decimal128 number.
 
@@ -400,7 +400,7 @@ fn negative(x: Decimal128) -> Decimal128:
     return result
 
 
-fn absolute(x: Decimal128) -> Decimal128:
+def absolute(x: Decimal128) -> Decimal128:
     """
     Returns the absolute value of a Decimal128 number.
 
@@ -415,7 +415,7 @@ fn absolute(x: Decimal128) -> Decimal128:
     return x
 
 
-fn multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
+def multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
     """
     Multiplies two Decimal128 values and returns a new Decimal128 containing the product.
 
@@ -768,7 +768,7 @@ fn multiply(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
     return Decimal128(low, mid, high, UInt32(final_scale), is_negative)
 
 
-fn divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
+def divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
     """
     Divides x1 by x2 and returns a new Decimal128 containing the quotient.
     Uses a simpler string-based long division approach as fallback.
@@ -1227,7 +1227,7 @@ fn divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
             )
 
 
-fn truncate_divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
+def truncate_divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
     """Returns the integral part of the quotient (truncating towards zero).
     The following identity always holds: x_1 == (x_1 // x_2) * x_2 + x_1 % x_2.
 
@@ -1244,7 +1244,7 @@ fn truncate_divide(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
         raise Error("Error in `divide()`: ", e)
 
 
-fn modulo(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
+def modulo(x1: Decimal128, x2: Decimal128) raises -> Decimal128:
     """Returns the remainder of the division of x1 by x2.
     The following identity always holds: x_1 == (x_1 // x_2) * x_2 + x_1 % x_2.
 

@@ -18,7 +18,7 @@ from std.time import perf_counter_ns
 from std.collections import List
 
 
-fn get_mojo_rounding(mode_str: String) -> RoundingMode:
+def get_mojo_rounding(mode_str: String) -> RoundingMode:
     """Map a TOML rounding string to a Mojo RoundingMode enum value."""
     if mode_str == "ROUND_HALF_UP":
         return RoundingMode.ROUND_HALF_UP
@@ -30,7 +30,7 @@ fn get_mojo_rounding(mode_str: String) -> RoundingMode:
         return RoundingMode.ROUND_HALF_EVEN
 
 
-fn get_py_rounding(
+def get_py_rounding(
     mode_str: String, pydecimal: PythonObject
 ) raises -> PythonObject:
     """Map a TOML rounding string to a Python decimal rounding constant."""
@@ -44,7 +44,7 @@ fn get_py_rounding(
         return pydecimal.ROUND_HALF_EVEN
 
 
-fn main() raises:
+def main() raises:
     var log_file = open_log_file("benchmark_quantize")
     print_header("Decimo Decimal128 Quantize Benchmark", log_file)
 

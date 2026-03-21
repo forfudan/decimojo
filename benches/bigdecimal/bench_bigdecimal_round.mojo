@@ -16,7 +16,7 @@ from std.time import perf_counter_ns
 from std.collections import List
 
 
-fn parse_rounding_mode(mode_str: String) raises -> RoundingMode:
+def parse_rounding_mode(mode_str: String) raises -> RoundingMode:
     """Parse a rounding mode string to RoundingMode enum."""
     if mode_str == "ROUND_DOWN":
         return RoundingMode.ROUND_DOWN
@@ -30,7 +30,7 @@ fn parse_rounding_mode(mode_str: String) raises -> RoundingMode:
         raise Error("Unknown rounding mode: " + mode_str)
 
 
-fn run_case(
+def run_case(
     bc: BenchCase,
     iterations: Int,
     pydecimal: PythonObject,
@@ -103,7 +103,7 @@ fn run_case(
         log_print("Skipping this case", log_file)
 
 
-fn main() raises:
+def main() raises:
     var log_file = open_log_file("benchmark_bigdecimal_round")
     print_header("Decimo BigDecimal Rounding Benchmark", log_file)
 

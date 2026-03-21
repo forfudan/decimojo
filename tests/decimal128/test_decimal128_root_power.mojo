@@ -19,7 +19,7 @@ comptime data_path = "tests/decimal128/test_data/decimal128_root_power.toml"
 # ─── TOML-driven tests ──────────────────────────────────────────────────────
 
 
-fn test_root_exact() raises:
+def test_root_exact() raises:
     """Exact nth-root results (9 cases via TOML)."""
     var doc = parse_file(data_path)
     var cases = load_test_cases(doc, "root_exact")
@@ -28,7 +28,7 @@ fn test_root_exact() raises:
         testing.assert_equal(String(result), tc.expected, tc.description)
 
 
-fn test_power_int() raises:
+def test_power_int() raises:
     """Power with integer exponents (5 cases via TOML)."""
     var doc = parse_file(data_path)
     var cases = load_test_cases(doc, "power_int")
@@ -37,7 +37,7 @@ fn test_power_int() raises:
         testing.assert_equal(String(result), tc.expected, tc.description)
 
 
-fn test_power_decimal() raises:
+def test_power_decimal() raises:
     """Power with decimal exponents — exact results (4 cases via TOML)."""
     var doc = parse_file(data_path)
     var cases = load_test_cases(doc, "power_decimal")
@@ -49,10 +49,10 @@ fn test_power_decimal() raises:
 # ─── root() inline tests ────────────────────────────────────────────────────
 
 
-fn test_root_approximate() raises:
+def test_root_approximate() raises:
     """Non-exact roots (startswith checks)."""
 
-    fn _check(a: String, n: Int, prefix: String, desc: String) raises:
+    def _check(a: String, n: Int, prefix: String, desc: String) raises:
         testing.assert_true(String(root(Dec128(a), n)).startswith(prefix), desc)
 
     _check("2", 2, "1.4142135623730950488", "√2")
@@ -62,7 +62,7 @@ fn test_root_approximate() raises:
     _check("10", 100, "1.02329299228075413096627517", "100th root of 10")
 
 
-fn test_root_exceptions() raises:
+def test_root_exceptions() raises:
     """Error conditions for root()."""
     # 0th root
     var caught = False
@@ -92,10 +92,10 @@ fn test_root_exceptions() raises:
     testing.assert_true(caught, "even root of negative exception")
 
 
-fn test_root_precision() raises:
+def test_root_precision() raises:
     """High-precision root checks."""
 
-    fn _check(a: String, n: Int, prefix: String, desc: String) raises:
+    def _check(a: String, n: Int, prefix: String, desc: String) raises:
         testing.assert_true(String(root(Dec128(a), n)).startswith(prefix), desc)
 
     _check("2", 2, "1.414213562373095048801688724", "√2 high precision")
@@ -103,7 +103,7 @@ fn test_root_precision() raises:
     _check("5", 2, "2.236067977499789696", "√5 high precision")
 
 
-fn test_root_identities() raises:
+def test_root_identities() raises:
     """Mathematical identities for root()."""
     var tol = Dec128("0.0000000001")
 
@@ -136,7 +136,7 @@ fn test_root_identities() raises:
 # ─── power() inline tests ───────────────────────────────────────────────────
 
 
-fn test_power_approximate() raises:
+def test_power_approximate() raises:
     """Non-exact power results (startswith checks)."""
     testing.assert_true(
         String(power(Dec128(2), Dec128("1.5"))).startswith(
@@ -152,7 +152,7 @@ fn test_power_approximate() raises:
     )
 
 
-fn test_power_exceptions() raises:
+def test_power_exceptions() raises:
     """Error conditions for power()."""
     # 0^(-2) should raise
     var caught = False
@@ -173,5 +173,5 @@ fn test_power_exceptions() raises:
     testing.assert_true(caught, "(-2)^0.5 exception")
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

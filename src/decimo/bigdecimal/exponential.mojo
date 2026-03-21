@@ -96,7 +96,7 @@ struct MathCache:
     var _ln10_precision: Int
     """Precision (in significant digits) at which _ln10 was computed."""
 
-    fn __init__(out self):
+    def __init__(out self):
         """Initializes an empty MathCache with no cached values."""
         self._ln2 = BigDecimal(BigUInt.zero(), 0, False)
         self._ln1d25 = BigDecimal(BigUInt.zero(), 0, False)
@@ -105,7 +105,7 @@ struct MathCache:
         self._ln1d25_precision = 0
         self._ln10_precision = 0
 
-    fn get_ln2(mut self, precision: Int) raises -> BigDecimal:
+    def get_ln2(mut self, precision: Int) raises -> BigDecimal:
         """Returns ln(2) computed to at least the specified precision.
 
         If the cached value has sufficient precision, it is returned (rounded
@@ -131,7 +131,7 @@ struct MathCache:
         self._ln2_precision = precision
         return self._ln2.copy()
 
-    fn get_ln1d25(mut self, precision: Int) raises -> BigDecimal:
+    def get_ln1d25(mut self, precision: Int) raises -> BigDecimal:
         """Returns ln(1.25) computed to at least the specified precision.
 
         If the cached value has sufficient precision, it is returned (rounded
@@ -157,7 +157,7 @@ struct MathCache:
         self._ln1d25_precision = precision
         return self._ln1d25.copy()
 
-    fn get_ln10(mut self, precision: Int) raises -> BigDecimal:
+    def get_ln10(mut self, precision: Int) raises -> BigDecimal:
         """Returns ln(10) computed to at least the specified precision.
 
         If the cached value has sufficient precision, it is returned (rounded
@@ -206,7 +206,7 @@ struct MathCache:
 # ===----------------------------------------------------------------------=== #
 
 
-fn power(
+def power(
     base: BigDecimal, exponent: BigDecimal, precision: Int = 28
 ) raises -> BigDecimal:
     """Raises a BigDecimal base to an arbitrary BigDecimal exponent power.
@@ -292,7 +292,7 @@ fn power(
     return exp_result^
 
 
-fn integer_power(
+def integer_power(
     base: BigDecimal, exponent: BigDecimal, precision: Int
 ) raises -> BigDecimal:
     """Raises a base to integer exponents using binary exponentiation.
@@ -367,7 +367,7 @@ fn integer_power(
     return result^
 
 
-fn _strip_trailing_fractional_zeros(mut number: BigDecimal):
+def _strip_trailing_fractional_zeros(mut number: BigDecimal):
     """Strip trailing zeros that are after the decimal point only.
 
     Unlike normalize(), this preserves integer trailing zeros. For example,
@@ -406,7 +406,7 @@ fn _strip_trailing_fractional_zeros(mut number: BigDecimal):
     number.scale -= n_strip
 
 
-fn root(x: BigDecimal, n: BigDecimal, precision: Int) raises -> BigDecimal:
+def root(x: BigDecimal, n: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculate the nth root of a BigDecimal number.
 
     Args:
@@ -522,7 +522,7 @@ fn root(x: BigDecimal, n: BigDecimal, precision: Int) raises -> BigDecimal:
     return result^
 
 
-fn integer_root(
+def integer_root(
     x: BigDecimal, n: BigDecimal, precision: Int
 ) raises -> BigDecimal:
     """Calculate the nth integer root of a BigDecimal number using Newton's
@@ -765,7 +765,7 @@ fn integer_root(
     return r^
 
 
-fn _integer_root_via_exp_ln(
+def _integer_root_via_exp_ln(
     x: BigDecimal, n: BigDecimal, precision: Int, result_sign: Bool
 ) raises -> BigDecimal:
     """Fallback: compute integer root via exp(ln(|x|)/n).
@@ -800,7 +800,7 @@ fn _integer_root_via_exp_ln(
     return result^
 
 
-fn is_integer_reciprocal_and_return(
+def is_integer_reciprocal_and_return(
     n: BigDecimal,
 ) raises -> Tuple[Bool, BigDecimal]:
     """Check if 1/n (n != 1) represents an odd integer and return the result.
@@ -819,7 +819,7 @@ fn is_integer_reciprocal_and_return(
     return Tuple(m.is_integer(), m^)
 
 
-fn is_odd_reciprocal(n: BigDecimal) raises -> Bool:
+def is_odd_reciprocal(n: BigDecimal) raises -> Bool:
     """Check if 1/n (n != 1) represents an odd integer.
 
     Args:
@@ -851,7 +851,7 @@ fn is_odd_reciprocal(n: BigDecimal) raises -> Bool:
         return False
 
 
-fn _gcd(var a: Int, var b: Int) -> Int:
+def _gcd(var a: Int, var b: Int) -> Int:
     """Compute the greatest common divisor of two integers.
 
     Handles negative inputs by taking absolute values first.
@@ -865,7 +865,7 @@ fn _gcd(var a: Int, var b: Int) -> Int:
     return a
 
 
-fn _rational_root_decomposition(
+def _rational_root_decomposition(
     n: BigDecimal,
 ) raises -> Tuple[Bool, Int, Int]:
     """Try to decompose a positive fractional n into a/b in lowest terms.
@@ -974,7 +974,7 @@ fn _rational_root_decomposition(
 # ===----------------------------------------------------------------------=== #
 
 
-fn sqrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
+def sqrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculate the square root of a BigDecimal number.
 
     This is the public API for square root. It delegates to `sqrt_exact()`,
@@ -999,7 +999,7 @@ fn sqrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
     return sqrt_exact(x, precision)
 
 
-fn fast_isqrt(c: BigUInt, working_digits: Int) raises -> BigUInt:
+def fast_isqrt(c: BigUInt, working_digits: Int) raises -> BigUInt:
     """Compute isqrt(c) using reciprocal sqrt with precision doubling for speed,
     then verify/correct with exact integer Newton iterations.
 
@@ -1149,7 +1149,7 @@ fn fast_isqrt(c: BigUInt, working_digits: Int) raises -> BigUInt:
     return n^
 
 
-fn sqrt_exact(x: BigDecimal, precision: Int) raises -> BigDecimal:
+def sqrt_exact(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculate the square root of a BigDecimal number using CPython's
     exact integer algorithm.
 
@@ -1287,7 +1287,7 @@ fn sqrt_exact(x: BigDecimal, precision: Int) raises -> BigDecimal:
     return result^
 
 
-fn sqrt_reciprocal(x: BigDecimal, precision: Int) raises -> BigDecimal:
+def sqrt_reciprocal(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculate the square root of a BigDecimal number using reciprocal square
     root iteration.
 
@@ -1460,7 +1460,7 @@ fn sqrt_reciprocal(x: BigDecimal, precision: Int) raises -> BigDecimal:
     return result^
 
 
-fn sqrt_newton(x: BigDecimal, precision: Int) raises -> BigDecimal:
+def sqrt_newton(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculates the square root of a BigDecimal number using Newton's method.
 
     Args:
@@ -1556,7 +1556,7 @@ fn sqrt_newton(x: BigDecimal, precision: Int) raises -> BigDecimal:
     return result^
 
 
-fn sqrt_decimal_approach(x: BigDecimal, precision: Int) raises -> BigDecimal:
+def sqrt_decimal_approach(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculate the square root of a BigDecimal number.
 
     Args:
@@ -1711,7 +1711,7 @@ fn sqrt_decimal_approach(x: BigDecimal, precision: Int) raises -> BigDecimal:
     return guess^
 
 
-fn cbrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
+def cbrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculate the cube root of a BigDecimal number.
 
     Args:
@@ -1738,7 +1738,7 @@ fn cbrt(x: BigDecimal, precision: Int) raises -> BigDecimal:
 # ===----------------------------------------------------------------------=== #
 
 
-fn exp(x: BigDecimal, precision: Int) raises -> BigDecimal:
+def exp(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculate the natural exponential of x (e^x) to the specified precision.
 
     Args:
@@ -1857,7 +1857,7 @@ fn exp(x: BigDecimal, precision: Int) raises -> BigDecimal:
     return result^
 
 
-fn exp_taylor_series(
+def exp_taylor_series(
     x: BigDecimal, minimum_precision: Int
 ) raises -> BigDecimal:
     """Calculate exp(x) using Taylor series for |x| <= 1.
@@ -1928,7 +1928,7 @@ fn exp_taylor_series(
 # ===----------------------------------------------------------------------=== #
 
 
-fn ln(x: BigDecimal, precision: Int) raises -> BigDecimal:
+def ln(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculate the natural logarithm of x to the specified precision.
 
     This is the non-cached version. For repeated calls, use the overload that
@@ -1948,7 +1948,9 @@ fn ln(x: BigDecimal, precision: Int) raises -> BigDecimal:
     return ln(x, precision, cache)
 
 
-fn ln(x: BigDecimal, precision: Int, mut cache: MathCache) raises -> BigDecimal:
+def ln(
+    x: BigDecimal, precision: Int, mut cache: MathCache
+) raises -> BigDecimal:
     """Calculate the natural logarithm of x to the specified precision.
 
     This overload accepts a `MathCache` to reuse cached values of ln(2) and
@@ -2043,7 +2045,7 @@ fn ln(x: BigDecimal, precision: Int, mut cache: MathCache) raises -> BigDecimal:
     return result^
 
 
-fn log(x: BigDecimal, base: BigDecimal, precision: Int) raises -> BigDecimal:
+def log(x: BigDecimal, base: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculates the logarithm of x with respect to an arbitrary base.
 
     Args:
@@ -2108,7 +2110,7 @@ fn log(x: BigDecimal, base: BigDecimal, precision: Int) raises -> BigDecimal:
     return result^
 
 
-fn log10(x: BigDecimal, precision: Int) raises -> BigDecimal:
+def log10(x: BigDecimal, precision: Int) raises -> BigDecimal:
     """Calculates the base-10 logarithm of a BigDecimal value.
 
     Args:
@@ -2155,7 +2157,7 @@ fn log10(x: BigDecimal, precision: Int) raises -> BigDecimal:
     return result^
 
 
-fn ln_series_expansion(
+def ln_series_expansion(
     z: BigDecimal, working_precision: Int
 ) raises -> BigDecimal:
     """Calculate ln(1+z) using a hybrid Taylor / atanh series.
@@ -2306,7 +2308,7 @@ fn ln_series_expansion(
     return result^
 
 
-fn compute_ln2(working_precision: Int) raises -> BigDecimal:
+def compute_ln2(working_precision: Int) raises -> BigDecimal:
     """Compute ln(2) to the specified working precision.
 
     Args:
@@ -2402,7 +2404,7 @@ fn compute_ln2(working_precision: Int) raises -> BigDecimal:
     return result^
 
 
-fn compute_ln1d25(precision: Int) raises -> BigDecimal:
+def compute_ln1d25(precision: Int) raises -> BigDecimal:
     """Compute ln(1.25) to the specified precision.
 
     Args:

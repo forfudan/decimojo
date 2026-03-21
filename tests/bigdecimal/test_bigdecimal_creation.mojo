@@ -8,7 +8,7 @@ from std.python import Python
 from decimo.bigdecimal.bigdecimal import BigDecimal
 
 
-fn test_from_python_decimal_basic() raises:
+def test_from_python_decimal_basic() raises:
     """Test basic Python Decimal to BigDecimal conversion."""
     var decimal = Python.import_module("decimal")
 
@@ -33,7 +33,7 @@ fn test_from_python_decimal_basic() raises:
     testing.assert_equal(String(mojo_int), "12345", "Integer (scale=0)")
 
 
-fn test_from_python_decimal_scale() raises:
+def test_from_python_decimal_scale() raises:
     """Test scale/exponent conversion."""
     var decimal = Python.import_module("decimal")
 
@@ -60,7 +60,7 @@ fn test_from_python_decimal_scale() raises:
     )
 
 
-fn test_from_python_decimal_scientific_notation() raises:
+def test_from_python_decimal_scientific_notation() raises:
     """Test scientific notation conversion."""
     var decimal = Python.import_module("decimal")
 
@@ -96,7 +96,7 @@ fn test_from_python_decimal_scientific_notation() raises:
     )
 
 
-fn test_from_python_decimal_high_precision() raises:
+def test_from_python_decimal_high_precision() raises:
     """Test high precision decimal conversion."""
     var decimal = Python.import_module("decimal")
 
@@ -116,7 +116,7 @@ fn test_from_python_decimal_high_precision() raises:
     testing.assert_equal(String(mojo_long), long_str, "Very long decimal")
 
 
-fn test_from_python_decimal_arithmetic() raises:
+def test_from_python_decimal_arithmetic() raises:
     """Test that converted BigDecimal can perform arithmetic correctly."""
     var decimal = Python.import_module("decimal")
 
@@ -153,7 +153,7 @@ fn test_from_python_decimal_arithmetic() raises:
     )
 
 
-fn test_from_python_decimal_sign() raises:
+def test_from_python_decimal_sign() raises:
     """Test sign handling in Python Decimal conversion."""
     var decimal = Python.import_module("decimal")
 
@@ -182,7 +182,7 @@ fn test_from_python_decimal_sign() raises:
     )
 
 
-fn test_from_python_decimal_edge_cases() raises:
+def test_from_python_decimal_edge_cases() raises:
     """Test edge cases for Python Decimal conversion."""
     var decimal = Python.import_module("decimal")
 
@@ -212,7 +212,7 @@ fn test_from_python_decimal_edge_cases() raises:
     )
 
 
-fn test_from_python_decimal_constructor() raises:
+def test_from_python_decimal_constructor() raises:
     """Test the py= constructor syntax."""
     var decimal = Python.import_module("decimal")
 
@@ -231,7 +231,7 @@ fn test_from_python_decimal_constructor() raises:
     )
 
 
-fn test_from_python_decimal_roundtrip() raises:
+def test_from_python_decimal_roundtrip() raises:
     """Test Python -> Mojo -> Python roundtrip."""
     var decimal = Python.import_module("decimal")
 
@@ -252,7 +252,7 @@ fn test_from_python_decimal_roundtrip() raises:
     )
 
 
-fn test_from_python_decimal_special_values() raises:
+def test_from_python_decimal_special_values() raises:
     """Test handling of special values."""
     var decimal = Python.import_module("decimal")
 
@@ -273,5 +273,5 @@ fn test_from_python_decimal_special_values() raises:
     # This is expected behavior and documented in the method
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

@@ -15,7 +15,7 @@ comptime file_path_arithmetics = "tests/biguint/test_data/biguint_arithmetics.to
 comptime file_path_truncate_divide = "tests/biguint/test_data/biguint_truncate_divide.toml"
 
 
-fn _set_max_str_digits(limit: Int) raises:
+def _set_max_str_digits(limit: Int) raises:
     """Set Python's int-to-string digit limit (Python 3.11+). No-op if unavailable.
     """
     try:
@@ -24,7 +24,7 @@ fn _set_max_str_digits(limit: Int) raises:
         pass
 
 
-fn test_biguint_arithmetics() raises:
+def test_biguint_arithmetics() raises:
     # Load test cases from TOML file
     _set_max_str_digits(500000)
 
@@ -153,7 +153,7 @@ fn test_biguint_arithmetics() raises:
             print("Implementation correctly throws error on underflow")
 
 
-fn test_biguint_truncate_divide() raises:
+def test_biguint_truncate_divide() raises:
     # Load test cases from TOML file
     _set_max_str_digits(500000)
 
@@ -188,7 +188,7 @@ fn test_biguint_truncate_divide() raises:
     )
 
 
-fn test_biguint_truncate_divide_random_numbers_against_python() raises:
+def test_biguint_truncate_divide_random_numbers_against_python() raises:
     # print("------------------------------------------------------")
     # print("Testing BigUInt truncate division on random numbers with python...")
 
@@ -222,7 +222,7 @@ fn test_biguint_truncate_divide_random_numbers_against_python() raises:
     # print("BigUInt truncate division tests passed!")
 
 
-fn main() raises:
+def main() raises:
     # test_biguint_arithmetics()
     # test_biguint_truncate_divide()
     # test_biguint_truncate_divide_random_numbers_against_python()

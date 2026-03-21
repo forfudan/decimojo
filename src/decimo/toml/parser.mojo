@@ -44,7 +44,7 @@ struct TOMLValue(Copyable, ImplicitlyCopyable, Movable):
     var array_values: List[TOMLValue]
     var table_values: Dict[String, TOMLValue]
 
-    fn __init__(out self):
+    def __init__(out self):
         """Initialize an empty TOML value."""
         self.type = TOMLValueType.NULL
         self.string_value = ""
@@ -54,7 +54,7 @@ struct TOMLValue(Copyable, ImplicitlyCopyable, Movable):
         self.array_values = List[TOMLValue]()
         self.table_values = Dict[String, TOMLValue]()
 
-    fn __init__(out self, string_value: String):
+    def __init__(out self, string_value: String):
         """Initialize a string TOML value."""
         self.type = TOMLValueType.STRING
         self.string_value = string_value
@@ -64,7 +64,7 @@ struct TOMLValue(Copyable, ImplicitlyCopyable, Movable):
         self.array_values = List[TOMLValue]()
         self.table_values = Dict[String, TOMLValue]()
 
-    fn __init__(out self, int_value: Int):
+    def __init__(out self, int_value: Int):
         """Initialize an integer TOML value."""
         self.type = TOMLValueType.INTEGER
         self.string_value = ""
@@ -74,7 +74,7 @@ struct TOMLValue(Copyable, ImplicitlyCopyable, Movable):
         self.array_values = List[TOMLValue]()
         self.table_values = Dict[String, TOMLValue]()
 
-    fn __init__(out self, float_value: Float64):
+    def __init__(out self, float_value: Float64):
         """Initialize a float TOML value."""
         self.type = TOMLValueType.FLOAT
         self.string_value = ""
@@ -84,7 +84,7 @@ struct TOMLValue(Copyable, ImplicitlyCopyable, Movable):
         self.array_values = List[TOMLValue]()
         self.table_values = Dict[String, TOMLValue]()
 
-    fn __init__(out self, bool_value: Bool):
+    def __init__(out self, bool_value: Bool):
         """Initialize a boolean TOML value."""
         self.type = TOMLValueType.BOOLEAN
         self.string_value = ""
@@ -94,7 +94,7 @@ struct TOMLValue(Copyable, ImplicitlyCopyable, Movable):
         self.array_values = List[TOMLValue]()
         self.table_values = Dict[String, TOMLValue]()
 
-    fn __init__(out self, *, copy: Self):
+    def __init__(out self, *, copy: Self):
         self.type = copy.type
         self.string_value = copy.string_value
         self.int_value = copy.int_value
@@ -103,15 +103,15 @@ struct TOMLValue(Copyable, ImplicitlyCopyable, Movable):
         self.array_values = copy.array_values.copy()
         self.table_values = copy.table_values.copy()
 
-    fn is_table(self) -> Bool:
+    def is_table(self) -> Bool:
         """Check if this value is a table."""
         return self.type == TOMLValueType.TABLE
 
-    fn is_array(self) -> Bool:
+    def is_array(self) -> Bool:
         """Check if this value is an array."""
         return self.type == TOMLValueType.ARRAY
 
-    fn as_string(self) -> String:
+    def as_string(self) -> String:
         """Get the value as a string."""
         if self.type == TOMLValueType.STRING:
             return self.string_value
@@ -124,14 +124,14 @@ struct TOMLValue(Copyable, ImplicitlyCopyable, Movable):
         else:
             return ""
 
-    fn as_int(self) -> Int:
+    def as_int(self) -> Int:
         """Get the value as an integer."""
         if self.type == TOMLValueType.INTEGER:
             return self.int_value
         else:
             return 0
 
-    fn as_float(self) -> Float64:
+    def as_float(self) -> Float64:
         """Get the value as a float."""
         if self.type == TOMLValueType.FLOAT:
             return self.float_value
@@ -140,20 +140,20 @@ struct TOMLValue(Copyable, ImplicitlyCopyable, Movable):
         else:
             return 0.0
 
-    fn as_bool(self) -> Bool:
+    def as_bool(self) -> Bool:
         """Get the value as a boolean."""
         if self.type == TOMLValueType.BOOLEAN:
             return self.bool_value
         else:
             return False
 
-    fn as_table(self) -> Dict[String, TOMLValue]:
+    def as_table(self) -> Dict[String, TOMLValue]:
         """Get the value as a table dictionary."""
         if self.type == TOMLValueType.TABLE:
             return self.table_values.copy()
         return Dict[String, TOMLValue]()
 
-    fn as_array(self) -> List[TOMLValue]:
+    def as_array(self) -> List[TOMLValue]:
         """Get the value as an array."""
         if self.type == TOMLValueType.ARRAY:
             return self.array_values.copy()
@@ -174,43 +174,43 @@ struct TOMLValueType(Copyable, ImplicitlyCopyable, Movable):
     var value: Int
 
     @staticmethod
-    fn null() -> TOMLValueType:
+    def null() -> TOMLValueType:
         return TOMLValueType(0)
 
     @staticmethod
-    fn string() -> TOMLValueType:
+    def string() -> TOMLValueType:
         return TOMLValueType(1)
 
     @staticmethod
-    fn integer() -> TOMLValueType:
+    def integer() -> TOMLValueType:
         return TOMLValueType(2)
 
     @staticmethod
-    fn float() -> TOMLValueType:
+    def float() -> TOMLValueType:
         return TOMLValueType(3)
 
     @staticmethod
-    fn boolean() -> TOMLValueType:
+    def boolean() -> TOMLValueType:
         return TOMLValueType(4)
 
     @staticmethod
-    fn array() -> TOMLValueType:
+    def array() -> TOMLValueType:
         return TOMLValueType(5)
 
     @staticmethod
-    fn table() -> TOMLValueType:
+    def table() -> TOMLValueType:
         return TOMLValueType(6)
 
-    fn __init__(out self, value: Int):
+    def __init__(out self, value: Int):
         self.value = value
 
-    fn __eq__(self, other: TOMLValueType) -> Bool:
+    def __eq__(self, other: TOMLValueType) -> Bool:
         return self.value == other.value
 
-    fn __ne__(self, other: TOMLValueType) -> Bool:
+    def __ne__(self, other: TOMLValueType) -> Bool:
         return self.value != other.value
 
-    fn to_string(self) -> String:
+    def to_string(self) -> String:
         if self == Self.NULL:
             return "NULL"
         elif self == Self.STRING:
@@ -234,16 +234,16 @@ struct TOMLDocument(Copyable, Movable):
 
     var root: Dict[String, TOMLValue]
 
-    fn __init__(out self):
+    def __init__(out self):
         self.root = Dict[String, TOMLValue]()
 
-    fn get(self, key: String) raises -> TOMLValue:
+    def get(self, key: String) raises -> TOMLValue:
         """Get a value from the document."""
         if key in self.root:
             return self.root[key]
         return TOMLValue()
 
-    fn get_table(self, table_name: String) raises -> Dict[String, TOMLValue]:
+    def get_table(self, table_name: String) raises -> Dict[String, TOMLValue]:
         """Get a table from the document."""
         if (
             table_name in self.root
@@ -252,13 +252,13 @@ struct TOMLDocument(Copyable, Movable):
             return self.root[table_name].table_values.copy()
         return Dict[String, TOMLValue]()
 
-    fn get_array(self, key: String) raises -> List[TOMLValue]:
+    def get_array(self, key: String) raises -> List[TOMLValue]:
         """Get an array from the document."""
         if key in self.root and self.root[key].type == TOMLValueType.ARRAY:
             return self.root[key].array_values.copy()
         return List[TOMLValue]()
 
-    fn get_array_of_tables(
+    def get_array_of_tables(
         self, key: String
     ) raises -> List[Dict[String, TOMLValue]]:
         """Get an array of tables from the document."""
@@ -277,7 +277,7 @@ struct TOMLDocument(Copyable, Movable):
 # ---------------------------------------------------------------------------
 # Helper: create a TOMLValue wrapping a Dict as a TABLE
 # ---------------------------------------------------------------------------
-fn _make_table(var d: Dict[String, TOMLValue]) -> TOMLValue:
+def _make_table(var d: Dict[String, TOMLValue]) -> TOMLValue:
     var v = TOMLValue()
     v.type = TOMLValueType.TABLE
     v.table_values = d^
@@ -289,7 +289,7 @@ fn _make_table(var d: Dict[String, TOMLValue]) -> TOMLValue:
 # intermediate tables as needed.  Detects duplicate keys.
 # path = ["a", "b"] and key = "c" means root["a"]["b"]["c"] = value
 # ---------------------------------------------------------------------------
-fn _set_value(
+def _set_value(
     mut root: Dict[String, TOMLValue],
     path: List[String],
     key: String,
@@ -351,7 +351,7 @@ fn _set_value(
 # Helper: ensure a table path exists and return a mutable reference-path
 # For [a.b.c], ensure root["a"]["b"]["c"] exists as a table.
 # ---------------------------------------------------------------------------
-fn _ensure_table_path(
+def _ensure_table_path(
     mut root: Dict[String, TOMLValue], path: List[String]
 ) raises:
     """Ensure all tables along `path` exist in `root`."""
@@ -389,7 +389,7 @@ fn _ensure_table_path(
 # Helper: for [[a.b.c]], ensure path and append a new empty table to the
 # array at the final key.
 # ---------------------------------------------------------------------------
-fn _append_array_of_tables(
+def _append_array_of_tables(
     mut root: Dict[String, TOMLValue], path: List[String]
 ) raises:
     """Append a new empty table to the array-of-tables at `path`."""
@@ -446,33 +446,33 @@ struct TOMLParser:
     var tokens: List[Token]
     var pos: Int
 
-    fn __init__(out self, source: String):
+    def __init__(out self, source: String):
         var tokenizer = Tokenizer(source)
         self.tokens = tokenizer.tokenize()
         self.pos = 0
 
-    fn __init__(out self, tokens: List[Token]):
+    def __init__(out self, tokens: List[Token]):
         self.tokens = tokens.copy()
         self.pos = 0
 
     # ---- token helpers ---------------------------------------------------
 
-    fn _tok(self) -> Token:
+    def _tok(self) -> Token:
         """Get current token."""
         if self.pos < len(self.tokens):
             return self.tokens[self.pos].copy()
         return Token(TokenType.EOF, "", 0, 0)
 
-    fn _advance(mut self):
+    def _advance(mut self):
         """Move to next token."""
         self.pos += 1
 
-    fn _skip_newlines(mut self):
+    def _skip_newlines(mut self):
         """Skip NEWLINE tokens."""
         while self._tok().type == TokenType.NEWLINE:
             self._advance()
 
-    fn _skip_ws(mut self):
+    def _skip_ws(mut self):
         """Skip NEWLINE and COMMA tokens (for arrays)."""
         while (
             self._tok().type == TokenType.NEWLINE
@@ -480,7 +480,7 @@ struct TOMLParser:
         ):
             self._advance()
 
-    fn _is_key_token(self) -> Bool:
+    def _is_key_token(self) -> Bool:
         """Check if current token can be a key (KEY or STRING)."""
         return (
             self._tok().type == TokenType.KEY
@@ -489,7 +489,7 @@ struct TOMLParser:
 
     # ---- key parsing (supports dotted and quoted keys) -------------------
 
-    fn _parse_key_path(mut self) raises -> List[String]:
+    def _parse_key_path(mut self) raises -> List[String]:
         """Parse a dotted key path like a.b."c d".e.
 
         Returns a list of key parts.  Accepts both KEY and STRING tokens
@@ -515,7 +515,7 @@ struct TOMLParser:
 
     # ---- value parsing ---------------------------------------------------
 
-    fn _parse_integer(self, val_str: String) raises -> TOMLValue:
+    def _parse_integer(self, val_str: String) raises -> TOMLValue:
         """Parse an integer string, handling hex/octal/binary prefixes."""
         if len(val_str) > 2:
             var prefix = String(val_str[byte=:2])
@@ -550,7 +550,7 @@ struct TOMLParser:
                 return TOMLValue(result)
         return TOMLValue(atol(val_str))
 
-    fn _parse_float(self, val_str: String) raises -> TOMLValue:
+    def _parse_float(self, val_str: String) raises -> TOMLValue:
         """Parse a float string, handling inf/nan."""
         if val_str == "inf" or val_str == "+inf":
             return TOMLValue(Float64.MAX)
@@ -560,7 +560,7 @@ struct TOMLParser:
             return TOMLValue(atof("nan"))
         return TOMLValue(atof(val_str))
 
-    fn _parse_value(mut self) raises -> TOMLValue:
+    def _parse_value(mut self) raises -> TOMLValue:
         """Parse a TOML value."""
         var token = self._tok()
         self._advance()
@@ -602,7 +602,7 @@ struct TOMLParser:
 
     # ---- arrays (with newline/comment support) ---------------------------
 
-    fn _parse_array(mut self) raises -> TOMLValue:
+    def _parse_array(mut self) raises -> TOMLValue:
         """Parse an array value (opening [ already consumed)."""
         var elements = List[TOMLValue]()
 
@@ -631,7 +631,7 @@ struct TOMLParser:
 
     # ---- inline tables ---------------------------------------------------
 
-    fn _parse_inline_table(mut self) raises -> TOMLValue:
+    def _parse_inline_table(mut self) raises -> TOMLValue:
         """Parse an inline table { key = value, ... } (opening { consumed)."""
         var table = Dict[String, TOMLValue]()
 
@@ -679,7 +679,7 @@ struct TOMLParser:
 
     # ---- table header parsing --------------------------------------------
 
-    fn _parse_table_header(mut self) raises -> List[String]:
+    def _parse_table_header(mut self) raises -> List[String]:
         """Parse [a.b.c] and return the path.  Opening [ already consumed."""
         var path = self._parse_key_path()
 
@@ -691,7 +691,7 @@ struct TOMLParser:
 
         return path^
 
-    fn _parse_array_of_tables_header(mut self) raises -> List[String]:
+    def _parse_array_of_tables_header(mut self) raises -> List[String]:
         """Parse [[a.b.c]] and return the path.  Opening [[ already consumed."""
         var path = self._parse_key_path()
 
@@ -709,7 +709,7 @@ struct TOMLParser:
 
     # ---- main parse loop -------------------------------------------------
 
-    fn parse(mut self) raises -> TOMLDocument:
+    def parse(mut self) raises -> TOMLDocument:
         """Parse the tokens into a TOMLDocument."""
         var document = TOMLDocument()
         var current_path = List[String]()
@@ -776,13 +776,13 @@ struct TOMLParser:
         return document^
 
 
-fn parse_string(input: String) raises -> TOMLDocument:
+def parse_string(input: String) raises -> TOMLDocument:
     """Parse a TOML string into a document."""
     var parser = TOMLParser(input)
     return parser.parse()
 
 
-fn parse_file(file_path: String) raises -> TOMLDocument:
+def parse_file(file_path: String) raises -> TOMLDocument:
     """Parse a TOML file into a document."""
 
     with open(file_path, "r") as file:

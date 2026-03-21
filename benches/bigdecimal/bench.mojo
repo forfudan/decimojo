@@ -9,7 +9,7 @@ from bench_bigdecimal_root import main as bench_root
 from bench_bigdecimal_round import main as bench_round
 
 
-fn main() raises:
+def main() raises:
     while True:
         print(
             """

@@ -87,7 +87,7 @@ comptime CUTOFF_BURNIKEL_ZIEGLER = 32
 # ===----------------------------------------------------------------------=== #
 
 
-fn negative(x: BigUInt) raises -> BigUInt:
+def negative(x: BigUInt) raises -> BigUInt:
     """Returns the negative of a BigUInt number if it is zero.
 
     Args:
@@ -114,7 +114,7 @@ fn negative(x: BigUInt) raises -> BigUInt:
     return BigUInt.zero()  # Return zero
 
 
-fn absolute(x: BigUInt) -> BigUInt:
+def absolute(x: BigUInt) -> BigUInt:
     """Returns the absolute value of a BigUInt number.
 
     Args:
@@ -132,7 +132,7 @@ fn absolute(x: BigUInt) -> BigUInt:
 # ===----------------------------------------------------------------------=== #
 
 
-fn add(x: BigUInt, y: BigUInt) -> BigUInt:
+def add(x: BigUInt, y: BigUInt) -> BigUInt:
     """Returns the sum of two unsigned integers.
 
     Args:
@@ -201,7 +201,7 @@ fn add(x: BigUInt, y: BigUInt) -> BigUInt:
     return add_slices_simd(x, y, (0, len(x.words)), (0, len(y.words)))
 
 
-fn add_slices(
+def add_slices(
     x: BigUInt, y: BigUInt, bounds_x: Tuple[Int, Int], bounds_y: Tuple[Int, Int]
 ) -> BigUInt:
     """Adds two BigUInt slices using the school method.
@@ -253,7 +253,7 @@ fn add_slices(
     return add_slices_simd(x, y, bounds_x, bounds_y)
 
 
-fn add_slices_simd(
+def add_slices_simd(
     x: BigUInt, y: BigUInt, bounds_x: Tuple[Int, Int], bounds_y: Tuple[Int, Int]
 ) -> BigUInt:
     """Adds two BigUInt slices using SIMD operations.
@@ -296,7 +296,7 @@ fn add_slices_simd(
     )
 
     @parameter
-    fn vector_add[
+    def vector_add[
         simd_width: Int
     ](i: Int) unified {
         mut result, read x, read y, read bounds_x, read bounds_y
@@ -328,7 +328,7 @@ fn add_slices_simd(
         longer_start = bounds_y[0]
 
     @parameter
-    fn vector_copy_rest_from_longer[
+    def vector_copy_rest_from_longer[
         simd_width: Int
     ](i: Int) unified {
         mut result, read longer, read n_words_shorter_slice, read longer_start
@@ -350,7 +350,7 @@ fn add_slices_simd(
     return result^
 
 
-fn add_inplace(mut x: BigUInt, y: BigUInt) -> None:
+def add_inplace(mut x: BigUInt, y: BigUInt) -> None:
     """Increments a BigUInt number by another BigUInt number in place.
 
     Args:
@@ -384,7 +384,7 @@ fn add_inplace(mut x: BigUInt, y: BigUInt) -> None:
         x.words.resize(new_size=len(y.words), value=UInt32(0))
 
     @parameter
-    fn vector_add[simd_width: Int](i: Int) unified {mut x, read y}:
+    def vector_add[simd_width: Int](i: Int) unified {mut x, read y}:
         x.words.unsafe_ptr().store[width=simd_width](
             i,
             x.words.unsafe_ptr().load[width=simd_width](i)
@@ -400,7 +400,7 @@ fn add_inplace(mut x: BigUInt, y: BigUInt) -> None:
     return
 
 
-fn add_inplace_by_slice(
+def add_inplace_by_slice(
     mut x: BigUInt, y: BigUInt, bounds_y: Tuple[Int, Int]
 ) -> None:
     """Increments a BigUInt number in-place by another BigUInt slice.
@@ -435,7 +435,7 @@ fn add_inplace_by_slice(
         x.words.resize(new_size=n_words_y_slice, value=UInt32(0))
 
     @parameter
-    fn vector_add[
+    def vector_add[
         simd_width: Int
     ](i: Int) unified {mut x, read y, read bounds_y}:
         x.words.unsafe_ptr().store[width=simd_width](
@@ -452,7 +452,7 @@ fn add_inplace_by_slice(
     return
 
 
-fn add_inplace_by_uint32(mut x: BigUInt, y: UInt32) -> None:
+def add_inplace_by_uint32(mut x: BigUInt, y: UInt32) -> None:
     """Increments a BigUInt number by a UInt32 value."""
     var carry: UInt32 = y
     for i in range(len(x.words)):
@@ -473,7 +473,7 @@ fn add_inplace_by_uint32(mut x: BigUInt, y: UInt32) -> None:
 # ===----------------------------------------------------------------------=== #
 
 
-fn subtract(x: BigUInt, y: BigUInt) raises -> BigUInt:
+def subtract(x: BigUInt, y: BigUInt) raises -> BigUInt:
     """Returns the difference of two unsigned integers.
 
     Args:
@@ -497,7 +497,7 @@ fn subtract(x: BigUInt, y: BigUInt) raises -> BigUInt:
     # return subtract_school(x, y)
 
 
-fn subtract_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
+def subtract_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
     """Returns the difference of two unsigned integers using the school method.
 
     Args:
@@ -580,7 +580,7 @@ fn subtract_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
     return result^
 
 
-fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
+def subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
     """Returns the difference of two unsigned integers using SIMD operations.
 
     Args:
@@ -648,7 +648,7 @@ fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
     # Note that there will be potential overflow in the subtraction,
     # but we will take advantage of that.
     @parameter
-    fn vector_subtract[
+    def vector_subtract[
         simd_width: Int
     ](i: Int) unified {mut result, read x, read y}:
         result.words.unsafe_ptr().store[width=simd_width](
@@ -660,7 +660,7 @@ fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
     vectorize[BigUInt.VECTOR_WIDTH](len(y.words), vector_subtract)
 
     @parameter
-    fn vector_copy_rest[
+    def vector_copy_rest[
         simd_width: Int
     ](i: Int) unified {mut result, read x, read y}:
         result.words.unsafe_ptr().store[width=simd_width](
@@ -678,7 +678,7 @@ fn subtract_simd(x: BigUInt, y: BigUInt) raises -> BigUInt:
     return result^
 
 
-fn subtract_inplace(mut x: BigUInt, y: BigUInt) raises -> None:
+def subtract_inplace(mut x: BigUInt, y: BigUInt) raises -> None:
     """Subtracts y from x in place."""
 
     # If the subtrahend is zero, return the minuend
@@ -716,7 +716,7 @@ fn subtract_inplace(mut x: BigUInt, y: BigUInt) raises -> None:
     # Note that len(x.words) >= len(y.words) here
     # Use SIMD operations to subtract the words in parallel.
     @parameter
-    fn vector_subtract[simd_width: Int](i: Int) unified {mut x, read y}:
+    def vector_subtract[simd_width: Int](i: Int) unified {mut x, read y}:
         x.words.unsafe_ptr().store[width=simd_width](
             i,
             x.words.unsafe_ptr().load[width=simd_width](i)
@@ -732,7 +732,7 @@ fn subtract_inplace(mut x: BigUInt, y: BigUInt) raises -> None:
     return
 
 
-fn subtract_inplace_no_check(mut x: BigUInt, y: BigUInt) -> None:
+def subtract_inplace_no_check(mut x: BigUInt, y: BigUInt) -> None:
     """Subtracts y from x in-place without checking for underflow.
 
     Notes:
@@ -753,7 +753,7 @@ fn subtract_inplace_no_check(mut x: BigUInt, y: BigUInt) -> None:
     # Note that len(x.words) >= len(y.words) under this assumption
 
     @parameter
-    fn vector_subtract[simd_width: Int](i: Int) unified {mut x, read y}:
+    def vector_subtract[simd_width: Int](i: Int) unified {mut x, read y}:
         x.words.unsafe_ptr().store[width=simd_width](
             i,
             x.words.unsafe_ptr().load[width=simd_width](i)
@@ -769,7 +769,7 @@ fn subtract_inplace_no_check(mut x: BigUInt, y: BigUInt) -> None:
     return
 
 
-fn subtract_inplace_by_uint32(mut x: BigUInt, y: UInt32) -> None:
+def subtract_inplace_by_uint32(mut x: BigUInt, y: UInt32) -> None:
     """Subtracts a UInt32 value from a BigUInt number in-place.
 
     Args:
@@ -819,7 +819,7 @@ fn subtract_inplace_by_uint32(mut x: BigUInt, y: UInt32) -> None:
 # ===----------------------------------------------------------------------=== #
 
 
-fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
+def multiply(x: BigUInt, y: BigUInt) -> BigUInt:
     """Returns the product of two BigUInt numbers.
 
     Args:
@@ -893,7 +893,7 @@ fn multiply(x: BigUInt, y: BigUInt) -> BigUInt:
         )
 
 
-fn multiply_slices(
+def multiply_slices(
     x: BigUInt,
     y: BigUInt,
     bounds_x: Tuple[Int, Int],
@@ -941,7 +941,7 @@ fn multiply_slices(
         )
 
 
-fn multiply_slices_school(
+def multiply_slices_school(
     read x: BigUInt,
     read y: BigUInt,
     bounds_x: Tuple[Int, Int],
@@ -1027,7 +1027,7 @@ fn multiply_slices_school(
     return result^
 
 
-fn multiply_slices_karatsuba(
+def multiply_slices_karatsuba(
     read x: BigUInt,
     read y: BigUInt,
     bounds_x: Tuple[Int, Int],
@@ -1208,7 +1208,7 @@ fn multiply_slices_karatsuba(
         return z2^
 
 
-fn multiply_slices_toom3(
+def multiply_slices_toom3(
     read x: BigUInt,
     read y: BigUInt,
     bounds_x: Tuple[Int, Int],
@@ -1491,7 +1491,7 @@ fn multiply_slices_toom3(
 
     # Helper: add a BigUInt value at a word offset into result
     @parameter
-    fn _add_at_offset(mut result: BigUInt, value: BigUInt, offset: Int):
+    def _add_at_offset(mut result: BigUInt, value: BigUInt, offset: Int):
         """Adds value into result starting at the given word offset."""
         if value.is_zero():
             return
@@ -1521,7 +1521,7 @@ fn multiply_slices_toom3(
     return result^
 
 
-fn multiply_inplace_by_uint32(mut x: BigUInt, y: UInt32):
+def multiply_inplace_by_uint32(mut x: BigUInt, y: UInt32):
     """Multiplies in-place a BigUInt by a UInt32 value.
 
     Args:
@@ -1548,7 +1548,7 @@ fn multiply_inplace_by_uint32(mut x: BigUInt, y: UInt32):
         x.words.append(UInt32(carry))
 
 
-fn multiply_inplace_by_uint32_le_4(mut x: BigUInt, y: UInt32):
+def multiply_inplace_by_uint32_le_4(mut x: BigUInt, y: UInt32):
     """Multiplies in-place a BigUInt by a UInt32 value which is between 0 and 4.
 
     Args:
@@ -1581,7 +1581,7 @@ fn multiply_inplace_by_uint32_le_4(mut x: BigUInt, y: UInt32):
 
     # y is 2, we can just shift the digits of each word to the left by 1
     @parameter
-    fn vector_multiply_by_2[simd_width: Int](i: Int) unified {mut x}:
+    def vector_multiply_by_2[simd_width: Int](i: Int) unified {mut x}:
         """Shifts the digits of each word to the left by 1."""
         x.words.unsafe_ptr().store[width=simd_width](
             i, x.words.unsafe_ptr().load[width=simd_width](i) << 1
@@ -1594,7 +1594,7 @@ fn multiply_inplace_by_uint32_le_4(mut x: BigUInt, y: UInt32):
 
     # y is 3, we can just multiply the digits of each word by 3
     @parameter
-    fn vector_multiply_by_3[simd_width: Int](i: Int) unified {mut x}:
+    def vector_multiply_by_3[simd_width: Int](i: Int) unified {mut x}:
         """Multiplies the digits of each word by 3."""
         x.words.unsafe_ptr().store[width=simd_width](
             i, x.words.unsafe_ptr().load[width=simd_width](i) * 3
@@ -1607,7 +1607,7 @@ fn multiply_inplace_by_uint32_le_4(mut x: BigUInt, y: UInt32):
 
     # y is 4, we can just shift the digits of each word to the left by 2
     @parameter
-    fn vector_multiply_by_4[simd_width: Int](i: Int) unified {mut x}:
+    def vector_multiply_by_4[simd_width: Int](i: Int) unified {mut x}:
         """Shifts the digits of each word to the left by 2."""
         x.words.unsafe_ptr().store[width=simd_width](
             i, x.words.unsafe_ptr().load[width=simd_width](i) << 2
@@ -1619,7 +1619,7 @@ fn multiply_inplace_by_uint32_le_4(mut x: BigUInt, y: UInt32):
         return
 
 
-fn multiply_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
+def multiply_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
     """Multiplies a BigUInt by 10^n (n >= 0).
 
     Args:
@@ -1694,7 +1694,7 @@ fn multiply_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
     return result^
 
 
-fn multiply_inplace_by_power_of_ten(mut x: BigUInt, n: Int):
+def multiply_inplace_by_power_of_ten(mut x: BigUInt, n: Int):
     """Multiplies a BigUInt in-place by 10^n (n >= 0).
 
     Args:
@@ -1785,7 +1785,7 @@ fn multiply_inplace_by_power_of_ten(mut x: BigUInt, n: Int):
         return
 
 
-fn multiply_by_power_of_billion(x: BigUInt, n: Int) -> BigUInt:
+def multiply_by_power_of_billion(x: BigUInt, n: Int) -> BigUInt:
     """Multiplies a BigUInt by (10^9)^n (n >= 0).
     This equals to adding 9n zeros (n words) to the end of the number.
 
@@ -1826,7 +1826,7 @@ fn multiply_by_power_of_billion(x: BigUInt, n: Int) -> BigUInt:
     return res^
 
 
-fn multiply_inplace_by_power_of_billion(mut x: BigUInt, n: Int):
+def multiply_inplace_by_power_of_billion(mut x: BigUInt, n: Int):
     """Multiplies a BigUInt in-place by (10^9)^n (n >= 0).
     This equals to adding 9n zeros (n words) to the end of the number.
 
@@ -1873,7 +1873,7 @@ fn multiply_inplace_by_power_of_billion(mut x: BigUInt, n: Int):
     return
 
 
-fn exact_divide_by_2_inplace(mut x: BigUInt):
+def exact_divide_by_2_inplace(mut x: BigUInt):
     """Divides a BigUInt by 2 exactly, in-place.
 
     The caller must ensure that x is even (divisible by 2).
@@ -1889,7 +1889,7 @@ fn exact_divide_by_2_inplace(mut x: BigUInt):
     x.remove_leading_empty_words()
 
 
-fn exact_divide_by_3_inplace(mut x: BigUInt):
+def exact_divide_by_3_inplace(mut x: BigUInt):
     """Divides a BigUInt by 3 exactly, in-place.
 
     The caller must ensure that x is divisible by 3.
@@ -1913,7 +1913,7 @@ fn exact_divide_by_3_inplace(mut x: BigUInt):
 # ===----------------------------------------------------------------------=== #
 
 
-fn floor_divide(x: BigUInt, y: BigUInt) raises -> BigUInt:
+def floor_divide(x: BigUInt, y: BigUInt) raises -> BigUInt:
     """Returns the quotient of two BigUInt numbers, truncating toward zero.
 
     Args:
@@ -2038,7 +2038,7 @@ fn floor_divide(x: BigUInt, y: BigUInt) raises -> BigUInt:
 
 # TODO: Implement a `floor_divide_slices_school()` function that
 # can be used for slices of BigUInt numbers.
-fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
+def floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
     """**[PRIVATE]** General schoolbook division algorithm for BigInt10 numbers.
 
     Args:
@@ -2146,7 +2146,7 @@ fn floor_divide_school(x: BigUInt, y: BigUInt) raises -> BigUInt:
     return result^
 
 
-fn floor_divide_estimate_quotient(
+def floor_divide_estimate_quotient(
     dividend: BigUInt, divisor: BigUInt, index_of_word: Int
 ) -> UInt32:
     """Estimates the quotient digit using 3-by-2 division.
@@ -2227,7 +2227,7 @@ fn floor_divide_estimate_quotient(
     return min(quotient, BigUInt.BASE_MAX)
 
 
-fn floor_divide_by_uint32(x: BigUInt, y: UInt32) -> BigUInt:
+def floor_divide_by_uint32(x: BigUInt, y: UInt32) -> BigUInt:
     """**[PRIVATE]** Divides a BigUInt by a UInt32 divisor.
 
     Args:
@@ -2268,7 +2268,7 @@ fn floor_divide_by_uint32(x: BigUInt, y: UInt32) -> BigUInt:
     return result^
 
 
-fn floor_divide_inplace_by_uint32(mut x: BigUInt, y: UInt32) -> None:
+def floor_divide_inplace_by_uint32(mut x: BigUInt, y: UInt32) -> None:
     """Divides a BigUInt by a UInt32 divisor in-place.
 
     Args:
@@ -2300,7 +2300,7 @@ fn floor_divide_inplace_by_uint32(mut x: BigUInt, y: UInt32) -> None:
         carry = dividend % y_uint64
 
 
-fn floor_divide_by_uint64(x: BigUInt, y: UInt64) -> BigUInt:
+def floor_divide_by_uint64(x: BigUInt, y: UInt64) -> BigUInt:
     """Divides a BigUInt by UInt64.
 
     Args:
@@ -2339,7 +2339,7 @@ fn floor_divide_by_uint64(x: BigUInt, y: UInt64) -> BigUInt:
     return result^
 
 
-fn floor_divide_inplace_by_uint64(mut x: BigUInt, y: UInt64) -> None:
+def floor_divide_inplace_by_uint64(mut x: BigUInt, y: UInt64) -> None:
     """Divides a BigUInt by UInt64 in-place.
 
     Args:
@@ -2375,7 +2375,7 @@ fn floor_divide_inplace_by_uint64(mut x: BigUInt, y: UInt64) -> None:
     return
 
 
-fn floor_divide_by_uint128(x: BigUInt, y: UInt128) -> BigUInt:
+def floor_divide_by_uint128(x: BigUInt, y: UInt128) -> BigUInt:
     """Divides a BigUInt by UInt128.
 
     Args:
@@ -2450,7 +2450,7 @@ fn floor_divide_by_uint128(x: BigUInt, y: UInt128) -> BigUInt:
     return result^
 
 
-fn floor_divide_inplace_by_2(mut x: BigUInt) -> None:
+def floor_divide_inplace_by_2(mut x: BigUInt) -> None:
     """Divides a BigUInt by 2 in-place.
 
     Args:
@@ -2477,7 +2477,7 @@ fn floor_divide_inplace_by_2(mut x: BigUInt) -> None:
 
 
 # TODO: Implement a in-place version of this function
-fn floor_divide_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
+def floor_divide_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
     """Floor divides a BigUInt by 10^n (n>=0).
     It is equal to removing the last n digits of the number.
 
@@ -2555,7 +2555,7 @@ fn floor_divide_by_power_of_ten(x: BigUInt, n: Int) -> BigUInt:
     return result^
 
 
-fn floor_divide_by_power_of_billion(x: BigUInt, n: Int) -> BigUInt:
+def floor_divide_by_power_of_billion(x: BigUInt, n: Int) -> BigUInt:
     """Floor divides a BigUInt by (10^9)^n (n>=0).
     This function is equivalent to removing the last n words of the number.
 
@@ -2619,7 +2619,7 @@ fn floor_divide_by_power_of_billion(x: BigUInt, n: Int) -> BigUInt:
 # - avoid unnecessary memory allocations and copies
 
 
-fn floor_divide_burnikel_ziegler(
+def floor_divide_burnikel_ziegler(
     a: BigUInt, b: BigUInt, cut_off: Int
 ) raises -> BigUInt:
     """Divides BigUInt using the Burnikel-Ziegler algorithm.
@@ -2763,7 +2763,7 @@ fn floor_divide_burnikel_ziegler(
     return q^
 
 
-fn floor_divide_two_by_one(
+def floor_divide_two_by_one(
     a: BigUInt, b: BigUInt, n: Int, cut_off: Int
 ) raises -> Tuple[BigUInt, BigUInt]:
     """Divides a BigUInt by another BigUInt using a recursive approach.
@@ -2825,7 +2825,7 @@ fn floor_divide_two_by_one(
         return (q^, s^)
 
 
-fn floor_divide_three_by_two(
+def floor_divide_three_by_two(
     a2: BigUInt,
     a1: BigUInt,
     a0: BigUInt,
@@ -2891,7 +2891,7 @@ fn floor_divide_three_by_two(
 # `floor_divide_two_by_one` and `floor_divide_three_by_two` functions.
 # They record the boundaries of the slices of the dividend and divisor
 # to avoid unnecessary recursive slicing and copying of the BigUInt objects.
-fn floor_divide_slices_two_by_one(
+def floor_divide_slices_two_by_one(
     a: BigUInt,
     b: BigUInt,
     bounds_a: Tuple[Int, Int],
@@ -2992,7 +2992,7 @@ fn floor_divide_slices_two_by_one(
         return (q^, s^)
 
 
-fn floor_divide_slices_three_by_two(
+def floor_divide_slices_three_by_two(
     a: BigUInt,
     b: BigUInt,
     bounds_a: Tuple[Int, Int],
@@ -3080,7 +3080,7 @@ fn floor_divide_slices_three_by_two(
 # When then size of the divisor is less than N, we switch to the schoolbook
 # division algorithm.
 # However, these functions are still valid and can be used if needed.
-fn floor_divide_three_by_two_uint32(
+def floor_divide_three_by_two_uint32(
     a2: UInt32, a1: UInt32, a0: UInt32, b1: UInt32, b0: UInt32
 ) raises -> Tuple[UInt32, UInt32, UInt32]:
     """Divides a 3-word number by a 2-word number.
@@ -3129,7 +3129,7 @@ fn floor_divide_three_by_two_uint32(
     return (UInt32(q), r1, r0)
 
 
-fn floor_divide_four_by_two_uint32(
+def floor_divide_four_by_two_uint32(
     a3: UInt32,
     a2: UInt32,
     a1: UInt32,
@@ -3175,7 +3175,7 @@ fn floor_divide_four_by_two_uint32(
 
 
 @always_inline
-fn truncate_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+def truncate_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """Returns the quotient of two BigUInt numbers, truncating toward zero.
     It is equal to floored division for unsigned numbers.
     See `floor_divide` for more details.
@@ -3183,7 +3183,7 @@ fn truncate_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     return floor_divide(x1, x2)
 
 
-fn ceil_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+def ceil_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """Returns the quotient of two BigUInt numbers, rounding up.
 
     Args:
@@ -3212,7 +3212,7 @@ fn ceil_divide(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     return quotient^
 
 
-fn floor_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+def floor_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """Returns the remainder of two BigUInt numbers, truncating toward zero.
     The remainder has the same sign as the dividend and satisfies:
     x1 = floor_divide(x1, x2) * x2 + floor_modulo(x1, x2).
@@ -3294,7 +3294,7 @@ fn floor_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
 
 
 @always_inline
-fn truncate_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+def truncate_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """Returns the remainder of two BigUInt numbers, truncating toward zero.
     It is equal to floored modulo for unsigned numbers.
     See `floor_modulo` for more details.
@@ -3322,7 +3322,7 @@ fn truncate_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         )
 
 
-fn ceil_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
+def ceil_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
     """Returns the remainder of two BigUInt numbers, rounding up.
     The remainder has the same sign as the dividend and satisfies:
     x1 = ceil_divide(x1, x2) * x2 + ceil_modulo(x1, x2).
@@ -3373,7 +3373,7 @@ fn ceil_modulo(x1: BigUInt, x2: BigUInt) raises -> BigUInt:
         return subtract(x2, remainder)
 
 
-fn floor_divide_modulo(
+def floor_divide_modulo(
     x1: BigUInt, x2: BigUInt
 ) raises -> Tuple[BigUInt, BigUInt]:
     """Returns the quotient and remainder of two numbers, truncating toward zero.
@@ -3413,7 +3413,7 @@ fn floor_divide_modulo(
 # ===----------------------------------------------------------------------=== #
 
 
-fn normalize_carries_lt_2_bases(mut x: BigUInt):
+def normalize_carries_lt_2_bases(mut x: BigUInt):
     """Normalizes the values of words into valid range by carrying over.
     The initial values of the words should be in the range [0, BASE*2).
 
@@ -3449,7 +3449,7 @@ fn normalize_carries_lt_2_bases(mut x: BigUInt):
     return
 
 
-fn normalize_carries_lt_4_bases(mut x: BigUInt):
+def normalize_carries_lt_4_bases(mut x: BigUInt):
     """Normalizes the values of words into valid range by carrying over.
     The initial values of the words should be in the range [0, BASE * 4 - 4].
 
@@ -3523,7 +3523,7 @@ fn normalize_carries_lt_4_bases(mut x: BigUInt):
     return
 
 
-fn normalize_borrows(mut x: BigUInt):
+def normalize_borrows(mut x: BigUInt):
     """Normalizes the values of words into valid range by borrowing.
     The caller should ensure that the final result is non-negative.
     The initial values of the words should be in the range:
@@ -3563,7 +3563,7 @@ fn normalize_borrows(mut x: BigUInt):
     return
 
 
-fn power_of_10(n: Int) raises -> BigUInt:
+def power_of_10(n: Int) raises -> BigUInt:
     """Calculates 10^n efficiently for non-negative n.
 
     Args:
@@ -3621,7 +3621,7 @@ fn power_of_10(n: Int) raises -> BigUInt:
 
 
 @always_inline
-fn calculate_ndigits_for_normalization(msw: UInt32) -> Int:
+def calculate_ndigits_for_normalization(msw: UInt32) -> Int:
     """Calculates the number of digits to shift left for normalization.
 
     Args:
@@ -3663,7 +3663,7 @@ fn calculate_ndigits_for_normalization(msw: UInt32) -> Int:
     return ndigits
 
 
-fn to_uint64_with_2_words(a: BigUInt, bounds_x: Tuple[Int, Int]) -> UInt64:
+def to_uint64_with_2_words(a: BigUInt, bounds_x: Tuple[Int, Int]) -> UInt64:
     """Convert two words at given index of the BigUInt to UInt64."""
     var n_words = bounds_x[1] - bounds_x[0]
     if n_words == 1:
@@ -3677,7 +3677,7 @@ fn to_uint64_with_2_words(a: BigUInt, bounds_x: Tuple[Int, Int]) -> UInt64:
         ).reduce_add()
 
 
-fn to_uint128_with_2_words(a: BigUInt, bounds_x: Tuple[Int, Int]) -> UInt128:
+def to_uint128_with_2_words(a: BigUInt, bounds_x: Tuple[Int, Int]) -> UInt128:
     """Convert two words at given index of the BigUInt to UInt128."""
     var n_words = bounds_x[1] - bounds_x[0]
     if n_words == 1:
@@ -3695,7 +3695,7 @@ fn to_uint128_with_2_words(a: BigUInt, bounds_x: Tuple[Int, Int]) -> UInt128:
         ).reduce_add()
 
 
-fn to_uint128_with_4_words(a: BigUInt, bounds_x: Tuple[Int, Int]) -> UInt128:
+def to_uint128_with_4_words(a: BigUInt, bounds_x: Tuple[Int, Int]) -> UInt128:
     """Convert four words at given index of the BigUInt to UInt128."""
     var n_words = bounds_x[1] - bounds_x[0]
     if n_words == 1:

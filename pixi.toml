@@ -26,7 +26,7 @@ format = """pixi run mojo format ./src \
 &&pixi run ruff format ./python"""
 
 # doc
-doc = """clear && pixi run mojo doc \
+doc = """pixi run mojo doc \
 --diagnose-missing-doc-strings --validate-doc-strings src/decimo"""
 
 # compile the package
@@ -87,3 +87,15 @@ testpy = "pixi run buildpy && pixi run python python/tests/test_decimo.py"
 tpy = "clear && pixi run testpy"
 # build PyPI wheel (placeholder, no .so included)
 wheel = "cd python && pixi run python -m build --wheel"
+
+# All task
+all = """pixi run format \
+&&pixi run package \
+&&pixi run doc \
+&&pixi run test \
+&&pixi run fetch \
+&&pixi run buildcli \
+&&pixi run testcli \
+&&pixi run buildpy \
+&&pixi run testpy \
+&&pixi run clean"""

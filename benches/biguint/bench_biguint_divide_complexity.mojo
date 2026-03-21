@@ -12,7 +12,7 @@ from std.python import Python, PythonObject
 from std.collections import List
 
 
-fn create_test_biguint(num_words: Int) raises -> BigUInt:
+def create_test_biguint(num_words: Int) raises -> BigUInt:
     """Creates a BigUInt with the specified number of words filled with test
     values."""
     var words = List[UInt32](capacity=num_words)
@@ -24,7 +24,7 @@ fn create_test_biguint(num_words: Int) raises -> BigUInt:
     return BigUInt(words=words^)
 
 
-fn benchmark_divide_at_size(
+def benchmark_divide_at_size(
     dividend_words: Int,
     divisor_words: Int,
     iterations: Int,
@@ -72,7 +72,7 @@ fn benchmark_divide_at_size(
     return avg
 
 
-fn main() raises:
+def main() raises:
     var log_file = open_log_file("benchmark_divide_complexity")
     print_header("Decimo BigUInt Division Time Complexity Benchmark", log_file)
 

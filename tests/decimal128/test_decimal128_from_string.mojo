@@ -22,7 +22,7 @@ from decimo.tests import TestCase, parse_file, load_test_cases
 comptime file_path = "tests/decimal128/test_data/decimal128_from_string.toml"
 
 
-fn _run_unary_section(
+def _run_unary_section(
     toml: TOMLDocument,
     section: String,
     mut count_wrong: Int,
@@ -49,7 +49,7 @@ fn _run_unary_section(
             count_wrong += 1
 
 
-fn test_from_string() raises:
+def test_from_string() raises:
     """Test from_string conversions using TOML data-driven test cases."""
     var toml = parse_file(file_path)
     var count_wrong = 0
@@ -71,7 +71,7 @@ fn test_from_string() raises:
     )
 
 
-fn test_from_string_high_precision_truncation() raises:
+def test_from_string_high_precision_truncation() raises:
     """Test that very long decimals are truncated to max precision."""
     var long_decimal = Dec128.from_string(
         "0.11111111111111111111111111111111111"
@@ -79,13 +79,13 @@ fn test_from_string_high_precision_truncation() raises:
     testing.assert_true(String(long_decimal).startswith("0.11111111111"))
 
 
-fn test_from_string_boundary_large_scale() raises:
+def test_from_string_boundary_large_scale() raises:
     """Test large integer part with scale causing rounding."""
     var large = Dec128.from_string("9999999999999999999999999999.5")
     testing.assert_equal(String(large), "10000000000000000000000000000")
 
 
-fn test_invalid_inputs() raises:
+def test_invalid_inputs() raises:
     """Test handling of invalid input strings that should raise exceptions."""
 
     # Test: Empty string
@@ -149,5 +149,5 @@ fn test_invalid_inputs() raises:
     testing.assert_true(caught)
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

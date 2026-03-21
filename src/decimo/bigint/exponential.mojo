@@ -33,7 +33,7 @@ from decimo.errors import DecimoError
 # ===----------------------------------------------------------------------=== #
 
 
-fn _extract_uint64_from_words(words: List[UInt32], bit_shift: Int) -> UInt64:
+def _extract_uint64_from_words(words: List[UInt32], bit_shift: Int) -> UInt64:
     """Extracts up to 64 bits from a magnitude at a given bit offset.
 
     Computes floor(value(words) >> bit_shift) mod 2^64, reading only the
@@ -68,7 +68,7 @@ fn _extract_uint64_from_words(words: List[UInt32], bit_shift: Int) -> UInt64:
     return result
 
 
-fn _uint64_to_words(val: UInt64) -> List[UInt32]:
+def _uint64_to_words(val: UInt64) -> List[UInt32]:
     """Converts a UInt64 value to a magnitude word list.
 
     Args:
@@ -93,7 +93,7 @@ fn _uint64_to_words(val: UInt64) -> List[UInt32]:
     return result^
 
 
-fn _extract_uint128_from_words(words: List[UInt32], bit_shift: Int) -> UInt128:
+def _extract_uint128_from_words(words: List[UInt32], bit_shift: Int) -> UInt128:
     """Extracts up to 128 bits from a magnitude at a given bit offset.
 
     Similar to _extract_uint64_from_words but returns UInt128.
@@ -134,7 +134,7 @@ fn _extract_uint128_from_words(words: List[UInt32], bit_shift: Int) -> UInt128:
     return result
 
 
-fn _uint128_to_words(val: UInt128) -> List[UInt32]:
+def _uint128_to_words(val: UInt128) -> List[UInt32]:
     """Converts a UInt128 value to a magnitude word list.
 
     Args:
@@ -156,7 +156,7 @@ fn _uint128_to_words(val: UInt128) -> List[UInt32]:
     return result^
 
 
-fn _left_shift_magnitude_bits(a: List[UInt32], shift: Int) -> List[UInt32]:
+def _left_shift_magnitude_bits(a: List[UInt32], shift: Int) -> List[UInt32]:
     """Shifts a magnitude left by an arbitrary number of bits.
 
     Handles both whole-word and sub-word shifts in a single pass.
@@ -200,7 +200,7 @@ fn _left_shift_magnitude_bits(a: List[UInt32], shift: Int) -> List[UInt32]:
     return result^
 
 
-fn _right_shift_magnitude_bits(a: List[UInt32], shift: Int) -> List[UInt32]:
+def _right_shift_magnitude_bits(a: List[UInt32], shift: Int) -> List[UInt32]:
     """Shifts a magnitude right by an arbitrary number of bits.
 
     Efficiently skips lower words that would be entirely shifted out,
@@ -251,7 +251,7 @@ fn _right_shift_magnitude_bits(a: List[UInt32], shift: Int) -> List[UInt32]:
 # ===----------------------------------------------------------------------=== #
 
 
-fn sqrt(x: BigInt) raises -> BigInt:
+def sqrt(x: BigInt) raises -> BigInt:
     """Calculates the integer square root of a BigInt.
 
     Args:
@@ -321,7 +321,7 @@ fn sqrt(x: BigInt) raises -> BigInt:
     return _sqrt_precision_doubling_fast(x)
 
 
-fn _sqrt_precision_doubling_fast(x: BigInt) raises -> BigInt:
+def _sqrt_precision_doubling_fast(x: BigInt) raises -> BigInt:
     """Optimized precision-doubling integer sqrt with UInt64 fast path.
 
     Args:
@@ -487,7 +487,7 @@ fn _sqrt_precision_doubling_fast(x: BigInt) raises -> BigInt:
     return BigInt(raw_words=a_words^, sign=False)
 
 
-fn isqrt(x: BigInt) raises -> BigInt:
+def isqrt(x: BigInt) raises -> BigInt:
     """Calculates the integer square root of a BigInt.
     Equivalent to `sqrt()`.
 

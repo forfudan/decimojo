@@ -12,7 +12,7 @@ from decimo.bigint.bigint import BigInt
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_to_string_with_separators() raises:
+def test_to_string_with_separators() raises:
     """Test to_string_with_separators."""
     testing.assert_equal(BigInt(0).to_string_with_separators(), "0")
     testing.assert_equal(BigInt(1).to_string_with_separators(), "1")
@@ -36,7 +36,7 @@ fn test_to_string_with_separators() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_to_string_line_width() raises:
+def test_to_string_line_width() raises:
     """Test to_string with line_width parameter."""
     # Default: no wrapping
     var val = BigInt("12345678901234567890")
@@ -59,7 +59,7 @@ fn test_to_string_line_width() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_number_of_digits() raises:
+def test_number_of_digits() raises:
     """Test number_of_digits method."""
     testing.assert_equal(BigInt(0).number_of_digits(), 1)
     testing.assert_equal(BigInt(1).number_of_digits(), 1)
@@ -83,12 +83,12 @@ fn test_number_of_digits() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_repr() raises:
+def test_repr() raises:
     """Test __repr__ (Representable trait)."""
     testing.assert_equal(repr(BigInt(42)), 'BigInt("42")')
     testing.assert_equal(repr(BigInt(-7)), 'BigInt("-7")')
     testing.assert_equal(repr(BigInt(0)), 'BigInt("0")')
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

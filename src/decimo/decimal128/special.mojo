@@ -21,7 +21,7 @@
 """Implements functions for special operations on Decimal128 objects."""
 
 
-fn factorial(n: Int) raises -> Decimal128:
+def factorial(n: Int) raises -> Decimal128:
     """Calculates the factorial of a non-negative integer.
 
     Args:
@@ -121,7 +121,7 @@ fn factorial(n: Int) raises -> Decimal128:
         )  # 10888869450418352160768000000
 
 
-fn factorial_reciprocal(n: Int) raises -> Decimal128:
+def factorial_reciprocal(n: Int) raises -> Decimal128:
     """Calculates the reciprocal of factorial of a non-negative integer (1/n!).
 
     Args:

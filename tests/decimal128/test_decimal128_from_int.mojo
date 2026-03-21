@@ -22,7 +22,7 @@ from decimo.tests import TestCase, parse_file, load_test_cases
 comptime file_path = "tests/decimal128/test_data/decimal128_from_int.toml"
 
 
-fn _run_from_int_section(
+def _run_from_int_section(
     toml: TOMLDocument,
     section: String,
     mut count_wrong: Int,
@@ -49,7 +49,7 @@ fn _run_from_int_section(
             count_wrong += 1
 
 
-fn test_from_int() raises:
+def test_from_int() raises:
     """Test from_int conversions using TOML data-driven test cases."""
     var toml = parse_file(file_path)
     var count_wrong = 0
@@ -85,7 +85,7 @@ fn test_from_int() raises:
     )
 
 
-fn test_operations_with_from_int() raises:
+def test_operations_with_from_int() raises:
     """Test arithmetic operations using from_int results."""
     # Addition
     var result1 = Dec128.from_int(100) + Dec128.from_int(50)
@@ -112,7 +112,7 @@ fn test_operations_with_from_int() raises:
     testing.assert_equal(String(result6), "15")
 
 
-fn test_comparison_with_from_int() raises:
+def test_comparison_with_from_int() raises:
     """Test comparison operations using from_int results."""
     # Equality with same value
     testing.assert_true(
@@ -145,7 +145,7 @@ fn test_comparison_with_from_int() raises:
     )
 
 
-fn test_properties() raises:
+def test_properties() raises:
     """Test properties of from_int results."""
     # Sign of positive
     testing.assert_false(
@@ -172,7 +172,7 @@ fn test_properties() raises:
     testing.assert_equal(Dec128.from_int(9876).coefficient(), UInt128(9876))
 
 
-fn test_edge_cases() raises:
+def test_edge_cases() raises:
     """Test edge cases for from_int."""
     # Zero remains zero
     testing.assert_equal(String(Dec128.from_int(0)), "0")
@@ -199,7 +199,7 @@ fn test_edge_cases() raises:
     testing.assert_equal(String(Dec128.from_int(10**9)), "1000000000")
 
 
-fn test_from_int_with_scale_advanced() raises:
+def test_from_int_with_scale_advanced() raises:
     """Test from_int with scale - advanced cases requiring inline assertions."""
     # Scale is correctly stored
     var r1 = Dec128.from_int(123, 2)
@@ -233,7 +233,7 @@ fn test_from_int_with_scale_advanced() raises:
     testing.assert_true(a8 != b8, "from_int(123, 0) != from_int(123, 2)")
 
 
-fn test_decimal_from_components() raises:
+def test_decimal_from_components() raises:
     """Test Decimal128 5-argument component constructor."""
     # Zero with zero scale
     testing.assert_equal(String(Decimal128(0, 0, 0, 0, False)), "0")
@@ -285,5 +285,5 @@ fn test_decimal_from_components() raises:
         pass
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

@@ -13,7 +13,7 @@ from decimo.tests import TestCase, parse_file, load_test_cases
 comptime file_path_sqrt = "tests/biguint/test_data/biguint_sqrt.toml"
 
 
-fn _set_max_str_digits(limit: Int) raises:
+def _set_max_str_digits(limit: Int) raises:
     """Set Python's int-to-string digit limit (Python 3.11+). No-op if unavailable.
     """
     try:
@@ -22,7 +22,7 @@ fn _set_max_str_digits(limit: Int) raises:
         pass
 
 
-fn test_biguint_sqrt() raises:
+def test_biguint_sqrt() raises:
     # Load test cases from TOML file
     var pymath = Python.import_module("math")
     _set_max_str_digits(25000)
@@ -58,7 +58,7 @@ fn test_biguint_sqrt() raises:
     )
 
 
-fn test_biguint_sqrt_random_numbers_against_python() raises:
+def test_biguint_sqrt_random_numbers_against_python() raises:
     # print("------------------------------------------------------")
     # print("Testing BigUInt sqrt on random numbers with python...")
 
@@ -87,7 +87,7 @@ fn test_biguint_sqrt_random_numbers_against_python() raises:
     # print("BigUInt sqrt tests passed!")
 
 
-fn main() raises:
+def main() raises:
     # test_biguint_sqrt()
     # test_biguint_sqrt_random_numbers_against_python()
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

@@ -17,7 +17,7 @@ from std.time import perf_counter_ns
 from std.collections import List
 
 
-fn run_case(
+def run_case(
     bc: BenchCase,
     iterations: Int,
     precision: Int,
@@ -67,7 +67,7 @@ fn run_case(
         log_print("Skipping this case", log_file)
 
 
-fn main() raises:
+def main() raises:
     var log_file = open_log_file("benchmark_bigdecimal_sqrt")
     print_header("Decimo BigDecimal Square Root Benchmark", log_file)
 

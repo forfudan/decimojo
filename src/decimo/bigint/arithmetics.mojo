@@ -58,7 +58,7 @@ comptime CUTOFF_BURNIKEL_ZIEGLER: Int = 64
 # ===----------------------------------------------------------------------=== #
 
 
-fn _add_magnitudes(a: List[UInt32], b: List[UInt32]) -> List[UInt32]:
+def _add_magnitudes(a: List[UInt32], b: List[UInt32]) -> List[UInt32]:
     """Adds two unsigned magnitudes represented as little-endian UInt32 words.
 
     Uses UInt64 accumulation to handle carries naturally via bit shift.
@@ -90,7 +90,7 @@ fn _add_magnitudes(a: List[UInt32], b: List[UInt32]) -> List[UInt32]:
     return result^
 
 
-fn _add_magnitudes_into(
+def _add_magnitudes_into(
     mut result: List[UInt32],
     read a: List[UInt32],
     a_start: Int,
@@ -129,7 +129,7 @@ fn _add_magnitudes_into(
         result[len_max] = UInt32(carry)
 
 
-fn _subtract_magnitudes(a: List[UInt32], b: List[UInt32]) -> List[UInt32]:
+def _subtract_magnitudes(a: List[UInt32], b: List[UInt32]) -> List[UInt32]:
     """Subtracts magnitude b from magnitude a, assuming |a| >= |b|.
 
     The caller MUST ensure |a| >= |b|; otherwise the result is undefined.
@@ -165,7 +165,7 @@ fn _subtract_magnitudes(a: List[UInt32], b: List[UInt32]) -> List[UInt32]:
     return result^
 
 
-fn _multiply_magnitudes(a: List[UInt32], b: List[UInt32]) -> List[UInt32]:
+def _multiply_magnitudes(a: List[UInt32], b: List[UInt32]) -> List[UInt32]:
     """Multiplies two unsigned magnitudes, dispatching to the best algorithm.
 
     Uses Karatsuba O(n^1.585) for large operands, schoolbook O(n*m) for small.
@@ -207,7 +207,7 @@ fn _multiply_magnitudes(a: List[UInt32], b: List[UInt32]) -> List[UInt32]:
         return _multiply_magnitudes_karatsuba(a, 0, len_a, b, 0, len_b)
 
 
-fn _multiply_magnitude_by_word(
+def _multiply_magnitude_by_word(
     read a: List[UInt32], a_start: Int, a_end: Int, w: UInt32
 ) -> List[UInt32]:
     """Multiplies a magnitude slice by a single UInt32 word.
@@ -254,7 +254,7 @@ fn _multiply_magnitude_by_word(
     return result^
 
 
-fn _multiply_magnitudes_school(
+def _multiply_magnitudes_school(
     read a: List[UInt32],
     a_start: Int,
     a_end: Int,
@@ -314,7 +314,7 @@ fn _multiply_magnitudes_school(
     return result^
 
 
-fn _multiply_magnitudes_karatsuba(
+def _multiply_magnitudes_karatsuba(
     read a: List[UInt32],
     a_start: Int,
     a_end: Int,
@@ -466,7 +466,7 @@ fn _multiply_magnitudes_karatsuba(
 # ===----------------------------------------------------------------------=== #
 
 
-fn _add_slices(
+def _add_slices(
     read a: List[UInt32],
     a_start: Int,
     a_end: Int,
@@ -517,7 +517,7 @@ fn _add_slices(
     return result^
 
 
-fn _add_magnitudes_inplace(mut a: List[UInt32], read b: List[UInt32]):
+def _add_magnitudes_inplace(mut a: List[UInt32], read b: List[UInt32]):
     """Adds magnitude b into a in-place: a += b.
 
     Grows a if needed to accommodate the sum.
@@ -559,7 +559,7 @@ fn _add_magnitudes_inplace(mut a: List[UInt32], read b: List[UInt32]):
             a.shrink(len(a) - 1)
 
 
-fn _add_at_offset_inplace(
+def _add_at_offset_inplace(
     mut a: List[UInt32], read b: List[UInt32], offset: Int
 ):
     """Adds magnitude b into a at a word offset: a[offset:] += b.
@@ -589,7 +589,7 @@ fn _add_at_offset_inplace(
         j += 1
 
 
-fn _subtract_magnitudes_inplace(mut a: List[UInt32], read b: List[UInt32]):
+def _subtract_magnitudes_inplace(mut a: List[UInt32], read b: List[UInt32]):
     """Subtracts magnitude b from a in-place: a -= b.
 
     Assumes a >= b. Used by Karatsuba where this is guaranteed by construction.
@@ -620,7 +620,7 @@ fn _subtract_magnitudes_inplace(mut a: List[UInt32], read b: List[UInt32]):
         a.shrink(len(a) - 1)
 
 
-fn _shift_left_words_inplace(mut a: List[UInt32], n: Int):
+def _shift_left_words_inplace(mut a: List[UInt32], n: Int):
     """Shifts a magnitude left by n whole words in-place (multiply by B^n).
 
     This is equivalent to prepending n zero words. In base-2^32, B^n shift
@@ -651,7 +651,7 @@ fn _shift_left_words_inplace(mut a: List[UInt32], n: Int):
     memset_zero(ptr=a._data, count=n)
 
 
-fn _divmod_single_word(
+def _divmod_single_word(
     a: List[UInt32], d: UInt32
 ) -> Tuple[List[UInt32], UInt32]:
     """Divides a magnitude by a single UInt32 word.
@@ -684,7 +684,7 @@ fn _divmod_single_word(
     return (quotient^, UInt32(remainder))
 
 
-fn _divmod_magnitudes(
+def _divmod_magnitudes(
     a: List[UInt32], b: List[UInt32]
 ) raises -> Tuple[List[UInt32], List[UInt32]]:
     """Divides magnitude a by magnitude b, returning (quotient, remainder).
@@ -841,7 +841,7 @@ fn _divmod_magnitudes(
     return (quotient^, remainder^)
 
 
-fn _compare_word_lists(a: List[UInt32], b: List[UInt32]) -> Int8:
+def _compare_word_lists(a: List[UInt32], b: List[UInt32]) -> Int8:
     """Compares two unsigned magnitude word lists.
 
     Args:
@@ -861,7 +861,7 @@ fn _compare_word_lists(a: List[UInt32], b: List[UInt32]) -> Int8:
     return 0
 
 
-fn _count_leading_zeros(word: UInt32) -> Int:
+def _count_leading_zeros(word: UInt32) -> Int:
     """Counts the number of leading zero bits in a UInt32 word.
 
     Args:
@@ -891,7 +891,7 @@ fn _count_leading_zeros(word: UInt32) -> Int:
     return count
 
 
-fn _shift_left_words(a: List[UInt32], shift: Int) -> List[UInt32]:
+def _shift_left_words(a: List[UInt32], shift: Int) -> List[UInt32]:
     """Shifts a magnitude left by `shift` bits (0 <= shift < 32).
 
     Args:
@@ -920,7 +920,7 @@ fn _shift_left_words(a: List[UInt32], shift: Int) -> List[UInt32]:
     return result^
 
 
-fn _shift_right_words(
+def _shift_right_words(
     a: List[UInt32], shift: Int, num_words: Int
 ) -> List[UInt32]:
     """Shifts the first `num_words` of a magnitude right by `shift` bits.
@@ -973,7 +973,7 @@ fn _shift_right_words(
 # ===----------------------------------------------------------------------=== #
 
 
-fn _get_words_slice(a: List[UInt32], start: Int, end: Int) -> List[UInt32]:
+def _get_words_slice(a: List[UInt32], start: Int, end: Int) -> List[UInt32]:
     """Extracts a sub-range of words from a magnitude as a new list.
 
     Returns words[start:end], stripping leading zeros. If the range is
@@ -1001,7 +1001,7 @@ fn _get_words_slice(a: List[UInt32], start: Int, end: Int) -> List[UInt32]:
     return result^
 
 
-fn _is_zero_in_range(a: List[UInt32], start: Int, end: Int) -> Bool:
+def _is_zero_in_range(a: List[UInt32], start: Int, end: Int) -> Bool:
     """Checks if all words in a[start:end] are zero.
 
     Args:
@@ -1019,7 +1019,7 @@ fn _is_zero_in_range(a: List[UInt32], start: Int, end: Int) -> Bool:
     return True
 
 
-fn _add_from_slice_inplace(
+def _add_from_slice_inplace(
     mut a: List[UInt32], read b: List[UInt32], b_start: Int, b_end: Int
 ):
     """Adds b[b_start:b_end] into a in-place: a += b[b_start:b_end].
@@ -1066,7 +1066,7 @@ fn _add_from_slice_inplace(
             a.shrink(len(a) - 1)
 
 
-fn _multiply_magnitudes_slices(
+def _multiply_magnitudes_slices(
     read a: List[UInt32],
     a_start: Int,
     a_end: Int,
@@ -1102,7 +1102,7 @@ fn _multiply_magnitudes_slices(
     return _multiply_magnitudes_karatsuba(a, a_start, a_end, b, b_start, b_end)
 
 
-fn _decrement_inplace(mut a: List[UInt32]):
+def _decrement_inplace(mut a: List[UInt32]):
     """Subtracts 1 from a magnitude in-place. Assumes a > 0."""
     for i in range(len(a)):
         if a[i] > 0:
@@ -1111,7 +1111,7 @@ fn _decrement_inplace(mut a: List[UInt32]):
         a[i] = UInt32(0xFFFF_FFFF)
 
 
-fn _divmod_knuth_d_from_slices(
+def _divmod_knuth_d_from_slices(
     read a: List[UInt32],
     a_start: Int,
     a_end: Int,
@@ -1282,7 +1282,7 @@ fn _divmod_knuth_d_from_slices(
     return (quotient^, u^)
 
 
-fn _divmod_burnikel_ziegler(
+def _divmod_burnikel_ziegler(
     a: List[UInt32], b: List[UInt32]
 ) raises -> Tuple[List[UInt32], List[UInt32]]:
     """Divides magnitude a by magnitude b using Burnikel-Ziegler algorithm.
@@ -1409,7 +1409,7 @@ fn _divmod_burnikel_ziegler(
     return (quotient^, remainder^)
 
 
-fn _bz_two_by_one_slices(
+def _bz_two_by_one_slices(
     a: List[UInt32],
     b: List[UInt32],
     a_start: Int,
@@ -1479,7 +1479,7 @@ fn _bz_two_by_one_slices(
     return (q1^, s^)
 
 
-fn _bz_three_by_two_slices(
+def _bz_three_by_two_slices(
     a: List[UInt32],
     b: List[UInt32],
     a_start: Int,
@@ -1563,7 +1563,7 @@ fn _bz_three_by_two_slices(
 # ===----------------------------------------------------------------------=== #
 
 
-fn add(x1: BigInt, x2: BigInt) -> BigInt:
+def add(x1: BigInt, x2: BigInt) -> BigInt:
     """Returns the sum of two BigInt numbers.
 
     Args:
@@ -1588,7 +1588,7 @@ fn add(x1: BigInt, x2: BigInt) -> BigInt:
     return BigInt(raw_words=result_words^, sign=x1.sign)
 
 
-fn subtract(x1: BigInt, x2: BigInt) -> BigInt:
+def subtract(x1: BigInt, x2: BigInt) -> BigInt:
     """Returns the difference of two BigInt numbers.
 
     Args:
@@ -1625,7 +1625,7 @@ fn subtract(x1: BigInt, x2: BigInt) -> BigInt:
         return BigInt(raw_words=result_words^, sign=not x1.sign)
 
 
-fn negative(x: BigInt) -> BigInt:
+def negative(x: BigInt) -> BigInt:
     """Returns the negative of a BigInt number.
 
     Args:
@@ -1641,7 +1641,7 @@ fn negative(x: BigInt) -> BigInt:
     return result^
 
 
-fn absolute(x: BigInt) -> BigInt:
+def absolute(x: BigInt) -> BigInt:
     """Returns the absolute value of a BigInt number.
 
     Args:
@@ -1656,7 +1656,7 @@ fn absolute(x: BigInt) -> BigInt:
         return x.copy()
 
 
-fn multiply(x1: BigInt, x2: BigInt) -> BigInt:
+def multiply(x1: BigInt, x2: BigInt) -> BigInt:
     """Returns the product of two BigInt numbers.
 
     Uses schoolbook multiplication O(n*m) with UInt64 intermediate products.
@@ -1682,7 +1682,7 @@ fn multiply(x1: BigInt, x2: BigInt) -> BigInt:
 # ===----------------------------------------------------------------------=== #
 
 
-fn _compare_magnitudes_words(
+def _compare_magnitudes_words(
     read a: List[UInt32], read b: List[UInt32]
 ) -> Int8:
     """Compares the magnitudes of two word lists.
@@ -1700,7 +1700,7 @@ fn _compare_magnitudes_words(
     return 0
 
 
-fn add_inplace(mut x: BigInt, read other: BigInt):
+def add_inplace(mut x: BigInt, read other: BigInt):
     """Performs x += other by mutating x.words directly.
 
     Avoids allocating a new BigInt. Uses the existing _add_magnitudes_inplace
@@ -1743,7 +1743,7 @@ fn add_inplace(mut x: BigInt, read other: BigInt):
             x.sign = other.sign
 
 
-fn add_inplace_int(mut x: BigInt, value: Int):
+def add_inplace_int(mut x: BigInt, value: Int):
     """Performs x += value (Int) by mutating x.words directly.
 
     Optimized for adding a small integer: avoids constructing a full BigInt.
@@ -1816,7 +1816,7 @@ fn add_inplace_int(mut x: BigInt, value: Int):
             x.sign = other_sign
 
 
-fn subtract_inplace(mut x: BigInt, read other: BigInt):
+def subtract_inplace(mut x: BigInt, read other: BigInt):
     """Performs x -= other by mutating x.words directly.
 
     Avoids allocating a new BigInt. Leverages the relationship:
@@ -1863,7 +1863,7 @@ fn subtract_inplace(mut x: BigInt, read other: BigInt):
             x.sign = effective_other_sign
 
 
-fn multiply_inplace(mut x: BigInt, read other: BigInt):
+def multiply_inplace(mut x: BigInt, read other: BigInt):
     """Performs x *= other by computing the product and moving the result
     into x.words.
 
@@ -1890,7 +1890,7 @@ fn multiply_inplace(mut x: BigInt, read other: BigInt):
     x.sign = x.sign != other.sign
 
 
-fn left_shift_inplace(mut x: BigInt, shift: Int):
+def left_shift_inplace(mut x: BigInt, shift: Int):
     """Performs x <<= shift by mutating x.words directly.
 
     Avoids allocating a new BigInt. Shifts left by `shift` bits
@@ -1935,7 +1935,7 @@ fn left_shift_inplace(mut x: BigInt, shift: Int):
     x.words = new_words^
 
 
-fn right_shift_inplace(mut x: BigInt, shift: Int):
+def right_shift_inplace(mut x: BigInt, shift: Int):
     """Performs x >>= shift by mutating x.words directly.
 
     For negative numbers, performs arithmetic right shift (rounds toward
@@ -2026,7 +2026,7 @@ fn right_shift_inplace(mut x: BigInt, shift: Int):
     x._normalize()
 
 
-fn floor_divide_inplace(mut x: BigInt, read other: BigInt) raises:
+def floor_divide_inplace(mut x: BigInt, read other: BigInt) raises:
     """Performs x //= other by computing the quotient and moving the result
     into x.words.
 
@@ -2073,7 +2073,7 @@ fn floor_divide_inplace(mut x: BigInt, read other: BigInt) raises:
     x._normalize()
 
 
-fn floor_modulo_inplace(mut x: BigInt, read other: BigInt) raises:
+def floor_modulo_inplace(mut x: BigInt, read other: BigInt) raises:
     """Performs x %= other by computing the remainder and moving the result
     into x.words.
 
@@ -2111,7 +2111,7 @@ fn floor_modulo_inplace(mut x: BigInt, read other: BigInt) raises:
     x._normalize()
 
 
-fn floor_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
+def floor_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
     """Returns the quotient of two BigInt numbers, rounding toward negative
     infinity.
 
@@ -2163,7 +2163,7 @@ fn floor_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
             return BigInt(raw_words=q_plus_one^, sign=True)
 
 
-fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
+def truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
     """Returns the quotient of two BigInt numbers, truncating toward zero.
 
     The result satisfies: x1 = truncate_divide(x1, x2) * x2 + truncate_modulo(x1, x2).
@@ -2194,7 +2194,7 @@ fn truncate_divide(x1: BigInt, x2: BigInt) raises -> BigInt:
     return BigInt(raw_words=q_words^, sign=sign)
 
 
-fn floor_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
+def floor_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
     """Returns the floor modulo (remainder) of two BigInt numbers.
 
     The result has the same sign as the divisor and satisfies:
@@ -2234,7 +2234,7 @@ fn floor_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
         return BigInt(raw_words=adjusted^, sign=x2.sign)
 
 
-fn truncate_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
+def truncate_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
     """Returns the truncate modulo (remainder) of two BigInt numbers.
 
     The result has the same sign as the dividend and satisfies:
@@ -2268,7 +2268,7 @@ fn truncate_modulo(x1: BigInt, x2: BigInt) raises -> BigInt:
     return BigInt(raw_words=r_words^, sign=x1.sign)
 
 
-fn floor_divmod(x1: BigInt, x2: BigInt) raises -> Tuple[BigInt, BigInt]:
+def floor_divmod(x1: BigInt, x2: BigInt) raises -> Tuple[BigInt, BigInt]:
     """Returns both the floor quotient and floor remainder.
 
     The result satisfies: x1 = q * x2 + r, where r has same sign as x2.
@@ -2320,7 +2320,7 @@ fn floor_divmod(x1: BigInt, x2: BigInt) raises -> Tuple[BigInt, BigInt]:
             )
 
 
-fn power(base: BigInt, exponent: Int) raises -> BigInt:
+def power(base: BigInt, exponent: Int) raises -> BigInt:
     """Raises a BigInt to the power of a non-negative integer exponent.
 
     Uses binary exponentiation (exponentiation by squaring) for O(log n)
@@ -2403,7 +2403,7 @@ fn power(base: BigInt, exponent: Int) raises -> BigInt:
     return BigInt(raw_words=result_words^, sign=result_sign)
 
 
-fn left_shift(x: BigInt, shift: Int) -> BigInt:
+def left_shift(x: BigInt, shift: Int) -> BigInt:
     """Shifts a BigInt left by `shift` bits (multiply by 2^shift).
 
     This is an efficient operation for base-2^32 representation since it
@@ -2450,7 +2450,7 @@ fn left_shift(x: BigInt, shift: Int) -> BigInt:
     return BigInt(raw_words=result^, sign=x.sign)
 
 
-fn right_shift(x: BigInt, shift: Int) -> BigInt:
+def right_shift(x: BigInt, shift: Int) -> BigInt:
     """Shifts a BigInt right by `shift` bits (floor divide by 2^shift).
 
     For negative numbers, this performs an arithmetic right shift (rounds

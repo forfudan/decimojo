@@ -25,7 +25,7 @@ from calculator.tokenizer import (
 # ===----------------------------------------------------------------------=== #
 
 
-fn assert_token(
+def assert_token(
     tokens: List[Token],
     index: Int,
     expected_kind: Int,
@@ -46,25 +46,25 @@ fn assert_token(
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_single_number() raises:
+def test_single_number() raises:
     var toks = tokenize("42")
     testing.assert_equal(len(toks), 1, "single number token count")
     assert_token(toks, 0, TOKEN_NUMBER, "42", "single number")
 
 
-fn test_decimal_number() raises:
+def test_decimal_number() raises:
     var toks = tokenize("3.14")
     testing.assert_equal(len(toks), 1, "decimal number token count")
     assert_token(toks, 0, TOKEN_NUMBER, "3.14", "decimal number")
 
 
-fn test_leading_dot() raises:
+def test_leading_dot() raises:
     var toks = tokenize(".5")
     testing.assert_equal(len(toks), 1, "leading dot token count")
     assert_token(toks, 0, TOKEN_NUMBER, ".5", "leading dot")
 
 
-fn test_simple_addition() raises:
+def test_simple_addition() raises:
     var toks = tokenize("2 + 3")
     testing.assert_equal(len(toks), 3, "2+3 token count")
     assert_token(toks, 0, TOKEN_NUMBER, "2", "first operand")
@@ -72,7 +72,7 @@ fn test_simple_addition() raises:
     assert_token(toks, 2, TOKEN_NUMBER, "3", "second operand")
 
 
-fn test_all_operators() raises:
+def test_all_operators() raises:
     var toks = tokenize("1+2-3*4/5")
     testing.assert_equal(len(toks), 9, "all ops token count")
     assert_token(toks, 1, TOKEN_PLUS, "+", "plus")
@@ -81,14 +81,14 @@ fn test_all_operators() raises:
     assert_token(toks, 7, TOKEN_SLASH, "/", "slash")
 
 
-fn test_parentheses() raises:
+def test_parentheses() raises:
     var toks = tokenize("(2+3)*4")
     testing.assert_equal(len(toks), 7, "parens token count")
     assert_token(toks, 0, TOKEN_LPAREN, "(", "left paren")
     assert_token(toks, 4, TOKEN_RPAREN, ")", "right paren")
 
 
-fn test_whitespace_handling() raises:
+def test_whitespace_handling() raises:
     var toks_no_space = tokenize("2+3")
     var toks_spaces = tokenize("  2  +  3  ")
     testing.assert_equal(
@@ -104,14 +104,14 @@ fn test_whitespace_handling() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_unary_minus_at_start() raises:
+def test_unary_minus_at_start() raises:
     var toks = tokenize("-5")
     testing.assert_equal(len(toks), 2, "-5 token count")
     assert_token(toks, 0, TOKEN_UNARY_MINUS, "neg", "unary at start")
     assert_token(toks, 1, TOKEN_NUMBER, "5", "operand after unary")
 
 
-fn test_unary_minus_after_lparen() raises:
+def test_unary_minus_after_lparen() raises:
     var toks = tokenize("(-5)")
     testing.assert_equal(len(toks), 4, "(-5) token count")
     assert_token(toks, 0, TOKEN_LPAREN, "(", "lparen")
@@ -120,7 +120,7 @@ fn test_unary_minus_after_lparen() raises:
     assert_token(toks, 3, TOKEN_RPAREN, ")", "rparen")
 
 
-fn test_unary_minus_after_operator() raises:
+def test_unary_minus_after_operator() raises:
     var toks = tokenize("2*-3")
     testing.assert_equal(len(toks), 4, "2*-3 token count")
     assert_token(toks, 0, TOKEN_NUMBER, "2", "first operand")
@@ -129,13 +129,13 @@ fn test_unary_minus_after_operator() raises:
     assert_token(toks, 3, TOKEN_NUMBER, "3", "second operand")
 
 
-fn test_binary_minus() raises:
+def test_binary_minus() raises:
     var toks = tokenize("5-3")
     testing.assert_equal(len(toks), 3, "5-3 token count")
     assert_token(toks, 1, TOKEN_MINUS, "-", "binary minus")
 
 
-fn test_double_unary_minus() raises:
+def test_double_unary_minus() raises:
     var toks = tokenize("--5")
     testing.assert_equal(len(toks), 3, "--5 token count")
     assert_token(toks, 0, TOKEN_UNARY_MINUS, "neg", "first neg")
@@ -148,7 +148,7 @@ fn test_double_unary_minus() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_large_integer() raises:
+def test_large_integer() raises:
     var toks = tokenize("123456789012345678901234567890")
     testing.assert_equal(len(toks), 1, "large integer token count")
     assert_token(
@@ -160,7 +160,7 @@ fn test_large_integer() raises:
     )
 
 
-fn test_long_decimal() raises:
+def test_long_decimal() raises:
     var toks = tokenize("3.141592653589793238462643383279")
     testing.assert_equal(len(toks), 1, "long decimal token count")
     assert_token(
@@ -177,7 +177,7 @@ fn test_long_decimal() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_invalid_character() raises:
+def test_invalid_character() raises:
     var raised = False
     try:
         _ = tokenize("2 @ 3")
@@ -186,7 +186,7 @@ fn test_invalid_character() raises:
     testing.assert_true(raised, "should raise on invalid character '@'")
 
 
-fn test_empty_string() raises:
+def test_empty_string() raises:
     """Empty string should raise an error since Phase 3."""
     var raised = False
     try:
@@ -201,7 +201,7 @@ fn test_empty_string() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_caret_operator() raises:
+def test_caret_operator() raises:
     var toks = tokenize("2^3")
     testing.assert_equal(len(toks), 3, "2^3 token count")
     assert_token(toks, 0, TOKEN_NUMBER, "2", "base")
@@ -209,20 +209,20 @@ fn test_caret_operator() raises:
     assert_token(toks, 2, TOKEN_NUMBER, "3", "exponent")
 
 
-fn test_double_star_as_power() raises:
+def test_double_star_as_power() raises:
     """'**' should be tokenized as TOKEN_CARET."""
     var toks = tokenize("2**3")
     testing.assert_equal(len(toks), 3, "2**3 token count")
     assert_token(toks, 1, TOKEN_CARET, "^", "** -> ^")
 
 
-fn test_caret_precedence() raises:
+def test_caret_precedence() raises:
     """Verify the caret token has precedence 3."""
     var toks = tokenize("^")
     testing.assert_equal(toks[0].precedence(), 3, "^ precedence")
 
 
-fn test_caret_right_associative() raises:
+def test_caret_right_associative() raises:
     """Verify the caret token is right-associative."""
     var toks = tokenize("^")
     testing.assert_equal(toks[0].is_left_associative(), False, "^ right assoc")
@@ -233,7 +233,7 @@ fn test_caret_right_associative() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_function_sqrt() raises:
+def test_function_sqrt() raises:
     var toks = tokenize("sqrt(4)")
     testing.assert_equal(len(toks), 4, "sqrt(4) token count")
     assert_token(toks, 0, TOKEN_FUNC, "sqrt", "sqrt function")
@@ -242,23 +242,23 @@ fn test_function_sqrt() raises:
     assert_token(toks, 3, TOKEN_RPAREN, ")", "rparen")
 
 
-fn test_function_ln() raises:
+def test_function_ln() raises:
     var toks = tokenize("ln(2)")
     testing.assert_equal(len(toks), 4, "ln(2) token count")
     assert_token(toks, 0, TOKEN_FUNC, "ln", "ln function")
 
 
-fn test_function_sin() raises:
+def test_function_sin() raises:
     var toks = tokenize("sin(3.14)")
     assert_token(toks, 0, TOKEN_FUNC, "sin", "sin function")
 
 
-fn test_function_log10() raises:
+def test_function_log10() raises:
     var toks = tokenize("log10(100)")
     assert_token(toks, 0, TOKEN_FUNC, "log10", "log10 function")
 
 
-fn test_function_abs() raises:
+def test_function_abs() raises:
     var toks = tokenize("abs(-5)")
     assert_token(toks, 0, TOKEN_FUNC, "abs", "abs function")
 
@@ -268,19 +268,19 @@ fn test_function_abs() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_constant_pi() raises:
+def test_constant_pi() raises:
     var toks = tokenize("pi")
     testing.assert_equal(len(toks), 1, "pi token count")
     assert_token(toks, 0, TOKEN_CONST, "pi", "pi constant")
 
 
-fn test_constant_e() raises:
+def test_constant_e() raises:
     var toks = tokenize("e")
     testing.assert_equal(len(toks), 1, "e token count")
     assert_token(toks, 0, TOKEN_CONST, "e", "e constant")
 
 
-fn test_constant_in_expression() raises:
+def test_constant_in_expression() raises:
     var toks = tokenize("2*pi")
     testing.assert_equal(len(toks), 3, "2*pi token count")
     assert_token(toks, 0, TOKEN_NUMBER, "2", "number")
@@ -293,7 +293,7 @@ fn test_constant_in_expression() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_comma_in_function() raises:
+def test_comma_in_function() raises:
     var toks = tokenize("root(27, 3)")
     testing.assert_equal(len(toks), 6, "root(27,3) token count")
     assert_token(toks, 0, TOKEN_FUNC, "root", "root function")
@@ -309,18 +309,18 @@ fn test_comma_in_function() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn test_unary_minus_after_caret() raises:
+def test_unary_minus_after_caret() raises:
     var toks = tokenize("2^-3")
     testing.assert_equal(len(toks), 4, "2^-3 token count")
     assert_token(toks, 2, TOKEN_UNARY_MINUS, "neg", "unary after ^")
 
 
-fn test_unary_minus_after_comma() raises:
+def test_unary_minus_after_comma() raises:
     var toks = tokenize("root(-8, 3)")
     assert_token(toks, 2, TOKEN_UNARY_MINUS, "neg", "unary after (")
 
 
-fn test_unknown_identifier() raises:
+def test_unknown_identifier() raises:
     var raised = False
     try:
         _ = tokenize("foo(1)")
@@ -334,5 +334,5 @@ fn test_unknown_identifier() raises:
 # ===----------------------------------------------------------------------=== #
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

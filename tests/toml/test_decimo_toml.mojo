@@ -4,14 +4,14 @@ from decimo.toml import parse_string, parse_file
 from std import testing
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()
 
 
 # ---------------------------------------------------------------------------
 # 1. Basic key-value pairs
 # ---------------------------------------------------------------------------
-fn test_basic_key_value() raises:
+def test_basic_key_value() raises:
     var doc = parse_string(
         """
 title = "TOML Example"
@@ -29,7 +29,7 @@ enabled = true
 # ---------------------------------------------------------------------------
 # 2. Standard tables
 # ---------------------------------------------------------------------------
-fn test_table() raises:
+def test_table() raises:
     var doc = parse_string(
         """
 [server]
@@ -46,7 +46,7 @@ port = 1018
 # ---------------------------------------------------------------------------
 # 3. Simple array
 # ---------------------------------------------------------------------------
-fn test_array() raises:
+def test_array() raises:
     var doc = parse_string(
         """
 colors = ["red", "green", "blue"]
@@ -63,7 +63,7 @@ numbers = [1, 2, 3]
 # ---------------------------------------------------------------------------
 # 4. Multiline array with trailing comma & comments
 # ---------------------------------------------------------------------------
-fn test_multiline_array() raises:
+def test_multiline_array() raises:
     var doc = parse_string(
         """
 fruits = [
@@ -82,7 +82,7 @@ fruits = [
 # ---------------------------------------------------------------------------
 # 5. Dotted keys
 # ---------------------------------------------------------------------------
-fn test_dotted_keys() raises:
+def test_dotted_keys() raises:
     var doc = parse_string(
         """
 fruit.name = "apple"
@@ -106,7 +106,7 @@ fruit.size.height = 20
 # ---------------------------------------------------------------------------
 # 6. Dotted table headers
 # ---------------------------------------------------------------------------
-fn test_dotted_table_headers() raises:
+def test_dotted_table_headers() raises:
     var doc = parse_string(
         """
 [a.b.c]
@@ -126,7 +126,7 @@ key = "value"
 # ---------------------------------------------------------------------------
 # 7. Quoted keys
 # ---------------------------------------------------------------------------
-fn test_quoted_keys() raises:
+def test_quoted_keys() raises:
     var doc = parse_string(
         """
 "my key" = "value1"
@@ -140,7 +140,7 @@ fn test_quoted_keys() raises:
 # ---------------------------------------------------------------------------
 # 8. Inline tables
 # ---------------------------------------------------------------------------
-fn test_inline_table() raises:
+def test_inline_table() raises:
     var doc = parse_string(
         """
 point = {x = 1, y = 2}
@@ -157,7 +157,7 @@ point = {x = 1, y = 2}
 # ---------------------------------------------------------------------------
 # 9. Nested inline tables
 # ---------------------------------------------------------------------------
-fn test_inline_table_nested() raises:
+def test_inline_table_nested() raises:
     var doc = parse_string(
         """
 animal = {type.name = "cat"}
@@ -172,7 +172,7 @@ animal = {type.name = "cat"}
 # ---------------------------------------------------------------------------
 # 10. Array of tables
 # ---------------------------------------------------------------------------
-fn test_array_of_tables() raises:
+def test_array_of_tables() raises:
     var doc = parse_string(
         """
 [[products]]
@@ -194,7 +194,7 @@ sku = 284758393
 # ---------------------------------------------------------------------------
 # 11. Array of tables with dotted header
 # ---------------------------------------------------------------------------
-fn test_array_of_tables_dotted() raises:
+def test_array_of_tables_dotted() raises:
     var doc = parse_string(
         """
 [[fruits]]
@@ -214,7 +214,7 @@ name = "banana"
 # ---------------------------------------------------------------------------
 # 12. Unicode escape sequences
 # ---------------------------------------------------------------------------
-fn test_unicode_escapes() raises:
+def test_unicode_escapes() raises:
     var doc = parse_string(
         """
 smile = "\\u0041"
@@ -228,7 +228,7 @@ smile = "\\u0041"
 # ---------------------------------------------------------------------------
 # 13. Integer bases: hex, octal, binary
 # ---------------------------------------------------------------------------
-fn test_integer_bases() raises:
+def test_integer_bases() raises:
     var doc = parse_string(
         """
 hex = 0xDEADBEEF
@@ -247,7 +247,7 @@ dec = 1_000_000
 # ---------------------------------------------------------------------------
 # 14. Special float values (inf, nan)
 # ---------------------------------------------------------------------------
-fn test_special_floats() raises:
+def test_special_floats() raises:
     var doc = parse_string(
         """
 pos_inf = inf
@@ -263,7 +263,7 @@ not_a_number = nan
 # ---------------------------------------------------------------------------
 # 15. Multiline basic strings
 # ---------------------------------------------------------------------------
-fn test_multiline_strings() raises:
+def test_multiline_strings() raises:
     var src = String('[test]\nml = """line1\nline2\nline3"""\n')
     var doc = parse_string(src)
     var tbl = doc.get_table("test")
@@ -276,7 +276,7 @@ fn test_multiline_strings() raises:
 # ---------------------------------------------------------------------------
 # 16. Nested tables via dotted keys + standard tables
 # ---------------------------------------------------------------------------
-fn test_nested_tables_via_dotted() raises:
+def test_nested_tables_via_dotted() raises:
     var doc = parse_string(
         """
 [server]
@@ -300,7 +300,7 @@ port = 1314
 # ---------------------------------------------------------------------------
 # 17. Duplicate key detection
 # ---------------------------------------------------------------------------
-fn test_duplicate_key_detection() raises:
+def test_duplicate_key_detection() raises:
     var caught = False
     try:
         var doc = parse_string(
@@ -318,7 +318,7 @@ name = "second"
 # ---------------------------------------------------------------------------
 # 18. Mixed features
 # ---------------------------------------------------------------------------
-fn test_mixed_features() raises:
+def test_mixed_features() raises:
     var doc = parse_string(
         """
 title = "Mixed Test"
@@ -363,7 +363,7 @@ role = "backend"
 # ---------------------------------------------------------------------------
 # 19. Parse our actual pixi.toml to make sure it still works
 # ---------------------------------------------------------------------------
-fn test_our_pixi_toml() raises:
+def test_our_pixi_toml() raises:
     var doc = parse_file("pixi.toml")
     var ws = doc.get_table("workspace")
     assert_true(len(ws) > 0, "pixi.toml workspace table non-empty")
@@ -374,6 +374,6 @@ fn test_our_pixi_toml() raises:
 
 
 # ---------------------------------------------------------------------------
-fn assert_true(cond: Bool, msg: String) raises:
+def assert_true(cond: Bool, msg: String) raises:
     if not cond:
         raise Error("ASSERTION FAILED: " + msg)

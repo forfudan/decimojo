@@ -115,7 +115,7 @@ struct DecimoError[error_type: String = "DecimoError"](Writable):
     var message: Optional[String]
     var previous_error: Optional[String]
 
-    fn __init__(
+    def __init__(
         out self,
         file: String,
         function: String,
@@ -132,7 +132,7 @@ struct DecimoError[error_type: String = "DecimoError"](Writable):
                 String(previous_error.value()).split("\n")[3:]
             )
 
-    fn write_to[W: Writer](self, mut writer: W):
+    def write_to[W: Writer](self, mut writer: W):
         writer.write("\n")
         writer.write(("-" * 80))
         writer.write("\n")

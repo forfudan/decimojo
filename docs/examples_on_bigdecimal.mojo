@@ -1,7 +1,7 @@
 from decimo.prelude import *
 
 
-fn main() raises:
+def main() raises:
     var b = Decimal(
         "1234.56789"
     )  # Decimal is a Python-like alias for BigDecimal

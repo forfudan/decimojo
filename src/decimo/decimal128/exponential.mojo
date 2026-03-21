@@ -29,7 +29,7 @@ import decimo.decimal128.utility
 # ===----------------------------------------------------------------------=== #
 
 
-fn power(base: Decimal128, exponent: Decimal128) raises -> Decimal128:
+def power(base: Decimal128, exponent: Decimal128) raises -> Decimal128:
     """Raises a Decimal128 base to an arbitrary Decimal128 exponent power.
 
     This function handles both integer and non-integer exponents using the
@@ -88,7 +88,7 @@ fn power(base: Decimal128, exponent: Decimal128) raises -> Decimal128:
         raise Error("Error in `power()` with Decimal128 exponent: ", e)
 
 
-fn power(base: Decimal128, exponent: Int) raises -> Decimal128:
+def power(base: Decimal128, exponent: Int) raises -> Decimal128:
     """Raises a Decimal128 base to an integer power.
 
     Args:
@@ -147,7 +147,7 @@ fn power(base: Decimal128, exponent: Int) raises -> Decimal128:
     return result
 
 
-fn root(x: Decimal128, n: Int) raises -> Decimal128:
+def root(x: Decimal128, n: Int) raises -> Decimal128:
     """Calculates the n-th root of a Decimal128 value using Newton-Raphson method.
 
     Args:
@@ -320,7 +320,7 @@ fn root(x: Decimal128, n: Int) raises -> Decimal128:
     return guess
 
 
-fn sqrt(x: Decimal128) raises -> Decimal128:
+def sqrt(x: Decimal128) raises -> Decimal128:
     """Computes the square root of a Decimal128 value using Newton-Raphson method.
 
     Args:
@@ -444,7 +444,7 @@ fn sqrt(x: Decimal128) raises -> Decimal128:
 # ===----------------------------------------------------------------------=== #
 
 
-fn exp(x: Decimal128) raises -> Decimal128:
+def exp(x: Decimal128) raises -> Decimal128:
     """Calculates e^x for any Decimal128 value using optimized range reduction.
     x should be no greater than 66 to avoid overflow.
 
@@ -597,7 +597,7 @@ fn exp(x: Decimal128) raises -> Decimal128:
     return exp_main * exp_remainder
 
 
-fn exp_series(x: Decimal128) raises -> Decimal128:
+def exp_series(x: Decimal128) raises -> Decimal128:
     """Calculates e^x using Taylor series expansion.
     Do not use this function for values larger than 1, but `exp()` instead.
 
@@ -652,7 +652,7 @@ fn exp_series(x: Decimal128) raises -> Decimal128:
 # ===----------------------------------------------------------------------=== #
 
 
-fn ln(x: Decimal128) raises -> Decimal128:
+def ln(x: Decimal128) raises -> Decimal128:
     """Calculates the natural logarithm (ln) of a Decimal128 value.
 
     Args:
@@ -857,7 +857,7 @@ fn ln(x: Decimal128) raises -> Decimal128:
     return result
 
 
-fn ln_series(z: Decimal128) raises -> Decimal128:
+def ln_series(z: Decimal128) raises -> Decimal128:
     """Calculates ln(1+z) using Taylor series expansion at 1.
     For best accuracy, |z| should be small (< 0.5).
 
@@ -915,7 +915,7 @@ fn ln_series(z: Decimal128) raises -> Decimal128:
     return result
 
 
-fn log(x: Decimal128, base: Decimal128) raises -> Decimal128:
+def log(x: Decimal128, base: Decimal128) raises -> Decimal128:
     """Calculates the logarithm of a Decimal128 with respect to an arbitrary base.
 
     Args:
@@ -970,7 +970,7 @@ fn log(x: Decimal128, base: Decimal128) raises -> Decimal128:
     return ln_x / ln_base
 
 
-fn log10(x: Decimal128) raises -> Decimal128:
+def log10(x: Decimal128) raises -> Decimal128:
     """Calculates the base-10 logarithm (log10) of a Decimal128 value.
 
     Args:

@@ -21,7 +21,7 @@ Implements functions for comparison operations on BigInt objects.
 from decimo.bigint.bigint import BigInt
 
 
-fn compare_magnitudes(x1: BigInt, x2: BigInt) -> Int8:
+def compare_magnitudes(x1: BigInt, x2: BigInt) -> Int8:
     """Compares the magnitudes (absolute values) of two BigInt numbers.
 
     The comparison is performed on the unsigned word arrays in base-2^32:
@@ -53,7 +53,7 @@ fn compare_magnitudes(x1: BigInt, x2: BigInt) -> Int8:
     return 0
 
 
-fn compare(x1: BigInt, x2: BigInt) -> Int8:
+def compare(x1: BigInt, x2: BigInt) -> Int8:
     """Compares two BigInt objects and returns the result.
 
     Args:
@@ -81,7 +81,7 @@ fn compare(x1: BigInt, x2: BigInt) -> Int8:
     return magnitude_comparison if not x1.sign else -magnitude_comparison
 
 
-fn greater(x1: BigInt, x2: BigInt) -> Bool:
+def greater(x1: BigInt, x2: BigInt) -> Bool:
     """Checks if the first number is greater than the second.
 
     Args:
@@ -94,7 +94,7 @@ fn greater(x1: BigInt, x2: BigInt) -> Bool:
     return compare(x1, x2) > 0
 
 
-fn greater_equal(x1: BigInt, x2: BigInt) -> Bool:
+def greater_equal(x1: BigInt, x2: BigInt) -> Bool:
     """Checks if the first number is greater than or equal to the second.
 
     Args:
@@ -107,7 +107,7 @@ fn greater_equal(x1: BigInt, x2: BigInt) -> Bool:
     return compare(x1, x2) >= 0
 
 
-fn less(x1: BigInt, x2: BigInt) -> Bool:
+def less(x1: BigInt, x2: BigInt) -> Bool:
     """Checks if the first number is less than the second.
 
     Args:
@@ -120,7 +120,7 @@ fn less(x1: BigInt, x2: BigInt) -> Bool:
     return compare(x1, x2) < 0
 
 
-fn less_equal(x1: BigInt, x2: BigInt) -> Bool:
+def less_equal(x1: BigInt, x2: BigInt) -> Bool:
     """Checks if the first number is less than or equal to the second.
 
     Args:
@@ -133,7 +133,7 @@ fn less_equal(x1: BigInt, x2: BigInt) -> Bool:
     return compare(x1, x2) <= 0
 
 
-fn equal(x1: BigInt, x2: BigInt) -> Bool:
+def equal(x1: BigInt, x2: BigInt) -> Bool:
     """Checks if two numbers are equal.
 
     Args:
@@ -146,7 +146,7 @@ fn equal(x1: BigInt, x2: BigInt) -> Bool:
     return compare(x1, x2) == 0
 
 
-fn not_equal(x1: BigInt, x2: BigInt) -> Bool:
+def not_equal(x1: BigInt, x2: BigInt) -> Bool:
     """Checks if two numbers are not equal.
 
     Args:

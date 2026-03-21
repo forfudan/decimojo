@@ -15,7 +15,7 @@ from decimo.tests import parse_file, load_test_cases
 comptime data_path = "tests/decimal128/test_data/decimal128_modulo.toml"
 
 
-fn _run_section(doc: TOMLDocument, section: String) raises:
+def _run_section(doc: TOMLDocument, section: String) raises:
     """Run modulo test cases from a TOML section."""
     var cases = load_test_cases(doc, section)
     for tc in cases:
@@ -23,25 +23,25 @@ fn _run_section(doc: TOMLDocument, section: String) raises:
         testing.assert_equal(String(result), tc.expected, tc.description)
 
 
-fn test_modulo_basic() raises:
+def test_modulo_basic() raises:
     """5 basic modulo cases with positive values."""
     var doc = parse_file(data_path)
     _run_section(doc, "modulo_basic")
 
 
-fn test_modulo_negative() raises:
+def test_modulo_negative() raises:
     """6 modulo cases with negative numbers."""
     var doc = parse_file(data_path)
     _run_section(doc, "modulo_negative")
 
 
-fn test_modulo_edge() raises:
+def test_modulo_edge() raises:
     """6 edge cases: mod by 1, zero dividend, small/large numbers."""
     var doc = parse_file(data_path)
     _run_section(doc, "modulo_edge")
 
 
-fn test_modulo_exception() raises:
+def test_modulo_exception() raises:
     """Modulo by zero should raise an error."""
     var exception_caught = False
     try:
@@ -52,7 +52,7 @@ fn test_modulo_exception() raises:
     testing.assert_true(exception_caught, "Modulo by zero should raise error")
 
 
-fn test_mathematical_relationships() raises:
+def test_mathematical_relationships() raises:
     """Mathematical properties of modulo."""
     # a = (a // b) * b + (a % b) for positive
     var a1 = Decimal128(10)
@@ -96,10 +96,10 @@ fn test_mathematical_relationships() raises:
     )
 
 
-fn test_consistency_with_floor_division() raises:
+def test_consistency_with_floor_division() raises:
     """Verify a % b equals a - (a // b) * b for various inputs."""
 
-    fn _check(a_str: String, b_str: String) raises:
+    def _check(a_str: String, b_str: String) raises:
         var a = Decimal128(a_str)
         var b = Decimal128(b_str)
         testing.assert_equal(
@@ -114,5 +114,5 @@ fn test_consistency_with_floor_division() raises:
     _check("10", "-3")
 
 
-fn main() raises:
+def main() raises:
     testing.TestSuite.discover_tests[__functions_in_module()]().run()

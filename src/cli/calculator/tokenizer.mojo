@@ -53,22 +53,22 @@ struct Token(Copyable, ImplicitlyCopyable, Movable):
     starts.  Used to produce clear diagnostics such as
     ``Error at position 5: unexpected '*'``."""
 
-    fn __init__(out self, kind: Int, value: String = "", position: Int = 0):
+    def __init__(out self, kind: Int, value: String = "", position: Int = 0):
         self.kind = kind
         self.value = value
         self.position = position
 
-    fn __init__(out self, *, copy: Self):
+    def __init__(out self, *, copy: Self):
         self.kind = copy.kind
         self.value = copy.value
         self.position = copy.position
 
-    fn __init__(out self, *, deinit take: Self):
+    def __init__(out self, *, deinit take: Self):
         self.kind = take.kind
         self.value = take.value^
         self.position = take.position
 
-    fn is_operator(self) -> Bool:
+    def is_operator(self) -> Bool:
         """Returns True if this token is a binary or unary operator."""
         return (
             self.kind == TOKEN_PLUS
@@ -79,7 +79,7 @@ struct Token(Copyable, ImplicitlyCopyable, Movable):
             or self.kind == TOKEN_UNARY_MINUS
         )
 
-    fn precedence(self) -> Int:
+    def precedence(self) -> Int:
         """Returns the precedence level (higher binds tighter).
 
         | Precedence | Operators | Associativity |
@@ -99,7 +99,7 @@ struct Token(Copyable, ImplicitlyCopyable, Movable):
             return 4
         return 0
 
-    fn is_left_associative(self) -> Bool:
+    def is_left_associative(self) -> Bool:
         """Returns True if this operator is left-associative."""
         if self.kind == TOKEN_UNARY_MINUS or self.kind == TOKEN_CARET:
             return False
@@ -122,7 +122,7 @@ struct Token(Copyable, ImplicitlyCopyable, Movable):
 # Known function names and built-in constants.
 
 
-fn _is_known_function(name: String) -> Bool:
+def _is_known_function(name: String) -> Bool:
     """Returns True if `name` is a recognized function."""
     return (
         name == "sqrt"
@@ -141,22 +141,22 @@ fn _is_known_function(name: String) -> Bool:
     )
 
 
-fn _is_known_constant(name: String) -> Bool:
+def _is_known_constant(name: String) -> Bool:
     """Returns True if `name` is a recognized constant."""
     return name == "pi" or name == "e"
 
 
-fn _is_alpha_or_underscore(c: UInt8) -> Bool:
+def _is_alpha_or_underscore(c: UInt8) -> Bool:
     """Returns True if c is a-z, A-Z, or '_'."""
     return (c >= 65 and c <= 90) or (c >= 97 and c <= 122) or c == 95
 
 
-fn _is_alnum_or_underscore(c: UInt8) -> Bool:
+def _is_alnum_or_underscore(c: UInt8) -> Bool:
     """Returns True if c is a-z, A-Z, 0-9, or '_'."""
     return _is_alpha_or_underscore(c) or (c >= 48 and c <= 57)
 
 
-fn tokenize(expr: String) raises -> List[Token]:
+def tokenize(expr: String) raises -> List[Token]:
     """Converts an expression string into a list of tokens.
 
     Handles: numbers (integer and decimal), operators (+, -, *, /, ^),

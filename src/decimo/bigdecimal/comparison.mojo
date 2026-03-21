@@ -21,7 +21,7 @@ Implements functions for comparison operations on BigDecimal objects.
 from decimo.bigdecimal.bigdecimal import BigDecimal
 
 
-fn compare_absolute(x1: BigDecimal, x2: BigDecimal) -> Int8:
+def compare_absolute(x1: BigDecimal, x2: BigDecimal) -> Int8:
     """Compares the absolute values of two numbers.
 
     Args:
@@ -71,7 +71,7 @@ fn compare_absolute(x1: BigDecimal, x2: BigDecimal) -> Int8:
         return scaled_x1.compare(x2.coefficient)
 
 
-fn compare(x1: BigDecimal, x2: BigDecimal) -> Int8:
+def compare(x1: BigDecimal, x2: BigDecimal) -> Int8:
     """Compares two BigDecimal numbers.
 
     Args:
@@ -110,44 +110,44 @@ fn compare(x1: BigDecimal, x2: BigDecimal) -> Int8:
         return abs_comparison
 
 
-fn equal(x1: BigDecimal, x2: BigDecimal) -> Bool:
+def equal(x1: BigDecimal, x2: BigDecimal) -> Bool:
     """Returns whether x1 equals x2."""
     return compare(x1, x2) == 0
 
 
-fn not_equal(x1: BigDecimal, x2: BigDecimal) -> Bool:
+def not_equal(x1: BigDecimal, x2: BigDecimal) -> Bool:
     """Returns whether x1 does not equal x2."""
     return compare(x1, x2) != 0
 
 
-fn less(x1: BigDecimal, x2: BigDecimal) -> Bool:
+def less(x1: BigDecimal, x2: BigDecimal) -> Bool:
     """Returns whether x1 is less than x2."""
     return compare(x1, x2) < 0
 
 
-fn less_equal(x1: BigDecimal, x2: BigDecimal) -> Bool:
+def less_equal(x1: BigDecimal, x2: BigDecimal) -> Bool:
     """Returns whether x1 is less than or equal to x2."""
     return compare(x1, x2) <= 0
 
 
-fn greater(x1: BigDecimal, x2: BigDecimal) -> Bool:
+def greater(x1: BigDecimal, x2: BigDecimal) -> Bool:
     """Returns whether x1 is greater than x2."""
     return compare(x1, x2) > 0
 
 
-fn greater_equal(x1: BigDecimal, x2: BigDecimal) -> Bool:
+def greater_equal(x1: BigDecimal, x2: BigDecimal) -> Bool:
     """Returns whether x1 is greater than or equal to x2."""
     return compare(x1, x2) >= 0
 
 
-fn max(x1: BigDecimal, x2: BigDecimal) -> BigDecimal:
+def max(x1: BigDecimal, x2: BigDecimal) -> BigDecimal:
     """Returns the maximum of x1 and x2."""
     if compare(x1, x2) >= 0:
         return x1.copy()
     return x2.copy()
 
 
-fn min(x1: BigDecimal, x2: BigDecimal) -> BigDecimal:
+def min(x1: BigDecimal, x2: BigDecimal) -> BigDecimal:
     """Returns the minimum of x1 and x2."""
     if compare(x1, x2) <= 0:
         return x1.copy()

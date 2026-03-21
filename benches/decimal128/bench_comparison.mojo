@@ -18,7 +18,7 @@ from std.time import perf_counter_ns
 from std.collections import List
 
 
-fn main() raises:
+def main() raises:
     var log_file = open_log_file("benchmark_comparison")
     print_header("Decimo Decimal128 Comparison Benchmark", log_file)
 
