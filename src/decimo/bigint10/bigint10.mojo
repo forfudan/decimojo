@@ -36,7 +36,6 @@ import decimo.str
 
 struct BigInt10(
     Absable,
-    AnyType,
     Comparable,
     Copyable,
     IntableRaising,

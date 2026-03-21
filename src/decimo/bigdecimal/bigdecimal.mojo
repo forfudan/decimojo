@@ -46,7 +46,6 @@ This will be configurable in future when Mojo supports global variables.
 
 struct BigDecimal(
     Absable,
-    AnyType,
     Comparable,
     Copyable,
     FloatableRaising,
