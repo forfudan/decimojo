@@ -84,7 +84,7 @@ def test_number_of_digits() raises:
 
 
 def test_repr() raises:
-    """Test __repr__ (Representable trait)."""
+    """Test __repr__ (Writable trait)."""
     testing.assert_equal(repr(BigInt(42)), 'BigInt("42")')
     testing.assert_equal(repr(BigInt(-7)), 'BigInt("-7")')
     testing.assert_equal(repr(BigInt(0)), 'BigInt("0")')
