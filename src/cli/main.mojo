@@ -46,7 +46,7 @@ fn _run() raises:
     )
 
     # Positional: the math expression
-    cmd.add_arg(
+    cmd.add_argument(
         Arg(
             "expr",
             help=(
@@ -58,41 +58,41 @@ fn _run() raises:
     )
 
     # Named option: number of significant digits
-    cmd.add_arg(
+    cmd.add_argument(
         Arg("precision", help="Number of significant digits (default: 50)")
-        .long("precision")
-        .short("p")
-        .default("50")
+        .long["precision"]()
+        .short["p"]()
+        .default["50"]()
     )
 
     # Output formatting flags
     # Mutually exclusive: scientific, engineering
-    cmd.add_arg(
+    cmd.add_argument(
         Arg("scientific", help="Output in scientific notation (e.g. 1.23E+10)")
-        .long("scientific")
-        .short("s")
+        .long["scientific"]()
+        .short["s"]()
         .flag()
     )
-    cmd.add_arg(
+    cmd.add_argument(
         Arg(
             "engineering",
             help="Output in engineering notation (exponent multiple of 3)",
         )
-        .long("engineering")
-        .short("e")
+        .long["engineering"]()
+        .short["e"]()
         .flag()
     )
     cmd.mutually_exclusive(["scientific", "engineering"])
-    cmd.add_arg(
+    cmd.add_argument(
         Arg(
             "pad",
             help="Pad trailing zeros to the specified precision",
         )
-        .long("pad")
-        .short("P")
+        .long["pad"]()
+        .short["P"]()
         .flag()
     )
-    cmd.add_arg(
+    cmd.add_argument(
         Arg(
             "delimiter",
             help=(
@@ -100,30 +100,27 @@ fn _run() raises:
                 " (e.g. '_' gives 1_234.567_89)"
             ),
         )
-        .long("delimiter")
-        .short("d")
-        .default("")
+        .long["delimiter"]()
+        .short["d"]()
+        .default[""]()
     )
 
     # Rounding mode for the final result
-    var rounding_choices: List[String] = [
-        "half-even",
-        "half-up",
-        "half-down",
-        "up",
-        "down",
-        "ceiling",
-        "floor",
-    ]
-    cmd.add_arg(
+    cmd.add_argument(
         Arg(
             "rounding-mode",
             help="Rounding mode for the final result (default: half-even)",
         )
-        .long("rounding-mode")
-        .short("r")
-        .choices(rounding_choices^)
-        .default("half-even")
+        .long["rounding-mode"]()
+        .short["r"]()
+        .choice["half-even"]()
+        .choice["half-up"]()
+        .choice["half-down"]()
+        .choice["up"]()
+        .choice["down"]()
+        .choice["ceiling"]()
+        .choice["floor"]()
+        .default["half-even"]()
     )
 
     var result = cmd.parse()
