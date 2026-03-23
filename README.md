@@ -5,14 +5,14 @@ An arbitrary-precision integer and decimal library for [Mojo](https://www.modula
 [![Version](https://img.shields.io/github/v/tag/forfudan/decimo?label=version&color=blue)](https://github.com/forfudan/decimo/releases)
 [![Mojo](https://img.shields.io/badge/mojo-0.26.2-orange)](https://docs.modular.com/mojo/manual/)
 [![pixi](https://img.shields.io/badge/pixi%20add-decimo-purple)](https://prefix.dev/channels/modular-community/packages/decimo)
-[![CI](https://img.shields.io/github/actions/workflow/status/forfudan/argmojo/run_tests.yaml?branch=main&label=tests)](https://github.com/forfudan/argmojo/actions/workflows/run_tests.yaml)
+[![CI](https://img.shields.io/github/actions/workflow/status/forfudan/decimo/run_tests.yaml?branch=main&label=tests)](https://github.com/forfudan/decimo/actions/workflows/run_tests.yaml)
 
 <!-- 
-[![License](https://img.shields.io/github/license/forfudan/argmojo)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/forfudan/argmojo?style=flat)](https://github.com/forfudan/argmojo/stargazers)
-[![Issues](https://img.shields.io/github/issues/forfudan/argmojo)](https://github.com/forfudan/argmojo/issues)
+[![License](https://img.shields.io/github/license/forfudan/decimo)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/forfudan/decimo?style=flat)](https://github.com/forfudan/decimo/stargazers)
+[![Issues](https://img.shields.io/github/issues/forfudan/decimo)](https://github.com/forfudan/decimo/issues)
 ![Platforms](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey)
-[![Last Commit](https://img.shields.io/github/last-commit/forfudan/argmojo?color=red)](https://github.com/forfudan/argmojo/commits/main)
+[![Last Commit](https://img.shields.io/github/last-commit/forfudan/decimo?color=red)](https://github.com/forfudan/decimo/commits/main)
 -->
 
 <!-- 
