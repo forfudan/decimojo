@@ -59,7 +59,7 @@ channels = ["https://conda.modular.com/max", "https://repo.prefix.dev/modular-co
 1. 在您項目的 `mojoproject.toml` 文件中，添加以下依賴：
 
     ```toml
-    decimo = "==0.8.0"
+    decimo = "==0.9.0"
     ```
 
     然後運行 `pixi install` 來下載並安裝包。
@@ -79,6 +79,7 @@ channels = ["https://conda.modular.com/max", "https://repo.prefix.dev/modular-co
 | `decimojo` | v0.6.0 | ==0.25.7      | pixi     |
 | `decimojo` | v0.7.0 | ==0.26.1      | pixi     |
 | `decimo`   | v0.8.0 | ==0.26.1      | pixi     |
+| `decimo`   | v0.9.0 | ==0.26.2      | pixi     |
 
 ## 快速開始
 
@@ -326,7 +327,7 @@ fn main() raises:
     year         = {2026},
     title        = {Decimo: An arbitrary-precision integer and decimal library for Mojo},
     url          = {https://github.com/forfudan/decimo},
-    version      = {0.8.0},
+    version      = {0.9.0},
     note         = {Computer Software}
 }
 ```

@@ -114,7 +114,7 @@ pixi add decimo
 Or add it manually to `pixi.toml`:
 
 ```toml
-decimo = "==0.8.0"
+decimo = "==0.9.0"
 ```
 
 Then run `pixi install`.

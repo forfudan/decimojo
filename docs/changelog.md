@@ -2,6 +2,53 @@
 
 This is a list of changes for the Decimo package (formerly DeciMojo).
 
+## 20260323 (v0.9.0)
+
+Decimo v0.9.0 updates the codebase to **Mojo v0.26.2** and marks the **"make it useful"** phase. This release introduces three major additions:
+
+First, a full-featured **CLI arbitrary-precision calculator** (`decimo`), powered by Decimo's `BigDecimal`. It includes a complete tokenizer, a shunting-yard parser, and an RPN evaluator with working-precision guard digits, supporting built-in mathematical functions (`sqrt`, `cbrt`, `root`, `ln`, `log`, `log10`, `exp`, trigonometric functions, `abs`), constants (`pi`, `e`), and configurable output formatting (scientific/engineering notation, digit delimiters, rounding modes, and precision control).
+
+Second, the `BigDecimal` API is significantly expanded with methods aligned to Python's `decimal.Decimal` and the IEEE 754 specification, including `as_tuple()`, `adjusted()`, `same_quantum()`, `scaleb()`, `fma()`, `copy_abs()`, `copy_negate()`, `copy_sign()`, `bit_count()`, `__float__()`, engineering notation, and digit-group delimiters for `to_string()`. The `ROUND_HALF_DOWN` rounding mode is added, bringing the total to seven.
+
+Third, Decimo gains **Python bindings** via Mojo's `PythonModuleBuilder`, exposing `BigDecimal` as a native Python extension module (`_decimo.so`) with a Pythonic `Decimal` wrapper for seamless interoperability.
+
+### ⭐️ New in v0.9.0
+
+**CLI Calculator:**
+
+1. Implement an arbitrary-precision CLI calculator with tokenizer, shunting-yard parser, and RPN evaluator, supporting arithmetic expressions with parentheses and operator precedence (PR #170).
+1. Add built-in functions (`sqrt`, `cbrt`, `root`, `ln`, `log`, `log10`, `exp`, `sin`, `cos`, `tan`, `cot`, `csc`, `abs`), constants (`pi`, `e`), and configurable output formatting (scientific/engineering notation, digit delimiter, padding, rounding mode) (PR #171).
+1. Improve CLI error handling with token location tracing and ANSI-coloured diagnostic output (PR #178).
+1. Use working precision (user precision + guard digits) for intermediate calculations to improve result accuracy (PR #182).
+
+**BigDecimal:**
+
+1. Add **engineering notation** (`to_eng_string()`) and **digit-group delimiters** (`to_string_with_separators()`) to `to_string()`, with optional line-width wrapping (PR #172).
+1. Add utility methods: `is_integer()`, `is_signed()`, `number_class()`, `logb()`, `normalize()`, `radix()` (PR #173).
+1. Implement `as_tuple()` returning `(sign, digits, exponent)`, matching Python's `Decimal.as_tuple()` (PR #174).
+1. Implement `adjusted()`, `copy_abs()`, `copy_negate()`, and `copy_sign()` aligned with Python's `decimal` API (PR #176).
+1. Implement `same_quantum()` and add the `ROUND_HALF_DOWN` rounding mode, bringing the total to seven (PR #177).
+1. Implement `scaleb()`, `fma()`, `bit_count()`, and `__float__()` (implements `FloatableRaising`) (PR #183).
+
+**Python Bindings:**
+
+1. Implement Python bindings via Mojo's `PythonModuleBuilder`, exposing `BigDecimal` as a native extension module `_decimo.so` with arithmetic, comparison, and string operations (PR #179).
+1. Restructure `python/` to a `src` layout with `pyproject.toml` for PyPI packaging (PR #180).
+
+### 🦋 Changed in v0.9.0
+
+1. Update the codebase to **Mojo v0.26.2**, adopting `byte=` slicing syntax, `out` parameter convention for constructors, and updated `String`/`StringSlice` APIs (PR #185).
+1. Merge `TOMLMojo` into Decimo as the sub-package `decimo.toml`, removing standalone packaging (PR #181).
+1. Rename `exponent()` to `adjusted()` for `BigDecimal` to align with Python's `decimal` module naming (PR #176).
+1. Change default precision of `BigDecimal` to **28** significant digits, matching Python's `decimal` module default.
+1. Remove deprecated free-function comparison aliases and legacy method names from `BigDecimal` (PR #173).
+1. Align `print_internal_representation()` output style across `BigInt`, `BigUInt`, `BigDecimal`, and `Decimal128` with dynamic column alignment (PR #169).
+
+### 📚 Documentation and testing in v0.9.0
+
+- Add comprehensive user manuals for the Decimo library and the CLI calculator (PR #184).
+- Add info badges to the README file.
+
 ## 20260225 (v0.8.0)
 
 > **Library renamed from `decimojo` to `decimo`.** The package name, import path, and all public references have been updated. GitHub repository will be renamed to `forfudan/decimo` (GitHub auto-redirects the old URL).
