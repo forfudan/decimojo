@@ -73,7 +73,7 @@ Then, you can install Decimo using any of these methods:
 1. In the `mojoproject.toml` file of your project, add the following dependency:
 
     ```toml
-    decimo = "==0.8.0"
+    decimo = "==0.9.0"
     ```
 
     Then run `pixi install` to download and install the package.
@@ -93,7 +93,7 @@ The following table summarizes the package versions and their corresponding Mojo
 | `decimojo` | v0.6.0  | ==0.25.7      | pixi            |
 | `decimojo` | v0.7.0  | ==0.26.1      | pixi            |
 | `decimo`   | v0.8.0  | ==0.26.1      | pixi            |
-| `decimo`   | v0.9.0  | ==0.26.1      | pixi            |
+| `decimo`   | v0.9.0  | ==0.26.2      | pixi            |
 
 ## Quick start
 
@@ -375,7 +375,7 @@ If you find Decimo useful, consider listing it in your citations.
     year         = {2026},
     title        = {Decimo: An arbitrary-precision integer and decimal library for Mojo},
     url          = {https://github.com/forfudan/decimo},
-    version      = {0.8.0},
+    version      = {0.9.0},
     note         = {Computer Software}
 }
 ```
