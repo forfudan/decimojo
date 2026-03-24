@@ -106,6 +106,38 @@ def test_from_integral_scalar() raises:
     var i64 = BigInt(Int64(-9223372036854775808))
     testing.assert_equal(String(i64), "-9223372036854775808")
 
+    # UInt128
+    var u128_small = BigInt(UInt128(12345))
+    testing.assert_equal(String(u128_small), "12345")
+
+    var u128_large = BigInt(UInt128(80554649779790687400))
+    testing.assert_equal(String(u128_large), "80554649779790687400")
+
+    # UInt128.MAX = 340282366920938463463374607431768211455
+    var u128_max = BigInt(UInt128.MAX)
+    testing.assert_equal(
+        String(u128_max), "340282366920938463463374607431768211455"
+    )
+
+    # Int128
+    var i128_pos = BigInt(Int128(80554649779790687400))
+    testing.assert_equal(String(i128_pos), "80554649779790687400")
+
+    var i128_neg = BigInt(Int128(-80554649779790687400))
+    testing.assert_equal(String(i128_neg), "-80554649779790687400")
+
+    # Int128.MIN = -170141183460469231731687303715884105728
+    var i128_min = BigInt(Int128.MIN)
+    testing.assert_equal(
+        String(i128_min), "-170141183460469231731687303715884105728"
+    )
+
+    # Int128.MAX = 170141183460469231731687303715884105727
+    var i128_max = BigInt(Int128.MAX)
+    testing.assert_equal(
+        String(i128_max), "170141183460469231731687303715884105727"
+    )
+
 
 # ===----------------------------------------------------------------------=== #
 # Test: D&C from_string for large numbers

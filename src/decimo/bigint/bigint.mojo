@@ -293,26 +293,39 @@ struct BigInt(
             return Self()
 
         var sign: Bool
-        var magnitude: UInt64
+        var remaining: Scalar[dtype]
 
         comptime if dtype.is_unsigned():
             sign = False
-            magnitude = UInt64(value)
+            remaining = value
         else:
             if value < 0:
                 sign = True
-                # Compute magnitude using explicit two's-complement conversion
-                magnitude = UInt64(0) - UInt64(value)
+                remaining = value
             else:
                 sign = False
-                magnitude = UInt64(value)
+                remaining = value
 
-        var words = List[UInt32](capacity=2)
-        var lo = UInt32(magnitude & 0xFFFF_FFFF)
-        var hi = UInt32(magnitude >> 32)
-        words.append(lo)
-        if hi != 0:
-            words.append(hi)
+        var words = List[UInt32](capacity=4)
+
+        comptime if dtype.is_unsigned():
+            while remaining != 0:
+                words.append(UInt32(remaining & 0xFFFF_FFFF))
+                remaining >>= 32
+        else:
+            if sign:
+                # Extract words from negative value without casting to
+                # a wider unsigned type. We divide by -0x1_0000_0000 to
+                # extract each 32-bit chunk of the magnitude.
+                while remaining != 0:
+                    var quotient = remaining // Scalar[dtype](-0x1_0000_0000)
+                    var word_val = remaining % Scalar[dtype](-0x1_0000_0000)
+                    words.append(UInt32(-word_val))
+                    remaining = -quotient
+            else:
+                while remaining != 0:
+                    words.append(UInt32(remaining & 0xFFFF_FFFF))
+                    remaining >>= 32
 
         return Self(raw_words=words^, sign=sign)
 
