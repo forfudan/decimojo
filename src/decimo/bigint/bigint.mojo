@@ -180,7 +180,7 @@ struct BigInt(
         self = Self.from_string(value)
 
     @implicit
-    def __init__(out self, value: Scalar):
+    def __init__(out self, value: Scalar) where value.dtype.is_integral():
         """Constructs a BigInt from an integral scalar.
         This includes all SIMD integral types, such as Int8, Int16, UInt32, etc.
 
@@ -231,54 +231,13 @@ struct BigInt(
         return Self(raw_words=words^, sign=sign)
 
     @staticmethod
-    def from_uint64(value: UInt64) -> Self:
-        """Creates a BigInt from a UInt64.
-
-        Args:
-            value: The unsigned 64-bit integer value.
-
-        Returns:
-            The BigInt representation.
-        """
-        if value == 0:
-            return Self()
-
-        var words = List[UInt32](capacity=2)
-        var lo = UInt32(value & 0xFFFF_FFFF)
-        var hi = UInt32(value >> 32)
-        words.append(lo)
-        if hi != 0:
-            words.append(hi)
-
-        return Self(raw_words=words^, sign=False)
-
-    @staticmethod
-    def from_uint128(value: UInt128) -> Self:
-        """Creates a BigInt from a UInt128.
-
-        Args:
-            value: The unsigned 128-bit integer value.
-
-        Returns:
-            The BigInt representation.
-        """
-        if value == 0:
-            return Self()
-
-        var words = List[UInt32](capacity=4)
-        var remaining = value
-        while remaining != 0:
-            words.append(UInt32(remaining & 0xFFFF_FFFF))
-            remaining >>= 32
-
-        return Self(raw_words=words^, sign=False)
-
-    @staticmethod
-    def from_integral_scalar[dtype: DType, //](value: SIMD[dtype, 1]) -> Self:
+    def from_integral_scalar[
+        dtype: DType, //
+    ](value: SIMD[dtype, 1]) -> Self where dtype.is_integral():
         """Initializes a BigInt from an integral scalar.
         This includes all SIMD integral types:
-        Int8, Int16, Int32, Int64, Int128,
-        UInt8, UInt16, UInt32, UInt64, UInt128,
+        Int8, Int16, Int32, Int64, Int128, Int256,
+        UInt8, UInt16, UInt32, UInt64, UInt128, UInt256,
         and the platform-sized Int (DType.int) and UInt (DType.uint).
 
         Constraints:
@@ -290,8 +249,6 @@ struct BigInt(
         Returns:
             The BigInt representation of the Scalar value.
         """
-
-        comptime assert dtype.is_integral(), "dtype must be integral."
 
         if value == 0:
             return Self()
@@ -315,6 +272,14 @@ struct BigInt(
 
         elif dtype == DType.uint128:
             var words = List[UInt32](capacity=4)
+            var remaining = value
+            while remaining != 0:
+                words.append(UInt32(remaining & 0xFFFF_FFFF))
+                remaining >>= 32
+            return Self(raw_words=words^, sign=False)
+
+        elif dtype == DType.uint256:
+            var words = List[UInt32](capacity=8)
             var remaining = value
             while remaining != 0:
                 words.append(UInt32(remaining & 0xFFFF_FFFF))
@@ -423,9 +388,26 @@ struct BigInt(
                     rem >>= 32
             return Self(raw_words=words^, sign=sign)
 
+        # --- Int256: use division to extract 32-bit chunks ---
+
+        elif dtype == DType.int256:
+            var sign = value < 0
+            var words = List[UInt32](capacity=8)
+            var rem = Int256(value)
+            if sign:
+                while rem != 0:
+                    var quotient = rem // Int256(-0x1_0000_0000)
+                    var word_val = rem % Int256(-0x1_0000_0000)
+                    words.append(UInt32(-word_val))
+                    rem = -quotient
+            else:
+                while rem != 0:
+                    words.append(UInt32(rem & 0xFFFF_FFFF))
+                    rem >>= 32
+            return Self(raw_words=words^, sign=sign)
+
         else:
             comptime assert False, "unsupported integral dtype"
-            return Self()
 
     @staticmethod
     def from_string(value: String) raises -> Self:
