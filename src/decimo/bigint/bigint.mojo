@@ -221,14 +221,19 @@ struct BigInt(
             sign = False
             magnitude = UInt(value)
 
-        # Split the magnitude into 32-bit words
-        # On 64-bit platforms, Int is 64 bits → at most 2 words
-        var words = List[UInt32](capacity=2)
-        while magnitude != 0:
+        comptime if size_of[Int]() == 4:
+            # 32-bit platform: magnitude fits in 1 word
+            return Self(raw_words=[UInt32(magnitude)], sign=sign)
+        elif size_of[Int]() == 8:
+            # 64-bit platform: at most 2 words
+            var words = List[UInt32](capacity=2)
             words.append(UInt32(magnitude & 0xFFFF_FFFF))
-            magnitude >>= 32
-
-        return Self(raw_words=words^, sign=sign)
+            var hi = UInt32(magnitude >> 32)
+            if hi != 0:
+                words.append(hi)
+            return Self(raw_words=words^, sign=sign)
+        else:
+            comptime assert False, "unsupported platform Int size"
 
     @staticmethod
     def from_integral_scalar[
