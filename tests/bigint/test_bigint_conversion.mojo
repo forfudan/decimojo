@@ -138,6 +138,63 @@ def test_from_integral_scalar() raises:
         String(i128_max), "170141183460469231731687303715884105727"
     )
 
+    # UInt256
+    var u256_small = BigInt(UInt256(12345))
+    testing.assert_equal(String(u256_small), "12345")
+
+    var u256_large = BigInt(UInt256(80554649779790687400))
+    testing.assert_equal(String(u256_large), "80554649779790687400")
+
+    # UInt256 value larger than UInt128.MAX
+    var u256_big = BigInt(UInt256(8055464977979068740023761289648172697))
+    testing.assert_equal(
+        String(u256_big), "8055464977979068740023761289648172697"
+    )
+
+    # Int256
+    var i256_pos = BigInt(Int256(8055464977979068740023761289648172697))
+    testing.assert_equal(
+        String(i256_pos), "8055464977979068740023761289648172697"
+    )
+
+    var i256_neg = BigInt(Int256(-8055464977979068740023761289648172697))
+    testing.assert_equal(
+        String(i256_neg), "-8055464977979068740023761289648172697"
+    )
+
+    # Int256.MIN
+    var i256_min = BigInt(Int256.MIN)
+    testing.assert_equal(
+        String(i256_min),
+        "-57896044618658097711785492504343953926634992332820282019728792003956564819968",
+    )
+
+    # Int256.MAX
+    var i256_max = BigInt(Int256.MAX)
+    testing.assert_equal(
+        String(i256_max),
+        "57896044618658097711785492504343953926634992332820282019728792003956564819967",
+    )
+
+    # Platform-sized UInt
+    var u_plat = BigInt(UInt(18446744073709551615))
+    testing.assert_equal(String(u_plat), "18446744073709551615")
+
+    # Platform-sized Int
+    var i_plat_pos = BigInt(Scalar[DType.int](1234567890))
+    testing.assert_equal(String(i_plat_pos), "1234567890")
+
+    var i_plat_neg = BigInt(Scalar[DType.int](-1234567890))
+    testing.assert_equal(String(i_plat_neg), "-1234567890")
+
+    # Zero for various types
+    testing.assert_equal(String(BigInt(UInt8(0))), "0")
+    testing.assert_equal(String(BigInt(Int32(0))), "0")
+    testing.assert_equal(String(BigInt(UInt64(0))), "0")
+    testing.assert_equal(String(BigInt(Int128(0))), "0")
+    testing.assert_equal(String(BigInt(UInt256(0))), "0")
+    testing.assert_equal(String(BigInt(Int256(0))), "0")
+
 
 # ===----------------------------------------------------------------------=== #
 # Test: D&C from_string for large numbers
