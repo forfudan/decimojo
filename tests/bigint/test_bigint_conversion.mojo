@@ -171,7 +171,7 @@ def test_from_integral_scalar() raises:
     var u256_large = BigInt(UInt256(80554649779790687400))
     testing.assert_equal(String(u256_large), "80554649779790687400")
 
-    # UInt256 value larger than UInt128.MAX
+    # UInt256 value larger than UInt64.MAX
     var u256_big = BigInt(UInt256(8055464977979068740023761289648172697))
     testing.assert_equal(
         String(u256_big), "8055464977979068740023761289648172697"
