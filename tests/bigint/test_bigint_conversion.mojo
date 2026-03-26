@@ -68,6 +68,32 @@ def test_to_int_overflow() raises:
 
 
 # ===----------------------------------------------------------------------=== #
+# Test: from_int edge cases (Int.MIN, Int.MAX)
+# ===----------------------------------------------------------------------=== #
+
+
+def test_from_int_edge_cases() raises:
+    """Test from_int with Int.MIN, Int.MAX, and other edge values."""
+    # Int.MAX via from_int path
+    var max_val = BigInt(Int.MAX)
+    testing.assert_equal(String(max_val), "9223372036854775807")
+    testing.assert_equal(Int(max_val), Int.MAX)
+
+    # Int.MIN via from_int path — the critical edge case
+    var min_val = BigInt(Int.MIN)
+    testing.assert_equal(String(min_val), "-9223372036854775808")
+    testing.assert_equal(Int(min_val), Int.MIN)
+
+    # -1 via from_int
+    var neg_one = BigInt(-1)
+    testing.assert_equal(String(neg_one), "-1")
+
+    # 0 via from_int
+    var zero = BigInt(Int(0))
+    testing.assert_equal(String(zero), "0")
+
+
+# ===----------------------------------------------------------------------=== #
 # Test: from_integral_scalar / Scalar constructor
 # ===----------------------------------------------------------------------=== #
 
