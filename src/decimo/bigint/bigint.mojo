@@ -211,12 +211,7 @@ struct BigInt(
 
         if value < 0:
             sign = True
-            # Handle Int.MIN (two's complement asymmetry)
-            if value == Int.MIN:
-                # |Int.MIN| = Int.MAX + 1
-                magnitude = UInt(Int.MAX) + 1
-            else:
-                magnitude = UInt(-value)
+            magnitude = UInt(0) - UInt(value)
         else:
             sign = False
             magnitude = UInt(value)
