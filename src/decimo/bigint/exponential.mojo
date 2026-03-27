@@ -315,7 +315,7 @@ def sqrt(x: BigInt) raises -> BigInt:
             guess -= 1
         while (guess + 1) * (guess + 1) <= val:
             guess += 1
-        return BigInt.from_uint64(guess)
+        return BigInt.from_integral_scalar(guess)
 
     # For all larger inputs: optimized precision-doubling with UInt64 fast path
     return _sqrt_precision_doubling_fast(x)
@@ -400,7 +400,7 @@ def _sqrt_precision_doubling_fast(x: BigInt) raises -> BigInt:
         )
         if decimo.bigint.arithmetics._compare_word_lists(a_sq, x.words) > 0:
             a_val -= 1
-        return BigInt.from_uint64(a_val)
+        return BigInt.from_integral_scalar(a_val)
 
     # --- Phase 1.5: UInt128 arithmetic for 1-2 more iterations ---
     # Extends the native phase to cover e+d up to ~126 bits, avoiding

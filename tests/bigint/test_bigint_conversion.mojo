@@ -68,6 +68,32 @@ def test_to_int_overflow() raises:
 
 
 # ===----------------------------------------------------------------------=== #
+# Test: from_int edge cases (Int.MIN, Int.MAX)
+# ===----------------------------------------------------------------------=== #
+
+
+def test_from_int_edge_cases() raises:
+    """Test from_int with Int.MIN, Int.MAX, and other edge values."""
+    # Int.MAX via from_int path
+    var max_val = BigInt(Int.MAX)
+    testing.assert_equal(String(max_val), "9223372036854775807")
+    testing.assert_equal(Int(max_val), Int.MAX)
+
+    # Int.MIN via from_int path — the critical edge case
+    var min_val = BigInt(Int.MIN)
+    testing.assert_equal(String(min_val), "-9223372036854775808")
+    testing.assert_equal(Int(min_val), Int.MIN)
+
+    # -1 via from_int
+    var neg_one = BigInt(-1)
+    testing.assert_equal(String(neg_one), "-1")
+
+    # 0 via from_int
+    var zero = BigInt(Int(0))
+    testing.assert_equal(String(zero), "0")
+
+
+# ===----------------------------------------------------------------------=== #
 # Test: from_integral_scalar / Scalar constructor
 # ===----------------------------------------------------------------------=== #
 
@@ -105,6 +131,95 @@ def test_from_integral_scalar() raises:
     # Int64
     var i64 = BigInt(Int64(-9223372036854775808))
     testing.assert_equal(String(i64), "-9223372036854775808")
+
+    # UInt128
+    var u128_small = BigInt(UInt128(12345))
+    testing.assert_equal(String(u128_small), "12345")
+
+    var u128_large = BigInt(UInt128(80554649779790687400))
+    testing.assert_equal(String(u128_large), "80554649779790687400")
+
+    # UInt128.MAX = 340282366920938463463374607431768211455
+    var u128_max = BigInt(UInt128.MAX)
+    testing.assert_equal(
+        String(u128_max), "340282366920938463463374607431768211455"
+    )
+
+    # Int128
+    var i128_pos = BigInt(Int128(80554649779790687400))
+    testing.assert_equal(String(i128_pos), "80554649779790687400")
+
+    var i128_neg = BigInt(Int128(-80554649779790687400))
+    testing.assert_equal(String(i128_neg), "-80554649779790687400")
+
+    # Int128.MIN = -170141183460469231731687303715884105728
+    var i128_min = BigInt(Int128.MIN)
+    testing.assert_equal(
+        String(i128_min), "-170141183460469231731687303715884105728"
+    )
+
+    # Int128.MAX = 170141183460469231731687303715884105727
+    var i128_max = BigInt(Int128.MAX)
+    testing.assert_equal(
+        String(i128_max), "170141183460469231731687303715884105727"
+    )
+
+    # UInt256
+    var u256_small = BigInt(UInt256(12345))
+    testing.assert_equal(String(u256_small), "12345")
+
+    var u256_large = BigInt(UInt256(80554649779790687400))
+    testing.assert_equal(String(u256_large), "80554649779790687400")
+
+    # UInt256 value larger than UInt64.MAX
+    var u256_big = BigInt(UInt256(8055464977979068740023761289648172697))
+    testing.assert_equal(
+        String(u256_big), "8055464977979068740023761289648172697"
+    )
+
+    # Int256
+    var i256_pos = BigInt(Int256(8055464977979068740023761289648172697))
+    testing.assert_equal(
+        String(i256_pos), "8055464977979068740023761289648172697"
+    )
+
+    var i256_neg = BigInt(Int256(-8055464977979068740023761289648172697))
+    testing.assert_equal(
+        String(i256_neg), "-8055464977979068740023761289648172697"
+    )
+
+    # Int256.MIN
+    var i256_min = BigInt(Int256.MIN)
+    testing.assert_equal(
+        String(i256_min),
+        "-57896044618658097711785492504343953926634992332820282019728792003956564819968",
+    )
+
+    # Int256.MAX
+    var i256_max = BigInt(Int256.MAX)
+    testing.assert_equal(
+        String(i256_max),
+        "57896044618658097711785492504343953926634992332820282019728792003956564819967",
+    )
+
+    # Platform-sized UInt
+    var u_plat = BigInt(UInt(18446744073709551615))
+    testing.assert_equal(String(u_plat), "18446744073709551615")
+
+    # Platform-sized Int
+    var i_plat_pos = BigInt(Scalar[DType.int](1234567890))
+    testing.assert_equal(String(i_plat_pos), "1234567890")
+
+    var i_plat_neg = BigInt(Scalar[DType.int](-1234567890))
+    testing.assert_equal(String(i_plat_neg), "-1234567890")
+
+    # Zero for various types
+    testing.assert_equal(String(BigInt(UInt8(0))), "0")
+    testing.assert_equal(String(BigInt(Int32(0))), "0")
+    testing.assert_equal(String(BigInt(UInt64(0))), "0")
+    testing.assert_equal(String(BigInt(Int128(0))), "0")
+    testing.assert_equal(String(BigInt(UInt256(0))), "0")
+    testing.assert_equal(String(BigInt(Int256(0))), "0")
 
 
 # ===----------------------------------------------------------------------=== #

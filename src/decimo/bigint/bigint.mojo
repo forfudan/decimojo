@@ -28,6 +28,7 @@ in little-endian order, and a separate sign bit.
 """
 
 from std.memory import UnsafePointer, memcpy
+from std.sys import size_of
 
 import decimo.bigint.arithmetics
 import decimo.bigint.bitwise
@@ -179,7 +180,7 @@ struct BigInt(
         self = Self.from_string(value)
 
     @implicit
-    def __init__(out self, value: Scalar):
+    def __init__(out self, value: Scalar) where value.dtype.is_integral():
         """Constructs a BigInt from an integral scalar.
         This includes all SIMD integral types, such as Int8, Int16, UInt32, etc.
 
@@ -210,72 +211,34 @@ struct BigInt(
 
         if value < 0:
             sign = True
-            # Handle Int.MIN (two's complement asymmetry)
-            if value == Int.MIN:
-                # |Int.MIN| = Int.MAX + 1
-                magnitude = UInt(Int.MAX) + 1
-            else:
-                magnitude = UInt(-value)
+            magnitude = UInt(0) - UInt(value)
         else:
             sign = False
             magnitude = UInt(value)
 
-        # Split the magnitude into 32-bit words
-        # On 64-bit platforms, Int is 64 bits → at most 2 words
-        var words = List[UInt32](capacity=2)
-        while magnitude != 0:
+        comptime if size_of[Int]() == 4:
+            # 32-bit platform: magnitude fits in 1 word
+            return Self(raw_words=[UInt32(magnitude)], sign=sign)
+        elif size_of[Int]() == 8:
+            # 64-bit platform: at most 2 words
+            var words = List[UInt32](capacity=2)
             words.append(UInt32(magnitude & 0xFFFF_FFFF))
-            magnitude >>= 32
-
-        return Self(raw_words=words^, sign=sign)
-
-    @staticmethod
-    def from_uint64(value: UInt64) -> Self:
-        """Creates a BigInt from a UInt64.
-
-        Args:
-            value: The unsigned 64-bit integer value.
-
-        Returns:
-            The BigInt representation.
-        """
-        if value == 0:
-            return Self()
-
-        var words = List[UInt32](capacity=2)
-        var lo = UInt32(value & 0xFFFF_FFFF)
-        var hi = UInt32(value >> 32)
-        words.append(lo)
-        if hi != 0:
-            words.append(hi)
-
-        return Self(raw_words=words^, sign=False)
+            var hi = UInt32(magnitude >> 32)
+            if hi != 0:
+                words.append(hi)
+            return Self(raw_words=words^, sign=sign)
+        else:
+            comptime assert False, "unsupported platform Int size"
 
     @staticmethod
-    def from_uint128(value: UInt128) -> Self:
-        """Creates a BigInt from a UInt128.
-
-        Args:
-            value: The unsigned 128-bit integer value.
-
-        Returns:
-            The BigInt representation.
-        """
-        if value == 0:
-            return Self()
-
-        var words = List[UInt32](capacity=4)
-        var remaining = value
-        while remaining != 0:
-            words.append(UInt32(remaining & 0xFFFF_FFFF))
-            remaining >>= 32
-
-        return Self(raw_words=words^, sign=False)
-
-    @staticmethod
-    def from_integral_scalar[dtype: DType, //](value: SIMD[dtype, 1]) -> Self:
+    def from_integral_scalar[
+        dtype: DType, //
+    ](value: SIMD[dtype, 1]) -> Self where dtype.is_integral():
         """Initializes a BigInt from an integral scalar.
-        This includes all SIMD integral types, such as Int8, Int16, UInt32, etc.
+        This includes all SIMD integral types:
+        Int8, Int16, Int32, Int64, Int128, Int256,
+        UInt8, UInt16, UInt32, UInt64, UInt128, UInt256,
+        and the platform-sized Int (DType.int) and UInt (DType.uint).
 
         Constraints:
             The dtype must be integral.
@@ -287,34 +250,164 @@ struct BigInt(
             The BigInt representation of the Scalar value.
         """
 
-        comptime assert dtype.is_integral(), "dtype must be integral."
-
         if value == 0:
             return Self()
 
-        var sign: Bool
-        var magnitude: UInt64
+        # --- Unsigned types: direct word extraction via bit ops ---
 
-        comptime if dtype.is_unsigned():
-            sign = False
-            magnitude = UInt64(value)
-        else:
+        comptime if dtype == DType.uint8 or dtype == DType.uint16:
+            # Fits in 1 word
+            return Self(raw_words=[UInt32(value)], sign=False)
+
+        elif dtype == DType.uint32:
+            return Self(raw_words=[UInt32(value)], sign=False)
+
+        elif dtype == DType.uint64:
+            var words = List[UInt32](capacity=2)
+            words.append(UInt32(value & 0xFFFF_FFFF))
+            var hi = UInt32(value >> 32)
+            if hi != 0:
+                words.append(hi)
+            return Self(raw_words=words^, sign=False)
+
+        elif dtype == DType.uint128:
+            var words = List[UInt32](capacity=4)
+            var remaining = value
+            while remaining != 0:
+                words.append(UInt32(remaining & 0xFFFF_FFFF))
+                remaining >>= 32
+            return Self(raw_words=words^, sign=False)
+
+        elif dtype == DType.uint256:
+            var words = List[UInt32](capacity=8)
+            var remaining = value
+            while remaining != 0:
+                words.append(UInt32(remaining & 0xFFFF_FFFF))
+                remaining >>= 32
+            return Self(raw_words=words^, sign=False)
+
+        # --- Platform-sized UInt (pointer width, 32- or 64-bit) ---
+
+        elif dtype == DType.uint:
+            comptime if size_of[Scalar[DType.uint]]() == 4:
+                # 32-bit platform: same as uint32
+                return Self(raw_words=[UInt32(value)], sign=False)
+            elif size_of[Scalar[DType.uint]]() == 8:
+                # 64-bit platform: same as uint64
+                var words = List[UInt32](capacity=2)
+                words.append(UInt32(value & 0xFFFF_FFFF))
+                var hi = UInt32(value >> 32)
+                if hi != 0:
+                    words.append(hi)
+                return Self(raw_words=words^, sign=False)
+            else:
+                comptime assert False, "unsupported platform UInt size"
+
+        # --- Signed types <= 64 bits: convert magnitude to UInt64 ---
+
+        elif dtype == DType.int8 or dtype == DType.int16:
+            # Magnitude fits in 1 word
             if value < 0:
-                sign = True
-                # Compute magnitude using explicit two's-complement conversion
+                return Self(raw_words=[UInt32(-Int32(value))], sign=True)
+            else:
+                return Self(raw_words=[UInt32(value)], sign=False)
+
+        elif dtype == DType.int32:
+            if value < 0:
+                var magnitude = UInt64(0) - UInt64(value)
+                var words = List[UInt32](capacity=2)
+                words.append(UInt32(magnitude & 0xFFFF_FFFF))
+                var hi = UInt32(magnitude >> 32)
+                if hi != 0:
+                    words.append(hi)
+                return Self(raw_words=words^, sign=True)
+            else:
+                return Self(raw_words=[UInt32(value)], sign=False)
+
+        elif dtype == DType.int64:
+            var sign = value < 0
+            var magnitude: UInt64
+            if sign:
                 magnitude = UInt64(0) - UInt64(value)
             else:
-                sign = False
                 magnitude = UInt64(value)
+            var words = List[UInt32](capacity=2)
+            words.append(UInt32(magnitude & 0xFFFF_FFFF))
+            var hi = UInt32(magnitude >> 32)
+            if hi != 0:
+                words.append(hi)
+            return Self(raw_words=words^, sign=sign)
 
-        var words = List[UInt32](capacity=2)
-        var lo = UInt32(magnitude & 0xFFFF_FFFF)
-        var hi = UInt32(magnitude >> 32)
-        words.append(lo)
-        if hi != 0:
-            words.append(hi)
+        # --- Platform-sized Int (pointer width, 32- or 64-bit) ---
 
-        return Self(raw_words=words^, sign=sign)
+        elif dtype == DType.int:
+            comptime if size_of[Scalar[DType.int]]() == 4:
+                # 32-bit platform: same as int32
+                if value < 0:
+                    var magnitude = UInt64(0) - UInt64(value)
+                    var words = List[UInt32](capacity=2)
+                    words.append(UInt32(magnitude & 0xFFFF_FFFF))
+                    var hi = UInt32(magnitude >> 32)
+                    if hi != 0:
+                        words.append(hi)
+                    return Self(raw_words=words^, sign=True)
+                else:
+                    return Self(raw_words=[UInt32(value)], sign=False)
+            elif size_of[Scalar[DType.int]]() == 8:
+                # 64-bit platform: same as int64
+                var sign = value < 0
+                var magnitude: UInt64
+                if sign:
+                    magnitude = UInt64(0) - UInt64(value)
+                else:
+                    magnitude = UInt64(value)
+                var words = List[UInt32](capacity=2)
+                words.append(UInt32(magnitude & 0xFFFF_FFFF))
+                var hi = UInt32(magnitude >> 32)
+                if hi != 0:
+                    words.append(hi)
+                return Self(raw_words=words^, sign=sign)
+            else:
+                comptime assert False, "unsupported platform Int size"
+
+        # --- Int128: use division to extract 32-bit chunks ---
+
+        elif dtype == DType.int128:
+            var sign = value < 0
+            var words = List[UInt32](capacity=4)
+            var rem = Int128(value)
+            if sign:
+                while rem != 0:
+                    var quotient = rem // Int128(-0x1_0000_0000)
+                    var word_val = rem % Int128(-0x1_0000_0000)
+                    words.append(UInt32(-word_val))
+                    rem = -quotient
+            else:
+                while rem != 0:
+                    words.append(UInt32(rem & 0xFFFF_FFFF))
+                    rem >>= 32
+            return Self(raw_words=words^, sign=sign)
+
+        # --- Int256: use division to extract 32-bit chunks ---
+
+        elif dtype == DType.int256:
+            var sign = value < 0
+            var words = List[UInt32](capacity=8)
+            var rem = Int256(value)
+            if sign:
+                while rem != 0:
+                    var quotient = rem // Int256(-0x1_0000_0000)
+                    var word_val = rem % Int256(-0x1_0000_0000)
+                    words.append(UInt32(-word_val))
+                    rem = -quotient
+            else:
+                while rem != 0:
+                    words.append(UInt32(rem & 0xFFFF_FFFF))
+                    rem >>= 32
+            return Self(raw_words=words^, sign=sign)
+
+        else:
+            comptime assert False, "unsupported integral dtype"
 
     @staticmethod
     def from_string(value: String) raises -> Self:
